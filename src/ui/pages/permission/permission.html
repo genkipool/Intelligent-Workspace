@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <title data-i18n="permissionTitle">Permiso de Micrófono</title>
+        <link rel="stylesheet" href="../../../styles/themes.css" />
+        <link rel="stylesheet" href="./permission.css" />
+    </head>
+    <body>
+        <div class="card">
+            <h1 data-i18n="permissionHeading">Habilitar Micrófono</h1>
+            <p data-i18n="permissionDesc">
+                Para escribir con la voz, haz clic a continuación y selecciona "Permitir".
+            </p>
+            <button id="request-btn" class="btn" data-i18n="permissionBtn">Permitir Micrófono</button>
+            <div id="status" class="status"></div>
+        </div>
+        <script src="./permission.js" type="module"></script>
+    </body>
+</html>

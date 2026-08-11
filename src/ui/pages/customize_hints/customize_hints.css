@@ -1,0 +1,1860 @@
+@import url('../popup/popup.css');
+
+/* @ section filter dropdown */
+.at-section-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 10px;
+    right: 10px;
+    z-index: 100;
+    background: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    max-height: 240px;
+    overflow-y: auto;
+    display: none;
+    margin-top: 4px;
+}
+.at-section-dropdown.visible {
+    display: block;
+}
+.at-section-dropdown-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 13px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.at-section-dropdown-item:last-child {
+    border-bottom: none;
+}
+.at-section-dropdown-item:hover,
+.at-section-dropdown-item.highlighted {
+    background: var(--action-color);
+    color: var(--text-color);
+}
+.at-section-dropdown-item .at-section-icon {
+    opacity: 0.6;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.at-section-dropdown-item .at-section-label {
+    font-weight: 600;
+}
+.at-section-dropdown-item .at-section-count {
+    margin-left: auto;
+    opacity: 0.5;
+    font-size: 11px;
+}
+.at-section-dropdown::-webkit-scrollbar {
+    width: 6px;
+}
+.at-section-dropdown::-webkit-scrollbar-track {
+    background: transparent;
+}
+.at-section-dropdown::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+/* Search bar */
+.search-bar-container {
+    position: sticky;
+    top: 10px;
+    z-index: 10;
+    padding: 8px 10px 4px 10px;
+    background-color: var(--bg-color);
+}
+
+.search-bar-container .search-input {
+    width: 100%;
+    padding: 6px 30px 6px 30px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+    transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 8px center;
+    background-size: 16px;
+    caret-color: var(--text-on-color);
+    box-sizing: border-box;
+}
+
+.search-bar-container .search-input:focus {
+    border-color: var(--action-color);
+    box-shadow: 0 0 0 2px var(--action-color);
+}
+
+.search-bar-container .search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    height: 14px;
+    width: 14px;
+    display: inline-block;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='red'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
+    cursor: pointer;
+    margin-right: 0;
+}
+
+.category-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+
+/* Command List (Original Compact Design) */
+.commands-list {
+    list-style: none;
+    padding: 12px 0px;
+    /* Ensure last items are visible */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.space {
+    padding-bottom: 60px;
+}
+
+.command-item {
+    display: grid;
+    /* Reverting to closer to original grid, but keeping URL column if present */
+    /* 70px key | 1fr desc | auto delete */
+    /* Dynamic grid template handles custom vs built-in via JS logic or CSS classes better, but let's stick to a safe default */
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background-color: var(--bg-panel-color);
+    transition: background-color 0.2s;
+}
+
+/* Specialized grids for Shortcuts and Snippets */
+.section-header div {
+    display: flex !important;
+    align-items: center !important;
+}
+
+.section-title {
+    margin: 0 !important;
+    display: inline-block !important;
+    /* Prevent flex spacing from popup.css */
+    width: auto !important;
+}
+
+.shortcuts-grid {
+    grid-template-columns: 80px 1.5fr 2fr 30px;
+}
+
+li.shortcuts-grid {
+    grid-template-columns: 80px 1fr 30px;
+}
+
+li.shortcuts-grid.is-editing-custom {
+    grid-template-columns: 80px 1fr 1.5fr 30px;
+}
+
+li.shortcuts-grid .command-description-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+li.shortcuts-grid .command-description-wrapper .command-description {
+    flex: 1;
+}
+
+.command-item.is-custom:not(.snippet-item) .command-description {
+    display: none;
+}
+
+.command-item.is-custom:not(.snippet-item).is-editing-custom .command-description {
+    display: block;
+}
+
+.snippet-item .command-description {
+    display: block !important;
+}
+
+.snippets-grid {
+    grid-template-columns: 80px auto 30px;
+}
+
+.command-item.is-custom {
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+
+.command-item.is-custom:hover {
+    border: 1px solid var(--action-color);
+}
+
+.command-keys {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    font-size: 13px;
+    color: var(--text-on-color);
+    padding: 3px 6px;
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.command-keys:focus,
+input.command-keys:focus {
+    outline: none !important;
+    border: 1px solid var(--interactive-color) !important;
+}
+
+.command-item.blacklist-item,
+.command-item.blacklist-item:focus-within {
+    grid-template-columns: 1fr auto;
+}
+
+.blacklist-item .command-description {
+    display: block !important;
+}
+
+.blacklist-domain {
+    cursor: text;
+}
+
+.command-url {
+    font-size: 13px;
+    color: var(--text-color);
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: transparent;
+    display: block;
+    max-height: 20px;
+    height: 100%;
+    align-content: center;
+}
+
+.command-url:focus {
+    white-space: normal;
+    word-break: break-all;
+    overflow-y: auto;
+    max-height: 100px;
+}
+
+/* Snippet Expansion styling */
+.snippet-expansion {
+    font-size: 13px;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    display: block;
+    max-height: 20px !important;
+    line-height: 20px;
+}
+
+.command-description {
+    font-size: 13px;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
+    display: block;
+    height: 100%;
+    align-content: center;
+}
+
+.snippet-expansion:focus,
+.command-description:focus {
+    white-space: pre-wrap !important;
+    word-break: break-all;
+    overflow-y: auto !important;
+    max-height: 100px !important;
+}
+
+.command-url::-webkit-scrollbar,
+.command-description::-webkit-scrollbar,
+.snippet-expansion::-webkit-scrollbar,
+#command-desc::-webkit-scrollbar,
+#snippet-expansion::-webkit-scrollbar {
+    width: 6px;
+}
+
+.command-url::-webkit-scrollbar-track,
+.command-description::-webkit-scrollbar-track,
+.snippet-expansion::-webkit-scrollbar-track,
+#command-desc::-webkit-scrollbar-track,
+#snippet-expansion::-webkit-scrollbar-track {
+    background: var(--bg-color);
+    border-radius: 3px;
+}
+
+.command-url::-webkit-scrollbar-thumb,
+.command-description::-webkit-scrollbar-thumb,
+.snippet-expansion::-webkit-scrollbar-thumb,
+#command-desc::-webkit-scrollbar-thumb,
+#snippet-expansion::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+    border: 1px solid var(--bg-color);
+}
+
+.command-url::-webkit-scrollbar-thumb:hover,
+.command-description::-webkit-scrollbar-thumb:hover,
+.snippet-expansion::-webkit-scrollbar-thumb:hover,
+#command-desc::-webkit-scrollbar-thumb:hover,
+#snippet-expansion::-webkit-scrollbar-thumb:hover {
+    background: var(--action-color);
+}
+
+/* Delete Button (Original Style) */
+.delete-command-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 5px;
+    /* Slight rounded square for modern feel */
+    display: flex;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    justify-self: center;
+    /* Center in its 24px/auto column */
+    color: var(--text-color);
+    margin-left: auto;
+    justify-self: end;
+}
+
+.command-item.is-custom:hover .delete-command-btn,
+.snippet-item:hover .delete-command-btn {
+    visibility: visible;
+    opacity: 1;
+}
+
+.delete-command-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    opacity: 0.6;
+}
+
+.delete-command-btn:hover {
+    background-color: var(--error-color);
+    color: var(--text-color);
+}
+
+.delete-command-btn:hover svg {
+    opacity: 1;
+}
+
+/* Formulario Compacto (Restored) */
+#add-command-form,
+#add-snippet-form {
+    margin-bottom: 12px;
+}
+
+.form-group-inline {
+    display: grid;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Specialized grids already defined above */
+
+.itg-manage-input,
+.form-group-inline input {
+    width: 100%;
+    height: 32px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 12px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+[contenteditable]:empty::before {
+    content: attr(data-i18n-placeholder);
+    opacity: 0.5;
+    pointer-events: none;
+    display: block;
+}
+
+[contenteditable]:focus:empty::before {
+    content: attr(data-i18n-placeholder);
+}
+
+#snippet-expansion,
+#command-desc {
+    width: 100%;
+    min-height: 32px;
+    /* Altura base */
+    max-height: 20vh;
+    /* Vertical growth limit (you can adjust it) */
+    height: auto;
+    /* Allows it to grow based on content */
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 12px;
+    box-sizing: border-box;
+    display: block;
+
+    /* Control de Scroll y Texto */
+    overflow-y: auto;
+    /* Scroll vertical solo cuando supera max-height */
+    overflow-x: hidden;
+    /* Prohibido el scroll horizontal */
+    white-space: pre-wrap;
+    /* Respects line breaks and adjusts to width */
+    word-break: break-word;
+    /* Rompe palabras largas para evitar desbordamiento horizontal */
+    overflow-wrap: anywhere;
+    /* Refuerzo para que nada se salga por los lados */
+    line-height: 1.5;
+}
+
+/* Link Popup Styles (Ported from hint_content.css) */
+.itg-link-popup {
+    position: fixed;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 2147483647;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 250px;
+    animation: itg-fade-in 0.2s ease;
+}
+
+.itg-link-popup input {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-color);
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.itg-link-popup input:focus {
+    border-color: var(--action-color);
+}
+
+.itg-link-popup input.itg-input-error {
+    border-color: var(--error-color) !important;
+}
+
+.itg-link-popup-header {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.itg-link-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--text-color);
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.itg-link-close-btn:hover {
+    opacity: 1;
+    background-color: var(--border-color);
+}
+
+.itg-link-close-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.itg-link-popup-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.itg-link-popup-actions button {
+    padding: 5px 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+}
+
+.itg-link-popup-actions button.itg-link-confirm {
+    background-color: var(--action-color);
+    color: var(--text-color);
+    font-weight: 500;
+    border: none;
+    width: 100%;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.itg-link-popup-actions button:hover {
+    opacity: 0.85;
+}
+
+.itg-link-popup-actions button.itg-link-confirm:hover {
+    opacity: 0.9;
+}
+
+.itg-manage-input:focus,
+.form-group-inline input:focus {
+    outline: none;
+    border-color: var(--interactive-color);
+}
+
+.itg-manage-input.error,
+.form-group-inline input.error,
+[contenteditable].error {
+    border-color: var(--error-color) !important;
+    color: var(--error-color);
+}
+
+/* Floating scroll buttons */
+.itg-scroll-buttons-float {
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-50%);
+    bottom: 70px;
+    left: 50%;
+    right: auto;
+    position: fixed;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+    transition: opacity 0.2s ease;
+}
+
+.itg-scroll-buttons-float.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.itg-scroll-buttons-float button {
+    background-color: var(--bg-panel-color);
+    border: none;
+    border-radius: 50%;
+    opacity: 0.5;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 8px 2px var(--border-color);
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.itg-scroll-buttons-float button:hover {
+    background-color: var(--border-color);
+    transform: scale(1.1);
+}
+
+.itg-scroll-buttons-float button svg {
+    width: 100%;
+    height: 100%;
+}
+
+.itg-scroll-buttons-float button svg path {
+    stroke: var(--text-color);
+    stroke-width: 1;
+}
+
+.itg-manage-input.error:focus,
+.form-group-inline input.error:focus,
+[contenteditable].error:focus {
+    border-color: var(--error-color) !important;
+    box-shadow: 0 0 0 1px var(--error-color) !important;
+    outline: none !important;
+    transition: none !important;
+}
+
+/* Error text coloring */
+.command-keys.error ~ .command-description,
+.itg-manage-input.error ~ .command-description,
+[contenteditable].error ~ .command-description {
+    color: var(--error-color);
+}
+
+/* Content Editable Focus */
+/* Content Editable Focus */
+[contenteditable]:focus {
+    outline: none;
+    border: 1px solid var(--interactive-color);
+    opacity: 1;
+}
+
+/* Custom Item Content Editable Improvements */
+.command-item.is-custom [contenteditable] {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 5px;
+    min-height: 20px;
+    overflow-y: auto;
+    max-height: 100px;
+}
+
+.command-item.is-custom [contenteditable]:hover:not(:focus) {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+}
+
+.command-item.is-custom .command-keys,
+.snippet-item .command-keys {
+    /* Ensure keys specific style is maintained but improved */
+    background-color: var(--bg-color);
+    /* Always visible bg for keys */
+}
+
+.form-group-inline .add-btn {
+    padding: 5px 9px;
+    font-size: 18px;
+    line-height: 1;
+    width: auto;
+    background-color: var(--bg-panel-color);
+    /* Restoring button style if it was like this, or default button style from popup.css will apply */
+}
+
+/* Edicion en Linea (Restored logic) */
+.command-item.is-editing {
+    background-color: var(--bg-color);
+    cursor: default;
+    display: block;
+    /* Switch to block for edit mode container */
+    padding: 0;
+}
+
+.edit-mode-container {
+    display: grid;
+    grid-template-columns: 70px minmax(100px, 1fr) 2fr auto;
+    gap: 8px;
+    padding: 6px 10px;
+    align-items: center;
+}
+
+.snippet-item .edit-mode-container {
+    grid-template-columns: 80px 1fr auto;
+}
+
+.edit-input {
+    width: 100%;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--action-color);
+    background-color: var(--bg-panel-color);
+    color: var(--text-color);
+    font-size: 13px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.edit-input-keys {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    text-align: center;
+}
+
+.edit-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.save-btn,
+.cancel-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px;
+    opacity: 0.7;
+}
+
+.help-btn {
+    padding: 2px;
+    color: var(--action-color);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    /* Align next to title */
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.help-btn:hover {
+    opacity: 1;
+    background-color: rgba(var(--action-color-rgb), 0.1);
+    color: var(--action-color);
+}
+
+.snippet-help-btn-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.save-btn:hover {
+    color: var(--action-color);
+    opacity: 1;
+}
+
+.cancel-btn:hover {
+    color: var(--error-color);
+    opacity: 1;
+}
+
+/* Mensajes y Restauracion */
+.no-commands-message {
+    text-align: center;
+    padding: 15px;
+    opacity: 0.7;
+    display: none;
+}
+
+/* Main layout with fixed footer */
+.option-page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.content-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 80px;
+}
+
+.footer-fixed {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--bg-panel-color);
+    border-top: 1px solid var(--border-color);
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    z-index: 10;
+}
+
+.footer-hint {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.6;
+}
+
+.restore-section {
+    display: none;
+    /* Moved to footer */
+}
+
+/* Hide number input arrows */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* New Refactored Classes for Inline Styles */
+.itg-manage-section.snippet-section {
+    margin-top: 30px;
+}
+
+.snippet-form-row {
+    display: grid;
+    grid-template-columns: 80px 1fr auto 32px;
+    gap: 8px;
+    align-items: center;
+}
+
+.snippet-trigger-input {
+    width: 100%;
+}
+
+.snippet-trigger-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.snippet-expansion-input {
+    width: 100%;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+
+.snippet-var-count-container {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.snippet-var-count-input {
+    width: 50px;
+    text-align: center;
+}
+
+.snippet-add-btn {
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    font-size: 20px;
+}
+
+.snippet-vars-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.itg-input-error,
+input.itg-input-error {
+    border-color: var(--error-color, #ff4444) !important;
+    outline: none !important;
+}
+
+.itg-is-placeholder {
+    opacity: 0.5;
+}
+
+.itg-var-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.itg-var-id-input {
+    width: 60px;
+}
+
+.itg-var-flex-input {
+    flex: 1;
+}
+
+.itg-var-badge {
+    background: var(--accent-color);
+    color: var(--bg-color);
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+.itg-display-none {
+    display: none;
+}
+
+.itg-display-block {
+    display: block;
+}
+
+.itg-display-flex {
+    display: flex;
+}
+
+/* --- New Snippet List Design --- */
+
+.snippet-item-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    align-items: stretch;
+}
+
+.snippet-item-container:hover {
+    border-color: var(--action-color);
+}
+
+.snippet-main-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 30px;
+    align-items: center;
+    gap: 8px;
+}
+
+.snippet-main-row .snippet-expansion-wrapper {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 20px;
+    overflow: hidden;
+}
+
+.snippet-main-row .snippet-expansion-wrapper .snippet-expansion {
+    flex: 1;
+    min-width: 0;
+}
+
+.snippet-variables-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+    padding-left: 8px;
+    /* Indent variables slightly */
+    border-left: 2px solid var(--border-color);
+}
+
+.variable-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+.variable-row input {
+    width: 100%;
+    /* Reusing input styles but ensuring sizing */
+    height: 28px;
+    padding: 2px 6px;
+    font-size: 12px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color);
+}
+
+.variable-row input:focus {
+    outline: none;
+    border-color: var(--interactive-color);
+}
+
+.snippet-usage-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.snippet-copy-usage-btn {
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    padding: 6px;
+    /* Mas padding para que sea un area clicable comoda */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    min-width: 32px;
+    height: 32px;
+}
+
+.snippet-copy-usage-btn:hover {
+    background-color: var(--action-color);
+    border-color: var(--action-color);
+    color: var(--text-color);
+}
+
+.snippet-copy-usage-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.usage-text {
+    font-weight: 500;
+    color: var(--action-color);
+    /* Resaltar el comando para que sea facil de leer */
+    letter-spacing: 0.5px;
+    font-size: 14px;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ===== RICH TEXT FORMATTING MODAL ===== */
+
+/* Format Button */
+.itg-format-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color);
+    opacity: 0.6;
+    transition: all 0.2s ease;
+
+    /* Absolute positioning within relative wrapper */
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    margin: 0;
+}
+
+.itg-format-btn:hover {
+    opacity: 1;
+    background-color: var(--bg-panel-color);
+}
+
+/* Show format button only on hover in snippet expansion wrappers */
+.snippet-expansion-wrapper:hover .itg-format-btn {
+    display: inline-flex;
+}
+
+.itg-format-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Modal Backdrop */
+.itg-format-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+}
+
+.itg-format-modal.itg-format-modal-visible {
+    display: flex;
+}
+
+/* Modal Content */
+.itg-format-modal-content {
+    background-color: var(--bg-panel-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 700px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Modal Header */
+.itg-format-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.itg-format-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-color);
+}
+
+.itg-format-close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-color);
+    opacity: 0.6;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.itg-format-close-btn:hover {
+    opacity: 1;
+    color: var(--error-color);
+}
+
+.itg-format-modal-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-on-color);
+}
+
+/* Toolbar */
+.itg-format-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-panel-color);
+}
+
+.itg-format-toolbar-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+}
+
+.itg-format-toolbar button,
+.itg-format-toolbar-item {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0;
+}
+
+.itg-format-toolbar button:hover,
+.itg-format-toolbar-item:hover {
+    background-color: var(--action-color);
+    border-color: var(--action-color);
+    color: var(--text-color);
+}
+
+.itg-format-toolbar button svg,
+.itg-format-icon-label svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Icon-based Labels (Select and Color) */
+.itg-format-icon-label {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.itg-format-icon-label select,
+.itg-format-icon-label input[type='color'] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+}
+
+/* Special styling for color bars in icons */
+.itg-format-icon-label input[type='color'] + svg rect {
+    transition: fill 0.2s ease;
+}
+
+/* Emoji Picker toggle button */
+.itg-emoji-trigger {
+    color: var(--text-color);
+}
+
+/* Emoji Picker */
+.itg-emoji-picker {
+    padding: 12px 20px;
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.itg-emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 4px;
+}
+
+.itg-emoji-btn {
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.itg-emoji-btn:hover {
+    background-color: var(--bg-panel-color);
+    border-color: var(--border-color);
+    transform: scale(1.1);
+}
+
+/* Preview Container */
+.itg-format-preview-container {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.itg-format-preview-container label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+.itg-format-preview {
+    min-height: 150px;
+    max-height: 300px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.itg-format-preview:focus {
+    outline: none;
+    border-color: var(--interactive-color);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-color-rgb, 66, 133, 244), 0.2);
+}
+
+.itg-format-preview::-webkit-scrollbar {
+    width: 8px;
+}
+
+.itg-format-preview::-webkit-scrollbar-track {
+    background: var(--bg-panel-color);
+    border-radius: 4px;
+}
+
+.itg-format-preview::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.itg-format-preview::-webkit-scrollbar-thumb:hover {
+    background: var(--action-color);
+}
+
+/* Modal Footer */
+.itg-format-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-panel-color);
+}
+
+.itg-format-modal-footer button {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Wrapper for fields with format button */
+.snippet-expansion-wrapper,
+.command-description-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    position: relative;
+    /* Container for absolute button */
+}
+
+/* Ensure expansion fields adapt to the formatting button visibility */
+.snippet-expansion-wrapper .itg-manage-input,
+.snippet-expansion-wrapper .snippet-expansion,
+.command-description-wrapper .itg-manage-input {
+    padding-right: 10px;
+    /* Reduced padding when button is hidden */
+    transition: padding-right 0.2s ease;
+}
+
+.snippet-expansion-wrapper:hover .itg-manage-input,
+.snippet-expansion-wrapper:hover .snippet-expansion,
+.command-description-wrapper:hover .itg-manage-input {
+    padding-right: 32px !important;
+    /* Restore space for button on hover */
+}
+
+.snippet-expansion-wrapper .itg-manage-input,
+.command-description-wrapper .itg-manage-input {
+    flex: 1;
+}
+
+/* Link Popup */
+.itg-link-popup {
+    position: fixed;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 250px;
+    animation: itg-fade-in 0.2s ease;
+}
+
+.itg-link-popup input {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-color);
+    font-size: 14px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.itg-link-popup input:focus {
+    border-color: var(--action-color);
+}
+
+.itg-link-popup input.itg-input-error {
+    border-color: var(--error-color) !important;
+}
+
+.itg-link-popup-header {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-bottom: 2px;
+    opacity: 0.8;
+}
+
+@keyframes itg-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Dropdown/Grid Popups */
+.itg-custom-popup {
+    position: fixed;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10002;
+    animation: itg-fade-in 0.15s ease-out;
+    padding: 8px;
+}
+
+/* Font Size List */
+.itg-font-size-popup {
+    max-height: 250px;
+    overflow-y: auto;
+    min-width: 80px;
+}
+
+.itg-font-size-option {
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-color);
+    transition: background-color 0.2s;
+    text-align: center;
+}
+
+.itg-font-size-option:hover {
+    background-color: var(--action-color);
+    color: var(--text-color);
+}
+
+/* Color Picker Grid */
+.itg-color-picker-popup {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    width: min-content;
+}
+
+.itg-color-option {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: transform 0.1s;
+    position: relative;
+}
+
+.itg-color-option:hover {
+    transform: scale(1.15);
+    border-color: var(--border-color);
+    z-index: 1;
+}
+
+.itg-color-option.itg-selected-color {
+    border: 2px solid var(--action-color);
+    box-shadow: 0 0 5px var(--action-color);
+    z-index: 2;
+}
+
+/* Custom Hex Color Section */
+.itg-color-custom-section {
+    grid-column: span 6;
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.itg-color-custom-section input {
+    flex: 1;
+    min-width: 0;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 6px;
+    color: var(--text-color);
+    font-size: 11px;
+    font-family: monospace;
+    outline: none;
+}
+
+.itg-color-custom-section .itg-graphic-picker-btn {
+    flex-shrink: 0;
+    padding: 0;
+    width: 28px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-color);
+}
+
+.itg-color-custom-section .itg-graphic-picker-btn:hover {
+    background-color: var(--action-color);
+    color: white;
+    border-color: var(--action-color);
+}
+
+.itg-color-custom-section .itg-graphic-picker-btn svg {
+    pointer-events: none;
+}
+
+/* ===== SNIPPET HELP MODAL ===== */
+
+.snippet-help-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    color: var(--text-color);
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+}
+
+.snippet-help-icon:hover {
+    opacity: 1;
+    background-color: var(--bg-panel-color);
+}
+
+.snippet-help-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 10001;
+    align-items: center;
+    justify-content: center;
+}
+
+.snippet-help-modal.visible {
+    display: flex;
+}
+
+.snippet-help-modal-content {
+    background-color: var(--bg-panel-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.snippet-help-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.snippet-help-modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: var(--text-on-color);
+}
+
+.snippet-help-close-btn {
+    background: none;
+    border: none;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--text-color);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.snippet-help-close-btn:hover {
+    opacity: 1;
+    color: var(--error-color);
+}
+
+.snippet-help-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.snippet-help-modal-body h3 {
+    color: var(--action-color);
+    margin-top: 16px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.snippet-help-modal-body h3:first-child {
+    margin-top: 0;
+}
+
+.snippet-help-modal-body p {
+    line-height: 1.6;
+    margin-bottom: 12px;
+    color: var(--text-color);
+}
+
+.snippet-help-modal-body ol,
+.snippet-help-modal-body ul {
+    padding-left: 24px;
+    margin-bottom: 12px;
+}
+
+.snippet-help-modal-body li {
+    line-height: 1.8;
+    margin-bottom: 6px;
+    color: var(--text-color);
+}
+
+.snippet-help-modal-body kbd {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.snippet-help-modal-body .example-box {
+    background-color: var(--bg-color);
+    border-left: 3px solid var(--action-color);
+    padding: 12px;
+    margin: 12px 0;
+    border-radius: 4px;
+    word-break: break-all;
+}
+
+.snippet-help-modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.snippet-help-modal-body::-webkit-scrollbar-track {
+    background: var(--bg-color);
+    border-radius: 4px;
+}
+
+.snippet-help-modal-body::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.snippet-help-modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--action-color);
+}
+
+/* Help Modal New Structure */
+.help-section {
+    margin-bottom: 28px;
+}
+
+.help-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 24px 0;
+    opacity: 0.5;
+}
+
+.example-box {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 12px;
+    font-size: 13px;
+    line-height: 1.8;
+    border-left: none;
+    /* Override previous */
+}
+
+.example-row,
+.usage-row,
+.var-row {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    word-break: break-word;
+}
+
+.var-row {
+    color: var(--text-on-color);
+}
+
+.variable-details {
+    margin: 8px 0;
+    padding: 0;
+    background: none;
+    border: none;
+}
+
+.usage-group {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border-color);
+}
+
+.usage-group:first-child {
+    border-top: none;
+    margin-top: 8px;
+    padding-top: 0;
+}
+
+.label {
+    font-weight: 600;
+    color: var(--text-on-color);
+    margin-right: 8px;
+    min-width: 70px;
+}
+
+.variable-details .label {
+    margin-right: 8px;
+}
+
+.snippet-help-modal-body code {
+    background: transparent;
+    padding: 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.95em;
+    color: var(--text-color);
+}
+
+/* Base style for code bits that SHOULD have background (triggers, etc) */
+.example-row code,
+.usage-row code {
+    background: var(--bg-panel-color);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Exception: the Expansion row (child 2) should NOT have a background on the full block */
+.example-row:nth-child(2) code {
+    background: transparent;
+    padding: 0;
+}
+
+.id_var,
+.value_default,
+.var-highlight {
+    background: var(--bg-panel-color);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.id_var,
+.value_default {
+    background: unset;
+}
+
+.value_default {
+    font-weight: 400;
+}
+
+.section-header {
+    padding: 0px 0px 8px 0px;
+}
+
+.section-header-alignment {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.itg-info-note .label-inline {
+    min-width: auto;
+    margin-right: 4px;
+}
+
+.help-section-desc {
+    margin-bottom: 8px;
+    color: var(--text-color);
+    opacity: 0.9;
+}
+
+.help-section-desc-spaced {
+    margin-bottom: 12px;
+    color: var(--text-color);
+}
+
+.help-section-text {
+    color: var(--text-color);
+}
+
+.itg-info-note {
+    background-color: var(--bg-color);
+    border-left: 3px solid var(--interactive-color);
+    padding: 12px;
+    border-radius: 0 4px 4px 0;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-color);
+    line-height: 1.5;
+}

@@ -1,0 +1,198 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #fff; /* Explicit white background for printing */
+}
+
+.conversation-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.entry {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 16px;
+    page-break-inside: avoid; /* Evita cortes en medio de una entrada al imprimir */
+}
+
+.query {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #1a0dab;
+    margin-bottom: 8px;
+}
+
+.answer {
+    font-size: 1em;
+    color: #4d5156;
+}
+
+/* --- ESTILOS MEJORADOS --- */
+
+/* Main title of the conversation */
+h1 {
+    font-size: 1.5em;
+    color: #202124;
+    border-bottom: 2px solid #1a73e8;
+    padding-bottom: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 24px; /* Added more space after the title */
+}
+
+/* Titles within Gemini responses (H2, H3, etc.) */
+.answer h2,
+.answer h3,
+.answer h4 {
+    color: #202124;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eaeaea;
+    padding-bottom: 4px;
+}
+.answer h2 {
+    font-size: 1.3em;
+}
+.answer h3 {
+    font-size: 1.2em;
+}
+.answer h4 {
+    font-size: 1.1em;
+}
+
+/* Code blocks <pre><code> */
+pre {
+    background-color: #f8f9fa;
+    padding: 16px;
+    border: 1px solid #e1e1e1;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Courier New', Courier, monospace;
+    page-break-inside: avoid; /* Prevents code blocks from being cut */
+}
+
+/* Inline code `code` */
+code {
+    font-family: 'Courier New', Courier, monospace;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: #1a73e8;
+}
+pre > code {
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
+    font-size: 1em;
+}
+
+/* Listas ordenadas y no ordenadas */
+ul,
+ol {
+    padding-left: 30px; /* More indentation */
+    margin-bottom: 16px;
+}
+ul li,
+ol li {
+    margin-bottom: 8px; /* Espacio entre elementos */
+}
+
+/* Citas > blockquote */
+blockquote {
+    border-left: 4px solid #1a73e8; /* Thicker, colored border */
+    padding: 10px 20px;
+    margin: 16px 0;
+    color: #666;
+    background-color: #f9f9f9; /* Fondo sutil para destacar */
+    border-radius: 0 4px 4px 0;
+    page-break-inside: avoid;
+}
+blockquote p {
+    margin-bottom: 0; /* Avoids double margin if there are paragraphs inside */
+}
+
+/* Regla horizontal <hr> */
+hr {
+    border: 0;
+    height: 1px;
+    background-color: #ddd;
+    margin: 24px 0;
+}
+
+/* Estilos para Tablas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.9em;
+    page-break-inside: avoid;
+}
+th,
+td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333;
+}
+/* Colores alternos para las filas para mejorar la legibilidad */
+tbody tr:nth-of-type(even) {
+    background-color: #f9f9f9;
+}
+
+/* Specific styles for printing (PDF) */
+@media print {
+    body {
+        color: #000 !important;
+        font-size: 11pt; /* Standard font size for printing */
+        background-color: #fff !important;
+    }
+    .query {
+        color: #00008b !important; /* Azul oscuro para mejor contraste */
+    }
+    .answer {
+        color: #222 !important;
+    }
+    h1 {
+        border-bottom-color: #00008b !important;
+    }
+    pre {
+        background-color: #f0f0f0 !important;
+        border: 1px solid #ccc;
+    }
+    table,
+    blockquote,
+    pre {
+        page-break-inside: avoid;
+    }
+    th,
+    td {
+        border: 1px solid #aaa;
+    }
+    th {
+        background-color: #e8e8e8 !important;
+    }
+    tbody tr:nth-of-type(even) {
+        background-color: #f6f6f6 !important;
+    }
+
+    /* Displays the full URL of the links in parentheses */
+    a {
+        text-decoration: none;
+        color: #0000ee !important;
+        word-break: break-all;
+    }
+    a[href]:after {
+        content: ' (' attr(href) ')';
+        font-size: 0.9em;
+        color: #555 !important;
+    }
+}
