@@ -1,4 +1,4 @@
-# 🧭 Intelligent Navigator
+# 🧭 Intelligent Workspace
 
 > **Transform Google Chrome into an intelligent, hyper-productive, and autonomous workstation.**
 
@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Production-success.svg)
 ![License](https://img.shields.io/badge/License-Proprietary-red.svg)
 
-**Intelligent Navigator** is much more than a tab manager. It is a "Super App" integrated directly into your browser that combines advanced window management, autonomous artificial intelligence, productivity metrics (Pomodoro), and keyboard navigation to take your workflow to the next level.
+**Intelligent Workspace** is much more than a tab manager. It is a "Super App" integrated directly into your browser that combines advanced window management, autonomous artificial intelligence, productivity metrics (Pomodoro), and keyboard navigation to take your workflow to the next level.
 
 ---
 
@@ -52,7 +52,7 @@ Currently, the extension is in its release deployment phase. To install it manua
 ## ⚙️ Initial Configuration
 
 To get the most out of the Artificial Intelligence features:
-1. Open the extension's side panel by clicking on the **Intelligent Navigator** icon.
+1. Open the extension's side panel by clicking on the **Intelligent Workspace** icon.
 2. Go to the **AI Assistant** tab.
 3. Click on **"Add API Key"**.
 4. Paste your free API Key from [Google AI Studio](https://aistudio.google.com/app/apikey). *(For complete privacy and security, your API key is stored exclusively locally on your device).*
@@ -73,7 +73,7 @@ Found a bug or have a feature request? Please open an [Issue](https://github.com
 
 **Copyright (c) 2026 GENKI Organization / Luis Reoyo. All rights reserved.**
 
-The source code of "Intelligent Navigator" is published on GitHub for the sole purpose of allowing security audits, encouraging learning, and facilitating community collaboration via *Pull Requests*.
+The source code of "Intelligent Workspace" is published on GitHub for the sole purpose of allowing security audits, encouraging learning, and facilitating community collaboration via *Pull Requests*.
 
 **IT IS STRICTLY PROHIBITED TO:**
 1. Copy, clone, fork (for external or separate project use), or reproduce this code to create derivative products.

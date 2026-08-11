@@ -1,4 +1,4 @@
-# 🧭 Intelligent Navigator
+# 🧭 Intelligent Workspace
 
 > **Transforma Google Chrome en una estación de trabajo inteligente, hiper-productiva y autónoma.**
 
@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Estado-Producción-success.svg)
 ![License](https://img.shields.io/badge/Licencia-Propietaria-red.svg)
 
-**Intelligent Navigator** es mucho más que un gestor de pestañas. Es una "Super App" integrada directamente en tu navegador que combina gestión avanzada de ventanas, inteligencia artificial autónoma, métricas de productividad (Pomodoro) y navegación por teclado para llevar tu flujo de trabajo al siguiente nivel.
+**Intelligent Workspace** es mucho más que un gestor de pestañas. Es una "Super App" integrada directamente en tu navegador que combina gestión avanzada de ventanas, inteligencia artificial autónoma, métricas de productividad (Pomodoro) y navegación por teclado para llevar tu flujo de trabajo al siguiente nivel.
 
 ---
 
@@ -52,7 +52,7 @@ Actualmente, la extensión está en fase de despliegue. Para instalarla manualme
 ## ⚙️ Configuración Inicial
 
 Para sacarle el máximo partido a las funciones de Inteligencia Artificial:
-1. Abre el panel lateral de la extensión haciendo clic en el icono de **Intelligent Navigator**.
+1. Abre el panel lateral de la extensión haciendo clic en el icono de **Intelligent Workspace**.
 2. Ve a la pestaña del **Asistente IA**.
 3. Haz clic en **"Añadir Clave API"**.
 4. Pega tu API Key gratuita de [Google AI Studio](https://aistudio.google.com/app/apikey). *(Tu clave se guarda exclusivamente de forma local en tu dispositivo por seguridad).*
@@ -73,7 +73,7 @@ Si deseas contribuir con código (Pull Requests), por favor lee atentamente nues
 
 **Copyright (c) 2026 GENKI Organización / Luis Reoyo. Todos los derechos reservados.**
 
-El código fuente de "Intelligent Navigator" se publica en GitHub con el único fin de permitir auditorías de seguridad, fomentar el aprendizaje y facilitar la colaboración de la comunidad mediante *Pull Requests*.
+El código fuente de "Intelligent Workspace" se publica en GitHub con el único fin de permitir auditorías de seguridad, fomentar el aprendizaje y facilitar la colaboración de la comunidad mediante *Pull Requests*.
 
 **QUEDA ESTRICTAMENTE PROHIBIDO:**
 1. Copiar, clonar, bifurcar (*fork* para uso externo) o reproducir este código para crear un producto derivado.

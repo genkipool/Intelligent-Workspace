@@ -2,7 +2,7 @@
 
 ## English (Primary)
 
-# Contributing to Intelligent Tab Group (Intelligent Navigator)
+# Contributing to Intelligent Tab Group (Intelligent Workspace)
 
 We greatly appreciate your contributions! To protect the project's intellectual property and ensure its ongoing development, we ask that you read the following terms before submitting a Pull Request (PR):
 
@@ -16,7 +16,7 @@ If you do not agree to these terms, please do not submit the Pull Request. For a
 
 ## Español
 
-# Guía para Contribuir a Intelligent Tab Group (Intelligent Navigator)
+# Guía para Contribuir a Intelligent Tab Group (Intelligent Workspace)
 
 ¡Agradecemos mucho tus contribuciones! Para proteger la propiedad intelectual del proyecto y asegurar su desarrollo continuo, te pedimos que leas los siguientes términos antes de enviar un Pull Request (PR):
 
