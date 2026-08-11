@@ -74,7 +74,7 @@
     let isPinned = $state(false);
 
     // On screens ≤600px the footer moves inside #rules-list
-    // (manageFooterPosition) y lo deja en #footer-container-large en grandes.
+    // (manageFooterPosition) and leaves it in #footer-container-large on large screens.
     let isSmallScreen = $state(window.matchMedia('(width <= 600px)').matches);
     $effect(() => {
         const mq = window.matchMedia('(width <= 600px)');
@@ -92,7 +92,7 @@
         $searchQueryStore;
     });
     // Only writes when the value actually changed (avoids loops with
-    // storage.onChanged y la cuota de escritura de chrome.storage.sync).
+    // storage.onChanged and chrome.storage.sync write quota).
     let lastSavedToggles = '';
     $effect(() => {
         const snapshot = {

@@ -728,7 +728,7 @@ var SnippetManager = class SnippetManager {
                     console.log('[Snippet] [MATCH] Match sincrono detected:', match.trigger);
                     e.preventDefault(); // Block space insertion by the editor
                     e.stopPropagation();
-                    this._checkBlindMatch(true); // Pasar true indicando que el espacio was prevented
+                    this._checkBlindMatch(true); // Pass true indicating that space was prevented
                     return;
                 }
             }
@@ -852,13 +852,13 @@ var SnippetManager = class SnippetManager {
                 return;
             }
 
-            // USAR HANDLERS CENTRALIZADOS
+            // USE CENTRALIZED HANDLERS
             if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA') {
                 await this._handleInputField(activeEl, '', match);
             } else if (activeEl.isContentEditable) {
                 await this._handleContentEditable(activeEl, match, spacePrevented);
             } else {
-                // Fallback para otros casos raros (role=textbox etc)
+                // Fallback for other rare cases (role=textbox etc)
                 const hasHTML = this._isHTML(match.expansion);
                 await this._deleteTrigger(activeEl, match.trigger, spacePrevented);
                 const plainText = this._cleanExpansionText(match.expansion, false) + ' ';
@@ -866,7 +866,7 @@ var SnippetManager = class SnippetManager {
                 await this._insertViaDataTransfer(activeEl, plainText, htmlText);
             }
 
-            // Limpiar buffer
+            // Clear buffer
             this.keyBuffer = [];
         } else {
             console.log('[DEBUG] [ERR] No match found para:', text);
@@ -1745,7 +1745,7 @@ ${finalHtml}
         this.savedSelection = null;
         if (!activeEl) return;
 
-        // Construir match object ficticio
+        // Build fictional match object
         const match = {
             expansion: snippet.expansion,
             // matchLength: 1

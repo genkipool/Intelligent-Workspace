@@ -294,7 +294,7 @@
 
     $effect(() => {
         if (!groupActionsEl || !groupEl) return;
-        $actionVisibilitySettings; // dependencia reactiva: reconstruye el overflow al cambiar
+        $actionVisibilitySettings; // reactive dependency: rebuilds overflow on change
         createOverflowMenu(groupActionsEl, 'group-item-template', groupEl);
     });
 

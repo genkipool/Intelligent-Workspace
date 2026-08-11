@@ -216,7 +216,7 @@
     function changeColor(e) {
         const rect = e?.currentTarget?.getBoundingClientRect();
         // Anchored to the RIGHT of the
-        // indicador (right + 5) y a la altura de su borde superior.
+        // indicator (right + 5) and aligned with its top border.
         onchangeColor?.({ index, x: rect ? rect.right + 5 : 0, y: rect ? rect.top : 0 });
     }
 

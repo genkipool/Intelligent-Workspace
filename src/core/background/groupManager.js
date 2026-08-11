@@ -1193,7 +1193,7 @@ async function renameMismatchedDomainGroups(groups, tabsByGroupId, groupInfoMap,
         // We calculate what the group 'key' would be with the NEW configuration.
         const hypotheticalNewKey = getDomain(representativeTab.url, newConfig.subdomainsEnabled);
 
-        // If the 'key' new is valid and is different al actual, proceed to rename.
+        // If the new 'key' is valid and is different from the current one, proceed to rename.
         if (hypotheticalNewKey && currentGroupKey !== hypotheticalNewKey) {
             const newBaseTitle = getBaseGroupName(hypotheticalNewKey);
             logMessage(

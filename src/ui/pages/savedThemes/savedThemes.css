@@ -42,35 +42,35 @@ html {
     overflow: hidden;
 }
 
-/* --- CAMBIOS CLAVE PARA EL LAYOUT --- */
+/* --- KEY LAYOUT CHANGES --- */
 body {
     width: 100%;
     height: 100vh;
-    /* Ocupa toda la altura de la ventana */
+    /* Occupies full window height */
     min-width: 360px;
     min-height: 600px;
     background-color: var(--bg-color);
     color: var(--text-color);
     transition: all 0.3s ease;
     display: flex;
-    /* Convierte el body en un contenedor flex */
+    /* Converts body into a flex container */
     overflow: hidden;
-    /* Evita el scroll en el body */
+    /* Prevents scroll on body */
 }
 
 .container {
     display: flex;
     flex-direction: column;
-    /* Apila los hijos verticalmente */
+    /* Stacks children vertically */
     width: 100%;
     height: 100vh;
-    /* Ocupa toda la altura del body */
+    /* Occupies full body height */
     background: var(--bg-color);
 }
 
 main {
     flex: 1;
-    /* Hace que el main ocupe todo el espacio vertical sobrante */
+    /* Makes main occupy remaining vertical space */
     overflow-y: auto;
     /* ADD SCROLL ONLY TO THIS ELEMENT */
     padding: 8px;
@@ -80,7 +80,7 @@ main {
     /* ADDED: Stack main children vertically */
 }
 
-/* --- FIN DE CAMBIOS CLAVE --- */
+/* --- END OF KEY CHANGES --- */
 
 /* Header Styles */
 .sticky-header {
@@ -445,9 +445,9 @@ button:focus-visible {
 /* CHANGE: Container for both footers */
 .main-footer-wrapper {
     margin-top: auto;
-    /* Empuja todo el bloque al final */
+    /* Pushes the entire block to the end */
     flex-shrink: 0;
-    /* Evita que el contenedor se encoja */
+    /* Prevents container from shrinking */
 }
 
 /* Footer for storage info */
@@ -1084,7 +1084,7 @@ button:focus-visible {
     flex: none;
 }
 
-/* El trigger que parece input */
+/* Trigger that looks like an input */
 .custom-input-trigger {
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
@@ -1201,13 +1201,13 @@ button:focus-visible {
     color: var(--text-on-color);
 }
 
-/* Ajuste para que el hover no oculte el borde de hoy si se desea */
+/* Adjustment so hover does not hide today's border if desired */
 .calendar-day.today:hover {
     background-color: var(--interactive-color);
     color: var(--text-color);
 }
 
-/* Asegurar que si hoy esta seleccionado, el fondo tenga prioridad */
+/* Ensure if today is selected, background has priority */
 .calendar-day.today.selected {
     background-color: var(--interactive-color);
     color: var(--text-color);
@@ -1243,7 +1243,7 @@ button:focus-visible {
     background: transparent;
     border: none;
     color: #1abc9c;
-    /* Color verde del tema */
+    /* Theme green color */
     font-family: 'Roboto Mono', monospace;
     font-size: 1.5rem;
     text-align: center;
@@ -1267,7 +1267,7 @@ button:focus-visible {
     letter-spacing: 1px;
 }
 
-/* Eliminar flechas de inputs numericos si se usaran */
+/* Remove arrows from numeric inputs if used */
 .time-input-container input::-webkit-inner-spin-button,
 .time-input-container input::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -1331,7 +1331,7 @@ button:focus-visible {
     cursor: pointer;
 }
 
-/* Ocultar scrollbars en las columnas */
+/* Hide scrollbars in columns */
 .time-column::-webkit-scrollbar {
     width: 4px;
 }
@@ -1377,7 +1377,7 @@ button:focus-visible {
     padding: 5px 8px !important;
 }
 
-/* Ajuste del ancho del popup para acomodar las flechas */
+/* Popup width adjustment to accommodate arrows */
 .custom-time-picker {
     width: 190px !important;
 }

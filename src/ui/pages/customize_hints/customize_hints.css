@@ -365,7 +365,7 @@ input.command-keys:focus {
     opacity: 1;
 }
 
-/* Formulario Compacto (Restored) */
+/* Compact Form (Restored) */
 #add-command-form,
 #add-snippet-form {
     margin-bottom: 12px;
@@ -410,7 +410,7 @@ input.command-keys:focus {
 #command-desc {
     width: 100%;
     min-height: 32px;
-    /* Altura base */
+    /* Base height */
     max-height: 20vh;
     /* Vertical growth limit (you can adjust it) */
     height: auto;
@@ -424,17 +424,17 @@ input.command-keys:focus {
     box-sizing: border-box;
     display: block;
 
-    /* Control de Scroll y Texto */
+    /* Scroll and Text Control */
     overflow-y: auto;
-    /* Scroll vertical solo cuando supera max-height */
+    /* Vertical scroll only when exceeding max-height */
     overflow-x: hidden;
-    /* Prohibido el scroll horizontal */
+    /* Forbidden horizontal scroll */
     white-space: pre-wrap;
     /* Respects line breaks and adjusts to width */
     word-break: break-word;
-    /* Rompe palabras largas para evitar desbordamiento horizontal */
+    /* Breaks long words to prevent horizontal overflow */
     overflow-wrap: anywhere;
-    /* Refuerzo para que nada se salga por los lados */
+    /* Reinforcement so nothing overflows horizontally */
     line-height: 1.5;
 }
 
@@ -670,7 +670,7 @@ input.command-keys:focus {
     /* Restoring button style if it was like this, or default button style from popup.css will apply */
 }
 
-/* Edicion en Linea (Restored logic) */
+/* Inline Editing (Restored logic) */
 .command-item.is-editing {
     background-color: var(--bg-color);
     cursor: default;
@@ -762,7 +762,7 @@ input.command-keys:focus {
     opacity: 1;
 }
 
-/* Mensajes y Restauracion */
+/* Messages and Restoration */
 .no-commands-message {
     text-align: center;
     padding: 15px;
@@ -1013,7 +1013,7 @@ input.itg-input-error {
     border: 1px solid var(--border-color);
     cursor: pointer;
     padding: 6px;
-    /* Mas padding para que sea un area clicable comoda */
+    /* More padding for a comfortable clickable area */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1038,7 +1038,7 @@ input.itg-input-error {
 .usage-text {
     font-weight: 500;
     color: var(--action-color);
-    /* Resaltar el comando para que sea facil de leer */
+    /* Highlight the command for easy reading */
     letter-spacing: 0.5px;
     font-size: 14px;
     width: 100%;

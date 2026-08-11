@@ -19,7 +19,7 @@ var CommandRegistry = class CommandRegistry {
         this.helpModal = modal;
     }
 
-    // NEW METHOD: Actualiza basandose en el ID de descripcion (ej: 'prefixSearchGoogle')
+    // NEW METHOD: Updates based on description ID (e.g.: 'prefixSearchGoogle')
     // Used both by regular commands and by the omnibar
     async updateShortcut(descKey, newKey) {
         // Update raw memory

@@ -15,7 +15,7 @@ body {
     margin-bottom: 24px;
     border-bottom: 1px solid #eee;
     padding-bottom: 16px;
-    page-break-inside: avoid; /* Evita cortes en medio de una entrada al imprimir */
+    page-break-inside: avoid; /* Prevents breaks in the middle of an entry when printing */
 }
 
 .query {
@@ -30,7 +30,7 @@ body {
     color: #4d5156;
 }
 
-/* --- ESTILOS MEJORADOS --- */
+/* --- IMPROVED STYLES --- */
 
 /* Main title of the conversation */
 h1 {
@@ -91,7 +91,7 @@ pre > code {
     font-size: 1em;
 }
 
-/* Listas ordenadas y no ordenadas */
+/* Ordered and unordered lists */
 ul,
 ol {
     padding-left: 30px; /* More indentation */
@@ -99,16 +99,16 @@ ol {
 }
 ul li,
 ol li {
-    margin-bottom: 8px; /* Espacio entre elementos */
+    margin-bottom: 8px; /* Space between items */
 }
 
-/* Citas > blockquote */
+/* Quotes > blockquote */
 blockquote {
     border-left: 4px solid #1a73e8; /* Thicker, colored border */
     padding: 10px 20px;
     margin: 16px 0;
     color: #666;
-    background-color: #f9f9f9; /* Fondo sutil para destacar */
+    background-color: #f9f9f9; /* Subtle background to highlight */
     border-radius: 0 4px 4px 0;
     page-break-inside: avoid;
 }
@@ -116,7 +116,7 @@ blockquote p {
     margin-bottom: 0; /* Avoids double margin if there are paragraphs inside */
 }
 
-/* Regla horizontal <hr> */
+/* Horizontal rule <hr> */
 hr {
     border: 0;
     height: 1px;
@@ -124,7 +124,7 @@ hr {
     margin: 24px 0;
 }
 
-/* Estilos para Tablas */
+/* Styles for Tables */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -143,7 +143,7 @@ th {
     font-weight: bold;
     color: #333;
 }
-/* Colores alternos para las filas para mejorar la legibilidad */
+/* Alternating row colors to improve readability */
 tbody tr:nth-of-type(even) {
     background-color: #f9f9f9;
 }
@@ -156,7 +156,7 @@ tbody tr:nth-of-type(even) {
         background-color: #fff !important;
     }
     .query {
-        color: #00008b !important; /* Azul oscuro para mejor contraste */
+        color: #00008b !important; /* Dark blue for better contrast */
     }
     .answer {
         color: #222 !important;

@@ -513,7 +513,7 @@ async function checkSchedules() {
     } = await chrome.storage.local.get(['schedules', 'activeScheduledThemeName', 'themeToRevertTo', 'activeTheme']);
     const now = new Date();
     const currentDay = now.getDay();
-    const currentTime = now.toTimeString().slice(0, 5); // Formato HH:MM
+    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
 
     let themeNameToActivate = null;
     let activeScheduleInfo = null;

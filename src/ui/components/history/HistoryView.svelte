@@ -11,7 +11,7 @@
 
     // The date filter is applied from the header calendar (#custom-calendar-popup);
     // here it only selects the
-    // mensaje de "sin resultados" correspondiente.
+    // corresponding "no results" message.
     let emptyMessage = $derived(
         $currentHistoryDateFilter
             ? $t('noHistoryForDate', [new Date($currentHistoryDateFilter.start).toLocaleDateString()])

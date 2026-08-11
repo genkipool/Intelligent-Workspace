@@ -907,7 +907,7 @@
     onfile={handleThemeFileImport}
 />
 
-<!-- MODAL EDITOR DE TEMAS -->
+<!-- THEME EDITOR MODAL -->
 {#if showThemeEditor}
     <div
         id="theme-editor-modal"
@@ -1141,7 +1141,7 @@
     </div>
 {/if}
 
-<!-- COMPONENTE CALENDARIO PERSONALIZADO -->
+<!-- CUSTOM CALENDAR COMPONENT -->
 {#if calendarPopupVisible}
     <div id="custom-calendar-popup" class="custom-calendar" bind:this={calendarPopupEl} style={calendarPopupStyle}>
         <div class="calendar-header">

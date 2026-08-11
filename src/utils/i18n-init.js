@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cachedMessagesStr && cachedLang) {
             const messages = JSON.parse(cachedMessagesStr);
 
-            // 1. Textos directos (textContent)
+            // 1. Direct texts (textContent)
             document.querySelectorAll('[data-i18n]').forEach((el) => {
                 const key = el.getAttribute('data-i18n');
                 if (messages[key] && messages[key].message && !el.textContent) {

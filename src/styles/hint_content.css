@@ -1,12 +1,12 @@
 .hint-hint {
     position: absolute;
     z-index: 99999999;
-    /* Colores ahora usan variables del tema */
+    /* Colors now use theme variables */
     background-color: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     padding: 1px 4px;
-    /* Usando la fuente definida en fonts.css */
+    /* Using font defined in fonts.css */
     font-family: 'Roboto Mono', monospace;
     font-size: 12px;
     font-weight: bold;
@@ -25,7 +25,7 @@
 
 .hint-hint span.highlight {
     color: var(--text-on-color);
-    /* Color de resaltado del tema */
+    /* Theme highlight color */
 }
 
 .hint-omni-bar {
@@ -33,9 +33,9 @@
     top: 5vh;
     /* We use vh (viewport height) for more consistent positioning */
     left: auto;
-    /* Ya no es necesario */
+    /* No longer needed */
     transform: none;
-    /* Ya no es necesario */
+    /* No longer needed */
     width: 80vw;
     max-width: 1200px;
     background-color: var(--bg-panel-color);
@@ -57,21 +57,21 @@
 .hint-omni-input {
     width: 100%;
     flex-grow: 1;
-    /* El input ocupa todo el espacio disponible */
+    /* The input occupies all available space */
     padding: 18px 18px;
     font-size: 16px;
     font-family: 'Roboto Mono', monospace;
     background-color: transparent;
     color: var(--text-color);
     border: none;
-    /* El borde se mueve al wrapper */
+    /* The border moves to the wrapper */
     outline: none;
     box-sizing: border-box;
 }
 
 .hint-omni-counter {
     display: none;
-    /* Oculto por defecto */
+    /* Hidden by default */
     margin-right: 18px;
     font-family: 'Roboto Mono', monospace;
     font-size: 12px;

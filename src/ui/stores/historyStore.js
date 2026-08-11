@@ -10,7 +10,7 @@ const list = createRemoteList(async (startTime, endTime, searchTerm) => {
         endTime,
     });
     if (!response?.success || !response.results) return [];
-    // Filtrado estricto en cliente: chrome.history puede devolver visitas fuera del rango.
+    // Strict client-side filtering: chrome.history may return visits outside the range.
     if (startTime && endTime) {
         return response.results.filter((i) => i.lastVisitTime >= startTime && i.lastVisitTime <= endTime);
     }

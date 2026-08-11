@@ -493,7 +493,7 @@ function handleDeleteBookmarkTree(payload, sendResponse) {
 }
 
 /**
- * Obtiene los marcadores recientes o busca en ellos.
+ * Gets recent bookmarks or searches through them.
  */
 async function handleGetBookmarks(sendResponse) {
     try {

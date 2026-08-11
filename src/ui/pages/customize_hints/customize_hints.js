@@ -24,7 +24,7 @@ export async function initCustomizeHints() {
     const customList = document.getElementById('custom-commands-list');
     const noCommandsMessage = document.getElementById('no-commands-message');
 
-    // Inputs principales
+    // Main inputs
     const commandKeysInput = document.getElementById('command-keys');
     if (commandKeysInput) {
         commandKeysInput.maxLength = 4;
@@ -52,7 +52,7 @@ export async function initCustomizeHints() {
     let linkPreviewTriggerKey = '';
     let isRendering = false;
 
-    // Helper para placeholders
+    // Placeholder helper
     const setupContentEditablePlaceholder = (el) => {
         if (el.innerText.trim() === '') {
             el.innerHTML = '';
@@ -1441,7 +1441,7 @@ export async function initCustomizeHints() {
         }
     });
 
-    // Nuevo listener de storage para sincronizacion real en tiempo real entre ventanas
+    // New storage listener for real-time synchronization between windows
     chrome.storage.onChanged.addListener((changes, areaName) => {
         if (areaName !== 'sync') return;
 

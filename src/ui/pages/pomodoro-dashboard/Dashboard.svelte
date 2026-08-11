@@ -54,7 +54,7 @@
                 return;
             }
         } catch (_) {}
-        // Fallback a ingles
+        // Fallback to English
         try {
             const url = chrome.runtime.getURL('_locales/en/messages.json');
             const res = await fetch(url);
@@ -72,7 +72,7 @@
         return msg;
     }
 
-    /** Aplica data-i18n / data-i18n-placeholder al DOM */
+    /** Applies data-i18n / data-i18n-placeholder to the DOM */
     function applyDomI18n() {
         document.querySelectorAll('[data-i18n]').forEach((el) => {
             const key = el.getAttribute('data-i18n');
@@ -197,9 +197,9 @@
         });
     }
 
-    // --- COLORES DE PROYECTO -------------------------------------------
+    // --- PROJECT COLORS -------------------------------------------
     // Uses theme variables only. The dark/light variants
-    // usan var(--bg-color) y var(--text-on-color) para adaptarse a cualquier tema.
+    // use var(--bg-color) and var(--text-on-color) to adapt to any theme.
     const PROJECT_COLORS = [
         'var(--interactive-color)',
         'var(--action-color)',
@@ -307,7 +307,7 @@
         font: { family: "'Roboto Mono', monospace", size: 11 },
     });
 
-    // Crea gradientes verticales usando variables de tema resueltas
+    // Creates vertical gradients using resolved theme variables
     function createVerticalGradient(ctx, chartArea, varName, alphaStart = 0.8, alphaEnd = 0.2) {
         const { top, bottom } = chartArea;
         const gradient = ctx.createLinearGradient(0, top, 0, bottom);
@@ -333,7 +333,7 @@
         return color;
     }
 
-    // Resuelve una variable CSS a su valor computado actual
+    // Resolves a CSS variable to its current computed value
     // data-theme lives on document.body, so the values are read from body
     function cssVar(v) {
         const name = v.startsWith('var(') ? v.slice(4, -1) : v.startsWith('--') ? v : '--' + v;
@@ -483,12 +483,12 @@
             : 0;
         const bestSession = d.reduce((b, e) => ((e.totalFocusSeconds || 0) > (b.totalFocusSeconds || 0) ? e : b), {});
 
-        // Pluralizacion simple de "proyecto(s)"
+        // Simple pluralization of "project(s)"
         const projLabel =
             projects === 1 ? i18n('dashboardProjects_n', projects) : i18n('dashboardProjects_plural', projects);
-        // Ciclos por sesion
+        // Cycles per session
         const cyclesPerSess = d.length > 0 ? (totalCycles / d.length).toFixed(1) : 0;
-        // Interrupciones por sesion
+        // Interruptions per session
         const intPerSess = d.length > 0 ? (totalInt / d.length).toFixed(1) : 0;
 
         // --- NEW METRICS ---
@@ -521,7 +521,7 @@
         const bestHour = hourlyFocus.indexOf(Math.max(...hourlyFocus));
         const goldenHourStr = d.length > 0 ? `${bestHour}:00 - ${bestHour + 1}:00` : '--';
 
-        // Proyecto con mas foco
+        // Project with most focus
         const projMap = {};
         d.forEach((e) => {
             const p = e.projectName || '--';
@@ -1066,7 +1066,7 @@
                             const { ctx, chartArea } = context.chart;
                             if (!chartArea) return null;
                             const idx = context.dataIndex;
-                            // Fin de semana usa action-color, laborables usan interactive-color
+                            // Weekend uses action-color, weekdays use interactive-color
                             const colorKey =
                                 order[idx] === 0 || order[idx] === 6 ? '--action-color' : '--interactive-color';
                             return createVerticalGradient(ctx, chartArea, colorKey, 0.7, 0.3);
@@ -1735,7 +1735,7 @@
             <div class="kpi-grid" id="kpi-grid"></div>
         </section>
 
-        <!-- -- Rachas & hora del dia ------------------------------------ -->
+        <!-- -- Streaks & time of day ------------------------------------ -->
         <section id="streak-section" style="display: none">
             <div class="section-title" title={$tt('titleStreaksSection')}>
                 {$t('dashboardStreaksSection') || 'Streaks and patterns'}
@@ -1784,7 +1784,7 @@
             </div>
         </section>
 
-        <!-- -- Mapa de calor -------------------------------------------- -->
+        <!-- -- Heatmap -------------------------------------------- -->
         <section id="activity-row" style="display: none">
             <div class="section-title" title={$tt('titleActivity52')}>
                 {$t('dashboardActivity52') || 'Daily activity - last 52 weeks'}
@@ -1858,7 +1858,7 @@
             </div>
         </section>
 
-        <!-- -- Tiempo y eficiencia -------------------------------------- -->
+        <!-- -- Time and efficiency -------------------------------------- -->
         <section id="charts-row2" style="display: none">
             <div class="section-title" title={$tt('titleTimeEff')}>
                 {$t('dashboardTimeEff') || 'Time and efficiency'}
@@ -1915,7 +1915,7 @@
             </div>
         </section>
 
-        <!-- -- Por proyecto --------------------------------------------- -->
+        <!-- -- By project --------------------------------------------- -->
         <section id="charts-row3" style="display: none">
             <div class="section-title" title={$tt('titleProjectSection')}>
                 {$t('dashboardProjectAnalysis') || 'Project analysis'}
@@ -1959,7 +1959,7 @@
             </div>
         </section>
 
-        <!-- -- Tabla + Timeline ----------------------------------------- -->
+        <!-- -- Table + Timeline ----------------------------------------- -->
         <section id="bottom-row" style="display: none">
             <div class="section-title" title={$tt('titleBreakdownSection')}>
                 {$t('dashboardSessionBreakdown') || 'Session breakdown'}

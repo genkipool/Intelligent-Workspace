@@ -89,9 +89,9 @@
         try {
             const response = await chrome.runtime.sendMessage({ action: 'getBookmarks' });
             if (response.success && response.bookmarks) {
-                // chrome.bookmarks.getTree() returns the root node (id '0'); it is
-                // lo omite y muestra directamente sus hijos ("Barra de marcadores",
-                // "Otros marcadores"…).
+                // chrome.bookmarks.getTree() returns the root node (id '0'); it
+                // omits it and directly displays its children ("Bookmarks Bar",
+                // "Other Bookmarks"...).
                 folderTree = response.bookmarks.flatMap((node) =>
                     node.id === '0' && node.children ? node.children : [node],
                 );

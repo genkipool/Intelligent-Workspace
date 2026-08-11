@@ -310,7 +310,7 @@ body.ctrl-pressed .rules-title-button {
     margin-right: 25px;
 }
 
-/* Ocultar botones cuando el search-container mide 110px o menos (controlado por ResizeObserver en JS) */
+/* Hide buttons when search-container is 110px or less (controlled by ResizeObserver in JS) */
 .search-container--compact #gemini-toggle-btn,
 .search-container--compact #web-search-toggle-btn,
 .search-container--compact #regex-toggle-btn {
@@ -1964,9 +1964,9 @@ body.show-domain-headers .subgroup-tab-list {
     border-radius: 4px;
 }
 
-/* --- Estilos unificados para modales de Gemini y Notas --- */
+/* --- Unified styles for Gemini and Notes modals --- */
 
-/* Cabecera del modal */
+/* Modal header */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1975,10 +1975,8 @@ body.show-domain-headers .subgroup-tab-list {
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     background-color: var(--bg-panel-color);
-    /* Tooltip-like dark background */
     color: var(--text-color);
     border-radius: 8px 8px 0 0;
-    /* Rounded top corners */
 }
 
 /* Modal title */
@@ -1990,7 +1988,7 @@ body.show-domain-headers .subgroup-tab-list {
     color: var(--text-on-color);
 }
 
-/* Cuerpo del modal */
+/* Body of the modal */
 .modal-body {
     overflow-y: auto;
     display: flex;
@@ -2010,7 +2008,7 @@ body.show-domain-headers .subgroup-tab-list {
     gap: 12px;
 }
 
-/* Separador visual dentro del cuerpo del modal de Gemini */
+/* Visual separator inside the Gemini modal body */
 #add-gemini-schedule-section {
     display: flex;
     flex-direction: column;
@@ -2033,7 +2031,7 @@ body.show-domain-headers .subgroup-tab-list {
     margin-bottom: 0;
 }
 
-/* Lista de Agendamentos */
+/* Schedule list */
 #gemini-schedules-list {
     list-style: none;
     padding: 0;
@@ -2266,19 +2264,19 @@ body.show-domain-headers .subgroup-tab-list {
 }
 
 /* ---------------------------------------------------------------- */
-/* --- FIN: Estilos mejorados para el modal de Gemini --- */
+/* --- END: Improved styles for Gemini modal --- */
 /* ---------------------------------------------------------------- */
 
 .gemini-notification-badge:hover {
     transform: scale(1.2);
 }
 
-/* Badge en open-gemini-view-btn */
+/* Badge on open-gemini-view-btn */
 #open-gemini-view-btn {
     position: relative;
 }
 
-/* Ocultar hover rule de view-gemini-btn obsoleta */
+/* Hide obsolete hover rule for view-gemini-btn */
 
 /* 3. Ensure that the animation is applied correctly */
 .gemini-notification-badge.hidden {
@@ -2303,7 +2301,7 @@ body.show-domain-headers .subgroup-tab-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
     gap: 8px;
-    /* Espacio entre los botones */
+    /* Space between buttons */
 
     overflow-y: auto;
     max-height: 300px;
@@ -2319,16 +2317,16 @@ body.show-domain-headers .subgroup-tab-list {
     padding: 8px 10px;
     font-size: 0.85rem;
     margin-bottom: 0;
-    /* Ya no se necesita el margen inferior de la lista */
+    /* List bottom margin no longer needed */
 
     /* To prevent long text from breaking the design */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
-    /* Centramos el texto */
+    /* We center the text */
 
-    /* Estilos existentes que se mantienen */
+    /* Existing styles maintained */
     background-color: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-color);
@@ -2353,7 +2351,7 @@ body.show-domain-headers .subgroup-tab-list {
     display: none;
 }
 
-/* El resto de los estilos del modal (header, search, etc.) se mantienen igual */
+/* The rest of the modal styles (header, search, etc.) are kept the same */
 .add-to-rule-modal .modal-header {
     display: flex;
     justify-content: space-between;
@@ -2486,7 +2484,7 @@ body.popup-window {
     min-width: 360px;
 }
 
-/* Cabecera del modal */
+/* Modal header */
 .note-modal .modal-header {
     display: flex;
     justify-content: space-between;
@@ -2523,7 +2521,7 @@ body.popup-window {
     opacity: 1;
 }
 
-/* Contenedor de los campos del formulario */
+/* Container for form fields */
 .note-modal .form-group {
     padding: 0px 16px;
 }
@@ -2575,7 +2573,7 @@ body.popup-window {
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
-    /* El editor crece para llenar el espacio vertical disponible */
+    /* The editor grows to fill available vertical space */
     flex-grow: 1;
 }
 
@@ -2585,7 +2583,7 @@ body.popup-window {
     box-shadow: 0 0 0 2px var(--action-color);
 }
 
-/* Simula el placeholder en el div editable */
+/* Simulates placeholder in contenteditable div */
 .note-content-editable:empty:before {
     content: attr(data-i18n-placeholder);
     color: var(--text-color);
@@ -2668,17 +2666,17 @@ body.popup-window {
 
 #note-custom-tag-input.visible {
     max-height: 60px;
-    /* Altura suficiente para mostrar el input */
+    /* Height sufficient to show the input */
     opacity: 1;
     transform: translateY(0);
     margin-bottom: 8px;
-    /* Restaura el margen original */
+    /* Restore original margin */
     padding-top: 10px;
-    /* Restaura el padding original */
+    /* Restore original padding */
     padding-bottom: 10px;
-    /* Restaura el padding original */
+    /* Restore original padding */
     border-width: 1px;
-    /* Restaura el borde original */
+    /* Restore original border */
 }
 
 .note-type-selector {
@@ -2780,7 +2778,7 @@ body.popup-window {
     height: 32px;
     font-size: 1.3rem;
     flex-shrink: 0;
-    /* No encoger nunca */
+    /* Never shrink */
 
     display: flex;
     align-items: center;
@@ -2804,7 +2802,7 @@ body.popup-window {
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-    /* No encoger nunca */
+    /* Never shrink */
     margin-left: 4px;
     /* Stuck to the left edge but with spacing */
     margin-top: 0;
@@ -3462,7 +3460,7 @@ body.popup-window {
     border: 1px solid var(--border-color);
     border-radius: 16px;
     overflow: hidden;
-    /* Para que los bordes redondeados se apliquen a los hijos */
+    /* So rounded corners apply to children */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -3471,7 +3469,7 @@ body.popup-window {
     border: none;
     color: var(--text-on-color);
     padding: 4px 8px;
-    /* Reducido para dejar espacio a las flechas */
+    /* Reduced to make room for arrows */
     font-size: 0.75rem;
     font-family: 'Roboto Mono', monospace;
     cursor: pointer;
@@ -6901,7 +6899,7 @@ summary.stats-toggle-btn::marker {
         /* Reduces the modal footer padding */
     }
 
-    /* --- Modal de Agendamiento de Gemini (`.gemini-schedule-modal`) --- */
+    /* --- Gemini Scheduling Modal (`.gemini-schedule-modal`) --- */
     .modal-body {
         gap: 12px;
         /* Reduces the space between sections */

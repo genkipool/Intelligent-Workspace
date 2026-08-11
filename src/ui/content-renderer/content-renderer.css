@@ -1,6 +1,6 @@
-/* --- ESTILOS UNIFICADOS PARA VISTAS PRINCIPALES --- */
+/* --- UNIFIED STYLES FOR MAIN VIEWS --- */
 
-/* Estilos comunes para todas las vistas principales */
+/* Common styles for all main views */
 ::selection {
     background-color: var(--interactive-color);
     color: var(--text-color);
@@ -20,7 +20,7 @@
 #gemini-conversation-view {
     padding: 0 8px;
     padding-bottom: 70px;
-    /* Espacio para la barra de entrada de Gemini */
+    /* Space for Gemini input bar */
     position: relative;
     /* Fix for absolute children (like error view) */
     transition: padding-bottom 0.3s ease;
@@ -30,7 +30,7 @@
 #notes-view,
 #screenshot-gallery-view {
     padding: 12px;
-    /* Padding uniforme que centra el contenido */
+    /* Uniform padding that centers content */
 }
 
 /* Headers of the Notes and Gallery views */
@@ -344,7 +344,7 @@
     color: var(--text-on-color);
 }
 
-/* --- Botones de Audio --- */
+/* --- Audio Buttons --- */
 .read-aloud-btn.reading {
     opacity: 1;
     color: var(--text-on-color);
@@ -379,7 +379,7 @@
     color: var(--error-color);
 }
 
-/* --- Resaltado de Sintaxis --- */
+/* --- Syntax Highlighting --- */
 .token.comment {
     color: #828581;
     font-style: italic;
@@ -454,7 +454,7 @@ body:not([data-theme='dark']) .token.builtin {
     color: var(--text-on-color);
 }
 
-/* --- Barra de Entrada de Gemini --- */
+/* --- Gemini Input Bar --- */
 #gemini-input-container {
     position: fixed;
     bottom: 0;
@@ -620,13 +620,13 @@ body:not([data-theme='dark']) .token.builtin {
 
 #gemini-send-btn:focus-visible {
     outline: none;
-    /* Se elimina el contorno predeterminado del navegador */
+    /* Default browser outline is removed */
     box-shadow: 0 0 0 2px var(--interactive-color);
     /* A consistent "glow" is added */
     background: var(--bg-color);
 }
 
-/* --- Estilos de la Galeria de Capturas --- */
+/* --- Screenshot Gallery Styles --- */
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -735,7 +735,7 @@ body:not([data-theme='dark']) .token.builtin {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    /* Similar a .download-list */
+    /* Similar to .download-list */
     padding: 4px;
     border-radius: 6px;
 }
@@ -759,7 +759,7 @@ body:not([data-theme='dark']) .token.builtin {
 
 .note-interactive-item:hover {
     background-color: var(--bg-color);
-    /* Similar a .download-item:hover */
+    /* Similar to .download-item:hover */
 }
 
 .note-item-text {
@@ -774,7 +774,7 @@ body:not([data-theme='dark']) .token.builtin {
     transition: opacity 0.2s;
 }
 
-/* Estilos especificos para Checklist */
+/* Specific styles for Checklist */
 .note-checklist-button {
     width: 20px;
     height: 20px;
@@ -796,11 +796,11 @@ body:not([data-theme='dark']) .token.builtin {
 
 .note-checklist-button .check-icon {
     display: none;
-    /* Oculto por defecto */
+    /* Hidden by default */
     color: var(--text-color);
 }
 
-/* Estilos para el estado "checked" */
+/* Styles for "checked" state */
 .note-checklist-button.checked {
     background-color: var(--action-color);
     border-color: var(--action-color);
@@ -808,7 +808,7 @@ body:not([data-theme='dark']) .token.builtin {
 
 .note-checklist-button.checked .check-icon {
     display: block;
-    /* Visible cuando esta chequeado */
+    /* Visible when checked */
     color: var(--text-color);
 }
 
@@ -821,7 +821,7 @@ body:not([data-theme='dark']) .token.builtin {
     color: var(--text-on-color);
 }
 
-/* Estilos especificos para Kanban */
+/* Specific styles for Kanban */
 .kanban-state-view {
     flex-shrink: 0;
     align-self: center;
@@ -910,10 +910,10 @@ body:not([data-theme='dark']) .token.builtin {
 
 .grounding-footer {
     margin-top: 8px;
-    /* Espacio entre el footer de tokens y el de busqueda */
+    /* Space between token footer and search footer */
     padding-top: 8px;
     border-top: 1px dashed var(--border-color);
-    /* Un separador mas sutil */
+    /* A more subtle separator */
     font-size: 0.8rem;
     font-family: 'Roboto Flex', 'Open Sans', sans-serif;
 }
@@ -933,7 +933,7 @@ body:not([data-theme='dark']) .token.builtin {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    /* Espacio entre elementos de la lista */
+    /* Space between list items */
 }
 
 .grounding-list li {
@@ -943,7 +943,7 @@ body:not([data-theme='dark']) .token.builtin {
 
 .grounding-list a {
     font-style: normal;
-    /* Los enlaces no deben ser italicos */
+    /* Links should not be italic */
     text-decoration: underline;
     opacity: 1;
 }

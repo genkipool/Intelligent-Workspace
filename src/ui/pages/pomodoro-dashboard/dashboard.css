@@ -210,14 +210,14 @@ body {
     font-family: var(--sans);
     cursor: pointer;
     height: 28px;
-    /* Un poco mas de altura para evitar cortes */
+    /* A bit more height to avoid clipping */
     width: 170px;
     transition: border-color 0.13s;
 }
 
 .tag-select::picker-icon {
     display: none !important;
-    /* Eliminamos la flecha nativa duplicada */
+    /* Remove duplicate native arrow */
 }
 
 .tag-select:focus {
@@ -225,7 +225,7 @@ body {
     outline: none;
 }
 
-/* El boton disparador */
+/* The trigger button */
 .tag-select button {
     display: flex;
     align-items: center;
@@ -250,7 +250,7 @@ selectedcontent {
     text-overflow: ellipsis;
 }
 
-/* La flecha del picker personalizada */
+/* Custom picker arrow */
 .tag-select .picker-icon {
     transition: transform 0.2s ease;
     color: color-mix(in srgb, var(--text-color) 50%, transparent);
@@ -263,7 +263,7 @@ selectedcontent {
     transform: rotate(180deg);
 }
 
-/* El menu desplegable (Top Layer) */
+/* Dropdown menu (Top Layer) */
 .tag-select::picker(select) {
     background: var(--bg-panel-color);
     border: 1px solid var(--border-color);
@@ -272,7 +272,7 @@ selectedcontent {
     padding: 4px;
     margin-top: 4px;
 
-    /* Animacion de entrada/salida 2026 */
+    /* Entry/exit animation 2026 */
     opacity: 0;
     transform: translateY(-5px);
     transition:
@@ -294,7 +294,7 @@ selectedcontent {
     }
 }
 
-/* Estilo de las opciones */
+/* Option styles */
 .tag-select option {
     padding: 6px 12px;
     border-radius: 5px;
@@ -315,7 +315,7 @@ selectedcontent {
     font-weight: 600;
 }
 
-/* Ocultar el checkmark nativo si se desea */
+/* Hide native checkmark if desired */
 .tag-select option::checkmark {
     display: none;
 }
@@ -645,7 +645,7 @@ selectedcontent {
 }
 
 /* ================================================================
-   MAIN CONTENT  --  diseno mejorado
+   MAIN CONTENT  --  improved design
    ================================================================ */
 
 .main-content {
@@ -827,15 +827,15 @@ selectedcontent {
     align-self: flex-end;
 }
 
-/* IMPORTANTE: NO usar flex:1 aqui.
-   flex:1 tiene flex-basis:0% que anula el height inline (height:200px, etc.)
+/* IMPORTANT: Do NOT use flex:1 here.
+   flex:1 has flex-basis:0% which overrides inline height (height:200px, etc.),
    leaving the container without fixed height -> ResizeObserver enters an infinite loop.
-   El height lo define el atributo inline style de cada .chart-wrap en el HTML.
-   El canvas es absolute para no participar en el flujo y no empujar al padre. */
+   Height is defined by the inline style attribute of each .chart-wrap in the HTML.
+   Canvas is absolute so it doesn't participate in flow or push the parent. */
 .chart-wrap {
     position: relative;
     overflow: hidden;
-    /* height viene del style inline en cada elemento del HTML */
+    /* height comes from the inline style on each HTML element */
 }
 
 .chart-wrap canvas {

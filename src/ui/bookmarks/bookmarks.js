@@ -113,7 +113,7 @@ function showInlineCreateFolderInput(parentId, folderEl) {
         return;
     }
 
-    // 3. Crear el contenedor temporal
+    // 3. Create the temporary container
     const tempContainer = document.createElement('div');
     tempContainer.className = 'bookmark-item temp-creation';
     tempContainer.style.display = 'flex';
@@ -134,18 +134,18 @@ function showInlineCreateFolderInput(parentId, folderEl) {
     // 4. Add text field
     const input = document.createElement('input');
     input.type = 'text';
-    input.className = 'folder-name-input'; // Reutiliza estilos existentes
+    input.className = 'folder-name-input'; // Reuses existing styles
     input.placeholder = chrome.i18n.getMessage('enterFolderNamePlaceholder') || 'Folder Name';
     input.style.flexGrow = '1';
 
     tempContainer.appendChild(iconSpan);
     tempContainer.appendChild(input);
 
-    // Insertar al principio de la lista de hijos
+    // Insert at the beginning of the children list
     contentContainer.prepend(tempContainer);
     input.focus();
 
-    // 5. Logica de Guardado y Cancelacion
+    // 5. Saving and Cancellation Logic
     let isSaving = false;
 
     const saveFolder = async () => {
@@ -166,12 +166,12 @@ function showInlineCreateFolderInput(parentId, folderEl) {
                 });
 
                 if (response && response.success) {
-                    // Eliminamos el input temporal.
+                    // Remove the temporary input.
                     // The view refreshes itself through the 'bookmarksChanged' listener
                     tempContainer.remove();
                 } else {
                     console.error('Error creating folder:', response.error);
-                    // Opcional: Mostrar error visual en el input
+                    // Optional: Show visual error in the input
                     input.classList.add('input-error');
                     isSaving = false;
                     input.focus();
@@ -194,7 +194,7 @@ function showInlineCreateFolderInput(parentId, folderEl) {
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            input.blur(); // Dispara el evento blur que llama a saveFolder
+            input.blur(); // Triggers the blur event that calls saveFolder
         } else if (e.key === 'Escape') {
             e.preventDefault();
             // Prevent blur from saving when cancelling
@@ -230,7 +230,7 @@ function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
 
     const actionsContainer = bookmarkEl.querySelector('.bookmark-actions');
     if (actionsContainer) {
-        // --- COPIADO INDIVIDUAL ---
+        // --- INDIVIDUAL COPY ---
         actionsContainer.querySelector('.copy-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             navigator.clipboard
@@ -248,7 +248,7 @@ function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
                 });
         });
 
-        // Boton Eliminar
+        // Delete button
         actionsContainer.querySelector('.delete-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             chrome.bookmarks.remove(bookmark.id, () => {
@@ -451,7 +451,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
             const folderEl = bookmarkFolderTemplate.content.cloneNode(true).firstElementChild;
             folderEl.dataset.folderId = node.id;
 
-            // Configuracion de apertura inicial
+            // Initial open configuration
             if (isFirstRender) {
                 folderEl.open = isAllExpanded;
             } else {
@@ -472,7 +472,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
             const nameEl = folderEl.querySelector('.folder-name');
             nameEl.textContent = displayTitle;
 
-            // --- POBLAR CONTADORES ---
+            // --- POPULATE COUNTERS ---
             const subfolderCount = countSubfolders(node);
             const totalBookmarks = countTotalBookmarks(node);
 
@@ -504,7 +504,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                     input.className = 'folder-name-input';
                     input.value = originalName;
 
-                    let isCancelled = false; // Flag local
+                    let isCancelled = false; // Local flag
 
                     const saveChanges = async () => {
                         const newName = input.value.trim();
@@ -543,9 +543,9 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                         }
                         if (ev.key === 'Escape') {
                             ev.preventDefault();
-                            ev.stopPropagation(); // Evitamos que otros scripts procesen este Esc
-                            isCancelled = true; // Activamos cancelacion
-                            input.blur(); // Al perder el foco, saveChanges no guardara
+                            ev.stopPropagation(); // Prevent other scripts from processing this Esc
+                            isCancelled = true; // Activate cancellation
+                            input.blur(); // On blur, saveChanges will not save
                         }
                     });
 
@@ -597,7 +597,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                     if (urlsToCopy.length > 0) {
                         const textToCopy = urlsToCopy.join('\n');
 
-                        // --- COPIADO DE CARPETA ---
+                        // --- FOLDER COPY ---
                         navigator.clipboard
                             .writeText(textToCopy)
                             .then(() => {

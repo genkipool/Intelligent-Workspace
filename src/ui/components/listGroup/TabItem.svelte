@@ -93,7 +93,7 @@
         }
 
         // e.detail > 0 means a mouse click: drop focus so it does not block keyboard
-        // por teclado; e.detail === 0 = Enter/Espacio: conservarlo.
+        // navigation; e.detail === 0 = Enter/Space: keep it.
         if (e.detail > 0 && tabEl) {
             if (document.activeElement && tabEl.contains(document.activeElement)) {
                 document.activeElement.blur();
@@ -351,7 +351,7 @@
         // Adds the overflow button that groups the hidden actions; it reacts to the
         // action visibility settings.
         if (tabActionsEl && tabEl && !isBackup) {
-            actionVisibility; // dependencia reactiva
+            actionVisibility; // reactive dependency
             createOverflowMenu(tabActionsEl, 'tab-item-template', tabEl);
         }
     });
@@ -379,9 +379,9 @@
 >
     <img src={faviconUrl} alt="" class="favicon" />
     <!--
-        Igual que tab-item-template del original: el indicador siempre existe en el
-        DOM y sólo se oculta con la clase `hidden`; el icono altavoz/silenciado lo
-        decide la CSS a partir de la clase `muted`.
+        Same as tab-item-template in original: the indicator always exists in the
+        DOM and is only hidden with the `hidden` class; the speaker/muted icon is
+        decided by CSS based on the `muted` class.
     -->
     <span
         class="audible-indicator"
