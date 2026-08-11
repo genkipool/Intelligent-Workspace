@@ -1,1 +1,0 @@
-import{n as e}from"./chunk-QTnfLwEv.js";import{t}from"./remoteList-BXn8GyGW.js";var n=e({recentLoaded:()=>i,recentStore:()=>a}),r=t(async()=>{let e=await chrome.runtime.sendMessage({action:`getRecentlyClosed`});return e?.success?e.results:[]}),i=r.loaded,a={subscribe:r.items.subscribe,loadRecent:()=>r.load(),removeItem:e=>r.remove(t=>t===e)};export{a as n,n as r,i as t};

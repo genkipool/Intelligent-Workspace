@@ -1,1 +1,0 @@
-import{ht as e}from"./index-client-A2gq9dIq.js";function t(t){let n=e([]),r=e(!1);return{items:n,loaded:r,remove(e){n.update(t=>t.filter(t=>!e(t)))},async load(...e){try{n.set(await t(...e)||[])}catch(e){console.error(`[remoteList] load failed:`,e),n.set([])}finally{r.set(!0)}}}}export{t};

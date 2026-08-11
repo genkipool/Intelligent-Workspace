@@ -1,1 +1,0 @@
-import{ht as e}from"./index-client-A2gq9dIq.js";var t=e(null);function n(e){return new Promise(n=>{t.set({titleKey:`confirmActionTitle`,confirmKey:`confirm`,danger:!0,...e,resolve:e=>{t.set(null),n(e)}})})}export{t as n,n as t};
