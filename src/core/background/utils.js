@@ -1483,7 +1483,12 @@ async function getFaviconColor(faviconUrl) {
         Math.abs(r - g) <= threshold && Math.abs(r - b) <= threshold && Math.abs(g - b) <= threshold;
 
     try {
-        const response = await fetch(faviconUrl);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120);
+        const response = await fetch(faviconUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!response.ok) return null;
+
         const blob = await response.blob();
         const imageBitmap = await createImageBitmap(blob);
         const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);

@@ -430,7 +430,8 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
         ? (extensionSettings.clusterConfig?.subdomainThreshold ?? 2)
         : (extensionSettings.clusterConfig?.domainThreshold ?? 2);
 
-    for (const [domain, tabs] of Object.entries(domainTabs)) {
+    const domainEntries = Object.entries(domainTabs);
+    const domainPromises = domainEntries.map(async ([domain, tabs]) => {
         const tabIds = tabs.map((tab) => tab.id);
         const existingGroup = Array.from(groupInfoMap).find(
             ([id, info]) => info.type === 'domain' && info.key === domain && existingGroups[id]?.windowId === windowId,
@@ -444,16 +445,24 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
                 const favIconUrl = faviconURL(tabs[0].url);
                 color = (await getFaviconColor(favIconUrl)) || color;
             }
-            groupingPlan.push({
-                type: 'domain',
-                key: domain,
-                color: color,
-                tabIds: tabIds,
-                name: domain,
-            });
+            return {
+                plan: {
+                    type: 'domain',
+                    key: domain,
+                    color: color,
+                    tabIds: tabIds,
+                    name: domain,
+                },
+            };
         } else {
-            miscTabs.push(...tabs);
+            return { misc: tabs };
         }
+    });
+
+    const results = await Promise.all(domainPromises);
+    for (const res of results) {
+        if (res.plan) groupingPlan.push(res.plan);
+        if (res.misc) miscTabs.push(...res.misc);
     }
     return { groupingPlan, miscTabs };
 }
@@ -625,7 +634,6 @@ async function executeGroupingPlan(groupingPlan, existingGroups, windowId) {
 
 async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
     try {
-        // API queries have been removed. We receive the data directly!
         if (groupsInWindow.length === 0) return;
 
         const groupDetails = new Map();
@@ -680,13 +688,15 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
         let currentIndex = tabsInWindow.filter((t) => t.pinned).length;
 
         for (const groupToPlace of idealOrder) {
-            await executeWithRetries(
-                async () =>
-                    await chrome.tabGroups.move(groupToPlace.id, {
-                        index: currentIndex,
-                    }),
-                `sort move group ${groupToPlace.title} to index ${currentIndex}`,
-            );
+            if (groupToPlace.actualIndex !== currentIndex) {
+                await executeWithRetries(
+                    async () =>
+                        await chrome.tabGroups.move(groupToPlace.id, {
+                            index: currentIndex,
+                        }),
+                    `sort move group ${groupToPlace.title} to index ${currentIndex}`,
+                );
+            }
             currentIndex += groupToPlace.tabCount;
         }
     } catch (error) {
