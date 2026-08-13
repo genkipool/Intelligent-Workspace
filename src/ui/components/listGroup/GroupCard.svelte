@@ -6,15 +6,9 @@
     import { animateAndRemove } from '../../services/utils.js';
     import { showNotification } from '@/utils/i18n.js';
     import { deleteBackupFromDb } from '../../../utils/db.js';
-    import {
-        handleBackupGroup,
-        handleRestoreGroup,
-        toggleColorPopup,
-        renderNotesButton,
-        renderScreenshotButton,
-    } from '../../services/groupsService.js';
-    import { createOverflowMenu } from '../../services/contextMenuService.js';
-    import { actionVisibilitySettings, backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
+    import { handleBackupGroup, handleRestoreGroup, toggleColorPopup } from '../../services/groupsService.js';
+    import { backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
+    import GroupActions from './GroupActions.svelte';
 
     /**
      * `liveTabs` are the tabs already restored from this backup: real tabs again.
@@ -281,31 +275,6 @@
     let noteContext = $derived({ type: 'group', id: group.id, title: displayTitle });
 
     let groupEl = $state(null);
-    let groupActionsEl = $state(null);
-
-    $effect(() => {
-        if (!groupActionsEl) return;
-        // Notes and screenshots belong to live groups only; a backup hides both buttons.
-        if (isBackup) {
-            groupActionsEl.querySelector('.view-notes-btn')?.classList.add('hidden');
-            groupActionsEl.querySelector('.view-screenshots-btn')?.classList.add('hidden');
-            return;
-        }
-        renderNotesButton(groupActionsEl, noteContext, notesData || {});
-        if (!isUngrouped) {
-            renderScreenshotButton(
-                groupActionsEl,
-                { type: 'group', id: group.id, title: group.title },
-                screenshotData || {},
-            );
-        }
-    });
-
-    $effect(() => {
-        if (!groupActionsEl || !groupEl) return;
-        $actionVisibilitySettings; // reactive dependency: rebuilds overflow on change
-        createOverflowMenu(groupActionsEl, 'group-item-template', groupEl);
-    });
 
     async function colorIndicatorClick(e) {
         e.preventDefault();
@@ -354,88 +323,23 @@
             <span class="group-tab-count" class:all-seen={isAllSeen}>{seenCount}/{tabCount}</span>
         {/if}
 
-        <div class="group-actions" bind:this={groupActionsEl}>
-            <div
-                class="backup-btn action-btn"
-                class:hidden={isBackup}
-                role="button"
-                tabindex="0"
-                title={$tt('backupGroup')}
-                onclick={handleBackup}
-            >
-                <svg width="14" height="14"><use href="#icon-backup"></use></svg>
-            </div>
-            <div
-                class="restore-btn action-btn"
-                class:hidden={!isBackup}
-                role="button"
-                tabindex="0"
-                title={$tt('restoreGroup')}
-                onclick={handleRestore}
-            >
-                <svg width="14" height="14"><use href="#icon-restore"></use></svg>
-            </div>
-
-            <div
-                class="pin-btn action-btn"
-                class:hidden={isUngrouped}
-                class:active={isPinned}
-                role="button"
-                tabindex="0"
-                title={$tt(isPinned ? 'unpinGroup' : 'pinGroup')}
-                onclick={togglePin}
-            >
-                <svg width="14" height="14"><use href="#icon-pin"></use></svg>
-            </div>
-            <div
-                class="hide-group-btn action-btn"
-                class:hidden={isUngrouped || isBackup}
-                role="button"
-                tabindex="0"
-                title={$tt('hideGroup')}
-                onclick={handleHide}
-            >
-                <svg width="14" height="14"><use href="#icon-eye"></use></svg>
-            </div>
-
-            <div
-                class="create-rule-btn action-btn"
-                class:hidden={isBackup || isUngrouped || info.type === 'special' || info.type === 'rule'}
-                role="button"
-                tabindex="0"
-                title={$tt('createRuleFromSubgroup')}
-            >
-                <svg width="14" height="14"><use href="#icon-create-rule"></use></svg>
-            </div>
-            <div
-                class="add-to-rule-btn action-btn"
-                class:hidden={isBackup || isUngrouped}
-                role="button"
-                tabindex="0"
-                title={$tt('addSubgroupToExistingRule')}
-            >
-                <svg width="14" height="14"><use href="#icon-add-to-rule"></use></svg>
-            </div>
-
-            <div
-                class="copy-group-urls-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('copyAllUrls')}
-                onclick={copyUrls}
-            >
-                <svg width="14" height="14"><use href="#icon-copy"></use></svg>
-            </div>
-            <div
-                class="delete-group-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('deleteGroupTabs')}
-                onclick={deleteGroupAction}
-            >
-                <svg width="14" height="14"><use href="#icon-trash"></use></svg>
-            </div>
-        </div>
+        <GroupActions
+            {group}
+            {groupEl}
+            {isBackup}
+            {isUngrouped}
+            {isPinned}
+            {info}
+            {noteContext}
+            {notesData}
+            {screenshotData}
+            onbackup={handleBackup}
+            onrestore={handleRestore}
+            ontogglepin={togglePin}
+            onhide={handleHide}
+            oncopyurls={copyUrls}
+            ondelete={deleteGroupAction}
+        />
     </summary>
 
     <div class="tab-list-container">
