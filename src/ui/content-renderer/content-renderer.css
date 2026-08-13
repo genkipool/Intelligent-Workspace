@@ -26,6 +26,13 @@
     transition: padding-bottom 0.3s ease;
 }
 
+/* While an error box is up, the conversation behind it is hidden rather than removed:
+   the cards belong to the component that renders them, and taking them out of the
+   document left it writing answers into nothing. */
+#gemini-conversation-view.showing-error > *:not(.error-message-container) {
+    display: none;
+}
+
 /* Specific styles for Notes and Gallery views */
 #notes-view,
 #screenshot-gallery-view {

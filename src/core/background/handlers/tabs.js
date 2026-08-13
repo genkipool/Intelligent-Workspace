@@ -314,3 +314,26 @@ function handleOpenFileUrl(message, sendResponse) {
         },
     );
 }
+
+/**
+ * Closes the tabs the omnibar selected with the `dt:` prefix.
+ *
+ * Listing them worked, but the message that closes them had no handler, so pressing
+ * Enter on the selection did nothing.
+ */
+async function handleDeleteTabs(message, sendResponse) {
+    try {
+        const tabIds = (message.tabIds || []).map((id) => Number.parseInt(id, 10)).filter((id) => Number.isFinite(id));
+        if (tabIds.length > 0) await chrome.tabs.remove(tabIds);
+        sendResponse({
+            success: true,
+            closed: tabIds.length,
+        });
+    } catch (error) {
+        console.error('Error closing tabs:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+        });
+    }
+}

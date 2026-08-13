@@ -54,7 +54,7 @@ import {
     updateHeaderButtonsVisibility,
     updateScrollButtons,
 } from './viewsService.js';
-import { updateOrphanIndicators, closeNotesView, showNotesView } from './notesService.js';
+import { updateOrphanIndicators, closeNotesView, showNotesView, getOrphanScreenshots } from './notesService.js';
 
 export async function handleHeaderScreenshot(e) {
     if (!get(isUrlViewActive) || !get(currentPanelUrl)) return;
@@ -434,6 +434,85 @@ export async function handleScreenshotRequest(tab, context) {
     }
 }
 
+/**
+ * The images a gallery context holds: the ones the session index files under it plus
+ * the archived ones whose stable context key points at it.
+ *
+ * Deleting an image used to count only the session index to decide whether anything
+ * was left, so a gallery of archived images closed itself on the first delete. Both
+ * the view and that decision read the same list from here.
+ */
+export async function resolveScreenshotIdsForContext(type, id, secondaryId, orphanScreenshots = null) {
+    if (type === 'orphan') {
+        const orphans = orphanScreenshots ?? (await getOrphanScreenshots());
+        return orphans.map((s) => s.id);
+    }
+
+    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
+        STORAGE_KEYS.SCREENSHOTS,
+    );
+    const sessionScreenshotIds = [];
+    if (type === 'group') {
+        const groupKey = id === -100 ? 'g_ungrouped' : `g_${id}`;
+        if (screenshotData[groupKey]) {
+            sessionScreenshotIds.push(...screenshotData[groupKey]);
+        }
+        const subgroupPrefix = id === -100 ? 's_ungrouped_' : `s_${id}_`;
+        for (const key in screenshotData) {
+            if (key.startsWith(subgroupPrefix)) {
+                sessionScreenshotIds.push(...screenshotData[key]);
+            }
+        }
+    } else {
+        const key = `s_${secondaryId}_${id}`;
+        if (screenshotData[key]) {
+            sessionScreenshotIds.push(...screenshotData[key]);
+        }
+    }
+    const finalScreenshotIds = new Set(sessionScreenshotIds);
+
+    const { [STORAGE_KEYS.PERSISTENT_SCREENSHOTS]: persistentIdsArray = [] } = await chrome.storage.local.get(
+        STORAGE_KEYS.PERSISTENT_SCREENSHOTS,
+    );
+
+    if (persistentIdsArray.length > 0) {
+        const groupInfoMap = await getGroupInfoMap();
+        const groupId = type === 'group' ? id : secondaryId;
+        const groupInfo = groupInfoMap.get(groupId);
+
+        if (groupInfo && groupInfo.key) {
+            const stableGroupKey = groupInfo.key;
+
+            const persistentPromises = persistentIdsArray.map((pid) => getScreenshotFromDb(pid));
+            const allPersistentScreenshots = (await Promise.all(persistentPromises)).filter(Boolean);
+
+            allPersistentScreenshots.forEach((screenshot) => {
+                if (!screenshot.contextKey) return;
+
+                let isMatch = false;
+                if (type === 'group') {
+                    const groupContextKey = `g_${stableGroupKey}`;
+                    const subgroupPrefix = `s_${stableGroupKey}_`;
+                    if (screenshot.contextKey === groupContextKey || screenshot.contextKey.startsWith(subgroupPrefix)) {
+                        isMatch = true;
+                    }
+                } else {
+                    const subgroupContextKey = `s_${stableGroupKey}_${id}`;
+                    if (screenshot.contextKey === subgroupContextKey) {
+                        isMatch = true;
+                    }
+                }
+
+                if (isMatch) {
+                    finalScreenshotIds.add(screenshot.id);
+                }
+            });
+        }
+    }
+
+    return Array.from(finalScreenshotIds);
+}
+
 export async function showScreenshotGallery(type, id, secondaryId, orphanScreenshots = null) {
     closeUrlInPanel(true);
     isGalleryViewActive.set(true);
@@ -455,78 +534,7 @@ export async function showScreenshotGallery(type, id, secondaryId, orphanScreens
         applyTranslations(mainHeaderTitle);
     }
 
-    let screenshotIds = [];
-
-    if (type === 'orphan' && orphanScreenshots) {
-        screenshotIds = orphanScreenshots.map((s) => s.id);
-    } else {
-        const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
-            STORAGE_KEYS.SCREENSHOTS,
-        );
-        const sessionScreenshotIds = [];
-        if (type === 'group') {
-            const groupKey = id === -100 ? 'g_ungrouped' : `g_${id}`;
-            if (screenshotData[groupKey]) {
-                sessionScreenshotIds.push(...screenshotData[groupKey]);
-            }
-            const subgroupPrefix = id === -100 ? 's_ungrouped_' : `s_${id}_`;
-            for (const key in screenshotData) {
-                if (key.startsWith(subgroupPrefix)) {
-                    sessionScreenshotIds.push(...screenshotData[key]);
-                }
-            }
-        } else {
-            const key = `s_${secondaryId}_${id}`;
-            if (screenshotData[key]) {
-                sessionScreenshotIds.push(...screenshotData[key]);
-            }
-        }
-        const finalScreenshotIds = new Set(sessionScreenshotIds);
-
-        const { [STORAGE_KEYS.PERSISTENT_SCREENSHOTS]: persistentIdsArray = [] } = await chrome.storage.local.get(
-            STORAGE_KEYS.PERSISTENT_SCREENSHOTS,
-        );
-
-        if (persistentIdsArray.length > 0) {
-            const groupInfoMap = await getGroupInfoMap();
-            const groupId = type === 'group' ? id : secondaryId;
-            const groupInfo = groupInfoMap.get(groupId);
-
-            if (groupInfo && groupInfo.key) {
-                const stableGroupKey = groupInfo.key;
-
-                const persistentPromises = persistentIdsArray.map((pid) => getScreenshotFromDb(pid));
-                const allPersistentScreenshots = (await Promise.all(persistentPromises)).filter(Boolean);
-
-                allPersistentScreenshots.forEach((screenshot) => {
-                    if (!screenshot.contextKey) return;
-
-                    let isMatch = false;
-                    if (type === 'group') {
-                        const groupContextKey = `g_${stableGroupKey}`;
-                        const subgroupPrefix = `s_${stableGroupKey}_`;
-                        if (
-                            screenshot.contextKey === groupContextKey ||
-                            screenshot.contextKey.startsWith(subgroupPrefix)
-                        ) {
-                            isMatch = true;
-                        }
-                    } else {
-                        const subgroupContextKey = `s_${stableGroupKey}_${id}`;
-                        if (screenshot.contextKey === subgroupContextKey) {
-                            isMatch = true;
-                        }
-                    }
-
-                    if (isMatch) {
-                        finalScreenshotIds.add(screenshot.id);
-                    }
-                });
-            }
-        }
-
-        screenshotIds = Array.from(finalScreenshotIds);
-    }
+    const screenshotIds = await resolveScreenshotIdsForContext(type, id, secondaryId, orphanScreenshots);
 
     listGroupStore.updateState({
         isGalleryViewActive: true,
@@ -923,44 +931,23 @@ export async function deleteScreenshot(screenshotId) {
         await chrome.storage.session.set({
             [STORAGE_KEYS.SCREENSHOTS]: storedScreenshotIndexes,
         });
+    }
 
-        if (get(isGalleryViewActive) && get(currentGalleryContext)) {
-            const { type, id, secondaryId } = get(currentGalleryContext);
-            let remainingCount = 0;
-            if (type === 'group') {
-                const groupKey = id === -100 ? 'g_ungrouped' : `g_${id}`;
-                remainingCount += storedScreenshotIndexes[groupKey]?.length || 0;
-                const subgroupPrefix = id === -100 ? 's_ungrouped_' : `s_${id}_`;
-                for (const key in storedScreenshotIndexes) {
-                    if (key.startsWith(subgroupPrefix)) {
-                        remainingCount += storedScreenshotIndexes[key]?.length || 0;
-                    }
-                }
-            } else if (type === 'orphan') {
-                // Orphans are not filed under a group or subgroup key, so the key-based
-                // count came out zero and the whole gallery was closed after deleting a
-                // single image. What is left is every id still in the DB that no context
-                // claims.
-                const claimed = new Set(Object.values(storedScreenshotIndexes).flat());
-                const allIds = await getAllScreenshotIdsFromDb();
-                remainingCount = allIds.filter((existing) => !claimed.has(existing)).length;
-            } else {
-                const viewKey = `s_${secondaryId}_${id}`;
-                remainingCount = storedScreenshotIndexes[viewKey]?.length || 0;
-            }
+    // An archived image is not in the session index at all, so gating the redraw on
+    // having removed it from there left the gallery showing a card that no longer
+    // exists.
+    if (get(isGalleryViewActive) && get(currentGalleryContext)) {
+        const { type, id, secondaryId } = get(currentGalleryContext);
+        // Only an empty gallery goes back to the group list; while images are left the
+        // view stays where it is, redrawn without the one that just went.
+        const remaining = await resolveScreenshotIdsForContext(type, id, secondaryId);
 
-            if (remainingCount === 0) {
-                await closeScreenshotGallery();
-            } else if (type === 'orphan') {
-                const claimed = new Set(Object.values(storedScreenshotIndexes).flat());
-                const allIds = await getAllScreenshotIdsFromDb();
-                const orphans = allIds
-                    .filter((existing) => !claimed.has(existing))
-                    .map((existing) => ({ id: existing }));
-                showScreenshotGallery(type, id, secondaryId, orphans);
-            } else {
-                showScreenshotGallery(type, id, secondaryId);
-            }
+        if (remaining.length === 0) {
+            await closeScreenshotGallery();
+        } else if (type === 'orphan') {
+            await showScreenshotGallery(type, id, secondaryId, await getOrphanScreenshots());
+        } else {
+            await showScreenshotGallery(type, id, secondaryId);
         }
     }
 

@@ -2,6 +2,8 @@
     import { hiddenControlsForView } from '../../services/viewsService.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
+    import DeleteBadge from '../../components/common/DeleteBadge.svelte';
+    import CountBadge from '../../components/common/CountBadge.svelte';
     import { onMount } from 'svelte';
     import { copyText } from '../../../utils/copyText.js';
     import { groupStore, groupsStore } from '../../stores/groupStore.js';
@@ -57,7 +59,7 @@
         deleteSpecialItem,
         resetSpecialScan,
     } from '../../services/bookmarksService.js';
-    import { geminiStore, conversationHistory } from '../../stores/geminiStore.js';
+    import { geminiStore, conversationHistory, CONVERSATION_SPEECH_ID } from '../../stores/geminiStore.js';
     import {
         renderContext,
         renderContextReady,
@@ -67,7 +69,9 @@
     import GeminiPanel from '../../components/gemini/GeminiPanel.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import { currentMainView, isGeminiViewActive } from '../../stores/appStore.svelte.js';
-    import { handleDownloadConversation } from '../../services/geminiService.js';
+    import { isCtrlHeld } from '../../stores/modifierKeysStore.js';
+    import { handleDownloadConversation, markdownToHtml, markdownToPlainText } from '../../services/geminiService.js';
+    import { copyRichTextToClipboard } from '../../services/utils.js';
     import { showNotification } from '../../../utils/i18n.js';
 
     // The page can be opened straight into a view, and the URL says which one before
@@ -115,6 +119,23 @@
         if (ASSISTANT_CONTROLS.includes(id)) return true;
         if (id === 'list-groups-btn') return initialView === 'groups';
         return initiallyHidden.has(id);
+    }
+
+    let hiddenGroupIds = $derived($listGroupState.hiddenGroupIds ?? new Set());
+    let visibleGroups = $derived(
+        ($groupsStore ?? []).filter((g) => g?.group && !hiddenGroupIds.has(g.group.id)),
+    );
+    let hiddenGroups = $derived(
+        ($groupsStore ?? []).filter((g) => g?.group && hiddenGroupIds.has(g.group.id)),
+    );
+
+    async function handleDeleteHiddenGroup(e, group, tabs) {
+        e.stopPropagation();
+        if (!group) return;
+        if (tabs && tabs.length > 0) {
+            await listGroupStore.actions.deleteAllTabsInGroup(group.id, tabs);
+        }
+        await listGroupStore.actions.unhideGroup(group.id);
     }
 
     onMount(async () => {
@@ -232,20 +253,39 @@
     let historyLen = $derived($conversationHistory?.length || 0);
 
     /** Copies the whole conversation as plain text. The button had no handler at all. */
+    /**
+     * Copies the whole conversation the way the original did: the title in capitals,
+     * then every question in bold followed by its answer. The old version wrote "Q1:"
+     * in front of each question and threw the formatting away.
+     */
     async function handleCopyConversation() {
         const entries = $conversationHistory || [];
         if (entries.length === 0) {
             showNotification('errorEmptyConversation', true);
             return;
         }
-        const asText = entries
-            .map((entry, i) => {
-                const answer = (entry.data?.answer || '').replace(/<[^>]*>/g, '').trim();
-                return `Q${i + 1}: ${entry.query || ''}\n${answer}`;
+
+        const title = (currentConversationTitle || $t('geminiConversationDefaultTitle') || 'Gemini Conversation')
+            .replace(/<[^>]*>/g, '')
+            .toUpperCase();
+
+        const htmlBody = entries
+            .map((entry) => {
+                const question = (entry.query || '').replace(/</g, '&lt;');
+                const answer = markdownToHtml(entry.data?.answer || '…');
+                return `<strong style="color:black;">${question}</strong><br>${answer}`;
             })
+            .join('<br>');
+
+        const plainBody = entries
+            .map((entry) => `${entry.query || ''}\n${markdownToPlainText(entry.data?.answer || '…').trim()}`)
             .join('\n\n');
-        const ok = await copyText(asText);
-        showNotification(ok ? 'copiedToClipboard' : 'errorCopying', !ok);
+
+        const html =
+            `<div style="font-size: 1.5em; font-weight: bold; text-transform: uppercase; margin-bottom: 0;">` +
+            `${title}</div><br><br>${htmlBody}`;
+        const ok = await copyRichTextToClipboard(html, `${title}\n\n\n${plainBody}`);
+        showNotification(ok ? 'geminiHistoryCopied' : 'errorCopying', !ok);
     }
 
     /** Reads the conversation aloud, entry by entry. Also had no handler. */
@@ -255,8 +295,28 @@
             showNotification('errorEmptyConversation', true);
             return;
         }
-        geminiStore.handleGlobalReadAloud(entries[0], e.ctrlKey || e.metaKey);
+        geminiStore.readConversationAloud(entries, e.ctrlKey || e.metaKey);
     }
+
+    /**
+     * Name of the conversation on screen.
+     *
+     * A conversation only earns a name once its first query has been answered, so
+     * until then the button keeps saying "select a conversation" — and the moment the
+     * name exists it appears here, because it is read from the store.
+     */
+    let currentConversationTitle = $derived.by(() => {
+        const conversations = $geminiStore.combinedConversations || [];
+        const current = conversations[$geminiStore.currentCombinedIndex];
+        return current?.title || '';
+    });
+
+    // Play / pause / resume / stop icons for the whole-conversation reader, driven by
+    // the store instead of by hand-written inline styles.
+    let isReadingConversation = $derived(
+        $geminiStore.isGlobalPlaybackActive && $geminiStore.currentlySpeakingEntryId === CONVERSATION_SPEECH_ID,
+    );
+    let isConversationPaused = $derived(isReadingConversation && $geminiStore.isSpeechPaused);
 
     async function handleNewGeminiConversation() {
         await geminiStore.newConversation();
@@ -295,66 +355,6 @@
 </script>
 
 <Icons />
-
-<!-- CUSTOM GEMINI TIME PICKER (outside template for fixed positioning) -->
-<div id="gemini-custom-time-popup" class="custom-time-picker hidden">
-    <div class="time-picker-main-row">
-        <div class="time-arrows">
-            <button class="time-arrow-btn" data-unit="hour" data-dir="up" type="button">▲</button>
-            <button class="time-arrow-btn" data-unit="hour" data-dir="down" type="button">▼</button>
-        </div>
-        <div class="time-input-container">
-            <input type="text" id="gemini-input-hour" maxlength="2" inputmode="numeric" placeholder="00" />
-            <span>:</span>
-            <input type="text" id="gemini-input-minute" maxlength="2" inputmode="numeric" placeholder="00" />
-        </div>
-        <div class="time-arrows">
-            <button class="time-arrow-btn" data-unit="minute" data-dir="up" type="button">▲</button>
-            <button class="time-arrow-btn" data-unit="minute" data-dir="down" type="button">▼</button>
-        </div>
-    </div>
-    <div class="time-picker-label">{$t('format24h') || '24h'}</div>
-</div>
-
-<!-- CUSTOM COOKIE CALENDAR -->
-<div id="cookie-custom-calendar-popup" class="custom-calendar hidden">
-    <div class="calendar-header">
-        <button id="cookie-cal-prev-btn" type="button">&lt;</button>
-        <span id="cookie-cal-month-year"></span>
-        <button id="cookie-cal-next-btn" type="button">&gt;</button>
-    </div>
-    <div class="calendar-weekdays">
-        <span>{$t('daySunInitial') || 'S'}</span><span>{$t('dayMonInitial') || 'M'}</span><span
-            >{$t('dayTueInitial') || 'T'}</span
-        ><span>{$t('dayWedInitial') || 'W'}</span><span>{$t('dayThuInitial') || 'T'}</span><span
-            >{$t('dayFriInitial') || 'F'}</span
-        ><span>{$t('daySatInitial') || 'S'}</span>
-    </div>
-    <div id="cookie-calendar-days-grid" class="calendar-grid"></div>
-    <div class="calendar-footer">
-        <button id="cookie-cal-clear-btn" type="button">{$t('reset')}</button>
-    </div>
-</div>
-
-<!-- CUSTOM COOKIE TIME PICKER -->
-<div id="cookie-custom-time-popup" class="custom-time-picker hidden">
-    <div class="time-picker-main-row">
-        <div class="time-arrows">
-            <button class="time-arrow-btn" data-unit="hour" data-dir="up" type="button">▲</button>
-            <button class="time-arrow-btn" data-unit="hour" data-dir="down" type="button">▼</button>
-        </div>
-        <div class="time-input-container">
-            <input type="text" id="cookie-input-hour" maxlength="2" inputmode="numeric" placeholder="00" />
-            <span>:</span>
-            <input type="text" id="cookie-input-minute" maxlength="2" inputmode="numeric" placeholder="00" />
-        </div>
-        <div class="time-arrows">
-            <button class="time-arrow-btn" data-unit="minute" data-dir="up" type="button">▲</button>
-            <button class="time-arrow-btn" data-unit="minute" data-dir="down" type="button">▼</button>
-        </div>
-    </div>
-    <div class="time-picker-label">{$t('format24h') || '24h'}</div>
-</div>
 
 <!-- POMODORO TIME: CALENDAR POPUP -->
 <div id="pomo-custom-calendar-popup" class="pomo-custom-calendar hidden">
@@ -590,7 +590,10 @@
                 </button>
                 <button
                     class="read-aloud-btn control-btn hidden"
-                    title={$tt('readAloud')}
+                    class:reading={isReadingConversation}
+                    class:paused={isConversationPaused}
+                    class:ctrl-held={isReadingConversation && $isCtrlHeld}
+                    title={$tt(isReadingConversation ? 'stopReadingAloud' : 'readAloud')}
                     onclick={handleReadWholeConversation}
                 >
                     <svg class="icon-play" width="20" height="20" aria-hidden="true" focusable="false">
@@ -1628,7 +1631,36 @@
                 </svg>
             </button>
         </section>
-        <section id="hidden-groups-container" class="hidden-groups-container hidden"></section>
+        <section
+            id="hidden-groups-container"
+            class="hidden-groups-container"
+            class:hidden={hiddenGroups.length === 0 && !$listGroupState.hiddenYoutubeView}
+        >
+            {#each hiddenGroups as g (g.group.id)}
+                {@const groupInfo = $renderContext?.groupInfoMap?.get(g.group.id) || {}}
+                {@const rawTitle = (groupInfo?.type === 'manual' && groupInfo?.key ? groupInfo.key : (groupInfo?.title || g.group?.title || '')).replace(/\u200B/g, '')}
+                {@const cleanTitle = rawTitle.startsWith('_hidden_') ? rawTitle.substring(8) : rawTitle}
+                {@const initial = (cleanTitle.trim().charAt(0) || 'G').toUpperCase()}
+                <div class="hidden-group-wrapper">
+                    <button
+                        type="button"
+                        class="hidden-group-indicator"
+                        style="background-color: {$listGroupState.themeColors[g.group?.color] || 'grey'};"
+                        title={cleanTitle ? `${$tt('showGroup')}: ${cleanTitle}` : $tt('showGroup')}
+                        aria-label={cleanTitle ? `${$tt('showGroup')}: ${cleanTitle}` : $tt('showGroup')}
+                        onclick={() => listGroupStore.actions.unhideGroup(g.group.id)}
+                    >
+                        <span class="hidden-group-initial">{initial}</span>
+                    </button>
+                    <DeleteBadge
+                        title={$tt('deleteGroupTabs')}
+                        ariaLabel={$tt('deleteGroupTabs')}
+                        showOnParentHover={true}
+                        onclick={(e) => handleDeleteHiddenGroup(e, g.group, g.tabs)}
+                    />
+                </div>
+            {/each}
+        </section>
         <section id="action-visibility-controls-panel" class="hidden"></section>
         <section id="hidden-context-container" class="hidden-context-container hidden"></section>
         <section id="persistent-conversation-controls" class="hidden-groups-container hidden">
@@ -1644,7 +1676,8 @@
             <button
                 id="persistent-conversation-display"
                 title={$tt('viewSavedConversations')}
-                onclick={handleViewConversations}>{$t('selectConversationPlaceholder')}</button
+                onclick={handleViewConversations}
+                >{currentConversationTitle || $t('selectConversationPlaceholder')}</button
             >
             <button id="cycle-next-conversation-btn" title={$tt('nextSavedConversation')} onclick={handleCycleNext}>
                 <svg width="16" height="16" aria-hidden="true" focusable="false">
@@ -1663,10 +1696,12 @@
         <!-- Waits for the render context: a card rendered without it shows the group's
              full name and then swaps to the prefix-stripped one. -->
         {#if $renderContextReady}
-            {#each $groupsStore as g, i (g.group.id ?? `g-${i}`)}
+            {#each visibleGroups as g, i (g.group.id ?? `g-${i}`)}
                 <GroupCard
                     group={g.group}
                     tabs={g.tabs}
+                    liveTabs={g.liveTabs ?? []}
+                    backupRows={g.rows ?? []}
                     isPinned={$listGroupState.pinnedGroupIds?.has(g.group.id)}
                     isBackup={g.isBackup ?? false}
                     renderContext={$renderContext}
@@ -1685,7 +1720,7 @@
             <footer class="footer">
                 <div>Intelligent Workspace v1.0.0</div>
                 <div class="color-dots">
-                    {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color}
+                    {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color (color)}
                         <div class="color-dot" style="background-color: {color};"></div>
                     {/each}
                 </div>
@@ -1842,9 +1877,16 @@
         conversations={$modalData?.conversations || []}
         onClose={() => closeModal(showViewConversationsModal)}
         onSelect={async (conv) => {
+            // The modal shows the list as it was when it opened, and a saved
+            // conversation's timestamp moves whenever it gains an entry. Requiring both
+            // fields to still match is why a conversation sometimes opened empty.
             const conversations = geminiStore.getCombinedConversations();
-            const found = conversations.find((c) => c.title === conv.title && c.timestamp === conv.timestamp);
-            if (found) await geminiStore.loadConversation(found);
+            const found =
+                conversations.find((c) => c.timestamp === conv.timestamp && c.title === conv.title) ||
+                conversations.find((c) => c.timestamp === conv.timestamp) ||
+                conversations.find((c) => c.title === conv.title) ||
+                conv;
+            await geminiStore.loadConversation(found);
             closeModal(showViewConversationsModal);
         }}
         onDelete={async (conv) => {

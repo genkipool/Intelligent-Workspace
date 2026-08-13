@@ -349,3 +349,20 @@ export function getRelativeTime(timestamp) {
     if (hours < 24) return `${hours} h ago`;
     return `${days} days ago`;
 }
+
+/**
+ * Ids of the live groups holding tabs already restored from a backup.
+ *
+ * Those tabs stay listed on the backup card they came from, so their group is neither
+ * a card of its own nor a group left to put away.
+ *
+ * @param {Record<string, object>} backups
+ * @returns {Set<number>}
+ */
+export function linkedGroupIds(backups) {
+    return new Set(
+        Object.values(backups || {})
+            .map((data) => data?.linkedGroupId)
+            .filter(Boolean),
+    );
+}

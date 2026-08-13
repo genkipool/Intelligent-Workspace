@@ -1,6 +1,6 @@
 <script>
     import { t, tt } from '../../stores/i18nStore.js';
-    import { allRulesActive, hintsEnabled, settingsStore } from '../../stores/settingsStore.js';
+    import { allRulesActive, hasRules, hintsEnabled, settingsStore } from '../../stores/settingsStore.js';
 
     let { onOpenRules, onOpenListGroup, onOpenGemini } = $props();
 
@@ -25,6 +25,7 @@
                     type="checkbox"
                     id="rules-nav-toggle"
                     tabindex="0"
+                    disabled={!$hasRules}
                     bind:checked={$allRulesActive}
                     onchange={toggleRules}
                 />

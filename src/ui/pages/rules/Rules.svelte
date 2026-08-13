@@ -52,6 +52,19 @@
     let isCollapseTimerEnabled = $state(false);
     let showImportPopup = $state(false);
     let showTutorial = $state(false);
+    // Opening the guide from the title takes the list's place, as in the original; the
+    // guide that opens by itself on an empty page sits under the "no rules" message.
+    let tutorialReplacesList = $state(false);
+
+    function toggleTutorial() {
+        showTutorial = !showTutorial;
+        tutorialReplacesList = showTutorial;
+    }
+
+    function hideTutorial() {
+        showTutorial = false;
+        tutorialReplacesList = false;
+    }
     let storageMode = $state('sync');
 
     let miscSortOption = $state('start');
@@ -143,8 +156,10 @@
             const localData = await chrome.storage.local.get(['ruleStorageArea', 'discardingTimeMinutes']);
             storageMode = localData.ruleStorageArea || 'sync';
             discardingTime = localData.discardingTimeMinutes ?? 60;
-            // The tutorial shows whenever there are no rules yet
-            showTutorial = true;
+            // The quick guide opens by itself only while there are no rules yet; from
+            // then on it is the Rules title and the "Rules" heading that summon it.
+            showTutorial = $rulesStore.length === 0;
+            tutorialReplacesList = false;
             const pinResult = await chrome.storage.local.get('isPinned');
             if (pinResult.isPinned !== undefined) isPinned = pinResult.isPinned;
         } catch (error) {
@@ -165,7 +180,7 @@
             ) {
                 return;
             }
-            showTutorial = false;
+            hideTutorial();
         });
 
         chrome.storage.onChanged.addListener(handleStorageChanged);
@@ -299,12 +314,29 @@
         expandedStatesStore.set(updatedStates);
     }
 
+    /**
+     * Saves the arrangement the list was showing when the card was dropped.
+     *
+     * `order` holds the stored positions of the cards on screen, in their new order. A
+     * search may be hiding some rules, so the reordered ones are written back into the
+     * slots they occupied and everything else stays where it was.
+     */
     function handleReorderRule(detail) {
-        const { sourceIndex, targetIndex } = detail;
-        let updatedRules = [...$rulesStore];
-        const [movedRule] = updatedRules.splice(sourceIndex, 1);
-        updatedRules.splice(targetIndex, 0, movedRule);
+        const { order, movedIndex } = detail;
+        if (!Array.isArray(order) || order.length === 0) return;
+
+        const updatedRules = [...$rulesStore];
+        const moved = updatedRules[movedIndex];
+        const slots = [...order].sort((a, b) => a - b);
+        const inNewOrder = order.map((i) => $rulesStore[i]);
+        if (inNewOrder.some((rule) => !rule)) return;
+        slots.forEach((slot, position) => {
+            updatedRules[slot] = inNewOrder[position];
+        });
+
         saveRulesToStorage(updatedRules);
+        groupTabs();
+        showNotification('ruleMoved', false, [moved?.name || '', order.indexOf(movedIndex) + 1]);
     }
 
     function handleDeleteDomain(detail) {
@@ -316,6 +348,65 @@
         }
     }
 
+    function handleEditDomain(detail) {
+        const { index, url, newUrl } = detail;
+        const updatedRules = [...$rulesStore];
+        const rule = updatedRules[index];
+        if (!rule) return;
+        const urls = [...(rule.urls || [])];
+        const at = urls.indexOf(url);
+        if (at === -1) return;
+        if (urls.includes(newUrl)) {
+            showNotification('errorUrlAlreadyInRule', true, [rule.name]);
+            return;
+        }
+        urls[at] = newUrl;
+        updatedRules[index] = { ...rule, urls };
+        saveRulesToStorage(updatedRules);
+        groupTabs();
+    }
+
+    /** Renaming a rule has to carry its per-rule state (sort, expansion) to the new key. */
+    function handleUpdateRuleName(detail) {
+        const { index, newName } = detail;
+        const updatedRules = [...$rulesStore];
+        const rule = updatedRules[index];
+        if (!rule || !newName || newName === rule.name) return;
+        if (updatedRules.some((r, i) => i !== index && r.name === newName)) {
+            showNotification('duplicateRuleName', true);
+            return;
+        }
+        const oldName = rule.name;
+        updatedRules[index] = { ...rule, name: newName };
+        saveRulesToStorage(updatedRules);
+
+        const sortStates = new Map($sortStatesStore);
+        if (sortStates.has(oldName)) {
+            sortStates.set(newName, sortStates.get(oldName));
+            sortStates.delete(oldName);
+            sortStatesStore.set(sortStates);
+            saveSettings({ [`sortState_${newName}`]: sortStates.get(newName) });
+        }
+        const expanded = new Map($expandedStatesStore);
+        if (expanded.has(oldName)) {
+            expanded.set(newName, expanded.get(oldName));
+            expanded.delete(oldName);
+            expandedStatesStore.set(expanded);
+        }
+        groupTabs();
+    }
+
+    /** Per-rule URL order, remembered per rule name exactly as the original did. */
+    function handleToggleSort(detail) {
+        const rule = $rulesStore[detail.index];
+        if (!rule) return;
+        const newState = !$sortStatesStore.get(rule.name);
+        const updated = new Map($sortStatesStore);
+        updated.set(rule.name, newState);
+        sortStatesStore.set(updated);
+        saveSettings({ [`sortState_${rule.name}`]: newState });
+    }
+
     // While searching, rules whose match sits in a hidden URL are expanded so the
     // highlighted term is visible; clearing the box restores the previous state.
     let preSearchExpandState = null;
@@ -323,7 +414,7 @@
     function handleSearch(e) {
         const term = e.target.value;
         searchQueryStore.set(term);
-        if (term.trim()) showTutorial = false;
+        if (term.trim()) hideTutorial();
         syncSearchExpansion(term.trim().toLowerCase());
     }
 
@@ -360,7 +451,9 @@
     }
 
     function toggleSortAlpha() {
-        sortAlphaStore.update((v) => !v);
+        const newState = !$sortAlphaStore;
+        sortAlphaStore.set(newState);
+        saveSettings({ sortAlphaPreference: newState });
     }
 
     // On wide screens only rules whose URLs actually overflow can be expanded, so
@@ -634,8 +727,8 @@
                 style="cursor: pointer;"
                 role="button"
                 tabindex="0"
-                onclick={() => (showTutorial = !showTutorial)}
-                onkeydown={(e) => e.key === 'Enter' && (showTutorial = !showTutorial)}
+                onclick={toggleTutorial}
+                onkeydown={(e) => e.key === 'Enter' && toggleTutorial()}
             >
                 {$t('manageRules') || 'Manage Rules'}
             </h1>
@@ -808,7 +901,7 @@
                     tabindex="0"
                     aria-expanded={showTutorial}
                     aria-label={$t('rules') || 'Rules'}
-                    onclick={() => (showTutorial = !showTutorial)}
+                    onclick={toggleTutorial}
                 >
                     <h2 id="h2-rule-name">{$t('rules') || 'Rules'}</h2>
                 </button>
@@ -1167,25 +1260,30 @@
         <section class="rules-loading">{$t('loading') || 'Loading...'}</section>
     {:else}
         <!--
-            Same element as the original: the list (or the "no rules" message) is always
-            rendered and the tutorial sits underneath, expanded, while there are no rules.
+            Same element as the original: the quick guide replaces the list while it is
+            open, and it opens by itself when there are no rules yet.
         -->
         <section id="rules-list" class="rules-loading">
-            <RuleList
-                {storageMode}
-                ontoggleStar={handleToggleStar}
-                ondeleteRule={handleDeleteRule}
-                oneditRule={handleEditRule}
-                ontoggleActive={handleToggleActive}
-                ontoggleExpand={handleToggleExpand}
-                onoverflowchange={handleOverflowChange}
-                onreorderRule={handleReorderRule}
-                ondeleteDomain={handleDeleteDomain}
-                onchangeColor={handleChangeColor}
-            />
-            {#if $rulesStore.length === 0 && showTutorial}
+            {#if showTutorial}
                 <Tutorial open={true} />
             {/if}
+            <div id="rules-items-container" class:hidden={tutorialReplacesList}>
+                <RuleList
+                    {storageMode}
+                    ontoggleStar={handleToggleStar}
+                    ondeleteRule={handleDeleteRule}
+                    oneditRule={handleEditRule}
+                    ontoggleActive={handleToggleActive}
+                    ontoggleExpand={handleToggleExpand}
+                    onoverflowchange={handleOverflowChange}
+                    onreorderRule={handleReorderRule}
+                    ondeleteDomain={handleDeleteDomain}
+                    oneditDomain={handleEditDomain}
+                    onupdateRuleName={handleUpdateRuleName}
+                    ontoggleSort={handleToggleSort}
+                    onchangeColor={handleChangeColor}
+                />
+            </div>
             {#if isSmallScreen}
                 {@render rulesFooter()}
             {/if}

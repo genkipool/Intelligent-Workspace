@@ -180,6 +180,12 @@ export const listGroupStore = {
 
                 return state;
             });
+
+            // The order the cards are laid out in is decided when the groups are
+            // fetched, so pinning (or letting a card go) only moves it once the list
+            // is rebuilt — without this an unpinned card kept the pinned slot.
+            const { groupStore } = await import('./groupStore.js');
+            await groupStore.fetchGroups();
         },
         reorderGroup: async (draggedGroupId, targetId, isOverTop) => {
             listGroupState.update((state) => {
@@ -244,20 +250,44 @@ export const listGroupStore = {
             await groupStore.fetchGroups();
         },
         hideGroup: async (groupId) => {
+            const numericId = parseInt(groupId, 10);
             listGroupState.update((state) => {
-                const numericId = parseInt(groupId, 10);
-                state.hiddenGroupIds.add(numericId);
-                chrome.storage.local.set({ [STORAGE_KEYS.HIDDEN]: Array.from(state.hiddenGroupIds) });
-                return state;
+                const nextHidden = new Set(state.hiddenGroupIds);
+                nextHidden.add(numericId);
+                return { ...state, hiddenGroupIds: nextHidden };
             });
+            const snapshot = get(listGroupState);
+            const hiddenArray = Array.from(snapshot.hiddenGroupIds);
+            chrome.storage.local.set({ [STORAGE_KEYS.HIDDEN]: hiddenArray });
+            try {
+                await persistOrder({ [STORAGE_KEYS.HIDDEN]: hiddenArray });
+            } catch (err) {
+                console.error('[listGroupStore] could not persist hidden groups:', err);
+            }
+            try {
+                const { hiddenGroupIds } = await import('../services/groupsService.js');
+                hiddenGroupIds.set(snapshot.hiddenGroupIds);
+            } catch (e) {}
         },
         unhideGroup: async (groupId) => {
+            const numericId = parseInt(groupId, 10);
             listGroupState.update((state) => {
-                const numericId = parseInt(groupId, 10);
-                state.hiddenGroupIds.delete(numericId);
-                chrome.storage.local.set({ [STORAGE_KEYS.HIDDEN]: Array.from(state.hiddenGroupIds) });
-                return state;
+                const nextHidden = new Set(state.hiddenGroupIds);
+                nextHidden.delete(numericId);
+                return { ...state, hiddenGroupIds: nextHidden };
             });
+            const snapshot = get(listGroupState);
+            const hiddenArray = Array.from(snapshot.hiddenGroupIds);
+            chrome.storage.local.set({ [STORAGE_KEYS.HIDDEN]: hiddenArray });
+            try {
+                await persistOrder({ [STORAGE_KEYS.HIDDEN]: hiddenArray });
+            } catch (err) {
+                console.error('[listGroupStore] could not persist hidden groups:', err);
+            }
+            try {
+                const { hiddenGroupIds } = await import('../services/groupsService.js');
+                hiddenGroupIds.set(snapshot.hiddenGroupIds);
+            } catch (e) {}
         },
         deleteAllTabsInGroup: async (groupId, tabs) => {
             if (!tabs) return;

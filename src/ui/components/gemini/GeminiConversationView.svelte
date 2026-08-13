@@ -4,6 +4,7 @@
     import { t } from '../../stores/i18nStore.js';
     import GeminiEntry from './GeminiEntry.svelte';
     import { showNotification } from '../../../utils/i18n.js';
+    import { markdownToHtml, markdownToPlainText } from '../../services/geminiService.js';
 
     let { visible = false, onopenapikey } = $props();
 
@@ -42,25 +43,27 @@
         geminiStore.submitEdit(entry.id, newQuery);
     }
 
+    /**
+     * Copies one entry: the answer alone, or the question with it on Ctrl+click.
+     *
+     * The markdown is rendered with the same parser the card uses. It used to go
+     * through `window.marked`, which the bundled page does not define, so every click
+     * threw before reaching the clipboard.
+     */
     function handleCopy(detail) {
         const { entry, ctrlKey } = detail;
         const entryToCopy = entries.find((e) => e.id === entry.id);
         if (!entryToCopy || !entryToCopy.data) return;
 
         const answerMarkdown = entryToCopy.data.answer || '';
-        const textRenderer = new window.marked.TextRenderer();
+        const answerHtml = markdownToHtml(answerMarkdown);
+        const answerPlainText = markdownToPlainText(answerMarkdown);
 
         if (ctrlKey) {
             const question = entryToCopy.query || '';
-            const answerHtml = window.marked.parse(answerMarkdown);
-            const answerPlainText = window.marked.parseInline(answerMarkdown, { renderer: textRenderer }).trim();
-            const htmlContent = `<strong>${question}</strong><br><br>${answerHtml}`;
-            const plainTextContent = `${question}\n\n${answerPlainText}`;
-            copyRichText(htmlContent, plainTextContent);
+            copyRichText(`<strong>${question}</strong><br><br>${answerHtml}`, `${question}\n\n${answerPlainText}`);
             showNotification('geminiQACopied');
         } else {
-            const answerHtml = window.marked.parse(answerMarkdown);
-            const answerPlainText = window.marked.parseInline(answerMarkdown, { renderer: textRenderer }).trim();
             copyRichText(answerHtml, answerPlainText);
             showNotification('geminiAnswerCopied');
         }
@@ -95,7 +98,7 @@
 
     function handleReadAloud(detail) {
         const { entry, ctrlKey } = detail;
-        geminiStore.handleGlobalReadAloud(entry, ctrlKey);
+        geminiStore.readEntryAloud(entry, ctrlKey);
     }
 
     function handleIconClick(detail) {

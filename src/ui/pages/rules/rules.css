@@ -1073,6 +1073,17 @@ h1 {
                 opacity: 1;
             }
 
+            /* The icons come from a sprite through <use>, and a selector cannot reach
+               the path inside it. They paint with currentColor, so the state is a
+               colour on the svg itself. */
+            &.sort-domains-btn svg {
+                color: var(--border-color);
+            }
+
+            &.sort-domains-btn[aria-pressed='true'] svg {
+                color: var(--text-on-color);
+            }
+
             &.collapse-btn {
                 svg path {
                     fill: transparent;
@@ -4036,6 +4047,21 @@ input[type='number']::-webkit-outer-spin-button {
     outline: 2px solid var(--interactive-color);
     outline-offset: 2px;
     border-radius: 4px;
+}
+
+/* Elements that already draw their own focus decoration (a coloured border or a
+   glow) must not get the generic ring on top: outline and box-shadow are different
+   properties, so both would paint and the element would show a double border. */
+.edit-input:focus-visible,
+.rule-name:focus-visible,
+.color-indicator:focus-visible,
+.color-box:focus-visible,
+.color-popup-item:focus-visible,
+.expand-btn:focus-visible,
+.tutorial-summary:focus-visible,
+.switch-rule-actions input:focus-visible ~ .slider,
+.rule-actions .svg-toggle-button:focus-visible {
+    outline: none;
 }
 
 /* The switch inputs are visually hidden; their ring belongs on the slider. */

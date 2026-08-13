@@ -156,3 +156,147 @@ function handleGetClusterConfig(message, sendResponse) {
         }
     })();
 }
+
+/**
+ * The name a group is known by, as the group list shows it.
+ *
+ * The title Chrome holds is not it: compact mode reduces it to a single letter and the
+ * prefixes (lock, key, loupe…) are part of the stored string. The full name lives in
+ * the session map, and `cleanGroupTitle` takes the prefixes off.
+ */
+function displayGroupTitle(group) {
+    let name = '';
+    if (typeof groupInfoMap !== 'undefined') {
+        const info = groupInfoMap.get(group.id);
+        if (info) name = info.title || info.key || '';
+    }
+    if (!name) name = group.title || '';
+    if (typeof getBaseGroupName === 'function') name = getBaseGroupName(name);
+    name = name.replace(/\u200B/g, '').trim();
+
+    // A title typed by hand can carry the prefix character without the invisible
+    // markers the extension adds, and it is not part of the name either.
+    const prefixes = (typeof extensionSettings !== 'undefined' && extensionSettings.userPrefixes) || {};
+    for (const mark of Object.values(prefixes)) {
+        if (mark && name.startsWith(mark)) {
+            name = name.slice(mark.length).trim();
+            break;
+        }
+    }
+    return name;
+}
+
+/**
+ * Lists the browser's tab groups for the omnibar.
+ *
+ * The `dg:`, `ccg:` and `bg:` prefixes all ask for this, and every one of them was
+ * coming back empty: the message was routed to a handler that did not exist.
+ */
+async function handleGetTabGroups(sendResponse) {
+    try {
+        const groups = await chrome.tabGroups.query({});
+        const results = await Promise.all(
+            groups.map(async (group) => {
+                const tabs = await chrome.tabs.query({ groupId: group.id });
+                return {
+                    id: group.id,
+                    title: displayGroupTitle(group),
+                    rawTitle: group.title || '',
+                    color: group.color,
+                    collapsed: group.collapsed,
+                    windowId: group.windowId,
+                    tabCount: tabs.length,
+                };
+            }),
+        );
+        sendResponse({
+            success: true,
+            results,
+        });
+    } catch (error) {
+        console.error('Error listing tab groups:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+        });
+    }
+}
+
+/** Closes every tab of a group, which is how a group is removed. */
+async function closeGroups(groupIds) {
+    let closed = 0;
+    for (const groupId of groupIds) {
+        const id = Number.parseInt(groupId, 10);
+        if (!Number.isFinite(id)) continue;
+        const tabs = await chrome.tabs.query({ groupId: id });
+        const tabIds = tabs.map((tab) => tab.id);
+        if (tabIds.length === 0) continue;
+        await chrome.tabs.remove(tabIds);
+        closed += tabIds.length;
+    }
+    return closed;
+}
+
+async function handleDeleteTabGroup(message, sendResponse) {
+    try {
+        const closed = await closeGroups([message.groupId]);
+        sendResponse({
+            success: true,
+            closed,
+        });
+    } catch (error) {
+        console.error('Error deleting tab group:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+        });
+    }
+}
+
+async function handleDeleteTabGroups(message, sendResponse) {
+    try {
+        const closed = await closeGroups(message.groupIds || []);
+        sendResponse({
+            success: true,
+            closed,
+        });
+    } catch (error) {
+        console.error('Error deleting tab groups:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+        });
+    }
+}
+
+/** Closes the group the calling tab belongs to (keyboard command). */
+async function handleDeleteCurrentTabGroup(sender) {
+    try {
+        const tab =
+            sender?.tab || (await chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => tabs[0]));
+        if (!tab || tab.groupId === undefined || tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) return;
+        await closeGroups([tab.groupId]);
+    } catch (error) {
+        console.error('Error deleting the current tab group:', error);
+    }
+}
+
+/** Closes every group except the one named in the message. */
+async function handleDeleteOtherGroups(message, sendResponse) {
+    try {
+        const keepId = Number.parseInt(message.groupId, 10);
+        const groups = await chrome.tabGroups.query({});
+        const others = groups.map((group) => group.id).filter((id) => id !== keepId);
+        const closed = await closeGroups(others);
+        sendResponse({
+            success: true,
+            closed,
+        });
+    } catch (error) {
+        console.error('Error deleting the other groups:', error);
+        sendResponse({
+            success: false,
+            error: error.message,
+        });
+    }
+}

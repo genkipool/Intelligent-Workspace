@@ -115,6 +115,19 @@ export function handleSearchToggle(clickedButtonName) {
     applySearchAndFilter();
 }
 
+/** The group and subgroup arrangement as it was before the current search started. */
+let preSearchExpansion = null;
+
+/**
+ * Emptying the box by hand does not fire `input`, so the filter has to be re-run:
+ * otherwise the groups that the query had hidden stay hidden and the list looks empty.
+ */
+function clearSearchInput(input) {
+    input.value = '';
+    lastSearchTerm.set('');
+    applySearchAndFilter();
+}
+
 export async function handleSearchEnter(event) {
     if (event.key !== 'Enter') return;
 
@@ -142,8 +155,7 @@ export async function handleSearchEnter(event) {
                     ? 'https://' + currentQuery
                     : `https://www.google.com/search?q=${encodeURIComponent(currentQuery)}`;
                 openUrlInPanel(searchUrl);
-                _searchInput.value = '';
-                lastSearchTerm.set('');
+                clearSearchInput(_searchInput);
             }
         }
         return;
@@ -162,8 +174,7 @@ export async function handleSearchEnter(event) {
 
         if (get(searchState).results.length === 0) {
             await handleGeminiQuery(trimmedQuery);
-            _searchInput.value = '';
-            lastSearchTerm.set('');
+            clearSearchInput(_searchInput);
         }
         return;
     }
@@ -207,8 +218,7 @@ export async function handleSearchEnter(event) {
             }
         }
 
-        _searchInput.value = '';
-        lastSearchTerm.set('');
+        clearSearchInput(_searchInput);
     }
 }
 
@@ -488,6 +498,21 @@ export function applySearchAndFilter() {
     const _groupListContainer = document.getElementById('groups-list');
     if (!_groupListContainer) return;
 
+    // Searching opens the cards that match and shuts the ones that do not, and a
+    // <details> that is opened from code reports it exactly like a click, so those
+    // passes were being written down as the user's own choice. The arrangement is put
+    // aside when a search starts and handed back when it ends.
+    if (keywordSearch && !preSearchExpansion) {
+        preSearchExpansion = {
+            groups: new Map(get(expandedGroupStates)),
+            subgroups: new Map(get(expandedSubgroupStates)),
+        };
+    } else if (!keywordSearch && preSearchExpansion) {
+        expandedGroupStates.set(new Map(preSearchExpansion.groups));
+        expandedSubgroupStates.set(new Map(preSearchExpansion.subgroups));
+        preSearchExpansion = null;
+    }
+
     const _hiddenGroupIds = get(hiddenGroupIds);
     const _expandedGroupStates = get(expandedGroupStates);
     const _expandedSubgroupStates = get(expandedSubgroupStates);
@@ -543,21 +568,21 @@ export function applySearchAndFilter() {
                 subgroup.open = storedState !== undefined ? storedState : _viewExpandStates.groups;
             }
         });
-        groupEl
-            .querySelector('.tab-list-container')
-            .querySelectorAll(':scope > .tab-item')
-            .forEach((tabEl) => {
-                const tabTitleEl = tabEl.querySelector('.tab-title');
-                const tabTitleText = tabTitleEl ? tabTitleEl.textContent : '';
-                const tabMatches =
-                    !!keywordSearch &&
-                    (searchRegex
-                        ? searchRegex.test(tabTitleText)
-                        : normalizeForSearch(tabTitleText).includes(lowerCaseKeywordSearch));
-                if (tabMatches) hasMatchingChild = true;
-                const isTabVisible = groupTitleMatches || tabMatches;
-                tabEl.classList.toggle('hidden', !!keywordSearch && !isTabVisible);
-            });
+        // A card without a tab list (a collapsed placeholder, a hidden group) must not
+        // abort the loop: the groups after it would stay hidden with no way back.
+        const tabListContainer = groupEl.querySelector('.tab-list-container');
+        tabListContainer?.querySelectorAll(':scope > .tab-item').forEach((tabEl) => {
+            const tabTitleEl = tabEl.querySelector('.tab-title');
+            const tabTitleText = tabTitleEl ? tabTitleEl.textContent : '';
+            const tabMatches =
+                !!keywordSearch &&
+                (searchRegex
+                    ? searchRegex.test(tabTitleText)
+                    : normalizeForSearch(tabTitleText).includes(lowerCaseKeywordSearch));
+            if (tabMatches) hasMatchingChild = true;
+            const isTabVisible = groupTitleMatches || tabMatches;
+            tabEl.classList.toggle('hidden', !!keywordSearch && !isTabVisible);
+        });
         const isMatch = groupTitleMatches || hasMatchingChild;
         if (keywordSearch) {
             groupEl.classList.toggle('hidden', !isMatch);

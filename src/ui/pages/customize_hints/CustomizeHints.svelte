@@ -10,9 +10,44 @@
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initCustomizeHints } from './customize_hints.js';
 
+    // Link preview on/off. The same flag the keyboard shortcut and the context menu
+    // toggle, so all three always agree.
+    let linkPreviewEnabled = $state(true);
+    let previewToggleTitle = $state('');
+
+    function updateToggleTitle() {
+        const key = linkPreviewEnabled ? 'linkPreviewToggleDisable' : 'linkPreviewToggleEnable';
+        const message = chrome.i18n.getMessage(key);
+        previewToggleTitle = message || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+    }
+
+    async function toggleLinkPreview(event) {
+        const enabled = event.currentTarget.checked;
+        linkPreviewEnabled = enabled;
+        updateToggleTitle();
+        try {
+            await chrome.runtime.sendMessage({ action: 'toggleLinkPreview', enabled });
+        } catch {
+            /* the background may be asleep; the stored flag below is what is read */
+        }
+    }
+
     onMount(() => {
         initNumberSpinnerArrows();
         initCustomizeHints();
+
+        chrome.storage.local.get(['linkPreviewEnabled'], (data) => {
+            linkPreviewEnabled = data.linkPreviewEnabled !== false;
+            updateToggleTitle();
+        });
+        // Kept in step with the shortcut, the context menu and any other window.
+        const onStorageChanged = (changes) => {
+            if (!changes.linkPreviewEnabled) return;
+            linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
+            updateToggleTitle();
+        };
+        chrome.storage.onChanged.addListener(onStorageChanged);
+        return () => chrome.storage.onChanged.removeListener(onStorageChanged);
     });
 </script>
 
@@ -179,7 +214,22 @@
         <!-- Link Preview Blacklist Section -->
         <section class="section itg-manage-section blacklist-section">
             <div class="section-header">
-                <h2 class="section-title" data-i18n="managePreviewBlacklistTitle">Link Preview Blacklist</h2>
+                <div class="section-header-alignment">
+                    <h2 class="section-title" data-i18n="managePreviewBlacklistTitle">Link Preview Blacklist</h2>
+                    <!-- The blacklist decides where previews are suppressed; this switch
+                         decides whether they happen at all. -->
+                    <label class="switch preview-toggle" id="link-preview-toggle-label" title={previewToggleTitle}>
+                        <input
+                            type="checkbox"
+                            id="link-preview-toggle"
+                            tabindex="0"
+                            aria-label={previewToggleTitle}
+                            checked={linkPreviewEnabled}
+                            onchange={toggleLinkPreview}
+                        />
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
             <div class="manage-form-container">
                 <div class="form-group-inline" style="display: flex; gap: 8px;">

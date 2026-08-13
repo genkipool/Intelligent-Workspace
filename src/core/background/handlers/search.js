@@ -7,7 +7,8 @@
  * Handles search actions on different websites.
  */
 function handleSearchAction(message) {
-    const query = message.query;
+    // The omnibar sends `query`; the agent tool sends `text`.
+    const query = message.query ?? message.text;
     let baseUrl;
     switch (message.action) {
         case 'searchGoogle':

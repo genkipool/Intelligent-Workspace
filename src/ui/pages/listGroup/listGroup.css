@@ -690,32 +690,99 @@ body.groups-view-active:not(.notes-view-active):not(.gallery-view-active) .contr
 }
 
 .hidden-group-indicator {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     border: 1px solid var(--border-color);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 11px;
     font-weight: 800;
+    line-height: 1;
+    text-align: center;
     color: var(--text-color);
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
     transition:
-        transform 0.2s,
-        box-shadow 0.2s;
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
     flex-shrink: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 .hidden-group-indicator:hover,
 .hidden-group-indicator:focus-visible {
-    transform: scale(1.1);
     box-shadow: 0 0 8px var(--interactive-color);
     outline: none;
+}
+
+.hidden-group-initial {
+    display: block;
+    line-height: 1;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+}
+
+.hidden-group-wrapper {
+    position: relative;
+    display: inline-flex;
     align-items: center;
-    font-size: 0.9rem;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.hidden-group-delete-badge,
+.delete-badge-btn {
+    position: absolute;
+    top: -12px;
+    right: -8px;
+    width: 16px;
+    height: 16px;
+    background-color: var(--error-color);
+    color: var(--text-color);
+    border: 1px solid var(--bg-panel-color, var(--bg-color));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 1;
+    padding: 0 0 2px 0;
+    z-index: 60;
+    box-sizing: border-box;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease,
+        padding 0.2s ease;
+}
+
+.delete-badge-btn.show-on-hover,
+.hidden-group-delete-badge {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8);
+}
+
+.hidden-group-wrapper:hover .delete-badge-btn,
+.hidden-group-wrapper:focus-within .delete-badge-btn,
+.hidden-group-wrapper:hover .hidden-group-delete-badge,
+.hidden-group-wrapper:focus-within .hidden-group-delete-badge {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+
+.hidden-group-delete-badge:hover,
+.hidden-group-delete-badge:focus-visible,
+.delete-badge-btn:hover,
+.delete-badge-btn:focus-visible {
+    transform: scale(1.5) !important;
+    outline: none;
 }
 
 #show-hidden-btn {
@@ -5596,12 +5663,14 @@ body.bookmarks-view-active #view-toggle-panel {
     opacity: 0.8;
 }
 
-#bookmark-drag-drop-panel .import-actions {
+#bookmark-drag-drop-panel .import-actions,
+#cookie-drag-drop-panel .import-actions {
     display: flex;
     justify-content: center;
 }
 
-#bookmark-drag-drop-panel .button-cancel-import-drop {
+#bookmark-drag-drop-panel .button-cancel-import-drop,
+#cookie-drag-drop-panel .button-cancel-import-drop {
     outline: none;
     border: none;
     width: 100%;
@@ -5615,7 +5684,8 @@ body.bookmarks-view-active #view-toggle-panel {
     border-radius: var(--small-border-radius, 4px);
 }
 
-#bookmark-drag-drop-panel .button-cancel-import-drop:hover {
+#bookmark-drag-drop-panel .button-cancel-import-drop:hover,
+#cookie-drag-drop-panel .button-cancel-import-drop:hover {
     background-color: var(--error-color);
     color: var(--text-color);
 }
@@ -6692,6 +6762,14 @@ a.delete-item-title:hover {
     min-width: 0;
 }
 
+.api-key-quota-badge {
+    margin-left: 6px;
+    font-size: 0.72em;
+    color: var(--error-color);
+    font-weight: bold;
+    white-space: nowrap;
+}
+
 .api-key-name-input {
     background: transparent;
     border: 1px solid transparent;
@@ -7108,102 +7186,6 @@ summary.stats-toggle-btn::marker {
     font-size: 0.85rem;
 }
 
-/* Gemini Custom Time Picker */
-#gemini-custom-time-popup {
-    position: fixed;
-    width: 190px;
-    background-color: var(--bg-panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    z-index: 99999;
-    padding: 12px 10px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-#gemini-custom-time-popup.hidden {
-    display: none !important;
-}
-
-#gemini-custom-time-popup .time-picker-main-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#gemini-custom-time-popup .time-arrows {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-#gemini-custom-time-popup .time-arrow-btn {
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
-    color: var(--text-on-color);
-    cursor: pointer;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    line-height: 1;
-    transition: all 0.15s;
-}
-
-#gemini-custom-time-popup .time-arrow-btn:hover {
-    background-color: var(--interactive-color);
-    color: var(--text-color);
-}
-
-#gemini-custom-time-popup .time-arrow-btn:active {
-    transform: scale(0.9);
-}
-
-#gemini-custom-time-popup .time-input-container {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: var(--bg-color);
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-}
-
-#gemini-custom-time-popup .time-input-container input {
-    width: 35px;
-    background: transparent;
-    border: none;
-    color: var(--text-on-color);
-    font-family: 'Roboto Mono', monospace;
-    font-size: 1.5rem;
-    text-align: center;
-    outline: none;
-    padding: 0;
-}
-
-#gemini-custom-time-popup .time-input-container input::-webkit-inner-spin-button,
-#gemini-custom-time-popup .time-input-container input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-#gemini-custom-time-popup .time-input-container span {
-    color: var(--text-color);
-    font-size: 1.5rem;
-    font-weight: bold;
-    padding-bottom: 4px;
-}
-
-#gemini-custom-time-popup .time-picker-label {
-    font-size: 10px;
-    opacity: 0.6;
-    color: var(--text-color);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
 /* --- COOKIE EDITOR DATETIME (same pattern as Gemini) --- */
 .cookie-editor-modal .datetime-row {
     display: flex;
@@ -7243,118 +7225,6 @@ summary.stats-toggle-btn::marker {
 .cookie-editor-modal .val-placeholder {
     opacity: 0.4;
     font-size: 12px;
-}
-
-#cookie-custom-calendar-popup,
-#cookie-custom-time-popup {
-    position: fixed;
-    z-index: 99999;
-    background-color: var(--bg-panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
-#cookie-custom-calendar-popup {
-    width: 260px;
-    padding: 10px;
-    user-select: none;
-}
-
-#cookie-custom-time-popup {
-    width: 190px;
-    padding: 12px 10px 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-}
-
-#cookie-custom-calendar-popup.hidden,
-#cookie-custom-time-popup.hidden {
-    display: none !important;
-}
-
-/* Time picker inner elements for cookie editor */
-#cookie-custom-time-popup .time-picker-main-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#cookie-custom-time-popup .time-arrows {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-}
-
-#cookie-custom-time-popup .time-arrow-btn {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 12px;
-    border-radius: 4px;
-    line-height: 1;
-}
-
-#cookie-custom-time-popup .time-arrow-btn:hover {
-    background-color: var(--border-color);
-}
-
-#cookie-custom-time-popup .time-input-container {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background-color: var(--bg-color);
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-}
-
-#cookie-custom-time-popup .time-input-container input {
-    width: 35px;
-    background: transparent;
-    border: none;
-    color: var(--interactive-color, #1abc9c);
-    font-family: 'Roboto Mono', monospace;
-    font-size: 1.5rem;
-    text-align: center;
-    outline: none;
-    padding: 0;
-}
-
-#cookie-custom-time-popup .time-input-container input::-webkit-inner-spin-button,
-#cookie-custom-time-popup .time-input-container input::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-#cookie-custom-time-popup .time-input-container span {
-    color: var(--text-color);
-    font-size: 1.5rem;
-    font-weight: bold;
-    padding-bottom: 4px;
-}
-
-#cookie-custom-time-popup .time-picker-label {
-    margin-top: 5px;
-    font-size: 10px;
-    opacity: 0.6;
-    color: var(--text-color);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Badge position on open-gemini-view-btn */
-
-/* ── Agent Mode — steps inside standard entry-card ─────────────────── */
-
-/* Mark agent entries visually */
-.gemini-entry.is-agent-entry {
-    border-left: 3px solid var(--interactive-color);
 }
 
 /* Gemini entry icon (now a span wrapping SVG) */
@@ -8421,7 +8291,10 @@ input.pomo-project-edit::placeholder {
 }
 
 /* Pomo time picker popup — mirrors gemini time popup styles */
-#pomo-custom-time-popup {
+/* One design for every hour/minute popup on this page: the shared TimeField
+   component carries the same rules, and the pomodoro popup — still built by
+   hand — picks them up from the class instead of a second copy. */
+.custom-time-picker {
     position: fixed;
     width: 190px;
     background-color: var(--bg-panel-color);
@@ -8436,23 +8309,23 @@ input.pomo-project-edit::placeholder {
     gap: 8px;
 }
 
-#pomo-custom-time-popup.hidden {
+.custom-time-picker.hidden {
     display: none !important;
 }
 
-#pomo-custom-time-popup .time-picker-main-row {
+.custom-time-picker .time-picker-main-row {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-#pomo-custom-time-popup .time-arrows {
+.custom-time-picker .time-arrows {
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
 
-#pomo-custom-time-popup .time-arrow-btn {
+.custom-time-picker .time-arrow-btn {
     background: var(--bg-color);
     border: 1px solid var(--border-color);
     color: var(--text-on-color);
@@ -8464,16 +8337,16 @@ input.pomo-project-edit::placeholder {
     transition: all 0.15s;
 }
 
-#pomo-custom-time-popup .time-arrow-btn:hover {
+.custom-time-picker .time-arrow-btn:hover {
     background-color: var(--interactive-color);
     color: var(--text-color);
 }
 
-#pomo-custom-time-popup .time-arrow-btn:active {
+.custom-time-picker .time-arrow-btn:active {
     transform: scale(0.9);
 }
 
-#pomo-custom-time-popup .time-input-container {
+.custom-time-picker .time-input-container {
     display: flex;
     align-items: center;
     gap: 5px;
@@ -8483,7 +8356,7 @@ input.pomo-project-edit::placeholder {
     border: 1px solid var(--border-color);
 }
 
-#pomo-custom-time-popup .time-input-container input {
+.custom-time-picker .time-input-container input {
     width: 35px;
     background: transparent;
     border: none;
@@ -8495,20 +8368,20 @@ input.pomo-project-edit::placeholder {
     padding: 0;
 }
 
-#pomo-custom-time-popup .time-input-container input::-webkit-inner-spin-button,
-#pomo-custom-time-popup .time-input-container input::-webkit-outer-spin-button {
+.custom-time-picker .time-input-container input::-webkit-inner-spin-button,
+.custom-time-picker .time-input-container input::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-#pomo-custom-time-popup .time-input-container span {
+.custom-time-picker .time-input-container span {
     color: var(--text-color);
     font-size: 1.5rem;
     font-weight: bold;
     padding-bottom: 4px;
 }
 
-#pomo-custom-time-popup .time-picker-label {
+.custom-time-picker .time-picker-label {
     font-size: 10px;
     opacity: 0.6;
     color: var(--text-color);
@@ -8798,8 +8671,6 @@ input.pomo-project-edit::placeholder {
     opacity: 1 !important;
 }
 
-
-
 /* Saved-conversations list: the rows are styled by `#saved-conversations-list li`;
    these two only need the empty state and a plain, full-width row button. */
 .no-conversations-msg {
@@ -8842,6 +8713,17 @@ input.pomo-project-edit::placeholder {
     outline: 2px solid var(--interactive-color);
     outline-offset: 2px;
     border-radius: 4px;
+}
+
+/* Elements that already draw their own focus decoration (a coloured border or a glow)
+   must not get the generic ring on top: outline and box-shadow are different
+   properties, so both paint and the element ends up with a double border. */
+.search-input:focus-visible,
+.bookmark-item:focus-visible,
+.bookmark-folder-title:focus-visible,
+.overflow-popup-item:focus-visible,
+.folder-actions .action-btn:focus-visible {
+    outline: none;
 }
 
 /* The switch inputs are visually hidden; their ring belongs on the slider. */

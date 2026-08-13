@@ -1,4 +1,5 @@
 <script>
+    import { tick } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
@@ -20,6 +21,31 @@
     let savedRange = null;
 
     let titleInput = $state(null);
+    let contentEditor = $state(null);
+
+    // The rich editor owns its own DOM while the user types: re-rendering its HTML from
+    // state on every keystroke would rebuild the nodes and collapse the caret to the
+    // start. Content is therefore only pushed in when it changed from the outside
+    // (opening a note, switching the type, inserting a pasted or uploaded file).
+    $effect(() => {
+        const html = contentHTML;
+        if (!contentEditor || contentEditor.innerHTML === html) return;
+        const hadFocus = document.activeElement === contentEditor;
+        // The editor is deliberately uncontrolled: Svelte must not own the nodes the
+        // browser edits under the caret, so the write is done by hand.
+        // eslint-disable-next-line svelte/no-dom-manipulating
+        contentEditor.innerHTML = html;
+        if (hadFocus) placeCaretAtEnd(contentEditor);
+    });
+
+    function placeCaretAtEnd(el) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+    }
 
     // The title field takes focus when the modal opens.
     $effect(() => {
@@ -169,8 +195,16 @@
         }
     }
 
+    /** A row added by hand is a row about to be typed into, so it takes the caret. */
+    async function focusLastItemInput(selector) {
+        await tick();
+        const inputs = document.querySelectorAll(selector);
+        inputs[inputs.length - 1]?.focus();
+    }
+
     function addChecklistItem() {
         checklistItems = [...checklistItems, { text: '', checked: false }];
+        focusLastItemInput('#checklist-items-container .checklist-item-input');
     }
 
     function removeChecklistItem(index) {
@@ -179,6 +213,7 @@
 
     function addKanbanItem() {
         kanbanItems = [...kanbanItems, { text: '', state: 'todo' }];
+        focusLastItemInput('#kanban-items-container .kanban-item-input');
     }
 
     function removeKanbanItem(index) {
@@ -364,11 +399,10 @@
                             translate="no"
                             style="white-space: pre-wrap;"
                             data-i18n-placeholder={$t('noteContentPlaceholder')}
+                            bind:this={contentEditor}
                             oninput={onContentInput}
                             onpaste={handlePaste}
-                        >
-                            {@html contentHTML}
-                        </div>
+                        ></div>
                         <label for="note-file-input" class="note-file-upload-label" title={$tt('uploadFileTooltip')}>
                             <svg width="16" height="16">
                                 <use href="#icon-upload"></use>

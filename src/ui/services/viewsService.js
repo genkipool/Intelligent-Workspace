@@ -74,6 +74,16 @@ function ext(key) {
     return _ext[key];
 }
 
+// The reader, the error box and the url panel are built by hand and marked
+// .active-view, but so are the views Svelte mounts. Ripping a component-owned node
+// out of the DOM leaves its store thinking the view is still open, which is how the
+// notes list disappeared for good after deleting a single note.
+const COMPONENT_OWNED_VIEWS = ':not(#notes-view):not(#screenshot-gallery-view)';
+
+function getTransientActiveView(container) {
+    return container?.querySelector(`.active-view${COMPONENT_OWNED_VIEWS}`) || null;
+}
+
 // ─── Exported Functions ──────────────────────────────────────────
 
 export function showWelcomeMessage(container, viewType) {
@@ -1188,7 +1198,7 @@ export function showReaderView(htmlContent, baseUrl) {
     const _container = document.querySelector('.container');
     const _mainHeaderTitle = document.getElementById('main-header-title');
 
-    const existingActiveView = _container.querySelector('.active-view');
+    const existingActiveView = getTransientActiveView(_container);
     if (existingActiveView) {
         existingActiveView.remove();
     }
@@ -1297,11 +1307,15 @@ export function showErrorView(errorMessage, url) {
     if (_hiddenContextContainer) _hiddenContextContainer.style.display = 'none';
 
     if (_geminiConversationView) {
-        _geminiConversationView.innerHTML = '';
+        // The cards in this view are rendered by Svelte. Emptying it by hand detached
+        // the nodes it keeps writing into, so after closing an error every later answer
+        // was added to a view that no longer existed and nothing showed up. A class
+        // hides the conversation while the error is up and leaves the DOM alone.
+        _geminiConversationView.classList.add('showing-error');
         _geminiConversationView.style.display = 'block';
     }
 
-    const existingActiveView = _container.querySelector('.active-view');
+    const existingActiveView = getTransientActiveView(_container);
     if (existingActiveView) {
         existingActiveView.remove();
     }
@@ -1316,6 +1330,7 @@ export function showErrorView(errorMessage, url) {
         if (errorView) {
             errorView.remove();
         }
+        _geminiConversationView?.classList.remove('showing-error');
         switchToGeminiView();
     };
 
@@ -1391,7 +1406,7 @@ export async function closeUrlInPanel(isSwitchingView = false) {
         if (indicator) indicator.remove();
     }
 
-    const activeView = _container.querySelector('.active-view');
+    const activeView = getTransientActiveView(_container);
     if (activeView) activeView.remove();
 
     if (isSwitchingView) {
@@ -1882,7 +1897,10 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
 
     if (get(isNotesViewActive)) {
         const nc = get(currentNotesContext);
-        if (_addNoteViewBtn && nc.type !== 'orphan') _addNoteViewBtn.classList.remove('hidden');
+        // The orphan list is a notes view like any other, so it keeps the button that
+        // writes a note; what it has no group for is where to file it, and that is
+        // resolved when the modal opens.
+        if (_addNoteViewBtn) _addNoteViewBtn.classList.remove('hidden');
         if (_deleteAllContextBtn) {
             _deleteAllContextBtn.classList.remove('hidden');
             _deleteAllContextBtn.setAttribute('data-i18n-title', 'deleteAllNotes');

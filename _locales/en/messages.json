@@ -1474,6 +1474,10 @@
     "message": "Report an Issue on GitHub",
     "description": "Report a problem on GitHub"
   },
+  "viewSourceCode": {
+    "message": "View the Code on GitHub",
+    "description": "Open the project's public repository on GitHub"
+  },
   "sendAnEmail": {
     "message": "Send an Email",
     "description": "Send an email to the developer"
@@ -5517,6 +5521,16 @@
   "omnibarPrefixTutorial": {
     "message": "Mini Omnibar Usage Tutorial"
   },
+  "omnibarPrefixSiteSearchDesc": {"message": "Search on $SITE$", "placeholders": {"site": {"content": "$1"}}},
+  "omnibarPrefixGoogleTitle": {"message": "Google"},
+  "omnibarPrefixYouTubeTitle": {"message": "YouTube"},
+  "omnibarPrefixDuckDuckGoTitle": {"message": "DuckDuckGo"},
+  "omnibarPrefixWikipediaTitle": {"message": "Wikipedia"},
+  "omnibarPrefixGoogleMapsTitle": {"message": "Google Maps"},
+  "omnibarPrefixXTitle": {"message": "X"},
+  "omnibarPrefixAmazonTitle": {"message": "Amazon"},
+  "omnibarPrefixAmazonESTitle": {"message": "Amazon Spain"},
+  "omnibarNoMatchingPrefixes": {"message": "No matching commands"},
   "omnibarPrefixTutorialTitle": {
     "message": "Omnibar Tutorial"
   },
@@ -6434,7 +6448,7 @@
   },
   "resendQuery": {
     "message": "Resend query",
-    "description": "Tooltip for the resend button on each entry"
+    "description": "Send this query again and replace its answer"
   },
   "toolGetOpenTabs": {
     "message": "📋 Getting open tabs…"
@@ -7801,6 +7815,18 @@
   "linkPreviewDisabledNotify": {
     "message": "Link preview disabled"
   },
+  "linkPreviewToggleLabel": {
+    "message": "Link preview",
+    "description": "Turn the link preview on or off"
+  },
+  "linkPreviewToggleEnable": {
+    "message": "Enable link preview",
+    "description": "Enable link preview"
+  },
+  "linkPreviewToggleDisable": {
+    "message": "Disable link preview",
+    "description": "Disable link preview"
+  },
   "blacklistDomainTitle": {
     "message": "Disable link preview on this site"
   },
@@ -7901,16 +7927,16 @@
     "message": "Picture-in-Picture (Video): Open videos from YouTube, YouTube Shorts, and other websites directly in a floating, resizable window."
   },
   "omnibarPrefixBackupTitle": {
-    "message": "Backups"
+    "message": "Restore backups"
   },
   "omnibarPrefixBackupDesc": {
-    "message": "Save backup of selected groups"
+    "message": "Search and restore backed up groups and tabs"
   },
   "omnibarPrefixBackupNowTitle": {
-    "message": "Backup Groups"
+    "message": "Backup groups"
   },
   "omnibarPrefixBackupNowDesc": {
-    "message": "Restore backups of selected tabs and groups"
+    "message": "Save a backup of the selected groups"
   },
   "omnibarLoadingBackups": {
     "message": "Loading backups..."

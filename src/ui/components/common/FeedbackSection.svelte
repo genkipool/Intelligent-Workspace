@@ -5,6 +5,10 @@
 
     let { email = '', notificationKey = 'addressCopied', variant = 'popup' } = $props();
 
+    // Public repository of the extension; the issue tracker hangs off the same repo.
+    const REPO_URL = 'https://github.com/genkipool/Intelligent-Workspace';
+    const ISSUES_URL = `${REPO_URL}/issues`;
+
     // The about page and the popup each ship their own stylesheet for this block. The
     // component emits whichever class names the host expects rather than inventing a
     // third set that neither stylesheet targets.
@@ -26,9 +30,24 @@
 </script>
 
 <div class={containerClass} id={isAbout ? 'feedback-links-container' : undefined}>
+    <!-- The repository link only belongs on the about page; the popup keeps its short list. -->
+    {#if isAbout}
+        <div class="github-link-wrapper">
+            <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={linkClass}
+                title={$tt('viewSourceCode')}
+            >
+                <span class="material-icons-sharp" translate="no" aria-hidden="true">code</span>
+                <span>{$t('viewSourceCode')}</span>
+            </a>
+        </div>
+    {/if}
     <svelte:element this={isAbout ? 'div' : 'span'} class={isAbout ? 'github-link-wrapper' : 'contents'}>
         <a
-            href="https://github.com/luisrb85/intelligent-tab-group/issues"
+            href={ISSUES_URL}
             target="_blank"
             rel="noopener noreferrer"
             class={linkClass}

@@ -53,7 +53,13 @@ function highlightSyntax(code, language) {
     return resultHtml;
 }
 
-function parseMarkdown(text) {
+/**
+ * The markdown the assistant answers with, as HTML.
+ *
+ * Exported because copying and reading aloud have to end up with the same text the
+ * card shows; `window.marked` is not available once the page is bundled.
+ */
+export function parseMarkdown(text) {
     if (!text) return '';
     let html = escapeHtml(text);
     html = html

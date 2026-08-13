@@ -247,7 +247,7 @@ var OmniBar = class OmniBar {
 
         // -- Prefix Selector Trigger (default: @) --------------
         const trigger = this.registry ? this.registry.getRawShortcuts()['prefixSelector'] || '@' : '@';
-        if (query === trigger) {
+        if (query.startsWith(trigger)) {
             const prefixList = [
                 {
                     prefix: this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
@@ -406,8 +406,39 @@ var OmniBar = class OmniBar {
                         chrome.i18n.getMessage('omnibarPrefixTutorialDesc') ||
                         'Learn how to use the Omnibar features and shortcuts',
                 },
+                // The site searches are prefixes like any other and belong on this list.
+                ...this._getSiteSearchPrefixes(),
             ];
-            this._renderResults(prefixList, 'prefix');
+            // Typing after the trigger narrows the list: `@b` shows the commands whose
+            // prefix or name mentions it, and the prefix matches come first. The
+            // description only counts when nothing else matched, so a common letter
+            // does not bring the whole list back.
+            const filter = query.slice(trigger.length).trim().toLowerCase();
+            let shown = prefixList;
+            if (filter) {
+                const byPrefix = prefixList.filter((item) => (item.prefix || '').toLowerCase().includes(filter));
+                const byTitle = prefixList.filter(
+                    (item) => !byPrefix.includes(item) && (item.title || '').toLowerCase().includes(filter),
+                );
+                shown = [...byPrefix, ...byTitle];
+                if (shown.length === 0) {
+                    shown = prefixList.filter((item) => (item.desc || '').toLowerCase().includes(filter));
+                }
+            }
+            if (shown.length === 0) {
+                this._renderResults(
+                    [
+                        {
+                            prefix: '',
+                            title: chrome.i18n.getMessage('omnibarNoMatchingPrefixes') || 'No matching commands',
+                            desc: '',
+                        },
+                    ],
+                    'prefix',
+                );
+                return;
+            }
+            this._renderResults(shown, 'prefix');
             return;
         }
 
@@ -465,6 +496,25 @@ var OmniBar = class OmniBar {
             const q = query.substring(prefixUsed.length).trim();
             const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
             this._renderResults(filtered, isPopup ? 'popup-tab' : isVideoPip ? 'video-pip-tab' : 'pip-tab');
+            return;
+        }
+
+        // -- Site searches (g:, y:, d:, w:, gm:, x:, am:, ams:) --
+        // These only act on Enter, so without a row the box looked dead while typing.
+        const site = this._getSiteSearchPrefixes().find((entry) => lower.startsWith(entry.prefix));
+        if (site) {
+            const q = query.substring(site.prefix.length).trim();
+            const hint = chrome.i18n.getMessage('omnibarPressEnterToSearch') || 'Press Enter to search';
+            this._renderResults(
+                [
+                    {
+                        title: q ? `${site.title}: ${q}` : site.desc,
+                        url: hint,
+                        icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="var(--text-color)" stroke-width="2"/><path d="M20 20l-3.5-3.5" stroke="var(--text-color)" stroke-width="2" stroke-linecap="round"/></svg>',
+                    },
+                ],
+                'site-search',
+            );
             return;
         }
 
@@ -1873,6 +1923,12 @@ var OmniBar = class OmniBar {
             if (selected && selected.dataset.type === 'tutorial-hint') {
                 return;
             }
+            // A site prefix is decided by what was typed, not by which row happens to be
+            // highlighted: its single row is only a preview of what Enter will do.
+            if (this._getSiteSearchPrefixes().some((entry) => currentLower.startsWith(entry.prefix))) {
+                this._executeDefaultSearch(currentValue);
+                return;
+            }
             const pAtr = this._getPrefixVal('atr:', 'omnibarPrefixAddToRule');
             if (currentLower.startsWith(pAtr)) {
                 if (this.atrSelectingRule) {
@@ -2731,6 +2787,31 @@ var OmniBar = class OmniBar {
      * @param {string} descKey - The registry key for the custom shortcut (e.g. 'prefixDeleteGroup').
      * @returns {string} The resolved prefix to use.
      */
+    /**
+     * The prefixes that send the query straight to a site.
+     *
+     * Same shape as the rest of the list so `@` can show them, and the single place
+     * that knows which site each one goes to.
+     */
+    _getSiteSearchPrefixes() {
+        const sites = [
+            ['g:', 'prefixSearchGoogle', 'omnibarPrefixGoogleTitle', 'Google'],
+            ['y:', 'prefixSearchYouTube', 'omnibarPrefixYouTubeTitle', 'YouTube'],
+            ['d:', 'prefixSearchDuckDuckGo', 'omnibarPrefixDuckDuckGoTitle', 'DuckDuckGo'],
+            ['w:', 'prefixSearchWikipedia', 'omnibarPrefixWikipediaTitle', 'Wikipedia'],
+            ['gm:', 'prefixSearchGoogleMaps', 'omnibarPrefixGoogleMapsTitle', 'Google Maps'],
+            ['x:', 'prefixSearchX', 'omnibarPrefixXTitle', 'X'],
+            ['am:', 'prefixSearchAmazon', 'omnibarPrefixAmazonTitle', 'Amazon'],
+            ['ams:', 'prefixSearchAmazonES', 'omnibarPrefixAmazonESTitle', 'Amazon ES'],
+        ];
+        const template = chrome.i18n.getMessage('omnibarPrefixSiteSearchDesc') || 'Search on $SITE$';
+        return sites.map(([prefix, descKey, titleKey, site]) => ({
+            prefix: this._getPrefixVal(prefix, descKey),
+            title: chrome.i18n.getMessage(titleKey) || site,
+            desc: template.replace('$SITE$', site).replace('$1', site),
+        }));
+    }
+
     _getPrefixVal(defaultPrefix, descKey) {
         if (this.registry) {
             const custom = this.registry.getRawShortcuts()[descKey];
@@ -3909,6 +3990,10 @@ IMPORTANT RULES:
                 title = data.title || chrome.i18n.getMessage('omnibarUntitledConversation') || 'Untitled conversation';
                 const dateStr = data.date ? new Date(data.date).toLocaleString() : '';
                 const hint = chrome.i18n.getMessage('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
+                // The number of entries, which was being read from a name that was never
+                // declared: the exception left the whole conversation list empty.
+                const entryCount = data.entryCount ?? (data.entryIds || []).length;
+                const countStr = entryCount ? ` . ${entryCount}` : '';
                 url = `${dateStr}${countStr} . ${hint}`;
                 favIcon = '';
                 const iconEl = this._injectSvgIcon(
@@ -4202,7 +4287,9 @@ IMPORTANT RULES:
                 }
             } else if (type === 'er-item') {
                 title = data.title;
-                url = data.url || data.desc || '';
+                // A URL row already says the URL in its title; the line underneath is
+                // what the row does, not the URL a second time.
+                url = (data.type === 'er-url' ? data.desc : data.url) || data.url || '';
                 li.dataset.erType = data.type; // 'er-rule' or 'er-url'
                 if (data.type === 'er-rule') {
                     li.dataset.ruleName = data.name;
@@ -4220,6 +4307,9 @@ IMPORTANT RULES:
                 } else {
                     li.dataset.ruleName = data.name;
                     li.dataset.tabUrl = data.url;
+                    // Choosing this row fills the box with `url:<rule>::<url>`, and it
+                    // reads the URL from here: without it the box said "undefined".
+                    li.dataset.url = data.url;
                     li.dataset.actionId = `${data.name}::${data.url}`;
                     favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
                 }

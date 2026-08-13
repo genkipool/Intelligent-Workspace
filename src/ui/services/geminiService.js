@@ -8,7 +8,7 @@ import { get, writable } from 'svelte/store';
 import { isGeminiViewActive } from '../stores/appStore.svelte.js';
 import { openModal, showApiKeyModal as showApiKeyModalStore } from '../stores/modalStore.js';
 import { geminiStore } from '../stores/geminiStore.js';
-import { renderGeminiResponse } from '../content-renderer/content-renderer.js';
+import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
 import '../../lib/marked.js';
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
 import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
@@ -116,19 +116,10 @@ export async function updateCombinedConversationDisplay() {
         geminiCurrentCombinedIndex.set(-1);
     }
 
-    const persistentConvDisplay = document.getElementById('persistent-conversation-display');
-    if (get(geminiCurrentCombinedIndex) > -1 && get(geminiCombinedConversations)[get(geminiCurrentCombinedIndex)]) {
-        const currentConv = get(geminiCombinedConversations)[get(geminiCurrentCombinedIndex)];
-        if (persistentConvDisplay) {
-            persistentConvDisplay.removeAttribute('data-i18n');
-            persistentConvDisplay.textContent = currentConv.title;
-        }
-    } else {
-        if (persistentConvDisplay) {
-            persistentConvDisplay.setAttribute('data-i18n', 'selectConversationPlaceholder');
-            applyTranslations(persistentConvDisplay);
-        }
-    }
+    // The name on the button is rendered by the page component from the live store.
+    // Writing it here as well overwrote it with this module's own stores, which the
+    // assistant no longer keeps up to date: the button kept the previous conversation's
+    // name after starting a new one.
 }
 
 export async function loadSelectedConversation(conversation) {
@@ -210,6 +201,11 @@ export async function switchToGeminiView() {
         if (titleText) mainHeaderTitle.textContent = titleText;
     }
 
+    // Coming back to the assistant always shows the conversation, whatever hid it —
+    // an error box that was closed, or one left behind by a new question.
+    document.getElementById('gemini-conversation-view')?.classList.remove('showing-error');
+    document.querySelector('.container .error-message-container.active-view')?.remove();
+
     manageViewVisibility('#gemini-conversation-view');
     const container = document.querySelector('.container');
     if (container) container.classList.add('gemini-view-active');
@@ -244,7 +240,6 @@ export async function switchToGeminiView() {
         applyTranslations(geminiModelSelectorContainer);
     }
 
-    geminiStore.syncSpeechUI();
     updateExpandAllButtonState();
     updateBackButtonTooltip();
     updateSubButtonVisibility();
@@ -253,6 +248,18 @@ export async function switchToGeminiView() {
     const geminiTextarea = document.getElementById('gemini-textarea');
     if (geminiTextarea) geminiTextarea.focus();
     updateScrollButtons();
+}
+
+/** An answer as rich text, for the clipboard: the same HTML the card renders. */
+export function markdownToHtml(markdown) {
+    return parseMarkdown(markdown || '');
+}
+
+/** The same answer as plain text, with the markdown resolved rather than spelled out. */
+export function markdownToPlainText(markdown) {
+    const holder = document.createElement('div');
+    holder.innerHTML = parseMarkdown(markdown || '');
+    return (holder.textContent || '').trim();
 }
 
 export function htmlToSpeechText(htmlString) {
@@ -405,7 +412,7 @@ function geminiEntryEventListeners(container, entry) {
 
     readAloudBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        geminiStore.handleGlobalReadAloud(entry, e.ctrlKey || e.metaKey);
+        geminiStore.readEntryAloud(entry, e.ctrlKey || e.metaKey);
     });
 
     editBtn?.addEventListener('click', (e) => {
@@ -568,39 +575,8 @@ export async function handleGeminiQuery(query) {
 }
 
 export function initGeminiEvents() {
-    const copyBtn = document.getElementById('copy-gemini-btn');
-    if (copyBtn) {
-        copyBtn.addEventListener('click', async () => {
-            const history = get(geminiConversationHistory);
-            if (history.length === 0) return;
-
-            const conversationTitle = (
-                document.querySelector('#persistent-conversation-display')?.textContent || 'Gemini Conversation'
-            ).replace(/<[^>]*>/g, '');
-            const upperCaseTitle = conversationTitle.toUpperCase();
-            const textRenderer = new window.marked.TextRenderer();
-            const htmlTitle = `<div style="font-size: 1.5em; font-weight: bold; text-transform: uppercase; margin-bottom: 0; color: #202124;">${upperCaseTitle}</div><br><br>`;
-            const plainTitle = `${upperCaseTitle}\n\n\n`;
-            const htmlBody = history
-                .map((entry) => {
-                    const question = entry.query;
-                    const answerMarkdown = entry.data?.answer || '...';
-                    const answerHtml = window.marked.parse(answerMarkdown);
-                    return `<strong style="color:black;">${question.replace(/</g, '&lt;')}</strong><br>${answerHtml}`;
-                })
-                .join('<br>');
-            const plainTextBody = history
-                .map((entry) => {
-                    const question = entry.query;
-                    const answerMarkdown = entry.data?.answer || '...';
-                    const answerPlainText = window.marked.parseInline(answerMarkdown, { renderer: textRenderer });
-                    return `${question}\n${answerPlainText.trim()}`;
-                })
-                .join('\n\n');
-            const success = await copyRichTextToClipboard(htmlTitle + htmlBody, plainTitle + plainTextBody);
-            showNotification(success ? 'geminiHistoryCopied' : 'errorCopying', !success);
-        });
-    }
+    // The copy button is wired by the page component, which reads the live store; a
+    // second listener here would run against the legacy one and copy nothing.
 
     const addApiKeyBtn = document.getElementById('add-api-key-btn');
     if (addApiKeyBtn) {

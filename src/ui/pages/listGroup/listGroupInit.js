@@ -590,7 +590,9 @@ export async function initializeAllEvents() {
         deleteAllContextBtn.addEventListener('click', async () => {
             const view = get(currentMainView);
             if (get(isGeminiViewActive)) {
-                handleClearCurrentConversation();
+                // The store holds the conversation on screen; the service copy of this
+                // reads the legacy stores and always reported "nothing to delete".
+                await geminiStore.deleteConversation();
             } else if (get(isGalleryViewActive)) {
                 clearAllContextDataUI(get(currentGalleryContext), screenshotConfig);
             } else if (get(isNotesViewActive)) {

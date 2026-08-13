@@ -3,6 +3,7 @@
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import ImportPanel from '../common/ImportPanel.svelte';
 
     /** @type {{ show: boolean, cookies: Array<{name: string, value: string, domain: string, path: string, expirationDate?: number, httpOnly: boolean, secure: boolean, sameSite: string}>, onClose: () => void, onSave: (cookies: Array) => void, onImport: () => void, onExport: () => void }} */
     let { show, cookies, onClose, onSave, onImport, onExport } = $props();
@@ -11,7 +12,6 @@
     let searchQuery = $state('');
     let workingCookies = $state([]);
     let showImportPanel = $state(false);
-    let isDragging = $state(false);
     let importError = $state('');
 
     // Sync workingCookies with the cookies prop when the modal opens
@@ -99,28 +99,6 @@
         showImportPanel = false;
         importError = '';
         isDragging = false;
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        isDragging = true;
-    }
-
-    function handleDragLeave() {
-        isDragging = false;
-    }
-
-    function handleDrop(e) {
-        e.preventDefault();
-        isDragging = false;
-        const file = e.dataTransfer.files[0];
-        if (file) processImportFile(file);
-    }
-
-    function handleFileSelect(e) {
-        const file = e.target.files[0];
-        if (file) processImportFile(file);
-        e.target.value = '';
     }
 
     async function processImportFile(file) {
@@ -379,56 +357,30 @@
             </div>
         {:else}
             <!-- Drag-and-Drop Import Panel -->
-            <section id="cookie-drag-drop-panel" class="cookie-import-panel" style="display: flex;">
-                <div class="header">
-                    <h1 class="title-import-themes">{$t('importCookiesTitle')}</h1>
-                    <button
-                        id="back-from-cookie-import-btn"
-                        class="back-button header-button"
-                        type="button"
-                        title={$tt('backToCookieEditor')}
-                        aria-label={$t('backToCookieEditor')}
-                        onclick={closeImportPanel}
-                    >
-                        <svg width="20" height="20">
-                            <use href="#icon-back"></use>
-                        </svg>
-                    </button>
-                </div>
-                <div
-                    class="drop-zone"
-                    class:highlight={isDragging}
-                    tabindex="0"
-                    role="button"
-                    title={$tt('selectCookieFile')}
-                    ondragover={handleDragOver}
-                    ondragleave={handleDragLeave}
-                    ondrop={handleDrop}
-                    onclick={() => document.getElementById('cookie-file-input')?.click()}
-                    onkeydown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            document.getElementById('cookie-file-input')?.click();
-                        }
-                    }}
-                >
-                    <div class="drop-zone-content">
-                        <span class="drop-icon">🍪</span>
-                        <p>{$t('dragDropCookie')}</p>
-                        <input
-                            type="file"
-                            id="cookie-file-input"
-                            accept=".json"
-                            style="display: none;"
-                            tabindex="-1"
-                            onchange={handleFileSelect}
-                        />
-                    </div>
-                </div>
-                {#if importError}
-                    <p class="import-error">{$t(importError)}</p>
-                {/if}
-            </section>
+            <!-- Same panel the rules, bookmarks and themes imports use, so the
+                 cookie import looks like every other one and keeps its cancel action. -->
+            <ImportPanel
+                show={true}
+                sectionId="cookie-drag-drop-panel"
+                sectionClass="cookie-import-panel"
+                headerClass="header"
+                headerTag="h1"
+                titleKey="importCookiesTitle"
+                titleClass="title-import-themes"
+                dropTextKey="dragDropCookie"
+                dropIcon="🍪"
+                selectFileKey="selectCookieFile"
+                fileInputId="cookie-file-input"
+                backButtonId="back-from-cookie-import-btn"
+                backTitleKey="backToCookieEditor"
+                cancelButtonId="cancel-cookie-import-drop"
+                cancelTitleKey="backToCookieEditor"
+                onback={closeImportPanel}
+                onfile={processImportFile}
+            />
+            {#if importError}
+                <p class="import-error">{$t(importError)}</p>
+            {/if}
         {/if}
     </div>
 {/if}

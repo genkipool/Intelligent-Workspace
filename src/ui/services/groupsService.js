@@ -29,7 +29,14 @@ import {
 } from '../../utils/db.js';
 
 import { STORAGE_KEYS, colors, noteConfig, screenshotConfig } from './constants.js';
-import { getGroupInfoMap, getGroupPrefixState, animateAndRemove, correctFaviconUrl, dataUrlToBlob } from './utils.js';
+import {
+    getGroupInfoMap,
+    getGroupPrefixState,
+    animateAndRemove,
+    correctFaviconUrl,
+    dataUrlToBlob,
+    linkedGroupIds,
+} from './utils.js';
 import { prefetchUrl } from './prefetchService.js';
 import { exportCookies, processCookieFile } from '../../utils/importExport.js';
 
@@ -177,6 +184,21 @@ export async function updateMuteButtonState() {
     const iconSpeaker = btn.querySelector('.icon-speaker');
     const iconMuted = btn.querySelector('.icon-speaker-muted');
 
+    // Audio in any tab fires this while the assistant, the notes or any other view is
+    // on screen, and those views do not own this button. Revealing it there made it
+    // appear and vanish as the view routine hid it again, which is the flicker the
+    // control strip showed every time a video was played or paused.
+    const belongsToCurrentView =
+        get(currentMainView) === 'groups' &&
+        !get(isGeminiViewActive) &&
+        !get(isNotesViewActive) &&
+        !get(isGalleryViewActive) &&
+        !get(isUrlViewActive);
+    if (!belongsToCurrentView) {
+        btn.classList.add('hidden');
+        return;
+    }
+
     const allTabs = await getValidStandardTabs();
     const audibleUnmuted = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
     const explicitlyMuted = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
@@ -318,8 +340,6 @@ export function handleRuleActionClick(e) {
     }
 }
 
-let cookiePickerState = null;
-
 export function readCookieExpirationFromCard(card) {
     const dateTrigger = card.querySelector('.cookie-expiration-date-trigger');
     const timeTrigger = card.querySelector('.cookie-expiration-time-trigger');
@@ -329,270 +349,6 @@ export function readCookieExpirationFromCard(card) {
     const timeVal = timeTrigger.textContent.trim() || '00:00';
     const ms = new Date(`${dateVal}T${timeVal}:00`).getTime();
     return isNaN(ms) ? undefined : Math.floor(ms / 1000);
-}
-
-function setCookieExpirationOnCard(card, expirationUnix) {
-    const dateTrigger = card.querySelector('.cookie-expiration-date-trigger');
-    const timeTrigger = card.querySelector('.cookie-expiration-time-trigger');
-    if (!dateTrigger || !timeTrigger) return;
-    if (!expirationUnix) {
-        delete dateTrigger.dataset.selectedDate;
-        dateTrigger.innerHTML = '<span class="val-placeholder">YYYY-MM-DD</span>';
-        timeTrigger.textContent = '00:00';
-        return;
-    }
-    const d = new Date(expirationUnix * 1000);
-    const formatted = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    dateTrigger.dataset.selectedDate = formatted;
-    dateTrigger.textContent = formatted;
-    timeTrigger.textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function destroyCookieDateTimePickers() {
-    if (cookiePickerState?.abort) cookiePickerState.abort.abort();
-    cookiePickerState = null;
-    document.getElementById('cookie-custom-calendar-popup')?.classList.add('hidden');
-    document.getElementById('cookie-custom-time-popup')?.classList.add('hidden');
-}
-
-function initCookieDateTimePickers(modalOverlay) {
-    destroyCookieDateTimePickers();
-
-    const calendarPopup = document.getElementById('cookie-custom-calendar-popup');
-    const timePopup = document.getElementById('cookie-custom-time-popup');
-    const inputHour = document.getElementById('cookie-input-hour');
-    const inputMinute = document.getElementById('cookie-input-minute');
-    if (!calendarPopup || !timePopup || !inputHour || !inputMinute) return;
-
-    if (timePopup.parentElement !== document.body) document.body.appendChild(timePopup);
-    if (calendarPopup.parentElement !== document.body) document.body.appendChild(calendarPopup);
-
-    const abort = new AbortController();
-    const signal = abort.signal;
-    const state = {
-        calCurrentDate: new Date(),
-        activeTrigger: null,
-        activePopup: null,
-    };
-
-    const monthNames = [
-        chrome.i18n.getMessage('monthJanuary') || 'January',
-        chrome.i18n.getMessage('monthFebruary') || 'February',
-        chrome.i18n.getMessage('monthMarch') || 'March',
-        chrome.i18n.getMessage('monthApril') || 'April',
-        chrome.i18n.getMessage('monthMay') || 'May',
-        chrome.i18n.getMessage('monthJune') || 'June',
-        chrome.i18n.getMessage('monthJuly') || 'July',
-        chrome.i18n.getMessage('monthAugust') || 'August',
-        chrome.i18n.getMessage('monthSeptember') || 'September',
-        chrome.i18n.getMessage('monthOctober') || 'October',
-        chrome.i18n.getMessage('monthNovember') || 'November',
-        chrome.i18n.getMessage('monthDecember') || 'December',
-    ];
-
-    const hidePopups = () => {
-        calendarPopup.classList.add('hidden');
-        timePopup.classList.add('hidden');
-        state.activeTrigger = null;
-        state.activePopup = null;
-    };
-
-    const updatePopupPosition = () => {
-        if (!state.activeTrigger || !state.activePopup || state.activePopup.classList.contains('hidden')) return;
-        const rect = state.activeTrigger.getBoundingClientRect();
-        const popupWidth = state.activePopup.offsetWidth;
-        const popupHeight = state.activePopup.offsetHeight;
-        const padding = 5;
-        let top = rect.bottom + padding;
-        if (top + popupHeight > window.innerHeight) top = rect.top - popupHeight - padding;
-        let left = rect.left;
-        if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - padding;
-        state.activePopup.style.top = `${top}px`;
-        state.activePopup.style.left = `${Math.max(padding, left)}px`;
-    };
-
-    const renderCalendar = () => {
-        const monthYearEl = calendarPopup.querySelector('#cookie-cal-month-year');
-        const gridEl = calendarPopup.querySelector('#cookie-calendar-days-grid');
-        const year = state.calCurrentDate.getFullYear();
-        const month = state.calCurrentDate.getMonth();
-        monthYearEl.textContent = `${monthNames[month]} ${year}`;
-        gridEl.innerHTML = '';
-        const fragment = document.createDocumentFragment();
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const selectedDate = state.activeTrigger?.dataset?.selectedDate;
-        for (let i = 0; i < firstDay; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'calendar-day empty';
-            fragment.appendChild(empty);
-        }
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dayEl = document.createElement('div');
-            dayEl.className = 'calendar-day';
-            dayEl.textContent = day;
-            const formatted = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            if (selectedDate === formatted) dayEl.classList.add('selected');
-            dayEl.addEventListener(
-                'click',
-                (e) => {
-                    e.stopPropagation();
-                    state.activeTrigger.dataset.selectedDate = formatted;
-                    state.activeTrigger.textContent = formatted;
-                    hidePopups();
-                },
-                { signal },
-            );
-            fragment.appendChild(dayEl);
-        }
-        gridEl.appendChild(fragment);
-    };
-
-    const updateTimeTrigger = () => {
-        if (!state.activeTrigger) return;
-        let hh = inputHour.value.replace(/\D/g, '');
-        let mm = inputMinute.value.replace(/\D/g, '');
-        if (hh !== '' && parseInt(hh, 10) > 23) hh = '23';
-        if (mm !== '' && parseInt(mm, 10) > 59) mm = '59';
-        state.activeTrigger.textContent = `${hh.padStart(2, '0').slice(-2)}:${mm.padStart(2, '0').slice(-2)}`;
-    };
-
-    modalOverlay.addEventListener(
-        'click',
-        (e) => {
-            const dateTrigger = e.target.closest('.cookie-expiration-date-trigger');
-            const timeTrigger = e.target.closest('.cookie-expiration-time-trigger');
-            if (dateTrigger) {
-                e.stopPropagation();
-                if (!calendarPopup.classList.contains('hidden') && state.activeTrigger === dateTrigger) {
-                    hidePopups();
-                    return;
-                }
-                timePopup.classList.add('hidden');
-                state.activeTrigger = dateTrigger;
-                state.activePopup = calendarPopup;
-                calendarPopup.classList.remove('hidden');
-                renderCalendar();
-                requestAnimationFrame(() => updatePopupPosition());
-                return;
-            }
-            if (timeTrigger) {
-                e.stopPropagation();
-                if (!timePopup.classList.contains('hidden') && state.activeTrigger === timeTrigger) {
-                    hidePopups();
-                    return;
-                }
-                calendarPopup.classList.add('hidden');
-                state.activeTrigger = timeTrigger;
-                state.activePopup = timePopup;
-                const parts = timeTrigger.textContent.split(':');
-                if (timeTrigger.textContent === '00:00') {
-                    const now = new Date();
-                    inputHour.value = String(now.getHours()).padStart(2, '0');
-                    inputMinute.value = String(now.getMinutes()).padStart(2, '0');
-                } else {
-                    inputHour.value = parts[0] || '00';
-                    inputMinute.value = parts[1] || '00';
-                }
-                timePopup.classList.remove('hidden');
-                requestAnimationFrame(() => updatePopupPosition());
-            }
-        },
-        { signal },
-    );
-
-    calendarPopup.querySelector('#cookie-cal-prev-btn').addEventListener(
-        'click',
-        (e) => {
-            e.stopPropagation();
-            state.calCurrentDate.setMonth(state.calCurrentDate.getMonth() - 1);
-            renderCalendar();
-        },
-        { signal },
-    );
-    calendarPopup.querySelector('#cookie-cal-next-btn').addEventListener(
-        'click',
-        (e) => {
-            e.stopPropagation();
-            state.calCurrentDate.setMonth(state.calCurrentDate.getMonth() + 1);
-            renderCalendar();
-        },
-        { signal },
-    );
-    calendarPopup.querySelector('#cookie-cal-clear-btn').addEventListener(
-        'click',
-        (e) => {
-            e.stopPropagation();
-            if (state.activeTrigger?.classList.contains('cookie-expiration-date-trigger')) {
-                delete state.activeTrigger.dataset.selectedDate;
-                state.activeTrigger.innerHTML = '<span class="val-placeholder">YYYY-MM-DD</span>';
-            }
-            hidePopups();
-        },
-        { signal },
-    );
-
-    [inputHour, inputMinute].forEach((input) => {
-        input.addEventListener(
-            'input',
-            (ev) => {
-                let val = ev.target.value.replace(/\D/g, '');
-                if (input === inputHour && parseInt(val, 10) > 23) val = '23';
-                if (input === inputMinute && parseInt(val, 10) > 59) val = '59';
-                ev.target.value = val;
-                if (input === inputHour && val.length === 2) {
-                    inputMinute.focus();
-                    inputMinute.select();
-                }
-                updateTimeTrigger();
-            },
-            { signal },
-        );
-        input.addEventListener(
-            'blur',
-            () => {
-                if (input.value === '') input.value = '00';
-                input.value = input.value.padStart(2, '0');
-                updateTimeTrigger();
-            },
-            { signal },
-        );
-    });
-
-    timePopup.querySelectorAll('.time-arrow-btn').forEach((btn) => {
-        btn.addEventListener(
-            'click',
-            (e) => {
-                e.stopPropagation();
-                const unit = btn.dataset.unit;
-                const dir = btn.dataset.dir;
-                if (unit === 'hour') {
-                    let val = parseInt(inputHour.value, 10) || 0;
-                    val = dir === 'up' ? (val + 1) % 24 : (val - 1 + 24) % 24;
-                    inputHour.value = val.toString().padStart(2, '0');
-                } else {
-                    let val = parseInt(inputMinute.value, 10) || 0;
-                    val = dir === 'up' ? (val + 1) % 60 : (val - 1 + 60) % 60;
-                    inputMinute.value = val.toString().padStart(2, '0');
-                }
-                updateTimeTrigger();
-            },
-            { signal },
-        );
-    });
-
-    document.addEventListener(
-        'mousedown',
-        (e) => {
-            if (!modalOverlay.isConnected) return;
-            if (calendarPopup.contains(e.target) || timePopup.contains(e.target)) return;
-            if (e.target.closest('.cookie-expiration-date-trigger, .cookie-expiration-time-trigger')) return;
-            hidePopups();
-        },
-        { signal },
-    );
-
-    cookiePickerState = { abort };
 }
 
 export async function openCookieEditorModal(url) {
@@ -802,7 +558,13 @@ export function scrollToActiveGroupIfNeeded() {
         parentGroup.open = true;
     }
 
-    requestAnimationFrame(() => {
+    // Opening the group above changed the layout, so the measuring waits for the next
+    // frame — except that a page in a background tab gets no frames, and switching tabs
+    // in the browser is exactly when this runs. A timeout keeps the list positioned for
+    // when the panel comes back into view.
+    const measureWhenLaidOut = (fn) => (document.hidden ? setTimeout(fn, 0) : requestAnimationFrame(fn));
+
+    measureWhenLaidOut(() => {
         const containerRect = scrollableContainer.getBoundingClientRect();
         const tabRect = activeTabEl.getBoundingClientRect();
 
@@ -830,7 +592,9 @@ export function scrollToActiveGroupIfNeeded() {
 
         scrollableContainer.scrollTo({
             top: targetScrollTop,
-            behavior: 'smooth',
+            // A smooth scroll is animated frame by frame and a hidden page gets no
+            // frames, so it would never actually move; jump straight there instead.
+            behavior: document.hidden ? 'auto' : 'smooth',
         });
     });
 }
@@ -1125,16 +889,43 @@ export function exportCookiesFromModal() {
     exportCookies(cookieElements, url, { showNotification });
 }
 
+/**
+ * The stored shape of a backed-up group.
+ *
+ * `order` keeps the urls in the order the group had when it was put away. Tabs brought
+ * back one by one leave `tabs`, so this is what lets the card keep showing them in
+ * their place instead of moving them.
+ */
+function buildBackupObject(groupData, title, index) {
+    const tabs = groupData.tabs.map((t) => ({
+        url: t.url,
+        title: t.title,
+        favIconUrl: t.favIconUrl,
+        pinned: t.pinned,
+    }));
+    return {
+        group: { ...groupData.group, title },
+        tabs,
+        order: tabs.map((t) => t.url),
+        index: index >= 0 ? index : Infinity,
+        createdAt: Date.now(),
+    };
+}
+
 export async function handleBackupAllGroups() {
     const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
     const activeGroupId = activeTab ? activeTab.groupId : -1;
 
     const allGroupDataRaw = await fetchData();
     const $backedUpGroupData = get(backedUpGroupData);
+    // A group linked to a backup is already listed inside that backup's card, so it is
+    // not a separate group to put away.
+    const linked = linkedGroupIds($backedUpGroupData);
     const groupsToBackup = allGroupDataRaw.filter(
         (item) =>
             item.group.id !== activeGroupId &&
             !$backedUpGroupData.hasOwnProperty(item.group.id) &&
+            !linked.has(item.group.id) &&
             item.group.id !== -100,
     );
 
@@ -1154,20 +945,7 @@ export async function handleBackupAllGroups() {
         const groupTitleEl = groupEl ? groupEl.querySelector('.group-title') : null;
         const originalTitle = groupTitleEl ? groupTitleEl.dataset.baseName : groupData.group.title;
 
-        const backupObject = {
-            group: {
-                ...groupData.group,
-                title: originalTitle,
-            },
-            tabs: groupData.tabs.map((t) => ({
-                url: t.url,
-                title: t.title,
-                favIconUrl: t.favIconUrl,
-                pinned: t.pinned,
-            })),
-            index: originalIndex >= 0 ? originalIndex : Infinity,
-            createdAt: Date.now(),
-        };
+        const backupObject = buildBackupObject(groupData, originalTitle, originalIndex);
 
         const currentBackedUp = get(backedUpGroupData);
         currentBackedUp[groupData.group.id] = backupObject;
@@ -1241,8 +1019,17 @@ export async function handleRestoreSingleTab(groupId, tabToRestore) {
             await chrome.tabs.group({ groupId: targetGroupId, tabIds: [newTab.id] });
         }
 
-        const remaining = backupData.tabs.filter(
-            (t) => !(t.url === tabToRestore.url && t.title === tabToRestore.title),
+        const restoredIndex = backupData.tabs.findIndex(
+            (t) => t.url === tabToRestore.url && t.title === tabToRestore.title,
+        );
+        const remaining = backupData.tabs.filter((_, index) => index !== restoredIndex);
+
+        // The tab joins the list and leaves the backup in the same update: the row on
+        // the card only changes state, it is never removed and rebuilt.
+        const { groupStore } = await import('../stores/groupStore.js');
+        groupStore.adoptRestoredTab(
+            { ...backupData.group, id: targetGroupId },
+            { ...newTab, url: newTab.url || tabToRestore.url, title: newTab.title || tabToRestore.title },
         );
 
         if (remaining.length === 0) {
@@ -1290,20 +1077,7 @@ export async function handleBackupGroup(groupId) {
     const groupTitleEl = groupEl ? groupEl.querySelector('.group-title') : null;
     const originalTitle = groupTitleEl ? groupTitleEl.dataset.baseName : groupData.group.title;
 
-    const backupObject = {
-        group: {
-            ...groupData.group,
-            title: originalTitle,
-        },
-        tabs: groupData.tabs.map((t) => ({
-            url: t.url,
-            title: t.title,
-            favIconUrl: t.favIconUrl,
-            pinned: t.pinned,
-        })),
-        index: originalIndex >= 0 ? originalIndex : Infinity,
-        createdAt: Date.now(),
-    };
+    const backupObject = buildBackupObject(groupData, originalTitle, originalIndex);
 
     const currentBackedUp = get(backedUpGroupData);
     currentBackedUp[groupId] = backupObject;
@@ -1372,17 +1146,13 @@ export async function handleRestoreGroup(groupId, suppressNotification = false, 
             color: backupData.group.color,
         });
 
-        if (groupEl) {
-            groupEl.dataset.groupId = newGroupId;
-        }
-
         const currentRestored = get(restoredGroupIds);
         currentRestored.add(newGroupId);
         restoredGroupIds.set(currentRestored);
 
-        const currentBackedUp = get(backedUpGroupData);
-        delete currentBackedUp[groupId];
-        backedUpGroupData.set(currentBackedUp);
+        backedUpGroupData.update((all) =>
+            Object.fromEntries(Object.entries(all).filter(([id]) => id !== String(groupId))),
+        );
 
         await deleteBackupFromDb(groupId);
 
@@ -1468,14 +1238,10 @@ export async function fetchData() {
     const allGroupsRaw = await chrome.tabGroups.query({});
     const allTabs = await getValidStandardTabs();
 
-    const $backedUpGroupData = get(backedUpGroupData);
-    const linkedGroupIds = new Set(
-        Object.values($backedUpGroupData)
-            .map((backup) => backup.linkedGroupId)
-            .filter(Boolean),
-    );
-
-    const groups = allGroupsRaw.filter((group) => !linkedGroupIds.has(group.id));
+    // Groups holding tabs restored from a backup are not filtered out here: the list
+    // needs their tabs to show them inside the backup card they came from, which is
+    // where withBackups() places them.
+    const groups = allGroupsRaw;
 
     const tabsByGroupId = {};
     const ungroupedTabs = [];
@@ -1677,21 +1443,13 @@ export async function deleteAllTabsInSubgroup(tabs) {
 }
 
 export async function hideGroup(groupId) {
-    const numericId = parseInt(groupId, 10);
-    const currentHidden = get(hiddenGroupIds);
-    currentHidden.add(numericId);
-    hiddenGroupIds.set(currentHidden);
-    await saveState();
-    await renderGroups();
+    const { listGroupStore } = await import('../stores/listGroupStore.js');
+    await listGroupStore.actions.hideGroup(groupId);
 }
 
 export async function unhideGroup(groupId) {
-    const numericId = parseInt(groupId, 10);
-    const currentHidden = get(hiddenGroupIds);
-    currentHidden.delete(numericId);
-    hiddenGroupIds.set(currentHidden);
-    await saveState();
-    await renderGroups();
+    const { listGroupStore } = await import('../stores/listGroupStore.js');
+    await listGroupStore.actions.unhideGroup(groupId);
 }
 
 export async function togglePinState(groupId) {

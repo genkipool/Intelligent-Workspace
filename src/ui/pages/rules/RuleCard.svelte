@@ -3,12 +3,15 @@
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
+    import { showUrlTooltip, hideUrlTooltip } from './urlTooltip.js';
 
     let {
         rule,
         index,
         isExpanded = false,
         isAlphaSort = false,
+        isDraggable = true,
+        isDragging = false,
         searchTerm = '',
         onupdateRuleName,
         ontoggleExpand,
@@ -23,6 +26,7 @@
         onoverflowchange,
         ondragstart,
         ondragover,
+        ondragend,
         ondrop,
     } = $props();
 
@@ -213,6 +217,37 @@
         showNotification('urlUpdateCancelled');
     }
 
+    // The edit/delete icons only exist visually while the row is hovered or focused, and
+    // an element that is display:none is skipped by the arrow-key navigation. Keeping the
+    // row's focus state here is what puts those two icons back on the keyboard path.
+    let focusedUrlIndex = $state(-1);
+
+    function handleUrlFocusIn(urlIndex) {
+        focusedUrlIndex = urlIndex;
+    }
+
+    function handleUrlFocusOut(e, urlIndex) {
+        const next = e.relatedTarget;
+        if ((!next || !e.currentTarget.contains(next)) && focusedUrlIndex === urlIndex) {
+            focusedUrlIndex = -1;
+        }
+    }
+
+    /** Tab walks link → edit icon → delete icon inside the row, as in the original. */
+    function handleUrlKeydown(e) {
+        if (e.key !== 'Tab') return;
+        const wrapper = e.currentTarget;
+        const link = wrapper.querySelector('.rule-urls');
+        const editIcon = wrapper.querySelector('.edit-icon');
+        if (e.target === link && !e.shiftKey && editIcon) {
+            e.preventDefault();
+            editIcon.focus();
+        } else if (e.target.closest('.edit-icon') && e.shiftKey && link) {
+            e.preventDefault();
+            link.focus();
+        }
+    }
+
     function changeColor(e) {
         const rect = e?.currentTarget?.getBoundingClientRect();
         // Anchored to the RIGHT of the
@@ -220,9 +255,17 @@
         onchangeColor?.({ index, x: rect ? rect.right + 5 : 0, y: rect ? rect.top : 0 });
     }
 
-    function copyRuleUrls() {
+    /** Copying is silent otherwise, so it looks as if the click did nothing. */
+    async function copyRuleUrls() {
         const urls = rule.urls || [];
-        navigator.clipboard.writeText(urls.join('\n'));
+        if (urls.length === 0) return;
+        try {
+            await navigator.clipboard.writeText(urls.join('\n'));
+            showNotification('urlsCopied', false, [urls.length]);
+        } catch (error) {
+            console.error('Error copying URLs:', error);
+            showNotification('errorCopying', true);
+        }
     }
 
     function openAllUrls() {
@@ -486,8 +529,10 @@
     class="rule-item"
     data-index={index}
     class:expanded={isExpanded}
+    class:dragging={isDragging}
     onclick={handleCardClick}
     {ondragover}
+    {ondragend}
     {ondrop}
 >
     <div class="rule-info" class:header-expanded={isExpanded} class:is-empty={!rule.urls || rule.urls.length === 0}>
@@ -516,7 +561,7 @@
         </button>
         <button
             class="drag-handle"
-            draggable="true"
+            draggable={isDraggable}
             tabindex="0"
             type="button"
             title={$tt('reorderRule')}
@@ -574,6 +619,10 @@
                     openAllUrls();
                 }}
                 onkeydown={(e) => e.key === 'Enter' && copyRuleUrls()}
+                onmouseenter={(e) => showUrlTooltip(e.currentTarget, rule.urls)}
+                onmouseleave={hideUrlTooltip}
+                onfocus={(e) => showUrlTooltip(e.currentTarget, rule.urls)}
+                onblur={hideUrlTooltip}
             >
                 {@render highlighted(rule.name)}
             </h3>
@@ -586,14 +635,9 @@
             style="display: {isExpanded ? 'inline-block' : 'none'};"
             title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabeticallyButton')}
         >
-            <svg
-                viewBox="0 0 24 24"
-                width="28"
-                height="28"
-                style="color: var(--border-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
+            <!-- The icon is drawn with currentColor, so the pressed state is a colour
+                 change on the svg and lives in the shared stylesheet. -->
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
                 <use href="#icon-sort"></use>
             </svg>
         </button>
@@ -633,7 +677,14 @@
             <span class="rule-urls">{$t('noUrlsAssociated') || 'No URLs associated'}</span>
         {:else}
             {#each renderedUrls as url, urlIndex (url)}
-                <div class="rule-urls-wrapper" data-url={url} data-url-index={urlIndex}>
+                <div
+                    class="rule-urls-wrapper"
+                    data-url={url}
+                    data-url-index={urlIndex}
+                    onfocusin={() => handleUrlFocusIn(urlIndex)}
+                    onfocusout={(e) => handleUrlFocusOut(e, urlIndex)}
+                    onkeydown={handleUrlKeydown}
+                >
                     {#if editingDomainIndex === urlIndex}
                         <!--
                             The editor keeps the size the link had, otherwise swapping it
@@ -673,7 +724,7 @@
                             onclick={(e) => handleUrlClick(e, url)}>{@render highlighted(displayText(url))}</a
                         >
                     {/if}
-                    <div class="icons-container">
+                    <div class="icons-container" class:focus-visible={focusedUrlIndex === urlIndex}>
                         <button class="edit-icon" type="button" tabindex="0" title={$tt('editDomain')}>
                             <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
                                 <use href="#icon-url-edit"></use>

@@ -153,11 +153,26 @@
                                 <div class="saved-api-key-item" class:has-quota-error={keyData.hasQuotaError}>
                                     <div class="saved-api-key-header">
                                         <div class="api-key-name-wrapper">
-                                            <span class="api-key-name-display"
-                                                >{keyData.name || $t('geminiApiKeyNameDefault')}</span
-                                            >
+                                            <input
+                                                type="text"
+                                                class="api-key-name-input"
+                                                value={keyData.name || $t('geminiApiKeyNameDefault')}
+                                                placeholder={$t('geminiApiKeyName')}
+                                                maxlength="50"
+                                                title={keyData.name || $t('geminiApiKeyNameDefault')}
+                                                onchange={async (e) => {
+                                                    const newName = e.currentTarget.value.trim() || $t('geminiApiKeyNameDefault');
+                                                    e.currentTarget.value = newName;
+                                                    e.currentTarget.title = newName;
+                                                    const { geminiApiKeysList = [] } = await chrome.storage.local.get('geminiApiKeysList');
+                                                    if (geminiApiKeysList[i]) {
+                                                        geminiApiKeysList[i].name = newName;
+                                                        await chrome.storage.local.set({ geminiApiKeysList });
+                                                    }
+                                                }}
+                                            />
                                             {#if keyData.hasQuotaError}
-                                                <span class="api-key-quota-badge"
+                                                <span class="api-key-quota-badge" style="margin-left:6px; font-size:0.72em; color:var(--error-color); font-weight:bold; white-space:nowrap;"
                                                     >{$t('geminiQuotaErrorIndicator')}</span
                                                 >
                                             {/if}

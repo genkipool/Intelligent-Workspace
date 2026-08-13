@@ -9,11 +9,15 @@ export const sortAlphaStore = writable(false);
 export const searchQueryStore = writable('');
 
 export async function initializeRules() {
-    const [syncData, expansionData] = await Promise.all([getRuleStorage(), getSettings(['isAllExpanded'])]);
+    const [syncData, expansionData] = await Promise.all([
+        getRuleStorage(),
+        getSettings(['isAllExpanded', 'sortAlphaPreference']),
+    ]);
 
     const rules = syncData?.customRules || [];
     rulesStore.set(rules);
     isAllExpandedStore.set(expansionData?.isAllExpanded || false);
+    sortAlphaStore.set(expansionData?.sortAlphaPreference || false);
 
     if (rules.length > 0) {
         const sortStateKeys = rules.map((rule) => `sortState_${rule.name}`);

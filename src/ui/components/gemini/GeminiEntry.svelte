@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { geminiStore } from '../../stores/geminiStore.js';
+    import { isCtrlHeld } from '../../stores/modifierKeysStore.js';
     import { renderGeminiResponse } from '../../content-renderer/content-renderer.js';
 
     let {
@@ -99,6 +100,7 @@
 
 <details
     class="entry-card gemini-entry"
+    data-entry-id={entry?.id}
     class:loading={entry?.isLoading}
     class:editing={isEditing}
     bind:this={entryEl}
@@ -150,7 +152,8 @@
                     class="read-aloud-btn action-btn"
                     class:reading={isSpeaking}
                     class:paused={isPaused}
-                    title={$tt('readAloud')}
+                    class:ctrl-held={isSpeaking && $isCtrlHeld}
+                    title={$tt(isSpeaking ? 'stopReadingAloud' : 'readAloud')}
                     onclick={(e) => {
                         e.stopPropagation();
                         handleReadAloud(e);

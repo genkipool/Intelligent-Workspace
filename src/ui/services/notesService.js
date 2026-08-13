@@ -50,6 +50,7 @@ import {
 } from '../stores/appStore.svelte.js';
 
 import { listGroupStore } from '../stores/listGroupStore.js';
+import { createUtterance, startKeepAlive, splitIntoSpeechChunks } from './speechService.js';
 
 import { fetchData, renderGroups, updateDuplicateCountBadge } from './groupsService.js';
 import { htmlToSpeechText } from './geminiService.js';
@@ -66,10 +67,13 @@ import {
 import { applySearchAndFilter } from './searchService.js';
 import { showScreenshotGallery } from './screenshotsService.js';
 
-export async function updateOrphanIndicators() {
-    const hiddenContextContainer = document.getElementById('hidden-context-container');
-    if (!hiddenContextContainer) return;
-
+/**
+ * The notes and screenshots whose group or subgroup no longer exists.
+ *
+ * They are what the indicators at the top of the list count, and what the orphan
+ * views show, so both read them from here.
+ */
+export async function getOrphanContent() {
     const allGroupDataRaw = await fetchData();
     const groupInfoMap = await getGroupInfoMap();
 
@@ -94,9 +98,15 @@ export async function updateOrphanIndicators() {
         }
 
         const groupInfo = groupInfoMap.get(item.group.id);
-        if (!groupInfo || !groupInfo.key) continue;
-
-        existingContextKeys.add(`g_${groupInfo.key}`);
+        // The key the notes were filed under comes from the background's map, but a
+        // group re-created by hand is on screen before the background has registered
+        // it. Its title is the key a manual group gets, so counting it too is what
+        // sends the notes home as soon as the group is back.
+        const keys = new Set();
+        if (groupInfo?.key) keys.add(groupInfo.key);
+        const titleKey = (item.group.title || '').replace(/\u200B/g, '').trim();
+        if (titleKey) keys.add(titleKey);
+        if (keys.size === 0) continue;
 
         const domainsInGroup = new Set(
             item.tabs
@@ -109,7 +119,11 @@ export async function updateOrphanIndicators() {
                 })
                 .filter(Boolean),
         );
-        domainsInGroup.forEach((domain) => existingContextKeys.add(`s_${groupInfo.key}_${domain}`));
+
+        for (const key of keys) {
+            existingContextKeys.add(`g_${key}`);
+            domainsInGroup.forEach((domain) => existingContextKeys.add(`s_${key}_${domain}`));
+        }
     }
 
     const allNoteIds = await getAllNoteIdsFromDb();
@@ -127,6 +141,104 @@ export async function updateOrphanIndicators() {
     const orphanScreenshots = allScreenshots.filter(
         (screenshot) => screenshot.contextKey && !existingContextKeys.has(screenshot.contextKey),
     );
+
+    return { orphanNotes, orphanScreenshots };
+}
+
+/**
+ * Files every stored note and screenshot under the session key of the group that owns
+ * it right now.
+ *
+ * Notes and images are saved in the database against a stable key built from the group
+ * title, but the views look them up by the group's numeric id of this session. Delete a
+ * group and create it again and that number changes, so its content stayed unreachable
+ * from the card even though it was never lost. The original rebuilt this map on every
+ * render; this is that pass.
+ */
+export async function syncContentSessionKeys() {
+    const allGroupData = await fetchData();
+    const groupInfoMap = await getGroupInfoMap();
+
+    const normalizeText = (text) =>
+        !text
+            ? ''
+            : text
+                  .replace(/^(g_|s_)/, '')
+                  .replace(/[\u200B\s]+/g, '')
+                  .trim();
+
+    const nameToGroupIdMap = new Map();
+    for (const [id, info] of groupInfoMap.entries()) {
+        nameToGroupIdMap.set(String(id), id);
+        if (info.key) nameToGroupIdMap.set(normalizeText(info.key), id);
+        if (info.title) nameToGroupIdMap.set(normalizeText(info.title), id);
+    }
+    allGroupData.forEach((item) => {
+        nameToGroupIdMap.set(String(item.group.id), item.group.id);
+        const cleanTitle = normalizeText(item.group.title);
+        if (cleanTitle) nameToGroupIdMap.set(cleanTitle, item.group.id);
+    });
+
+    const knownGroupNames = Array.from(nameToGroupIdMap.keys()).sort((a, b) => b.length - a.length);
+
+    const resolveSessionKeyFromDbKey = (dbContextKey) => {
+        if (!dbContextKey) return null;
+        if (dbContextKey.includes('ungrouped')) return dbContextKey;
+
+        if (dbContextKey.startsWith('g_')) {
+            const nameInDb = normalizeText(dbContextKey);
+            if (nameToGroupIdMap.has(nameInDb)) return `g_${nameToGroupIdMap.get(nameInDb)}`;
+        } else if (dbContextKey.startsWith('s_')) {
+            const content = dbContextKey.substring(2);
+            for (const groupName of knownGroupNames) {
+                if (groupName && normalizeText(content).startsWith(groupName)) {
+                    const parts = content.split('_');
+                    return `s_${nameToGroupIdMap.get(groupName)}_${parts[parts.length - 1]}`;
+                }
+            }
+        }
+        return null;
+    };
+
+    const { [STORAGE_KEYS.NOTES]: notesData = {} } = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
+    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
+        STORAGE_KEYS.SCREENSHOTS,
+    );
+
+    const fileUnderSessionKey = (index, item) => {
+        const sessionKey = resolveSessionKeyFromDbKey(item.contextKey);
+        if (!sessionKey) return;
+        if (!index[sessionKey]) index[sessionKey] = [];
+        if (!index[sessionKey].includes(item.id)) index[sessionKey].push(item.id);
+    };
+
+    const noteIds = await getAllNoteIdsFromDb();
+    const notes = (await Promise.all(noteIds.map((id) => getNoteFromDb(id)))).filter(Boolean);
+    notes.forEach((note) => fileUnderSessionKey(notesData, note));
+
+    const screenshotIds = await getAllScreenshotIdsFromDb();
+    const screenshots = (await Promise.all(screenshotIds.map((id) => getScreenshotFromDb(id)))).filter(Boolean);
+    screenshots.forEach((screenshot) => fileUnderSessionKey(screenshotData, screenshot));
+
+    await chrome.storage.session.set({
+        [STORAGE_KEYS.NOTES]: notesData,
+        [STORAGE_KEYS.SCREENSHOTS]: screenshotData,
+    });
+}
+
+export async function getOrphanNotes() {
+    return (await getOrphanContent()).orphanNotes;
+}
+
+export async function getOrphanScreenshots() {
+    return (await getOrphanContent()).orphanScreenshots;
+}
+
+export async function updateOrphanIndicators() {
+    const hiddenContextContainer = document.getElementById('hidden-context-container');
+    if (!hiddenContextContainer) return;
+
+    const { orphanNotes, orphanScreenshots } = await getOrphanContent();
 
     const currentNotesIndicator = hiddenContextContainer.querySelector('#orphan-notes-btn');
     if (orphanNotes.length > 0) {
@@ -288,16 +400,7 @@ export function getNoteHandlers(context) {
                 isSpeechPaused.set(false);
                 const existingInterval = get(speechKeepAliveInterval);
                 if (existingInterval) clearInterval(existingInterval);
-                speechKeepAliveInterval.set(
-                    setInterval(() => {
-                        if (speechSynthesis.speaking && !speechSynthesis.paused) {
-                            speechSynthesis.pause();
-                            speechSynthesis.resume();
-                        } else if (!speechSynthesis.speaking) {
-                            clearInterval(get(speechKeepAliveInterval));
-                        }
-                    }, 10000),
-                );
+                speechKeepAliveInterval.set(startKeepAlive());
                 return;
             }
 
@@ -362,8 +465,7 @@ export function getNoteHandlers(context) {
                         break;
                 }
 
-                const sentences = textToRead.match(/[^.!?]+[.!?]*|[^.!?\s]+/g) || [];
-                textChunks = sentences.map((s) => s.trim()).filter(Boolean);
+                textChunks = splitIntoSpeechChunks(textToRead);
                 if (textChunks.length === 0) return;
 
                 const speakNextChunk = () => {
@@ -372,9 +474,8 @@ export function getNoteHandlers(context) {
                         return;
                     }
                     const chunk = textChunks[currentChunkIndex];
-                    currentSpeechUtterance.set(new SpeechSynthesisUtterance(chunk));
+                    currentSpeechUtterance.set(createUtterance(chunk));
                     const utterance = get(currentSpeechUtterance);
-                    utterance.lang = chrome.i18n.getUILanguage() || 'en-US';
                     utterance.onend = speakNextChunk;
                     utterance.onerror = (event) => {
                         const interval = get(speechKeepAliveInterval);
@@ -395,16 +496,7 @@ export function getNoteHandlers(context) {
 
                 const existingInterval = get(speechKeepAliveInterval);
                 if (existingInterval) clearInterval(existingInterval);
-                speechKeepAliveInterval.set(
-                    setInterval(() => {
-                        if (speechSynthesis.speaking && !speechSynthesis.paused) {
-                            speechSynthesis.pause();
-                            speechSynthesis.resume();
-                        } else if (!speechSynthesis.speaking) {
-                            clearInterval(get(speechKeepAliveInterval));
-                        }
-                    }, 10000),
-                );
+                speechKeepAliveInterval.set(startKeepAlive());
             }
         },
         onFilter: handleNoteFilter,
@@ -675,9 +767,20 @@ export async function deleteNote(noteId) {
     showNotification('noteDeleted');
 
     if (get(isNotesViewActive)) {
-        await showNotesView(get(currentNotesContext));
+        const context = get(currentNotesContext);
+        if (context?.type === 'orphan') {
+            // Orphans are not filed under any context key, so asking for them by
+            // context returns nothing and the view emptied after deleting one note.
+            // What is left is every note whose context no longer exists.
+            const remaining = await getOrphanNotes();
+            if (remaining.length > 0) await showNotesView(context, remaining);
+            else await closeNotesView();
+        } else {
+            await showNotesView(context);
+        }
     }
 
+    await updateOrphanIndicators();
     await renderGroups();
 }
 
@@ -899,9 +1002,11 @@ export function initNotesEvents() {
     if (addNoteViewBtn) {
         addNoteViewBtn.addEventListener('click', () => {
             const ctx = get(currentNotesContext);
-            if (ctx) {
-                openNoteModal(ctx);
-            }
+            if (!ctx) return;
+            // An orphan note belongs to a group that is gone, so there is nothing to
+            // file a new one under; the ungrouped context is the one that is always
+            // there, and it is where the note lands.
+            openNoteModal(ctx.type === 'orphan' ? { type: 'group', id: -100 } : ctx);
         });
     }
 

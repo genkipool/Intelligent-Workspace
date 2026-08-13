@@ -16,7 +16,19 @@
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings, backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
 
-    let { group = {}, tabs = [], isPinned = false, renderContext = {}, isBackup = false } = $props();
+    /**
+     * `liveTabs` are the tabs already restored from this backup: real tabs again.
+     * `backupRows` is the card's list, already merged and ordered by the store.
+     */
+    let {
+        group = {},
+        tabs = [],
+        liveTabs = [],
+        backupRows = [],
+        isPinned = false,
+        renderContext = {},
+        isBackup = false,
+    } = $props();
 
     // Derived values from renderContext
     let seenTabIds = $derived(renderContext.seenTabIds || new Set());
@@ -65,6 +77,8 @@
         return name;
     });
     let tabCount = $derived(tabs.length);
+    // A backup card counts how many of its tabs are back in the browser.
+    let backupCount = $derived(`${liveTabs.length} / ${liveTabs.length + tabs.length}`);
     let seenCount = $derived(tabs.filter((t) => seenTabIds.has(t.id)).length);
     let isAllSeen = $derived(seenCount === tabCount && tabCount > 0);
 
@@ -84,11 +98,6 @@
 
     let domains = $derived(Object.keys(subGroupsMap));
     let hasSubgroups = $derived(tabs.length > 1 && domains.length > 1);
-
-    // A backed-up tab is stored without a tab id — it no longer exists in the browser —
-    // so the list is keyed by its position and url instead. Keying it by the missing id
-    // made every key `undefined`, and the whole card failed to render.
-    let backupTabs = $derived(tabs.map((tab, index) => ({ tab, key: `${index}-${tab.url}` })));
 
     // Native Svelte Action for Drag and Drop
     function useDraggable(node) {
@@ -339,7 +348,11 @@
         >
             {displayTitle}
         </h3>
-        <span class="group-tab-count" class:all-seen={isAllSeen}>{seenCount}/{tabCount}</span>
+        {#if isBackup}
+            <span class="group-tab-count">{backupCount}</span>
+        {:else}
+            <span class="group-tab-count" class:all-seen={isAllSeen}>{seenCount}/{tabCount}</span>
+        {/if}
 
         <div class="group-actions" bind:this={groupActionsEl}>
             <div
@@ -376,6 +389,7 @@
             </div>
             <div
                 class="hide-group-btn action-btn"
+                class:hidden={isUngrouped || isBackup}
                 role="button"
                 tabindex="0"
                 title={$tt('hideGroup')}
@@ -426,8 +440,13 @@
 
     <div class="tab-list-container">
         {#if isBackup}
-            {#each backupTabs as { tab, key } (key)}
-                <TabItem {tab} {renderContext} groupContext={{ type: 'backup', id: group.id }} isBackup={true} />
+            {#each backupRows as row (row.key)}
+                <TabItem
+                    tab={row.tab}
+                    {renderContext}
+                    groupContext={{ type: row.isBackup ? 'backup' : 'group', id: group.id }}
+                    isBackup={row.isBackup}
+                />
             {/each}
         {:else if hasSubgroups}
             {#each domains as domain (domain)}

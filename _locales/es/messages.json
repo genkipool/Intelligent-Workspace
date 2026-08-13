@@ -1439,6 +1439,10 @@
     "message": "Reportar un Problema en GitHub",
     "description": "Informar de un problema en GitHub"
   },
+  "viewSourceCode": {
+    "message": "Ver el Código en GitHub",
+    "description": "Abrir el repositorio público del proyecto en GitHub"
+  },
   "sendAnEmail": {
     "message": "Enviar un Correo Electrónico",
     "description": "Enviar un correo al desarrollador"
@@ -5575,6 +5579,16 @@
   "omnibarPrefixTutorial": {
     "message": "Mini tutorial de uso Omnibar"
   },
+  "omnibarPrefixSiteSearchDesc": {"message": "Buscar en $SITE$", "placeholders": {"site": {"content": "$1"}}},
+  "omnibarPrefixGoogleTitle": {"message": "Google"},
+  "omnibarPrefixYouTubeTitle": {"message": "YouTube"},
+  "omnibarPrefixDuckDuckGoTitle": {"message": "DuckDuckGo"},
+  "omnibarPrefixWikipediaTitle": {"message": "Wikipedia"},
+  "omnibarPrefixGoogleMapsTitle": {"message": "Google Maps"},
+  "omnibarPrefixXTitle": {"message": "X"},
+  "omnibarPrefixAmazonTitle": {"message": "Amazon"},
+  "omnibarPrefixAmazonESTitle": {"message": "Amazon España"},
+  "omnibarNoMatchingPrefixes": {"message": "Ningún comando coincide"},
   "omnibarPrefixTutorialTitle": {
     "message": "Tutorial de la Omnibar"
   },
@@ -6492,7 +6506,7 @@
   },
   "resendQuery": {
     "message": "Reenviar consulta",
-    "description": "Tooltip del botón de reenvío en cada entrada"
+    "description": "Vuelve a enviar esta consulta y sustituye su respuesta"
   },
   "toolGetOpenTabs": {
     "message": "📋 Obteniendo pestañas abiertas…"
@@ -7798,6 +7812,18 @@
   "linkPreviewDisabledNotify": {
     "message": "Vista previa de enlaces desactivada"
   },
+  "linkPreviewToggleLabel": {
+    "message": "Vista previa de enlaces",
+    "description": "Activa o desactiva la vista previa de enlaces"
+  },
+  "linkPreviewToggleEnable": {
+    "message": "Activar la vista previa de enlaces",
+    "description": "Activar la vista previa de enlaces"
+  },
+  "linkPreviewToggleDisable": {
+    "message": "Desactivar la vista previa de enlaces",
+    "description": "Desactivar la vista previa de enlaces"
+  },
   "blacklistDomainTitle": {
     "message": "Deshabilitar vista previa en este sitio"
   },
@@ -7898,16 +7924,16 @@
     "message": "Picture-in-Picture (Vídeo): Abre vídeos de YouTube, YouTube Shorts y otros sitios web directamente en una ventana flotante y redimensionable."
   },
   "omnibarPrefixBackupTitle": {
-    "message": "Copias de seguridad"
+    "message": "Restaurar copias de seguridad"
   },
   "omnibarPrefixBackupDesc": {
-    "message": "Guaardar copia de seguridad de los grupos seleccionados"
+    "message": "Busca y restaura los grupos y pestañas respaldados"
   },
   "omnibarPrefixBackupNowTitle": {
     "message": "Respaldar grupos"
   },
   "omnibarPrefixBackupNowDesc": {
-    "message": "Restaurar copia de seguridad de los grupos y pestañas seleccionados"
+    "message": "Guarda una copia de seguridad de los grupos seleccionados"
   },
   "omnibarLoadingBackups": {
     "message": "Cargando copias de seguridad..."

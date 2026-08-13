@@ -9,7 +9,20 @@ import {
     showGeminiScheduleModal,
 } from './modalStore.js';
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
-import { isGeminiViewActive as appIsGeminiViewActive } from './appStore.svelte.js';
+import { parseMarkdown } from '../content-renderer/content-renderer.js';
+import {
+    isGeminiViewActive as appIsGeminiViewActive,
+    currentlySpeakingEntryId as noteSpeakingEntryId,
+    isSpeechPaused as noteSpeechPaused,
+    speechKeepAliveInterval as noteKeepAliveInterval,
+} from './appStore.svelte.js';
+import {
+    createUtterance,
+    startKeepAlive,
+    stopKeepAlive,
+    splitIntoSpeechChunks,
+    cancelSpeech,
+} from '../services/speechService.js';
 
 const STORAGE_KEYS = {
     API_KEY: 'geminiApiKey',
@@ -19,6 +32,28 @@ const STORAGE_KEYS = {
 };
 
 export const MAX_GEMINI_SCHEDULES = 7;
+
+/** Speaker id used when the controls bar reads the whole conversation instead of one entry. */
+export const CONVERSATION_SPEECH_ID = '__conversation__';
+
+/**
+ * The notes reader keeps the state of its buttons in the DOM. When the assistant takes
+ * the synthesizer over, that state has to be released or a note button stays lit with
+ * nothing being read.
+ */
+function releaseDomReaders() {
+    document.querySelectorAll('.read-aloud-btn.reading').forEach((btn) => {
+        btn.classList.remove('reading', 'paused', 'ctrl-held');
+        btn.setAttribute('data-i18n-title', 'readAloud');
+    });
+    const interval = get(noteKeepAliveInterval);
+    if (interval) {
+        clearInterval(interval);
+        noteKeepAliveInterval.set(null);
+    }
+    noteSpeakingEntryId.set(null);
+    noteSpeechPaused.set(false);
+}
 
 function createGeminiStore() {
     const state = writable({
@@ -312,20 +347,12 @@ function createGeminiStore() {
 
         closeView: async (isSwitchingView = false) => {
             cancelAgentQuery();
-            if (typeof speechSynthesis !== 'undefined') {
-                if (speechSynthesis.speaking || speechSynthesis.pending) {
-                    speechSynthesis.cancel();
-                }
-            }
+            cancelSpeech();
+            geminiStore.resetGlobalSpeechState();
             update((st) => ({
                 ...st,
                 isViewActive: false,
                 _returnToMainView: !isSwitchingView,
-                isGlobalPlaybackActive: false,
-                globalPlaybackChunks: [],
-                currentGlobalChunkIndex: 0,
-                currentlySpeakingEntryId: null,
-                isSpeechPaused: false,
             }));
             appIsGeminiViewActive.set(false);
         },
@@ -432,6 +459,11 @@ function createGeminiStore() {
                 }));
             }
 
+            // The question just gave the conversation a name and a place in the list, so
+            // the selector has to be told about it: until this ran, a brand new
+            // conversation stayed nameless and the button kept saying "select one".
+            await updateCombinedConversationDisplay();
+
             chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
 
             setSendButtonBusy(true);
@@ -468,7 +500,12 @@ function createGeminiStore() {
                             }));
                             await deleteGeminiEntryFromDb(newEntry.id);
                             chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-                            return { error: errorMsg };
+                            // The card is dropped so no half-answer is left behind, but the
+                            // reason has to be shown: a quota or connection error used to
+                            // leave the question simply vanishing with no explanation.
+                            const { showErrorView } = await import('../services/viewsService.js');
+                            showErrorView(errorMsg);
+                            return;
                         }
 
                         // Replaced rather than mutated: the view is keyed on these entry
@@ -584,19 +621,27 @@ function createGeminiStore() {
                 }
             }
 
+            // A saved conversation carries its entries; a session one only carries their
+            // ids. Going by the ids whenever the entries are missing keeps a conversation
+            // from opening empty just because it was not flagged as temporary.
             let history;
-            if (conversation.isTemporary) {
-                const entryIds = new Set(conversation.entryIds);
+            if (Array.isArray(conversation.entries) && conversation.entries.length > 0) {
+                history = conversation.entries;
+            } else {
+                const entryIds = new Set(conversation.entryIds || []);
                 const allEntries = await getAllGeminiEntriesFromDb();
                 history = allEntries.filter((e) => entryIds.has(e.id)).sort((a, b) => a.id - b.id);
-            } else {
-                history = conversation.entries;
             }
 
             const s2 = get(state);
-            const currentCombinedIndex = s2.combinedConversations.findIndex(
+            // By timestamp first, then by name: a saved conversation's timestamp is the
+            // id of its newest entry, so it moves as the conversation grows.
+            let currentCombinedIndex = s2.combinedConversations.findIndex(
                 (c) => c.timestamp === conversation.timestamp,
             );
+            if (currentCombinedIndex === -1) {
+                currentCombinedIndex = s2.combinedConversations.findIndex((c) => c.title === conversation.title);
+            }
 
             update((st) => ({
                 ...st,
@@ -626,38 +671,52 @@ function createGeminiStore() {
         },
 
         deleteEntry: async (entryId) => {
-            const s = get(state);
-            update((st) => ({
-                ...st,
-                conversationHistory: st.conversationHistory.filter((e) => e.id !== entryId),
-            }));
             await deleteGeminiEntryFromDb(entryId);
 
-            let s2 = get(state);
+            // The entry also has to leave the conversations that list it, and a
+            // conversation left with no entries is gone.
+            const s = get(state);
             let changed = false;
-            s2.sessionConversations = s2.sessionConversations
+            const sessionConversations = s.sessionConversations
                 .map((conv) => {
-                    const newIds = conv.entryIds.filter((id) => id !== entryId);
-                    if (newIds.length !== conv.entryIds.length) changed = true;
+                    const newIds = (conv.entryIds || []).filter((id) => id !== entryId);
+                    if (newIds.length !== (conv.entryIds || []).length) changed = true;
                     return { ...conv, entryIds: newIds };
                 })
                 .filter((conv) => conv.entryIds.length > 0);
 
+            const persistentConversations = s.persistentConversations
+                .map((conv) => ({ ...conv, entries: (conv.entries || []).filter((e) => e.id !== entryId) }))
+                .filter((conv) => conv.entries.length > 0);
+
+            const conversationHistory = s.conversationHistory.filter((e) => e.id !== entryId);
+
+            // One update for the whole removal: writing the history twice made the view
+            // rebuild itself in between, and putting the conversation list in the history
+            // — which is what used to happen when it emptied — painted cards out of it.
+            update((st) => ({
+                ...st,
+                conversationHistory,
+                sessionConversations,
+                persistentConversations,
+                currentCombinedIndex: conversationHistory.length === 0 ? -1 : st.currentCombinedIndex,
+            }));
+
             if (changed) {
                 await chrome.storage.session.set({
-                    [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: s2.sessionConversations,
+                    [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: sessionConversations,
                 });
             }
 
-            if (s2.conversationHistory.length === 0) {
-                update((st) => ({
-                    ...st,
-                    conversationHistory: s2.sessionConversations,
-                    currentCombinedIndex: -1,
-                }));
+            const { [STORAGE_KEYS.PERSISTENT_GEMINI]: currentIds = [] } = await chrome.storage.local.get(
+                STORAGE_KEYS.PERSISTENT_GEMINI,
+            );
+            if (currentIds.includes(entryId)) {
+                await chrome.storage.local.set({
+                    [STORAGE_KEYS.PERSISTENT_GEMINI]: currentIds.filter((id) => id !== entryId),
+                });
             }
 
-            update((st) => ({ ...st }));
             chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
         },
 
@@ -811,73 +870,91 @@ function createGeminiStore() {
             return speechText.replace(/\s+/g, ' ').replace(/\s+\./g, '.').trim();
         },
 
-        handleGlobalReadAloud: async (entry, ctrlHeld) => {
-            const s = get(state);
-            if (!entry?.data?.answer && !entry?.query) return;
+        /**
+         * Reads a single conversation entry: its question and then its answer, the same
+         * text the original extension read.
+         */
+        /**
+         * The answer as it should be heard.
+         *
+         * What is stored is markdown, and reading it as HTML left the emphasis marks in
+         * the text, so the voice spelled out "asterisk asterisk" around every bold word.
+         * Rendering it first is what the card on screen does too.
+         */
+        answerToSpeechText: (answer) => {
+            if (!answer) return '';
+            return geminiStore
+                .htmlToSpeechText(parseMarkdown(answer))
+                .replace(/[*_`~]{1,3}/g, '')
+                .replace(/\s{2,}/g, ' ')
+                .trim();
+        },
 
-            if (s.currentlySpeakingEntryId === entry.id && s.isGlobalPlaybackActive) {
-                if (s.isSpeechPaused) {
-                    update((st) => ({ ...st, isSpeechPaused: false }));
-                    speechSynthesis.resume();
-                } else {
-                    update((st) => ({ ...st, isSpeechPaused: true }));
-                    speechSynthesis.pause();
+        readEntryAloud: (entry, ctrlHeld) => {
+            if (!entry?.data?.answer && !entry?.query) return;
+            const answer = geminiStore.answerToSpeechText(entry.data?.answer || '');
+            const text = entry.query ? `${entry.query}. ${answer}` : answer;
+            geminiStore.startSpeech(entry.id, text, ctrlHeld);
+        },
+
+        /** Reads the whole conversation from the controls bar, entry after entry. */
+        readConversationAloud: (entries, ctrlHeld) => {
+            const list = entries || [];
+            if (list.length === 0) return;
+            const text = list
+                .map((entry) => {
+                    const answer = geminiStore.answerToSpeechText(entry.data?.answer || '');
+                    return entry.query ? `${entry.query}. ${answer}` : answer;
+                })
+                .filter(Boolean)
+                .join('. ');
+            geminiStore.startSpeech(CONVERSATION_SPEECH_ID, text, ctrlHeld);
+        },
+
+        /**
+         * Play / pause / resume for whoever asked to be read, plus stop on Ctrl+click,
+         * mirroring the notes reader so both behave the same way.
+         */
+        startSpeech: (speakerId, text, ctrlHeld) => {
+            const s = get(state);
+            const isCurrentSpeaker = s.isGlobalPlaybackActive && s.currentlySpeakingEntryId === speakerId;
+
+            if (isCurrentSpeaker) {
+                // The button shows a stop icon while Ctrl is held, so honour it.
+                if (ctrlHeld) {
+                    geminiStore.stopSpeech();
+                    return;
                 }
-                geminiStore.syncSpeechUI();
+                if (s.isSpeechPaused) {
+                    speechSynthesis.resume();
+                    stopKeepAlive(s.speechKeepAliveInterval);
+                    update((st) => ({ ...st, isSpeechPaused: false, speechKeepAliveInterval: startKeepAlive() }));
+                } else {
+                    speechSynthesis.pause();
+                    stopKeepAlive(s.speechKeepAliveInterval);
+                    update((st) => ({ ...st, isSpeechPaused: true, speechKeepAliveInterval: null }));
+                }
                 return;
             }
 
-            if (s.isGlobalPlaybackActive) {
-                if (typeof speechSynthesis !== 'undefined') {
-                    try {
-                        speechSynthesis.cancel();
-                    } catch (e) {
-                        /* ignore */
-                    }
-                }
-                if (s.speechKeepAliveInterval) {
-                    clearInterval(s.speechKeepAliveInterval);
-                }
-            }
+            // Whatever else was talking (another entry, a note) gives up the synthesizer.
+            geminiStore.stopSpeech();
+            releaseDomReaders();
 
-            const isQAPlayback = !!ctrlHeld;
-            let speechText = '';
-            if (isQAPlayback && entry.query) {
-                speechText = entry.query + '. ' + (geminiStore.htmlToSpeechText(entry.data?.answer || '') || '');
-            } else {
-                speechText = geminiStore.htmlToSpeechText(entry.data?.answer || entry.query || '') || '';
-            }
-            if (!speechText) {
+            const chunks = splitIntoSpeechChunks(text);
+            if (chunks.length === 0) {
                 showNotification('geminiNoContentToRead', true);
                 return;
             }
 
-            const chunks = speechText.match(/[^.!?]+[.!?]+/g) || [speechText];
-            const cleanChunks = chunks.map((c) => c.trim()).filter((c) => c.length > 0);
-            if (cleanChunks.length === 0) return;
-
-            const keepAliveInterval = setInterval(() => {
-                try {
-                    if (
-                        typeof speechSynthesis !== 'undefined' &&
-                        (speechSynthesis.speaking || speechSynthesis.pending)
-                    ) {
-                        speechSynthesis.pause();
-                        speechSynthesis.resume();
-                    }
-                } catch (e) {
-                    /* ignore */
-                }
-            }, 10000);
-
             update((st) => ({
                 ...st,
                 isGlobalPlaybackActive: true,
-                globalPlaybackChunks: cleanChunks,
+                globalPlaybackChunks: chunks,
                 currentGlobalChunkIndex: 0,
-                currentlySpeakingEntryId: entry.id,
+                currentlySpeakingEntryId: speakerId,
                 isSpeechPaused: false,
-                speechKeepAliveInterval: keepAliveInterval,
+                speechKeepAliveInterval: startKeepAlive(),
             }));
 
             geminiStore.speakNextGlobalChunk();
@@ -888,59 +965,57 @@ function createGeminiStore() {
             if (!s.isGlobalPlaybackActive || s.isSpeechPaused) return;
 
             if (s.currentGlobalChunkIndex >= s.globalPlaybackChunks.length) {
-                if (s.speechKeepAliveInterval) {
-                    clearInterval(s.speechKeepAliveInterval);
-                }
-                update((st) => ({
-                    ...st,
-                    isGlobalPlaybackActive: false,
-                    globalPlaybackChunks: [],
-                    currentGlobalChunkIndex: 0,
-                    currentlySpeakingEntryId: null,
-                    speechKeepAliveInterval: null,
-                }));
-                geminiStore.syncSpeechUI();
+                geminiStore.resetGlobalSpeechState();
                 return;
             }
 
-            const text = s.globalPlaybackChunks[s.currentGlobalChunkIndex];
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US';
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
+            // Cancelling a reading can still deliver a late event for the chunk that was
+            // being spoken; without this stamp it would advance the reading that replaced it.
+            const speakerId = s.currentlySpeakingEntryId;
+            const chunkIndex = s.currentGlobalChunkIndex;
+            const isStale = () => {
+                const current = get(state);
+                return (
+                    !current.isGlobalPlaybackActive ||
+                    current.currentlySpeakingEntryId !== speakerId ||
+                    current.currentGlobalChunkIndex !== chunkIndex
+                );
+            };
 
+            const utterance = createUtterance(s.globalPlaybackChunks[chunkIndex]);
             utterance.onend = () => {
-                const s2 = get(state);
-                if (s2.currentGlobalChunkIndex < s2.globalPlaybackChunks.length) {
-                    update((st) => ({ ...st, currentGlobalChunkIndex: st.currentGlobalChunkIndex + 1 }));
-                    geminiStore.speakNextGlobalChunk();
-                }
+                if (isStale()) return;
+                update((st) => ({ ...st, currentGlobalChunkIndex: st.currentGlobalChunkIndex + 1 }));
+                geminiStore.speakNextGlobalChunk();
             };
-            utterance.onerror = () => {
+            utterance.onerror = (event) => {
+                if (isStale()) return;
+                // 'interrupted' just means someone else took the synthesizer over.
+                if (event.error !== 'interrupted') {
+                    console.error('Error in speech synthesis:', event.error);
+                    showNotification('errorReadingAloud', true);
+                }
                 geminiStore.resetGlobalSpeechState();
             };
 
-            try {
-                speechSynthesis.speak(utterance);
-            } catch (e) {
-                geminiStore.resetGlobalSpeechState();
-            }
+            update((st) => ({ ...st, currentSpeechUtterance: utterance }));
+            speechSynthesis.speak(utterance);
         },
 
+        /** Stops the reading on demand: silences the synthesizer and clears the state. */
+        stopSpeech: () => {
+            if (get(state).isGlobalPlaybackActive) cancelSpeech();
+            geminiStore.resetGlobalSpeechState();
+        },
+
+        /**
+         * Clears the playback state without touching the synthesizer. Cancelling here
+         * would cut off whoever took the synthesizer over (a note, another entry), since
+         * that hand-over is precisely what fires the 'interrupted' error that lands here.
+         */
         resetGlobalSpeechState: () => {
-            if (typeof speechSynthesis !== 'undefined') {
-                try {
-                    if (speechSynthesis.speaking || speechSynthesis.pending) {
-                        speechSynthesis.cancel();
-                    }
-                } catch (e) {
-                    /* ignore */
-                }
-            }
             const s = get(state);
-            if (s.speechKeepAliveInterval) {
-                clearInterval(s.speechKeepAliveInterval);
-            }
+            stopKeepAlive(s.speechKeepAliveInterval);
             update((st) => ({
                 ...st,
                 isGlobalPlaybackActive: false,
@@ -950,51 +1025,6 @@ function createGeminiStore() {
                 isSpeechPaused: false,
                 speechKeepAliveInterval: null,
             }));
-            geminiStore.syncSpeechUI();
-        },
-
-        syncSpeechUI: () => {
-            const s = get(state);
-            document.querySelectorAll('.gemini-entry').forEach((el) => {
-                const entryId = el.dataset.entryId;
-                const playBtn = el.querySelector('.icon-play');
-                const pauseBtn = el.querySelector('.icon-pause');
-                const resumeBtn = el.querySelector('.icon-refresh');
-                const stopBtn = el.querySelector('.icon-stop');
-                if (!playBtn || !pauseBtn) return;
-
-                if (s.currentlySpeakingEntryId === entryId) {
-                    if (s.isSpeechPaused) {
-                        playBtn.style.display = 'none';
-                        pauseBtn.style.display = 'none';
-                        if (resumeBtn) resumeBtn.style.display = '';
-                        if (stopBtn) stopBtn.style.display = '';
-                        el.classList.add('reading');
-                        el.classList.remove('paused');
-                    } else {
-                        playBtn.style.display = 'none';
-                        pauseBtn.style.display = '';
-                        if (resumeBtn) resumeBtn.style.display = 'none';
-                        if (stopBtn) stopBtn.style.display = '';
-                        el.classList.add('reading');
-                        el.classList.remove('paused');
-                    }
-                } else if (s.isGlobalPlaybackActive) {
-                    playBtn.style.display = '';
-                    pauseBtn.style.display = 'none';
-                    if (resumeBtn) resumeBtn.style.display = 'none';
-                    if (stopBtn) stopBtn.style.display = 'none';
-                    el.classList.remove('reading');
-                    el.classList.remove('paused');
-                } else {
-                    playBtn.style.display = '';
-                    pauseBtn.style.display = 'none';
-                    if (resumeBtn) resumeBtn.style.display = 'none';
-                    if (stopBtn) stopBtn.style.display = 'none';
-                    el.classList.remove('reading');
-                    el.classList.remove('paused');
-                }
-            });
         },
 
         downloadEntry: (entry) => {
