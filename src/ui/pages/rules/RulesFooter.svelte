@@ -1,7 +1,11 @@
 <script>
     import { t } from '../../stores/i18nStore.js';
 
-    let { onOpenAbout = () => {} } = $props();
+    let {
+        onOpenAbout = () => {
+            chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/pages/about/about.html') });
+        },
+    } = $props();
 </script>
 
 <a

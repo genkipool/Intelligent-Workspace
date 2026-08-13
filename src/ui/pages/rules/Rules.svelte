@@ -646,7 +646,7 @@
     }
 
     function openFooterLink() {
-        chrome.tabs.create({ url: 'https://example.com' });
+        chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/pages/about/about.html') });
     }
 
     function openPopupOnContextMenu(popupName, e) {
