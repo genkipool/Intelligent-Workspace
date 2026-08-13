@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { SvelteMap, SvelteSet, SvelteDate } from 'svelte/reactivity';
 
 // ─── View Management ─────────────────────────────────────────────
 export const currentMainView = writable('groups');
@@ -17,12 +18,12 @@ export const previousIframeUrl = writable(null);
 export const navigationHistory = writable([]);
 
 // ─── Group State ──────────────────────────────────────────────────
-export const expandedGroupStates = writable(new Map());
-export const expandedSubgroupStates = writable(new Map());
+export const expandedGroupStates = writable(new SvelteMap());
+export const expandedSubgroupStates = writable(new SvelteMap());
 export const isAllExpanded = writable(true);
-export const pendingDeletionGroupIds = writable(new Set());
+export const pendingDeletionGroupIds = writable(new SvelteSet());
 export const backedUpGroupData = writable({});
-export const restoredGroupIds = writable(new Set());
+export const restoredGroupIds = writable(new SvelteSet());
 export const elementToFocusAfterRender = writable(null);
 export const isPerformingProgrammaticUpdate = writable(false);
 
@@ -44,7 +45,7 @@ export const isRenderingBookmarks = writable(false);
 export const isHandlingBookmarkChange = writable(false);
 export const currentBookmarkSort = writable('dateAdded');
 export const currentHistoryDateFilter = writable(null);
-export const calCurrentDate = writable(new Date());
+export const calCurrentDate = writable(new SvelteDate());
 export const calSelectedDate = writable(null);
 export const isPopupWindow = writable(false);
 export const isProgrammaticActivation = writable(false);
@@ -113,7 +114,7 @@ export const viewExpandStates = writable({
     gemini: true,
     notes: true,
 });
-export const persistentNoteIds = writable(new Set());
+export const persistentNoteIds = writable(new SvelteSet());
 export const settings = writable({});
 export const splitScreenState = writable({ isActive: false, splitTabs: {} });
 
