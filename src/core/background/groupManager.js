@@ -1083,11 +1083,23 @@ function dissolveEmptyOrInvalidGroups(tabs, existingGroups, groupInfoMap, localC
     }
     return tabsToUngroup;
 }
-async function processAndGroupRemainingTabs(tabsToGroup, customRules, existingGroups, windowId, localClusterConfig) {
+async function processAndGroupRemainingTabs(
+    tabsToGroup,
+    customRules,
+    existingGroups,
+    windowId,
+    localClusterConfig,
+    isClusteringGloballyEnabled = true,
+) {
     let groupingPlan = [];
 
     const { customGroupTabs, groupedTabIds } = applyCustomRules(tabsToGroup, customRules);
     groupingPlan.push(...planCustomGroups(customGroupTabs, customRules));
+
+    if (!isClusteringGloballyEnabled) {
+        const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId);
+        return allGroupIds;
+    }
 
     const remainingTabs = tabsToGroup.filter((tab) => !groupedTabIds.has(tab.id));
     const {
@@ -1422,7 +1434,7 @@ async function groupTabs() {
                 );
             }
 
-            // STEP 2: If clustering is disabled, dissolve all automatic groups.
+            // STEP 2: If clustering is disabled, dissolve all automatic domain and special groups.
             if (!isClusteringGloballyEnabled) {
                 const tabsToUngroup = [];
                 const groupIdsToClean = new Set();
@@ -1448,11 +1460,18 @@ async function groupTabs() {
                 }
 
                 if (tabsToUngroup.length > 0) {
-                    const logMessage = `ungrouping all automatic tabs because clustering is disabled`;
+                    const logMessage = `ungrouping all automatic cluster tabs because clustering is disabled`;
                     await executeWithRetries(async () => await chrome.tabs.ungroup(tabsToUngroup), logMessage);
+                    const updatedWindow = await executeWithRetries(
+                        async () => await chrome.windows.get(windowId, { populate: true }),
+                        `getting updated window ${windowId} after dissolving cluster groups`,
+                    );
+                    tabs = updatedWindow.tabs.filter((tab) => !tab.pinned);
+                    existingGroups = await executeWithRetries(
+                        async () => await getExistingGroupsForWindow(windowId),
+                        `getting existing groups for window ${windowId} after dissolving cluster groups`,
+                    );
                 }
-
-                continue;
             }
 
             // STEP 3: Dissolve entire groups that are no longer valid (e.g., below threshold).
@@ -1499,6 +1518,7 @@ async function groupTabs() {
                 existingGroups,
                 windowId,
                 localClusterConfig,
+                isClusteringGloballyEnabled,
             );
 
             // STEP 5: Final tasks like sorting and updating prefixes.
