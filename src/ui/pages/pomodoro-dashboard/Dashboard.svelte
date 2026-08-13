@@ -1,5 +1,6 @@
 <script>
     import { onMount, tick, mount } from 'svelte';
+    import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
@@ -15,6 +16,13 @@
     import DonutStats from './components/DonutStats.svelte';
     import ProjectTable from './components/ProjectTable.svelte';
     import Timeline from './components/Timeline.svelte';
+    import DashboardHeader from './components/DashboardHeader.svelte';
+    import DashboardKpiSection from './components/DashboardKpiSection.svelte';
+    import DashboardStreaksSection from './components/DashboardStreaksSection.svelte';
+    import DashboardHeatmapSection from './components/DashboardHeatmapSection.svelte';
+    import DashboardTimeEfficiencySection from './components/DashboardTimeEfficiencySection.svelte';
+    import DashboardProjectAnalysisSection from './components/DashboardProjectAnalysisSection.svelte';
+    import DashboardBreakdownSection from './components/DashboardBreakdownSection.svelte';
 
     let apps = {
         sidebar: null,
@@ -31,8 +39,8 @@
     // Loads the active language messages and exposes the i18n(key) helper
     let _msgs = {};
     let _lang = 'en';
-    let openFolders = new Set();
-    let closedFolders = new Set();
+    let openFolders = new SvelteSet();
+    let closedFolders = new SvelteSet();
 
     const FOLDER_CLOSED_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M3 8.2c0-1.12 0-1.68.218-2.108a2 2 0 0 1 .874-.874C4.52 5 5.08 5 6.2 5h3.475c.489 0 .733 0 .963.055.204.05.4.13.579.24.201.123.374.296.72.642l.126.126c.346.346.519.519.72.642q.271.165.579.24c.23.055.474.055.963.055H17.8c1.12 0 1.68 0 2.108.218a2 2 0 0 1 .874.874C21 8.52 21 9.08 21 10.2v5.6c0 1.12 0 1.68-.218 2.108a2 2 0 0 1-.874.874C19.48 19 18.92 19 17.8 19H6.2c-1.12 0-1.68 0-2.108-.218a2 2 0 0 1-.874-.874C3 17.48 3 16.92 3 15.8z"/></svg>`;
     const FOLDER_OPEN_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M4 9V6.472a2 2 0 0 1 .211-.894L5 4h5l1 2h10a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2h-2"/><path d="M17.236 9H2.31a1 1 0 0 0-.965 1.263l2.254 8.263A2 2 0 0 0 5.528 20H19.69a1 1 0 0 0 .965-1.263l-2.455-9A1 1 0 0 0 17.236 9Z"/></svg>`;
@@ -346,7 +354,7 @@
         filteredData = allData.filter((e) => {
             if (activePeriod > 0 && e.savedAt < now - activePeriod * 86400000) return false;
             if (activePeriod === 1) {
-                const today = new Date();
+                const today = new SvelteDate();
                 today.setHours(0, 0, 0, 0);
                 if (e.savedAt < today.getTime()) return false;
             }
@@ -662,7 +670,7 @@
         let maxStreak = 1,
             tempStreak = 1;
         for (let i = 1; i < days.length; i++) {
-            const prev = new Date(days[i - 1]);
+            const prev = new SvelteDate(days[i - 1]);
             prev.setDate(prev.getDate() + 1);
             const cur = new Date(days[i]);
             if (prev.toDateString() === cur.toDateString()) {
@@ -673,18 +681,18 @@
         if (days.length === 1) maxStreak = 1;
 
         let currentStreak = 0;
-        const last = new Date(days[days.length - 1]);
+        const last = new SvelteDate(days[days.length - 1]);
         last.setHours(0, 0, 0, 0);
-        const today = new Date();
+        const today = new SvelteDate();
         today.setHours(0, 0, 0, 0);
-        const yest = new Date(today);
+        const yest = new SvelteDate(today);
         yest.setDate(today.getDate() - 1);
         if (last >= yest) {
             currentStreak = 1;
             for (let i = days.length - 2; i >= 0; i--) {
-                const d = new Date(days[i]);
+                const d = new SvelteDate(days[i]);
                 d.setHours(0, 0, 0, 0);
-                const n = new Date(days[i + 1]);
+                const n = new SvelteDate(days[i + 1]);
                 n.setHours(0, 0, 0, 0);
                 n.setDate(n.getDate() - 1);
                 if (d.toDateString() === n.toDateString()) currentStreak++;
@@ -740,10 +748,10 @@
         // -- date range: last 52 complete weeks ending today -------------
         const todayDate = new Date();
         const todayKey = dayKey(todayDate.getTime());
-        const today = new Date(todayDate);
+        const today = new SvelteDate(todayDate);
         today.setHours(23, 59, 59, 999);
         const rangeEnd = new Date(today);
-        const rangeStart = new Date(today);
+        const rangeStart = new SvelteDate(today);
         rangeStart.setDate(rangeStart.getDate() - 364);
         // Snap to Monday
         const dowSnap = rangeStart.getDay();
@@ -760,11 +768,11 @@
         const cells = [];
         let colIdx = 0;
         const monthPositions = []; // { col, label, colOffset }
-        const monthStartCols = new Set(); // columns that contain day 1 of a new month (skip col 0)
+        const monthStartCols = new SvelteSet(); // columns that contain day 1 of a new month (skip col 0)
         // Track which months we've already registered to avoid duplicates
-        const seenMonths = new Set();
+        const seenMonths = new SvelteSet();
 
-        const cur = new Date(rangeStart);
+        const cur = new SvelteDate(rangeStart);
         while (cur <= rangeEnd) {
             // 7 cells for this week column -- scan first to detect day-1 boundaries
             const weekStart = new Date(cur);
@@ -1425,7 +1433,7 @@
         try {
             allData = await getAllStats();
             // Deduplicate cumulative entries from the same session (legacy or autosave snapshots)
-            const sessionMap = new Map();
+            const sessionMap = new SvelteMap();
             allData.forEach((entry) => {
                 const sid = entry.sessionStarted;
                 if (!sid) {
@@ -1535,132 +1543,7 @@
 <div id="tooltip"></div>
 
 <!-- --- Header ----------------------------------------------------- -->
-<header class="app-header">
-    <!-- Brand (matches sidebar width) -->
-    <div class="header-brand">
-        <div class="brand-icon">
-            <svg
-                width="18"
-                height="18"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 512 512"
-                xml:space="preserve"
-                fill="currentColor"
-                id="open-pomodoro-btn-svg"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <path
-                    d="M360 80c4.8-12.8 8-27.2 8-44.8 0-4.8-1.6-4.8-4.8-8s-8-4.8-12.8-4.8c-19.2 1.6-40 9.6-60.8 24-6.4-11.2-12.8-22.4-22.4-33.6C264 9.6 259.2 8 256 8c-4.8 0-9.6 1.6-11.2 6.4-9.6 11.2-17.6 20.8-24 33.6q-26.4-21.6-57.6-24c-4.8 0-9.6 1.6-12.8 4.8S144 35.2 144 40c0 16 1.6 28.8 6.4 40C59.2 104 0 176 0 260.8 0 376 108.8 504 256 504s256-128 256-243.2c0-88-59.2-156.8-152-180.8m-65.6 8c1.6 0 1.6-1.6 1.6-3.2 12.8-11.2 24-19.2 36.8-24-4.8 19.2-19.2 48-57.6 56C280 105.6 288 96 294.4 88M256 49.6c4.8 6.4 8 12.8 9.6 20.8-11.2 12.8-19.2 28.8-25.6 48-1.6 0-3.2-1.6-4.8-1.6 1.6-32 8-51.2 20.8-67.2m-48 28.8c-1.6 6.4-3.2 14.4-4.8 22.4-11.2-8-20.8-20.8-25.6-40 11.2 3.2 20.8 9.6 30.4 17.6M256 472C128 472 32 360 32 260.8c0-73.6 52.8-132.8 134.4-152 12.8 16 27.2 25.6 43.2 32 1.6 0 1.6 0 3.2 1.6 12.8 4.8 27.2 8 36.8 9.6h1.6c6.4 0 11.2-3.2 14.4-8 24-3.2 54.4-12.8 76.8-35.2 84.8 17.6 139.2 76.8 139.2 152C480 360 384 472 256 472"
-                >
-                </path>
-            </svg>
-        </div>
-        <div>
-            <div class="brand-title">{$t('pomodoroTitle') || 'Pomodoro'}</div>
-            <div class="brand-sub">{$t('dashboardDashboard') || 'Dashboard'}</div>
-        </div>
-    </div>
-
-    <!-- Period & tag filters -->
-    <div class="header-filters">
-        <span class="filter-label">{$t('dashboardPeriod') || 'Period'}</span>
-        <div style="display:flex;gap:5px;align-items:center" id="period-filters">
-            <button class="filter-chip" data-period="1" title={$tt('titleFilterToday')}
-                >{$t('dashboardToday') || 'Today'}</button
-            >
-            <button class="filter-chip" data-period="7" title={$tt('titleFilter7Days')}
-                >{$t('dashboard7Days') || '7 days'}</button
-            >
-            <button class="filter-chip" data-period="30" title={$tt('titleFilter30Days')}
-                >{$t('dashboard30Days') || '30 days'}</button
-            >
-            <button class="filter-chip" data-period="90" title={$tt('titleFilter3Months')}
-                >{$t('dashboard3Months') || '3 months'}</button
-            >
-            <button class="filter-chip active" data-period="0" title={$tt('titleFilterAll')}
-                >{$t('dashboardAllTime') || 'All time'}</button
-            >
-        </div>
-        <span class="filter-sep"></span>
-        <span class="filter-label">{$t('pomodoroProjectTag') || 'Tag'}</span>
-        <select class="tag-select" id="tag-filter" title={$tt('titleTagFilter')}>
-            <button type="button">
-                <selectedcontent></selectedcontent>
-                <svg
-                    class="picker-icon"
-                    width="10"
-                    height="10"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <path d="m6 9 6 6 6-6" />
-                </svg>
-            </button>
-            <option value="">{$t('dashboardAllTags') || 'All tags'}</option>
-        </select>
-    </div>
-
-    <!-- Actions -->
-    <div class="header-actions">
-        <div class="last-updated" id="last-updated">-</div>
-        <div class="header-actions-group">
-            <button class="btn" id="export-btn" title={$tt('dashboardExportJSON')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path
-                        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                <span>{$t('pomodoroExport') || 'Export'}</span>
-            </button>
-
-            <button class="btn" id="import-btn" title={$tt('dashboardImportJSON')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path
-                        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 10l-5-5-5 5M12 5v12"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                <span>{$t('pomodoroImport') || 'Import'}</span>
-            </button>
-            <input type="file" id="import-input" accept=".json" style="display:none" />
-        </div>
-        <div class="header-actions-refresh">
-            <button class="btn btn-accent" id="refresh-btn" title={$tt('dashboardRefresh')}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path
-                        d="M1 4v6h6M23 20v-6h-6"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                    <path
-                        d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                <span>{$t('dashboardRefresh') || 'Refresh'}</span>
-            </button>
-        </div>
-    </div>
-</header>
+<DashboardHeader />
 
 <!-- --- App body ---------------------------------------------------- -->
 <div class="app-body">
@@ -1728,284 +1611,22 @@
         </div>
 
         <!-- -- KPIs ----------------------------------------------------- -->
-        <section id="kpi-section" style="display: none">
-            <div class="section-title" title={$tt('titleSummarySection')}>
-                {$t('dashboardSummary') || 'General summary'}
-            </div>
-            <div class="kpi-grid" id="kpi-grid"></div>
-        </section>
+        <DashboardKpiSection />
 
         <!-- -- Streaks & time of day ------------------------------------ -->
-        <section id="streak-section" style="display: none">
-            <div class="section-title" title={$tt('titleStreaksSection')}>
-                {$t('dashboardStreaksSection') || 'Streaks and patterns'}
-            </div>
-            <div class="chart-grid-2">
-                <div class="chart-card animate-in delay-1">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title">{$t('dashboardStreakActivity') || 'Activity streak'}</div>
-                        <div class="chart-card-meta">{$t('dashboardConsecutiveDays') || 'consecutive days'}</div>
-                    </div>
-                    <div class="streak-grid">
-                        <div class="streak-item">
-                            <div class="streak-icon">🔥</div>
-                            <div class="streak-value" id="streak-current">-</div>
-                            <div class="streak-label" title={$tt('titleCurrentStreak')}>
-                                {$t('dashboardCurrentStreak') || 'Current streak'}
-                            </div>
-                        </div>
-                        <div class="streak-item">
-                            <div class="streak-icon">🏆</div>
-                            <div class="streak-value" id="streak-max">-</div>
-                            <div class="streak-label" title={$tt('titleBestStreak')}>
-                                {$t('dashboardBestStreak') || 'Best streak'}
-                            </div>
-                        </div>
-                        <div class="streak-item">
-                            <div class="streak-icon">⭐</div>
-                            <div class="streak-value" id="streak-best-val">-</div>
-                            <div class="streak-label">
-                                <span>{$t('dashboardBestDay') || 'Best day'}</span>
-                                - <span id="streak-best-date" style="color:var(--interactive-color)"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-card animate-in delay-1">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleHourDistrib')}>
-                            {$t('dashboardHourDistrib') || 'Hourly distribution'}
-                        </div>
-                        <div class="chart-card-meta">{$t('dashboardAccFocus') || 'accumulated total focus'}</div>
-                    </div>
-                    <div id="hour-grid" class="hour-bar-grid" style="height:88px"></div>
-                </div>
-            </div>
-        </section>
+        <DashboardStreaksSection />
 
         <!-- -- Heatmap -------------------------------------------- -->
-        <section id="activity-row" style="display: none">
-            <div class="section-title" title={$tt('titleActivity52')}>
-                {$t('dashboardActivity52') || 'Daily activity - last 52 weeks'}
-            </div>
-            <div class="chart-card animate-in delay-1">
-                <div class="chart-card-header">
-                    <div class="chart-card-title" title={$tt('titleHeatmap')}>
-                        {$t('dashboardHeatmapTitle') || 'Session heatmap of sessions'}
-                    </div>
-                    <div class="chart-card-meta" id="heatmap-meta"></div>
-                </div>
-                <div>
-                    <div class="heatmap-container">
-                        <div class="heatmap-days">
-                            <div class="heatmap-months-spacer"></div>
-                            <div class="heatmap-day-label">{$t('dashboardMonday') || 'Mon'}</div>
-                            <div class="heatmap-day-label"></div>
-                            <div class="heatmap-day-label">{$t('dashboardWednesday') || 'Wed'}</div>
-                            <div class="heatmap-day-label"></div>
-                            <div class="heatmap-day-label">{$t('dashboardFriday') || 'Fri'}</div>
-                            <div class="heatmap-day-label"></div>
-                            <div class="heatmap-day-label">{$t('dashboardSunday') || 'Sun'}</div>
-                        </div>
-                        <div class="heatmap-wrap">
-                            <div class="heatmap-months" id="heatmap-months"></div>
-                            <div class="heatmap-grid" id="heatmap-grid"></div>
-                        </div>
-                    </div>
-                    <div class="legend" style="margin-top:12px">
-                        <div class="legend-item">
-                            <div
-                                class="legend-dot"
-                                style="background:color-mix(in srgb,var(--bg-panel-color) 40%,var(--bg-color))"
-                            ></div>
-                            <span>{$t('dashboardLegendNone') || 'No activity'}</span>
-                        </div>
-                        <div class="legend-item">
-                            <div
-                                class="legend-dot"
-                                style="background:color-mix(in srgb,var(--interactive-color) 20%,var(--bg-color))"
-                            ></div>
-                            <span>1-2</span>
-                        </div>
-                        <div class="legend-item">
-                            <div
-                                class="legend-dot"
-                                style="background:color-mix(in srgb,var(--interactive-color) 42%,var(--bg-color))"
-                            ></div>
-                            <span>3-5</span>
-                        </div>
-                        <div class="legend-item">
-                            <div
-                                class="legend-dot"
-                                style="background:color-mix(in srgb,var(--interactive-color) 68%,var(--bg-color))"
-                            ></div>
-                            <span>6-9</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-dot" style="background:var(--interactive-color)"></div>
-                            <span>10+</span>
-                        </div>
-                        <div class="legend-item" style="margin-left:6px">
-                            <div
-                                class="legend-dot"
-                                style="box-shadow:inset 0 0 0 1.5px var(--interactive-color);background:color-mix(in srgb,var(--interactive-color) 10%,var(--bg-color))"
-                            ></div>
-                            <span>{$t('dashboardToday') || 'today'}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <DashboardHeatmapSection />
 
         <!-- -- Time and efficiency -------------------------------------- -->
-        <section id="charts-row2" style="display: none">
-            <div class="section-title" title={$tt('titleTimeEff')}>
-                {$t('dashboardTimeEff') || 'Time and efficiency'}
-            </div>
-            <div class="chart-grid-3">
-                <div class="chart-card animate-in delay-2" style="grid-column:span 2">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleFocusBreakChart')}>
-                            {$t('dashboardFocusBreakTitle') || 'Daily focus and break'}
-                        </div>
-                        <div class="legend">
-                            <div class="legend-item">
-                                <div class="legend-dot" style="background:var(--interactive-color)"></div>
-                                <span>{$t('pomodoroWork') || 'Focus'}</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-dot" style="background:var(--text-color)"></div>
-                                <span>{$t('dashboardBreak') || 'Break'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="chart-wrap" style="height:200px">
-                        <canvas id="focus-chart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card animate-in delay-2">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleWeekdayChart')}>
-                            {$t('dashboardFocusPerDay') || 'Focus by day'}
-                        </div>
-                        <div class="chart-card-meta">{$t('dashboardWeekAvg') || 'weekly average'}</div>
-                    </div>
-                    <div class="chart-wrap" style="height:200px">
-                        <canvas id="weekday-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-gap">
-                <div class="chart-card animate-in delay-2">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleEffChart')}>
-                            {$t('dashboardEffPerSess') || 'Efficiency per session'}
-                        </div>
-                        <div class="chart-card-meta">
-                            {$t('dashboardEffMeta') || 'bar = value - line = 5-session moving average'}
-                        </div>
-                    </div>
-                    <div class="chart-wrap" style="height:140px">
-                        <canvas id="eff-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <DashboardTimeEfficiencySection />
 
         <!-- -- By project --------------------------------------------- -->
-        <section id="charts-row3" style="display: none">
-            <div class="section-title" title={$tt('titleProjectSection')}>
-                {$t('dashboardProjectAnalysis') || 'Project analysis'}
-            </div>
-            <div class="chart-grid-3">
-                <div class="chart-card animate-in delay-3">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleProjectBar')}>
-                            {$t('dashboardFocusPerProject') || 'Focus by project'}
-                        </div>
-                        <div class="chart-card-meta">{$t('dashboardTop12') || 'total hours - top 12'}</div>
-                    </div>
-                    <div class="chart-wrap" style="height:250px">
-                        <canvas id="project-bar-chart"></canvas>
-                    </div>
-                </div>
-
-                <div class="chart-card animate-in delay-3">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleDonut')}>
-                            {$t('dashboardTimeDistrib') || 'Time distribution'}
-                        </div>
-                    </div>
-                    <div class="chart-wrap" style="height:170px">
-                        <canvas id="donut-chart"></canvas>
-                    </div>
-                    <div id="donut-stats"></div>
-                </div>
-
-                <div class="chart-card animate-in delay-3">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleCyclesChart')}>
-                            {$t('dashboardCyclesPerProject') || 'Pomodoros by project'}
-                        </div>
-                        <div class="chart-card-meta">{$t('dashboardCompleted') || 'completed'}</div>
-                    </div>
-                    <div class="chart-wrap" style="height:250px">
-                        <canvas id="cycles-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </section>
+        <DashboardProjectAnalysisSection />
 
         <!-- -- Table + Timeline ----------------------------------------- -->
-        <section id="bottom-row" style="display: none">
-            <div class="section-title" title={$tt('titleBreakdownSection')}>
-                {$t('dashboardSessionBreakdown') || 'Session breakdown'}
-            </div>
-            <div class="chart-grid-2">
-                <div class="chart-card animate-in delay-4">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleProjectTable')}>
-                            {$t('dashboardProjectSummary') || 'Project summary'}
-                        </div>
-                        <div class="chart-card-meta" id="project-count"></div>
-                    </div>
-                    <div style="overflow-x:auto">
-                        <table class="data-table" id="project-table">
-                            <thead>
-                                <tr>
-                                    <th>{$t('dashboardHdrProject') || 'Project'}</th>
-                                    <th>{$t('dashboardHdrSessions') || 'Sessions'}</th>
-                                    <th>{$t('dashboardHdrFocus') || 'Focus'}</th>
-                                    <th>{$t('dashboardHdrCycles') || 'Pomodoros'}</th>
-                                    <th>{$t('dashboardHdrInterruptions') || 'Interrup.'}</th>
-                                    <th>{$t('dashboardHdrEfficiency') || 'Efficiency'}</th>
-                                </tr>
-                            </thead>
-                            <tbody id="project-table-body"></tbody>
-                        </table>
-                        <div class="no-data-msg" id="table-empty" style="display:none">
-                            {$t('dashboardNoProjects') || 'No projects in the selected period'}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-card animate-in delay-4">
-                    <div class="chart-card-header">
-                        <div class="chart-card-title" title={$tt('titleTimeline')}>
-                            {$t('dashboardRecentSessions') || 'Recent sessions'}
-                        </div>
-                        <div class="chart-card-meta" id="sessions-count"></div>
-                    </div>
-                    <div class="timeline" id="timeline"></div>
-                    <div class="no-data-msg" id="timeline-empty" style="display:none">
-                        {$t('dashboardNoSessions') || 'No sessions in the selected period'}
-                    </div>
-                </div>
-            </div>
-        </section>
+        <DashboardBreakdownSection />
     </main>
     <!-- /main-content -->
 </div>
