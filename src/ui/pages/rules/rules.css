@@ -2430,8 +2430,11 @@ form {
     @media (width <=600px) {
         display: flex;
         justify-content: center;
-        align-items: center;
-
+        align-items: flex-end;
+        width: var(--button-size-header);
+        height: var(--button-size-header);
+        padding: var(--padding-button-rules-header);
+        box-sizing: border-box;
         border: none;
         background: transparent;
         cursor: pointer;
