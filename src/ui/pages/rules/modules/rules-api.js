@@ -8,9 +8,23 @@ import { showNotification } from '../../../../utils/i18n.js';
 // EN: Gets the 'customRules' from the correct storage area.
 
 // EN: Saves the 'customRules' to the correct storage area with error handling.
+let cachedStorageArea = null;
+
 export async function getSettingsStorage() {
+    if (cachedStorageArea) return cachedStorageArea;
     const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
-    return ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
+    cachedStorageArea = ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
+    return cachedStorageArea;
+}
+
+// Keep cached storage area in sync with storage area setting changes
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'local' && changes.ruleStorageArea) {
+            cachedStorageArea =
+                changes.ruleStorageArea.newValue === 'local' ? chrome.storage.local : chrome.storage.sync;
+        }
+    });
 }
 export async function getSettings(keys) {
     const storage = await getSettingsStorage();

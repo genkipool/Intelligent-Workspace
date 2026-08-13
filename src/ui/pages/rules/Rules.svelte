@@ -33,6 +33,7 @@
     } from './modules/clusterDefaults.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
+    import { ClusterPerfMonitor } from './modules/clusterPerf.js';
 
     let isLoading = $state(true);
     let isModalOpen = $state(false);
@@ -491,14 +492,24 @@
 
     /** The master switch turns every grouping on or off at once, as in the original. */
     async function setClusterEnabled(enabled) {
+        const perf = ClusterPerfMonitor.startToggle(enabled);
         isClusterEnabled = enabled;
         await yieldForAnimation(350);
-        clusterConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
-        await saveSettings({
-            clusterConfig: $state.snapshot(clusterConfig),
+        const animationMs = await perf.endAnimation();
+
+        const storageStart = performance.now();
+        const nextConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
+        clusterConfig = nextConfig;
+
+        const savePromise = saveSettings({
+            clusterConfig: nextConfig,
             clusteringEnabled: enabled,
         });
-        await groupTabs();
+        const groupPromise = groupTabs();
+
+        const [_, groupResult] = await Promise.all([savePromise, groupPromise]);
+        const storageMs = await perf.endStorage(storageStart);
+        await perf.endAll({ animationMs, storageMs });
     }
 
     function toggleCluster() {
@@ -507,13 +518,23 @@
 
     /** Any change in Configure Groups re-syncs the master switch and regroups the tabs. */
     async function onClusterChanged() {
-        isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
+        const enabled = isAnyClusterSwitchOn(clusterConfig);
+        const perf = ClusterPerfMonitor.startToggle(enabled);
+        isClusterEnabled = enabled;
         await yieldForAnimation(350);
-        await saveSettings({
-            clusterConfig: $state.snapshot(clusterConfig),
+        const animationMs = await perf.endAnimation();
+
+        const storageStart = performance.now();
+        const nextConfig = $state.snapshot(clusterConfig);
+        const savePromise = saveSettings({
+            clusterConfig: nextConfig,
             clusteringEnabled: isClusterEnabled,
         });
-        await groupTabs();
+        const groupPromise = groupTabs();
+
+        await Promise.all([savePromise, groupPromise]);
+        const storageMs = await perf.endStorage(storageStart);
+        await perf.endAll({ animationMs, storageMs });
     }
 
     async function toggleSortGroups() {
