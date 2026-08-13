@@ -2,22 +2,18 @@
 import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 
 export const PROJECT_COLORS = [
-    'var(--interactive-color)',
-    'var(--action-color)',
-    'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
-    'color-mix(in srgb, var(--action-color)      70%, var(--text-on-color))',
-    'color-mix(in srgb, var(--interactive-color) 55%, var(--bg-color))',
-    'color-mix(in srgb, var(--action-color)      55%, var(--bg-color))',
-    'color-mix(in srgb, var(--error-color)       80%, var(--bg-panel-color))',
-    'color-mix(in srgb, var(--interactive-color) 40%, var(--text-on-color))',
-    'color-mix(in srgb, var(--action-color)      40%, var(--text-on-color))',
-    'color-mix(in srgb, var(--interactive-color) 30%, var(--bg-color))',
-    'color-mix(in srgb, var(--action-color)      30%, var(--bg-color))',
-    'color-mix(in srgb, var(--error-color)       50%, var(--bg-panel-color))',
-    'color-mix(in srgb, var(--interactive-color) 85%, var(--action-color))',
-    'color-mix(in srgb, var(--action-color)      85%, var(--interactive-color))',
-    'color-mix(in srgb, var(--interactive-color) 60%, var(--error-color))',
-    'color-mix(in srgb, var(--action-color)      60%, var(--error-color))',
+    '#3b82f6',
+    '#10b981',
+    '#8b5cf6',
+    '#f59e0b',
+    '#06b6d4',
+    '#ec4899',
+    '#6366f1',
+    '#14b8a6',
+    '#f97316',
+    '#a855f7',
+    '#84cc16',
+    '#e11d48',
 ];
 
 export const fmtDur = (secs) => {
@@ -58,10 +54,10 @@ export const dayKey = (ts) => {
 };
 
 export const effColor = (pct) => {
-    if (pct >= 80) return 'color-mix(in srgb, var(--interactive-color) 90%, var(--text-on-color))';
-    if (pct >= 60) return 'var(--interactive-color)';
-    if (pct >= 40) return 'color-mix(in srgb, var(--interactive-color) 70%, var(--action-color))';
-    return 'var(--error-color)';
+    if (pct >= 80) return '#10b981';
+    if (pct >= 60) return '#3b82f6';
+    if (pct >= 40) return '#f59e0b';
+    return '#ef4444';
 };
 
 export const projColor = (idx) => PROJECT_COLORS[idx % PROJECT_COLORS.length];

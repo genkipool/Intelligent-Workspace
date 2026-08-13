@@ -907,9 +907,9 @@
                 datasets: [
                     {
                         data: vals,
-                        backgroundColor: colors.map((c) => c),
+                        backgroundColor: colors.map((c) => colorMix(c, 0.85)),
                         borderColor: colors,
-                        borderWidth: 1,
+                        borderWidth: 1.5,
                         borderRadius: 5,
                         borderSkipped: false,
                     },
@@ -945,7 +945,7 @@
 
         // Donut colours taken from theme variables
         const c1 = cssVar('--interactive-color');
-        const c2 = cssVar('--text-color');
+        const c2 = '#10b981';
         const c3 = cssVar('--error-color');
 
         charts.donut = new Chart(ctx, {
