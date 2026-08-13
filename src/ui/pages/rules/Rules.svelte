@@ -3,7 +3,7 @@
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import { SvelteSet } from 'svelte/reactivity';
+    import { SvelteSet, SvelteMap } from 'svelte/reactivity';
     import {
         rulesStore,
         initializeRules,
@@ -18,13 +18,8 @@
     import RuleModal from './RuleModal.svelte';
     import SettingsModal from './SettingsModal.svelte';
     import Tutorial from './Tutorial.svelte';
-    import ClusterConfigPopup from './popups/ClusterConfigPopup.svelte';
-    import MiscSortPopup from './popups/MiscSortPopup.svelte';
-    import PrefixConfigPopup from './popups/PrefixConfigPopup.svelte';
-    import CollapseTimerPopup from './popups/CollapseTimerPopup.svelte';
-    import ColorPopup from './popups/ColorPopup.svelte';
-    import StorageConfigPopup from './popups/StorageConfigPopup.svelte';
-    import DiscardingConfigPopup from './popups/DiscardingConfigPopup.svelte';
+    import RulesToolbar from './RulesToolbar.svelte';
+    import RulesPopupHost from './popups/RulesPopupHost.svelte';
     import ImportPopup from './popups/ImportPopup.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
@@ -82,6 +77,7 @@
     let showStoragePopup = $state(false);
     let showColorPopup = $state(false);
     let colorTargetIndex = $state(-1);
+    let selectedRuleColor = $derived(colorTargetIndex >= 0 ? $rulesStore[colorTargetIndex]?.color : 'blue');
     let showDiscardingPopup = $state(false);
     let popupPosition = $state({ x: 0, y: 0 });
     let isPinned = $state(false);
@@ -309,7 +305,7 @@
 
     function handleToggleExpand(detail) {
         const { name } = detail;
-        let updatedStates = new Map($expandedStatesStore);
+        let updatedStates = new SvelteMap($expandedStatesStore);
         updatedStates.set(name, !updatedStates.get(name));
         expandedStatesStore.set(updatedStates);
     }
@@ -380,14 +376,14 @@
         updatedRules[index] = { ...rule, name: newName };
         saveRulesToStorage(updatedRules);
 
-        const sortStates = new Map($sortStatesStore);
+        const sortStates = new SvelteMap($sortStatesStore);
         if (sortStates.has(oldName)) {
             sortStates.set(newName, sortStates.get(oldName));
             sortStates.delete(oldName);
             sortStatesStore.set(sortStates);
             saveSettings({ [`sortState_${newName}`]: sortStates.get(newName) });
         }
-        const expanded = new Map($expandedStatesStore);
+        const expanded = new SvelteMap($expandedStatesStore);
         if (expanded.has(oldName)) {
             expanded.set(newName, expanded.get(oldName));
             expanded.delete(oldName);
@@ -401,7 +397,7 @@
         const rule = $rulesStore[detail.index];
         if (!rule) return;
         const newState = !$sortStatesStore.get(rule.name);
-        const updated = new Map($sortStatesStore);
+        const updated = new SvelteMap($sortStatesStore);
         updated.set(rule.name, newState);
         sortStatesStore.set(updated);
         saveSettings({ [`sortState_${rule.name}`]: newState });
@@ -419,10 +415,10 @@
     }
 
     function syncSearchExpansion(term) {
-        const states = new Map($expandedStatesStore);
+        const states = new SvelteMap($expandedStatesStore);
 
         if (term && preSearchExpandState === null) {
-            preSearchExpandState = new Map(states);
+            preSearchExpandState = new SvelteMap(states);
         }
 
         if (term) {
@@ -438,7 +434,7 @@
         }
 
         if (preSearchExpandState) {
-            expandedStatesStore.set(new Map(preSearchExpandState));
+            expandedStatesStore.set(new SvelteMap(preSearchExpandState));
             preSearchExpandState = null;
         }
     }
@@ -460,7 +456,7 @@
     // "expand all" must ignore the ones that already show every URL — otherwise it
     // would open cards that have nothing to reveal. Each card reports its own
     // overflow state as it is measured.
-    let overflowingRules = $state(new SvelteSet());
+    let overflowingRules = new SvelteSet();
 
     function handleOverflowChange({ name, hasHiddenUrls }) {
         if (hasHiddenUrls) overflowingRules.add(name);
@@ -480,7 +476,7 @@
     function toggleExpandAll() {
         if (expandableRuleNames.length === 0) return;
         const newState = !areAllExpanded;
-        const newMap = new Map($expandedStatesStore);
+        const newMap = new SvelteMap($expandedStatesStore);
         for (const name of expandableRuleNames) newMap.set(name, newState);
         expandedStatesStore.set(newMap);
         isAllExpandedStore.set(newState);
@@ -735,6 +731,7 @@
             <button
                 id="pin-toggle"
                 class="pin-button"
+                type="button"
                 class:pinned={isPinned}
                 aria-pressed={isPinned}
                 onclick={togglePin}
@@ -815,6 +812,7 @@
                 <button
                     id="add-rule"
                     class="action-button"
+                    type="button"
                     tabindex="0"
                     onclick={openAddModal}
                     title={$tt('addRule') || 'Add Rule'}
@@ -843,6 +841,7 @@
                 <button
                     id="export-rules"
                     class="action-button"
+                    type="button"
                     tabindex="0"
                     onclick={exportRules}
                     title={$tt('exportRules') || 'Export rules'}
@@ -857,6 +856,7 @@
                 <button
                     id="import-rules"
                     class="action-button"
+                    type="button"
                     tabindex="0"
                     onclick={openImportPopup}
                     title={$tt('importRules') || 'Import rules'}
@@ -871,6 +871,7 @@
                 <button
                     id="settings-rules-btn"
                     class="action-button"
+                    type="button"
                     tabindex="0"
                     title={$tt('settingsActions') || 'Settings'}
                     onclick={() => (isSettingsOpen = true)}
@@ -892,368 +893,33 @@
             </div>
         </menu>
 
-        <section class="rules-header">
-            <div class="rules-header-content" id="rules-title-container">
-                <button
-                    id="rules-title-button"
-                    class="rules-title-button"
-                    type="button"
-                    tabindex="0"
-                    aria-expanded={showTutorial}
-                    aria-label={$t('rules') || 'Rules'}
-                    onclick={toggleTutorial}
-                >
-                    <h2 id="h2-rule-name">{$t('rules') || 'Rules'}</h2>
-                </button>
-                <button
-                    id="resizeButton"
-                    type="button"
-                    class="resize-button"
-                    onclick={openResize}
-                    title={$tt('openSettingsRules') || 'Open in tab'}
-                    aria-label={$t('openWebConfigRules') || 'Open web config'}
-                    aria-pressed="false"
-                >
-                    <svg
-                        width="30"
-                        height="30"
-                        viewBox="-2 -2 24 24"
-                        style="color: var(--text-color);"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <use href="#icon-resize"></use>
-                    </svg>
-                </button>
-                <button
-                    type="button"
-                    id="storage-status-icon-container"
-                    class="storage-status-icon button-rules-header"
-                    class:syncing={isSyncing}
-                    data-storage-mode={storageMode}
-                    title={$tt(storageMode === 'sync' ? 'storageModeSyncDescClick' : 'storageModeLocalDesc')}
-                    oncontextmenu={(e) => {
-                        e.preventDefault();
-                        openPopupOnContextMenu('storage', e);
-                    }}
-                    onclick={forceSync}
-                    aria-label={$t('storageSyncStatus') || 'Storage status'}
-                >
-                    {#if storageMode === 'sync'}
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 24 24"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-sync"></use>
-                        </svg>
-                    {:else}
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 24 24"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-local"></use>
-                        </svg>
-                    {/if}
-                </button>
-                <button
-                    id="sort-alpha-btn"
-                    type="button"
-                    class="sort-btn button-rules-header"
-                    class:active={isAlphaSort}
-                    onclick={toggleSortAlpha}
-                    title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabetically')}
-                    aria-label={$t(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabetically')}
-                    aria-pressed={isAlphaSort}
-                >
-                    <svg
-                        width="30"
-                        height="30"
-                        viewBox="0 0 24 24"
-                        style="color: var(--text-color);"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <use href="#icon-sort"></use>
-                    </svg>
-                </button>
-                <button
-                    id="expand-all-btn"
-                    class="expand-btn button-rules-header"
-                    type="button"
-                    onclick={toggleExpandAll}
-                    disabled={expandableRuleNames.length === 0}
-                    title={$tt(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
-                    aria-label={$t(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
-                    aria-pressed={areAllExpanded}
-                >
-                    <svg
-                        width="30"
-                        height="30"
-                        viewBox="0 0 32 32"
-                        style="color: var(--text-color);"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <use href="#icon-expand-all"></use>
-                    </svg>
-                </button>
-                <div class="search-container">
-                    <label for="search-rules-input" class="visually-hidden"
-                        >{$t('searchRulePlaceholder') || 'Search'}</label
-                    >
-                    <input
-                        type="search"
-                        id="search-rules-input"
-                        placeholder={$t('searchRulePlaceholder') || 'Search rules by name or URL.'}
-                        class="search-input"
-                        autocomplete="off"
-                        spellcheck="false"
-                        translate="no"
-                        oninput={handleSearch}
-                    />
-                </div>
-                <div class="settings-container">
-                    <button
-                        type="button"
-                        class="svg-settings-container button-rules-header"
-                        title={$tt('configureClusterCtrlClick')}
-                        oncontextmenu={(e) => {
-                            e.preventDefault();
-                            openPopupOnContextMenu('cluster', e);
-                        }}
-                        onclick={toggleCluster}
-                    >
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 512 512"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-cluster"></use>
-                        </svg>
-                    </button>
-                    <label class="switch" for="toggle-cluster">
-                        <input
-                            type="checkbox"
-                            id="toggle-cluster"
-                            class="input-settings-container"
-                            checked={isClusterEnabled}
-                            onchange={(e) => setClusterEnabled(e.currentTarget.checked)}
-                        />
-                        <span
-                            class="slider slider-header-controls"
-                            title={$tt(isClusterEnabled ? 'disableCluster' : 'enableCluster')}
-                        >
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                </div>
-                <div class="settings-container">
-                    <button
-                        type="button"
-                        class="svg-settings-container toggle-groups button-rules-header"
-                        title={$tt('miscSortCtrlClick')}
-                        oncontextmenu={(e) => {
-                            e.preventDefault();
-                            openPopupOnContextMenu('sortGroups', e);
-                        }}
-                        onclick={toggleSortGroups}
-                    >
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="-51.2 -51.2 614.4 614.4"
-                            style="color: var(--text-color); --icon-bg: var(--bg-panel-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-sort-groups"></use>
-                        </svg>
-                    </button>
-                    <label class="switch" for="toggle-sort-groups">
-                        <input
-                            class="input-settings-container"
-                            type="checkbox"
-                            id="toggle-sort-groups"
-                            tabindex="0"
-                            title={$tt(isSortGroupsEnabled ? 'disableSortGroups' : 'enableSortGroups')}
-                            bind:checked={isSortGroupsEnabled}
-                        />
-                        <span
-                            class="slider slider-header-controls"
-                            title={$tt(isSortGroupsEnabled ? 'disableSortGroups' : 'enableSortGroups')}
-                        >
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                </div>
-                <div class="settings-container expand-small-container">
-                    <button
-                        id="expand-all-small-btn"
-                        class="expand-btn-small button-rules-header"
-                        type="button"
-                        onclick={toggleExpandAll}
-                        disabled={expandableRuleNames.length === 0}
-                        title={$tt(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
-                        aria-label={$t(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
-                        aria-pressed={areAllExpanded}
-                    >
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 24 24"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-chevron-down"></use>
-                        </svg>
-                    </button>
-                </div>
-                <div class="settings-container">
-                    <button
-                        type="button"
-                        class="svg-settings-container button-rules-header"
-                        title={$tt('configurePrefixesCtrlClick')}
-                        oncontextmenu={(e) => {
-                            e.preventDefault();
-                            openPopupOnContextMenu('prefixes', e);
-                        }}
-                        onclick={togglePrefixes}
-                    >
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 512 512"
-                            style="color: var(--text-color); transform: rotate(180deg);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-prefixes"></use>
-                        </svg>
-                    </button>
-                    <label class="switch" for="toggle-prefixes">
-                        <input
-                            type="checkbox"
-                            id="toggle-prefixes"
-                            class="input-settings-container"
-                            bind:checked={isPrefixesEnabled}
-                        />
-                        <span
-                            class="slider slider-header-controls"
-                            title={$tt(isPrefixesEnabled ? 'disablePrefixes' : 'enablePrefixes')}
-                        >
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                </div>
-                <div class="settings-container">
-                    <button
-                        type="button"
-                        class="svg-settings-container button-rules-header"
-                        title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}
-                        oncontextmenu={(e) => {
-                            e.preventDefault();
-                            openPopupOnContextMenu('timer', e);
-                        }}
-                        onclick={toggleCollapseTimer}
-                    >
-                        <svg
-                            width="30"
-                            height="30"
-                            viewBox="0 0 512 512"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-timer"></use>
-                        </svg>
-                    </button>
-                    <label
-                        class="switch"
-                        for="toggle-collapse-timer"
-                        title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}
-                    >
-                        <input
-                            class="input-settings-container"
-                            type="checkbox"
-                            id="toggle-collapse-timer"
-                            tabindex="0"
-                            bind:checked={isCollapseTimerEnabled}
-                        />
-                        <span
-                            class="slider slider-header-controls"
-                            title={$tt(
-                                isCollapseTimerEnabled ? 'disableToggleCollapseTimer' : 'enableToggleCollapseTimer',
-                            )}
-                        >
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                </div>
-                <div class="settings-container">
-                    <button
-                        type="button"
-                        class="svg-settings-container all-rules-checks button-rules-header"
-                        title={$tt('configureStorageCtrlClick')}
-                        oncontextmenu={(e) => {
-                            e.preventDefault();
-                            openPopupOnContextMenu('discarding', e);
-                        }}
-                        onclick={toggleAllRules}
-                    >
-                        <svg
-                            class="svg-all-rules"
-                            width="30"
-                            height="30"
-                            viewBox="0 0 38 38"
-                            style="color: var(--text-color);"
-                            aria-hidden="true"
-                            focusable="false"
-                        >
-                            <use href="#icon-all-rules"></use>
-                        </svg>
-                    </button>
-                    <label class="switch" for="toggle-all-rules">
-                        <input
-                            class="input-settings-container"
-                            type="checkbox"
-                            id="toggle-all-rules"
-                            tabindex="0"
-                            checked={isAllRulesActive}
-                            disabled={!hasRules}
-                            onchange={toggleAllRules}
-                        />
-                        <span
-                            class="slider slider-header-controls"
-                            title={$tt(isAllRulesActive ? 'disableAllRules' : 'enableAllRules')}
-                        >
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                </div>
-            </div>
-        </section>
+        <RulesToolbar
+            {showTutorial}
+            {storageMode}
+            {isSyncing}
+            {isAlphaSort}
+            {areAllExpanded}
+            expandableRuleNamesCount={expandableRuleNames.length}
+            bind:isClusterEnabled
+            bind:isSortGroupsEnabled
+            bind:isPrefixesEnabled
+            bind:isCollapseTimerEnabled
+            {isAllRulesActive}
+            {hasRules}
+            onToggleTutorial={toggleTutorial}
+            onOpenResize={openResize}
+            onForceSync={forceSync}
+            onOpenContextMenu={openPopupOnContextMenu}
+            onToggleSortAlpha={toggleSortAlpha}
+            onToggleExpandAll={toggleExpandAll}
+            onSearch={handleSearch}
+            onToggleCluster={toggleCluster}
+            onSetClusterEnabled={setClusterEnabled}
+            onToggleSortGroups={toggleSortGroups}
+            onTogglePrefixes={togglePrefixes}
+            onToggleCollapseTimer={toggleCollapseTimer}
+            onToggleAllRules={toggleAllRules}
+        />
     </div>
 
     {#if isLoading}
@@ -1291,7 +957,7 @@
     {/if}
 
     <div id="scroll-buttons" class="scroll-buttons">
-        <button id="scroll-up" onclick={scrollToTop} aria-label={$t('scrollToTop') || 'Scroll to top'}>
+        <button id="scroll-up" type="button" onclick={scrollToTop} aria-label={$t('scrollToTop') || 'Scroll to top'}>
             <svg
                 width="24"
                 height="24"
@@ -1303,7 +969,12 @@
                 <use href="#icon-chevron-up"></use>
             </svg>
         </button>
-        <button id="scroll-down" onclick={scrollToBottom} aria-label={$t('scrollToBottom') || 'Scroll to bottom'}>
+        <button
+            id="scroll-down"
+            type="button"
+            onclick={scrollToBottom}
+            aria-label={$t('scrollToBottom') || 'Scroll to bottom'}
+        >
             <svg
                 width="24"
                 height="24"
@@ -1380,62 +1051,37 @@
 
 <SettingsModal isOpen={isSettingsOpen} onclose={() => (isSettingsOpen = false)} />
 
-<ClusterConfigPopup
-    show={showClusterPopup}
-    position={popupPosition}
+<RulesPopupHost
+    bind:showClusterPopup
+    bind:showSortGroupsPopup
+    bind:showPrefixPopup
+    bind:showTimerPopup
+    bind:showColorPopup
+    bind:showStoragePopup
+    bind:showDiscardingPopup
+    {popupPosition}
     bind:clusterConfig
-    onchange={onClusterChanged}
-    onclose={() => (showClusterPopup = false)}
-    onreset={resetClusterDefaults}
-/>
-<MiscSortPopup
-    show={showSortGroupsPopup}
-    position={popupPosition}
-    onclose={() => (showSortGroupsPopup = false)}
-    onselect={(detail) => {
+    bind:userPrefixes
+    bind:timerInactiveTime
+    bind:timerActiveTime
+    bind:discardingTime
+    {selectedRuleColor}
+    {onClusterChanged}
+    onResetCluster={resetClusterDefaults}
+    onSelectMiscSort={(detail) => {
         miscSortOption = detail.value;
-        showSortGroupsPopup = false;
         saveSettings({ miscGroupSortOption: detail.value });
     }}
-/>
-<PrefixConfigPopup
-    show={showPrefixPopup}
-    position={popupPosition}
-    bind:lock={userPrefixes.lock}
-    bind:openKey={userPrefixes.openKey}
-    bind:loupe={userPrefixes.loupe}
-    bind:checked={userPrefixes.checked}
-    bind:warning={userPrefixes.warning}
-    onclose={() => {
-        showPrefixPopup = false;
-        saveSettings({ userPrefixes });
-    }}
-    onreset={resetPrefixesDefaults}
-/>
-<CollapseTimerPopup
-    show={showTimerPopup}
-    position={popupPosition}
-    bind:inactiveTime={timerInactiveTime}
-    bind:activeTime={timerActiveTime}
-    onclose={() => {
-        showTimerPopup = false;
+    onResetPrefixes={resetPrefixesDefaults}
+    onSavePrefixes={() => saveSettings({ userPrefixes })}
+    onSaveTimer={() =>
         saveSettings({
             inactiveCollapseTime: timerInactiveTime,
             activeCollapseTime: timerActiveTime,
             enableCollapseTimer: true,
-        });
-    }}
-    onreset={resetTimerDefaults}
-/>
-<ColorPopup
-    show={showColorPopup}
-    position={popupPosition}
-    selectedColor={colorTargetIndex >= 0 ? $rulesStore[colorTargetIndex]?.color : 'blue'}
-    onclose={() => {
-        showColorPopup = false;
-        colorTargetIndex = -1;
-    }}
-    onselect={(detail) => {
+        })}
+    onResetTimer={resetTimerDefaults}
+    onSelectColor={(detail) => {
         if (colorTargetIndex >= 0) {
             const updated = [...$rulesStore];
             if (updated[colorTargetIndex]) {
@@ -1443,29 +1089,16 @@
                 saveRulesToStorage(updated);
             }
         }
-        showColorPopup = false;
         colorTargetIndex = -1;
     }}
-/>
-<StorageConfigPopup
-    show={showStoragePopup}
-    position={popupPosition}
-    onclose={() => (showStoragePopup = false)}
-    onselect={(detail) => {
+    onCloseColor={() => (colorTargetIndex = -1)}
+    onSelectStorage={(detail) => {
         storageMode = detail.value;
-        showStoragePopup = false;
         chrome.storage.local.set({ ruleStorageArea: detail.value });
     }}
-/>
-<DiscardingConfigPopup
-    show={showDiscardingPopup}
-    position={popupPosition}
-    bind:discardingTime
-    onclose={() => {
-        showDiscardingPopup = false;
-        chrome.storage.local.set({ discardingTimeMinutes: discardingTime, discardingEnabled: true });
-    }}
-    onreset={resetDiscardingDefaults}
+    onSaveDiscarding={() =>
+        chrome.storage.local.set({ discardingTimeMinutes: discardingTime, discardingEnabled: true })}
+    onResetDiscarding={resetDiscardingDefaults}
 />
 
 <div id="drag-announcer" aria-live="assertive" class="visually-hidden"></div>
