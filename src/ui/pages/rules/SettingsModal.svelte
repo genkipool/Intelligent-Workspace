@@ -134,15 +134,21 @@
         onClusterChanged();
     }
 
+    function yieldForAnimation(ms = 350) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
     /** Any grouping change re-syncs the master switch and regroups the tabs. */
-    function onClusterChanged() {
+    async function onClusterChanged() {
         isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
+        await yieldForAnimation(350);
         groupTabs();
     }
 
     /** The master switch turns every grouping on or off at once. */
-    function setClusterEnabled(enabled) {
+    async function setClusterEnabled(enabled) {
         isClusterEnabled = enabled;
+        await yieldForAnimation(350);
         clusterConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
         groupTabs();
     }

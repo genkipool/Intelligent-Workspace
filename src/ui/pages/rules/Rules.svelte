@@ -483,21 +483,20 @@
         isAllExpandedStore.set(newState);
     }
 
-    let _groupTabsTimer = null;
-    function debouncedGroupTabs(delay = 120) {
-        if (_groupTabsTimer) clearTimeout(_groupTabsTimer);
-        _groupTabsTimer = setTimeout(() => {
-            _groupTabsTimer = null;
-            groupTabs();
-        }, delay);
+    export function yieldForAnimation(ms = 350) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
     /** The master switch turns every grouping on or off at once, as in the original. */
-    function setClusterEnabled(enabled) {
+    async function setClusterEnabled(enabled) {
         isClusterEnabled = enabled;
+        await yieldForAnimation(350);
         clusterConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
-        saveSettings({ clusterConfig: $state.snapshot(clusterConfig) });
-        debouncedGroupTabs(120);
+        await saveSettings({
+            clusterConfig: $state.snapshot(clusterConfig),
+            clusteringEnabled: enabled,
+        });
+        await groupTabs();
     }
 
     function toggleCluster() {
@@ -505,28 +504,44 @@
     }
 
     /** Any change in Configure Groups re-syncs the master switch and regroups the tabs. */
-    function onClusterChanged() {
+    async function onClusterChanged() {
         isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
-        saveSettings({ clusterConfig: $state.snapshot(clusterConfig) });
-        debouncedGroupTabs(120);
+        await yieldForAnimation(350);
+        await saveSettings({
+            clusterConfig: $state.snapshot(clusterConfig),
+            clusteringEnabled: isClusterEnabled,
+        });
+        await groupTabs();
     }
 
-    function toggleSortGroups() {
+    async function toggleSortGroups() {
         isSortGroupsEnabled = !isSortGroupsEnabled;
+        await yieldForAnimation(350);
+        await saveSettings({ sortGroups: isSortGroupsEnabled });
     }
 
-    function togglePrefixes() {
+    async function togglePrefixes() {
         isPrefixesEnabled = !isPrefixesEnabled;
+        await yieldForAnimation(350);
+        await saveSettings({ enablePrefixes: isPrefixesEnabled });
+        chrome.runtime.sendMessage({
+            action: 'togglePrefixes',
+            enabled: isPrefixesEnabled,
+        });
     }
 
-    function toggleCollapseTimer() {
+    async function toggleCollapseTimer() {
         isCollapseTimerEnabled = !isCollapseTimerEnabled;
+        await yieldForAnimation(350);
+        await saveSettings({ collapseTimer: isCollapseTimerEnabled });
     }
 
-    function toggleAllRules() {
+    async function toggleAllRules() {
         const newState = !isAllRulesActive;
+        isAllRulesActive = newState;
+        await yieldForAnimation(350);
         let updatedRules = $rulesStore.map((r) => ({ ...r, active: newState }));
-        saveRulesToStorage(updatedRules);
+        await saveRulesToStorage(updatedRules);
     }
 
     function openResize() {
