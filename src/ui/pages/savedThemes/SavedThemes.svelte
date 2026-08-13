@@ -1,13 +1,11 @@
 <script>
     import { onMount, tick } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
-    import DateField from '../../components/common/DateField.svelte';
-    import TimeField from '../../components/common/TimeField.svelte';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import ThemeCard from './ThemeCard.svelte';
     import ThemeEditorModal from './components/ThemeEditorModal.svelte';
     import ThemeScheduleModal from './components/ThemeScheduleModal.svelte';
+    import SavedThemesToolbar from './components/SavedThemesToolbar.svelte';
     import {
         initializeTranslations,
         showNotification,
@@ -74,25 +72,6 @@
     let endDateTrigger = $state('YYYY-MM-DD');
 
     let scheduleError = $state('');
-
-    // Popup states
-    let calendarPopupVisible = $state(false);
-    let timePopupVisible = $state(false);
-    let currentCalendarTarget = $state('start');
-    let activeTriggerType = null; // e.g. 'startTimeOneTime'
-    let activeTriggerEl = null;
-
-    let calCurrentDate = $state(new Date());
-    let calSelectedStartDate = $state(null);
-    let calSelectedEndDate = $state(null);
-
-    let inputHour = $state('00');
-    let inputMinute = $state('00');
-
-    let calendarPopupStyle = $state('');
-    let timePopupStyle = $state('');
-    let calendarPopupEl = $state();
-    let timePopupEl = $state();
 
     onMount(async () => {
         initNumberSpinnerArrows();
@@ -513,133 +492,6 @@
         return sorted.map((d) => dNames[d]).join(', ');
     }
 
-    // --- Popups (Calendar / Time) ---
-    function hidePopups() {
-        calendarPopupVisible = false;
-        timePopupVisible = false;
-        activeTriggerType = null;
-        activeTriggerEl = null;
-    }
-
-    function updatePopupPosition() {
-        if (!activeTriggerEl) return;
-        const rect = activeTriggerEl.getBoundingClientRect();
-        let el = calendarPopupVisible ? calendarPopupEl : timePopupVisible ? timePopupEl : null;
-        if (!el) return;
-        const popupWidth = el.offsetWidth;
-        const popupHeight = el.offsetHeight;
-        const padding = 5;
-        let top = rect.bottom + padding;
-        if (top + popupHeight > window.innerHeight) top = rect.top - popupHeight - padding;
-        let left = rect.left;
-        if (left + popupWidth > window.innerWidth) left = window.innerWidth - popupWidth - padding;
-        const style = `position: fixed; top: ${top}px; left: ${Math.max(padding, left)}px;`;
-        if (calendarPopupVisible) calendarPopupStyle = style;
-        else if (timePopupVisible) timePopupStyle = style;
-    }
-
-    function toggleCalendar(target, type, e) {
-        if (calendarPopupVisible && activeTriggerType === type) {
-            hidePopups();
-            return;
-        }
-        hidePopups();
-        currentCalendarTarget = target;
-        activeTriggerType = type;
-        activeTriggerEl = e.currentTarget;
-        calendarPopupVisible = true;
-        tick().then(updatePopupPosition);
-    }
-
-    function toggleTimePicker(type, currentVal, e) {
-        if (timePopupVisible && activeTriggerType === type) {
-            hidePopups();
-            return;
-        }
-        hidePopups();
-        activeTriggerType = type;
-        activeTriggerEl = e.currentTarget;
-        let [h, m] = currentVal.split(':');
-        if (currentVal === '00:00') {
-            const now = new Date();
-            h = String(now.getHours()).padStart(2, '0');
-            m = String(now.getMinutes()).padStart(2, '0');
-        }
-        inputHour = h || '00';
-        inputMinute = m || '00';
-        timePopupVisible = true;
-        tick().then(updatePopupPosition);
-    }
-
-    function selectDate(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        const formatted = `${y}-${m}-${day}`;
-        if (currentCalendarTarget === 'start') {
-            calSelectedStartDate = d;
-            startDateTrigger = formatted;
-        } else {
-            calSelectedEndDate = d;
-            endDateTrigger = formatted;
-        }
-        hidePopups();
-        scheduleError = '';
-    }
-
-    function generateCalendarDays(currentDate, selectedDate) {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const today = new Date();
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-        let days = [];
-        for (let i = 0; i < firstDay; i++) days.push({ empty: true });
-
-        for (let day = 1; day <= daysInMonth; day++) {
-            const isPast =
-                year < today.getFullYear() ||
-                (year === today.getFullYear() && month < today.getMonth()) ||
-                (year === today.getFullYear() && month === today.getMonth() && day < today.getDate());
-            const isToday = today.getMonth() === month && today.getFullYear() === year && day === today.getDate();
-            const isSelected =
-                selectedDate &&
-                day === selectedDate.getDate() &&
-                month === selectedDate.getMonth() &&
-                year === selectedDate.getFullYear();
-
-            days.push({ day, isPast, isToday, isSelected, dateObj: new Date(year, month, day) });
-        }
-        return days;
-    }
-
-    function updateTime() {
-        let h = inputHour.replace(/\D/g, '');
-        let m = inputMinute.replace(/\D/g, '');
-        if (h !== '' && parseInt(h) > 23) h = '23';
-        if (m !== '' && parseInt(m) > 59) m = '59';
-        const display = `${h.padStart(2, '0')}:${m.padStart(2, '0')}`;
-        if (activeTriggerType === 'startOneTime') startTimeOneTimeTrigger = display;
-        else if (activeTriggerType === 'endOneTime') endTimeOneTimeTrigger = display;
-        else if (activeTriggerType === 'startRep') startTimeTrigger = display;
-        else if (activeTriggerType === 'endRep') endTimeTrigger = display;
-        scheduleError = '';
-    }
-
-    function handleTimeArrow(unit, dir) {
-        if (unit === 'hour') {
-            let val = parseInt(inputHour) || 0;
-            val = dir === 'up' ? (val + 1) % 24 : (val - 1 + 24) % 24;
-            inputHour = val.toString().padStart(2, '0');
-        } else {
-            let val = parseInt(inputMinute) || 0;
-            val = dir === 'up' ? (val + 1) % 60 : (val - 1 + 60) % 60;
-            inputMinute = val.toString().padStart(2, '0');
-        }
-        updateTime();
-    }
-
     // --- Drag and Drop Repositioning ---
     let draggedIndex = -1;
     function handleItemDragStart(e, idx) {
@@ -701,148 +553,23 @@
     }
 </script>
 
-<svelte:window
-    onresize={updatePopupPosition}
-    onclick={(e) => {
-        if (
-            calendarPopupVisible &&
-            calendarPopupEl &&
-            !calendarPopupEl.contains(e.target) &&
-            !e.target.closest('.custom-input-trigger')
-        )
-            hidePopups();
-        if (timePopupVisible && timePopupEl && !timePopupEl.contains(e.target) && !e.target.closest('.time-trigger'))
-            hidePopups();
-    }}
-/>
-
 <!--
     The container is hidden rather than removed while the import panel is open:
     unmounting it would drop the text applied by applyTranslations() and the page
     would come back blank.
 -->
-<div
-    class="container"
-    style:display={showImportPanel ? 'none' : null}
-    bind:this={mainContainerEl}
-    onscroll={updatePopupPosition}
->
-    <div class="sticky-header">
-        <header class="header">
-            <h1 data-i18n="savedThemes"></h1>
-            <div class="header-actions">
-                <button
-                    id="storage-sync-btn"
-                    class="storage-btn"
-                    class:active={currentStorageArea === 'sync'}
-                    data-i18n-title="storageSyncSavedLimit"
-                    onclick={() => setStorageArea('sync')}
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        ><path
-                            d="M12 16v-6m0 0-3 2m3-2 3 2m8 3a4 4 0 0 0-4.07-4A7.002 7.002 0 0 0 5.669 9.01 5 5 0 0 0 6 19h13a4 4 0 0 0 4-4"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        /></svg
-                    >
-                </button>
-                <button
-                    id="storage-local-btn"
-                    class="storage-btn"
-                    class:active={currentStorageArea === 'local'}
-                    data-i18n-title="storageLocalSavedLimit"
-                    onclick={() => setStorageArea('local')}
-                >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        ><path
-                            d="m13 7-1.116-2.231c-.32-.642-.481-.963-.72-1.198a2 2 0 0 0-.748-.462C10.1 3 9.74 3 9.022 3H5.2c-1.12 0-1.68 0-2.108.218a2 2 0 0 0-.874.874C2 4.52 2 5.08 2 6.2V7m0 0h15.2c1.68 0 2.52 0 3.162.327a3 3 0 0 1 1.311 1.311C22 9.28 22 10.12 22 11.8v4.4c0 1.68 0 2.52-.327 3.162a3 3 0 0 1-1.311 1.311C19.72 21 18.88 21 17.2 21H6.8c-1.68 0-2.52 0-3.162-.327a3 3 0 0 1-1.311-1.311C2 18.72 2 17.88 2 16.2zm7 7 3 3m0 0 3-3m-3 3v-6"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        /></svg
-                    >
-                </button>
-                <button
-                    id="list-group-toggle"
-                    class="rules-button"
-                    data-i18n-title="listTabGroups"
-                    onclick={() => navigateTo('../listGroup/listGroup.html')}
-                >
-                    <svg width="20" height="20" viewBox="0 0 512 512" fill="var(--text-color)"
-                        ><path
-                            d="M136 24H16v120h120Zm-32 88H48V56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm32 88H16v120h120Zm-32 88H48v-56h56Zm72-440.002h320v32H176zm0 88h256v32H176zm0 88h320v32H176zm0 88h256v32H176zm0 176h256v32H176zm0-88h320v32H176z"
-                        /></svg
-                    >
-                </button>
-                <button
-                    id="rules-toggle"
-                    class="rules-button"
-                    data-i18n-title="openRulesPage"
-                    onclick={() => navigateTo('../rules/rules.html')}
-                >
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="var(--text-color)"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        ><circle cx="2.5" cy="4" r="1.5" fill="var(--text-color)"></circle><circle
-                            cx="2.5"
-                            cy="12"
-                            r="1.5"
-                            fill="var(--text-color)"
-                        ></circle><circle cx="2.5" cy="20" r="1.5" fill="var(--text-color)"></circle><path
-                            d="M9 4h13"
-                            stroke-width="3"
-                        ></path><path d="M9 12h13" stroke-width="3"></path><path d="M9 20h13" stroke-width="3"
-                        ></path></svg
-                    >
-                </button>
-                <button
-                    id="home-btn"
-                    class="home-button"
-                    type="button"
-                    data-i18n-title="backToHome"
-                    onclick={() => navigateTo('../popup/popup.html')}
-                >
-                    <svg width="20" height="20" viewBox="2 2 20 20" fill="var(--text-color)"
-                        ><path
-                            fill-rule="evenodd"
-                            clip-rule="evenodd"
-                            d="m12 3.188 9.45 7.087-.45 1.35h-.75v8.625H3.75v-8.625H3l-.45-1.35zm-6.75 6.937v8.625h13.5v-8.625L12 5.063z"
-                        /></svg
-                    >
-                </button>
-            </div>
-        </header>
-        <div class="theme-actions-container">
-            <button
-                id="create-theme-btn"
-                class="theme-action"
-                data-i18n="createThemeTitle"
-                onclick={() => openThemeEditor('create')}
-            ></button>
-            <button
-                id="view-all-schedules-btn"
-                class="theme-action"
-                data-i18n="scheduleThemes"
-                onclick={() => openScheduleModalFor()}
-            ></button>
-            <button id="export-themes-btn" class="theme-action" data-i18n="export" onclick={exportAllThemes}></button>
-            <button
-                id="import-themes-btn"
-                class="theme-action"
-                data-i18n="import"
-                onclick={() => (showImportPanel = true)}
-            ></button>
-        </div>
-    </div>
+<div class="container" style:display={showImportPanel ? 'none' : null} bind:this={mainContainerEl}>
+    <SavedThemesToolbar
+        {currentStorageArea}
+        onSetStorageArea={setStorageArea}
+        onNavigate={navigateTo}
+        onCreateTheme={() => openThemeEditor('create')}
+        onOpenSchedule={() => openScheduleModalFor()}
+        onExportThemes={exportAllThemes}
+        onOpenImport={() => (showImportPanel = true)}
+    />
 
-    <main onscroll={updatePopupPosition}>
+    <main>
         <div id="saved-themes-grid" class="saved-themes-grid">
             {#if savedThemes.length === 0}
                 <p id="no-saved-themes-message" class="no-themes-message" data-i18n="noSavedThemes"></p>
@@ -941,7 +668,6 @@
     bind:scheduleError
     {MAX_GLOBAL_SCHEDULES}
     onClose={() => (showScheduleModal = false)}
-    onScroll={updatePopupPosition}
     onEditSchedule={handleEditSchedule}
     onDeleteSchedule={handleDeleteSchedule}
     onToggleDay={toggleDay}
@@ -951,171 +677,5 @@
     {formatDateTime}
     {getDayNames}
 />
-
-<!-- CUSTOM CALENDAR COMPONENT -->
-{#if calendarPopupVisible}
-    <div id="custom-calendar-popup" class="custom-calendar" bind:this={calendarPopupEl} style={calendarPopupStyle}>
-        <div class="calendar-header">
-            <button
-                id="cal-prev-btn"
-                onclick={(e) => {
-                    e.stopPropagation();
-                    const now = new Date();
-                    const prevMonth = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() - 1, 1);
-                    if (
-                        prevMonth.getFullYear() > now.getFullYear() ||
-                        (prevMonth.getFullYear() === now.getFullYear() && prevMonth.getMonth() >= now.getMonth())
-                    ) {
-                        calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() - 1, 1);
-                    }
-                }}>&lt;</button
-            >
-            <span id="cal-month-year"
-                >{[
-                    chrome.i18n.getMessage('monthJanuary') || 'January',
-                    chrome.i18n.getMessage('monthFebruary') || 'February',
-                    chrome.i18n.getMessage('monthMarch') || 'March',
-                    chrome.i18n.getMessage('monthApril') || 'April',
-                    chrome.i18n.getMessage('monthMay') || 'May',
-                    chrome.i18n.getMessage('monthJune') || 'June',
-                    chrome.i18n.getMessage('monthJuly') || 'July',
-                    chrome.i18n.getMessage('monthAugust') || 'August',
-                    chrome.i18n.getMessage('monthSeptember') || 'September',
-                    chrome.i18n.getMessage('monthOctober') || 'October',
-                    chrome.i18n.getMessage('monthNovember') || 'November',
-                    chrome.i18n.getMessage('monthDecember') || 'December',
-                ][calCurrentDate.getMonth()]}
-                {calCurrentDate.getFullYear()}</span
-            >
-            <button
-                id="cal-next-btn"
-                onclick={(e) => {
-                    e.stopPropagation();
-                    calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth() + 1, 1);
-                }}>&gt;</button
-            >
-        </div>
-        <div class="calendar-weekdays">
-            <span data-i18n="daySunInitial">D</span><span data-i18n="dayMonInitial">L</span><span
-                data-i18n="dayTueInitial">M</span
-            ><span data-i18n="dayWedInitial">X</span><span data-i18n="dayThuInitial">J</span><span
-                data-i18n="dayFriInitial">V</span
-            ><span data-i18n="daySatInitial">S</span>
-        </div>
-        <div id="calendar-days-grid" class="calendar-grid">
-            {#each generateCalendarDays(calCurrentDate, currentCalendarTarget === 'start' ? calSelectedStartDate : calSelectedEndDate) as d, i (d.dateObj ? d.dateObj.getTime() : `empty-${i}`)}
-                {#if d.empty}
-                    <div class="calendar-day empty"></div>
-                {:else if d.isPast}
-                    <div class="calendar-day disabled" style="opacity: 0.3; cursor: not-allowed;">{d.day}</div>
-                {:else}
-                    <div
-                        class="calendar-day"
-                        class:selected={d.isSelected}
-                        class:today={d.isToday}
-                        onclick={(e) => {
-                            e.stopPropagation();
-                            selectDate(d.dateObj);
-                        }}
-                    >
-                        {d.day}
-                    </div>
-                {/if}
-            {/each}
-        </div>
-        <div class="calendar-footer">
-            <button
-                id="cal-clear-btn"
-                data-i18n="reset"
-                onclick={(e) => {
-                    e.stopPropagation();
-                    if (currentCalendarTarget === 'start') {
-                        calSelectedStartDate = null;
-                        startDateTrigger = 'YYYY-MM-DD';
-                    } else {
-                        calSelectedEndDate = null;
-                        endDateTrigger = 'YYYY-MM-DD';
-                    }
-                    hidePopups();
-                }}
-            ></button>
-        </div>
-    </div>
-{/if}
-
-{#if timePopupVisible}
-    <div id="custom-time-popup" class="custom-time-picker" bind:this={timePopupEl} style={timePopupStyle}>
-        <div class="time-picker-main-row">
-            <div class="time-arrows">
-                <button
-                    class="time-arrow-btn"
-                    type="button"
-                    onclick={(e) => {
-                        e.stopPropagation();
-                        handleTimeArrow('hour', 'up');
-                    }}>▲</button
-                >
-                <button
-                    class="time-arrow-btn"
-                    type="button"
-                    onclick={(e) => {
-                        e.stopPropagation();
-                        handleTimeArrow('hour', 'down');
-                    }}>▼</button
-                >
-            </div>
-            <div class="time-input-container">
-                <input
-                    type="text"
-                    id="input-hour"
-                    maxlength="2"
-                    inputmode="numeric"
-                    placeholder="00"
-                    bind:value={inputHour}
-                    oninput={updateTime}
-                    onblur={() => {
-                        if (!inputHour) inputHour = '00';
-                        inputHour = inputHour.padStart(2, '0');
-                        updateTime();
-                    }}
-                />
-                <span>:</span>
-                <input
-                    type="text"
-                    id="input-minute"
-                    maxlength="2"
-                    inputmode="numeric"
-                    placeholder="00"
-                    bind:value={inputMinute}
-                    oninput={updateTime}
-                    onblur={() => {
-                        if (!inputMinute) inputMinute = '00';
-                        inputMinute = inputMinute.padStart(2, '0');
-                        updateTime();
-                    }}
-                />
-            </div>
-            <div class="time-arrows">
-                <button
-                    class="time-arrow-btn"
-                    type="button"
-                    onclick={(e) => {
-                        e.stopPropagation();
-                        handleTimeArrow('minute', 'up');
-                    }}>▲</button
-                >
-                <button
-                    class="time-arrow-btn"
-                    type="button"
-                    onclick={(e) => {
-                        e.stopPropagation();
-                        handleTimeArrow('minute', 'down');
-                    }}>▼</button
-                >
-            </div>
-        </div>
-        <div class="time-picker-label" data-i18n="format24h">24h</div>
-    </div>
-{/if}
 
 <ConfirmDialog />
