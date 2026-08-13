@@ -260,28 +260,55 @@
 
     // Creates vertical gradients using resolved theme variables
     function createVerticalGradient(ctx, chartArea, varName, alphaStart = 0.8, alphaEnd = 0.2) {
-        const { top, bottom } = chartArea;
+        if (!chartArea || !ctx) return 'rgba(52,152,219,0.5)';
+        const { top = 0, bottom = 100 } = chartArea;
         const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-        const baseColor = cssVar(varName);
+        const baseColor = cssVar(varName) || '#3498db';
         gradient.addColorStop(0, colorMix(baseColor, alphaStart));
         gradient.addColorStop(1, colorMix(baseColor, alphaEnd));
         return gradient;
     }
 
-    function colorMix(color, alpha) {
-        if (color.startsWith('#')) {
-            const r = parseInt(color.slice(1, 3), 16);
-            const g = parseInt(color.slice(3, 5), 16);
-            const b = parseInt(color.slice(5, 7), 16);
+    function colorMix(color, alpha = 1) {
+        if (!color) return `rgba(52,152,219,${alpha})`;
+        const str = String(color).trim();
+
+        // 3-digit hex: #rgb
+        if (/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.test(str)) {
+            const match = str.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
+            const r = parseInt(match[1] + match[1], 16);
+            const g = parseInt(match[2] + match[2], 16);
+            const b = parseInt(match[3] + match[3], 16);
             return `rgba(${r},${g},${b},${alpha})`;
         }
-        if (color.startsWith('rgb')) {
-            return color
-                .replace(/rgb\(|rgba\(/, 'rgba(')
-                .replace(/\)$/, `,${alpha})`)
-                .replace(/,[\d.]+\)$/, `,${alpha})`);
+
+        // 6-digit hex: #rrggbb
+        if (/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/.test(str)) {
+            const r = parseInt(str.slice(1, 3), 16);
+            const g = parseInt(str.slice(3, 5), 16);
+            const b = parseInt(str.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${alpha})`;
         }
-        return color;
+
+        // rgb / rgba format
+        const rgbMatch = str.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+        if (rgbMatch) {
+            return `rgba(${rgbMatch[1]},${rgbMatch[2]},${rgbMatch[3]},${alpha})`;
+        }
+
+        // DOM canvas context parser as safe fallback for named colors
+        try {
+            const testCanvas = document.createElement('canvas');
+            testCanvas.width = 1;
+            testCanvas.height = 1;
+            const testCtx = testCanvas.getContext('2d');
+            testCtx.fillStyle = str;
+            testCtx.fillRect(0, 0, 1, 1);
+            const [r, g, b] = testCtx.getImageData(0, 0, 1, 1).data;
+            return `rgba(${r},${g},${b},${alpha})`;
+        } catch (_) {
+            return str;
+        }
     }
 
     // Resolves a CSS variable to its current computed value
