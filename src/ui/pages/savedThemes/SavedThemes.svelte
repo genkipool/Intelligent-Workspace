@@ -2,10 +2,11 @@
     import { onMount, tick } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import ThemeCard from './ThemeCard.svelte';
     import ThemeEditorModal from './components/ThemeEditorModal.svelte';
     import ThemeScheduleModal from './components/ThemeScheduleModal.svelte';
     import SavedThemesToolbar from './components/SavedThemesToolbar.svelte';
+    import SavedThemesGrid from './components/SavedThemesGrid.svelte';
+    import SavedThemesFooter from './components/SavedThemesFooter.svelte';
     import {
         initializeTranslations,
         showNotification,
@@ -570,55 +571,24 @@
     />
 
     <main>
-        <div id="saved-themes-grid" class="saved-themes-grid">
-            {#if savedThemes.length === 0}
-                <p id="no-saved-themes-message" class="no-themes-message" data-i18n="noSavedThemes"></p>
-            {/if}
-            {#each savedThemes as theme, i (theme.name + i)}
-                <ThemeCard
-                    {theme}
-                    index={i}
-                    isActive={activeTheme &&
-                        activeTheme.name === theme.name &&
-                        JSON.stringify(activeTheme.colors) === JSON.stringify(theme.colors)}
-                    onactivate={handleActivate}
-                    onrename={handleRename}
-                    ondelete={handleDelete}
-                    onedit={() => openThemeEditor('edit', theme, i)}
-                    onschedule={() => openScheduleModalFor(theme.name)}
-                    onitemdragstart={({ event }) => handleItemDragStart(event, i)}
-                    ondrop={(e) => handleItemDrop(e, i)}
-                    ondragover={(e) => e.preventDefault()}
-                />
-            {/each}
-        </div>
+        <SavedThemesGrid
+            {savedThemes}
+            {activeTheme}
+            onactivate={handleActivate}
+            onrename={handleRename}
+            ondelete={handleDelete}
+            onedit={(theme, i) => openThemeEditor('edit', theme, i)}
+            onschedule={(themeName) => openScheduleModalFor(themeName)}
+            onitemdragstart={(event, i) => handleItemDragStart(event, i)}
+            ondrop={(e, i) => handleItemDrop(e, i)}
+        />
 
-        <div class="main-footer-wrapper">
-            <footer class="storage-info-footer">
-                <span id="storage-limits-info"
-                    >{`Sync: ${syncThemesCount}/${MAX_SYNC_THEMES} | Local: ${localThemesCount}/${MAX_LOCAL_THEMES}`}</span
-                >
-            </footer>
-            <a
-                href="#"
-                id="about-link-saved-themes"
-                class="footer-link"
-                onclick={(e) => {
-                    e.preventDefault();
-                    chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/pages/about/about.html') });
-                }}
-            >
-                <footer class="footer">
-                    <div>Intelligent Workspace v1.0.0</div>
-                    <div class="color-dots">
-                        {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color (color)}
-                            <div class="color-dot" style="background-color: {color};"></div>
-                        {/each}
-                    </div>
-                    <div data-i18n="developedBy"></div>
-                </footer>
-            </a>
-        </div>
+        <SavedThemesFooter
+            {syncThemesCount}
+            {localThemesCount}
+            maxSyncThemes={MAX_SYNC_THEMES}
+            maxLocalThemes={MAX_LOCAL_THEMES}
+        />
     </main>
 </div>
 <ImportPanel
