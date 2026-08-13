@@ -23,6 +23,19 @@
     import DashboardTimeEfficiencySection from './components/DashboardTimeEfficiencySection.svelte';
     import DashboardProjectAnalysisSection from './components/DashboardProjectAnalysisSection.svelte';
     import DashboardBreakdownSection from './components/DashboardBreakdownSection.svelte';
+    import {
+        PROJECT_COLORS,
+        fmtDur,
+        fmtH,
+        fmtDate,
+        fmtDateShort,
+        fmtTime,
+        dayKey,
+        effColor,
+        projColor,
+        computeKpis,
+        computeStreak,
+    } from './dashboardAnalytics.js';
 
     let apps = {
         sidebar: null,
@@ -205,28 +218,6 @@
         });
     }
 
-    // --- PROJECT COLORS -------------------------------------------
-    // Uses theme variables only. The dark/light variants
-    // use var(--bg-color) and var(--text-on-color) to adapt to any theme.
-    const PROJECT_COLORS = [
-        'var(--interactive-color)',
-        'var(--action-color)',
-        'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
-        'color-mix(in srgb, var(--action-color)      70%, var(--text-on-color))',
-        'color-mix(in srgb, var(--interactive-color) 55%, var(--bg-color))',
-        'color-mix(in srgb, var(--action-color)      55%, var(--bg-color))',
-        'color-mix(in srgb, var(--error-color)       80%, var(--bg-panel-color))',
-        'color-mix(in srgb, var(--interactive-color) 40%, var(--text-on-color))',
-        'color-mix(in srgb, var(--action-color)      40%, var(--text-on-color))',
-        'color-mix(in srgb, var(--interactive-color) 30%, var(--bg-color))',
-        'color-mix(in srgb, var(--action-color)      30%, var(--bg-color))',
-        'color-mix(in srgb, var(--error-color)       50%, var(--bg-panel-color))',
-        'color-mix(in srgb, var(--interactive-color) 85%, var(--action-color))',
-        'color-mix(in srgb, var(--action-color)      85%, var(--interactive-color))',
-        'color-mix(in srgb, var(--interactive-color) 60%, var(--error-color))',
-        'color-mix(in srgb, var(--action-color)      60%, var(--error-color))',
-    ];
-
     // --- STATE --------------------------------------------------------
     let allData = [];
     let filteredData = [];
@@ -236,54 +227,6 @@
     let activeTag = '';
     let sidebarQuery = '';
     let charts = {};
-
-    // --- UTILS --------------------------------------------------------
-    const fmtDur = (secs) => {
-        secs = Math.max(0, Math.round(secs));
-        const h = Math.floor(secs / 3600);
-        const m = Math.floor((secs % 3600) / 60);
-        const s = secs % 60;
-        if (h > 0) return `${h}h ${m}m`;
-        if (m > 0) return `${m}m ${s}s`;
-        return `${s}s`;
-    };
-
-    const fmtH = (secs) => (secs / 3600).toFixed(1) + i18n('dashboardFocusH_abbrev');
-
-    const fmtDate = (ts) =>
-        !ts
-            ? '--'
-            : new Date(ts).toLocaleDateString(_lang === 'es' ? 'es-ES' : 'en-GB', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-              });
-    const fmtDateShort = (ts) =>
-        !ts
-            ? '--'
-            : new Date(ts).toLocaleDateString(_lang === 'es' ? 'es-ES' : 'en-GB', { day: '2-digit', month: 'short' });
-    const fmtTime = (ts) =>
-        !ts
-            ? '--'
-            : new Date(ts).toLocaleTimeString(_lang === 'es' ? 'es-ES' : 'en-GB', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-              });
-
-    const dayKey = (ts) => {
-        const d = new Date(ts);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
-
-    // Efficiency colours taken from theme variables only
-    const effColor = (pct) => {
-        if (pct >= 80) return 'color-mix(in srgb, var(--interactive-color) 90%, var(--text-on-color))';
-        if (pct >= 60) return 'var(--interactive-color)';
-        if (pct >= 40) return 'color-mix(in srgb, var(--interactive-color) 70%, var(--action-color))';
-        return 'var(--error-color)';
-    };
-
-    const projColor = (idx) => PROJECT_COLORS[idx % PROJECT_COLORS.length];
 
     // --- CHART DEFAULTS -----------------------------------------------
     Chart.defaults.color = cssVar('--text-color');
@@ -475,243 +418,26 @@
 
     // --- KPIs ---------------------------------------------------------
     function renderKPIs() {
-        const d = filteredData;
-        const totalFocus = d.reduce((a, e) => a + (e.totalFocusSeconds || 0), 0);
-        const totalBreak = d.reduce((a, e) => a + (e.totalBreakSeconds || 0), 0);
-        const totalTime = totalFocus + totalBreak;
-        const totalCycles = d.reduce((a, e) => a + (e.completedCycles || 0), 0);
-        const totalInt = d.reduce((a, e) => a + (e.interruptions || 0), 0);
-        const totalIntTime = d.reduce((a, e) => a + (e.totalInterruptionSeconds || 0), 0);
-        const eff = totalTime > 0 ? Math.round((totalFocus / totalTime) * 100) : 0;
-        const projects = [...new Set(d.map((e) => e.projectName))].length;
-        const activeDays = new Set(d.map((e) => dayKey(e.savedAt))).size;
-        const avgFocusArr = d.filter((e) => e.avgFocus > 0).map((e) => e.avgFocus);
-        const avgFocus = avgFocusArr.length
-            ? Math.round(avgFocusArr.reduce((a, b) => a + b, 0) / avgFocusArr.length)
-            : 0;
-        const bestSession = d.reduce((b, e) => ((e.totalFocusSeconds || 0) > (b.totalFocusSeconds || 0) ? e : b), {});
-
-        // Simple pluralization of "project(s)"
-        const projLabel =
-            projects === 1 ? i18n('dashboardProjects_n', projects) : i18n('dashboardProjects_plural', projects);
-        // Cycles per session
-        const cyclesPerSess = d.length > 0 ? (totalCycles / d.length).toFixed(1) : 0;
-        // Interruptions per session
-        const intPerSess = d.length > 0 ? (totalInt / d.length).toFixed(1) : 0;
-
-        // --- NEW METRICS ---
-        const wrRatio = totalFocus > 0 ? (totalBreak / totalFocus).toFixed(1) : 0;
-        const intRate = totalFocus > 0 ? (totalInt / (totalFocus / 3600)).toFixed(1) : 0;
-        const avgIntDur = totalInt > 0 ? Math.round(totalIntTime / totalInt) : 0;
-
-        const daysOfWeek = new Array(7).fill(0);
-        const hourlyFocus = new Array(24).fill(0);
-        d.forEach((e) => {
-            const date = new Date(e.savedAt);
-            const dow = date.getDay();
-            const h = date.getHours();
-            daysOfWeek[dow] += e.totalFocusSeconds || 0;
-            hourlyFocus[h] += e.totalFocusSeconds || 0;
-        });
-        const bestDayIdx = daysOfWeek.indexOf(Math.max(...daysOfWeek));
-        const bestDayName =
-            d.length > 0
-                ? [
-                      i18n('dashboardSunday'),
-                      i18n('dashboardMonday'),
-                      i18n('dashboardTuesday'),
-                      i18n('dashboardWednesday'),
-                      i18n('dashboardThursday'),
-                      i18n('dashboardFriday'),
-                      i18n('dashboardSaturday'),
-                  ][bestDayIdx]
-                : '--';
-        const bestHour = hourlyFocus.indexOf(Math.max(...hourlyFocus));
-        const goldenHourStr = d.length > 0 ? `${bestHour}:00 - ${bestHour + 1}:00` : '--';
-
-        // Project with most focus
-        const projMap = {};
-        d.forEach((e) => {
-            const p = e.projectName || '--';
-            projMap[p] = (projMap[p] || 0) + (e.totalFocusSeconds || 0);
-        });
-        let topProj = '--',
-            maxP = 0;
-        for (const p in projMap) {
-            if (projMap[p] > maxP) {
-                maxP = projMap[p];
-                topProj = p;
-            }
-        }
-
-        const kpis = [
-            {
-                label: i18n('pomodoroStatsFocusTime'),
-                value: fmtDur(totalFocus),
-                sub: fmtH(totalFocus) + ' ' + i18n('dashboardInTotal'),
-                color: 'var(--interactive-color)',
-            },
-            { label: i18n('pomodoroStatsSessions'), value: d.length, sub: projLabel, color: 'var(--action-color)' },
-            {
-                label: i18n('pomodoroStatsCompletedCycles'),
-                value: totalCycles,
-                sub: `~${cyclesPerSess} / ${i18n('dashboardSession')}`,
-                color: 'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
-            },
-            {
-                label: i18n('dashboardAvgEfficiency'),
-                value: eff + '%',
-                sub: i18n('dashboardFocusDivTotal'),
-                color: effColor(eff),
-            },
-            {
-                label: i18n('dashboardActiveDays'),
-                value: activeDays,
-                sub: i18n('dashboardAtLeast1'),
-                color: 'color-mix(in srgb, var(--action-color) 80%, var(--text-on-color))',
-            },
-            {
-                label: i18n('pomodoroStatsBreakTime'),
-                value: fmtDur(totalBreak),
-                sub: i18n('dashboardRestTime'),
-                color: 'color-mix(in srgb, var(--text-color) 55%, var(--bg-color))',
-            },
-            {
-                label: i18n('pomodoroStatsFocusInterruptions'),
-                value: totalInt,
-                sub: `${intPerSess} ${i18n('dashboardPerSession')}`,
-                color: 'color-mix(in srgb, var(--error-color) 70%, var(--bg-color))',
-            },
-            {
-                label: i18n('dashboardInterruptionTime'),
-                value: fmtDur(totalIntTime),
-                sub: i18n('dashboardTotalTimePaused'),
-                color: 'color-mix(in srgb, var(--error-color) 70%, var(--bg-color))',
-            },
-            {
-                label: i18n('dashboardBestSession'),
-                value: (bestSession.totalFocusSeconds || 0) > 0 ? fmtDur(bestSession.totalFocusSeconds) : '--',
-                sub: bestSession.projectName || '--',
-                color: 'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
-            },
-            {
-                label: i18n('pomodoroStatsAvgFocusDuration'),
-                value: avgFocus > 0 ? fmtDur(avgFocus) : '--',
-                sub: i18n('dashboardAvgCycle'),
-                color: 'var(--action-color)',
-            },
-            {
-                label: i18n('pomodoroStatsTotalTime'),
-                value: fmtDur(totalTime),
-                sub: i18n('dashboardFocusPlusBreak'),
-                color: 'var(--text-color)',
-            },
-            {
-                label: i18n('dashboardWorkRestRatio'),
-                value: `1 : ${wrRatio}`,
-                sub: i18n('dashboardFocusVsBreak'),
-                color: 'var(--interactive-color)',
-            },
-            {
-                label: i18n('dashboardDistractionRate'),
-                value: intRate,
-                sub: i18n('dashboardIntsPerHour'),
-                color: 'var(--error-color)',
-            },
-            {
-                label: i18n('dashboardMostProductiveDay'),
-                value: bestDayName,
-                sub: i18n('dashboardMaxFocusDay'),
-                color: 'var(--action-color)',
-            },
-            {
-                label: i18n('dashboardGoldenHour'),
-                value: goldenHourStr,
-                sub: i18n('dashboardMostFocusedSlot'),
-                color: 'var(--interactive-color)',
-            },
-            {
-                label: i18n('dashboardTotalProjects'),
-                value: projects,
-                sub: i18n('dashboardProjectVariety'),
-                color: 'var(--action-color)',
-            },
-            {
-                label: i18n('dashboardAvgIntDuration'),
-                value: avgIntDur > 0 ? fmtDur(avgIntDur) : '--',
-                sub: i18n('dashboardPerInterruption'),
-                color: 'var(--error-color)',
-            },
-            {
-                label: i18n('dashboardTopProject'),
-                value: topProj,
-                sub: i18n('dashboardMostTimeOn'),
-                color: 'var(--action-color)',
-            },
-            {
-                label: i18n('dashboardFocusIntensity'),
-                value: activeDays > 0 ? (totalFocus / activeDays / 3600).toFixed(1) + 'h' : '--',
-                sub: i18n('dashboardAvgFocusPerDay'),
-                color: 'var(--interactive-color)',
-            },
-        ];
-
+        const kpis = computeKpis(filteredData, allData, i18n, _lang);
         const props = { kpis };
         const el = document.getElementById('kpi-grid');
-        el.replaceChildren();
-        apps.kpiGrid = mount(KpiGrid, { target: el, props });
+        if (el) {
+            el.replaceChildren();
+            apps.kpiGrid = mount(KpiGrid, { target: el, props });
+        }
     }
 
     // --- STREAK -------------------------------------------------------
     function renderStreak() {
-        const days = [...new Set(allData.map((e) => dayKey(e.savedAt)))].sort();
-        if (!days.length) return;
-
-        let maxStreak = 1,
-            tempStreak = 1;
-        for (let i = 1; i < days.length; i++) {
-            const prev = new SvelteDate(days[i - 1]);
-            prev.setDate(prev.getDate() + 1);
-            const cur = new Date(days[i]);
-            if (prev.toDateString() === cur.toDateString()) {
-                tempStreak++;
-                if (tempStreak > maxStreak) maxStreak = tempStreak;
-            } else tempStreak = 1;
-        }
-        if (days.length === 1) maxStreak = 1;
-
-        let currentStreak = 0;
-        const last = new SvelteDate(days[days.length - 1]);
-        last.setHours(0, 0, 0, 0);
-        const today = new SvelteDate();
-        today.setHours(0, 0, 0, 0);
-        const yest = new SvelteDate(today);
-        yest.setDate(today.getDate() - 1);
-        if (last >= yest) {
-            currentStreak = 1;
-            for (let i = days.length - 2; i >= 0; i--) {
-                const d = new SvelteDate(days[i]);
-                d.setHours(0, 0, 0, 0);
-                const n = new SvelteDate(days[i + 1]);
-                n.setHours(0, 0, 0, 0);
-                n.setDate(n.getDate() - 1);
-                if (d.toDateString() === n.toDateString()) currentStreak++;
-                else break;
-            }
-        }
-
-        const dayFocus = {};
-        allData.forEach((e) => {
-            const k = dayKey(e.savedAt);
-            dayFocus[k] = (dayFocus[k] || 0) + (e.totalFocusSeconds || 0);
-        });
-        const bestSec = Math.max(...Object.values(dayFocus), 0);
-        const bestKey = Object.entries(dayFocus).find(([, v]) => v === bestSec)?.[0];
-
-        document.getElementById('streak-current').textContent = currentStreak;
-        document.getElementById('streak-max').textContent = maxStreak;
-        document.getElementById('streak-best-val').textContent = bestSec > 0 ? fmtDur(bestSec) : '--';
-        document.getElementById('streak-best-date').textContent = bestKey ? fmtDateShort(new Date(bestKey)) : '';
+        const { currentStreak, maxStreak, bestSec, bestKey } = computeStreak(allData);
+        const currEl = document.getElementById('streak-current');
+        const maxEl = document.getElementById('streak-max');
+        const valEl = document.getElementById('streak-best-val');
+        const dateEl = document.getElementById('streak-best-date');
+        if (currEl) currEl.textContent = currentStreak;
+        if (maxEl) maxEl.textContent = maxStreak;
+        if (valEl) valEl.textContent = bestSec > 0 ? fmtDur(bestSec) : '--';
+        if (dateEl) dateEl.textContent = bestKey ? fmtDateShort(new Date(bestKey), _lang) : '';
     }
 
     // --- HOUR CHART ---------------------------------------------------
