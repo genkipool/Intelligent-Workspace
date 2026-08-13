@@ -5,7 +5,6 @@
     import { showNotification } from '../../../utils/i18n.js';
     import { isProgrammaticActivation, splitScreenState } from '../../stores/appStore.svelte.js';
     import {
-        createPageModePopup,
         openCookieEditorModal,
         showQrCodeModal,
         updateMuteButtonState,
@@ -22,10 +21,7 @@
     import { loadSplitScreenState } from '../../services/settingsService.js';
     import { prefetchUrl } from '../../services/prefetchService.js';
     import { dataUrlToBlob, animateAndRemove } from '../../services/utils.js';
-    import { createOverflowMenu } from '../../services/contextMenuService.js';
-    import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
-
-    let actionVisibility = $derived($actionVisibilitySettings);
+    import TabActions from './TabActions.svelte';
 
     let { tab, isBackup = false, groupContext = {}, renderContext = {}, subgroupContext = null } = $props();
 
@@ -338,24 +334,6 @@
         }
     }
 
-    let pageModeContainer = $state(null);
-    let tabActionsEl = $state(null);
-
-    $effect(() => {
-        if (pageModeContainer && tabEl && !isBackup) {
-            createPageModePopup(pageModeContainer, tabEl, pageModes);
-        }
-    });
-
-    $effect(() => {
-        // Adds the overflow button that groups the hidden actions; it reacts to the
-        // action visibility settings.
-        if (tabActionsEl && tabEl && !isBackup) {
-            actionVisibility; // reactive dependency
-            createOverflowMenu(tabActionsEl, 'tab-item-template', tabEl);
-        }
-    });
-
     $effect(() => {
         // The overflow menu and Ctrl+click activation read the context off the node
         if (tabEl) tabEl._context = context;
@@ -409,130 +387,26 @@
     >
 
     {#if !isBackup}
-        <div class="tab-actions" bind:this={tabActionsEl}>
-            {#if !isSplitGroup}
-                <div
-                    class="split-screen-btn action-btn"
-                    class:active={isSplitActive}
-                    role="button"
-                    tabindex="0"
-                    title={$tt('splitScreen')}
-                    onclick={handleSplitScreen}
-                >
-                    <svg width="14" height="14"><use href="#icon-split-screen"></use></svg>
-                </div>
-            {/if}
-            <div
-                class="open-in-panel-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('openInPanel')}
-                onclick={openInPanel}
-                onmouseenter={prefetchTab}
-            >
-                <svg width="14" height="14"><use href="#icon-open-panel"></use></svg>
-            </div>
-            <div
-                class="gemini-summary-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('summarizeWithGemini')}
-                onclick={geminiSummary}
-            >
-                <svg width="14" height="14"><use href="#icon-summary"></use></svg>
-            </div>
-            <div class="page-mode-container" bind:this={pageModeContainer}>
-                <div class="page-mode-btn action-btn" role="button" tabindex="0" title={$tt('changePageMode')}>
-                    <svg width="14" height="14"><use href="#icon-page-mode"></use></svg>
-                </div>
-            </div>
-            <div class="qr-code-btn action-btn" role="button" tabindex="0" title={$tt('showQrCode')} onclick={showQr}>
-                <svg width="14" height="14"><use href="#icon-qr"></use></svg>
-            </div>
-            <div
-                class="edit-cookies-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('editCookies')}
-                onclick={editCookies}
-            >
-                <svg width="14" height="14"><use href="#icon-cookie"></use></svg>
-            </div>
-            <div
-                class="screenshot-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('captureWebpage')}
-                onclick={takeScreenshot}
-            >
-                <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
-            </div>
-            <div
-                class="bookmark-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('addToBookmarks')}
-                onclick={addToBookmarks}
-            >
-                <svg width="14" height="14"><use href="#icon-bookmark"></use></svg>
-            </div>
-            <div
-                class="download-files-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('showDownloads')}
-                onclick={showDownloads}
-            >
-                <svg width="14" height="14"><use href="#icon-download"></use></svg>
-            </div>
-            <div
-                class="copy-tab-url-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('copyUrl')}
-                onclick={copyUrl}
-            >
-                <svg width="14" height="14"><use href="#icon-copy"></use></svg>
-            </div>
-            <div
-                class="delete-tab-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('closeTab')}
-                onclick={deleteTab}
-            >
-                <svg width="14" height="14"><use href="#icon-close"></use></svg>
-            </div>
-            <div
-                class="pip-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('openAsPipTitle')}
-                onclick={openPip}
-                onmouseenter={prefetchTab}
-            >
-                <svg width="14" height="14"><use href="#icon-pip"></use></svg>
-            </div>
-            <div
-                class="video-pip-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('omnibarPrefixVideoPipTitle')}
-                onclick={openVideoPip}
-                onmouseenter={prefetchTab}
-            >
-                <svg width="14" height="14"><use href="#icon-video-pip"></use></svg>
-            </div>
-            <div
-                class="popup-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('openAsPopupTitle')}
-                onclick={openPopupWindow}
-                onmouseenter={prefetchTab}
-            >
-                <svg width="14" height="14"><use href="#icon-popup"></use></svg>
-            </div>
-        </div>
+        <TabActions
+            {tab}
+            {tabEl}
+            {isSplitGroup}
+            {isSplitActive}
+            {pageModes}
+            onSplitScreen={handleSplitScreen}
+            onOpenInPanel={openInPanel}
+            onGeminiSummary={geminiSummary}
+            onShowQr={showQr}
+            onEditCookies={editCookies}
+            onTakeScreenshot={takeScreenshot}
+            onAddToBookmarks={addToBookmarks}
+            onShowDownloads={showDownloads}
+            onCopyUrl={copyUrl}
+            onDeleteTab={deleteTab}
+            onOpenPip={openPip}
+            onOpenVideoPip={openVideoPip}
+            onOpenPopupWindow={openPopupWindow}
+            onPrefetchTab={prefetchTab}
+        />
     {/if}
 </div>
