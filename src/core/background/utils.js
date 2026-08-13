@@ -1069,6 +1069,18 @@ async function clearAllGroupPrefixes(windowId) {
     }
 }
 
+const DOMAIN_PALETTE = ['blue', 'cyan', 'green', 'yellow', 'orange', 'red', 'purple', 'pink'];
+
+function getDeterministicColor(str) {
+    if (!str) return 'blue';
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return DOMAIN_PALETTE[Math.abs(hash) % DOMAIN_PALETTE.length];
+}
+
 function getRandomColor() {
     const colors = ['red', 'yellow', 'green', 'blue', 'purple', 'pink', 'orange', 'cyan'];
     return colors[Math.floor(Math.random() * colors.length)];
