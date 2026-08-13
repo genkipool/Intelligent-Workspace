@@ -2,18 +2,12 @@
 import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 
 export const PROJECT_COLORS = [
-    '#3b82f6',
-    '#10b981',
-    '#8b5cf6',
-    '#f59e0b',
-    '#06b6d4',
-    '#ec4899',
-    '#6366f1',
-    '#14b8a6',
-    '#f97316',
-    '#a855f7',
-    '#84cc16',
-    '#e11d48',
+    'var(--interactive-color)',
+    'var(--action-color)',
+    'var(--header-color)',
+    'var(--text-on-color)',
+    'var(--error-color)',
+    'var(--border-color)',
 ];
 
 export const fmtDur = (secs) => {
@@ -54,10 +48,10 @@ export const dayKey = (ts) => {
 };
 
 export const effColor = (pct) => {
-    if (pct >= 80) return '#10b981';
-    if (pct >= 60) return '#3b82f6';
-    if (pct >= 40) return '#f59e0b';
-    return '#ef4444';
+    if (pct >= 80) return 'var(--interactive-color)';
+    if (pct >= 60) return 'var(--action-color)';
+    if (pct >= 40) return 'var(--text-on-color)';
+    return 'var(--error-color)';
 };
 
 export const projColor = (idx) => PROJECT_COLORS[idx % PROJECT_COLORS.length];

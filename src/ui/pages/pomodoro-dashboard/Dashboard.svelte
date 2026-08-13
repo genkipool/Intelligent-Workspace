@@ -356,6 +356,18 @@
         return palette[idx % palette.length];
     }
 
+    function getThemeEffColor(pct) {
+        const cInteractive = cssVar('--interactive-color') || '#3498db';
+        const cAction = cssVar('--action-color') || '#3498db';
+        const cTextOn = cssVar('--text-on-color') || '#ffffff';
+        const cError = cssVar('--error-color') || '#e74c3c';
+
+        if (pct >= 80) return blendColors(cInteractive, cTextOn, 75);
+        if (pct >= 60) return cInteractive;
+        if (pct >= 40) return blendColors(cInteractive, cAction, 60);
+        return cError;
+    }
+
     function colorMix(color, alpha = 1) {
         const rgba = parseRgba(color);
         return `rgba(${rgba.r},${rgba.g},${rgba.b},${alpha})`;
@@ -1020,9 +1032,9 @@
         const tB = filteredData.reduce((a, e) => a + (e.totalBreakSeconds || 0), 0);
         const tI = filteredData.reduce((a, e) => a + (e.totalInterruptionSeconds || 0), 0);
 
-        // Donut colours taken from theme variables
+        // Donut colours taken dynamically from active theme variables
         const c1 = cssVar('--interactive-color');
-        const c2 = '#10b981';
+        const c2 = blendColors(cssVar('--action-color'), cssVar('--header-color') || cssVar('--text-on-color'), 60);
         const c3 = cssVar('--error-color');
 
         charts.donut = new Chart(ctx, {
@@ -1162,7 +1174,7 @@
         empty.style.display = 'none';
         const maxF = sorted[0][1].focus;
 
-        const props = { sorted, maxF, effColor, projColor: getProjectColor, fmtDur };
+        const props = { sorted, maxF, effColor: getThemeEffColor, projColor: getProjectColor, fmtDur };
         tbody.replaceChildren();
         apps.projectTable = mount(ProjectTable, { target: tbody, props });
     }
