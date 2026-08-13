@@ -178,7 +178,7 @@
                     <use href="#icon-cluster"></use>
                 </svg>
             </button>
-            <label class="switch" for="toggle-cluster">
+            <label class="switch">
                 <input
                     type="checkbox"
                     id="toggle-cluster"
@@ -218,7 +218,7 @@
                     <use href="#icon-sort-groups"></use>
                 </svg>
             </button>
-            <label class="switch" for="toggle-sort-groups">
+            <label class="switch">
                 <input
                     class="input-settings-container"
                     type="checkbox"
@@ -248,15 +248,8 @@
                 aria-label={$t(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
                 aria-pressed={areAllExpanded}
             >
-                <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 24 24"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-chevron-down"></use>
+                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+                    <use href="#icon-collapse-all"></use>
                 </svg>
             </button>
         </div>
@@ -282,7 +275,7 @@
                     <use href="#icon-prefixes"></use>
                 </svg>
             </button>
-            <label class="switch" for="toggle-prefixes">
+            <label class="switch">
                 <input
                     type="checkbox"
                     id="toggle-prefixes"
@@ -321,11 +314,7 @@
                     <use href="#icon-timer"></use>
                 </svg>
             </button>
-            <label
-                class="switch"
-                for="toggle-collapse-timer"
-                title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}
-            >
+            <label class="switch" title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}>
                 <input
                     class="input-settings-container"
                     type="checkbox"
@@ -366,7 +355,7 @@
                     <use href="#icon-all-rules"></use>
                 </svg>
             </button>
-            <label class="switch" for="toggle-all-rules">
+            <label class="switch">
                 <input
                     class="input-settings-container"
                     type="checkbox"

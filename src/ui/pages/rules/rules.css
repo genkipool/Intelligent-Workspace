@@ -599,14 +599,6 @@ h1 {
 
     &:has(input:focus-visible) {
         overflow: visible;
-
-        &:has(input:checked) .switch-text-off {
-            display: none;
-        }
-
-        &:not(:has(input:checked)) .switch-text-on {
-            display: none;
-        }
     }
 
     .switch {
