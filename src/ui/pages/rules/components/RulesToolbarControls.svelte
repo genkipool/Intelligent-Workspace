@@ -117,7 +117,7 @@
             <svg
                 width="30"
                 height="30"
-                viewBox="0 0 24 24"
+                viewBox="3 6 18 12"
                 style="color: var(--text-color);"
                 aria-hidden="true"
                 focusable="false"
