@@ -388,6 +388,7 @@
 
     function measureOverflow() {
         if (!urlsContainerEl || !cardEl) return;
+        if (isEditingName) return;
         measuredWidth = availableUrlWidth();
         containerWidth = Math.round(measuredWidth);
 
@@ -598,6 +599,7 @@
                 class="rule-name-edit"
                 type="text"
                 bind:value={editingNameValue}
+                style="width: {Math.max((editingNameValue || '').length, 1)}ch;"
                 onkeydown={handleNameEditKeydown}
                 onblur={handleNameEditBlur}
                 spellcheck="false"
