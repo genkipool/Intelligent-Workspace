@@ -5,6 +5,7 @@
     import { showNotification } from '../../../utils/i18n.js';
     import { showUrlTooltip, hideUrlTooltip } from './urlTooltip.js';
     import RuleCardActions from './card/RuleCardActions.svelte';
+    import RuleUrlItem from './card/RuleUrlItem.svelte';
 
     let {
         rule,
@@ -171,7 +172,6 @@
     let editingDomainIndex = $state(-1);
     let editingDomainUrl = $state('');
 
-    let domainInputEl = $state(null);
     let editingDomainSize = $state({ width: 0, height: 0 });
 
     function editDomain(url, urlIndex, wrapperEl) {
@@ -182,15 +182,6 @@
         editingDomainIndex = urlIndex;
         editingDomainUrl = url;
     }
-
-    // The input is created by the {#if}; focus it as soon as it exists so the caret
-    // shows and Escape/blur reach it.
-    $effect(() => {
-        if (editingDomainIndex !== -1 && domainInputEl) {
-            domainInputEl.focus();
-            domainInputEl.select();
-        }
-    });
 
     function handleEditDomainKeydown(e, originalUrl) {
         if (e.key === 'Enter') {
@@ -678,66 +669,23 @@
             <span class="rule-urls">{$t('noUrlsAssociated') || 'No URLs associated'}</span>
         {:else}
             {#each renderedUrls as url, urlIndex (url)}
-                <div
-                    class="rule-urls-wrapper"
-                    data-url={url}
-                    data-url-index={urlIndex}
+                <RuleUrlItem
+                    {url}
+                    {urlIndex}
+                    ruleIndex={index}
+                    isSingleUrl={displayUrls.length === 1}
+                    {searchTerm}
+                    isEditing={editingDomainIndex === urlIndex}
+                    bind:editingUrl={editingDomainUrl}
+                    editingSize={editingDomainSize}
+                    isFocused={focusedUrlIndex === urlIndex}
                     onfocusin={() => handleUrlFocusIn(urlIndex)}
                     onfocusout={(e) => handleUrlFocusOut(e, urlIndex)}
                     onkeydown={handleUrlKeydown}
-                >
-                    {#if editingDomainIndex === urlIndex}
-                        <!--
-                            The editor keeps the size the link had, otherwise swapping it
-                            in reflows the whole card.
-                        -->
-                        <span
-                            class="edit-wrapper"
-                            spellcheck="false"
-                            translate="no"
-                            style="width: {editingDomainSize.width}px; height: {editingDomainSize.height}px;"
-                        >
-                            <input
-                                bind:this={domainInputEl}
-                                type="text"
-                                class="edit-input"
-                                id="edit-domain-input-{index}-{urlIndex}"
-                                name="edit-domain-input-{index}-{urlIndex}"
-                                spellcheck="false"
-                                autocomplete="off"
-                                translate="no"
-                                bind:value={editingDomainUrl}
-                                onkeydown={(e) => handleEditDomainKeydown(e, url)}
-                                onblur={() => saveDomainEdit(url)}
-                            />
-                        </span>
-                    {:else}
-                        <a
-                            class="rule-urls"
-                            class:single-url={displayUrls.length === 1}
-                            href={toHref(url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            tabindex="0"
-                            translate="no"
-                            data-original-text={url}
-                            title={$t('ctrlClickUrl', [url])}
-                            onclick={(e) => handleUrlClick(e, url)}>{@render highlighted(displayText(url))}</a
-                        >
-                    {/if}
-                    <div class="icons-container" class:focus-visible={focusedUrlIndex === urlIndex}>
-                        <button class="edit-icon" type="button" tabindex="0" title={$tt('editDomain')}>
-                            <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
-                                <use href="#icon-url-edit"></use>
-                            </svg>
-                        </button>
-                        <button class="delete-icon" type="button" tabindex="0" title={$tt('deleteDomain')}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                                <use href="#icon-trash"></use>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+                    oneditkeydown={(e) => handleEditDomainKeydown(e, url)}
+                    onsaveedit={() => saveDomainEdit(url)}
+                    onclickurl={(e) => handleUrlClick(e, url)}
+                />
             {/each}
         {/if}
         {#if expandedClass}
