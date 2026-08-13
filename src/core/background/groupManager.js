@@ -216,7 +216,9 @@ function applyCustomRules(tabs, customRules) {
         return { customGroupTabs, groupedTabIds };
     }
 
-    const activeRules = customRules.filter((rule) => rule.active && Array.isArray(rule.urls) && rule.urls.length > 0);
+    const activeRules = customRules.filter(
+        (rule) => rule.active !== false && Array.isArray(rule.urls) && rule.urls.length > 0,
+    );
     if (activeRules.length === 0) {
         return { customGroupTabs, groupedTabIds };
     }
@@ -228,7 +230,7 @@ function applyCustomRules(tabs, customRules) {
             if (tab.pinned || groupedTabIds.has(tab.id) || !tab.url || tab.url === 'chrome://newtab/') {
                 continue;
             }
-            if (rule.urls.some((u) => tab.url.includes(u))) {
+            if (rule.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim()))) {
                 matchingTabs.push(tab);
                 groupedTabIds.add(tab.id);
             }
@@ -927,17 +929,46 @@ function ejectMisplacedTabsFromGroups(tabs, existingGroups, groupInfoMap, custom
                         const rule = Array.isArray(customRules)
                             ? customRules.find((r) => r.name === info.key)
                             : undefined;
-                        if (rule && rule.active && rule.urls.some((u) => tab.url && tab.url.includes(u))) {
+                        if (
+                            rule &&
+                            rule.active !== false &&
+                            Array.isArray(rule.urls) &&
+                            rule.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim()))
+                        ) {
                             belongs = true;
                         }
                         break;
                     case 'domain':
+                        const tabMatchesRule =
+                            Array.isArray(customRules) &&
+                            customRules.some(
+                                (r) =>
+                                    r.active !== false &&
+                                    Array.isArray(r.urls) &&
+                                    r.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim())),
+                            );
+                        if (tabMatchesRule) {
+                            belongs = false;
+                            break;
+                        }
                         const tabDomain = getDomain(tab.url, subdomainsEnabledForCheck);
                         if (tabDomain === info.key && isEligibleForDomainGrouping(tab.url)) {
                             belongs = true;
                         }
                         break;
                     case 'special':
+                        const tabMatchesRuleSpecial =
+                            Array.isArray(customRules) &&
+                            customRules.some(
+                                (r) =>
+                                    r.active !== false &&
+                                    Array.isArray(r.urls) &&
+                                    r.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim())),
+                            );
+                        if (tabMatchesRuleSpecial) {
+                            belongs = false;
+                            break;
+                        }
                         const tabCategoryKey = getSpecialCategoryKeyForTab(tab.url, localClusterConfig);
                         if (tabCategoryKey === info.key) {
                             belongs = true;

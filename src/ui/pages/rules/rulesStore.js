@@ -1,5 +1,5 @@
 import { writable, get } from 'svelte/store';
-import { getRuleStorage, setRuleStorage, getSettings, saveSettings } from './modules/rules-api.js';
+import { getRuleStorage, setRuleStorage, getSettings, saveSettings, groupTabs } from './modules/rules-api.js';
 
 export const rulesStore = writable([]);
 export const expandedStatesStore = writable(new Map());
@@ -34,4 +34,5 @@ export async function initializeRules() {
 export async function saveRulesToStorage(rules) {
     rulesStore.set(rules);
     await setRuleStorage(rules);
+    await groupTabs();
 }
