@@ -3,12 +3,19 @@ function applyTheme(theme) {
 
     if (theme === 'system') {
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        root.style.cssText = '';
+        const targetTheme = prefersDark ? 'dark' : 'light';
+        if (root.getAttribute('data-theme') !== targetTheme) {
+            root.setAttribute('data-theme', targetTheme);
+        }
+        if (root.style.cssText) {
+            root.style.cssText = '';
+        }
     } else {
-        root.setAttribute('data-theme', theme);
+        if (root.getAttribute('data-theme') !== theme) {
+            root.setAttribute('data-theme', theme);
+        }
         // When it's not a custom or system theme, we clear the inline styles.
-        if (theme !== 'custom') {
+        if (theme !== 'custom' && root.style.cssText) {
             root.style.cssText = '';
         }
     }

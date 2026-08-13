@@ -21,10 +21,11 @@ export async function initializeRules() {
 
     if (rules.length > 0) {
         const sortStateKeys = rules.map((rule) => `sortState_${rule.name}`);
-        const sortStateData = await getSettings(sortStateKeys);
+        const sortStateData = (await getSettings(sortStateKeys)) || {};
         const sortMap = new Map();
-        for (const rule of rules) {
-            sortMap.set(rule.name, sortStateData[`sortState_${rule.name}`] || false);
+        for (let i = 0; i < rules.length; i++) {
+            const name = rules[i].name;
+            sortMap.set(name, sortStateData[`sortState_${name}`] || false);
         }
         sortStatesStore.set(sortMap);
     }

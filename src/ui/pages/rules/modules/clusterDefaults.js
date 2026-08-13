@@ -50,12 +50,17 @@ export function defaultClusterConfig() {
  * reports whether something below it is on.
  */
 export function isAnyClusterSwitchOn(config) {
-    return Boolean(
-        config.domainsEnabled ||
-        config.subdomainsEnabled ||
-        config.compactMode?.enabled ||
-        Object.values(config.specialGroups || {}).some((group) => group.enabled),
-    );
+    if (!config) return false;
+    if (config.domainsEnabled || config.subdomainsEnabled || config.compactMode?.enabled) {
+        return true;
+    }
+    const groups = config.specialGroups;
+    if (groups) {
+        for (const key in groups) {
+            if (groups[key]?.enabled) return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -65,9 +70,10 @@ export function isAnyClusterSwitchOn(config) {
  * @returns {object} A new configuration; the argument is left untouched.
  */
 export function applyMasterSwitch(config, enabled) {
+    const origGroups = config.specialGroups || {};
     const specialGroups = {};
-    for (const [key, group] of Object.entries(config.specialGroups || {})) {
-        specialGroups[key] = { ...group, enabled };
+    for (const key in origGroups) {
+        specialGroups[key] = { ...origGroups[key], enabled };
     }
     return {
         ...config,

@@ -16,18 +16,25 @@ export function replacePlaceholders(message, params) {
  */
 export function resolveMessage(entry, params = [], field = 'message') {
     if (!entry) return '';
-    let text = entry[field] || '';
+    const text = entry[field] || '';
     if (!text) return '';
 
+    // Fast path: if there are no placeholders defined, no parameters provided,
+    // and no special '$' symbols, return the raw string directly without regex passes.
+    if (!entry.placeholders && (!params || params.length === 0) && !text.includes('$')) {
+        return text;
+    }
+
+    let result = text;
     if (entry.placeholders) {
-        text = text.replace(/\$([A-Za-z_][A-Za-z0-9_]*)\$/g, (match, name) => {
+        result = result.replace(/\$([A-Za-z_][A-Za-z0-9_]*)\$/g, (match, name) => {
             const placeholder = entry.placeholders[name] || entry.placeholders[name.toLowerCase()];
             return placeholder?.content ?? match;
         });
     }
 
-    text = replacePlaceholders(text, params);
-    return text.replace(/\$\$/g, '$');
+    result = replacePlaceholders(result, params);
+    return result.includes('$$') ? result.replace(/\$\$/g, '$') : result;
 }
 
 /** Reads a JSON array of substitutions from a data attribute, tolerating bad input. */
