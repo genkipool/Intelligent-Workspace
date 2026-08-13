@@ -940,15 +940,6 @@ h1 {
         }
     }
 
-    &:has(> .rule-info > .rule-name-edit):not(:has(> .rule-urls-container.expanded)) {
-        flex-wrap: nowrap;
-    }
-
-    &:has(.rule-name-edit) .rule-urls-container {
-        overflow: hidden;
-        flex-wrap: nowrap;
-    }
-
     &:has(.expanded) .rule-urls-container {
         order: 2;
     }
@@ -3298,17 +3289,37 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .rule-name-edit {
-    font-size: inherit;
-    font-weight: inherit;
-    font-family: inherit;
+    font-family: 'Roboto Mono', monospace;
+    font-size: var(--large-text);
+    font-weight: bold;
     color: var(--text-color);
-    background-color: transparent;
+    background-color: var(--bg-color, transparent);
     border: 2px solid var(--action-color);
     box-sizing: border-box;
-    outline: none;
+    outline: none !important;
+    box-shadow: none !important;
     border-radius: var(--small-border-radius);
+    padding: var(--rule-name-padding);
+    margin: var(--rule-name-margin-y) 0;
+    line-height: normal;
+    min-width: 120px;
+    max-width: 100%;
+    flex-shrink: 1;
     z-index: 100;
     caret-color: var(--text-on-color);
+
+    &:focus,
+    &:focus-visible {
+        outline: none !important;
+        box-shadow: none !important;
+        border: 2px solid var(--action-color);
+    }
+
+    @media (width <=600px) {
+        font-size: var(--medium-text);
+        padding: var(--spacing-vsm) 1px;
+        margin: 0;
+    }
 }
 
 .footer {
@@ -4054,6 +4065,8 @@ input[type='number']::-webkit-outer-spin-button {
    properties, so both would paint and the element would show a double border. */
 .edit-input:focus-visible,
 .rule-name:focus-visible,
+.rule-name-edit:focus-visible,
+.rule-name-edit:focus,
 .color-indicator:focus-visible,
 .color-box:focus-visible,
 .color-popup-item:focus-visible,
