@@ -982,6 +982,9 @@ function debounceUpdateAllGroupPrefixes(windowId, options = {}, delay = 250) {
 }
 
 function debounceGroupTabs(delay = 250) {
+    if (isGrouping) {
+        return;
+    }
     if (groupTabsTimer) {
         clearTimeout(groupTabsTimer);
     }

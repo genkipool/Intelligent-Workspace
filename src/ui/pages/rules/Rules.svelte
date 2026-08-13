@@ -302,7 +302,6 @@
         if (updatedRules[index]) {
             updatedRules[index] = { ...updatedRules[index], active };
             rulesStore.set(updatedRules);
-            await yieldForAnimation(350);
             await saveRulesToStorage(updatedRules);
         }
     }
@@ -494,20 +493,18 @@
     async function setClusterEnabled(enabled) {
         const perf = ClusterPerfMonitor.startToggle(enabled);
         isClusterEnabled = enabled;
-        await yieldForAnimation(350);
         const animationMs = await perf.endAnimation();
 
         const storageStart = performance.now();
         const nextConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
         clusterConfig = nextConfig;
 
-        const savePromise = saveSettings({
+        await saveSettings({
             clusterConfig: nextConfig,
             clusteringEnabled: enabled,
         });
-        const groupPromise = groupTabs();
+        await groupTabs();
 
-        const [_, groupResult] = await Promise.all([savePromise, groupPromise]);
         const storageMs = await perf.endStorage(storageStart);
         await perf.endAll({ animationMs, storageMs });
     }
@@ -521,31 +518,27 @@
         const enabled = isAnyClusterSwitchOn(clusterConfig);
         const perf = ClusterPerfMonitor.startToggle(enabled);
         isClusterEnabled = enabled;
-        await yieldForAnimation(350);
         const animationMs = await perf.endAnimation();
 
         const storageStart = performance.now();
         const nextConfig = $state.snapshot(clusterConfig);
-        const savePromise = saveSettings({
+        await saveSettings({
             clusterConfig: nextConfig,
             clusteringEnabled: isClusterEnabled,
         });
-        const groupPromise = groupTabs();
+        await groupTabs();
 
-        await Promise.all([savePromise, groupPromise]);
         const storageMs = await perf.endStorage(storageStart);
         await perf.endAll({ animationMs, storageMs });
     }
 
     async function toggleSortGroups() {
         isSortGroupsEnabled = !isSortGroupsEnabled;
-        await yieldForAnimation(350);
         await saveSettings({ sortGroups: isSortGroupsEnabled });
     }
 
     async function togglePrefixes() {
         isPrefixesEnabled = !isPrefixesEnabled;
-        await yieldForAnimation(350);
         await saveSettings({ enablePrefixes: isPrefixesEnabled });
         chrome.runtime.sendMessage({
             action: 'togglePrefixes',
@@ -555,7 +548,6 @@
 
     async function toggleCollapseTimer() {
         isCollapseTimerEnabled = !isCollapseTimerEnabled;
-        await yieldForAnimation(350);
         await saveSettings({ collapseTimer: isCollapseTimerEnabled });
     }
 
@@ -563,7 +555,6 @@
         const newState = !isAllRulesActive;
         let updatedRules = $rulesStore.map((r) => ({ ...r, active: newState }));
         rulesStore.set(updatedRules);
-        await yieldForAnimation(350);
         await saveRulesToStorage(updatedRules);
     }
 

@@ -141,14 +141,12 @@
     /** Any grouping change re-syncs the master switch and regroups the tabs. */
     async function onClusterChanged() {
         isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
-        await yieldForAnimation(350);
         groupTabs();
     }
 
     /** The master switch turns every grouping on or off at once. */
     async function setClusterEnabled(enabled) {
         isClusterEnabled = enabled;
-        await yieldForAnimation(350);
         clusterConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
         groupTabs();
     }
