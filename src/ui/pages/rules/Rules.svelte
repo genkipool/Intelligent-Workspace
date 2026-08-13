@@ -483,12 +483,21 @@
         isAllExpandedStore.set(newState);
     }
 
+    let _groupTabsTimer = null;
+    function debouncedGroupTabs(delay = 120) {
+        if (_groupTabsTimer) clearTimeout(_groupTabsTimer);
+        _groupTabsTimer = setTimeout(() => {
+            _groupTabsTimer = null;
+            groupTabs();
+        }, delay);
+    }
+
     /** The master switch turns every grouping on or off at once, as in the original. */
     function setClusterEnabled(enabled) {
         isClusterEnabled = enabled;
         clusterConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
         saveSettings({ clusterConfig: $state.snapshot(clusterConfig) });
-        groupTabs();
+        debouncedGroupTabs(120);
     }
 
     function toggleCluster() {
@@ -499,7 +508,7 @@
     function onClusterChanged() {
         isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
         saveSettings({ clusterConfig: $state.snapshot(clusterConfig) });
-        groupTabs();
+        debouncedGroupTabs(120);
     }
 
     function toggleSortGroups() {
