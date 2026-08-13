@@ -3,9 +3,9 @@
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
-    import { showUrlTooltip, hideUrlTooltip } from './urlTooltip.js';
     import RuleCardActions from './card/RuleCardActions.svelte';
     import RuleUrlItem from './card/RuleUrlItem.svelte';
+    import RuleCardHeader from './card/RuleCardHeader.svelte';
 
     let {
         rule,
@@ -56,40 +56,6 @@
         mqList.addEventListener('change', updateMatch);
         return () => mqList.removeEventListener('change', updateMatch);
     });
-
-    let isEditingName = $state(false);
-    let editingNameValue = $state('');
-    let ruleNameInputEl = $state(null);
-
-    function startEditingName() {
-        isEditingName = true;
-        editingNameValue = rule.name;
-        setTimeout(() => {
-            if (ruleNameInputEl) ruleNameInputEl.focus();
-        }, 0);
-    }
-
-    function handleNameEditBlur() {
-        saveEditedName();
-    }
-
-    function handleNameEditKeydown(e) {
-        if (e.key === 'Enter') {
-            saveEditedName();
-        } else if (e.key === 'Escape') {
-            isEditingName = false;
-            editingNameValue = rule.name;
-        }
-    }
-
-    function saveEditedName() {
-        if (!isEditingName) return;
-        isEditingName = false;
-        const newName = editingNameValue.trim();
-        if (newName && newName !== rule.name) {
-            onupdateRuleName?.({ index, newName });
-        }
-    }
 
     function toggleExpand() {
         if (!rule.urls || rule.urls.length === 0) return;
@@ -267,25 +233,6 @@
 
     function toggleSort() {
         ontoggleSort?.({ index });
-    }
-
-    /** Splits a label around the search term so the matches can be wrapped in a mark. */
-    function splitOnTerm(text, term) {
-        const value = String(text ?? '');
-        if (!term) return [{ text: value, match: false, key: '0' }];
-        const parts = [];
-        const lower = value.toLowerCase();
-        const needle = term.toLowerCase();
-        let from = 0;
-        let at = lower.indexOf(needle);
-        while (at !== -1) {
-            if (at > from) parts.push({ text: value.slice(from, at), match: false, key: `${from}` });
-            parts.push({ text: value.slice(at, at + needle.length), match: true, key: `m${at}` });
-            from = at + needle.length;
-            at = lower.indexOf(needle, from);
-        }
-        if (from < value.length) parts.push({ text: value.slice(from), match: false, key: `${from}` });
-        return parts;
     }
 
     /** Same shortening as the original: drop scheme, `www.` and path. */
@@ -527,135 +474,22 @@
     {ondragend}
     {ondrop}
 >
-    <div class="rule-info" class:header-expanded={isExpanded} class:is-empty={!rule.urls || rule.urls.length === 0}>
-        <button
-            id="starButton"
-            class="star-button"
-            type="button"
-            data-index={index}
-            title={$tt(isStarred ? 'unstarRule' : 'starRule')}
-            aria-label={$t(isStarred ? 'unstarRule' : 'starRule')}
-            aria-pressed={isStarred}
-        >
-            <svg
-                class="star-svg"
-                class:starred={isStarred}
-                width="25"
-                height="25"
-                viewBox="0 0 100 100"
-                fill={isStarred ? 'var(--action-color)' : 'var(--bg-color)'}
-                stroke={isStarred ? 'var(--action-color)' : 'var(--bg-color)'}
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#icon-star"></use>
-            </svg>
-        </button>
-        <button
-            class="drag-handle"
-            draggable={isDraggable}
-            tabindex="0"
-            type="button"
-            title={$tt('reorderRule')}
-            aria-label={$t('dragRule')}
-            {ondragstart}
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                style="color: var(--action-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#icon-drag"></use>
-            </svg>
-        </button>
-        <span
-            class="color-indicator"
-            id="colorIndicator"
-            data-index={index}
-            style="background-color: {groupColorHex}"
-            tabindex="0"
-            role="button"
-            title={$tt('changeRuleColor')}
-            aria-label={$t('changeColor')}
-            onkeydown={(e) => e.key === 'Enter' && changeColor({ currentTarget: e.currentTarget })}
-        ></span>
-
-        {#if isEditingName}
-            <input
-                bind:this={ruleNameInputEl}
-                class="rule-name-edit"
-                type="text"
-                bind:value={editingNameValue}
-                onkeydown={handleNameEditKeydown}
-                onblur={handleNameEditBlur}
-                spellcheck="false"
-                translate="no"
-                autocomplete="off"
-            />
-        {:else}
-            <h3
-                id="ruleName"
-                class="rule-name"
-                tabindex="0"
-                role="button"
-                data-original-text={rule.name}
-                data-urls={(rule.urls || []).join('\n')}
-                title={$tt('ruleNameTooltip')}
-                aria-label={$tt('ruleNameTooltip')}
-                ondblclick={startEditingName}
-                oncontextmenu={(e) => {
-                    e.preventDefault();
-                    openAllUrls();
-                }}
-                onkeydown={(e) => e.key === 'Enter' && copyRuleUrls()}
-                onmouseenter={(e) => showUrlTooltip(e.currentTarget, rule.urls)}
-                onmouseleave={hideUrlTooltip}
-                onfocus={(e) => showUrlTooltip(e.currentTarget, rule.urls)}
-                onblur={hideUrlTooltip}
-            >
-                {@render highlighted(rule.name)}
-            </h3>
-        {/if}
-
-        <button
-            class="sort-domains-btn"
-            type="button"
-            aria-pressed={isAlphaSort}
-            style="display: {isExpanded ? 'inline-block' : 'none'};"
-            title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabeticallyButton')}
-        >
-            <!-- The icon is drawn with currentColor, so the pressed state is a colour
-                 change on the svg and lives in the shared stylesheet. -->
-            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false">
-                <use href="#icon-sort"></use>
-            </svg>
-        </button>
-        <button
-            class="collapse-btn"
-            type="button"
-            tabindex="0"
-            data-index={index}
-            style="display: {isExpanded && isLargeScreen ? 'inline-block' : 'none'};"
-            title={$tt('collapseSection')}
-            aria-label={$t('collapseSection')}
-        >
-            <span class="svg-deploy">
-                <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    style="color: var(--text-on-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-chevron-up"></use>
-                </svg>
-            </span>
-        </button>
-    </div>
+    <RuleCardHeader
+        {rule}
+        {index}
+        {isExpanded}
+        {isStarred}
+        {isDraggable}
+        {isAlphaSort}
+        {isLargeScreen}
+        {groupColorHex}
+        {searchTerm}
+        {ondragstart}
+        onchangeColor={changeColor}
+        {onupdateRuleName}
+        onOpenAllUrls={openAllUrls}
+        onCopyRuleUrls={copyRuleUrls}
+    />
 
     <div
         bind:this={urlsContainerEl}
@@ -709,13 +543,3 @@
 
     <RuleCardActions {rule} {index} {isExpanded} {isLargeScreen} {ontoggleActive} {oneditRule} {ondeleteRule} />
 </div>
-
-{#snippet highlighted(text)}
-    {#each splitOnTerm(text, searchTerm) as part (part.key)}
-        {#if part.match}
-            <span class="search-highlight">{part.text}</span>
-        {:else}
-            {part.text}
-        {/if}
-    {/each}
-{/snippet}
