@@ -1,20 +1,15 @@
 <script>
     import { onMount } from 'svelte';
+    import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../stores/i18nStore.js';
     import { rulesStore } from './rulesStore.js';
-    import { lightThemeColors, darkThemeColors } from '../../services/constants.js';
-
-    // Swatches are painted with the active theme's hex colours, not with CSS
-    // custom properties (there are no --group-color-* variables).
-    let themeColors = $state(
-        window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors,
-    );
+    import RuleColorPicker from './components/RuleColorPicker.svelte';
 
     let { isOpen = false, mode = 'add', rule = null, onclose, onsave } = $props();
     let dialogEl = $state(null);
     let textareaEl = $state(null);
     let overlayEl = $state(null);
-    let overlayHtml = $state('');
+    let overlayLines = $state([]);
     let textareaInvalid = $state(false);
 
     let ruleName = $state('');
@@ -45,7 +40,7 @@
         isRealTimeValidation = false;
         isNameInvalid = false;
         textareaInvalid = false;
-        overlayHtml = '';
+        overlayLines = [];
         if (mode === 'edit' && rule && rule.urls && rule.urls.length > 0) {
             validateUrls(rule.urls.join('\n'));
         }
@@ -65,7 +60,7 @@
     $effect(() => {
         if (!isOpen && dialogEl && dialogEl.open) {
             dialogEl.close();
-            overlayHtml = '';
+            overlayLines = [];
             textareaInvalid = false;
         }
     });
@@ -111,29 +106,22 @@
             if (isChromeExtensions) return true;
             if ((isHttp || isHttps) && url.hostname && url.hostname.length > 0) return true;
             return false;
-        } catch (e) {
+        } catch {
             return false;
         }
     }
 
-    function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
     function validateUrls(content) {
         if (!content) {
-            overlayHtml = '';
+            overlayLines = [];
             textareaInvalid = false;
             return;
         }
         if (!isRealTimeValidation && !(mode === 'edit')) {
-            overlayHtml = content
-                .split('\n')
-                .map((line) => {
-                    const displayText = line || ' ';
-                    return `<span class="url-line" translate="no">${escapeHtml(displayText)}</span>`;
-                })
-                .join('');
+            overlayLines = content.split('\n').map((line) => ({
+                text: line || ' ',
+                classes: 'url-line',
+            }));
             textareaInvalid = false;
             return;
         }
@@ -142,7 +130,7 @@
         const urls = lines.map((l) => l.trim()).filter((u) => u);
         const currentRules = $rulesStore;
 
-        const duplicatesInRule = new Set();
+        const duplicatesInRule = new SvelteSet();
         const normalizedUrls = urls.map(normalizeUrl);
         const urlCounts = {};
         normalizedUrls.forEach((normUrl, idx) => {
@@ -150,8 +138,8 @@
             if (urlCounts[normUrl] === 2) duplicatesInRule.add(urls[idx]);
         });
 
-        const duplicatesInOtherRules = new Set();
-        currentRules.forEach((existingRule, idx) => {
+        const duplicatesInOtherRules = new SvelteSet();
+        currentRules.forEach((existingRule) => {
             if (mode === 'edit' && rule && existingRule.name === rule.name) return;
             existingRule.urls.forEach((ruleUrl) => {
                 if (normalizedUrls.includes(normalizeUrl(ruleUrl))) {
@@ -162,29 +150,29 @@
         });
 
         let hasError = false;
-        const spans = lines
-            .map((line) => {
-                const trimmed = line.trim();
-                const displayText = line || ' ';
-                const isValidFormat = !trimmed || isValidUrl(trimmed);
-                const isDupeInRule = duplicatesInRule.has(trimmed);
-                const isDupeInOther = duplicatesInOtherRules.has(trimmed);
-                const classes = ['url-line'];
-                if (!isValidFormat && trimmed) {
-                    classes.push('invalid');
-                    hasError = true;
-                } else if (isDupeInRule) {
-                    classes.push('invalid', 'duplicate');
-                    hasError = true;
-                } else if (isDupeInOther) {
-                    classes.push('invalid', 'duplicate-other');
-                    hasError = true;
-                }
-                return `<span class="${classes.join(' ')}" translate="no">${escapeHtml(displayText)}</span>`;
-            })
-            .join('');
+        overlayLines = lines.map((line) => {
+            const trimmed = line.trim();
+            const displayText = line || ' ';
+            const isValidFormat = !trimmed || isValidUrl(trimmed);
+            const isDupeInRule = duplicatesInRule.has(trimmed);
+            const isDupeInOther = duplicatesInOtherRules.has(trimmed);
+            const classes = ['url-line'];
+            if (!isValidFormat && trimmed) {
+                classes.push('invalid');
+                hasError = true;
+            } else if (isDupeInRule) {
+                classes.push('invalid', 'duplicate');
+                hasError = true;
+            } else if (isDupeInOther) {
+                classes.push('invalid', 'duplicate-other');
+                hasError = true;
+            }
+            return {
+                text: displayText,
+                classes: classes.join(' '),
+            };
+        });
 
-        overlayHtml = spans;
         textareaInvalid = hasError;
     }
 
@@ -276,7 +264,7 @@
         if (dialogEl) {
             dialogEl.close();
         }
-        overlayHtml = '';
+        overlayLines = [];
         textareaInvalid = false;
         onclose?.();
     }
@@ -340,15 +328,11 @@
             validateUrls(ruleUrls);
             showFirstError();
         } else {
-            // .url-line elements are display:block, so they are joined without a
-            // separator (an extra '\n' would double the break and offset the caret).
             const lines = ruleUrls.split('\n');
-            let htmlBuilder = [];
-            lines.forEach((line) => {
-                const displayText = line || ' ';
-                htmlBuilder.push(`<span class="url-line" translate="no">${escapeHtml(displayText)}</span>`);
-            });
-            overlayHtml = htmlBuilder.join('');
+            overlayLines = lines.map((line) => ({
+                text: line || ' ',
+                classes: 'url-line',
+            }));
         }
     }
 
@@ -398,38 +382,9 @@
     });
 
     $effect(() => {
-        overlayHtml;
+        overlayLines;
         if (textareaEl) syncOverlayLayout();
     });
-
-    function handleColorKeydown(e, index) {
-        const ROW_LENGTH = 4;
-        let newIndex = index;
-
-        if (e.key === 'ArrowRight') {
-            newIndex = (index + 1) % colors.length;
-        } else if (e.key === 'ArrowLeft') {
-            newIndex = (index - 1 + colors.length) % colors.length;
-        } else if (e.key === 'ArrowDown') {
-            newIndex = (index + ROW_LENGTH) % colors.length;
-        } else if (e.key === 'ArrowUp') {
-            newIndex = (index - ROW_LENGTH + colors.length) % colors.length;
-        } else if (e.key === 'Enter') {
-            selectColor(colors[index]);
-            e.preventDefault();
-            return;
-        } else {
-            return;
-        }
-
-        e.preventDefault();
-        if (newIndex !== index) {
-            const colorBoxes = dialogEl.querySelectorAll('.color-box');
-            if (colorBoxes[newIndex]) {
-                colorBoxes[newIndex].focus();
-            }
-        }
-    }
 
     function handleRealTimeToggle() {
         if (isRealTimeValidation) {
@@ -484,24 +439,7 @@
                 oninput={handleNameInput}
             />
 
-            <div class="form-color-grid">{$t('groupColor') || 'Group Color'}</div>
-            <div class="color-grid" id="color-grid">
-                {#each colors as color, i (color)}
-                    <div
-                        class="color-box"
-                        class:selected={ruleColor === color}
-                        role="button"
-                        tabindex="0"
-                        data-color={color}
-                        style="background-color: {themeColors[color]}"
-                        title={$tt('selectSpecificColor', [$t(color) || color])}
-                        aria-label={$tt('selectSpecificColor', [$t(color) || color])}
-                        onclick={() => selectColor(color)}
-                        onkeydown={(e) => handleColorKeydown(e, i)}
-                    ></div>
-                {/each}
-            </div>
-            <input type="hidden" id="rule-color" value={ruleColor} />
+            <RuleColorPicker bind:selectedColor={ruleColor} {colors} onSelectColor={selectColor} />
 
             <div class="validation-option">
                 <label class="label-input-url" for="rule-urls">{$t('ruleUrls') || 'URLs'}</label>
@@ -540,7 +478,9 @@
                     title={$tt('enterRuleUrls') || 'Enter rule URLs'}
                 ></textarea>
                 <div bind:this={overlayEl} class="error-overlay" id="urls-overlay" spellcheck="false" translate="no">
-                    {@html overlayHtml}
+                    {#each overlayLines as line, i (i)}
+                        <span class={line.classes} translate="no">{line.text}</span>
+                    {/each}
                 </div>
             </div>
 
