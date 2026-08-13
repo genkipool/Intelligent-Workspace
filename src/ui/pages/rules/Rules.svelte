@@ -22,6 +22,7 @@
     import RulesPopupHost from './popups/RulesPopupHost.svelte';
     import ImportPopup from './popups/ImportPopup.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
+    import RulesFooter from './RulesFooter.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
     import { groupTabs, getRuleStorage, setRuleStorage, getSettings, saveSettings } from './modules/rules-api.js';
     import {
@@ -564,35 +565,6 @@
         }
     }
 
-    function handleFileInputChange(e) {
-        const file = e.target.files[0];
-        processImportedFile(file);
-        e.target.value = '';
-    }
-
-    function handleDrop(e) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            processImportedFile(e.dataTransfer.files[0]);
-        }
-    }
-
-    function handleDragOver(e) {
-        e.preventDefault();
-        e.currentTarget.classList.add('dragover');
-    }
-
-    function handleDragLeave(e) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('dragover');
-    }
-
-    function openFileInput() {
-        const fileInput = document.getElementById('theme-file-input');
-        if (fileInput) fileInput.click();
-    }
-
     function resetClusterDefaults() {
         clusterConfig = defaultClusterConfig();
         onClusterChanged();
@@ -951,7 +923,7 @@
                 />
             </div>
             {#if isSmallScreen}
-                {@render rulesFooter()}
+                <RulesFooter onOpenAbout={openFooterLink} />
             {/if}
         </section>
     {/if}
@@ -1007,7 +979,7 @@
 
     <div id="footer-container-large">
         {#if !isSmallScreen}
-            {@render rulesFooter()}
+            <RulesFooter onOpenAbout={openFooterLink} />
         {/if}
     </div>
 
@@ -1020,34 +992,6 @@
         onsave={handleSaveRule}
     />
 </div>
-
-{#snippet rulesFooter()}
-    <a
-        href="#about"
-        id="about-link-rules"
-        class="footer-link"
-        onclick={(e) => {
-            e.preventDefault();
-            openFooterLink();
-        }}
-    >
-        <footer class="footer">
-            <div>Intelligent Workspace v1.0.0</div>
-            <div class="color-dots">
-                <div class="color-dot" style="background-color: #5F6368;"></div>
-                <div class="color-dot" style="background-color: #1A73E8;"></div>
-                <div class="color-dot" style="background-color: #D93025;"></div>
-                <div class="color-dot" style="background-color: #F9AB00;"></div>
-                <div class="color-dot" style="background-color: #188038;"></div>
-                <div class="color-dot" style="background-color: #D01884;"></div>
-                <div class="color-dot" style="background-color: #A142F4;"></div>
-                <div class="color-dot" style="background-color: #007B83;"></div>
-                <div class="color-dot" style="background-color: #FA903E;"></div>
-            </div>
-            <div>{$t('developedBy') || 'Developed by'}</div>
-        </footer>
-    </a>
-{/snippet}
 
 <SettingsModal isOpen={isSettingsOpen} onclose={() => (isSettingsOpen = false)} />
 
