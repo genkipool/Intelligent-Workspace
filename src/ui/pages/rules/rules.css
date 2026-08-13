@@ -629,7 +629,7 @@ h1 {
         background-size: 205% 105%;
         background-position: 100% 0;
         border-radius: var(--switch-height);
-        transition: background-position 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: background-position 0.3s ease;
         cursor: pointer;
         flex-shrink: 0;
         justify-content: start;
@@ -638,8 +638,6 @@ h1 {
         border: 1px solid var(--border-color);
         padding: var(--spacing-left-switch-handle);
         position: relative;
-        transform: translateZ(0);
-        will-change: background-position;
     }
 
     input:checked ~ .slider {
@@ -653,15 +651,13 @@ h1 {
         background-color: var(--bg-panel-color);
         border-radius: 50%;
         transition:
-            transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-            background-color 0.22s ease;
+            transform 0.3s ease,
+            background-color 0.3s ease;
         display: flex;
         justify-content: center;
         align-items: center;
         border: 1px solid var(--border-color);
         box-sizing: border-box;
-        transform: translateZ(0);
-        will-change: transform;
     }
 
     .switch-light {
@@ -670,28 +666,24 @@ h1 {
         background-color: var(--action-color);
         border-radius: 50%;
         transition:
-            background-color 0.22s ease,
-            box-shadow 0.22s ease;
-        will-change: background-color, box-shadow;
+            background-color 0.3s ease,
+            box-shadow 0.3s ease;
     }
 
     .switch-text-on,
     .switch-text-off {
         position: absolute;
         top: 50%;
-        transform: translateY(-50%) translateZ(0);
+        transform: translateY(-50%);
         font-size: var(--small-text);
         pointer-events: none;
         font-weight: bold;
         opacity: 1;
-        transition:
-            transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-            opacity 0.22s ease;
+        transition: transform 0.3s ease;
         user-select: none;
         align-items: center;
         line-height: var(--switch-height);
         overflow: hidden;
-        will-change: transform, opacity;
     }
 
     .switch-text-on {
@@ -709,39 +701,32 @@ h1 {
 
     input:checked ~ .slider {
         .switch-handle {
-            transform: translateX(calc(var(--switch-width) - var(--switch-height))) translateZ(0);
+            transform: translateX(calc(var(--switch-width) - var(--switch-height)));
         }
 
         .switch-text-on {
-            transform: translateY(-50%) translateX(var(--translate-handle-on)) translateZ(0);
-            opacity: 1;
+            transform: translateY(-50%) translateX(var(--translate-handle-on));
         }
 
         .switch-text-off {
-            transform: translateY(-50%) translateX(calc(10 * var(--translate-handle-off))) translateZ(0);
-            opacity: 0;
+            transform: translateY(-50%) translateX(calc(10 * var(--translate-handle-off)));
         }
 
         .switch-handle .switch-light {
             background-color: var(--action-color);
             box-shadow: 0 0 var(--shadow-blur-md) var(--shadow-spread-sm) var(--action-color);
+            animation: blink 0.5s ease;
             border: 1px solid var(--border-color);
         }
     }
 
     input:not(:checked) ~ .slider {
-        .switch-handle {
-            transform: translateX(0) translateZ(0);
-        }
-
         .switch-text-on {
-            transform: translateY(-50%) translateX(calc(-15 * var(--translate-handle-on))) translateZ(0);
-            opacity: 0;
+            transform: translateY(-50%) translateX(calc(-15 * var(--translate-handle-on)));
         }
 
         .switch-text-off {
-            transform: translateY(-50%) translateX(0) translateZ(0);
-            opacity: 0.3;
+            transform: translateY(-50%) translateX(0);
         }
 
         .switch-handle .switch-light {

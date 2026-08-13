@@ -295,12 +295,14 @@
         isModalOpen = true;
     }
 
-    function handleToggleActive(detail) {
+    async function handleToggleActive(detail) {
         const { index, active } = detail;
         let updatedRules = [...$rulesStore];
         if (updatedRules[index]) {
-            updatedRules[index].active = active;
-            saveRulesToStorage(updatedRules);
+            updatedRules[index] = { ...updatedRules[index], active };
+            rulesStore.set(updatedRules);
+            await yieldForAnimation(350);
+            await saveRulesToStorage(updatedRules);
         }
     }
 
@@ -538,9 +540,9 @@
 
     async function toggleAllRules() {
         const newState = !isAllRulesActive;
-        isAllRulesActive = newState;
-        await yieldForAnimation(350);
         let updatedRules = $rulesStore.map((r) => ({ ...r, active: newState }));
+        rulesStore.set(updatedRules);
+        await yieldForAnimation(350);
         await saveRulesToStorage(updatedRules);
     }
 
