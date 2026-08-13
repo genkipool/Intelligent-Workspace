@@ -6,6 +6,8 @@
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import ThemeCard from './ThemeCard.svelte';
+    import ThemeEditorModal from './components/ThemeEditorModal.svelte';
+    import ThemeScheduleModal from './components/ThemeScheduleModal.svelte';
     import {
         initializeTranslations,
         showNotification,
@@ -731,7 +733,8 @@
             <div class="header-actions">
                 <button
                     id="storage-sync-btn"
-                    class="storage-btn {currentStorageArea === 'sync' ? 'active' : ''}"
+                    class="storage-btn"
+                    class:active={currentStorageArea === 'sync'}
                     data-i18n-title="storageSyncSavedLimit"
                     onclick={() => setStorageArea('sync')}
                 >
@@ -746,7 +749,8 @@
                 </button>
                 <button
                     id="storage-local-btn"
-                    class="storage-btn {currentStorageArea === 'local' ? 'active' : ''}"
+                    class="storage-btn"
+                    class:active={currentStorageArea === 'local'}
                     data-i18n-title="storageLocalSavedLimit"
                     onclick={() => setStorageArea('local')}
                 >
@@ -880,7 +884,7 @@
                 <footer class="footer">
                     <div>Intelligent Workspace v1.0.0</div>
                     <div class="color-dots">
-                        {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color}
+                        {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color (color)}
                             <div class="color-dot" style="background-color: {color};"></div>
                         {/each}
                     </div>
@@ -908,238 +912,45 @@
 />
 
 <!-- THEME EDITOR MODAL -->
-{#if showThemeEditor}
-    <div
-        id="theme-editor-modal"
-        class="modal-overlay"
-        style="display: flex;"
-        use:dismissOnBackdrop={() => closeThemeEditor()}
-    >
-        <div class="modal-content">
-            <section class="section" style="border-bottom: none; padding-bottom: 0;">
-                <div class="section-title">
-                    <span
-                        id="theme-editor-title"
-                        class="createThemeTitle"
-                        data-i18n={editorState.mode === 'edit' ? 'editThemeTitle' : 'createThemeTitle'}
-                    ></span>
-                    <button id="close-theme-editor-btn" class="close-button" onclick={closeThemeEditor}>x</button>
-                </div>
-                <div class="color-options">
-                    {#each [{ id: 'bg-color', k: 'bgColor', l: 'bgColor' }, { id: 'bg-panel-color', k: 'bgPanelColor', l: 'bgPanelColor' }, { id: 'text-color', k: 'textColor', l: 'textColor' }, { id: 'text-on-color', k: 'textOnColor', l: 'textOnColor' }, { id: 'action-color', k: 'actionColor', l: 'actionColor' }, { id: 'interactive-color', k: 'interactiveColor', l: 'interactiveColor' }, { id: 'border-color', k: 'borderColor', l: 'borderColor' }, { id: 'error-color', k: 'errorColor', l: 'errorColor' }, { id: 'header-color', k: 'headerColor', l: 'headerColor' }] as colorInput}
-                        <div class="color-option">
-                            <label for={colorInput.id} data-i18n={colorInput.l}></label>
-                            <input
-                                type="color"
-                                id={colorInput.id}
-                                value={editorColors[colorInput.k]}
-                                oninput={(e) => handleColorInput(e, colorInput.k)}
-                            />
-                        </div>
-                    {/each}
-                    <div class="color-option">
-                        <label for="random-theme" data-i18n="randomTheme"></label>
-                        <button
-                            id="random-theme-btn"
-                            class="button button-random"
-                            data-i18n="randomTheme"
-                            onclick={randomTheme}
-                        ></button>
-                    </div>
-                </div>
-                <button
-                    id="save-edited-theme-btn"
-                    class="button button-save"
-                    type="button"
-                    data-i18n={editorState.mode === 'edit' ? 'updateCustomTheme' : 'saveCustomTheme'}
-                    onclick={saveEditedTheme}
-                ></button>
-            </section>
-        </div>
-    </div>
-{/if}
+<ThemeEditorModal
+    show={showThemeEditor}
+    {editorState}
+    bind:editorColors
+    onClose={() => closeThemeEditor()}
+    onSave={saveEditedTheme}
+    onRandom={randomTheme}
+    onColorInput={handleColorInput}
+/>
 
 <!-- SCHEDULE MODAL -->
-{#if showScheduleModal}
-    <div
-        id="schedule-modal"
-        class="modal-overlay"
-        style="display: flex;"
-        use:dismissOnBackdrop={() => (showScheduleModal = false)}
-        onscroll={updatePopupPosition}
-    >
-        <div class="modal-content">
-            <section class="section">
-                <div class="section-title">
-                    <span
-                        id="schedule-modal-title"
-                        class="createThemeTitle"
-                        data-i18n={currentThemeForScheduling ? '' : 'scheduleThemes'}
-                        >{currentThemeForScheduling ? currentThemeForScheduling.name : ''}</span
-                    >
-                    <button id="close-schedule-modal" class="close-button" onclick={() => (showScheduleModal = false)}
-                        >x</button
-                    >
-                </div>
-                <h3 class="titleSchedules">
-                    <span data-i18n="existingSchedules"></span> (<span id="schedule-count">{totalScheduleCount}</span
-                    >/7)
-                </h3>
-                <ul id="schedules-list">
-                    {#each schedules as sch, i}
-                        <li class="schedule-item" tabindex="0">
-                            <span class="schedule-type-indicator"
-                                >{sch.type === 'onetime'
-                                    ? chrome.i18n.getMessage('scheduleTypeDate') || 'Date'
-                                    : chrome.i18n.getMessage('scheduleTypeTime') || 'Time'}</span
-                            >
-                            <div class="schedule-details">
-                                <span class="schedule-theme-name">{sch.themeName}</span>
-                                <div class="schedule-time-details">
-                                    {#if sch.type === 'onetime'}
-                                        <div class="schedule-date-row">
-                                            <span>{chrome.i18n.getMessage('scheduleFrom') || 'From:'}</span>
-                                            <span>{formatDateTime(sch.startDateTime)}</span>
-                                        </div>
-                                        <div class="schedule-date-row">
-                                            <span>{chrome.i18n.getMessage('scheduleTo') || 'To:'}</span>
-                                            <span>{formatDateTime(sch.endDateTime)}</span>
-                                        </div>
-                                    {:else}
-                                        <span>{getDayNames(sch.days)}: {sch.startTime} - {sch.endTime}</span>
-                                    {/if}
-                                </div>
-                                {#if sch.reminder}
-                                    <div class="schedule-reminder-text" title={sch.reminder}>{sch.reminder}</div>
-                                {/if}
-                            </div>
-                            <button
-                                class="edit-schedule-btn"
-                                data-i18n-title="editSchedule"
-                                aria-label="Edit schedule"
-                                onclick={() => handleEditSchedule(sch)}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    ><path
-                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    ></path><path
-                                        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 9.5-9.5z"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    ></path></svg
-                                >
-                            </button>
-                            <button
-                                class="delete-schedule-btn"
-                                data-i18n-title="deleteSchedule"
-                                aria-label="Delete schedule"
-                                onclick={() => handleDeleteSchedule(sch.themeName, sch.originalIndex)}>x</button
-                            >
-                        </li>
-                    {/each}
-                </ul>
-                {#if schedules.length === 0}
-                    <p id="no-schedules-message" data-i18n="noSchedulesFound"></p>
-                {/if}
-
-                {#if currentThemeForScheduling && (totalScheduleCount < MAX_GLOBAL_SCHEDULES || scheduleEditorState.mode === 'edit')}
-                    <div id="add-schedule-section">
-                        <h3
-                            id="schedule-form-title"
-                            data-i18n={scheduleEditorState.mode === 'edit' ? 'editScheduleTitle' : 'addNewSchedule'}
-                        ></h3>
-
-                        <div class="form-group">
-                            <label data-i18n="daysOfWeek"></label>
-                            <div id="schedule-days" class="days-selector">
-                                {#each [{ d: 1, k: 'dayMon' }, { d: 2, k: 'dayTue' }, { d: 3, k: 'dayWed' }, { d: 4, k: 'dayThu' }, { d: 5, k: 'dayFri' }, { d: 6, k: 'daySat' }, { d: 0, k: 'daySun' }] as day}
-                                    <button
-                                        class={selectedDays.includes(day.d) ? 'selected' : ''}
-                                        data-i18n={day.k}
-                                        onclick={() => toggleDay(day.d)}
-                                    ></button>
-                                {/each}
-                            </div>
-                        </div>
-
-                        {#if scheduleType === 'onetime'}
-                            <div id="onetime-schedule-group" class="form-group">
-                                <div class="datetime-row">
-                                    <div class="field-container">
-                                        <label data-i18n="startDateTime"></label>
-                                        <DateField id="start-date-trigger" bind:value={startDateValue} />
-                                    </div>
-                                    <div class="field-container time-width">
-                                        <label data-i18n="startTime"></label>
-                                        <TimeField
-                                            id="start-time-onetime-trigger"
-                                            bind:value={startTimeOneTimeTrigger}
-                                        />
-                                    </div>
-                                </div>
-                                <div class="datetime-row">
-                                    <div class="field-container">
-                                        <label data-i18n="endDateTime"></label>
-                                        <DateField id="end-date-trigger" bind:value={endDateValue} />
-                                    </div>
-                                    <div class="field-container time-width">
-                                        <label data-i18n="endTime"></label>
-                                        <TimeField id="end-time-onetime-trigger" bind:value={endTimeOneTimeTrigger} />
-                                    </div>
-                                </div>
-                            </div>
-                        {:else}
-                            <div id="repeating-schedule-group" class="form-group">
-                                <div class="time-range">
-                                    <div class="start-time time">
-                                        <label data-i18n="startTime"></label>
-                                        <TimeField id="start-time-trigger" bind:value={startTimeTrigger} />
-                                    </div>
-                                    <div class="end-time time">
-                                        <label data-i18n="endTime"></label>
-                                        <TimeField id="end-time-trigger" bind:value={endTimeTrigger} />
-                                    </div>
-                                </div>
-                            </div>
-                        {/if}
-
-                        <div class="form-group">
-                            <label for="schedule-reminder" data-i18n="scheduleReminderLabel"></label>
-                            <textarea
-                                id="schedule-reminder"
-                                maxlength="200"
-                                data-i18n-placeholder="scheduleReminderPlaceholder"
-                                bind:value={scheduleReminder}
-                                oninput={() => (scheduleError = '')}
-                            ></textarea>
-                        </div>
-
-                        <p class="schedule-storage-info" data-i18n="scheduleStorageInfo"></p>
-                        <button
-                            id="save-schedule-btn"
-                            class="button {scheduleError ? 'error-state' : ''}"
-                            data-i18n={scheduleEditorState.mode === 'edit' ? 'updateSchedule' : 'addSchedule'}
-                            onclick={async (e) => {
-                                const ok = await saveSchedule();
-                                if (ok && (e.ctrlKey || e.metaKey)) {
-                                    resetScheduleForm();
-                                    fetchSchedules(currentThemeForScheduling?.name);
-                                }
-                            }}
-                        ></button>
-                        {#if scheduleError}
-                            <div id="schedule-error" class="modal-error-message">{scheduleError}</div>
-                        {/if}
-                    </div>
-                {/if}
-            </section>
-        </div>
-    </div>
-{/if}
+<ThemeScheduleModal
+    show={showScheduleModal}
+    {currentThemeForScheduling}
+    {totalScheduleCount}
+    {schedules}
+    {scheduleEditorState}
+    {selectedDays}
+    {scheduleType}
+    bind:scheduleReminder
+    bind:startDateValue
+    bind:endDateValue
+    bind:startTimeTrigger
+    bind:endTimeTrigger
+    bind:startTimeOneTimeTrigger
+    bind:endTimeOneTimeTrigger
+    bind:scheduleError
+    {MAX_GLOBAL_SCHEDULES}
+    onClose={() => (showScheduleModal = false)}
+    onScroll={updatePopupPosition}
+    onEditSchedule={handleEditSchedule}
+    onDeleteSchedule={handleDeleteSchedule}
+    onToggleDay={toggleDay}
+    onSaveSchedule={saveSchedule}
+    onResetForm={resetScheduleForm}
+    onFetchSchedules={fetchSchedules}
+    {formatDateTime}
+    {getDayNames}
+/>
 
 <!-- CUSTOM CALENDAR COMPONENT -->
 {#if calendarPopupVisible}
@@ -1192,14 +1003,16 @@
             ><span data-i18n="daySatInitial">S</span>
         </div>
         <div id="calendar-days-grid" class="calendar-grid">
-            {#each generateCalendarDays(calCurrentDate, currentCalendarTarget === 'start' ? calSelectedStartDate : calSelectedEndDate) as d}
+            {#each generateCalendarDays(calCurrentDate, currentCalendarTarget === 'start' ? calSelectedStartDate : calSelectedEndDate) as d, i (d.dateObj ? d.dateObj.getTime() : `empty-${i}`)}
                 {#if d.empty}
                     <div class="calendar-day empty"></div>
                 {:else if d.isPast}
                     <div class="calendar-day disabled" style="opacity: 0.3; cursor: not-allowed;">{d.day}</div>
                 {:else}
                     <div
-                        class="calendar-day {d.isToday ? 'today' : ''} {d.isSelected ? 'selected' : ''}"
+                        class="calendar-day"
+                        class:selected={d.isSelected}
+                        class:today={d.isToday}
                         onclick={(e) => {
                             e.stopPropagation();
                             selectDate(d.dateObj);
