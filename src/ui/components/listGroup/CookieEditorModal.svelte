@@ -1,5 +1,6 @@
 <script>
     import { t, tt } from '../../stores/i18nStore.js';
+    import { SvelteMap } from 'svelte/reactivity';
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
@@ -135,7 +136,7 @@
             }
 
             // Merge imported over existing (keyed by name+domain+path)
-            const mergedMap = new Map(workingCookies.map((c) => [c.name + c.domain + c.path, c]));
+            const mergedMap = new SvelteMap(workingCookies.map((c) => [c.name + c.domain + c.path, c]));
             validated.forEach((c) => mergedMap.set(c.name + c.domain + c.path, c));
             workingCookies = Array.from(mergedMap.values());
             closeImportPanel();
@@ -307,6 +308,24 @@
                                                         e.target.value,
                                                     )}
                                             >
+                                                <button type="button">
+                                                    <selectedcontent></selectedcontent>
+                                                    <svg
+                                                        class="picker-icon"
+                                                        width="10"
+                                                        height="10"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="3"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        aria-hidden="true"
+                                                        focusable="false"
+                                                    >
+                                                        <path d="m6 9 6 6 6-6" />
+                                                    </svg>
+                                                </button>
                                                 <option value="no_restriction">None</option>
                                                 <option value="lax">Lax</option>
                                                 <option value="strict">Strict</option>

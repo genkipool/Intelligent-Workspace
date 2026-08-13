@@ -333,6 +333,24 @@
             <div class="form-group">
                 <div class="field-label" data-i18n="cookieSameSite"></div>
                 <select class="cookie-samesite">
+                    <button type="button">
+                        <selectedcontent></selectedcontent>
+                        <svg
+                            class="picker-icon"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                            focusable="false"
+                        >
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
                     <option value="no_restriction">None</option>
                     <option value="lax">Lax</option>
                     <option value="strict">Strict</option>

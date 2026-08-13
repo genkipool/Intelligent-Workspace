@@ -364,8 +364,48 @@
                     renderAll();
                 },
                 onselectProject: (detail) => selectProject(detail.project),
+                onrenameProject: (detail) => renameProject(detail.oldName, detail.newName),
             },
         });
+    }
+
+    async function renameProject(oldName, newName) {
+        try {
+            const db = await openDb();
+            await new Promise((resolve, reject) => {
+                const tx = db.transaction([STORE], 'readwrite');
+                const store = tx.objectStore(STORE);
+                const req = store.openCursor();
+                req.onsuccess = (e) => {
+                    const cursor = e.target.result;
+                    if (cursor) {
+                        const val = cursor.value;
+                        const defaultName = i18n('dashboardNoName') || 'Unnamed';
+                        if (
+                            val.projectName === oldName ||
+                            (!val.projectName && (oldName === defaultName || oldName === 'Unnamed'))
+                        ) {
+                            val.projectName = newName;
+                            cursor.update(val);
+                        }
+                        cursor.continue();
+                    } else {
+                        db.close();
+                        resolve();
+                    }
+                };
+                req.onerror = () => {
+                    db.close();
+                    reject(req.error);
+                };
+            });
+            if (activeProject === oldName) {
+                activeProject = newName;
+            }
+            await loadData();
+        } catch (err) {
+            console.error('Error renaming project:', err);
+        }
     }
 
     function selectProject(name) {

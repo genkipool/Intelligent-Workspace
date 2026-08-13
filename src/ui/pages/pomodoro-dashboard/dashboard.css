@@ -542,6 +542,48 @@ selectedcontent {
     color: var(--action-color);
 }
 
+.si-edit-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color);
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition:
+        opacity 0.15s,
+        color 0.15s,
+        background 0.15s;
+    flex-shrink: 0;
+}
+
+.sidebar-item:hover .si-edit-btn,
+.sidebar-item.active .si-edit-btn {
+    display: inline-flex;
+}
+
+.si-edit-btn:hover {
+    opacity: 1;
+    color: var(--action-color);
+    background: color-mix(in srgb, var(--interactive-color) 15%, transparent);
+}
+
+.si-edit-input {
+    flex: 1;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: var(--text-color);
+    background: var(--bg-color);
+    border: 1px solid var(--interactive-color);
+    border-radius: 4px;
+    padding: 2px 6px;
+    outline: none;
+    width: 100%;
+}
+
 .sidebar-scroll {
     flex: 1;
     overflow-y: auto;
