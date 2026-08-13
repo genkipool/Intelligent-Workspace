@@ -2509,6 +2509,24 @@ export function initPomodoro() {
         }
     };
 
+    // ─── Real-time Synchronization ─────────────────────────────
+    try {
+        const syncChannel = new BroadcastChannel('pomodoro_sync_channel');
+        syncChannel.onmessage = async (e) => {
+            if (e.data?.type === 'pomodoroStatsChanged') {
+                await loadSavedProjects();
+            }
+        };
+    } catch (_) {}
+
+    try {
+        chrome.runtime.onMessage.addListener(async (msg) => {
+            if (msg.action === 'pomodoroStatsChanged' || msg.action === 'pomodoroStatsUpdated') {
+                await loadSavedProjects();
+            }
+        });
+    } catch (_) {}
+
     // ─── Init ───────────────────────────────────────────────────
     initPomoTiempoCalendar();
     updateUnitTooltips();

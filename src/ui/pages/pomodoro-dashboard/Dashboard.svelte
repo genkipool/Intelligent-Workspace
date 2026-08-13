@@ -1,7 +1,8 @@
 <script>
-    import { onMount, tick, mount } from 'svelte';
+    import { onMount, onDestroy, tick, mount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
+    import { notifyPomoStatsChanged } from '../../../utils/db.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
     /* ===============================================================
@@ -491,9 +492,10 @@
                 };
             });
             if (activeProject === oldName) {
-                activeProject = newName;
+                activeProject = sanitizedNewName;
             }
             await loadData();
+            notifyPomoStatsChanged();
         } catch (err) {
             console.error('Error renaming project:', err);
         }
@@ -1379,6 +1381,53 @@
         });
     }
 
+    // --- REAL-TIME SYNC -----------------------------------------------
+    let _syncChannel = null;
+    let _dataSyncTimer = null;
+    let _onMessageListener = null;
+    let _visibilityHandler = null;
+    let _focusHandler = null;
+
+    function triggerSyncLoad() {
+        if (_dataSyncTimer) clearTimeout(_dataSyncTimer);
+        _dataSyncTimer = setTimeout(() => {
+            _dataSyncTimer = null;
+            loadData();
+        }, 150);
+    }
+
+    function initSync() {
+        try {
+            _syncChannel = new BroadcastChannel('pomodoro_sync_channel');
+            _syncChannel.onmessage = (e) => {
+                if (e.data?.type === 'pomodoroStatsChanged') {
+                    triggerSyncLoad();
+                }
+            };
+        } catch (_) {}
+
+        _onMessageListener = (msg) => {
+            if (msg.action === 'pomodoroStatsChanged' || msg.action === 'pomodoroStatsUpdated') {
+                triggerSyncLoad();
+            }
+        };
+        try {
+            chrome.runtime.onMessage.addListener(_onMessageListener);
+        } catch (_) {}
+
+        _visibilityHandler = () => {
+            if (document.visibilityState === 'visible') {
+                triggerSyncLoad();
+            }
+        };
+        document.addEventListener('visibilitychange', _visibilityHandler);
+
+        _focusHandler = () => {
+            triggerSyncLoad();
+        };
+        window.addEventListener('focus', _focusHandler);
+    }
+
     // --- INIT ---------------------------------------------------------
 
     onMount(async () => {
@@ -1386,7 +1435,32 @@
         await i18nStore.init();
         await _loadI18n();
         initTheme();
+        initSync();
         loadData();
+    });
+
+    onDestroy(() => {
+        if (_syncChannel) {
+            try {
+                _syncChannel.close();
+            } catch (_) {}
+            _syncChannel = null;
+        }
+        if (_dataSyncTimer) {
+            clearTimeout(_dataSyncTimer);
+            _dataSyncTimer = null;
+        }
+        if (_onMessageListener) {
+            try {
+                chrome.runtime.onMessage.removeListener(_onMessageListener);
+            } catch (_) {}
+        }
+        if (_visibilityHandler) {
+            document.removeEventListener('visibilitychange', _visibilityHandler);
+        }
+        if (_focusHandler) {
+            window.removeEventListener('focus', _focusHandler);
+        }
     });
 </script>
 

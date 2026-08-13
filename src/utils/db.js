@@ -444,13 +444,31 @@ export async function deleteBackupFromDb(groupId) {
     });
 }
 // ─── Pomodoro Stats Store ──────────────────────────────
+export function notifyPomoStatsChanged() {
+    try {
+        if (typeof BroadcastChannel !== 'undefined') {
+            const bc = new BroadcastChannel('pomodoro_sync_channel');
+            bc.postMessage({ type: 'pomodoroStatsChanged', timestamp: Date.now() });
+            bc.close();
+        }
+    } catch (_) {}
+    try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+            chrome.runtime.sendMessage({ action: 'pomodoroStatsChanged' }).catch(() => {});
+        }
+    } catch (_) {}
+}
+
 export async function savePomoStatsToDb(statsEntry) {
     const db = await openDb();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([POMO_STATS_STORE_NAME], 'readwrite');
         const store = transaction.objectStore(POMO_STATS_STORE_NAME);
         const request = store.put(statsEntry);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => {
+            notifyPomoStatsChanged();
+            resolve();
+        };
         request.onerror = (event) => {
             console.error('Error saving pomo stats:', event.target.error);
             reject(event.target.error);
@@ -490,7 +508,10 @@ export async function deletePomoStatsFromDb(id) {
         const transaction = db.transaction([POMO_STATS_STORE_NAME], 'readwrite');
         const store = transaction.objectStore(POMO_STATS_STORE_NAME);
         const request = store.delete(id);
-        request.onsuccess = () => resolve();
+        request.onsuccess = () => {
+            notifyPomoStatsChanged();
+            resolve();
+        };
         request.onerror = (event) => reject(event.target.error);
     });
 }
@@ -525,6 +546,7 @@ export async function clearPomoStatsFromDb(projectName) {
                     cr.onerror = (e) => rej(e.target.error);
                 });
             }
+            notifyPomoStatsChanged();
             resolve();
         } catch (e) {
             reject(e);
