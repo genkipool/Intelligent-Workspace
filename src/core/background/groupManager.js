@@ -212,18 +212,29 @@ function applyCustomRules(tabs, customRules) {
     const customGroupTabs = {};
     const groupedTabIds = new Set();
 
-    if (!Array.isArray(customRules)) {
+    if (!Array.isArray(customRules) || customRules.length === 0) {
         return { customGroupTabs, groupedTabIds };
     }
 
-    for (const rule of customRules) {
-        if (rule.active) {
-            const matchingTabs = tabs.filter(
-                (tab) =>
-                    !tab.pinned && rule.urls.some((url) => tab.url.includes(url)) && tab.url !== 'chrome://newtab/',
-            );
+    const activeRules = customRules.filter((rule) => rule.active && Array.isArray(rule.urls) && rule.urls.length > 0);
+    if (activeRules.length === 0) {
+        return { customGroupTabs, groupedTabIds };
+    }
+
+    for (const rule of activeRules) {
+        const matchingTabs = [];
+        for (let i = 0; i < tabs.length; i++) {
+            const tab = tabs[i];
+            if (tab.pinned || groupedTabIds.has(tab.id) || !tab.url || tab.url === 'chrome://newtab/') {
+                continue;
+            }
+            if (rule.urls.some((u) => tab.url.includes(u))) {
+                matchingTabs.push(tab);
+                groupedTabIds.add(tab.id);
+            }
+        }
+        if (matchingTabs.length > 0) {
             customGroupTabs[rule.name] = matchingTabs;
-            matchingTabs.forEach((tab) => groupedTabIds.add(tab.id));
         }
     }
     return { customGroupTabs, groupedTabIds };
@@ -250,28 +261,38 @@ function addToGroup(groupMap, groupName, tab) {
     groupMap[groupName].push(tab);
 }
 
+const SEARCH_ENGINES_SET = new Set([
+    'google.com',
+    'www.google.com',
+    'bing.com',
+    'www.bing.com',
+    'baidu.com',
+    'www.baidu.com',
+    'duckduckgo.com',
+    'www.duckduckgo.com',
+    'yahoo.com',
+    'search.yahoo.com',
+    'ecosia.org',
+    'www.ecosia.org',
+    'yandex.com',
+    'ask.com',
+    'aol.com',
+    'startpage.com',
+    'qwant.com',
+    'brave.com',
+    'search.brave.com',
+]);
+
 function isSearchUrl(url) {
     try {
         const parsedUrl = new URL(url);
         const hostname = parsedUrl.hostname.toLowerCase();
+        if (!SEARCH_ENGINES_SET.has(hostname)) return false;
+
         const searchParams = parsedUrl.searchParams;
-
-        const searchEngines = [
-            'google.com',
-            'www.google.com',
-            'bing.com',
-            'www.bing.com',
-            'baidu.com',
-            'www.baidu.com',
-            'duckduckgo.com',
-            'www.duckduckgo.com',
-        ];
-
-        const isSearchEngine = searchEngines.includes(hostname);
-        const hasSearchParams =
-            searchParams.has('q') || searchParams.has('query') || searchParams.has('search') || searchParams.has('ie');
-
-        return isSearchEngine && hasSearchParams;
+        return (
+            searchParams.has('q') || searchParams.has('query') || searchParams.has('search') || searchParams.has('ie')
+        );
     } catch {
         return false;
     }
@@ -304,7 +325,8 @@ function classifyTabs(tabs, groupedTabIds, existingGroups) {
     const subdomainsEnabled = extensionSettings.clusterConfig?.subdomainsEnabled ?? false;
     const domainsOrSubdomainsEnabled = subdomainsEnabled || (extensionSettings.clusterConfig?.domainsEnabled ?? true);
 
-    for (const tab of tabs) {
+    for (let i = 0; i < tabs.length; i++) {
+        const tab = tabs[i];
         if (tab.pinned) continue;
 
         if (manualGroupIds.has(tab.groupId)) {
@@ -314,7 +336,6 @@ function classifyTabs(tabs, groupedTabIds, existingGroups) {
         if (groupedTabIds.has(tab.id)) continue;
         const url = tab.url;
 
-        // If the URL is empty or not a valid string, the tab is considered "miscellaneous" and the rest of the processing is skipped.
         // If the URL is empty or not a valid string, the tab is considered "misc" and the rest of the processing is skipped.
         if (!url || url.trim() === '' || url === 'about:blank' || url === 'chrome://blank') {
             continue;

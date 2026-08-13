@@ -1163,20 +1163,20 @@ function loadUserDefinedPrefixes() {
     logMessage('[loadUserDefinedPrefixes] Prefixes loaded and rebuilt successfully.');
 }
 
-function getDomain(url, useSubdomain = false) {
-    const compoundTLDs = [
-        'co.uk',
-        'com.br',
-        'co.jp',
-        'co.za',
-        'gov.ar',
-        'edu.es',
-        'ac.uk',
-        'net.au',
-        'org.uk',
-        'com.au',
-    ];
+const COMPOUND_TLDS_SET = new Set([
+    'co.uk',
+    'com.br',
+    'co.jp',
+    'co.za',
+    'gov.ar',
+    'edu.es',
+    'ac.uk',
+    'net.au',
+    'org.uk',
+    'com.au',
+]);
 
+function getDomain(url, useSubdomain = false) {
     try {
         const hostname = new URL(url).hostname;
 
@@ -1187,9 +1187,8 @@ function getDomain(url, useSubdomain = false) {
         const parts = hostname.split('.');
 
         // First, try to get the subdomain if the option is enabled.
-        // First, try to get the subdomain if the option is enabled.
         if (useSubdomain) {
-            const isCompound = parts.length > 2 && compoundTLDs.includes(parts.slice(-2).join('.'));
+            const isCompound = parts.length > 2 && COMPOUND_TLDS_SET.has(parts.slice(-2).join('.'));
             const minPartsForSubdomain = isCompound ? 4 : 3;
 
             if (parts.length >= minPartsForSubdomain) {
@@ -1204,10 +1203,9 @@ function getDomain(url, useSubdomain = false) {
         }
 
         // Main domain logic (used if useSubdomain is false OR if no subdomain was found).
-        // Main domain logic (used if useSubdomain is false OR if no subdomain was found).
         if (parts.length > 2) {
             const possibleCompoundTLD = parts.slice(-2).join('.');
-            if (compoundTLDs.includes(possibleCompoundTLD)) {
+            if (COMPOUND_TLDS_SET.has(possibleCompoundTLD)) {
                 return capitalizeFirstLetter(parts.slice(-3, -2)[0]) + '\u200B';
             }
         }
