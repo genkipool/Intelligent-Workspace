@@ -248,8 +248,15 @@
                 aria-label={$t(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
                 aria-pressed={areAllExpanded}
             >
-                <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-                    <use href="#icon-collapse-all"></use>
+                <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    style="color: var(--text-color);"
+                    aria-hidden="true"
+                    focusable="false"
+                >
+                    <use href="#icon-chevron-down"></use>
                 </svg>
             </button>
         </div>
