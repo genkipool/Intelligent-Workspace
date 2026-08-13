@@ -802,9 +802,19 @@ selectedcontent {
     font-weight: 600;
     color: var(--text-on-color);
     letter-spacing: -0.03em;
-    line-height: 1;
+    line-height: 1.15;
     position: relative;
     z-index: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.kpi-value.kpi-value-text {
+    font-size: 1.25rem;
+    font-family: var(--sans);
+    letter-spacing: normal;
 }
 
 .kpi-sub {

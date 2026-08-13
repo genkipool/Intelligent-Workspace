@@ -370,6 +370,8 @@
     }
 
     async function renameProject(oldName, newName) {
+        const sanitizedNewName = (newName || '').trim().slice(0, 18);
+        if (!sanitizedNewName) return;
         try {
             const db = await openDb();
             await new Promise((resolve, reject) => {
@@ -385,7 +387,7 @@
                             val.projectName === oldName ||
                             (!val.projectName && (oldName === defaultName || oldName === 'Unnamed'))
                         ) {
-                            val.projectName = newName;
+                            val.projectName = sanitizedNewName;
                             cursor.update(val);
                         }
                         cursor.continue();

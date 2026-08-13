@@ -46,7 +46,7 @@
 
     function saveEditing(oldName) {
         if (!editingProject) return;
-        const newName = editingName.trim();
+        const newName = editingName.trim().slice(0, 18);
         editingProject = null;
         if (newName && newName !== oldName) {
             onrenameProject?.({ oldName, newName });
@@ -142,6 +142,7 @@
                                     bind:this={editInputEl}
                                     class="si-edit-input"
                                     type="text"
+                                    maxlength="18"
                                     bind:value={editingName}
                                     onkeydown={(e) => handleEditKeydown(e, p)}
                                     onblur={() => saveEditing(p)}
@@ -198,6 +199,7 @@
                 bind:this={editInputEl}
                 class="si-edit-input"
                 type="text"
+                maxlength="18"
                 bind:value={editingName}
                 onkeydown={(e) => handleEditKeydown(e, p)}
                 onblur={() => saveEditing(p)}

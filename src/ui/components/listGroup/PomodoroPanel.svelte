@@ -83,7 +83,7 @@
             id="pomo-project-inline"
             class="pomo-project-inline-input"
             type="text"
-            maxlength="100"
+            maxlength="18"
             autocomplete="off"
             placeholder={$t('pomodoroProjectName')}
         />
