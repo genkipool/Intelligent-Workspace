@@ -269,34 +269,39 @@
         return gradient;
     }
 
-    function colorMix(color, alpha = 1) {
-        if (!color) return `rgba(52,152,219,${alpha})`;
+    function parseRgba(color) {
+        if (!color) return { r: 52, g: 152, b: 219, a: 1 };
         const str = String(color).trim();
 
-        // 3-digit hex: #rgb
         if (/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.test(str)) {
             const match = str.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
-            const r = parseInt(match[1] + match[1], 16);
-            const g = parseInt(match[2] + match[2], 16);
-            const b = parseInt(match[3] + match[3], 16);
-            return `rgba(${r},${g},${b},${alpha})`;
+            return {
+                r: parseInt(match[1] + match[1], 16),
+                g: parseInt(match[2] + match[2], 16),
+                b: parseInt(match[3] + match[3], 16),
+                a: 1,
+            };
         }
 
-        // 6-digit hex: #rrggbb
         if (/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/.test(str)) {
-            const r = parseInt(str.slice(1, 3), 16);
-            const g = parseInt(str.slice(3, 5), 16);
-            const b = parseInt(str.slice(5, 7), 16);
-            return `rgba(${r},${g},${b},${alpha})`;
+            return {
+                r: parseInt(str.slice(1, 3), 16),
+                g: parseInt(str.slice(3, 5), 16),
+                b: parseInt(str.slice(5, 7), 16),
+                a: 1,
+            };
         }
 
-        // rgb / rgba format
-        const rgbMatch = str.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+        const rgbMatch = str.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?/);
         if (rgbMatch) {
-            return `rgba(${rgbMatch[1]},${rgbMatch[2]},${rgbMatch[3]},${alpha})`;
+            return {
+                r: parseFloat(rgbMatch[1]),
+                g: parseFloat(rgbMatch[2]),
+                b: parseFloat(rgbMatch[3]),
+                a: rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1,
+            };
         }
 
-        // DOM canvas context parser as safe fallback for named colors
         try {
             const testCanvas = document.createElement('canvas');
             testCanvas.width = 1;
@@ -304,11 +309,56 @@
             const testCtx = testCanvas.getContext('2d');
             testCtx.fillStyle = str;
             testCtx.fillRect(0, 0, 1, 1);
-            const [r, g, b] = testCtx.getImageData(0, 0, 1, 1).data;
-            return `rgba(${r},${g},${b},${alpha})`;
+            const [r, g, b, a] = testCtx.getImageData(0, 0, 1, 1).data;
+            return { r, g, b, a: a / 255 };
         } catch (_) {
-            return str;
+            return { r: 52, g: 152, b: 219, a: 1 };
         }
+    }
+
+    function blendColors(c1, c2, pct1 = 50) {
+        const rgb1 = parseRgba(c1);
+        const rgb2 = parseRgba(c2);
+        const w1 = pct1 / 100;
+        const w2 = 1 - w1;
+        const r = Math.round(rgb1.r * w1 + rgb2.r * w2);
+        const g = Math.round(rgb1.g * w1 + rgb2.g * w2);
+        const b = Math.round(rgb1.b * w1 + rgb2.b * w2);
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function getThemeProjectColors() {
+        const cInteractive = cssVar('--interactive-color') || '#3498db';
+        const cAction = cssVar('--action-color') || '#3498db';
+        const cTextOn = cssVar('--text-on-color') || '#ffffff';
+        const cText = cssVar('--text-color') || '#000000';
+        const cError = cssVar('--error-color') || '#e74c3c';
+        const cHeader = cssVar('--header-color') || cAction;
+
+        return [
+            cInteractive,
+            cAction,
+            blendColors(cInteractive, cTextOn, 75),
+            blendColors(cAction, cTextOn, 75),
+            blendColors(cInteractive, cError, 65),
+            blendColors(cAction, cError, 65),
+            blendColors(cHeader, cInteractive, 60),
+            blendColors(cError, cAction, 60),
+            blendColors(cInteractive, cText, 70),
+            blendColors(cAction, cText, 70),
+            blendColors(cHeader, cTextOn, 70),
+            blendColors(cError, cTextOn, 70),
+        ];
+    }
+
+    function getProjectColor(idx) {
+        const palette = getThemeProjectColors();
+        return palette[idx % palette.length];
+    }
+
+    function colorMix(color, alpha = 1) {
+        const rgba = parseRgba(color);
+        return `rgba(${rgba.r},${rgba.g},${rgba.b},${alpha})`;
     }
 
     // Resolves a CSS variable to its current computed value
@@ -925,7 +975,7 @@
             .slice(0, 12);
         const labels = sorted.map(([n]) => n);
         const vals = sorted.map(([, v]) => +v.toFixed(2));
-        const colors = labels.map((_, i) => projColor(i));
+        const colors = labels.map((_, i) => getProjectColor(i));
 
         charts.projectBar = new Chart(ctx, {
             type: 'bar',
@@ -1029,7 +1079,7 @@
             .slice(0, 10);
         const labels = sorted.map(([n]) => n);
         const vals = sorted.map(([, v]) => v);
-        const colors = labels.map((_, i) => projColor(i));
+        const colors = labels.map((_, i) => getProjectColor(i));
 
         charts.cycles = new Chart(ctx, {
             type: 'bar',
@@ -1112,7 +1162,7 @@
         empty.style.display = 'none';
         const maxF = sorted[0][1].focus;
 
-        const props = { sorted, maxF, effColor, projColor, fmtDur };
+        const props = { sorted, maxF, effColor, projColor: getProjectColor, fmtDur };
         tbody.replaceChildren();
         apps.projectTable = mount(ProjectTable, { target: tbody, props });
     }
