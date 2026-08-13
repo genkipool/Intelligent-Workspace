@@ -36,6 +36,7 @@
         <FeatureItem isMaterial={true} iconName="swap_vert" textKey="feature_v098_groupReordering" />
         <FeatureItem isMaterial={true} iconName="save" textKey="feature_backupGroup" />
         <FeatureItem isMaterial={true} iconName="visibility_off" textKey="feature_hideGroup" />
+        <FeatureItem isMaterial={true} iconName="cookie" textKey="feature_v100_cookie_editor" />
         <FeatureItem isMaterial={true} iconName="content_copy" textKey="feature_copyAllUrls" />
         <FeatureItem isMaterial={true} iconName="delete_sweep" textKey="feature_deleteGroupTabs" />
         <FeatureItem isMaterial={true} iconName="close" textKey="feature_closeTab" />
@@ -79,6 +80,7 @@
         <FeatureItem isMaterial={true} iconName="timer" textKey="feature_pomodoro_tracking" />
         <FeatureItem isMaterial={true} iconName="open_in_browser" textKey="feature_pomodoro_floating_timer" />
         <FeatureItem isMaterial={true} iconName="analytics" textKey="feature_pomodoro_stats" />
+        <FeatureItem isMaterial={true} iconName="dashboard" textKey="feature_v100_pomodoro_dashboard" />
         <FeatureItem isMaterial={true} iconName="settings_suggest" textKey="feature_pomodoro_config" />
     </div>
 </section>
@@ -158,6 +160,12 @@
         <FeatureItem isMaterial={true} iconName="schedule" textKey="feature_v099_theme_scheduling" />
         <FeatureItem isMaterial={true} iconName="import_export" textKey="feature_v095_import_export_themes" />
         <FeatureItem isMaterial={true} iconName="cloud_queue" textKey="feature_v097_cloud_local_storage" />
+        <FeatureItem isMaterial={true} iconName="swap_vert" textKey="feature_v094_dnd_reorder_themes" />
+        <FeatureItem
+            isMaterial={true}
+            iconName="drive_file_rename_outline"
+            textKey="feature_v092_inline_rename_themes"
+        />
         <FeatureItem isMaterial={true} iconName="colorize" textKey="featureFaviconColoring" />
     </div>
 </section>
