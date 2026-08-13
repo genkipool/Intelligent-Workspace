@@ -1160,8 +1160,8 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         updateAllPrefixesForAllWindow();
     }
     if (needsRegroup && !isInstallActive) {
-        logMessage('[Storage Changed] Triggering groupTabs() due to configuration changes.');
-        groupTabs();
+        logMessage('[Storage Changed] Triggering debounced groupTabs() due to configuration changes.');
+        debounceGroupTabs(50);
     }
     debounceSetupContextMenus();
 });
