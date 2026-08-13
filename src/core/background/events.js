@@ -1052,9 +1052,16 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
             await setupContextMenus();
         }
     }
+    let configuredArea = cachedConfiguredRuleStorageArea;
+    if (!configuredArea) {
+        const { ruleStorageArea: currentArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+        cachedConfiguredRuleStorageArea = currentArea;
+        configuredArea = currentArea;
+    }
     if (changes.ruleStorageArea && area === 'local') {
         const oldValue = changes.ruleStorageArea.oldValue || 'sync';
         const newValue = changes.ruleStorageArea.newValue || 'sync';
+        cachedConfiguredRuleStorageArea = newValue;
         logMessage(`[Storage Changed] Storage area switched from '${oldValue}' to '${newValue}'. Re-initializing...`);
         if (!isInstallActive) {
             await initializeExtensionStates();
@@ -1062,9 +1069,6 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         isInstallActive = false;
         return;
     }
-    const { ruleStorageArea: configuredArea } = await chrome.storage.local.get({
-        ruleStorageArea: 'sync',
-    });
     if (area !== configuredArea) {
         return;
     }
@@ -1151,9 +1155,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
                 loadUserDefinedPrefixes();
             }
             const windows = await chrome.windows.getAll();
-            for (const window of windows) {
-                await updateAllGroupPrefixes(window.id, null);
-            }
+            await Promise.all(windows.map((window) => updateAllGroupPrefixes(window.id, null)));
         };
         updateAllPrefixesForAllWindow();
     }
@@ -1161,7 +1163,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         logMessage('[Storage Changed] Triggering groupTabs() due to configuration changes.');
         groupTabs();
     }
-    await setupContextMenus();
+    debounceSetupContextMenus();
 });
 chrome.action.onClicked.addListener((tab) => {
     // We read directly from the variables in memory, which are updated by onChanged.

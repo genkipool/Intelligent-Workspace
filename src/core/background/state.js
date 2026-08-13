@@ -42,6 +42,7 @@ let dbPromise = null;
 let currentActiveTabId = null;
 let previousActiveTabId = null;
 let tabModes = new Map();
+let cachedConfiguredRuleStorageArea = null;
 
 let bookmarkTreeCache = null;
 let duplicateUrlSetCache = null;
