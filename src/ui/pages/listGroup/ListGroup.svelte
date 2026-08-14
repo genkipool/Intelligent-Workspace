@@ -143,6 +143,15 @@
         // with the grouping already settled.
         const { renderGroups } = await import('../../services/groupsService.js');
         await catchErrors('renderGroups', () => renderGroups());
+
+        // Ensure we smoothly scroll to the currently active tab once loaded
+        setTimeout(() => {
+            const activeTabEl = document.querySelector('.tab-item.active');
+            if (activeTabEl) {
+                activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 250);
+
         if (errors.length > 0) {
             const div = document.createElement('div');
             div.style.cssText =

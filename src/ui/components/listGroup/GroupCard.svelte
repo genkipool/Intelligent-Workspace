@@ -34,10 +34,27 @@
     let groupInfoMap = $derived(renderContext.groupInfoMap || new Map());
     let groupPrefixState = $derived(renderContext.groupPrefixState || {});
 
+    let hasActiveTab = $derived(tabs.some((t) => t.active));
+
+    // Ensure the group containing the active tab is expanded so it is visible
+    $effect(() => {
+        if (hasActiveTab && group.id !== undefined) {
+            const stored = $expandedGroupStates.get(group.id);
+            if (stored === false) {
+                expandedGroupStates.update((map) => {
+                    const next = new Map(map);
+                    next.set(group.id, true);
+                    return next;
+                });
+            }
+        }
+    });
+
     // Derived from the shared map rather than mirrored into local state. The mirror
     // was written back by an effect that depended on the whole store, so toggling one
     // group re-evaluated every card and could snap a different one open or shut.
     let isExpanded = $derived.by(() => {
+        if (hasActiveTab) return true;
         const stored = $expandedGroupStates.get(group.id);
         return stored !== undefined ? stored : $listGroupState.viewExpandStates.groups;
     });

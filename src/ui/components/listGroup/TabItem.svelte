@@ -338,6 +338,18 @@
         // The overflow menu and Ctrl+click activation read the context off the node
         if (tabEl) tabEl._context = context;
     });
+
+    let hasScrolledInitial = false;
+    $effect(() => {
+        if (tab.active && tabEl && !hasScrolledInitial) {
+            hasScrolledInitial = true;
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    tabEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            });
+        }
+    });
 </script>
 
 <div
