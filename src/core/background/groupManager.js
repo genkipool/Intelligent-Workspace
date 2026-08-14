@@ -425,14 +425,15 @@ function planCustomGroups(customGroupTabs, customRules) {
 }
 
 async function planDomainGroups(domainTabs, existingGroups, windowId) {
-    const groupingPlan = [];
-    const miscTabs = [];
     const subdomainsEnabled = extensionSettings.clusterConfig?.subdomainsEnabled ?? false;
     const domainThreshold = subdomainsEnabled
         ? (extensionSettings.clusterConfig?.subdomainThreshold ?? 2)
         : (extensionSettings.clusterConfig?.domainThreshold ?? 2);
 
-    for (const [domain, tabs] of Object.entries(domainTabs)) {
+    const domainEntries = Object.entries(domainTabs);
+    const miscTabs = [];
+
+    const planPromises = domainEntries.map(async ([domain, tabs]) => {
         const tabIds = tabs.map((tab) => tab.id);
         const existingGroup = Array.from(groupInfoMap).find(
             ([id, info]) => info.type === 'domain' && info.key === domain && existingGroups[id]?.windowId === windowId,
@@ -447,17 +448,31 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
                 const extractedColor = await getFaviconColor(favIconUrl);
                 color = extractedColor || getDeterministicColor(domain);
             }
-            groupingPlan.push({
-                type: 'domain',
-                key: domain,
-                color: color,
-                tabIds: tabIds,
-                name: domain,
-            });
+            return {
+                plan: {
+                    type: 'domain',
+                    key: domain,
+                    color: color,
+                    tabIds: tabIds,
+                    name: domain,
+                },
+                misc: null,
+            };
         } else {
-            miscTabs.push(...tabs);
+            return {
+                plan: null,
+                misc: tabs,
+            };
         }
+    });
+
+    const results = await Promise.all(planPromises);
+    const groupingPlan = [];
+    for (const res of results) {
+        if (res.plan) groupingPlan.push(res.plan);
+        if (res.misc) miscTabs.push(...res.misc);
     }
+
     return { groupingPlan, miscTabs };
 }
 
@@ -594,22 +609,23 @@ async function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, ex
                 color = extractedColor || getDeterministicColor(name);
             }
 
-            groupingPlan.push({
+            return {
                 type: 'special',
                 key: name,
                 color: color, // We use the correctly determined color
                 tabIds: tabs.map((tab) => tab.id),
                 name: name,
-            });
+            };
         }
+        return null;
     };
 
-    for (const [name, tabs] of Object.entries(localhostTabs)) {
-        await processIpLikeGroup(name, tabs);
-    }
-
-    for (const [name, tabs] of Object.entries(ipTabs)) {
-        await processIpLikeGroup(name, tabs);
+    const ipPromises = [...Object.entries(localhostTabs), ...Object.entries(ipTabs)].map(([name, tabs]) =>
+        processIpLikeGroup(name, tabs),
+    );
+    const ipResults = await Promise.all(ipPromises);
+    for (const res of ipResults) {
+        if (res) groupingPlan.push(res);
     }
 
     return groupingPlan;
@@ -1245,14 +1261,14 @@ async function renameMismatchedDomainGroups(groups, tabsByGroupId, groupInfoMap,
 
     logMessage('[Rename Strategy] Domain/subdomain strategy changed. Checking for groups to rename.');
 
-    for (const group of groups) {
+    const renamePromises = groups.map(async (group) => {
         const info = groupInfoMap.get(group.id);
 
         // We are only interested in 'domain' type groups.
-        if (!info || info.type !== 'domain') continue;
+        if (!info || info.type !== 'domain') return;
 
         const tabsInGroup = tabsByGroupId.get(group.id);
-        if (!tabsInGroup || tabsInGroup.length === 0) continue;
+        if (!tabsInGroup || tabsInGroup.length === 0) return;
 
         const representativeTab = tabsInGroup[0];
         const currentGroupKey = info.key;
@@ -1279,7 +1295,9 @@ async function renameMismatchedDomainGroups(groups, tabsByGroupId, groupInfoMap,
                 `renaming group ${group.id} to ${newBaseTitle}`,
             );
         }
-    }
+    });
+
+    await Promise.all(renamePromises);
 }
 
 function constructFullTitle(type, key, title, config) {
