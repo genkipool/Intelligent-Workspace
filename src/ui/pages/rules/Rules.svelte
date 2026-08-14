@@ -102,25 +102,6 @@
     $effect(() => {
         $searchQueryStore;
     });
-    // Only writes when the value actually changed (avoids loops with
-    // storage.onChanged and chrome.storage.sync write quota).
-    let lastSavedToggles = '';
-    $effect(() => {
-        const snapshot = {
-            clusteringEnabled: isClusterEnabled,
-            sortGroupsAlphabetically: isSortGroupsEnabled,
-            enablePrefixes: isPrefixesEnabled,
-            enableCollapseTimer: isCollapseTimerEnabled,
-        };
-        const serialized = JSON.stringify(snapshot);
-        if (lastSavedToggles === '') {
-            lastSavedToggles = serialized;
-        } else if (serialized !== lastSavedToggles) {
-            lastSavedToggles = serialized;
-            saveSettings(snapshot);
-        }
-    });
-
     onMount(async () => {
         initNumberSpinnerArrows();
         try {

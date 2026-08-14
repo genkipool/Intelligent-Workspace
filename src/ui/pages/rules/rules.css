@@ -629,7 +629,7 @@ h1 {
         background-size: 205% 105%;
         background-position: 100% 0;
         border-radius: var(--switch-height);
-        transition: background-position 0.3s ease;
+        transition: background-position 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         flex-shrink: 0;
         justify-content: start;
@@ -638,6 +638,8 @@ h1 {
         border: 1px solid var(--border-color);
         padding: var(--spacing-left-switch-handle);
         position: relative;
+        will-change: background-position;
+        contain: layout paint;
     }
 
     input:checked ~ .slider {
@@ -651,13 +653,14 @@ h1 {
         background-color: var(--bg-panel-color);
         border-radius: 50%;
         transition:
-            transform 0.3s ease,
-            background-color 0.3s ease;
+            transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         justify-content: center;
         align-items: center;
         border: 1px solid var(--border-color);
         box-sizing: border-box;
+        will-change: transform;
     }
 
     .switch-light {
@@ -666,8 +669,8 @@ h1 {
         background-color: var(--action-color);
         border-radius: 50%;
         transition:
-            background-color 0.3s ease,
-            box-shadow 0.3s ease;
+            background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .switch-text-on,
@@ -679,11 +682,12 @@ h1 {
         pointer-events: none;
         font-weight: bold;
         opacity: 1;
-        transition: transform 0.3s ease;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         user-select: none;
         align-items: center;
         line-height: var(--switch-height);
         overflow: hidden;
+        will-change: transform;
     }
 
     .switch-text-on {
