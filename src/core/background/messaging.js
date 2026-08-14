@@ -282,6 +282,13 @@ function handleFocusSidePanel(sendResponse) {
 }
 
 const MESSAGE_HANDLERS = {
+    clearFaviconCache: (message, sender, sendResponse) => {
+        if (typeof clearFaviconColorCache === 'function') {
+            clearFaviconColorCache();
+        }
+        sendResponse({ success: true, message: 'Favicon color cache cleared' });
+        return true;
+    },
     snippetsUpdated: (message, sender, sendResponse) => {
         // Forward to all content scripts
         chrome.tabs.query({}, (tabs) => {

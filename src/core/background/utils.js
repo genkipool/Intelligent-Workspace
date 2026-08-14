@@ -1476,6 +1476,11 @@ function quantize(r, g, b, granularity = 15) {
 
 const faviconColorCache = new Map();
 
+function clearFaviconColorCache() {
+    faviconColorCache.clear();
+    logMessage('[Favicon] Favicon color cache cleared successfully.');
+}
+
 async function getFaviconColor(faviconUrl) {
     if (!faviconUrl) return null;
     if (faviconColorCache.has(faviconUrl)) {

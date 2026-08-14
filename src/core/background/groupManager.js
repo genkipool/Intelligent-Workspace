@@ -424,7 +424,7 @@ function planCustomGroups(customGroupTabs, customRules) {
     return groupingPlan;
 }
 
-function planDomainGroups(domainTabs, existingGroups, windowId) {
+async function planDomainGroups(domainTabs, existingGroups, windowId) {
     const groupingPlan = [];
     const miscTabs = [];
     const subdomainsEnabled = extensionSettings.clusterConfig?.subdomainsEnabled ?? false;
@@ -443,8 +443,9 @@ function planDomainGroups(domainTabs, existingGroups, windowId) {
             if (existingGroup) {
                 color = existingGroups[existingGroup[0]].color;
             } else {
-                const favIconUrl = faviconURL(tabs[0].url);
-                color = (favIconUrl && faviconColorCache.get(favIconUrl)) || getDeterministicColor(domain);
+                const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
+                const extractedColor = await getFaviconColor(favIconUrl);
+                color = extractedColor || getDeterministicColor(domain);
             }
             groupingPlan.push({
                 type: 'domain',
@@ -537,7 +538,7 @@ function planMiscGroup(miscTabs, existingGroups, windowId) {
     return groupingPlan;
 }
 
-function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, extensionTabs, existingGroups, windowId) {
+async function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, extensionTabs, existingGroups, windowId) {
     const groupingPlan = [];
     const { specialGroups } = extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG;
 
@@ -577,7 +578,7 @@ function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, extensio
     };
     const ipThreshold = ipConfig.threshold || 1;
 
-    const processIpLikeGroup = (name, tabs) => {
+    const processIpLikeGroup = async (name, tabs) => {
         const existingGroupInfo = findExistingSpecialGroup(name); // Search for existing group
 
         if (ipConfig.enabled && (tabs.length >= ipThreshold || existingGroupInfo) && tabs.length > 0) {
@@ -588,8 +589,9 @@ function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, extensio
                 const existingGroupId = existingGroupInfo[0];
                 color = existingGroups[existingGroupId].color;
             } else {
-                const favIconUrl = faviconURL(tabs[0].url);
-                color = (favIconUrl && faviconColorCache.get(favIconUrl)) || getDeterministicColor(name);
+                const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
+                const extractedColor = await getFaviconColor(favIconUrl);
+                color = extractedColor || getDeterministicColor(name);
             }
 
             groupingPlan.push({
@@ -603,11 +605,11 @@ function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, extensio
     };
 
     for (const [name, tabs] of Object.entries(localhostTabs)) {
-        processIpLikeGroup(name, tabs);
+        await processIpLikeGroup(name, tabs);
     }
 
     for (const [name, tabs] of Object.entries(ipTabs)) {
-        processIpLikeGroup(name, tabs);
+        await processIpLikeGroup(name, tabs);
     }
 
     return groupingPlan;
@@ -1116,7 +1118,7 @@ async function processAndGroupRemainingTabs(
 
     const { domainsEnabled, subdomainsEnabled } = localClusterConfig;
     if (domainsEnabled || subdomainsEnabled) {
-        const domainPlanResult = planDomainGroups(domainTabs, existingGroups, windowId);
+        const domainPlanResult = await planDomainGroups(domainTabs, existingGroups, windowId);
         groupingPlan.push(...domainPlanResult.groupingPlan);
         finalMiscTabs.push(...domainPlanResult.miscTabs);
     } else {
@@ -1141,7 +1143,7 @@ async function processAndGroupRemainingTabs(
         Object.values(ipTabs).forEach((arr) => finalMiscTabs.push(...arr));
     }
 
-    const specialPlan = planSpecialGroups(
+    const specialPlan = await planSpecialGroups(
         tabsForSpecialGrouping.chrome,
         tabsForSpecialGrouping.files,
         tabsForIpLikeGrouping.localhost,
