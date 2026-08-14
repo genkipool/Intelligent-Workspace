@@ -1433,7 +1433,9 @@ async function groupTabs() {
                 existingGroups = await getExistingGroupsForWindow(windowId);
             }
 
-            // STEP 1: Eject individual tabs that no longer belong to their group.
+            // STEP 1 & 2 & 3: Combine all tabs to ungroup (misplaced, disabled cluster, dissolved) in a single fast pass.
+            const allTabsToUngroup = new Set();
+
             const misplacedTabIds = ejectMisplacedTabsFromGroups(
                 tabs,
                 existingGroups,
@@ -1441,60 +1443,28 @@ async function groupTabs() {
                 customRules,
                 localClusterConfig,
             );
-            if (misplacedTabIds.length > 0) {
-                const logMessage = `ungrouping ${misplacedTabIds.length} misplaced tabs`;
-                await executeWithRetries(async () => await chrome.tabs.ungroup(misplacedTabIds), logMessage);
-                const updatedWindow = await chrome.windows.get(windowId, {
-                    populate: true,
-                });
-                tabs = updatedWindow.tabs.filter((tab) => !tab.pinned);
-                existingGroups = await executeWithRetries(
-                    async () => await getExistingGroupsForWindow(windowId),
-                    `getting existing groups for window ${windowId} after ejecting`,
-                );
-            }
+            misplacedTabIds.forEach((id) => allTabsToUngroup.add(id));
 
-            // STEP 2: If clustering is disabled, dissolve all automatic domain and special groups.
             if (!isClusteringGloballyEnabled) {
-                const tabsToUngroup = [];
                 const groupIdsToClean = new Set();
-
                 tabs.forEach((t) => {
                     if (t.groupId !== -1) {
                         const info = groupInfoMap.get(t.groupId);
                         if (info && (info.type === 'domain' || info.type === 'special')) {
-                            tabsToUngroup.push(t.id);
+                            allTabsToUngroup.add(t.id);
                             groupIdsToClean.add(t.groupId);
                         }
                     }
                 });
 
                 for (const groupId of groupIdsToClean) {
-                    logMessage(
-                        `[groupTabs] Proactively cleaning state for dissolved group ${groupId} as clustering is disabled.`,
-                    );
                     groupInfoMap.delete(groupId);
                     groupIdentifierMap.delete(groupId);
                     groupExpandedEver.delete(groupId);
                     delete lastActivity[groupId];
                 }
-
-                if (tabsToUngroup.length > 0) {
-                    const logMessage = `ungrouping all automatic cluster tabs because clustering is disabled`;
-                    await executeWithRetries(async () => await chrome.tabs.ungroup(tabsToUngroup), logMessage);
-                    const updatedWindow = await executeWithRetries(
-                        async () => await chrome.windows.get(windowId, { populate: true }),
-                        `getting updated window ${windowId} after dissolving cluster groups`,
-                    );
-                    tabs = updatedWindow.tabs.filter((tab) => !tab.pinned);
-                    existingGroups = await executeWithRetries(
-                        async () => await getExistingGroupsForWindow(windowId),
-                        `getting existing groups for window ${windowId} after dissolving cluster groups`,
-                    );
-                }
             }
 
-            // STEP 3: Dissolve entire groups that are no longer valid (e.g., below threshold).
             const tabsToUngroupFromDissolved = dissolveEmptyOrInvalidGroups(
                 tabs,
                 existingGroups,
@@ -1502,18 +1472,17 @@ async function groupTabs() {
                 localClusterConfig,
                 configChanged,
             );
-            if (tabsToUngroupFromDissolved.length > 0) {
-                const logMessage = `ungrouping ${tabsToUngroupFromDissolved.length} tabs from dissolved groups`;
-                await executeWithRetries(async () => await chrome.tabs.ungroup(tabsToUngroupFromDissolved), logMessage);
-                const updatedWindow = await executeWithRetries(
-                    async () => await chrome.windows.get(windowId, { populate: true }),
-                    `getting updated window ${windowId} after dissolving groups`,
+            tabsToUngroupFromDissolved.forEach((id) => allTabsToUngroup.add(id));
+
+            if (allTabsToUngroup.size > 0) {
+                const ungroupList = Array.from(allTabsToUngroup);
+                await executeWithRetries(
+                    async () => await chrome.tabs.ungroup(ungroupList),
+                    `ungrouping ${ungroupList.length} tabs in single batch`,
                 );
+                const updatedWindow = await chrome.windows.get(windowId, { populate: true });
                 tabs = updatedWindow.tabs.filter((tab) => !tab.pinned);
-                existingGroups = await executeWithRetries(
-                    async () => await getExistingGroupsForWindow(windowId),
-                    `getting existing groups for window ${windowId} after dissolving`,
-                );
+                existingGroups = await getExistingGroupsForWindow(windowId);
             }
 
             // STEP 4: Group remaining tabs (new, ejected, from dissolved groups).
