@@ -200,9 +200,8 @@
         await chrome.storage.local.set({ ruleStorageArea: area });
         const { customRules = [] } = await getRuleStorage();
         allRulesActive = customRules.length > 0 && customRules.every((r) => r.active);
-        showNotification('storageModeSet', false, [area.toUpperCase()]);
-        showNotification('storageChangeWarning', true);
     }
+
 
 
     async function toggleAllRules() {
