@@ -1176,6 +1176,14 @@ async function processAndGroupRemainingTabs(
         groupingPlan.push(...miscPlan);
     }
 
+    if (extensionSettings.sortGroupsAlphabetically) {
+        groupingPlan.sort((a, b) => {
+            const nameA = getBaseGroupName(a.name || a.key || '');
+            const nameB = getBaseGroupName(b.name || b.key || '');
+            return nameA.localeCompare(nameB);
+        });
+    }
+
     const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId);
 
     return allGroupIds;
