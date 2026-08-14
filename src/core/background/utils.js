@@ -1504,7 +1504,7 @@ async function getFaviconColor(faviconUrl) {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 500);
+        const timeoutId = setTimeout(() => controller.abort(), 180);
         const response = await fetch(faviconUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
         if (!response.ok) return null;
