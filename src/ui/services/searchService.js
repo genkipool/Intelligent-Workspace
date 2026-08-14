@@ -16,6 +16,7 @@ import {
     expandedSubgroupStates,
     viewExpandStates,
     currentHistoryDateFilter,
+    searchToggles,
 } from '../stores/appStore.svelte.js';
 
 import { hiddenGroupIds } from './groupsService.js';
@@ -87,8 +88,9 @@ export function initSearchEvents() {
     if (_webSearchToggleBtn) _webSearchToggleBtn.addEventListener('click', () => handleSearchToggle('web'));
     if (_regexToggleBtn) {
         _regexToggleBtn.addEventListener('click', () => {
-            const isCurrentlyActive = _regexToggleBtn.getAttribute('aria-pressed') === 'true';
-            _regexToggleBtn.setAttribute('aria-pressed', isCurrentlyActive ? 'false' : 'true');
+            // The store is what the toolbar draws from, so the switch is flipped there
+            // and the attribute follows.
+            searchToggles.update((t) => ({ ...t, regex: !t.regex }));
             saveListGroupSettings();
             applySearchAndFilter();
         });
@@ -96,20 +98,14 @@ export function initSearchEvents() {
 }
 
 export function handleSearchToggle(clickedButtonName) {
-    const geminiBtn = document.getElementById('gemini-toggle-btn');
-    const webBtn = document.getElementById('web-search-toggle-btn');
+    // Only one of the two searches can be on: turning one on turns the other off.
+    const clicked = clickedButtonName === 'gemini' ? 'gemini' : 'web';
+    const other = clicked === 'gemini' ? 'web' : 'gemini';
 
-    const clickedBtn = clickedButtonName === 'gemini' ? geminiBtn : webBtn;
-    const otherBtn = clickedButtonName === 'gemini' ? webBtn : geminiBtn;
-
-    const isCurrentlyActive = clickedBtn.getAttribute('aria-pressed') === 'true';
-
-    if (isCurrentlyActive) {
-        clickedBtn.setAttribute('aria-pressed', 'false');
-    } else {
-        clickedBtn.setAttribute('aria-pressed', 'true');
-        otherBtn.setAttribute('aria-pressed', 'false');
-    }
+    searchToggles.update((t) => {
+        if (t[clicked]) return { ...t, [clicked]: false };
+        return { ...t, [clicked]: true, [other]: false };
+    });
 
     saveListGroupSettings();
     applySearchAndFilter();

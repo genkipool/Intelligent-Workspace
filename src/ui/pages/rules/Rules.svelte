@@ -30,6 +30,7 @@
         mergeClusterConfig,
         isAnyClusterSwitchOn,
         applyMasterSwitch,
+        defaultUserPrefixes,
     } from './modules/clusterDefaults.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
@@ -191,6 +192,24 @@
         }
     }
 
+    /**
+     * Moves the rules between the synced account and this computer.
+     *
+     * Writing the setting was all this did, so the list kept showing whatever the old
+     * area held and the choice looked like it had done nothing: the rules have to be
+     * read again from the area that is now in charge, and the change announced.
+     */
+    async function switchStorageMode(detail) {
+        const newMode = detail?.value;
+        if (!newMode || newMode === storageMode) return;
+        storageMode = newMode;
+        await chrome.storage.local.set({ ruleStorageArea: newMode });
+        await initializeRules();
+        showTutorial = $rulesStore.length === 0;
+        showNotification('storageModeSet', false, [newMode.toUpperCase()]);
+        showNotification('storageChangeWarning', true);
+    }
+
     function handleStorageChanged(changes) {
         if (changes.customRules) {
             rulesStore.set(changes.customRules.newValue || []);
@@ -200,7 +219,15 @@
             isSortGroupsEnabled = changes.sortGroupsAlphabetically.newValue;
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
-        if (changes.ruleStorageArea) storageMode = changes.ruleStorageArea.newValue;
+        if (changes.ruleStorageArea) {
+            const newArea = changes.ruleStorageArea.newValue || 'sync';
+            if (newArea !== storageMode) {
+                storageMode = newArea;
+                initializeRules().then(() => {
+                    showTutorial = $rulesStore.length === 0;
+                });
+            }
+        }
 
         // The settings modal and these popups are two faces of the same settings, so
         // whatever one of them writes has to reach the other. Values identical to the
@@ -262,11 +289,24 @@
         }
     }
 
-    function handleDeleteRule(detail) {
+    async function handleDeleteRule(detail) {
         const { index } = detail;
-        let updatedRules = [...$rulesStore];
-        updatedRules.splice(index, 1);
-        saveRulesToStorage(updatedRules);
+        const updatedRules = [...$rulesStore];
+        const [deleted] = updatedRules.splice(index, 1);
+        if (!deleted) return;
+        await saveRulesToStorage(updatedRules);
+        // The rule is gone, so the group it kept together stops being a group: its tabs
+        // are released, exactly as the original does before saying goodbye to the rule.
+        try {
+            const groups = await chrome.tabGroups.query({ title: deleted.name });
+            for (const group of groups) {
+                const tabs = await chrome.tabs.query({ groupId: group.id });
+                if (tabs.length) await chrome.tabs.ungroup(tabs.map((tab) => tab.id));
+            }
+        } catch (error) {
+            console.error('Error releasing the tabs of the deleted rule:', error);
+        }
+        showNotification('ruleDeleted', false, [deleted.name]);
     }
 
     function handleEditRule(detail) {
@@ -321,11 +361,19 @@
 
     function handleDeleteDomain(detail) {
         const { index, url } = detail;
-        let updatedRules = [...$rulesStore];
-        if (updatedRules[index]) {
-            updatedRules[index].urls = updatedRules[index].urls.filter((u) => u !== url);
-            saveRulesToStorage(updatedRules);
+        const updatedRules = [...$rulesStore];
+        const rule = updatedRules[index];
+        if (!rule) return;
+        const urls = (rule.urls || []).filter((u) => u !== url);
+        // A rule with no URLs matches nothing and cannot be given one from the card, so
+        // taking its last URL away takes the rule with it, as the original does.
+        if (urls.length === 0) {
+            handleDeleteRule({ index });
+            return;
         }
+        updatedRules[index] = { ...rule, urls };
+        saveRulesToStorage(updatedRules);
+        showNotification('itemDeleted', true, [url]);
     }
 
     function handleEditDomain(detail) {
@@ -583,15 +631,45 @@
         onClusterChanged();
     }
 
+    /** The markers that appear more than once; two groups cannot share one. */
+    function duplicatePrefixValues(prefixes) {
+        const counts = new Map();
+        for (const value of Object.values(prefixes || {})) {
+            const marker = (value || '').trim();
+            if (!marker) continue;
+            counts.set(marker, (counts.get(marker) || 0) + 1);
+        }
+        return [...counts.entries()].filter(([, count]) => count > 1).map(([marker]) => marker);
+    }
+
+    /**
+     * Writes the markers, unless two of them are the same.
+     *
+     * Saving a repeated marker leaves two groups indistinguishable, so the original
+     * refused and said so; nothing was checking it here.
+     */
+    function savePrefixes() {
+        if (duplicatePrefixValues($state.snapshot(userPrefixes)).length > 0) {
+            showNotification('duplicatePrefixesError', true);
+            return;
+        }
+        saveSettings({ userPrefixes: $state.snapshot(userPrefixes) });
+    }
+
     function resetPrefixesDefaults() {
-        userPrefixes = { lock: '', openKey: '', loupe: '', checked: '', warning: '' };
-        saveSettings({ userPrefixes: userPrefixes });
+        // Restoring means going back to the markers the extension ships with, not
+        // emptying every field.
+        userPrefixes = defaultUserPrefixes();
+        saveSettings({ userPrefixes: $state.snapshot(userPrefixes) });
+        showNotification('prefixesReset');
     }
 
     function resetTimerDefaults() {
-        timerInactiveTime = 0;
-        timerActiveTime = 0;
-        saveSettings({ inactiveCollapseTime: 0, activeCollapseTime: 0 });
+        // The times the extension ships with; zero is not the default, it is "never".
+        timerInactiveTime = 1;
+        timerActiveTime = 15;
+        saveSettings({ inactiveCollapseTime: 1, activeCollapseTime: 15 });
+        showNotification('timerSettingsReset');
     }
 
     function resetDiscardingDefaults() {
@@ -1023,6 +1101,7 @@
     bind:timerActiveTime
     bind:discardingTime
     {selectedRuleColor}
+    {storageMode}
     {onClusterChanged}
     onResetCluster={resetClusterDefaults}
     onSelectMiscSort={(detail) => {
@@ -1030,7 +1109,7 @@
         saveSettings({ miscGroupSortOption: detail.value });
     }}
     onResetPrefixes={resetPrefixesDefaults}
-    onSavePrefixes={() => saveSettings({ userPrefixes })}
+    onSavePrefixes={savePrefixes}
     onSaveTimer={() =>
         saveSettings({
             inactiveCollapseTime: timerInactiveTime,
@@ -1049,10 +1128,7 @@
         colorTargetIndex = -1;
     }}
     onCloseColor={() => (colorTargetIndex = -1)}
-    onSelectStorage={(detail) => {
-        storageMode = detail.value;
-        chrome.storage.local.set({ ruleStorageArea: detail.value });
-    }}
+    onSelectStorage={switchStorageMode}
     onSaveDiscarding={() =>
         chrome.storage.local.set({ discardingTimeMinutes: discardingTime, discardingEnabled: true })}
     onResetDiscarding={resetDiscardingDefaults}

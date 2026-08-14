@@ -8683,5 +8683,78 @@
   },
   "toggleAlphabeticalSort": {
     "message": "Activar/Desactivar Orden Alfabético"
+  },
+  "toolGetLinkPreviewSettings": {
+    "message": "Consultando la configuración de vista previa"
+  },
+  "toolBlacklistPreviewDomain": {
+    "message": "Desactivando la vista previa en $DOMAIN$",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUnblacklistPreviewDomain": {
+    "message": "Reactivando la vista previa en $DOMAIN$",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolGetSnippets": {
+    "message": "Consultando los snippets"
+  },
+  "toolCreateSnippet": {
+    "message": "Creando el snippet «$TRIGGER$»",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUpdateSnippet": {
+    "message": "Editando el snippet «$TRIGGER$»",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolDeleteSnippet": {
+    "message": "Eliminando el snippet «$TRIGGER$»",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolGetSiteShortcuts": {
+    "message": "Consultando los atajos de sitio"
+  },
+  "toolCreateSiteShortcut": {
+    "message": "Creando el atajo de sitio «$KEYS$»",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUpdateSiteShortcut": {
+    "message": "Editando el atajo de sitio «$KEYS$»",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolDeleteSiteShortcut": {
+    "message": "Eliminando el atajo de sitio «$KEYS$»",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
   }
 }

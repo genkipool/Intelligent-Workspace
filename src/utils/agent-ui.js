@@ -111,12 +111,12 @@ GROUP TOOLS:
 - regroupAllTabs -- re-applies all grouping rules
 - removeDuplicateTabs -- removes duplicate open tabs
 
-RULE TOOLS (CRITICAL: ALL urls MUST be valid domain names or URLs like 'wikipedia.org' or 'sega.com', NEVER plain words or asterisk wildcards):
+RULE TOOLS (CRITICAL: ALL urls MUST be full addresses with their scheme, like 'https://wikipedia.org' or 'https://sega.com', NEVER plain words or asterisk wildcards):
 - getRules -- lists all configured grouping rules
-- createRule -- {name:string, urls:string[], color?:string} -- (urls must be valid hostnames/domains e.g. ['sega.com', 'nintendo.com'])
-- updateRule -- {name:string, newName?:string, color?:string, urls?:string[], active?:boolean} -- (urls must be valid hostnames/domains)
+- createRule -- {name:string, urls:string[], color?:string} -- (urls must be full addresses e.g. ['https://sega.com', 'https://nintendo.com'])
+- updateRule -- {name:string, newName?:string, color?:string, urls?:string[], active?:boolean} -- (urls must be full addresses)
 - deleteRule -- {name:string}
-- addUrlToRule -- {ruleName:string, url:string} -- (url must be a valid hostname/domain)
+- addUrlToRule -- {ruleName:string, url:string} -- (url must be a full address)
 - removeUrlFromRule -- {ruleName:string, url:string}
 
 THEME TOOLS:
@@ -144,10 +144,25 @@ HISTORY TOOLS:
 - getHistory -- {query?:string, maxResults?:number}
 - getRecentlyClosed -- {maxResults?:number}
 
+SNIPPET TOOLS (auto-completed text, configured in the hints page):
+- getSnippets -- lists the configured snippets
+- createSnippet -- {trigger:string, expansion:string, variables?:[{id,word,defaultValue}]}
+- updateSnippet -- {trigger:string, expansion:string, variables?:array} -- the trigger must already exist
+- deleteSnippet -- {trigger:string}
+
+SITE SHORTCUT TOOLS (key combinations that open a site):
+- getSiteShortcuts -- lists the configured site shortcuts
+- createSiteShortcut -- {keys:string, url:string, description?:string} -- e.g. {keys:'gh', url:'https://github.com'}
+- updateSiteShortcut -- {keys:string, url?:string, description?:string}
+- deleteSiteShortcut -- {keys:string}
+
 OTHER TOOLS:
 - openUrl -- {url:string}
 - searchGoogle -- {query:string}
 - setLinkPreview -- {enabled:boolean} -- enables or disables floating link previews on webpages
+- getLinkPreviewSettings -- whether link previews are on, and the domains excluded from them
+- addLinkPreviewBlacklistDomain -- {domain:string} -- stops previewing links on that domain
+- removeLinkPreviewBlacklistDomain -- {domain:string} -- previews links on that domain again
 
 STRICT RESPONSE FORMAT -- respond ONLY with a single raw JSON object, no markdown, no explanation outside the JSON:
 
@@ -160,7 +175,7 @@ When you have enough information to answer the user:
 IMPORTANT RULES:
 - ONE tool call per response -- never combine multiple tools in one response
 - For tab navigation: ALWAYS use findAndSwitchToTab FIRST before creating a new tab -- only create if tab doesn't exist
-- For grouping rules: you MUST use valid domain names or URLs (e.g. 'sega.com', 'nintendo.com'). NEVER use plain text names, wildcards, or asterisk-wrapped words (like '*sega*'). If the user provides brand names, infer their standard domain names (.com, .org, etc.).
+- For grouping rules: you MUST use full addresses with their scheme (e.g. 'https://sega.com', 'https://nintendo.com'). NEVER use plain text names, wildcards, or asterisk-wrapped words (like '*sega*'). If the user provides brand names, infer their standard domain names (.com, .org, etc.) and write them as https:// addresses.
 - For summarizing/analyzing a page: use getActiveTabContent to extract the page text, then analyze it in your final response
 - For collapsing/expanding: use the group tools, not DOM manipulation
 - Always call a read/query tool first to get IDs before performing actions
@@ -314,6 +329,28 @@ export function getToolLabel(tool, params) {
                 return params.enabled !== false
                     ? i18n('enableLinkPreview') || 'Enable link previews'
                     : i18n('disableLinkPreview') || 'Disable link previews';
+            case 'getLinkPreviewSettings':
+                return i18n('toolGetLinkPreviewSettings') || 'Read the link preview settings';
+            case 'addLinkPreviewBlacklistDomain':
+                return i18n('toolBlacklistPreviewDomain', [String(params.domain || '')]);
+            case 'removeLinkPreviewBlacklistDomain':
+                return i18n('toolUnblacklistPreviewDomain', [String(params.domain || '')]);
+            case 'getSnippets':
+                return i18n('toolGetSnippets') || 'List the snippets';
+            case 'createSnippet':
+                return i18n('toolCreateSnippet', [String(params.trigger || '')]);
+            case 'updateSnippet':
+                return i18n('toolUpdateSnippet', [String(params.trigger || '')]);
+            case 'deleteSnippet':
+                return i18n('toolDeleteSnippet', [String(params.trigger || '')]);
+            case 'getSiteShortcuts':
+                return i18n('toolGetSiteShortcuts') || 'List the site shortcuts';
+            case 'createSiteShortcut':
+                return i18n('toolCreateSiteShortcut', [String(params.keys || '')]);
+            case 'updateSiteShortcut':
+                return i18n('toolUpdateSiteShortcut', [String(params.keys || '')]);
+            case 'deleteSiteShortcut':
+                return i18n('toolDeleteSiteShortcut', [String(params.keys || '')]);
             default:
                 return i18n('toolUnknown', [String(tool)]) || `⚙ ${tool}`;
         }

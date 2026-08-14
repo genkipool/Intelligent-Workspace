@@ -83,3 +83,18 @@ export function applyMasterSwitch(config, enabled) {
         specialGroups,
     };
 }
+
+// The group markers the extension ships with. The service worker keeps the same set
+// in its own state, and a reset has to land back on these rather than on empty
+// fields, which is what "restore defaults" means everywhere else.
+export const DEFAULT_USER_PREFIXES = {
+    lock: '🔒',
+    openKey: '🗝️',
+    loupe: '🔍',
+    checked: '',
+    warning: '⚠️',
+};
+
+export function defaultUserPrefixes() {
+    return { ...DEFAULT_USER_PREFIXES };
+}

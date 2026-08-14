@@ -201,9 +201,7 @@ export const groupStore = {
                 // Deleting a group leaves its notes and screenshots without a home, and
                 // the indicators at the top are how they are reached; re-creating the
                 // group takes them back. The original refreshed them on every render.
-                const { updateOrphanIndicators, syncContentSessionKeys } = await import(
-                    '../services/notesService.js'
-                );
+                const { updateOrphanIndicators, syncContentSessionKeys } = await import('../services/notesService.js');
                 // A group that comes back has a new numeric id; its notes and images are
                 // filed under the old one until this re-files them, which is what makes
                 // them show up on the card again instead of staying up top as orphans.

@@ -8703,5 +8703,78 @@
   },
   "toggleAlphabeticalSort": {
     "message": "Toggle Alphabetical Sorting"
+  },
+  "toolGetLinkPreviewSettings": {
+    "message": "Reading the link preview settings"
+  },
+  "toolBlacklistPreviewDomain": {
+    "message": "Turning link previews off on $DOMAIN$",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUnblacklistPreviewDomain": {
+    "message": "Turning link previews back on for $DOMAIN$",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolGetSnippets": {
+    "message": "Reading the snippets"
+  },
+  "toolCreateSnippet": {
+    "message": "Creating the snippet “$TRIGGER$”",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUpdateSnippet": {
+    "message": "Editing the snippet “$TRIGGER$”",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolDeleteSnippet": {
+    "message": "Deleting the snippet “$TRIGGER$”",
+    "placeholders": {
+      "trigger": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolGetSiteShortcuts": {
+    "message": "Reading the site shortcuts"
+  },
+  "toolCreateSiteShortcut": {
+    "message": "Creating the site shortcut “$KEYS$”",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolUpdateSiteShortcut": {
+    "message": "Editing the site shortcut “$KEYS$”",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
+  },
+  "toolDeleteSiteShortcut": {
+    "message": "Deleting the site shortcut “$KEYS$”",
+    "placeholders": {
+      "keys": {
+        "content": "$1"
+      }
+    }
   }
 }

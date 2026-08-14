@@ -2,6 +2,8 @@
  * Validates and sanitizes URL strings for grouping rules.
  * Ensures domain substrings are cleaned from wildcards/asterisks and formatted as valid domain hosts.
  */
+const RULE_URL_SCHEMES = /^(https?:\/\/|file:\/\/\/|chrome:\/\/|chrome-extension:\/\/)/;
+
 function validateAndSanitizeRuleUrls(urls) {
     if (!urls) return [];
     const list = Array.isArray(urls) ? urls : [urls];
@@ -11,11 +13,14 @@ function validateAndSanitizeRuleUrls(urls) {
             let s = u.trim().toLowerCase();
             s = s.replace(/^\*+|\*+$/g, '');
             if (!s) return '';
-            s = s.replace(/^(https?:\/\/|file:\/\/\/|chrome:\/\/|chrome-extension:\/\/)/, '');
-            if (!s.includes('.')) {
-                s += '.com';
+            // The rules page only accepts addresses with a scheme, and it is what the
+            // matcher compares against; a bare domain was stored as-is and the rule then
+            // showed up as invalid there. A domain is given the https it implies.
+            if (!RULE_URL_SCHEMES.test(s)) {
+                if (!s.includes('.')) s += '.com';
+                s = 'https://' + s;
             }
-            return s;
+            return s.replace(/\/+$/, '');
         })
         .filter(Boolean);
 }
@@ -30,8 +35,14 @@ async function resolveGroup(params) {
     if (!groupName && groupId === undefined) {
         throw new Error('groupName or groupId required');
     }
-    const group = await resolveGroup(params);
-    return group;
+    // This used to call itself, so every tool that resolved a group by name ran out of
+    // stack instead of answering.
+    const groups = await chrome.tabGroups.query({});
+    if (groupId !== undefined) {
+        const byId = groups.find((g) => g.id === Number(groupId));
+        if (byId) return byId;
+    }
+    return findGroupIdByName(groupName, groups);
 }
 
 /**
@@ -588,7 +599,162 @@ async function executeAgentTool(tool, params) {
             }
             return `Floating link previews are now ${enabled ? 'enabled' : 'disabled'}.`;
         }
+
+        case 'getLinkPreviewSettings': {
+            const local = await chrome.storage.local.get(['linkPreviewEnabled']);
+            const { linkPreviewBlacklist = [] } = await chrome.storage.sync.get(['linkPreviewBlacklist']);
+            return JSON.stringify({
+                enabled: local.linkPreviewEnabled !== false,
+                blacklist: linkPreviewBlacklist,
+            });
+        }
+
+        case 'addLinkPreviewBlacklistDomain': {
+            const domain = normalizeDomain(params.domain);
+            if (!domain) return 'Error: domain required';
+            if (typeof addLinkPreviewBlacklistDomain === 'function') {
+                await addLinkPreviewBlacklistDomain(domain);
+                return `Link previews are now off for "${domain}".`;
+            }
+            return 'Error: the link preview blacklist is not available';
+        }
+
+        case 'removeLinkPreviewBlacklistDomain': {
+            const domain = normalizeDomain(params.domain);
+            if (!domain) return 'Error: domain required';
+            if (typeof removeLinkPreviewBlacklistDomain === 'function') {
+                await removeLinkPreviewBlacklistDomain(domain);
+                return `Link previews are back on for "${domain}".`;
+            }
+            return 'Error: the link preview blacklist is not available';
+        }
+
+        case 'getSnippets': {
+            const snippets = await getStoredSnippets();
+            const list = Object.entries(snippets).map(([trigger, value]) => ({
+                trigger,
+                expansion: typeof value === 'object' ? value.expansion : value,
+                variables: typeof value === 'object' ? value.variables || [] : [],
+            }));
+            return list.length ? JSON.stringify(list) : 'No snippets configured yet.';
+        }
+
+        case 'createSnippet':
+        case 'updateSnippet': {
+            const trigger = String(params.trigger || '').trim();
+            const expansion = String(params.expansion || '').trim();
+            if (!trigger || !expansion) return 'Error: trigger and expansion required';
+            const snippets = await getStoredSnippets();
+            const exists = Object.prototype.hasOwnProperty.call(snippets, trigger);
+            if (tool === 'createSnippet' && exists) {
+                return `Error: a snippet with the trigger "${trigger}" already exists`;
+            }
+            if (tool === 'updateSnippet' && !exists) {
+                return `Error: no snippet with the trigger "${trigger}"`;
+            }
+            const variables = Array.isArray(params.variables) ? params.variables : [];
+            snippets[trigger] = variables.length ? { expansion, variables } : expansion;
+            await saveStoredSnippets(snippets);
+            return `Snippet "${trigger}" ${exists ? 'updated' : 'created'}.`;
+        }
+
+        case 'deleteSnippet': {
+            const trigger = String(params.trigger || '').trim();
+            if (!trigger) return 'Error: trigger required';
+            const snippets = await getStoredSnippets();
+            if (!Object.prototype.hasOwnProperty.call(snippets, trigger)) {
+                return `Error: no snippet with the trigger "${trigger}"`;
+            }
+            delete snippets[trigger];
+            await saveStoredSnippets(snippets);
+            return `Snippet "${trigger}" deleted.`;
+        }
+
+        case 'getSiteShortcuts': {
+            const shortcuts = await getStoredSiteShortcuts();
+            return shortcuts.length ? JSON.stringify(shortcuts) : 'No site shortcuts configured yet.';
+        }
+
+        case 'createSiteShortcut':
+        case 'updateSiteShortcut': {
+            const keys = String(params.keys || '')
+                .trim()
+                .toLowerCase();
+            if (!keys) return 'Error: keys required';
+            const shortcuts = await getStoredSiteShortcuts();
+            const at = shortcuts.findIndex((c) => c.keys === keys);
+            if (tool === 'createSiteShortcut' && at !== -1) {
+                return `Error: the shortcut "${keys}" is already in use`;
+            }
+            if (tool === 'updateSiteShortcut' && at === -1) {
+                return `Error: no site shortcut with the keys "${keys}"`;
+            }
+            const url = params.url ? sanitizeShortcutUrl(params.url) : at !== -1 ? shortcuts[at].url : '';
+            if (!url) return 'Error: url required';
+            const description = String(params.description || (at !== -1 ? shortcuts[at].description : '') || '').trim();
+            const entry = { keys, url, description };
+            if (at === -1) shortcuts.push(entry);
+            else shortcuts[at] = entry;
+            await saveStoredSiteShortcuts(shortcuts);
+            return `Site shortcut "${keys}" ${at === -1 ? 'created' : 'updated'} for ${url}.`;
+        }
+
+        case 'deleteSiteShortcut': {
+            const keys = String(params.keys || '')
+                .trim()
+                .toLowerCase();
+            if (!keys) return 'Error: keys required';
+            const shortcuts = await getStoredSiteShortcuts();
+            const remaining = shortcuts.filter((c) => c.keys !== keys);
+            if (remaining.length === shortcuts.length) return `Error: no site shortcut with the keys "${keys}"`;
+            await saveStoredSiteShortcuts(remaining);
+            return `Site shortcut "${keys}" deleted.`;
+        }
     }
+}
+
+/** A bare host, the shape the preview blacklist stores. */
+function normalizeDomain(value) {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return '';
+    try {
+        return new URL(RULE_URL_SCHEMES.test(trimmed) ? trimmed : `https://${trimmed}`).hostname;
+    } catch (_) {
+        return trimmed.replace(RULE_URL_SCHEMES, '').split('/')[0];
+    }
+}
+
+/** Site shortcuts open a page, so what they hold is a full address. */
+function sanitizeShortcutUrl(value) {
+    const url = String(value || '').trim();
+    if (!url) return '';
+    return RULE_URL_SCHEMES.test(url) ? url : `https://${url}`;
+}
+
+// Snippets and site shortcuts live under the keys the hints page uses, and both it and
+// the content scripts listen for these messages to redraw themselves.
+const HINT_SNIPPETS_KEY = 'itg-user-snippets';
+const HINT_COMMANDS_KEY = 'userHintCommands';
+
+async function getStoredSnippets() {
+    const data = await chrome.storage.sync.get(HINT_SNIPPETS_KEY);
+    return data[HINT_SNIPPETS_KEY] || {};
+}
+
+async function saveStoredSnippets(snippets) {
+    await chrome.storage.sync.set({ [HINT_SNIPPETS_KEY]: snippets });
+    chrome.runtime.sendMessage({ action: 'snippetsUpdated' }).catch(() => {});
+}
+
+async function getStoredSiteShortcuts() {
+    const data = await chrome.storage.sync.get(HINT_COMMANDS_KEY);
+    return Array.isArray(data[HINT_COMMANDS_KEY]) ? data[HINT_COMMANDS_KEY] : [];
+}
+
+async function saveStoredSiteShortcuts(shortcuts) {
+    await chrome.storage.sync.set({ [HINT_COMMANDS_KEY]: shortcuts });
+    chrome.runtime.sendMessage({ action: 'hintCommandsUpdated' }).catch(() => {});
 }
 
 /**

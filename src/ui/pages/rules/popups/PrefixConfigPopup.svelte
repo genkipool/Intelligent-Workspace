@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { t } from '../../../stores/i18nStore.js';
+    import { duplicateMarkerFields, firstCharacter } from '../modules/prefixMarkers.js';
 
     let {
         show = false,
@@ -15,6 +16,17 @@
     } = $props();
 
     let popupEl = $state(null);
+
+    // The single-character and no-repeats rules live next to the settings modal's copy
+    // of this form, so both behave the same way.
+    let values = $derived({ lock, openKey, loupe, checked, warning });
+    let duplicates = $derived(duplicateMarkerFields(values));
+
+    function handleInput(e, assign) {
+        const trimmed = firstCharacter(e.currentTarget.value);
+        e.currentTarget.value = trimmed;
+        assign(trimmed);
+    }
 
     function handleClickOutside(e) {
         if (popupEl && !popupEl.contains(e.target)) {
@@ -50,10 +62,12 @@
             <input
                 type="text"
                 class="prefix-input"
+                class:duplicate={duplicates.has('lock')}
                 id="prefix-lock-input"
                 autocomplete="off"
                 placeholder=""
-                bind:value={lock}
+                value={lock}
+                oninput={(e) => handleInput(e, (v) => (lock = v))}
             />
         </div>
         <div class="prefix-entry">
@@ -61,10 +75,12 @@
             <input
                 type="text"
                 class="prefix-input"
+                class:duplicate={duplicates.has('openKey')}
                 id="prefix-openKey-input"
                 autocomplete="off"
                 placeholder=""
-                bind:value={openKey}
+                value={openKey}
+                oninput={(e) => handleInput(e, (v) => (openKey = v))}
             />
         </div>
         <div class="prefix-entry">
@@ -72,10 +88,12 @@
             <input
                 type="text"
                 class="prefix-input"
+                class:duplicate={duplicates.has('loupe')}
                 id="prefix-loupe-input"
                 autocomplete="off"
                 placeholder=""
-                bind:value={loupe}
+                value={loupe}
+                oninput={(e) => handleInput(e, (v) => (loupe = v))}
             />
         </div>
         <div class="prefix-entry">
@@ -83,10 +101,12 @@
             <input
                 type="text"
                 class="prefix-input"
+                class:duplicate={duplicates.has('checked')}
                 id="prefix-checked-input"
                 autocomplete="off"
                 placeholder=""
-                bind:value={checked}
+                value={checked}
+                oninput={(e) => handleInput(e, (v) => (checked = v))}
             />
         </div>
         <div class="prefix-entry">
@@ -94,10 +114,12 @@
             <input
                 type="text"
                 class="prefix-input"
+                class:duplicate={duplicates.has('warning')}
                 id="prefix-warning-input"
                 autocomplete="off"
                 placeholder=""
-                bind:value={warning}
+                value={warning}
+                oninput={(e) => handleInput(e, (v) => (warning = v))}
             />
         </div>
         <div class="popup-actions">

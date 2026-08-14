@@ -9,6 +9,8 @@
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { getSettings, saveSettings, getRuleStorage, setRuleStorage, groupTabs } from './modules/rules-api.js';
+    import { hasDuplicateMarkers } from './modules/prefixMarkers.js';
+    import { showNotification } from '../../../utils/i18n.js';
     import {
         defaultClusterConfig,
         mergeClusterConfig,
@@ -103,7 +105,25 @@
         wasOpen = isOpen;
     });
 
-    onMount(loadAll);
+    function handleStorageChanged(changes) {
+        if (changes.ruleStorageArea) {
+            const newArea = changes.ruleStorageArea.newValue || 'sync';
+            if (newArea !== ruleStorageArea) {
+                ruleStorageArea = newArea;
+                getRuleStorage().then(({ customRules = [] }) => {
+                    allRulesActive = customRules.length > 0 && customRules.every((r) => r.active);
+                });
+            }
+        }
+    }
+
+    onMount(() => {
+        loadAll();
+        chrome.storage.onChanged.addListener(handleStorageChanged);
+        return () => {
+            chrome.storage.onChanged.removeListener(handleStorageChanged);
+        };
+    });
 
     // Autosaves under the shared setting keys. Writes only when the serialized value
     // really changed, which keeps the effect↔storage.onChanged loop closed and stays
@@ -115,6 +135,12 @@
         const snapshot = syncSnapshot();
         const serialized = JSON.stringify(snapshot);
         if (loaded && isOpen && serialized !== lastSavedSync) {
+            // Two groups marked with the same character cannot be told apart, so a
+            // clashing set is flagged in the form and never written.
+            if (hasDuplicateMarkers(snapshot.userPrefixes)) {
+                showNotification('duplicatePrefixesError', true);
+                return;
+            }
             lastSavedSync = serialized;
             saveSettings(snapshot);
         }
@@ -168,10 +194,16 @@
         miscSortOption = option;
     }
 
-    function setStorageArea(area) {
+    async function setStorageArea(area) {
+        if (!area || area === ruleStorageArea) return;
         ruleStorageArea = area;
-        chrome.storage.local.set({ ruleStorageArea: area });
+        await chrome.storage.local.set({ ruleStorageArea: area });
+        const { customRules = [] } = await getRuleStorage();
+        allRulesActive = customRules.length > 0 && customRules.every((r) => r.active);
+        showNotification('storageModeSet', false, [area.toUpperCase()]);
+        showNotification('storageChangeWarning', true);
     }
+
 
     async function toggleAllRules() {
         const newState = !allRulesActive;

@@ -1,6 +1,7 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import { isCtrlHeld } from '../../../stores/modifierKeysStore.js';
+    import { searchToggles } from '../../../stores/appStore.svelte.js';
 
     let {
         initialTitleKey = 'titleTabGroups',
@@ -89,17 +90,32 @@
             translate="no"
             title={$tt('searchBarHelpTooltip')}
         />
-        <button id="gemini-toggle-btn" type="button" aria-pressed="true" title={$tt('enableGeminiSearch')}>
+        <button
+            id="gemini-toggle-btn"
+            type="button"
+            aria-pressed={$searchToggles.gemini}
+            title={$tt('enableGeminiSearch')}
+        >
             <svg width="24" height="24" aria-hidden="true" focusable="false">
                 <use href="#icon-gemini"></use>
             </svg>
         </button>
-        <button id="web-search-toggle-btn" type="button" aria-pressed="false" title={$tt('enableWebSearch')}>
+        <button
+            id="web-search-toggle-btn"
+            type="button"
+            aria-pressed={$searchToggles.web}
+            title={$tt('enableWebSearch')}
+        >
             <svg width="24" height="24" aria-hidden="true" focusable="false">
                 <use href="#icon-web-search"></use>
             </svg>
         </button>
-        <button id="regex-toggle-btn" type="button" aria-pressed="false" title={$tt('enableRegexSearch')}>
+        <button
+            id="regex-toggle-btn"
+            type="button"
+            aria-pressed={$searchToggles.regex}
+            title={$tt('enableRegexSearch')}
+        >
             <svg width="14" height="14" aria-hidden="true" focusable="false">
                 <use href="#icon-regex"></use>
             </svg>

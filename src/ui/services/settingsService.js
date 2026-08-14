@@ -34,6 +34,7 @@ import {
     persistentNoteIds,
     backedUpGroupData,
     settings as settingsStore,
+    searchToggles,
     splitScreenState,
     currentHistoryDateFilter,
 } from '../stores/appStore.svelte.js';
@@ -298,24 +299,17 @@ async function doLoadState() {
         settingsStore.update((s) => ({ ...s, enablePrefixes: syncData.enablePrefixes ?? true }));
 
         const listGroupSettings = syncData[STORAGE_KEYS.SETTINGS] || {};
-        const _geminiToggleBtn = document.getElementById('gemini-toggle-btn');
-        const _webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
-        const _regexToggleBtn = document.getElementById('regex-toggle-btn');
-
-        if (_geminiToggleBtn)
-            _geminiToggleBtn.setAttribute('aria-pressed', String(listGroupSettings.geminiSearchActive === true));
-        if (_webSearchToggleBtn)
-            _webSearchToggleBtn.setAttribute('aria-pressed', String(listGroupSettings.webSearchActive !== false));
-        if (_regexToggleBtn)
-            _regexToggleBtn.setAttribute('aria-pressed', String(listGroupSettings.regexActive === true));
+        // The toolbar draws these three switches from the store; writing the attribute
+        // by hand only lasted until the next render, which is how the assistant search
+        // came back on after leaving the page.
+        searchToggles.set({
+            gemini: listGroupSettings.geminiSearchActive === true,
+            web: listGroupSettings.webSearchActive !== false,
+            regex: listGroupSettings.regexActive === true,
+        });
     } catch (e) {
         console.error('Error loading state:', e);
-        const _geminiToggleBtn = document.getElementById('gemini-toggle-btn');
-        const _webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
-        const _regexToggleBtn = document.getElementById('regex-toggle-btn');
-        if (_geminiToggleBtn) _geminiToggleBtn.setAttribute('aria-pressed', 'false');
-        if (_webSearchToggleBtn) _webSearchToggleBtn.setAttribute('aria-pressed', 'true');
-        if (_regexToggleBtn) _regexToggleBtn.setAttribute('aria-pressed', 'false');
+        searchToggles.set({ gemini: false, web: true, regex: false });
         settingsStore.update((s) => ({ ...s, enablePrefixes: true }));
     }
 }
@@ -745,14 +739,12 @@ export async function saveState() {
 export async function saveListGroupSettings() {
     try {
         const storage = await getStorage();
-        const _webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
-        const _regexToggleBtn = document.getElementById('regex-toggle-btn');
-        const _geminiToggleBtn = document.getElementById('gemini-toggle-btn');
+        const toggles = get(searchToggles);
 
         const currentSettings = {
-            webSearchActive: _webSearchToggleBtn ? _webSearchToggleBtn.getAttribute('aria-pressed') === 'true' : false,
-            regexActive: _regexToggleBtn ? _regexToggleBtn.getAttribute('aria-pressed') === 'true' : false,
-            geminiSearchActive: _geminiToggleBtn ? _geminiToggleBtn.getAttribute('aria-pressed') === 'true' : false,
+            webSearchActive: toggles.web,
+            regexActive: toggles.regex,
+            geminiSearchActive: toggles.gemini,
         };
         await storage.set({
             [STORAGE_KEYS.SETTINGS]: currentSettings,
@@ -821,13 +813,6 @@ export function initSettingsEvents() {
         });
     }
 
-    const regexToggleBtn = document.getElementById('regex-toggle-btn');
-    if (regexToggleBtn) {
-        regexToggleBtn.addEventListener('click', () => {
-            const isPressed = regexToggleBtn.getAttribute('aria-pressed') === 'true';
-            regexToggleBtn.setAttribute('aria-pressed', String(!isPressed));
-            saveListGroupSettings();
-            applySearchAndFilter();
-        });
-    }
+    // The regex switch is wired in searchService.initSearchEvents(); a second listener
+    // here flipped it back on the same click.
 }

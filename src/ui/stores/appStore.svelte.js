@@ -116,6 +116,15 @@ export const viewExpandStates = writable({
 });
 export const persistentNoteIds = writable(new SvelteSet());
 export const settings = writable({});
+
+/**
+ * The three switches of the search bar.
+ *
+ * They used to live only in the DOM as `aria-pressed`, which the toolbar re-rendered
+ * back to its hard-coded defaults: leaving the page with the assistant search off and
+ * coming back found it on again. The stored value now feeds the markup.
+ */
+export const searchToggles = writable({ gemini: false, web: true, regex: false });
 export const splitScreenState = writable({ isActive: false, splitTabs: {} });
 
 export const isInputFocused = writable(false);

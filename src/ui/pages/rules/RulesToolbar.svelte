@@ -346,7 +346,7 @@
                 title={$tt('configureStorageCtrlClick')}
                 oncontextmenu={(e) => {
                     e.preventDefault();
-                    onOpenContextMenu('discarding', e);
+                    onOpenContextMenu('storage', e);
                 }}
                 onclick={onToggleAllRules}
             >

@@ -5,7 +5,7 @@
  */
 
 import { get, writable } from 'svelte/store';
-import { isGeminiViewActive } from '../stores/appStore.svelte.js';
+import { isGeminiViewActive, searchToggles } from '../stores/appStore.svelte.js';
 import { openModal, showApiKeyModal as showApiKeyModalStore } from '../stores/modalStore.js';
 import { geminiStore } from '../stores/geminiStore.js';
 import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
@@ -361,15 +361,12 @@ export async function updateGeminiButtonState() {
 }
 
 export function updateGeminiConversationButtonState() {
-    const geminiToggleBtn = document.getElementById('gemini-toggle-btn');
-    if (!geminiToggleBtn) return;
-
-    const geminiView = document.getElementById('gemini-conversation-view');
-    if (geminiView && !geminiView.classList.contains('hidden')) {
-        geminiToggleBtn.setAttribute('aria-pressed', 'true');
-    } else {
-        geminiToggleBtn.setAttribute('aria-pressed', 'false');
-    }
+    // The conversation view is mounted with an inline display rather than the `hidden`
+    // class the original toggled, so looking for that class always answered "visible"
+    // and left the search switch pressed on a page that had it turned off. Whether the
+    // assistant view is open is what the switch reflects, and the toolbar draws it from
+    // the store.
+    searchToggles.update((toggles) => ({ ...toggles, gemini: get(isGeminiViewActive) }));
 }
 
 export async function loadConversationFromDb() {

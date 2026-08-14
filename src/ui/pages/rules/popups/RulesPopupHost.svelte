@@ -22,6 +22,7 @@
         timerActiveTime = $bindable(15),
         discardingTime = $bindable(60),
         selectedRuleColor = 'blue',
+        storageMode = 'sync',
         onClusterChanged = () => {},
         onResetCluster = () => {},
         onSelectMiscSort = () => {},
@@ -95,6 +96,7 @@
 <StorageConfigPopup
     show={showStoragePopup}
     position={popupPosition}
+    selectedMode={storageMode}
     onclose={() => (showStoragePopup = false)}
     onselect={(detail) => {
         showStoragePopup = false;

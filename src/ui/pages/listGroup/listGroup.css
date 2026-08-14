@@ -5373,6 +5373,9 @@ body.bookmarks-view-active #view-toggle-panel {
 /* Individual action button inside the folder */
 .in-folder-action-btn {
     background: none;
+    /* Its icons are drawn with currentColor and the button inherited no colour of its
+       own, so they came out black on a dark panel and looked missing. */
+    color: var(--text-color);
     border: 1px solid transparent;
     border-radius: 50%;
     width: 20px;

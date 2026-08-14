@@ -1,11 +1,22 @@
 <script>
     import { t } from '../../../stores/i18nStore.js';
+    import { duplicateMarkerFields, firstCharacter } from '../modules/prefixMarkers.js';
 
     let {
         isPrefixesEnabled = $bindable(true),
         currentUserPrefixes = $bindable({ lock: '🔒', openKey: '🗝️', loupe: '🔍', checked: '', warning: '⚠️' }),
         onreset = () => {},
     } = $props();
+
+    // Same rules as the popup on the toolbar: one character per marker, and no two
+    // markers alike.
+    let duplicates = $derived(duplicateMarkerFields(currentUserPrefixes));
+
+    function handleInput(e, field) {
+        const trimmed = firstCharacter(e.currentTarget.value);
+        e.currentTarget.value = trimmed;
+        currentUserPrefixes[field] = trimmed;
+    }
 </script>
 
 <div class="settings-section" id="modal-prefixes-section">
@@ -59,9 +70,11 @@
                 type="text"
                 autocomplete="off"
                 class="prefix-input"
+                class:duplicate={duplicates.has('lock')}
                 id="modal-prefix-lock-input"
                 placeholder=""
-                bind:value={currentUserPrefixes.lock}
+                value={currentUserPrefixes.lock}
+                oninput={(e) => handleInput(e, 'lock')}
             />
         </div>
         <div class="prefix-entry">
@@ -70,9 +83,11 @@
                 type="text"
                 autocomplete="off"
                 class="prefix-input"
+                class:duplicate={duplicates.has('openKey')}
                 id="modal-prefix-openKey-input"
                 placeholder=""
-                bind:value={currentUserPrefixes.openKey}
+                value={currentUserPrefixes.openKey}
+                oninput={(e) => handleInput(e, 'openKey')}
             />
         </div>
         <div class="prefix-entry">
@@ -81,9 +96,11 @@
                 type="text"
                 autocomplete="off"
                 class="prefix-input"
+                class:duplicate={duplicates.has('loupe')}
                 id="modal-prefix-loupe-input"
                 placeholder=""
-                bind:value={currentUserPrefixes.loupe}
+                value={currentUserPrefixes.loupe}
+                oninput={(e) => handleInput(e, 'loupe')}
             />
         </div>
         <div class="prefix-entry">
@@ -92,9 +109,11 @@
                 type="text"
                 autocomplete="off"
                 class="prefix-input"
+                class:duplicate={duplicates.has('checked')}
                 id="modal-prefix-checked-input"
                 placeholder=""
-                bind:value={currentUserPrefixes.checked}
+                value={currentUserPrefixes.checked}
+                oninput={(e) => handleInput(e, 'checked')}
             />
         </div>
         <div class="prefix-entry">
@@ -103,9 +122,11 @@
                 type="text"
                 autocomplete="off"
                 class="prefix-input"
+                class:duplicate={duplicates.has('warning')}
                 id="modal-prefix-warning-input"
                 placeholder=""
-                bind:value={currentUserPrefixes.warning}
+                value={currentUserPrefixes.warning}
+                oninput={(e) => handleInput(e, 'warning')}
             />
         </div>
         <div class="popup-actions">
