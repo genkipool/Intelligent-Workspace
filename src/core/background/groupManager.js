@@ -443,7 +443,7 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
             if (existingGroup) {
                 color = existingGroups[existingGroup[0]].color;
             } else {
-                const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
+                const favIconUrl = faviconURL(tabs[0].url);
                 const extractedColor = await getFaviconColor(favIconUrl);
                 color = extractedColor || getDeterministicColor(domain);
             }
