@@ -123,7 +123,7 @@
     let changeTimer = null;
     function scheduleChange() {
         clearTimeout(changeTimer);
-        changeTimer = setTimeout(() => onchange?.(), 250);
+        changeTimer = setTimeout(() => onchange?.(), 60);
     }
 
     let colorPickerFor = $state(null);

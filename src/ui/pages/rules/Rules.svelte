@@ -504,7 +504,7 @@
                 clusteringEnabled: isClusterEnabled,
             });
             await groupTabs();
-        }, 150);
+        }, 50);
     }
 
     async function toggleSortGroups() {

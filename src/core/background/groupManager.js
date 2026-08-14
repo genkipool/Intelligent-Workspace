@@ -1563,6 +1563,10 @@ async function groupTabs() {
     } finally {
         isGrouping = false;
         logMessage('[groupTabs] Grouping process finished.');
+        if (typeof hasPendingRegroup !== 'undefined' && hasPendingRegroup) {
+            hasPendingRegroup = false;
+            debounceGroupTabs(50);
+        }
     }
 }
 

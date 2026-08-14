@@ -981,8 +981,11 @@ function debounceUpdateAllGroupPrefixes(windowId, options = {}, delay = 250) {
     pendingPrefixUpdates.set(windowId, { timer: newTimer, options: mergedOptions });
 }
 
+let hasPendingRegroup = false;
+
 function debounceGroupTabs(delay = 250) {
     if (isGrouping) {
+        hasPendingRegroup = true;
         return;
     }
     if (groupTabsTimer) {
