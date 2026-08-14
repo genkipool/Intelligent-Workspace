@@ -5284,8 +5284,6 @@ body.bookmarks-view-active #view-toggle-panel {
 
 /* Child folder counter */
 .folder-child-count {
-    margin-left: auto;
-    /* Pushes the counter to the far right */
     font-size: 0.75rem;
     font-weight: 500;
     background-color: var(--bg-panel-color);
@@ -5368,6 +5366,7 @@ body.bookmarks-view-active #view-toggle-panel {
 .folder-action-btn-container {
     display: flex;
     align-items: center;
+    margin-left: auto;
 }
 
 /* Individual action button inside the folder */

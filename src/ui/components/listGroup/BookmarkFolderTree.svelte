@@ -37,6 +37,18 @@
     let filteredTree = $derived.by(() => annotateTree(folderTree, searchTerm));
 
     $effect(() => {
+        if (folderTree && folderTree.length > 0) {
+            function collectAllFolders(nodes) {
+                for (const node of nodes) {
+                    if (node.id) expandedFolders.add(node.id);
+                    if (node.children) collectAllFolders(node.children);
+                }
+            }
+            collectAllFolders(folderTree);
+        }
+    });
+
+    $effect(() => {
         if (hasSearch) {
             const matching = new SvelteSet();
             function collectMatching(nodes) {
@@ -49,6 +61,7 @@
             matching.forEach((id) => expandedFolders.add(id));
         }
     });
+
 
     function annotateTree(nodes, query) {
         if (!nodes || !Array.isArray(nodes)) return [];
