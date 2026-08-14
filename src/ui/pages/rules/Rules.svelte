@@ -470,26 +470,22 @@
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    /** The master switch turns every grouping on or off at once, as in the original. */
+    /** The master switch turns every grouping on or off at once, smoothly without blocking the UI thread. */
     async function setClusterEnabled(enabled) {
-        const perf = ClusterPerfMonitor.startToggle(enabled);
         isClusterEnabled = enabled;
 
-        requestAnimationFrame(async () => {
-            const animationMs = await perf.endAnimation();
-            const storageStart = performance.now();
-            const nextConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
-            clusterConfig = nextConfig;
+        // Apply config change
+        const nextConfig = applyMasterSwitch($state.snapshot(clusterConfig), enabled);
+        clusterConfig = nextConfig;
 
+        // Save settings and trigger regrouping asynchronously without blocking the switch transition
+        setTimeout(async () => {
             await saveSettings({
                 clusterConfig: nextConfig,
                 clusteringEnabled: enabled,
             });
             await groupTabs();
-
-            const storageMs = await perf.endStorage(storageStart);
-            await perf.endAll({ animationMs, storageMs });
-        });
+        }, 150);
     }
 
     function toggleCluster() {
@@ -499,22 +495,16 @@
     /** Any change in Configure Groups re-syncs the master switch and regroups the tabs. */
     async function onClusterChanged() {
         const enabled = isAnyClusterSwitchOn(clusterConfig);
-        const perf = ClusterPerfMonitor.startToggle(enabled);
         isClusterEnabled = enabled;
 
-        requestAnimationFrame(async () => {
-            const animationMs = await perf.endAnimation();
-            const storageStart = performance.now();
+        setTimeout(async () => {
             const nextConfig = $state.snapshot(clusterConfig);
             await saveSettings({
                 clusterConfig: nextConfig,
                 clusteringEnabled: isClusterEnabled,
             });
             await groupTabs();
-
-            const storageMs = await perf.endStorage(storageStart);
-            await perf.endAll({ animationMs, storageMs });
-        });
+        }, 150);
     }
 
     async function toggleSortGroups() {

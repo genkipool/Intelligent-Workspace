@@ -87,22 +87,21 @@ try {
     }
   }
 
-  // 5. Fix importScripts paths in the background bundle (assets/background.js-*.js)
-  //    The bundle lives under dist/assets/ but importScripts references like
-  //    './background/gemini-api.js' need to be '../background/gemini-api.js'
-  //    to resolve from assets/ to the extension root.
+  // 5. Ensure importScripts paths in the background bundle are root-relative ('/...')
   const assetsDir = path.join(distPath, 'assets');
   if (fs.existsSync(assetsDir)) {
     const bgBundles = fs.readdirSync(assetsDir).filter(f => f.startsWith('background.js') && f.endsWith('.js'));
     for (const bgFile of bgBundles) {
       const bgPath = path.join(assetsDir, bgFile);
       let bgContent = fs.readFileSync(bgPath, 'utf8');
-      const fixed = bgContent.replace(/importScripts\(`\.\//g, "importScripts(`../");
+      const fixed = bgContent
+        .replace(/importScripts\(['"`]\.\.\//g, "importScripts('/")
+        .replace(/importScripts\(['"`]\.\//g, "importScripts('/");
       if (fixed !== bgContent) {
         fs.writeFileSync(bgPath, fixed);
-        console.log(`✅ Fixed importScripts paths in ${bgFile}`);
+        console.log(`✅ Normalized importScripts paths to root-relative in ${bgFile}`);
       } else {
-        console.log(`ℹ️  No ./ paths to fix in ${bgFile}`);
+        console.log(`ℹ️  importScripts paths already root-relative in ${bgFile}`);
       }
     }
   }
