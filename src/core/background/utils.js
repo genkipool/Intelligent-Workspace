@@ -1504,13 +1504,17 @@ async function getFaviconColor(faviconUrl) {
 
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120);
+        const timeoutId = setTimeout(() => controller.abort(), 500);
         const response = await fetch(faviconUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
         if (!response.ok) return null;
 
         const blob = await response.blob();
+        if (!blob || blob.size === 0) return null;
+
         const imageBitmap = await createImageBitmap(blob);
+        if (!imageBitmap || imageBitmap.width === 0 || imageBitmap.height === 0) return null;
+
         const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
         const ctx = canvas.getContext('2d');
         ctx.drawImage(imageBitmap, 0, 0);
@@ -1548,7 +1552,6 @@ async function getFaviconColor(faviconUrl) {
         faviconColorCache.set(faviconUrl, closestColor.name);
         return closestColor.name;
     } catch (error) {
-        console.warn('Error fetching favicon color:', error);
         faviconColorCache.set(faviconUrl, null);
         return null;
     }
