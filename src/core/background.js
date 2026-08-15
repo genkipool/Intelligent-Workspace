@@ -34,6 +34,7 @@ importScripts('/agent-backend.js');
 importScripts('/background/state.js');
 importScripts('/background/stateManager.js');
 importScripts('/services/storage.js');
+importScripts('/services/dbSchema.js');
 importScripts('/background/db.js');
 importScripts('/background/utils.js');
 importScripts('/background/handlers/bookmarks.js');

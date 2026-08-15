@@ -2,7 +2,8 @@ function openDb() {
     if (dbPromise) return dbPromise;
 
     dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open('Intelligent_Workspace', 6);
+        // Schema lives in /services/dbSchema.js, shared with the pages.
+        const request = indexedDB.open(ITG_DB_SCHEMA.name, ITG_DB_SCHEMA.version);
 
         request.onerror = (event) => {
             console.error('Error opening IndexedDB:', event.target.error);
@@ -10,36 +11,7 @@ function openDb() {
         };
 
         request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains(CONVERSATION_STORE_NAME)) {
-                db.createObjectStore(CONVERSATION_STORE_NAME, { keyPath: 'id' });
-            }
-            if (db.objectStoreNames.contains(NOTES_STORE_NAME)) {
-                const transaction = event.target.transaction;
-                if (transaction) {
-                    const store = transaction.objectStore(NOTES_STORE_NAME);
-                    if (store.autoIncrement) {
-                        db.deleteObjectStore(NOTES_STORE_NAME);
-                        db.createObjectStore(NOTES_STORE_NAME, { keyPath: 'id' });
-                    }
-                }
-            } else {
-                db.createObjectStore(NOTES_STORE_NAME, { keyPath: 'id' });
-            }
-
-            if (!db.objectStoreNames.contains(BACKUPS_STORE_NAME)) {
-                // We use 'groupId' as the unique key for each backup.
-                db.createObjectStore(BACKUPS_STORE_NAME, { keyPath: 'group.id' });
-            }
-
-            if (!db.objectStoreNames.contains(POMO_STATS_STORE_NAME)) {
-                const pomoStore = db.createObjectStore(POMO_STATS_STORE_NAME, { keyPath: 'id' });
-                pomoStore.createIndex('projectName', 'projectName', { unique: false });
-                pomoStore.createIndex('savedAt', 'savedAt', { unique: false });
-            }
+            ITG_DB_SCHEMA.upgrade(event.target.result, event.target.transaction);
         };
 
         request.onsuccess = (event) => {

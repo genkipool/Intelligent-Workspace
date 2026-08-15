@@ -1,51 +1,28 @@
-const DB_NAME = 'Intelligent_Workspace';
-const STORE_NAME = 'screenshots';
-const CONVERSATION_STORE_NAME = 'geminiConversations';
-const NOTES_STORE_NAME = 'notesStore'; // New store for notes
-const BACKUPS_STORE_NAME = 'backupsGroups';
-const POMO_STATS_STORE_NAME = 'pomodoroStats';
+// The schema (name, version, stores, upgrade) is defined once in
+// src/core/services/dbSchema.js and shared with the service worker, which cannot
+// import ES modules. Importing it for its side effect publishes ITG_DB_SCHEMA.
+import '../core/services/dbSchema.js';
+
+const { name: DB_NAME, stores: ITG_STORES } = globalThis.ITG_DB_SCHEMA;
+const STORE_NAME = ITG_STORES.screenshots;
+const CONVERSATION_STORE_NAME = ITG_STORES.conversations;
+const NOTES_STORE_NAME = ITG_STORES.notes;
+const BACKUPS_STORE_NAME = ITG_STORES.backups;
+const POMO_STATS_STORE_NAME = ITG_STORES.pomodoroStats;
 let dbPromise = null;
 
 function openDb() {
     if (dbPromise) return dbPromise;
 
     dbPromise = new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 6);
+        const request = indexedDB.open(DB_NAME, globalThis.ITG_DB_SCHEMA.version);
         request.onerror = (event) => {
             console.error('Error opening IndexedDB:', event.target.error);
             reject('Error opening the database.');
         };
 
         request.onupgradeneeded = (event) => {
-            const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-            }
-            if (!db.objectStoreNames.contains(CONVERSATION_STORE_NAME)) {
-                db.createObjectStore(CONVERSATION_STORE_NAME, { keyPath: 'id' });
-            }
-            if (db.objectStoreNames.contains(NOTES_STORE_NAME)) {
-                const transaction = event.target.transaction;
-                if (transaction) {
-                    const store = transaction.objectStore(NOTES_STORE_NAME);
-                    if (store.autoIncrement) {
-                        db.deleteObjectStore(NOTES_STORE_NAME);
-                        db.createObjectStore(NOTES_STORE_NAME, { keyPath: 'id' });
-                    }
-                }
-            } else {
-                db.createObjectStore(NOTES_STORE_NAME, { keyPath: 'id' });
-            }
-
-            if (!db.objectStoreNames.contains(BACKUPS_STORE_NAME)) {
-                db.createObjectStore(BACKUPS_STORE_NAME, { keyPath: 'group.id' });
-            }
-
-            if (!db.objectStoreNames.contains(POMO_STATS_STORE_NAME)) {
-                const pomoStore = db.createObjectStore(POMO_STATS_STORE_NAME, { keyPath: 'id' });
-                pomoStore.createIndex('projectName', 'projectName', { unique: false });
-                pomoStore.createIndex('savedAt', 'savedAt', { unique: false });
-            }
+            globalThis.ITG_DB_SCHEMA.upgrade(event.target.result, event.target.transaction);
         };
 
         request.onsuccess = (event) => {
