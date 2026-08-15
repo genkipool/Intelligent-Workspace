@@ -99,7 +99,6 @@
     function closeImportPanel() {
         showImportPanel = false;
         importError = '';
-        isDragging = false;
     }
 
     async function processImportFile(file) {

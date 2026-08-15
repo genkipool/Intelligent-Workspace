@@ -158,6 +158,13 @@ export default [
         languageOptions: { globals: { ...globals.commonjs } },
     },
     {
+        // lib/chart.local.js is imported for its side effect by the dashboard's
+        // entry point and defines globalThis.Chart. The global is real; it just
+        // never arrives through a named import.
+        files: ['src/ui/pages/pomodoro-dashboard/**'],
+        languageOptions: { globals: { Chart: 'readonly' } },
+    },
+    {
         // Imported by the listGroup page right after hint_common.js, which publishes
         // window.HintCommon. The global is genuinely there at run time; it just
         // arrives through a side-effect import instead of a named one.
@@ -177,12 +184,25 @@ export default [
     ),
     {
         files: ['**/*.svelte'],
+        // The base block that declares these only matches .js and .mjs, so components
+        // had no globals at all — which is why no-undef could not run on them.
+        languageOptions: {
+            ecmaVersion: 'latest',
+            globals: {
+                ...globals.browser,
+                chrome: 'readonly',
+            },
+        },
         rules: {
             // The base block only covers .js/.mjs, so components were never checked
             // for this and unused imports piled up unseen. The parser resolves names
             // referenced from the markup, so a prop or a store used only in the
             // template still counts as used.
             'no-unused-vars': ['warn', { args: 'none' }],
+            // Nor did this one, and that is how deleting a `let` while leaving its
+            // assignments behind reached the browser as a ReferenceError instead of
+            // being caught here.
+            'no-undef': 'error',
             'svelte/no-reactive-functions': 'off',
             'svelte/no-unused-props': 'warn',
             'svelte/button-has-type': 'warn',

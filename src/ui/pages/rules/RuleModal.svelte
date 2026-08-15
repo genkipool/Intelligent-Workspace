@@ -78,9 +78,11 @@
 
     function normalizeUrl(url) {
         try {
-            const u = new URL(url);
-            u.hash = '';
-            return u.href.replace(/\/$/, '');
+            // The fragment is dropped by cutting the normalised href rather than by
+            // assigning to u.hash, so the URL is never mutated after it is built.
+            // Checked to give the same answer for http, file, chrome and bracketed
+            // IPv6 addresses, with and without a fragment.
+            return new URL(url).href.split('#')[0].replace(/\/$/, '');
         } catch {
             return url.trim().toLowerCase();
         }

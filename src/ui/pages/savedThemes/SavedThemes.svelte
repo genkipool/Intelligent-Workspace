@@ -314,7 +314,6 @@
 
     // --- Schedules ---
     async function openScheduleModalFor(themeName = null) {
-        hidePopups();
         if (themeName) {
             currentThemeForScheduling = { name: themeName };
         } else {
