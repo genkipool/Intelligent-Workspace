@@ -69,8 +69,11 @@
     let endTimeTrigger = $state('00:00');
     let startTimeOneTimeTrigger = $state('00:00');
     let endTimeOneTimeTrigger = $state('00:00');
-    let startDateTrigger = $state('YYYY-MM-DD');
-    let endDateTrigger = $state('YYYY-MM-DD');
+    // Writable $derived: they mirror the date fields, and the schedule loading and
+    // reset paths below still assign them directly, which a $derived allows since
+    // Svelte 5.25. Previously this was $state kept in sync by two $effect blocks.
+    let startDateTrigger = $derived(startDateValue || 'YYYY-MM-DD');
+    let endDateTrigger = $derived(endDateValue || 'YYYY-MM-DD');
 
     let scheduleError = $state('');
 
@@ -460,14 +463,10 @@
     // schedule code still speaks the placeholder form.
     let startDateValue = $state('');
     let endDateValue = $state('');
-    $effect(() => {
-        startDateTrigger = startDateValue || 'YYYY-MM-DD';
-        calSelectedStartDate = startDateValue ? new Date(`${startDateValue}T00:00`) : null;
-    });
-    $effect(() => {
-        endDateTrigger = endDateValue || 'YYYY-MM-DD';
-        calSelectedEndDate = endDateValue ? new Date(`${endDateValue}T00:00`) : null;
-    });
+    // These effects also assigned to calSelectedStartDate / calSelectedEndDate, which
+    // are declared nowhere and read nowhere: leftovers from the vanilla calendar that
+    // the port never wired up. Assigning to an undeclared name inside a module throws,
+    // so every date change raised "calSelectedStartDate is not defined".
 
     function formatDateTime(isoString) {
         const date = new Date(isoString);
