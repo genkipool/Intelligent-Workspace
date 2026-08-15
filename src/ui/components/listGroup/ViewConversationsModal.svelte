@@ -106,7 +106,8 @@
         <div class="modal-content view-conversations-modal" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2 id="view-conversations-title">{$t('savedConversationsTitle')}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
+                >
             </div>
 
             <div class="modal-body">
@@ -175,6 +176,7 @@
                                 </div>
                             </button>
                             <button
+                                type="button"
                                 class="delete-conversation-btn"
                                 title={$tt('deleteConversation')}
                                 onclick={(e) => {

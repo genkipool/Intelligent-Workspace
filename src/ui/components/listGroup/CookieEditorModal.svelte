@@ -184,14 +184,15 @@
             <div class="modal-content cookie-editor-modal">
                 <div class="modal-header">
                     <h2 id="cookie-modal-title">{$t('cookieEditorTitle')}</h2>
-                    <button class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
+                    <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button
+                    >
                 </div>
                 <div class="modal-body cookie-editor-body">
                     <div class="cookie-modal-actions-header">
-                        <button id="export-cookies-btn" class="modal-btn-action" onclick={handleExport}
+                        <button type="button" id="export-cookies-btn" class="modal-btn-action" onclick={handleExport}
                             >{$t('export')}</button
                         >
-                        <button id="import-cookies-btn" class="modal-btn-action" onclick={openImportPanel}
+                        <button type="button" id="import-cookies-btn" class="modal-btn-action" onclick={openImportPanel}
                             >{$t('import')}</button
                         >
                     </div>
@@ -220,6 +221,7 @@
                                     <summary>
                                         <span class="cookie-name">{cookie.name}</span>
                                         <button
+                                            type="button"
                                             class="delete-cookie-btn action-btn"
                                             title={$tt('deleteCookie')}
                                             onclick={(e) => {
@@ -370,8 +372,10 @@
                     {/if}
                 </div>
                 <div class="modal-actions">
-                    <button class="modal-btn-cancel modal-btn-reset" onclick={resetCookies}>{$t('reset')}</button>
-                    <button class="modal-btn-save" onclick={handleSave}>{$t('save')}</button>
+                    <button type="button" class="modal-btn-cancel modal-btn-reset" onclick={resetCookies}
+                        >{$t('reset')}</button
+                    >
+                    <button type="button" class="modal-btn-save" onclick={handleSave}>{$t('save')}</button>
                 </div>
             </div>
         {:else}

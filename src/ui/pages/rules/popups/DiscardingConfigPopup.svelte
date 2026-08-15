@@ -49,7 +49,7 @@
             />
             <small>{$t('discardingTimeDesc')}</small>
         </label>
-        <button class="popup-reset-btn" id="reset-discarding-btn" onclick={resetToDefaults}
+        <button type="button" class="popup-reset-btn" id="reset-discarding-btn" onclick={resetToDefaults}
             >{$t('resetDiscarding')}</button
         >
     </div>

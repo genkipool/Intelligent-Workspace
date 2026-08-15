@@ -58,7 +58,13 @@
 <div class="container option-page">
     <header class="header">
         <h1 data-i18n="customizeCommandsTitle"></h1>
-        <button id="home-btn" class="header-button" data-i18n-title="backToHome" data-i18n-aria-label="backToHome">
+        <button
+            type="button"
+            id="home-btn"
+            class="header-button"
+            data-i18n-title="backToHome"
+            data-i18n-aria-label="backToHome"
+        >
             <svg
                 width="20"
                 height="20"
@@ -133,12 +139,17 @@
 
     <footer class="footer-fixed">
         <button
+            type="button"
             id="restore-defaults-btn"
             class="button button-danger"
             data-i18n="resetClusterDefaults"
             data-i18n-title="restoreDefaultsTitle"
         ></button>
-        <button id="export-config-btn" class="button button-secondary" data-i18n="exportConfig">Export</button>
-        <button id="import-config-btn" class="button button-secondary" data-i18n="importConfig">Import</button>
+        <button type="button" id="export-config-btn" class="button button-secondary" data-i18n="exportConfig"
+            >Export</button
+        >
+        <button type="button" id="import-config-btn" class="button button-secondary" data-i18n="importConfig"
+            >Import</button
+        >
     </footer>
 </div>

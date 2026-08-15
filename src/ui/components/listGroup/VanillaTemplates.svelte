@@ -2,7 +2,7 @@
 </script>
 
 <template id="hidden-group-indicator-template">
-    <button class="hidden-group-indicator" role="button">
+    <button type="button" class="hidden-group-indicator" role="button">
         <span class="hidden-group-initial"></span>
     </button>
 </template>
@@ -21,8 +21,8 @@
             <div class="download-modal-header">
                 <h4 data-i18n="downloadableFiles"></h4>
                 <div class="header-controls">
-                    <button class="select-all-btn"></button>
-                    <button class="close-modal-btn" data-i18n-title="close">×</button>
+                    <button type="button" class="select-all-btn"></button>
+                    <button type="button" class="close-modal-btn" data-i18n-title="close">×</button>
                 </div>
             </div>
             <div class="download-filter-container"></div>
@@ -31,7 +31,7 @@
                 <p class="no-files-filtered-message hidden" data-i18n="noFilesMatchFilter"></p>
             </div>
             <div class="download-modal-footer">
-                <button class="download-action-btn" disabled>
+                <button type="button" class="download-action-btn" disabled>
                     <svg width="16" height="16">
                         <use href="#icon-download-all"></use>
                     </svg>
@@ -46,7 +46,7 @@
     <li class="download-item" tabindex="0">
         <span class="download-file-extension"></span>
         <span class="download-filename"></span>
-        <button class="download-item-select-btn" data-i18n-aria-label="selectFile">
+        <button type="button" class="download-item-select-btn" data-i18n-aria-label="selectFile">
             <svg class="check-icon" width="12" height="12">
                 <use href="#icon-check"></use>
             </svg>
@@ -69,7 +69,7 @@
     <div class="error-message-container">
         <div class="error-header">
             <h2 data-i18n="errorLoadingPageTitle"></h2>
-            <button class="close-error-btn" data-i18n-title="close">&times;</button>
+            <button type="button" class="close-error-btn" data-i18n-title="close">&times;</button>
         </div>
         <p class="error-details"></p>
     </div>
@@ -142,7 +142,7 @@
     <div class="gemini-edit-container">
         <textarea class="gemini-edit-textarea" translate="no"></textarea>
         <div class="gemini-edit-actions">
-            <button class="gemini-edit-btn-save" data-i18n="send"></button>
+            <button type="button" class="gemini-edit-btn-save" data-i18n="send"></button>
         </div>
     </div>
 </template>
@@ -199,12 +199,12 @@
         <div class="schedule-item-header">
             <span class="schedule-query-text"></span>
             <div class="schedule-item-actions">
-                <button class="edit-schedule-btn" data-i18n-title="editGeminiQuery">
+                <button type="button" class="edit-schedule-btn" data-i18n-title="editGeminiQuery">
                     <svg width="20" height="20">
                         <use href="#icon-edit"></use>
                     </svg>
                 </button>
-                <button class="delete-schedule-btn" data-i18n-title="deleteSchedule">×</button>
+                <button type="button" class="delete-schedule-btn" data-i18n-title="deleteSchedule">×</button>
             </div>
         </div>
         <div class="schedule-details"></div>
@@ -214,7 +214,7 @@
 <template id="checklist-item-template">
     <div class="checklist-item">
         <input type="text" class="checklist-item-input" data-i18n-placeholder="checklistItemPlaceholder" />
-        <button class="delete-item-btn">&times;</button>
+        <button type="button" class="delete-item-btn">&times;</button>
     </div>
 </template>
 
@@ -226,9 +226,9 @@
 
 <template id="kanban-item-template">
     <div class="kanban-item">
-        <button class="kanban-item-state" data-state="todo" data-i18n="kanbanDefaultTodo"></button>
+        <button type="button" class="kanban-item-state" data-state="todo" data-i18n="kanbanDefaultTodo"></button>
         <input type="text" class="kanban-item-input" data-i18n-placeholder="addKanbanCardPlaceholder" />
-        <button class="delete-item-btn">&times;</button>
+        <button type="button" class="delete-item-btn">&times;</button>
     </div>
 </template>
 
@@ -286,11 +286,11 @@
         </summary>
         <div class="entry-content"></div>
         <div class="entry-footer">
-            <button class="note-tag filter-btn"></button>
-            <button class="note-pomo-filter filter-btn hidden" data-pomo="pomodoro">Pomodoro</button>
-            <button class="entry-domain filter-btn"></button>
+            <button type="button" class="note-tag filter-btn"></button>
+            <button type="button" class="note-pomo-filter filter-btn hidden" data-pomo="pomodoro">Pomodoro</button>
+            <button type="button" class="entry-domain filter-btn"></button>
             <span class="note-date"></span>
-            <button class="note-type filter-btn"></button>
+            <button type="button" class="note-type filter-btn"></button>
             <span class="note-stats"></span>
             <span class="note-modified-date"></span>
         </div>
@@ -634,7 +634,7 @@
             <span class="item-url"></span>
             <span class="item-meta"></span>
         </div>
-        <button class="delete-item-btn action-btn" data-i18n-title="deleteButton">
+        <button type="button" class="delete-item-btn action-btn" data-i18n-title="deleteButton">
             <svg width="20" height="20">
                 <use href="#icon-close-stroke"></use>
             </svg>
@@ -728,28 +728,28 @@
         <div class="gallery-item-info">
             <p class="gallery-item-title"></p>
         </div>
-        <button class="gallery-action-btn gallery-pin-btn" data-i18n-title="pinScreenshot">
+        <button type="button" class="gallery-action-btn gallery-pin-btn" data-i18n-title="pinScreenshot">
             <svg width="20" height="20">
                 <use href="#icon-archive-note"></use>
             </svg>
         </button>
-        <button class="gallery-action-btn gallery-ocr-btn" data-i18n-title="ocrScreenshot">
+        <button type="button" class="gallery-action-btn gallery-ocr-btn" data-i18n-title="ocrScreenshot">
             <svg width="18" height="18">
                 <use href="#icon-summary"></use>
             </svg>
         </button>
         <div class="gallery-item-actions">
-            <button class="gallery-action-btn copy-btn" data-i18n-title="copy">
+            <button type="button" class="gallery-action-btn copy-btn" data-i18n-title="copy">
                 <svg width="14" height="14">
                     <use href="#icon-copy"></use>
                 </svg>
             </button>
-            <button class="gallery-action-btn download-btn" data-i18n-title="download">
+            <button type="button" class="gallery-action-btn download-btn" data-i18n-title="download">
                 <svg width="18" height="18">
                     <use href="#icon-download-all"></use>
                 </svg>
             </button>
-            <button class="gallery-action-btn delete-btn" data-i18n-title="delete">
+            <button type="button" class="gallery-action-btn delete-btn" data-i18n-title="delete">
                 <svg width="18" height="18">
                     <use href="#icon-trash"></use>
                 </svg>

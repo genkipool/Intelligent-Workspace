@@ -214,7 +214,7 @@
             <h2 id="note-modal-title">
                 {$t(note ? 'editNote' : 'createNote')}
             </h2>
-            <button class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
+            <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
         </div>
 
         <!-- Title input -->

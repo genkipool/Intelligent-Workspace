@@ -117,6 +117,7 @@
                         {/if}
                         <span title={fileObj.name}>{fileObj.name}</span>
                         <button
+                            type="button"
                             class="remove-attachment-btn"
                             data-index={i}
                             title="Remove"

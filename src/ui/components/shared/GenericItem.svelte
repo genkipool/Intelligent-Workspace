@@ -130,6 +130,7 @@
         <span class="item-meta" style:display={meta ? null : 'none'}>{meta ?? ''}</span>
     </div>
     <button
+        type="button"
         class="delete-item-btn action-btn"
         title={$tt(DELETE_TOOLTIP[type] ?? 'deleteButton')}
         onclick={handleDelete}

@@ -143,8 +143,12 @@
         <div class="modal-content gemini-schedule-modal" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2 id="gemini-schedule-modal-title">{$t('scheduleGeminiQuery')}</h2>
-                <button id="close-gemini-schedule-modal" class="close-modal-btn" onclick={onClose} title={$tt('close')}
-                    >&times;</button
+                <button
+                    type="button"
+                    id="close-gemini-schedule-modal"
+                    class="close-modal-btn"
+                    onclick={onClose}
+                    title={$tt('close')}>&times;</button
                 >
             </div>
 
@@ -161,6 +165,7 @@
                                     <span class="schedule-query-text" title={schedule.query}>{schedule.title}</span>
                                     <div class="schedule-item-actions">
                                         <button
+                                            type="button"
                                             class="edit-schedule-btn"
                                             onclick={() => handleEdit(i)}
                                             title={$tt('editGeminiQuery')}
@@ -170,6 +175,7 @@
                                             </svg>
                                         </button>
                                         <button
+                                            type="button"
                                             class="delete-schedule-btn"
                                             onclick={() => handleDelete(i)}
                                             title={$tt('deleteSchedule')}
@@ -223,26 +229,40 @@
                         <div class="form-group">
                             <div class="field-label">{$t('daysOfWeek')}</div>
                             <div id="gemini-schedule-days" class="days-selector">
-                                <button class:selected={selectedDays.includes(1)} onclick={() => handleDayToggle(1)}
-                                    >{$t('dayMon')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(1)}
+                                    onclick={() => handleDayToggle(1)}>{$t('dayMon')}</button
                                 >
-                                <button class:selected={selectedDays.includes(2)} onclick={() => handleDayToggle(2)}
-                                    >{$t('dayTue')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(2)}
+                                    onclick={() => handleDayToggle(2)}>{$t('dayTue')}</button
                                 >
-                                <button class:selected={selectedDays.includes(3)} onclick={() => handleDayToggle(3)}
-                                    >{$t('dayWed')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(3)}
+                                    onclick={() => handleDayToggle(3)}>{$t('dayWed')}</button
                                 >
-                                <button class:selected={selectedDays.includes(4)} onclick={() => handleDayToggle(4)}
-                                    >{$t('dayThu')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(4)}
+                                    onclick={() => handleDayToggle(4)}>{$t('dayThu')}</button
                                 >
-                                <button class:selected={selectedDays.includes(5)} onclick={() => handleDayToggle(5)}
-                                    >{$t('dayFri')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(5)}
+                                    onclick={() => handleDayToggle(5)}>{$t('dayFri')}</button
                                 >
-                                <button class:selected={selectedDays.includes(6)} onclick={() => handleDayToggle(6)}
-                                    >{$t('daySat')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(6)}
+                                    onclick={() => handleDayToggle(6)}>{$t('daySat')}</button
                                 >
-                                <button class:selected={selectedDays.includes(0)} onclick={() => handleDayToggle(0)}
-                                    >{$t('daySun')}</button
+                                <button
+                                    type="button"
+                                    class:selected={selectedDays.includes(0)}
+                                    onclick={() => handleDayToggle(0)}>{$t('daySun')}</button
                                 >
                             </div>
                         </div>
@@ -276,7 +296,12 @@
 
             {#if schedules.length < 7}
                 <div class="modal-actions">
-                    <button id="save-gemini-schedule-btn" class:error-state={!!formError} onclick={handleSave}>
+                    <button
+                        type="button"
+                        id="save-gemini-schedule-btn"
+                        class:error-state={!!formError}
+                        onclick={handleSave}
+                    >
                         {$t(formMode === 'add' ? 'addSchedule' : 'updateSchedule')}
                     </button>
                     {#if formError}

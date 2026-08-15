@@ -195,6 +195,7 @@
 
                         <p class="schedule-storage-info" data-i18n="scheduleStorageInfo"></p>
                         <button
+                            type="button"
                             id="save-schedule-btn"
                             class="button"
                             class:error-state={scheduleError}

@@ -91,7 +91,7 @@
         <div class="modal-content api-key-modal">
             <div class="modal-header">
                 <h2 id="modal-title">{$t('geminiApiKeyTitle')}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
             </div>
 
             <div class="modal-body">
@@ -161,10 +161,12 @@
                                                 maxlength="50"
                                                 title={keyData.name || $t('geminiApiKeyNameDefault')}
                                                 onchange={async (e) => {
-                                                    const newName = e.currentTarget.value.trim() || $t('geminiApiKeyNameDefault');
+                                                    const newName =
+                                                        e.currentTarget.value.trim() || $t('geminiApiKeyNameDefault');
                                                     e.currentTarget.value = newName;
                                                     e.currentTarget.title = newName;
-                                                    const { geminiApiKeysList = [] } = await chrome.storage.local.get('geminiApiKeysList');
+                                                    const { geminiApiKeysList = [] } =
+                                                        await chrome.storage.local.get('geminiApiKeysList');
                                                     if (geminiApiKeysList[i]) {
                                                         geminiApiKeysList[i].name = newName;
                                                         await chrome.storage.local.set({ geminiApiKeysList });
@@ -172,12 +174,15 @@
                                                 }}
                                             />
                                             {#if keyData.hasQuotaError}
-                                                <span class="api-key-quota-badge" style="margin-left:6px; font-size:0.72em; color:var(--error-color); font-weight:bold; white-space:nowrap;"
+                                                <span
+                                                    class="api-key-quota-badge"
+                                                    style="margin-left:6px; font-size:0.72em; color:var(--error-color); font-weight:bold; white-space:nowrap;"
                                                     >{$t('geminiQuotaErrorIndicator')}</span
                                                 >
                                             {/if}
                                         </div>
                                         <button
+                                            type="button"
                                             class="saved-api-key-delete-btn"
                                             title={$tt('deleteApiKeyTooltip')}
                                             onclick={() => handleDelete(i)}>&times;</button
@@ -188,6 +193,7 @@
                                             >{maskKey(keyData.key)}</span
                                         >
                                         <button
+                                            type="button"
                                             class="copy-api-key-btn"
                                             title={$tt('copyApiKeyTooltip')}
                                             onclick={async () => {
@@ -278,7 +284,13 @@
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn-save" class:error-state={!!error} disabled={saving} onclick={handleSave}>
+                <button
+                    type="button"
+                    class="modal-btn-save"
+                    class:error-state={!!error}
+                    disabled={saving}
+                    onclick={handleSave}
+                >
                     {saving ? $t('checkingApiKey') : $t('addApiKeyBtn')}
                 </button>
             </div>

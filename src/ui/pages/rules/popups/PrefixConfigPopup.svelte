@@ -123,7 +123,7 @@
             />
         </div>
         <div class="popup-actions">
-            <button class="popup-reset-btn" id="reset-prefixes-btn" onclick={resetToDefaults}
+            <button type="button" class="popup-reset-btn" id="reset-prefixes-btn" onclick={resetToDefaults}
                 >{$t('resetPrefixes')}</button
             >
         </div>

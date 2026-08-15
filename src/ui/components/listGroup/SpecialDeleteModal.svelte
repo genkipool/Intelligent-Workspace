@@ -101,13 +101,19 @@
             <div class="modal-header">
                 <h2 class="modal-title">{$t(titleKey)}</h2>
                 {#if type === 'broken' && onReset}
-                    <button class="restart-scan-btn control-btn" title={$tt('restartScan')} onclick={onReset}>
+                    <button
+                        type="button"
+                        class="restart-scan-btn control-btn"
+                        title={$tt('restartScan')}
+                        onclick={onReset}
+                    >
                         <svg width="18" height="18" aria-hidden="true" focusable="false">
                             <use href="#icon-refresh"></use>
                         </svg>
                     </button>
                 {/if}
-                <button class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
+                >
             </div>
             <div class="modal-body">
                 <p class="modal-description">{$t(descriptionKey)}</p>
@@ -115,26 +121,31 @@
                 {#if type === 'broken' && !isLoading && filteredItems.length > 0}
                     <div class="modal-filters">
                         <button
+                            type="button"
                             class="filter-btn"
                             class:active={filterType === 'all'}
                             onclick={() => (filterType = 'all')}>{$t('filterAll')}</button
                         >
                         <button
+                            type="button"
                             class="filter-btn"
                             class:active={filterType === '4xx'}
                             onclick={() => (filterType = '4xx')}>{$t('filter4xx')}</button
                         >
                         <button
+                            type="button"
                             class="filter-btn"
                             class:active={filterType === '5xx'}
                             onclick={() => (filterType = '5xx')}>{$t('filterTimeouts')}</button
                         >
                         <button
+                            type="button"
                             class="filter-btn"
                             class:active={filterType === 'timeout'}
                             onclick={() => (filterType = 'timeout')}>{$t('filterTimeouts')}</button
                         >
                         <button
+                            type="button"
                             class="filter-btn"
                             class:active={filterType === 'other'}
                             onclick={() => (filterType = 'other')}>{$t('filterOther')}</button
@@ -194,6 +205,7 @@
                                         >
                                     </div>
                                     <button
+                                        type="button"
                                         class="delete-item-action-btn"
                                         title={$tt('deleteButton')}
                                         onclick={(e) => {
@@ -226,6 +238,7 @@
                         {$t('items') || 'items'}
                     </span>
                     <button
+                        type="button"
                         class="modal-btn-delete-all-listed error-state"
                         disabled={filteredItems.length === 0}
                         onclick={handleDeleteAll}>{$t('deleteAllListed')}</button

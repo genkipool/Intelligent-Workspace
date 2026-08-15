@@ -9,17 +9,29 @@
     <!-- ① CONTROLS ROW: mode tabs + all action buttons -->
     <div class="pomo-row pomo-row-controls">
         <div class="pomo-mode-tabs">
-            <button class="pomo-mode-btn active" data-mode="work" title={$tt('pomodoroWork')} tabindex="-1">
+            <button
+                type="button"
+                class="pomo-mode-btn active"
+                data-mode="work"
+                title={$tt('pomodoroWork')}
+                tabindex="-1"
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-target"></use>
                 </svg>
             </button>
-            <button class="pomo-mode-btn" data-mode="short" title={$tt('pomodoroShortBreak')} tabindex="-1">
+            <button
+                type="button"
+                class="pomo-mode-btn"
+                data-mode="short"
+                title={$tt('pomodoroShortBreak')}
+                tabindex="-1"
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-coffee"></use>
                 </svg>
             </button>
-            <button class="pomo-mode-btn" data-mode="long" title={$tt('pomodoroLongBreak')} tabindex="-1">
+            <button type="button" class="pomo-mode-btn" data-mode="long" title={$tt('pomodoroLongBreak')} tabindex="-1">
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-relax"></use>
                 </svg>
@@ -27,12 +39,17 @@
         </div>
         <div class="pomo-divider" title={$tt('dragToMovePanel')}></div>
         <div class="pomo-actions" title={$tt('dragToMovePanel')}>
-            <button id="pomodoro-reset-btn" class="pomo-action-btn" title={$tt('pomodoroReset')}>
+            <button type="button" id="pomodoro-reset-btn" class="pomo-action-btn" title={$tt('pomodoroReset')}>
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-pomo-reset"></use>
                 </svg>
             </button>
-            <button id="pomodoro-start-btn" class="pomo-action-btn pomo-play-btn" title={$tt('pomodoroStart')}>
+            <button
+                type="button"
+                id="pomodoro-start-btn"
+                class="pomo-action-btn pomo-play-btn"
+                title={$tt('pomodoroStart')}
+            >
                 <svg class="icon-play" width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-play-solid"></use>
                 </svg>
@@ -43,33 +60,58 @@
                     <use href="#icon-stop-solid"></use>
                 </svg>
             </button>
-            <button id="pomodoro-skip-btn" class="pomo-action-btn" title={$tt('pomodoroSkip')}>
+            <button type="button" id="pomodoro-skip-btn" class="pomo-action-btn" title={$tt('pomodoroSkip')}>
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-skip"></use>
                 </svg>
             </button>
             <div class="pomo-divider"></div>
-            <button id="pomodoro-dashboard-btn" class="pomo-action-btn pomo-icon-only" title={$tt('pomodoroDashboard')}>
+            <button
+                type="button"
+                id="pomodoro-dashboard-btn"
+                class="pomo-action-btn pomo-icon-only"
+                title={$tt('pomodoroDashboard')}
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-dashboard"></use>
                 </svg>
             </button>
-            <button id="pomodoro-note-btn" class="pomo-action-btn pomo-icon-only" title={$tt('pomodoroCreateNote')}>
+            <button
+                type="button"
+                id="pomodoro-note-btn"
+                class="pomo-action-btn pomo-icon-only"
+                title={$tt('pomodoroCreateNote')}
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-add-note"></use>
                 </svg>
             </button>
-            <button id="pomodoro-stats-btn" class="pomo-action-btn pomo-icon-only" title={$tt('pomodoroStats')}>
+            <button
+                type="button"
+                id="pomodoro-stats-btn"
+                class="pomo-action-btn pomo-icon-only"
+                title={$tt('pomodoroStats')}
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-stats"></use>
                 </svg>
             </button>
-            <button id="pomodoro-settings-btn" class="pomo-action-btn pomo-icon-only" title={$tt('pomodoroSettings')}>
+            <button
+                type="button"
+                id="pomodoro-settings-btn"
+                class="pomo-action-btn pomo-icon-only"
+                title={$tt('pomodoroSettings')}
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-settings"></use>
                 </svg>
             </button>
-            <button id="pomodoro-close-btn" class="pomo-action-btn pomo-icon-only" title={$tt('pomodoroClose')}>
+            <button
+                type="button"
+                id="pomodoro-close-btn"
+                class="pomo-action-btn pomo-icon-only"
+                title={$tt('pomodoroClose')}
+            >
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-close-stroke"></use>
                 </svg>
@@ -92,13 +134,23 @@
     <!-- ③ TIMER ROW: big time + project name -->
     <div class="pomo-row pomo-row-timer">
         <!-- Top-left: Reset task (zero out stats) -->
-        <button id="pomo-task-reset-btn" class="pomo-corner-btn pomo-corner-tl" title={$tt('pomodoroTaskReset')}>
+        <button
+            type="button"
+            id="pomo-task-reset-btn"
+            class="pomo-corner-btn pomo-corner-tl"
+            title={$tt('pomodoroTaskReset')}
+        >
             <svg width="14" height="14" aria-hidden="true" focusable="false">
                 <use href="#icon-rotate-ccw"></use>
             </svg>
         </button>
         <!-- Top-right: Note button with counter -->
-        <button id="pomo-note-corner-btn" class="pomo-corner-btn pomo-corner-tr" title={$tt('pomodoroCreateNote')}>
+        <button
+            type="button"
+            id="pomo-note-corner-btn"
+            class="pomo-corner-btn pomo-corner-tr"
+            title={$tt('pomodoroCreateNote')}
+        >
             <svg width="14" height="14" aria-hidden="true" focusable="false">
                 <use href="#icon-add-note"></use>
             </svg>
@@ -115,13 +167,23 @@
         />
         <span id="pomodoro-time" class="pomo-time">25:00</span>
         <!-- Bottom-left: Finish task -->
-        <button id="pomo-task-finish-btn" class="pomo-corner-btn pomo-corner-bl" title={$tt('pomodoroTaskFinish')}>
+        <button
+            type="button"
+            id="pomo-task-finish-btn"
+            class="pomo-corner-btn pomo-corner-bl"
+            title={$tt('pomodoroTaskFinish')}
+        >
             <svg width="14" height="14" aria-hidden="true" focusable="false">
                 <use href="#icon-check"></use>
             </svg>
         </button>
         <!-- Bottom-right: Save stats (archive icon) -->
-        <button id="pomo-save-stats-btn" class="pomo-corner-btn pomo-corner-br" title={$tt('pomodoroSaveStats')}>
+        <button
+            type="button"
+            id="pomo-save-stats-btn"
+            class="pomo-corner-btn pomo-corner-br"
+            title={$tt('pomodoroSaveStats')}
+        >
             <svg width="14" height="14" aria-hidden="true" focusable="false">
                 <use href="#icon-archive-note"></use>
             </svg>
@@ -228,7 +290,11 @@
                         <div class="pomo-sf">
                             <label for="pomodoro-work-input">{$t('pomodoroWork') || 'Pomodoro'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-work-input" data-delta="-1">−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-work-input"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -238,15 +304,23 @@
                                     value="25"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-work-input" data-delta="1">+</button>
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-work-input"
+                                    data-delta="1">+</button
+                                >
                             </div>
                             <span class="pomo-unit">min</span>
                         </div>
                         <div class="pomo-sf">
                             <label for="pomodoro-short-input">{$t('pomodoroShortBreak') || 'Short break'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-short-input" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-short-input"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -256,7 +330,11 @@
                                     value="5"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-short-input" data-delta="1">+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-short-input"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit">min</span>
@@ -264,7 +342,11 @@
                         <div class="pomo-sf">
                             <label for="pomodoro-long-input">{$t('pomodoroLongBreak') || 'Long break'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-long-input" data-delta="-1">−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-long-input"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -274,7 +356,12 @@
                                     value="15"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-long-input" data-delta="1">+</button>
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-long-input"
+                                    data-delta="1">+</button
+                                >
                             </div>
                             <span class="pomo-unit">min</span>
                         </div>
@@ -291,8 +378,11 @@
                                 >{$t('pomodoroSessionsBeforeLong') || 'Pomodoros for the long break'}</label
                             >
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-sessions-input" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-sessions-input"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -302,8 +392,11 @@
                                     value="4"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-sessions-input" data-delta="1"
-                                    >+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-sessions-input"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit pomo-unit-cycle-info" id="pomo-unit-cycle-info"
@@ -315,8 +408,11 @@
                                 >{$t('pomodoroEndAfter') || 'Pomodoros to finish'}</label
                             >
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-endafter-input" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-endafter-input"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -326,8 +422,11 @@
                                     value="8"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-endafter-input" data-delta="1"
-                                    >+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-endafter-input"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit pomo-unit-sessions" id="pomo-unit-sessions"
@@ -347,8 +446,11 @@
                         <div class="pomo-sf">
                             <label for="pomodoro-timer-hours">{$t('pomodoroTimerHours') || 'Hours'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-hours" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-hours"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -358,7 +460,11 @@
                                     value="0"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-hours" data-delta="1">+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-hours"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit">h</span>
@@ -366,8 +472,11 @@
                         <div class="pomo-sf">
                             <label for="pomodoro-timer-minutes">{$t('pomodoroTimerMinutes') || 'Minutes'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-minutes" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-minutes"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -377,8 +486,11 @@
                                     value="25"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-minutes" data-delta="1"
-                                    >+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-minutes"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit">min</span>
@@ -386,8 +498,11 @@
                         <div class="pomo-sf">
                             <label for="pomodoro-timer-seconds">{$t('pomodoroTimerSeconds') || 'Seconds'}</label>
                             <div class="pomo-num-wrap">
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-seconds" data-delta="-1"
-                                    >−</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-seconds"
+                                    data-delta="-1">−</button
                                 >
                                 <input
                                     type="number"
@@ -397,8 +512,11 @@
                                     value="0"
                                     class="pomo-num-input"
                                 />
-                                <button class="pomo-num-btn" data-target="pomodoro-timer-seconds" data-delta="1"
-                                    >+</button
+                                <button
+                                    type="button"
+                                    class="pomo-num-btn"
+                                    data-target="pomodoro-timer-seconds"
+                                    data-delta="1">+</button
                                 >
                             </div>
                             <span class="pomo-unit">sec</span>
@@ -580,13 +698,13 @@
             </div>
         </div>
         <div class="pomo-stats-actions">
-            <button id="pomodoro-clear-stats-btn" class="pomo-clear-btn"
+            <button type="button" id="pomodoro-clear-stats-btn" class="pomo-clear-btn"
                 >{$t('pomodoroStatsClearBtn') || 'Clear statistics'}</button
             >
-            <button id="pomodoro-export-stats-btn" class="pomo-clear-btn pomo-export-btn"
+            <button type="button" id="pomodoro-export-stats-btn" class="pomo-clear-btn pomo-export-btn"
                 >{$t('pomodoroExport') || 'Export'}</button
             >
-            <button id="pomodoro-import-stats-btn" class="pomo-clear-btn pomo-export-btn"
+            <button type="button" id="pomodoro-import-stats-btn" class="pomo-clear-btn pomo-export-btn"
                 >{$t('pomodoroImport') || 'Import'}</button
             >
             <input type="file" id="pomodoro-import-stats-input" accept=".json" style="display:none" />

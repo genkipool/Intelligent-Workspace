@@ -37,20 +37,21 @@
         <div class="modal-content confirm-dialog" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2 id="confirm-dialog-title">{$t($confirmRequest.titleKey)}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={reject}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={reject}>&times;</button>
             </div>
             <div class="modal-body">
                 <p>{text($confirmRequest)}</p>
             </div>
             <div class="modal-actions">
                 <button
+                    type="button"
                     bind:this={confirmButton}
                     class={$confirmRequest.danger ? 'modal-btn-delete' : 'modal-btn-save'}
                     onclick={accept}
                 >
                     {$t($confirmRequest.confirmKey)}
                 </button>
-                <button class="modal-btn-cancel" onclick={reject}>{$t('cancel')}</button>
+                <button type="button" class="modal-btn-cancel" onclick={reject}>{$t('cancel')}</button>
             </div>
         </div>
     </div>

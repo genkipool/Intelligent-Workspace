@@ -325,6 +325,7 @@
         />
         <section id="view-toggle-panel" class="hidden-context-container hidden">
             <button
+                type="button"
                 id="view-groups-btn"
                 class="control-btn active"
                 title={$tt('listTabGroups')}
@@ -336,6 +337,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="toggle-bookmarks-view-btn"
                 class="control-btn"
                 title={$tt('toggleBookmarksViewTooltip')}
@@ -347,6 +349,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="view-history-btn"
                 class="control-btn"
                 title={$tt('viewHistory')}
@@ -360,6 +363,7 @@
 
             <!-- Recently Closed Button -->
             <button
+                type="button"
                 id="view-recent-btn"
                 class="control-btn"
                 title={$tt('viewRecentlyClosed')}
@@ -373,6 +377,7 @@
 
             <!-- Reading List Button -->
             <button
+                type="button"
                 id="view-reading-list-btn"
                 class="control-btn"
                 title={$tt('viewReadingList')}
@@ -384,6 +389,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="backup-all-btn"
                 class="control-btn"
                 title={$tt('backupAllGroupsTooltip')}
@@ -394,6 +400,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="restore-all-btn"
                 class="control-btn"
                 title={$tt('restoreAllGroupsTooltip')}
@@ -404,6 +411,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="export-bookmarks-btn"
                 class="control-btn"
                 title={$tt('exportBookmarksTooltip')}
@@ -414,6 +422,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="import-bookmarks-btn"
                 class="control-btn"
                 title={$tt('importBookmarksTooltip')}
@@ -424,6 +433,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="toggle-visibility-controls-btn"
                 class="control-btn"
                 title={$tt('toggleVisibilityControls')}
@@ -435,6 +445,7 @@
             </button>
             <div class="history-filter-wrapper" style="position: relative;">
                 <button
+                    type="button"
                     id="history-date-filter-btn"
                     class="control-btn"
                     title={$tt('filterByDate')}
@@ -447,9 +458,9 @@
                 <!-- NEW: Custom calendar container -->
                 <div id="custom-calendar-popup" class="custom-calendar hidden">
                     <div class="calendar-header">
-                        <button id="cal-prev-btn">&lt;</button>
+                        <button type="button" id="cal-prev-btn">&lt;</button>
                         <span id="cal-month-year"></span>
-                        <button id="cal-next-btn">&gt;</button>
+                        <button type="button" id="cal-next-btn">&gt;</button>
                     </div>
                     <div class="calendar-weekdays">
                         <span>{$t('daySunInitial') || 'S'}</span>
@@ -462,12 +473,13 @@
                     </div>
                     <div id="calendar-days-grid" class="calendar-grid"></div>
                     <div class="calendar-footer">
-                        <button id="cal-clear-btn">{$t('reset') || 'Reset'}</button>
+                        <button type="button" id="cal-clear-btn">{$t('reset') || 'Reset'}</button>
                     </div>
                 </div>
             </div>
 
             <button
+                type="button"
                 id="toggle-bookmarks-sort-panel-btn"
                 class="control-btn"
                 title={$tt('toggleSortOptionsTooltip')}
@@ -478,6 +490,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="delete-all-bookmarks-btn"
                 class="control-btn"
                 title={$tt('deleteAllBookmarksTooltip')}
@@ -488,6 +501,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="regroup-btn"
                 class="control-btn"
                 title={$tt('contextMenuRegroupAll')}
@@ -503,6 +517,7 @@
 
         <section id="visibility-controls-panel" class="hidden">
             <button
+                type="button"
                 id="sort-by-name-btn"
                 class="control-btn sort-option-btn hidden"
                 data-sort-by="title"
@@ -513,6 +528,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="sort-by-date-btn"
                 class="control-btn sort-option-btn hidden"
                 data-sort-by="dateAdded"
@@ -523,6 +539,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="sort-by-count-btn"
                 class="control-btn sort-option-btn hidden"
                 data-sort-by="count"
@@ -533,6 +550,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="sort-by-access-btn"
                 class="control-btn sort-option-btn hidden"
                 data-sort-by="lastAccessed"
@@ -542,37 +560,68 @@
                     <use href="#icon-sort-access"></use>
                 </svg>
             </button>
-            <button id="toggle-group-actions-btn" class="control-btn" title={$tt('toggleGroupActionsTooltip')}>
+            <button
+                type="button"
+                id="toggle-group-actions-btn"
+                class="control-btn"
+                title={$tt('toggleGroupActionsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-box"></use>
                 </svg>
             </button>
-            <button id="toggle-domain-headers-btn" class="control-btn" title={$tt('toggleSubgroupsTooltip')}>
+            <button
+                type="button"
+                id="toggle-domain-headers-btn"
+                class="control-btn"
+                title={$tt('toggleSubgroupsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-tree"></use>
                 </svg>
             </button>
-            <button id="toggle-subgroup-actions-btn" class="control-btn" title={$tt('toggleSubgroupActionsTooltip')}>
+            <button
+                type="button"
+                id="toggle-subgroup-actions-btn"
+                class="control-btn"
+                title={$tt('toggleSubgroupActionsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-box-nested-1"></use>
                 </svg>
             </button>
-            <button id="toggle-tab-actions-btn" class="control-btn" title={$tt('toggleTabActionsTooltip')}>
+            <button
+                type="button"
+                id="toggle-tab-actions-btn"
+                class="control-btn"
+                title={$tt('toggleTabActionsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-box-nested-2"></use>
                 </svg>
             </button>
-            <button id="toggle-folder-actions-btn" class="control-btn" title={$tt('toggleFolderActionsTooltip')}>
+            <button
+                type="button"
+                id="toggle-folder-actions-btn"
+                class="control-btn"
+                title={$tt('toggleFolderActionsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-folder-closed"></use>
                 </svg>
             </button>
-            <button id="toggle-child-folders-btn" class="control-btn" title={$tt('toggleChildFoldersTooltip')}>
+            <button
+                type="button"
+                id="toggle-child-folders-btn"
+                class="control-btn"
+                title={$tt('toggleChildFoldersTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-child-folders"></use>
                 </svg>
             </button>
             <button
+                type="button"
                 id="toggle-child-folder-actions-btn"
                 class="control-btn"
                 title={$tt('toggleChildFolderActionsTooltip')}
@@ -581,12 +630,18 @@
                     <use href="#icon-box-nested-1"></use>
                 </svg>
             </button>
-            <button id="toggle-bookmark-actions-btn" class="control-btn" title={$tt('toggleBookmarkActionsTooltip')}>
+            <button
+                type="button"
+                id="toggle-bookmark-actions-btn"
+                class="control-btn"
+                title={$tt('toggleBookmarkActionsTooltip')}
+            >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
                     <use href="#icon-box-nested-2"></use>
                 </svg>
             </button>
             <button
+                type="button"
                 id="delete-mode-all-btn"
                 class="control-btn delete-option-btn hidden"
                 title={$tt('deleteAllBookmarksTooltip')}
@@ -596,6 +651,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="delete-mode-old-btn"
                 class="control-btn delete-option-btn hidden"
                 title={$tt('deleteOldBookmarksTooltip')}
@@ -605,6 +661,7 @@
                 </svg>
             </button>
             <button
+                type="button"
                 id="delete-mode-broken-btn"
                 class="control-btn delete-option-btn hidden"
                 title={$tt('deleteBrokenBookmarksTooltip')}
@@ -673,12 +730,12 @@
 
     <div id="drag-announcer" aria-live="assertive" class="visually-hidden"></div>
     <div id="scroll-buttons" class="scroll-buttons">
-        <button id="scroll-up" aria-label={$t('scrollToTop')}>
+        <button type="button" id="scroll-up" aria-label={$t('scrollToTop')}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M6 15L12 9L18 15" stroke="var(--text-color)" stroke-linecap="square" />
             </svg>
         </button>
-        <button id="scroll-down" aria-label={$t('scrollToBottom')}>
+        <button type="button" id="scroll-down" aria-label={$t('scrollToBottom')}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <path d="M6 9L12 15L18 9" stroke="var(--text-color)" stroke-linecap="square" />
             </svg>

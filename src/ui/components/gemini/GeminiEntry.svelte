@@ -218,7 +218,7 @@
                     onkeydown={handleEditKeydown}
                 ></textarea>
                 <div class="gemini-edit-actions">
-                    <button class="gemini-edit-btn-save" onclick={handleSaveEdit}>{$t('send')}</button>
+                    <button type="button" class="gemini-edit-btn-save" onclick={handleSaveEdit}>{$t('send')}</button>
                 </div>
             </div>
         {:else}

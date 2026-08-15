@@ -58,7 +58,8 @@
         <div class="modal-content qr-code-modal" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2>{title || $t('qrCodeForUrl')}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
+                >
             </div>
             <div class="modal-body">
                 <div id="qrcode-container" use:qrCodeAction></div>

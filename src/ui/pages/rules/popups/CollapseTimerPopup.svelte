@@ -70,6 +70,8 @@
             />
             <small>{$t('activeTimeDesc')}</small>
         </label>
-        <button class="popup-reset-btn" id="reset-timer-btn" onclick={resetToDefaults}>{$t('resetTimer')}</button>
+        <button type="button" class="popup-reset-btn" id="reset-timer-btn" onclick={resetToDefaults}
+            >{$t('resetTimer')}</button
+        >
     </div>
 {/if}

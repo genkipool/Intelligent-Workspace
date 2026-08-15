@@ -69,7 +69,7 @@
         <div class="modal-content add-to-rule-modal" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2 id="add-to-rule-modal-title">{$t('addToExistingRule')}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
             </div>
 
             <div class="search-container-modal">

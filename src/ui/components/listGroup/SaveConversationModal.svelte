@@ -66,7 +66,8 @@
         <div class="modal-content save-conversation-modal" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">
                 <h2 id="save-conversation-title">{$t('saveConversationTitle')}</h2>
-                <button class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
+                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
+                >
             </div>
 
             <div class="modal-body">
@@ -94,7 +95,13 @@
             </div>
 
             <div class="modal-actions">
-                <button class="modal-btn-save" class:error-state={!!error} disabled={saving} onclick={handleSave}>
+                <button
+                    type="button"
+                    class="modal-btn-save"
+                    class:error-state={!!error}
+                    disabled={saving}
+                    onclick={handleSave}
+                >
                     {saving ? $t('saving') : $t('save')}
                 </button>
             </div>

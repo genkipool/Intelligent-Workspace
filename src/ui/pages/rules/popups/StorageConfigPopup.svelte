@@ -45,6 +45,7 @@
         <h3>{$t('configureStorageTitle')}</h3>
         <div class="misc-sort-options-container">
             <button
+                type="button"
                 class="option-button"
                 class:selected={selectedMode === 'sync'}
                 data-value="sync"
@@ -52,6 +53,7 @@
                 onclick={() => select('sync')}>{$t('storageSync')}</button
             >
             <button
+                type="button"
                 class="option-button"
                 class:selected={selectedMode === 'local'}
                 data-value="local"

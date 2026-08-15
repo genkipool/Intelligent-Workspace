@@ -19,27 +19,27 @@
             <img src="" alt="Favicon" class="favicon" />
             <span class="bookmark-title"></span>
             <div class="bookmark-actions">
-                <button class="action-btn create-rule-btn" data-i18n-title="createRule">
+                <button type="button" class="action-btn create-rule-btn" data-i18n-title="createRule">
                     <svg width="14" height="14" aria-hidden="true" focusable="false">
                         <use href="#icon-create-rule"></use>
                     </svg>
                 </button>
-                <button class="action-btn add-to-rule-btn" data-i18n-title="addToRule">
+                <button type="button" class="action-btn add-to-rule-btn" data-i18n-title="addToRule">
                     <svg width="14" height="14" aria-hidden="true" focusable="false">
                         <use href="#icon-add-to-rule"></use>
                     </svg>
                 </button>
-                <button class="action-btn edit-btn" data-i18n-title="editBookmark">
+                <button type="button" class="action-btn edit-btn" data-i18n-title="editBookmark">
                     <svg width="14" height="14" aria-hidden="true" focusable="false">
                         <use href="#icon-edit"></use>
                     </svg>
                 </button>
-                <button class="action-btn copy-btn" data-i18n-title="copyUrl">
+                <button type="button" class="action-btn copy-btn" data-i18n-title="copyUrl">
                     <svg width="14" height="14" aria-hidden="true" focusable="false">
                         <use href="#icon-copy"></use>
                     </svg>
                 </button>
-                <button class="action-btn delete-btn" data-i18n-title="deleteBookmark">
+                <button type="button" class="action-btn delete-btn" data-i18n-title="deleteBookmark">
                     <svg class="icon-close" width="14" height="14" aria-hidden="true" focusable="false">
                         <use href="#icon-close"></use>
                     </svg>
@@ -54,23 +54,25 @@
             <div class="modal-content special-delete-modal">
                 <div class="modal-header">
                     <h2 class="modal-title"></h2>
-                    <button class="restart-scan-btn control-btn hidden" data-i18n-title="restartScan">
+                    <button type="button" class="restart-scan-btn control-btn hidden" data-i18n-title="restartScan">
                         <svg width="18" height="18" aria-hidden="true" focusable="false">
                             <use href="#icon-refresh"></use>
                         </svg>
                     </button>
-                    <button class="close-modal-btn">&times;</button>
+                    <button type="button" class="close-modal-btn">&times;</button>
                 </div>
 
                 <div class="modal-body">
                     <p class="modal-description"></p>
 
                     <div class="modal-filters hidden">
-                        <button class="filter-btn active" data-filter="all" data-i18n="filterAll"></button>
-                        <button class="filter-btn" data-filter="4xx" data-i18n="filter4xx"></button>
-                        <button class="filter-btn" data-filter="5xx" data-i18n="filter5xx"></button>
-                        <button class="filter-btn" data-filter="timeout" data-i18n="filterTimeouts"></button>
-                        <button class="filter-btn" data-filter="other" data-i18n="filterOther"></button>
+                        <button type="button" class="filter-btn active" data-filter="all" data-i18n="filterAll"
+                        ></button>
+                        <button type="button" class="filter-btn" data-filter="4xx" data-i18n="filter4xx"></button>
+                        <button type="button" class="filter-btn" data-filter="5xx" data-i18n="filter5xx"></button>
+                        <button type="button" class="filter-btn" data-filter="timeout" data-i18n="filterTimeouts"
+                        ></button>
+                        <button type="button" class="filter-btn" data-filter="other" data-i18n="filterOther"></button>
                     </div>
 
                     <div class="scanning-progress-container hidden">
@@ -93,7 +95,7 @@
 
                 <div class="modal-footer">
                     <span class="items-count-label">0 items</span>
-                    <button class="modal-btn-delete-all-listed error-state"></button>
+                    <button type="button" class="modal-btn-delete-all-listed error-state"></button>
                 </div>
             </div>
         </div>
@@ -106,7 +108,7 @@
                 <span class="delete-item-url"></span>
                 <span class="delete-item-error"></span>
             </div>
-            <button class="delete-item-action-btn" data-i18n-title="deleteButton">
+            <button type="button" class="delete-item-action-btn" data-i18n-title="deleteButton">
                 <svg width="18" height="18" aria-hidden="true" focusable="false">
                     <use href="#icon-trash"></use>
                 </svg>
