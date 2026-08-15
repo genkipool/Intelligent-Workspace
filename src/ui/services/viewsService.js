@@ -38,7 +38,6 @@ import {
     isPopupWindow,
     expandedGroupStates,
     expandedSubgroupStates,
-    currentNotesContext,
 } from '../stores/appStore.svelte.js';
 
 // ─── Svelte Stores (other) ───────────────────────────────────────
@@ -235,13 +234,6 @@ export async function toggleViews() {
     }
 
     const bookmarksViewContainer = document.getElementById('bookmarks-view-container');
-
-    const groupVisibilityButtons = [
-        document.getElementById('toggle-group-actions-btn'),
-        document.getElementById('toggle-domain-headers-btn'),
-        document.getElementById('toggle-subgroup-actions-btn'),
-        document.getElementById('toggle-tab-actions-btn'),
-    ];
 
     if (_backupAllBtn) _backupAllBtn.classList.toggle('hidden', currentBookmarksActive);
     if (_restoreAllBtn) _restoreAllBtn.classList.toggle('hidden', currentBookmarksActive);
@@ -514,8 +506,6 @@ export function hiddenControlsForView(view) {
 
 export async function switchMainView(viewName, addToHistory = true, { skipHeaderButtons = false } = {}) {
     const _mainHeaderTitle = document.getElementById('main-header-title');
-    const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
-    const _hiddenContextContainer = document.getElementById('hidden-context-container');
     const _groupListContainer = document.getElementById('groups-list');
     const _visibilityControlsPanel = document.getElementById('visibility-controls-panel');
     const _actionVisibilityControlsPanel = document.getElementById('action-visibility-controls-panel');
@@ -608,10 +598,6 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
 
     document.body.classList.toggle('groups-view-active', viewName === 'groups');
     document.body.classList.toggle('bookmarks-view-active', viewName === 'bookmarks');
-
-    const visibilityToggleBtn = document.getElementById('toggle-visibility-controls-btn');
-    const historyDateBtn = document.getElementById('history-date-filter-btn');
-    const bookmarkSortBtn = document.getElementById('toggle-bookmarks-sort-panel-btn');
 
     if (_visibilityControlsPanel) _visibilityControlsPanel.classList.add('hidden');
     if (_actionVisibilityControlsPanel) _actionVisibilityControlsPanel.classList.add('hidden');
@@ -1812,7 +1798,6 @@ export function toggleExpandAll() {
 
 export function updateHeaderButtonsVisibility(contextualData = {}) {
     const _visibilityControlsPanel = document.getElementById('visibility-controls-panel');
-    const _geminiConversationView = document.getElementById('gemini-conversation-view');
     const _copyGeminiBtn = document.getElementById('copy-gemini-btn');
     const _readerViewBtn = document.getElementById('reader-view-btn');
     const _downloadAllScreenshotsBtn = document.getElementById('download-all-screenshots-btn');
@@ -1894,7 +1879,6 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
     document.body.classList.toggle('gallery-view-active', get(isGalleryViewActive));
 
     if (get(isNotesViewActive)) {
-        const nc = get(currentNotesContext);
         // The orphan list is a notes view like any other, so it keeps the button that
         // writes a note; what it has no group for is where to file it, and that is
         // resolved when the modal opens.

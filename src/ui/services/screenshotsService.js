@@ -206,7 +206,6 @@ export async function withTabActivation(tab, actionCallback) {
     let originalActiveTab = null;
     let originalTargetWindowState = null;
     const originalSidePanelWindowId = chrome.windows.WINDOW_ID_CURRENT;
-    const CSS_INJECTION_KEY = 'ITG_HIDE_SCROLLBARS';
     const HIDE_SCROLLBAR_CSS = {
         css: `
             body::-webkit-scrollbar { display: none !important; }

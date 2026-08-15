@@ -2665,7 +2665,6 @@ var OmniBar = class OmniBar {
             return;
         }
         const imgId = li.dataset.imgId;
-        const imgTitle = li.dataset.imgTitle || 'Image';
         const existingDataUrl = li.dataset.imgDataUrl;
         const showExpand = (dataUrl) => {
             const expandEl = document.createElement('div');
@@ -4619,7 +4618,7 @@ IMPORTANT RULES:
                         const items = Array.from(li.parentNode.children);
                         ids.forEach((id) => {
                             if (typeof id === 'string' && id.includes('::')) {
-                                const [_, url] = id.split('::');
+                                const url = id.split('::')[1];
                                 urlsToOpen.push(url);
                             } else {
                                 const liEl = items.find(
@@ -4737,8 +4736,6 @@ IMPORTANT RULES:
                     this._toggleActionItemSelection(li, e.shiftKey, true);
                 } else if (type === 'er-item') {
                     const input = this.shadow.getElementById('hint-omni-input');
-                    const currentValue = input.value.trim();
-                    const currentLower = currentValue.toLowerCase();
                     const pErl = this._getPrefixVal('er:', 'omnibarPrefixRulesEdit');
                     if (li.dataset.erType === 'er-rule') {
                         input.value = `${pErl} rule:${li.dataset.ruleName}, `;

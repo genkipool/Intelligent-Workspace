@@ -428,7 +428,6 @@ var SnippetManager = class SnippetManager {
 
         // Determine whether to use HTML or plain text
         const useHTML = htmlText && !strategy.forcePlainText;
-        const contentToInsert = useHTML ? htmlText : plainText;
         console.log(`[Snippet] Inserting: ${useHTML ? 'HTML' : 'plain text'}`);
 
         // Apply insertion strategy
@@ -1205,7 +1204,6 @@ ${finalHtml}
         try {
             const hasHTML = this._isHTML(match.expansion);
             const editorType = this._detectEditorType(el);
-            const strategy = this._getEditorStrategy(editorType);
             console.log('[Snippet] ContentEditable Exp:', {
                 trigger: match.trigger,
                 editorType,
@@ -1417,7 +1415,6 @@ ${finalHtml}
             span.textContent = '|'; // Caret fake
             div.appendChild(span);
             doc.body.appendChild(div);
-            const spanRect = span.getBoundingClientRect();
             const elementRect = element.getBoundingClientRect();
 
             // Adjust coordinates relative to the element

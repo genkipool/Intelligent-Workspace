@@ -257,7 +257,6 @@ export function applySearchAndFilter() {
     const _regexToggleBtn = document.getElementById('regex-toggle-btn');
     const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
     const _geminiConversationView = document.getElementById('gemini-conversation-view');
-    const _webSearchToggleBtn = document.getElementById('web-search-toggle-btn');
 
     if (!_searchInput) return;
 
@@ -374,7 +373,6 @@ export function applySearchAndFilter() {
         }
 
         const allItems = bookmarksContainer.querySelectorAll('.bookmark-item, .bookmark-folder');
-        let hasVisibleItems = false;
 
         allItems.forEach((item) => {
             const titleEl = item.querySelector('.bookmark-title, .folder-name');
@@ -387,7 +385,6 @@ export function applySearchAndFilter() {
 
             item.classList.toggle('hidden', !matches);
             if (matches) {
-                hasVisibleItems = true;
                 let parent = item.parentElement.closest('.bookmark-folder');
                 while (parent) {
                     parent.classList.remove('hidden');

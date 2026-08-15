@@ -3,19 +3,6 @@ import { get } from 'svelte/store';
 import { prefetchCache, isPopupWindow } from '../stores/appStore.svelte.js';
 import { prefetchUrl } from '../services/prefetchService.js';
 
-function collectBookmarkUrls(node) {
-    let urls = [];
-    if (node.url) {
-        urls.push(node.url);
-    }
-    if (node.children) {
-        for (const child of node.children) {
-            urls = urls.concat(collectBookmarkUrls(child));
-        }
-    }
-    return urls;
-}
-
 function attachDragAndDropEvents(el, node, isFolder) {
     const isRootFolder = isFolder && ['0', '1', '2', '3'].includes(node.id);
 

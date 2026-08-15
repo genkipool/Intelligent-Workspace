@@ -585,7 +585,7 @@ export function scrollToActiveGroupIfNeeded() {
 }
 
 export function renderNotesButton(actionsContainer, context, notesData) {
-    const { type, id, secondaryId, title } = context;
+    const { type, id, secondaryId } = context;
     let totalNoteIds = new Set();
 
     if (type === 'group') {
@@ -850,7 +850,6 @@ export async function handleCookieFileImport(file) {
         if (renderFn) {
             renderFn(finalCookies);
 
-            const cookieSearchInput = document.querySelector('#cookie-search-input');
             const mainSearchInput = document.getElementById('search-input');
             if (mainSearchInput) {
                 mainSearchInput.dispatchEvent(new Event('input', { bubbles: true }));

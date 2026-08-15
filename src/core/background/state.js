@@ -7,7 +7,6 @@ let justClosedTab = false;
 let isPopupCurrentlyOpen = false;
 let groupIdentifierMap = new Map(); // Session map: groupId -> customIdentifier.
 let groupPrefixState = new Map(); // Persistent map: identifier -> group state (prefix, etc.).
-let customIdentifier;
 let isInitializing = false; // Flag to ignore events during startup.
 
 let enablePrefixes = false;

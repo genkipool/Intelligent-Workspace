@@ -546,7 +546,7 @@ export async function initCustomizeHints() {
             if (newCount > currentVars.length) {
                 // Add new variables
                 for (let i = currentVars.length; i < newCount; i++) {
-                    const prev = currentVars[i - 1] || { id: '0' }; // Simple fallback
+                    // Simple fallback
                     // Try to increment ID if it looks like a number or $number
                     let nextId = '$' + (i + 1);
                     currentVars.push({ id: nextId, word: '', defaultValue: '' });
@@ -1104,7 +1104,6 @@ export async function initCustomizeHints() {
             renderSnippets();
             renderBlacklist();
 
-            const currentOverridesStr = JSON.stringify(customShortcutsOverrides);
             renderBuiltInCommands();
         } catch (err) {
             console.error('Error in renderAll:', err);

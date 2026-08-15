@@ -10,12 +10,6 @@ export function initPomodoro() {
 
     // ─── Helpers ───────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
-    const t = (key, subs) => {
-        const m = chrome.i18n.getMessage(key);
-        if (!m) return key;
-        if (!subs) return m;
-        return subs.reduce((s, v, i) => s.replace(`$${i + 1}`, String(v)), m);
-    };
 
     function fmt(sec) {
         const s = Math.max(0, Math.round(sec));
@@ -240,7 +234,6 @@ export function initPomodoro() {
     }
 
     function applyHideProject(hide) {
-        const projectRow = $('pomo-row-project');
         // Only hide the input; keep the row for error messages
         const input = $('pomo-project-inline');
         if (input) input.style.display = hide ? 'none' : '';
@@ -360,7 +353,6 @@ export function initPomodoro() {
     // Register global callback so handleSaveNote can increment the counter
     window._onPomoNoteSaved = () => updateNoteCounter(pomodoroNoteCount + 1);
     let taskCompletionLog = []; // [{name, startTime, endTime, duration, cycle}]
-    let currentSessionStart = null;
     let selectedStatProject = null; // null = current session
     let savedStatProjects = [];
 
@@ -768,8 +760,6 @@ export function initPomodoro() {
             if (!temporizadorRunning) return;
             const now = Date.now();
             temporizadorRemaining = Math.max(0, temporizadorRemaining - (now - lastTickMs) / 1000);
-            // Accept dynamically updated end time from inputs
-            const newTotal = getTimerInputSecs();
             lastTickMs = now;
             updateTemporizadorDisplay();
             if (temporizadorRemaining <= 0) {
@@ -1975,6 +1965,16 @@ export function initPomodoro() {
         }
         if (pomoMethod === 'temporizador') {
             if (temporizadorRunning) {
+                // The countdown has the same "stop finishes the task (no pause)" switch
+                // as the stopwatch, and updateStartPauseUI already reads it to decide
+                // whether the button shows a stop or a pause icon. The click ignored it
+                // and always finished the task, so with the switch off the button drew
+                // a pause and ended the task anyway. pauseTemporizador is the branch
+                // that was missing; resumeTemporizador below already expected it.
+                if (!temporizadorStopToggle?.checked) {
+                    pauseTemporizador();
+                    return;
+                }
                 // Stop (finish) the task early
                 temporizadorRunning = false;
                 if (uiInterval) {
@@ -2311,11 +2311,9 @@ export function initPomodoro() {
                     throw new Error('Unsupported format');
                 }
 
-                let imported = 0;
                 for (const entry of entries) {
                     if (!entry.id) continue;
                     await chrome.runtime.sendMessage({ action: 'savePomoStats', stats: entry });
-                    imported++;
                 }
 
                 showNotification('pomodoroStatsSaved', false);

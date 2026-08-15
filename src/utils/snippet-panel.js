@@ -14,18 +14,6 @@
 
     // ── Inline helpers (no dependency on hint_content.js Utils class) ──
 
-    function isInputLikeElement(element) {
-        if (!element) return false;
-        const tagName = element.tagName;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return true;
-        if (element.isContentEditable) return true;
-        if (element.getAttribute) {
-            const role = element.getAttribute('role');
-            if (role === 'textbox' || role === 'searchbox' || role === 'combobox') return true;
-        }
-        return false;
-    }
-
     function setReactValue(element, value) {
         const proto = Object.getPrototypeOf(element);
         const valueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;

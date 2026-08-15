@@ -1075,7 +1075,6 @@ var HelpModal = class HelpModal {
             category: el.dataset.category,
             blurOnEnter: true,
             validate: (val) => {
-                const oldKey = el.dataset.key;
                 // WE PASS THE CATEGORY TO SEPARATE NAMESPACES
                 return !this._isKeyInUse(val, 'mapping', el.dataset.desc, el.dataset.category);
             },

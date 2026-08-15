@@ -915,7 +915,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const result = handler(message, sender, sendResponse);
         return result !== false;
     }
-    // Actions that are broadcast globally for UI synchronization and do not require background handling
+    // Actions broadcast to every page so the UI can keep in step. The worker is not
+    // meant to answer them — the list was here from the start but nothing read it, so
+    // each one still printed "not handled" and the console filled with warnings about
+    // messages that were never addressed to the worker.
     const ignoredBroadcastActions = [
         'geminiConversationUpdated',
         'geminiQueryCompleted',
@@ -931,7 +934,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         'linkPreviewBlacklistUpdated',
         'linkPreviewTriggerKeyUpdated',
     ];
-    console.warn(`[onMessage] Action "${message.action}" not handled.`);
+    if (!ignoredBroadcastActions.includes(message.action)) {
+        console.warn(`[onMessage] Action "${message.action}" not handled.`);
+    }
     return false;
 });
 

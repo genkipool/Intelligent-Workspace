@@ -1034,17 +1034,6 @@ var Main = class Main {
                 <polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polygon>
                 <rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></rect>
             </svg>`;
-        const getActiveTiktokVideo = () => {
-            const videos = Array.from(document.querySelectorAll('video'));
-            if (videos.length === 0) return null;
-            const playing = videos.find((v) => !v.paused);
-            if (playing) return playing;
-            const visible = videos.find((v) => {
-                const rect = v.getBoundingClientRect();
-                return rect.top >= 0 && rect.bottom <= window.innerHeight;
-            });
-            return visible || videos[0];
-        };
         const handlePipClick = async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1137,12 +1126,6 @@ var Main = class Main {
                     btn.style.transform = 'scale(1)';
                 });
                 btn.addEventListener('click', handlePipClick);
-                const feedCard =
-                    container.closest('article[data-e2e="recommend-list-item-container"]') ||
-                    container.closest('[class*="DivContentFlexLayout"]') ||
-                    container.closest('[class*="DivVideoWrapper"]') ||
-                    container.closest('[class*="DivItemContainer"]') ||
-                    container.closest('[class*="DivPlayerContainer"]');
 
                 // Always keep the PiP button visible
                 btn.style.opacity = '1';
