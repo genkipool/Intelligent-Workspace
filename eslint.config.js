@@ -37,24 +37,60 @@ function expand(dir) {
     }
 }
 
+const DECLARATION = /^(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z_$][\w$]*)/;
+
+/** Reads every file of a shared set once, as [path, source] pairs. */
+function readAll(files) {
+    return files.flatMap((file) => {
+        try {
+            return [[file, fs.readFileSync(file, 'utf8')]];
+        } catch {
+            return [];
+        }
+    });
+}
+
 /** Every name declared at the top level of the given files. */
 function sharedGlobalsOf(files) {
-    const declaration = /^(?:async\s+)?(?:function|class|const|let|var)\s+([A-Za-z_$][\w$]*)/;
     const names = {};
-    for (const file of files) {
-        let source;
-        try {
-            source = fs.readFileSync(file, 'utf8');
-        } catch {
-            continue;
-        }
+    for (const [, source] of readAll(files)) {
         for (const line of source.split('\n')) {
-            const match = declaration.exec(line);
+            const match = DECLARATION.exec(line);
             // Only column 0: anything indented is local to a block.
             if (match && !/^\s/.test(line)) names[match[1]] = 'writable';
         }
     }
     return names;
+}
+
+/**
+ * The mirror image of the problem sharedGlobalsOf solves. A function declared in
+ * db.js and called from handlers/backups.js is used, but ESLint checks each file
+ * alone and sees a top-level declaration nobody reads: 268 no-unused-vars that
+ * were not real, drowning the ones that were.
+ *
+ * The exemption is deliberately narrow. It lists only the names that some *other*
+ * file of the same shared scope actually mentions, so a function nobody calls is
+ * still reported — which is how fifteen genuinely dead ones were found. Adding a
+ * declaration that nothing uses will be reported too.
+ */
+function usedAcrossFiles(files) {
+    const sources = readAll(files);
+    const declared = new Map(); // name -> file where it is declared
+    for (const [file, source] of sources) {
+        for (const line of source.split('\n')) {
+            const match = DECLARATION.exec(line);
+            if (match && !/^\s/.test(line)) declared.set(match[1], file);
+        }
+    }
+
+    const used = [];
+    for (const [name, home] of declared) {
+        const mention = new RegExp(`\\b${name.replace(/\$/g, '\\$')}\\b`);
+        if (sources.some(([file, source]) => file !== home && mention.test(source))) used.push(name);
+    }
+    // Anchored, so a local variable only escapes if its name is exactly a shared one.
+    return used.length ? `^(?:${used.map((n) => n.replace(/\$/g, '\\$')).join('|')})$` : '(?!)';
 }
 
 export default [
@@ -96,6 +132,9 @@ export default [
                 ...sharedGlobalsOf(sharedScriptFiles),
             },
         },
+        rules: {
+            'no-unused-vars': ['warn', { args: 'none', varsIgnorePattern: usedAcrossFiles(sharedScriptFiles) }],
+        },
     },
     {
         files: contentScriptFiles,
@@ -106,6 +145,9 @@ export default [
                 chrome: 'readonly',
                 ...sharedGlobalsOf(contentScriptFiles),
             },
+        },
+        rules: {
+            'no-unused-vars': ['warn', { args: 'none', varsIgnorePattern: usedAcrossFiles(contentScriptFiles) }],
         },
     },
     {
