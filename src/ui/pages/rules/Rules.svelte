@@ -35,6 +35,7 @@
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
     import { ClusterPerfMonitor } from './modules/clusterPerf.js';
+    import { duplicateMarkerFields } from './modules/prefixMarkers.js';
 
     let isLoading = $state(true);
     let isModalOpen = $state(false);
@@ -631,17 +632,6 @@
         onClusterChanged();
     }
 
-    /** The markers that appear more than once; two groups cannot share one. */
-    function duplicatePrefixValues(prefixes) {
-        const counts = new Map();
-        for (const value of Object.values(prefixes || {})) {
-            const marker = (value || '').trim();
-            if (!marker) continue;
-            counts.set(marker, (counts.get(marker) || 0) + 1);
-        }
-        return [...counts.entries()].filter(([, count]) => count > 1).map(([marker]) => marker);
-    }
-
     /**
      * Writes the markers, unless two of them are the same.
      *
@@ -649,7 +639,7 @@
      * refused and said so; nothing was checking it here.
      */
     function savePrefixes() {
-        if (duplicatePrefixValues($state.snapshot(userPrefixes)).length > 0) {
+        if (duplicateMarkerFields($state.snapshot(userPrefixes)).size > 0) {
             showNotification('duplicatePrefixesError', true);
             return;
         }
