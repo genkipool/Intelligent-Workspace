@@ -207,8 +207,22 @@ function inferGroupTypeFromTabs(groupId, tabsInGroup, groupTitle, customRules, c
     };
 }
 
-async function repairEmptyGroupTitles(groupsInWindow, isEdit = false) {
+async function repairEmptyGroupTitles(groupsInWindow, isEdit = false, tabsInWindow = null) {
     let wasTitleRestored = false;
+
+    // The tabs of the whole window are already in hand at the only call site that
+    // matters, so index them once instead of issuing a query per group.
+    let tabsByGroupId = null;
+    if (tabsInWindow) {
+        tabsByGroupId = new Map();
+        for (const tab of tabsInWindow) {
+            if (tab.groupId === -1) continue;
+            if (!tabsByGroupId.has(tab.groupId)) tabsByGroupId.set(tab.groupId, []);
+            tabsByGroupId.get(tab.groupId).push(tab);
+        }
+    }
+    const tabsOfGroup = async (groupId) =>
+        tabsByGroupId ? tabsByGroupId.get(groupId) || [] : await chrome.tabs.query({ groupId });
 
     for (const group of groupsInWindow) {
         let needsRepair = !group.title || group.title.trim() === '';
@@ -221,7 +235,7 @@ async function repairEmptyGroupTitles(groupsInWindow, isEdit = false) {
             let identifiedInfo = groupInfoMap.get(group.id);
 
             if (!identifiedInfo || !identifiedInfo.type || !identifiedInfo.key) {
-                const tabsInGroup = await chrome.tabs.query({ groupId: group.id });
+                const tabsInGroup = await tabsOfGroup(group.id);
                 if (tabsInGroup.length > 0) {
                     const allTabsLoaded = tabsInGroup.every(
                         (tab) => tab.url !== '' && tab.url !== 'about:blank' && tab.url !== 'chrome://blank',
@@ -283,7 +297,7 @@ async function repairEmptyGroupTitles(groupsInWindow, isEdit = false) {
                     console.warn(
                         `[repairEmptyGroupTitles] FAILED: Could not determine identity for non-manual group ${group.id}. Dissolving group.`,
                     );
-                    const tabsToUngroup = await chrome.tabs.query({ groupId: group.id });
+                    const tabsToUngroup = await tabsOfGroup(group.id);
                     if (tabsToUngroup.length > 0) {
                         await executeWithRetries(
                             async () => await chrome.tabs.ungroup(tabsToUngroup.map((t) => t.id)),
@@ -334,7 +348,7 @@ async function updateAllGroupPrefixes(
         );
     }
 
-    const wasTitleRestored = await repairEmptyGroupTitles(allGroupsInWindow, isEdit);
+    const wasTitleRestored = await repairEmptyGroupTitles(allGroupsInWindow, isEdit, tabsInWindow);
     if (wasTitleRestored) {
         logMessage(`[updateAllGroupPrefixes] Titles were restored. Re-fetching groups to get latest state.`);
         allGroupsInWindow = await chrome.tabGroups.query({ windowId });

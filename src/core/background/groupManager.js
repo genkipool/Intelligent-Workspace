@@ -46,9 +46,23 @@ function findManagedGroup(groupType, groupKey, existingGroups, windowId) {
     return null;
 }
 
-async function updateGroupProperties(group, tabIds, newColor, clusterConfig) {
-    logMessage(`[updateGroupProperties] Adding ${tabIds.length} tabs to existing group ${group.id}.`);
-    await chrome.tabs.group({ groupId: group.id, tabIds });
+async function updateGroupProperties(group, tabIds, newColor, clusterConfig, currentGroupIdByTabId = null) {
+    // Only the tabs that are not in the group yet. Re-adding the ones already there
+    // is not free: Chrome relocates the whole group to keep it contiguous, so a pass
+    // in which nothing had changed still paid one tab-strip write per group and left
+    // the strip shuffled enough that the sorting step then had to move everything.
+    const tabIdsToAdd = currentGroupIdByTabId
+        ? tabIds.filter((id) => currentGroupIdByTabId.get(id) !== group.id)
+        : tabIds;
+
+    if (tabIdsToAdd.length > 0) {
+        logMessage(`[updateGroupProperties] Adding ${tabIdsToAdd.length} tabs to existing group ${group.id}.`);
+        await chrome.tabs.group({ groupId: group.id, tabIds: tabIdsToAdd });
+    } else {
+        logMessage(
+            `[updateGroupProperties] Group ${group.id} already holds its ${tabIds.length} tabs; nothing to add.`,
+        );
+    }
 
     const updatePayload = {};
     const info = groupInfoMap.get(group.id);
@@ -87,7 +101,40 @@ async function updateGroupProperties(group, tabIds, newColor, clusterConfig) {
     }
 }
 
-async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clusterConfig) {
+/**
+ * The title the tab strip should show for a group, given whether compact mode
+ * will be active. Mirrors what updateAllGroupPrefixes computes, so that a group
+ * can be born with its definitive title instead of being renamed right after.
+ */
+function buildUiTitleForNewGroup(groupType, groupKey, fullTitle, tabIds, isCompact) {
+    if (!isCompact) return fullTitle;
+
+    const baseName = getBaseGroupName(fullTitle) || groupKey;
+    let titleCore = baseName.charAt(0).toUpperCase();
+
+    if (extensionSettings.enablePrefixes ?? false) {
+        // A brand-new group is created collapsed and has never been expanded.
+        const prefixMarker = determinePotentialPrefix(
+            null,
+            tabIds.map((id) => ({ id })),
+            false,
+        ).trim();
+        if (prefixMarker.length >= 4) titleCore = prefixMarker;
+    }
+
+    switch (groupType) {
+        case 'domain':
+            return titleCore + DOMAIN_SUFFIX;
+        case 'rule':
+            return RULE_PREFIX + titleCore;
+        case 'special':
+            return SPECIAL_PREFIX + titleCore + SPECIAL_SUFFIX;
+        default:
+            return titleCore;
+    }
+}
+
+async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clusterConfig, willBeCompact = false) {
     logMessage(`[createAndConfigureGroup] Creating and IMMEDIATELY registering a NEW group for key '${groupKey}'.`);
 
     // 1. Create the tab group.
@@ -100,18 +147,23 @@ async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clust
     // 3. Use the helper function to build the full title with markers.
     const fullTitle = constructFullTitle(groupType, groupKey, baseTitle, clusterConfig);
 
-    // 4. Update the newly created group with its title and color.
+    // 4. Update the newly created group with its title and color. When compact mode
+    //    is going to be on, write the compact title straight away: writing the long
+    //    one first only to rename it a moment later costs one extra tab-strip write
+    //    per group and makes the names visibly flicker.
+    const uiTitle = buildUiTitleForNewGroup(groupType, groupKey, fullTitle, tabIds, willBeCompact);
     await executeWithRetries(
-        async () => await chrome.tabGroups.update(groupId, { title: fullTitle, color, collapsed: true }),
-        `create group ${groupId} (${fullTitle})`,
+        async () => await chrome.tabGroups.update(groupId, { title: uiTitle, color, collapsed: true }),
+        `create group ${groupId} (${uiTitle})`,
     );
 
-    // 5. Register group info immediately in the session map.
+    // 5. Register group info immediately in the session map. The map always keeps the
+    //    full title; only what the tab strip shows is shortened.
     const groupInfo = {
         type: groupType,
         key: groupKey,
         title: fullTitle, // Use the full title built by the auxiliary function.
-        isCompact: false,
+        isCompact: willBeCompact,
     };
     groupInfoMap.set(groupId, groupInfo);
     logMessage(`[createAndConfigureGroup] Group ${groupId} created and INSTANTLY identified in groupInfoMap.`);
@@ -119,7 +171,16 @@ async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clust
     return groupId;
 }
 
-async function manageGroup(groupType, groupKey, color, tabIds, existingGroups, windowId) {
+async function manageGroup(
+    groupType,
+    groupKey,
+    color,
+    tabIds,
+    existingGroups,
+    windowId,
+    willBeCompact = false,
+    currentGroupIdByTabId = null,
+) {
     logMessage(`[manageGroup] Process start. Type: '${groupType}', Key: '${groupKey}'.`);
     const localClusterConfig = extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG;
 
@@ -130,12 +191,12 @@ async function manageGroup(groupType, groupKey, color, tabIds, existingGroups, w
 
     if (existingGroup) {
         // 2a. If it exists, update it.
-        await updateGroupProperties(existingGroup, tabIds, color, localClusterConfig);
+        await updateGroupProperties(existingGroup, tabIds, color, localClusterConfig, currentGroupIdByTabId);
         groupId = existingGroup.id;
         //groupFinalTitle = groupInfoMap.get(groupId)?.title || existingGroup.title;
     } else {
         // 2b. If it doesn't exist, create it.
-        groupId = await createAndConfigureGroup(groupType, groupKey, color, tabIds, localClusterConfig);
+        groupId = await createAndConfigureGroup(groupType, groupKey, color, tabIds, localClusterConfig, willBeCompact);
         groupFinalTitle = groupInfoMap.get(groupId)?.title;
     }
 
@@ -200,9 +261,8 @@ async function loadClusterConfig() {
             specialGroups: mergedSpecialGroups,
         };
 
-        if (typeof elements !== 'undefined' && elements.toggleCluster) {
-            elements.toggleCluster.checked = data.clusteringEnabled ?? true;
-        }
+        // A leftover from before the migration: `elements` was the popup's DOM cache
+        // and does not exist in the worker, so this could never run.
     } catch (error) {
         console.error('Error loading cluster config.', error);
     }
@@ -631,15 +691,98 @@ async function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, ex
     return groupingPlan;
 }
 
-async function executeGroupingPlan(groupingPlan, existingGroups, windowId) {
-    const groupPromises = groupingPlan.map(async (plan) => {
-        const groupId = await manageGroup(plan.type, plan.key, plan.color, plan.tabIds, existingGroups, windowId);
-        if (plan.name) {
-            return [plan.name, groupId];
-        }
-    });
+// How many groups are built before letting the browser process catch its breath.
+//
+// Creating a group is cheap as an API call (measured at 2 ms), but the tab strip
+// then animates the new group and its collapse, and that animation runs on the
+// browser's UI thread — the same one that paints and handles clicks. Building the
+// groups back to back keeps that thread saturated and the whole browser stops
+// responding. The pause has to be long enough for an animation to get through.
+//
+// Measured with 120 tabs and 21 groups (total time / peak of the UI thread):
+//   16 ms ->  505 ms / 92%   (fastest, browser frozen while it lasts)
+//   80 ms ->  923 ms / 68%   (chosen: browser stays usable)
+//  200 ms -> 1508 ms / 60%
+// The extra time is roughly (groups / batch size) x pause.
+const GROUP_CREATION_BATCH_SIZE = 4;
+const GROUP_CREATION_BATCH_PAUSE_MS = 80;
 
-    const groupResults = await Promise.all(groupPromises);
+async function executeGroupingPlan(groupingPlan, existingGroups, windowId, currentGroupIdByTabId = null) {
+    // How many groups the window will end up with, so new groups can be created
+    // with their definitive (compact or full) title in a single write.
+    const compactConfig = (extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG).compactMode;
+    let willBeCompact = false;
+    if (compactConfig?.enabled) {
+        const newGroups = groupingPlan.filter(
+            (plan) => !findManagedGroup(plan.type, plan.key, existingGroups, windowId),
+        ).length;
+        const expectedGroupCount = Object.keys(existingGroups).length + newGroups;
+        willBeCompact = expectedGroupCount >= (compactConfig.threshold ?? 12);
+    }
+
+    // Tabs that are leaving one group for another are pulled out in a single call
+    // before anything is created. Chrome keeps every group contiguous, so taking
+    // them out one target group at a time made it close the gap in the group they
+    // were leaving once per new group: with a 160-tab Misc group, moving 60 tabs out
+    // into 15 domain groups cost 1141 ms, against 26 ms to move the same 60 back in.
+    // Detaching them in one go leaves that group to compact itself exactly once.
+    if (currentGroupIdByTabId) {
+        const targetByTabId = new Map();
+        for (const plan of groupingPlan) {
+            const existing = findManagedGroup(plan.type, plan.key, existingGroups, windowId);
+            for (const tabId of plan.tabIds) targetByTabId.set(tabId, existing ? existing.id : null);
+        }
+
+        const leaving = [];
+        for (const [tabId, targetGroupId] of targetByTabId) {
+            const currentGroupId = currentGroupIdByTabId.get(tabId);
+            if (currentGroupId !== undefined && currentGroupId !== -1 && currentGroupId !== targetGroupId) {
+                leaving.push(tabId);
+            }
+        }
+
+        if (leaving.length > 1) {
+            logMessage(`[executeGroupingPlan] Detaching ${leaving.length} tabs that change group, in one call.`);
+            const detached = await executeWithRetries(
+                async () => await chrome.tabs.ungroup(leaving),
+                `detaching ${leaving.length} tabs before regrouping them`,
+            );
+            if (detached !== false) {
+                for (const tabId of leaving) currentGroupIdByTabId.set(tabId, -1);
+            }
+        }
+    }
+
+    // In batches, with a breath in between. Every one of these calls is executed by
+    // the browser process, which is also the one that paints and handles input:
+    // handing it the whole plan at once leaves the browser unable to respond until
+    // the last group is built. Pausing between batches lets it service what is
+    // waiting. It costs a little total time and buys back a responsive browser.
+    const groupResults = [];
+    for (let i = 0; i < groupingPlan.length; i += GROUP_CREATION_BATCH_SIZE) {
+        const batch = groupingPlan.slice(i, i + GROUP_CREATION_BATCH_SIZE);
+        const batchResults = await Promise.all(
+            batch.map(async (plan) => {
+                const groupId = await manageGroup(
+                    plan.type,
+                    plan.key,
+                    plan.color,
+                    plan.tabIds,
+                    existingGroups,
+                    windowId,
+                    willBeCompact,
+                    currentGroupIdByTabId,
+                );
+                if (plan.name) {
+                    return [plan.name, groupId];
+                }
+            }),
+        );
+        groupResults.push(...batchResults);
+        if (i + GROUP_CREATION_BATCH_SIZE < groupingPlan.length) {
+            await new Promise((resolve) => setTimeout(resolve, GROUP_CREATION_BATCH_PAUSE_MS));
+        }
+    }
     return Object.fromEntries(groupResults.filter(Boolean));
 }
 
@@ -696,10 +839,47 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
             return baseTitleA.localeCompare(baseTitleB);
         });
 
-        let currentIndex = tabsInWindow.filter((t) => t.pinned).length;
+        const orderedTabs = [...tabsInWindow].sort((a, b) => a.index - b.index);
+        const startIndex = tabsInWindow.filter((t) => t.pinned).length;
 
+        // Note: pushing the ungrouped tabs to the end up front looks like it would
+        // save group moves, and it does — but measured on a profile with many loose
+        // tabs, that single chrome.tabs.move costs far more than the moves it saves
+        // (60 loose tabs: 273 ms -> 364 ms). The loose tabs end up behind the groups
+        // anyway as the groups are packed to the front.
+
+        // The tab strip as blocks in index order: one block per group, one per
+        // loose tab. Every move is replayed here so the next comparison is made
+        // against where the group really is, not against the stale snapshot.
+        // Comparing against the snapshot made the first move invalidate all the
+        // others, so every group was moved even when it was already in place.
+        const blocks = [];
+        for (const tab of orderedTabs) {
+            if (tab.pinned) continue;
+            const last = blocks[blocks.length - 1];
+            if (tab.groupId !== -1 && last && last.groupId === tab.groupId) {
+                last.size++;
+            } else {
+                blocks.push({ groupId: tab.groupId, size: 1 });
+            }
+        }
+
+        const startOfBlock = (position) => {
+            let index = startIndex;
+            for (let i = 0; i < position; i++) index += blocks[i].size;
+            return index;
+        };
+
+        let currentIndex = startIndex;
+        let moves = 0;
         for (const groupToPlace of idealOrder) {
-            if (groupToPlace.actualIndex !== currentIndex) {
+            const from = blocks.findIndex((b) => b.groupId === groupToPlace.id);
+            if (from === -1) {
+                currentIndex += groupToPlace.tabCount;
+                continue;
+            }
+
+            if (startOfBlock(from) !== currentIndex) {
                 await executeWithRetries(
                     async () =>
                         await chrome.tabGroups.move(groupToPlace.id, {
@@ -707,9 +887,20 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
                         }),
                     `sort move group ${groupToPlace.title} to index ${currentIndex}`,
                 );
+                moves++;
+
+                const [block] = blocks.splice(from, 1);
+                let to = 0;
+                let index = startIndex;
+                while (to < blocks.length && index < currentIndex) {
+                    index += blocks[to].size;
+                    to++;
+                }
+                blocks.splice(to, 0, block);
             }
             currentIndex += groupToPlace.tabCount;
         }
+        logMessage(`[sortGroups] Reordered window ${windowId} with ${moves} move(s) for ${idealOrder.length} groups.`);
     } catch (error) {
         console.warn('Error sorting groups.', error);
     }
@@ -883,10 +1074,10 @@ async function collapseInactiveGroups(tabId) {
     }
 }
 
-async function getGroupComposition(windowId) {
+async function getGroupComposition(windowId, knownTabs = null) {
     const composition = new Map();
     try {
-        const tabs = await chrome.tabs.query({ windowId });
+        const tabs = knownTabs || (await chrome.tabs.query({ windowId }));
         for (const tab of tabs) {
             if (tab.groupId !== -1) {
                 if (!composition.has(tab.groupId)) {
@@ -1111,11 +1302,15 @@ async function processAndGroupRemainingTabs(
 ) {
     let groupingPlan = [];
 
+    // Where every tab lives right now, so a group that already holds its tabs is
+    // left untouched instead of being rebuilt.
+    const currentGroupIdByTabId = new Map(tabsToGroup.map((tab) => [tab.id, tab.groupId]));
+
     const { customGroupTabs, groupedTabIds } = applyCustomRules(tabsToGroup, customRules);
     groupingPlan.push(...planCustomGroups(customGroupTabs, customRules));
 
     if (!isClusteringGloballyEnabled) {
-        const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId);
+        const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId, currentGroupIdByTabId);
         return allGroupIds;
     }
 
@@ -1182,9 +1377,15 @@ async function processAndGroupRemainingTabs(
             const nameB = getBaseGroupName(b.name || b.key || '');
             return nameA.localeCompare(nameB);
         });
+        // Chrome lays the new groups out in the reverse of the order in which the
+        // calls are issued, so issuing them backwards leaves the strip already in
+        // alphabetical order and the sorting step has nothing left to move —
+        // otherwise it had to relocate every single group, one call at a time.
+        // sortGroups still runs afterwards and fixes the order if this ever changes.
+        groupingPlan.reverse();
     }
 
-    const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId);
+    const allGroupIds = await executeGroupingPlan(groupingPlan, existingGroups, windowId, currentGroupIdByTabId);
 
     return allGroupIds;
 }
@@ -1206,18 +1407,39 @@ async function finalizeWindowProcessing(
     }
 
     // We use the final data for the new tabs logic.
-    const newTabTabs = finalTabs.filter((t) => t.url === 'chrome://newtab/' && t.groupId === -1);
+    // New tab pages belong at the end, ungrouped. This used to move them on every
+    // single pass without checking where they already were, and that move triggered
+    // another regroup, which moved them again: one click produced 24 chained passes,
+    // about one per second, for as long as a new tab page stayed open. It is a fixed
+    // cost, so it showed up just as badly with few tabs as with many, and equally
+    // when switching the grouping on and off. Only act when something is actually
+    // out of place.
+    const newTabTabs = finalTabs.filter((t) => t.url === 'chrome://newtab/');
     if (newTabTabs.length > 0) {
-        const newTabIds = newTabTabs.map((tab) => tab.id);
+        const grouped = newTabTabs.filter((t) => t.groupId !== -1);
+
+        // They are in place when they occupy the last positions of the strip.
+        const lastIndex = finalTabs.reduce((max, t) => Math.max(max, t.index), -1);
+        const byIndex = [...newTabTabs].sort((a, b) => a.index - b.index);
+        const alreadyAtEnd = byIndex.every((t, i) => t.index === lastIndex - (byIndex.length - 1 - i));
+
         try {
-            await executeWithRetries(
-                async () => await chrome.tabs.ungroup(newTabIds),
-                `ungrouping new tabs in window ${windowId}`,
-            );
-            await executeWithRetries(
-                async () => await chrome.tabs.move(newTabIds, { index: -1 }),
-                `moving new tabs to the end in window ${windowId}`,
-            );
+            if (grouped.length > 0) {
+                await executeWithRetries(
+                    async () => await chrome.tabs.ungroup(grouped.map((t) => t.id)),
+                    `ungrouping ${grouped.length} new tabs in window ${windowId}`,
+                );
+            }
+            if (!alreadyAtEnd) {
+                await executeWithRetries(
+                    async () =>
+                        await chrome.tabs.move(
+                            byIndex.map((t) => t.id),
+                            { index: -1 },
+                        ),
+                    `moving new tabs to the end in window ${windowId}`,
+                );
+            }
         } catch (e) {
             if (!e.message.includes('No tab with id')) console.warn('Error ungrouping/moving new tabs.', e);
         }
@@ -1369,7 +1591,9 @@ async function groupTabs() {
             const windowId = window.id;
             let tabs = window.tabs.filter((tab) => !tab.pinned);
             let existingGroups = await getExistingGroupsForWindow(windowId);
-            const initialComposition = await getGroupComposition(windowId);
+            // The populated window already carries every tab; querying them again
+            // only added a round trip per window.
+            const initialComposition = await getGroupComposition(windowId, window.tabs);
 
             const tabsByGroupId = new Map();
             for (const tab of tabs) {
@@ -1407,7 +1631,6 @@ async function groupTabs() {
                                 cleanTitle,
                                 localClusterConfig,
                             );
-                            isNameValid = isTitleInvalidForUpdate(fullTitle);
                             if (!isTitleInvalidForUpdate(fullTitle)) {
                                 groupInfoMap.set(group.id, {
                                     type: inferredInfo.type,

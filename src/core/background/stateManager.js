@@ -312,14 +312,19 @@ async function syncWithExistingGroups() {
             `%c[syncWithExistingGroups] Starting sync. groupPrefixState size BEFORE filtering: ${groupPrefixState.size}.`,
             'color: #D35400; font-weight: bold;',
         );
+        // One query for every tab instead of one query per group: with many groups
+        // this loop was the single biggest source of round trips to the browser.
+        const tabCountByGroupId = new Map();
+        for (const tab of await chrome.tabs.query({})) {
+            if (tab.groupId === -1) continue;
+            tabCountByGroupId.set(tab.groupId, (tabCountByGroupId.get(tab.groupId) || 0) + 1);
+        }
+
         const validIdentifiers = new Set();
         for (const group of allCurrentGroups) {
-            const tabsInGroup = await chrome.tabs.query({
-                groupId: group.id,
-            });
             const cleanTitle = getBaseGroupName(group.title);
             validIdentifiers.add(generateGroupIdentifier(cleanTitle, null, group.id));
-            validIdentifiers.add(generateGroupIdentifier(cleanTitle, tabsInGroup.length));
+            validIdentifiers.add(generateGroupIdentifier(cleanTitle, tabCountByGroupId.get(group.id) || 0));
         }
         for (const groupId of groupIdentifierMap.keys()) {
             if (!currentGroupIds.has(groupId)) {
