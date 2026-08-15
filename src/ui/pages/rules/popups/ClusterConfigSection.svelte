@@ -118,12 +118,18 @@
         scheduleChange();
     }
 
-    // Same debounce as the original: the switch finishes its animation before the
-    // configuration is written and the tabs are regrouped.
+    // The switch has to finish its animation before the configuration is written and
+    // the tabs are regrouped. Regrouping keeps the browser process busy for a few
+    // hundred milliseconds, and while it is, this page gets no frames at all: with
+    // 120 tabs the slider froze mid-travel for 130-350 ms on every click, because
+    // the old 60 ms delay landed right in the middle of the transition.
+    // Keep in sync with the transition on `.slider` in rules.css.
+    // It also coalesces typing in the threshold and name fields.
+    const SWITCH_TRANSITION_MS = 150;
     let changeTimer = null;
     function scheduleChange() {
         clearTimeout(changeTimer);
-        changeTimer = setTimeout(() => onchange?.(), 60);
+        changeTimer = setTimeout(() => onchange?.(), SWITCH_TRANSITION_MS + 30);
     }
 
     let colorPickerFor = $state(null);

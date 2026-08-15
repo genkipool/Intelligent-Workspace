@@ -541,19 +541,21 @@
         setClusterEnabled(!isClusterEnabled);
     }
 
-    /** Any change in Configure Groups re-syncs the master switch and regroups the tabs. */
+    /**
+     * Any change in Configure Groups re-syncs the master switch and regroups the tabs.
+     * The caller already waited for the switch animation to finish, so there is
+     * nothing left to stay out of the way of here.
+     */
     async function onClusterChanged() {
         const enabled = isAnyClusterSwitchOn(clusterConfig);
         isClusterEnabled = enabled;
 
-        setTimeout(async () => {
-            const nextConfig = $state.snapshot(clusterConfig);
-            await saveSettings({
-                clusterConfig: nextConfig,
-                clusteringEnabled: isClusterEnabled,
-            });
-            await groupTabs();
-        }, 50);
+        const nextConfig = $state.snapshot(clusterConfig);
+        await saveSettings({
+            clusterConfig: nextConfig,
+            clusteringEnabled: isClusterEnabled,
+        });
+        await groupTabs();
     }
 
     async function toggleSortGroups() {

@@ -629,7 +629,9 @@ h1 {
         background-size: 205% 105%;
         background-position: 100% 0;
         border-radius: var(--switch-height);
-        transition: background-position 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Kept in sync with SWITCH_TRANSITION_MS in ClusterConfigSection.svelte:
+           the regroup is held back until the slider has finished travelling. */
+        transition: background-position 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         cursor: pointer;
         flex-shrink: 0;
         justify-content: start;
@@ -653,8 +655,8 @@ h1 {
         background-color: var(--bg-panel-color);
         border-radius: 50%;
         transition:
-            transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-            background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -669,8 +671,8 @@ h1 {
         background-color: var(--action-color);
         border-radius: 50%;
         transition:
-            background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-            box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .switch-text-on,
@@ -682,7 +684,7 @@ h1 {
         pointer-events: none;
         font-weight: bold;
         opacity: 1;
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         user-select: none;
         align-items: center;
         line-height: var(--switch-height);
