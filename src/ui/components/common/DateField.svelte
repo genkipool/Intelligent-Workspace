@@ -67,8 +67,11 @@
     const days = $derived.by(() => {
         const first = new Date(month.getFullYear(), month.getMonth(), 1);
         const total = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        // Built at midnight directly instead of created and then rewound with
+        // setHours: nothing here is reactive, it is recomputed whenever the month
+        // changes, and a date that is never mutated cannot go stale.
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
         const cells = Array.from({ length: first.getDay() }, () => ({ empty: true }));
         for (let day = 1; day <= total; day++) {
@@ -159,12 +162,12 @@
             >
         </div>
         <div class="calendar-weekdays">
-            {#each WEEKDAY_KEYS as key}
+            {#each WEEKDAY_KEYS as key (key)}
                 <span>{$t(key)}</span>
             {/each}
         </div>
         <div class="calendar-grid">
-            {#each days as cell}
+            {#each days as cell, i (cell.empty ? `pad${i}` : cell.day)}
                 {#if cell.empty}
                     <div class="calendar-day empty"></div>
                 {:else if cell.isPast}

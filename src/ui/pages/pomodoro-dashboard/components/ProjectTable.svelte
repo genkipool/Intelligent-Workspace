@@ -2,7 +2,7 @@
     let { sorted = [], maxF = 0, effColor = () => '', projColor = () => '', fmtDur = () => '' } = $props();
 </script>
 
-{#each sorted as [name, s], i}
+{#each sorted as [name, s], i (name)}
     {@const eff = s.effCount > 0 ? Math.round(s.effSum / s.effCount) : 0}
     {@const color = projColor(i)}
     {@const barW = maxF > 0 ? Math.round((s.focus / maxF) * 100) : 0}
@@ -13,7 +13,7 @@
             <span class="dot" style="background:{color}"></span>{name}
             {#if tags.length > 0}
                 <span style="margin-left:4px">
-                    {#each tags as t}
+                    {#each tags as t (t)}
                         <span class="tl-chip tl-tag">#{t}</span>
                     {/each}
                 </span>

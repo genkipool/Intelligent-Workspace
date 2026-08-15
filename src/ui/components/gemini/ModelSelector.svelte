@@ -100,7 +100,7 @@
             />
         </div>
         <ul>
-            {#each filteredModels as model}
+            {#each filteredModels as model (model)}
                 <li
                     class="gemini-model-item"
                     class:active={model === $selectedModel}

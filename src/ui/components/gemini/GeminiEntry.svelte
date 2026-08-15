@@ -238,7 +238,9 @@
     </summary>
     {#if entry?.isAgent && entry?.agentSteps?.length}
         <div class="agent-steps">
-            {#each entry.agentSteps as step}
+            <!-- The steps are only ever appended (agent-ui.js), never removed or
+                 reordered, so a step's position is its identity. -->
+            {#each entry.agentSteps as step, i (i)}
                 <div
                     class="agent-step-indicator"
                     class:agent-step-done={step.status === 'done'}

@@ -127,7 +127,7 @@
     <div id="gemini-input-container" class="gemini-input-container">
         {#if attachments.length > 0}
             <div id="gemini-attachment-preview" class="gemini-attachment-preview">
-                {#each attachments as fileObj, i}
+                {#each attachments as fileObj, i (fileObj.id ?? i)}
                     <div class="gemini-attachment-chip">
                         {#if fileObj.mimeType.startsWith('image/')}
                             <img src={fileObj.data} class="preview-img" alt={fileObj.name} />

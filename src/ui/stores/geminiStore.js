@@ -1100,7 +1100,16 @@ function createGeminiStore() {
                         const ext = file.type.split('/')[1] || 'png';
                         fileName = `pasted_image_${Date.now()}_${Math.floor(Math.random() * 1000)}.${ext}`;
                     }
-                    pending.push({ name: fileName, mimeType: file.type, data: base64Data });
+                    // The id is what identifies the chip in the preview list. Neither the
+                    // name nor the data can play that part: the same file can be attached
+                    // twice, and removeAttachment splices from the middle, so keying the
+                    // list by position would leave the wrong chip on screen.
+                    pending.push({
+                        id: crypto.randomUUID(),
+                        name: fileName,
+                        mimeType: file.type,
+                        data: base64Data,
+                    });
                 } catch (error) {
                     console.error('Error reading file:', error);
                 }

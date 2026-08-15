@@ -2,7 +2,7 @@
     let { hours = [], cnts = [], maxH = 0.001, fmtH = (val) => val, i18n = (key) => key } = $props();
 </script>
 
-{#each hours as val, h}
+{#each hours as val, h (h)}
     {@const pct = Math.round((val / maxH) * 100)}
     {@const label = h % 6 === 0 ? `${h}h` : ''}
     {@const alpha = 0.15 + (pct / 100) * 0.75}

@@ -41,7 +41,7 @@
 </script>
 
 <div class="heatmap-months">
-    {#each monthPositions as mp, i}
+    {#each monthPositions as mp, i (mp.col)}
         {@const nextMp = i + 1 < monthPositions.length ? monthPositions[i + 1] : null}
         {@const nextCol = nextMp ? nextMp.col : cells.length / 7}
         {@const w = (nextCol - mp.col) * STRIDE}
@@ -53,7 +53,7 @@
 </div>
 
 <div class="heatmap-grid">
-    {#each cells as cell}
+    {#each cells as cell (cell.date.getTime())}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
             class="heatmap-cell"

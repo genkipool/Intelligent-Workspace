@@ -2,7 +2,7 @@
     let { stats = [] } = $props();
 </script>
 
-{#each stats as r}
+{#each stats as r (r.label)}
     <div class="stat-row">
         <span class="stat-row-label">
             <span class="dot" style="background:{r.color}"></span>{r.label}
