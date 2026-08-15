@@ -52,10 +52,7 @@
     position={popupPosition}
     selected={miscSortOption}
     onclose={() => (showSortGroupsPopup = false)}
-    onselect={(detail) => {
-        showSortGroupsPopup = false;
-        onSelectMiscSort(detail);
-    }}
+    onselect={onSelectMiscSort}
 />
 <PrefixConfigPopup
     show={showPrefixPopup}
@@ -100,10 +97,7 @@
     position={popupPosition}
     selectedMode={storageMode}
     onclose={() => (showStoragePopup = false)}
-    onselect={(detail) => {
-        showStoragePopup = false;
-        onSelectStorage(detail);
-    }}
+    onselect={onSelectStorage}
 />
 <DiscardingConfigPopup
     show={showDiscardingPopup}

@@ -733,11 +733,18 @@
         chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/pages/about/about.html') });
     }
 
+    /**
+     * Right-clicking a header button opens its popup and closes any other. Doing it
+     * again on the same button closes that one too, so the same gesture puts it away.
+     *
+     * The popups ignore a secondary-button mousedown for this to work: mousedown
+     * reaches them before contextmenu reaches this handler, so dismissing there would
+     * always have closed the popup a moment before the check below could see it open.
+     */
     function openPopupOnContextMenu(popupName, e) {
         e.preventDefault();
-        const rect = e.currentTarget.getBoundingClientRect();
-        const pos = { x: rect.left, y: rect.bottom + 4 };
-        popupPosition = pos;
+        const wasOpen = isPopupOpen(popupName);
+
         showClusterPopup = false;
         showSortGroupsPopup = false;
         showPrefixPopup = false;
@@ -746,6 +753,10 @@
         showStoragePopup = false;
         showColorPopup = false;
         showDiscardingPopup = false;
+        if (wasOpen) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        popupPosition = { x: rect.left, y: rect.bottom + 4 };
         if (popupName === 'cluster') showClusterPopup = true;
         else if (popupName === 'sortGroups') showSortGroupsPopup = true;
         else if (popupName === 'prefixes') showPrefixPopup = true;
@@ -754,6 +765,18 @@
         else if (popupName === 'storage') showStoragePopup = true;
         else if (popupName === 'color') showColorPopup = true;
         else if (popupName === 'discarding') showDiscardingPopup = true;
+    }
+
+    function isPopupOpen(popupName) {
+        if (popupName === 'cluster') return showClusterPopup;
+        if (popupName === 'sortGroups') return showSortGroupsPopup;
+        if (popupName === 'prefixes') return showPrefixPopup;
+        if (popupName === 'timer') return showTimerPopup;
+        if (popupName === 'allRules') return showAllRulesPopup;
+        if (popupName === 'storage') return showStoragePopup;
+        if (popupName === 'color') return showColorPopup;
+        if (popupName === 'discarding') return showDiscardingPopup;
+        return false;
     }
 </script>
 

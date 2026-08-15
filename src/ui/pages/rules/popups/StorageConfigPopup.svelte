@@ -1,4 +1,5 @@
 <script>
+    import { popupScale } from './popupTransition.js';
     import { onMount } from 'svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
 
@@ -7,9 +8,21 @@
     let popupEl = $state(null);
 
     function handleClickOutside(e) {
+        // Only the primary button dismisses. A right click is what opens these, and
+        // mousedown runs before contextmenu, so closing here would undo the toggle
+        // before openPopupOnContextMenu ever saw the popup as open.
+        if (e.button !== 0) return;
         if (popupEl && !popupEl.contains(e.target)) {
             onclose?.();
         }
+    }
+
+    // A right click elsewhere still dismisses, but the trigger buttons get the last
+    // word: openPopupOnContextMenu calls preventDefault, so when it has handled the
+    // event this stays out of the way and lets its toggle decide.
+    function handleContextMenuOutside(e) {
+        if (e.defaultPrevented) return;
+        if (popupEl && !popupEl.contains(e.target)) onclose?.();
     }
 
     function handleKeydown(e) {
@@ -20,25 +33,29 @@
 
     onMount(() => {
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('contextmenu', handleContextMenuOutside);
         document.addEventListener('keydown', handleKeydown);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('contextmenu', handleContextMenuOutside);
             document.removeEventListener('keydown', handleKeydown);
         };
     });
 
+    // Choosing does not close: switching area reloads the rules and raises two
+    // notifications, and the popup staying up is what shows the selection moved.
+    // It closes on a click outside or Escape.
     function select(value) {
-        // Picking the mode already in use is not a change; the original left the popup
-        // open and did nothing, and so does this.
+        // Picking the mode already in use is not a change.
         if (value === selectedMode) return;
         onselect?.({ value });
-        onclose?.();
     }
 </script>
 
 {#if show}
     <div
         class="storage-config-popup misc-sort-popup open"
+        transition:popupScale
         style="left: {position.x}px; top: {position.y}px;"
         bind:this={popupEl}
     >

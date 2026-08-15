@@ -1,4 +1,5 @@
 <script>
+    import { popupScale } from './popupTransition.js';
     import { onMount } from 'svelte';
     import { t } from '../../../stores/i18nStore.js';
 
@@ -14,9 +15,21 @@
     let popupEl = $state(null);
 
     function handleClickOutside(e) {
+        // Only the primary button dismisses. A right click is what opens these, and
+        // mousedown runs before contextmenu, so closing here would undo the toggle
+        // before openPopupOnContextMenu ever saw the popup as open.
+        if (e.button !== 0) return;
         if (popupEl && !popupEl.contains(e.target)) {
             onclose?.();
         }
+    }
+
+    // A right click elsewhere still dismisses, but the trigger buttons get the last
+    // word: openPopupOnContextMenu calls preventDefault, so when it has handled the
+    // event this stays out of the way and lets its toggle decide.
+    function handleContextMenuOutside(e) {
+        if (e.defaultPrevented) return;
+        if (popupEl && !popupEl.contains(e.target)) onclose?.();
     }
 
     function handleKeydown(e) {
@@ -27,9 +40,11 @@
 
     onMount(() => {
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('contextmenu', handleContextMenuOutside);
         document.addEventListener('keydown', handleKeydown);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('contextmenu', handleContextMenuOutside);
             document.removeEventListener('keydown', handleKeydown);
         };
     });
@@ -40,7 +55,12 @@
 </script>
 
 {#if show}
-    <div class="collapse-timer-popup open" style="left: {position.x}px; top: {position.y}px;" bind:this={popupEl}>
+    <div
+        class="collapse-timer-popup open"
+        transition:popupScale
+        style="left: {position.x}px; top: {position.y}px;"
+        bind:this={popupEl}
+    >
         <h3>{$t('configureCollapseTimer')}</h3>
         <label>
             <span>{$t('inactiveTime')}</span>
