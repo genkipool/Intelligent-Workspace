@@ -6,19 +6,20 @@
 
     let {
         show = false,
-        position = { x: 0, y: 0 },
+        trigger = null,
         clusterConfig = $bindable(defaultClusterConfig()),
         onclose,
         onreset,
         onchange,
     } = $props();
 
-    const popup = popupVisibility(
-        () => show,
-        () => position,
-    );
-
     let popupEl = $state(null);
+
+    const popup = popupVisibility({
+        isOpen: () => show,
+        getTrigger: () => trigger,
+        getElement: () => popupEl,
+    });
 
     function handleClickOutside(e) {
         // Only the primary button dismisses. A right click is what opens these, and

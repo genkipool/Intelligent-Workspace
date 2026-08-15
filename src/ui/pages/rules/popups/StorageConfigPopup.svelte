@@ -3,14 +3,15 @@
     import { onMount } from 'svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
 
-    let { show = false, position = { x: 0, y: 0 }, selectedMode = 'sync', onclose, onselect } = $props();
-
-    const popup = popupVisibility(
-        () => show,
-        () => position,
-    );
+    let { show = false, trigger = null, selectedMode = 'sync', onclose, onselect } = $props();
 
     let popupEl = $state(null);
+
+    const popup = popupVisibility({
+        isOpen: () => show,
+        getTrigger: () => trigger,
+        getElement: () => popupEl,
+    });
 
     function handleClickOutside(e) {
         // Only the primary button dismisses. A right click is what opens these, and

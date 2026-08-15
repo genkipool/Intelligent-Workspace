@@ -5,14 +5,15 @@
 
     // `selected` marks the option currently in force. Without it the popup opened
     // with nothing highlighted, unlike the same list in the settings modal.
-    let { show = false, position = { x: 0, y: 0 }, selected = 'start', onclose, onselect } = $props();
-
-    const popup = popupVisibility(
-        () => show,
-        () => position,
-    );
+    let { show = false, trigger = null, selected = 'start', onclose, onselect } = $props();
 
     let popupEl = $state(null);
+
+    const popup = popupVisibility({
+        isOpen: () => show,
+        getTrigger: () => trigger,
+        getElement: () => popupEl,
+    });
 
     function handleClickOutside(e) {
         // Only the primary button dismisses. A right click is what opens these, and

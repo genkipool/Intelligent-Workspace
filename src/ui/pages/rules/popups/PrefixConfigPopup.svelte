@@ -6,7 +6,7 @@
 
     let {
         show = false,
-        position = { x: 0, y: 0 },
+        trigger = null,
         lock = $bindable(''),
         openKey = $bindable(''),
         loupe = $bindable(''),
@@ -16,12 +16,13 @@
         onreset,
     } = $props();
 
-    const popup = popupVisibility(
-        () => show,
-        () => position,
-    );
-
     let popupEl = $state(null);
+
+    const popup = popupVisibility({
+        isOpen: () => show,
+        getTrigger: () => trigger,
+        getElement: () => popupEl,
+    });
 
     // The single-character and no-repeats rules live next to the settings modal's copy
     // of this form, so both behave the same way.

@@ -86,6 +86,9 @@
     let selectedRuleColor = $derived(colorTargetIndex >= 0 ? $rulesStore[colorTargetIndex]?.color : 'blue');
     let showDiscardingPopup = $state(false);
     let popupPosition = $state({ x: 0, y: 0 });
+    // The button a popup belongs to. Kept instead of only its coordinates so the
+    // popup can measure it again when the window is resized.
+    let popupTrigger = $state(null);
     let isPinned = $state(false);
 
     // On screens ≤600px the footer moves inside #rules-list
@@ -755,8 +758,7 @@
         showDiscardingPopup = false;
         if (wasOpen) return;
 
-        const rect = e.currentTarget.getBoundingClientRect();
-        popupPosition = { x: rect.left, y: rect.bottom + 4 };
+        popupTrigger = e.currentTarget;
         if (popupName === 'cluster') showClusterPopup = true;
         else if (popupName === 'sortGroups') showSortGroupsPopup = true;
         else if (popupName === 'prefixes') showPrefixPopup = true;
@@ -1100,6 +1102,7 @@
     bind:showStoragePopup
     bind:showDiscardingPopup
     {popupPosition}
+    {popupTrigger}
     bind:clusterConfig
     bind:userPrefixes
     bind:timerInactiveTime

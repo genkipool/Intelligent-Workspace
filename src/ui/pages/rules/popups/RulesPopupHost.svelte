@@ -16,6 +16,7 @@
         showStoragePopup = $bindable(false),
         showDiscardingPopup = $bindable(false),
         popupPosition = { x: 0, y: 0 },
+        popupTrigger = null,
         clusterConfig = $bindable({}),
         userPrefixes = $bindable({}),
         timerInactiveTime = $bindable(1),
@@ -41,7 +42,7 @@
 
 <ClusterConfigPopup
     show={showClusterPopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     bind:clusterConfig
     onchange={onClusterChanged}
     onclose={() => (showClusterPopup = false)}
@@ -49,14 +50,14 @@
 />
 <MiscSortPopup
     show={showSortGroupsPopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     selected={miscSortOption}
     onclose={() => (showSortGroupsPopup = false)}
     onselect={onSelectMiscSort}
 />
 <PrefixConfigPopup
     show={showPrefixPopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     bind:lock={userPrefixes.lock}
     bind:openKey={userPrefixes.openKey}
     bind:loupe={userPrefixes.loupe}
@@ -70,7 +71,7 @@
 />
 <CollapseTimerPopup
     show={showTimerPopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     bind:inactiveTime={timerInactiveTime}
     bind:activeTime={timerActiveTime}
     onclose={() => {
@@ -94,14 +95,14 @@
 />
 <StorageConfigPopup
     show={showStoragePopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     selectedMode={storageMode}
     onclose={() => (showStoragePopup = false)}
     onselect={onSelectStorage}
 />
 <DiscardingConfigPopup
     show={showDiscardingPopup}
-    position={popupPosition}
+    trigger={popupTrigger}
     bind:discardingTime
     onclose={() => {
         showDiscardingPopup = false;
