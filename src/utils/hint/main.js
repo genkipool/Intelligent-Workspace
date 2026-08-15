@@ -5,7 +5,7 @@ window.addEventListener('message', (event) => {
         document.querySelectorAll('video, audio').forEach((media) => {
             try {
                 if (!media.paused) media.pause();
-            } catch (e) {}
+            } catch {}
         });
         document.querySelectorAll('iframe').forEach((subIframe) => {
             try {
@@ -17,7 +17,7 @@ window.addEventListener('message', (event) => {
                         '*',
                     );
                 }
-            } catch (e) {}
+            } catch {}
         });
     }
 });
@@ -256,7 +256,7 @@ var Main = class Main {
                                         iframeDoc.readyState === 'complete' &&
                                         iframeDoc.body &&
                                         iframeDoc.body.children.length > 0;
-                                } catch (e) {
+                                } catch {
                                     // Cross-origin: can't access contentDocument.
                                     // Fall back to checking if the iframe has a src and has had time to load.
                                     chatReady = !!chatIframe.src && chatIframe.src !== 'about:blank';
@@ -411,10 +411,10 @@ var Main = class Main {
                         new URLSearchParams(win.location.search).get('itg_pip') === 'true') ||
                     (win.location && win.location.href && win.location.href.includes('itg_pip=true'))
                 );
-            } catch (e) {
+            } catch {
                 try {
                     return win.name === 'itg-page-pip-iframe' || win.name === 'itg-pip-iframe';
-                } catch (err) {
+                } catch {
                     return false;
                 }
             }
@@ -465,7 +465,7 @@ var Main = class Main {
                         if (showHideBtn) {
                             try {
                                 showHideBtn.click();
-                            } catch (err) {}
+                            } catch {}
                         }
 
                         // 2. Direct style fallback to guarantee visibility hides
@@ -473,7 +473,7 @@ var Main = class Main {
                         document.querySelectorAll(chatSelectors).forEach((el) => {
                             try {
                                 el.style.setProperty('display', 'none', 'important');
-                            } catch (err) {}
+                            } catch {}
                         });
                     }
                 });
@@ -504,10 +504,10 @@ var Main = class Main {
                             if (panel) {
                                 try {
                                     panel.setAttribute('visibility', 'ENGAGEMENT_PANEL_VISIBILITY_HIDDEN');
-                                } catch (err) {}
+                                } catch {}
                                 try {
                                     panel.style.setProperty('display', 'none', 'important');
-                                } catch (err) {}
+                                } catch {}
                             }
                         }
                     },
@@ -552,7 +552,7 @@ var Main = class Main {
                 document.querySelectorAll(chatSelectors).forEach((el) => {
                     try {
                         el.remove();
-                    } catch (e) {}
+                    } catch {}
                 });
 
                 // Watch for YouTube re-injecting chat elements and remove them
@@ -563,14 +563,14 @@ var Main = class Main {
                                 if (node.matches && node.matches(chatSelectors)) {
                                     try {
                                         node.remove();
-                                    } catch (e) {}
+                                    } catch {}
                                 }
                                 // Also check children
                                 const inner = node.querySelectorAll ? node.querySelectorAll(chatSelectors) : [];
                                 inner.forEach((el) => {
                                     try {
                                         el.remove();
-                                    } catch (e) {}
+                                    } catch {}
                                 });
                             }
                         }
@@ -633,7 +633,7 @@ var Main = class Main {
                 const handleHover = () => {
                     try {
                         if (document.activeElement !== video) video.focus();
-                    } catch (e) {}
+                    } catch {}
                     video.setAttribute('itg-hover', 'true');
                     clearTimeout(hoverTimeout);
                     hoverTimeout = setTimeout(() => {
@@ -1175,7 +1175,7 @@ var Main = class Main {
         if (this._boundMessageHandler) {
             try {
                 chrome.runtime.onMessage.removeListener(this._boundMessageHandler);
-            } catch (e) {}
+            } catch {}
         }
         if (this._videoCheckInterval) clearInterval(this._videoCheckInterval);
         if (this._findVideoInterval) clearInterval(this._findVideoInterval);
@@ -1191,7 +1191,7 @@ var Main = class Main {
         try {
             document.body.classList.remove('itg-pip-shorts');
             document.body.classList.remove('itg-hide-masthead');
-        } catch (e) {}
+        } catch {}
         if (this.shadowUI) this.shadowUI.cleanup();
         if (this.hintEngine) this.hintEngine.cleanup();
         if (this.snippetManager) this.snippetManager.cleanup();

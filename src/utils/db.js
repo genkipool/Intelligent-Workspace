@@ -428,12 +428,12 @@ export function notifyPomoStatsChanged() {
             bc.postMessage({ type: 'pomodoroStatsChanged', timestamp: Date.now() });
             bc.close();
         }
-    } catch (_) {}
+    } catch {}
     try {
         if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
             chrome.runtime.sendMessage({ action: 'pomodoroStatsChanged' }).catch(() => {});
         }
-    } catch (_) {}
+    } catch {}
 }
 
 export async function savePomoStatsToDb(statsEntry) {

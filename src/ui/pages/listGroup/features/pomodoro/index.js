@@ -994,7 +994,7 @@ export function initPomodoro() {
                 osc.start(t0);
                 osc.stop(t0 + 0.75);
             });
-        } catch (e) {}
+        } catch {}
     }
 
     // ─── Render ─────────────────────────────────────────────────
@@ -2517,7 +2517,7 @@ export function initPomodoro() {
                 await loadSavedProjects();
             }
         };
-    } catch (_) {}
+    } catch {}
 
     try {
         chrome.runtime.onMessage.addListener(async (msg) => {
@@ -2525,7 +2525,7 @@ export function initPomodoro() {
                 await loadSavedProjects();
             }
         });
-    } catch (_) {}
+    } catch {}
 
     // ─── Init ───────────────────────────────────────────────────
     initPomoTiempoCalendar();

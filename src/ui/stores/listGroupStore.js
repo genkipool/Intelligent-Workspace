@@ -267,7 +267,7 @@ export const listGroupStore = {
             try {
                 const { hiddenGroupIds } = await import('../services/groupsService.js');
                 hiddenGroupIds.set(snapshot.hiddenGroupIds);
-            } catch (e) {}
+            } catch {}
         },
         unhideGroup: async (groupId) => {
             const numericId = parseInt(groupId, 10);
@@ -287,7 +287,7 @@ export const listGroupStore = {
             try {
                 const { hiddenGroupIds } = await import('../services/groupsService.js');
                 hiddenGroupIds.set(snapshot.hiddenGroupIds);
-            } catch (e) {}
+            } catch {}
         },
         deleteAllTabsInGroup: async (groupId, tabs) => {
             if (!tabs) return;

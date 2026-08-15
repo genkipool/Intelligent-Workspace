@@ -39,7 +39,7 @@ if (window.self !== window.top) {
                 const pattern = isRegex ? searchTerm : searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                 if (!pattern) return;
                 regex = new RegExp(`(${pattern})`, 'gi');
-            } catch (e) {
+            } catch {
                 return;
             }
 

@@ -156,7 +156,7 @@ function inferGroupTypeFromTabs(groupId, tabsInGroup, groupTitle, customRules, c
             const portPrefix = port ? `:${port}` : '';
             if (isLocalhost(hostname)) return `Localhost${portPrefix}`;
             if (isIPAddress(hostname)) return formatIPGroupName(hostname, portPrefix);
-        } catch (e) {}
+        } catch {}
         return null;
     };
 

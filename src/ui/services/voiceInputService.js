@@ -38,7 +38,7 @@ export function stopVoiceInput() {
         recognition = null;
         try {
             current.stop();
-        } catch (err) {
+        } catch {
             // Already stopped; nothing to undo.
         }
     }
@@ -138,7 +138,7 @@ async function startRecognition(textarea, { onPermissionDenied } = {}) {
             try {
                 instance.start();
                 return;
-            } catch (err) {
+            } catch {
                 // Restart refused (for instance the tab lost focus): fall through.
             }
         }
@@ -166,7 +166,7 @@ async function requestMicrophonePermission(textarea) {
         try {
             await chrome.windows.update(permissionWindowId, { focused: true });
             return;
-        } catch (err) {
+        } catch {
             permissionWindowId = null;
         }
     }

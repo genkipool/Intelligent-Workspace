@@ -232,7 +232,7 @@ export async function showContextMenu(event, contextElement) {
                                     const blob = await dataUrlToBlob(areaDataUrl);
                                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                                     showNotification('screenshotCopied');
-                                } catch (e) {
+                                } catch {
                                     showNotification('screenshotSavedNoCopy', true);
                                 }
                             }
@@ -549,7 +549,7 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
                                 const blob = await dataUrlToBlob(areaDataUrl);
                                 await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                                 showNotification('screenshotCopied');
-                            } catch (e) {
+                            } catch {
                                 showNotification('screenshotSavedNoCopy', true);
                             }
                         }

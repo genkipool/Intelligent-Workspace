@@ -328,7 +328,7 @@ async function handleRestoreBackupTab(message, sendResponse) {
         if (targetGroupId) {
             try {
                 await chrome.tabGroups.get(targetGroupId);
-            } catch (e) {
+            } catch {
                 targetGroupId = null;
                 self.omnibarLinkedGroups.delete(groupId);
             }

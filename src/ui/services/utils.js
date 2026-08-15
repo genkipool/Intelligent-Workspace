@@ -120,7 +120,7 @@ export function highlight(node, searchTerm, isRegex) {
             const pattern = isRegex ? searchTerm : searchTerm.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
             if (!pattern) return;
             regex = new RegExp(`(${pattern})`, 'gi');
-        } catch (_e) {
+        } catch {
             return;
         }
 

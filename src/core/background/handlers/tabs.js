@@ -266,7 +266,7 @@ function handleGetActiveTab(message, sendResponse) {
             } else {
                 sendResponse(null);
             }
-        } catch (e) {
+        } catch {
             sendResponse(null);
         }
     })();

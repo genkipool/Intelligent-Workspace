@@ -144,7 +144,7 @@ var LinkPreviewManager = class LinkPreviewManager {
         let absoluteUrl;
         try {
             absoluteUrl = new URL(href, window.location.href).href;
-        } catch (err) {
+        } catch {
             return;
         }
 
@@ -155,7 +155,7 @@ var LinkPreviewManager = class LinkPreviewManager {
         try {
             const targetHostname = new URL(absoluteUrl).hostname;
             if (this.blacklist.includes(targetHostname)) return;
-        } catch (err) {}
+        } catch {}
 
         // Step 1: Speculative preconnect / dns-prefetch at ms 0
         try {
@@ -184,10 +184,10 @@ var LinkPreviewManager = class LinkPreviewManager {
                         if (preconnect.parentNode) document.head.removeChild(preconnect);
                         if (dnsPrefetch.parentNode) document.head.removeChild(dnsPrefetch);
                         if (docPrefetch.parentNode) document.head.removeChild(docPrefetch);
-                    } catch (e) {}
+                    } catch {}
                 }, 10000);
             }
-        } catch (err) {}
+        } catch {}
         const currentUrlNoHash = window.location.href.split('#')[0];
         const targetUrlNoHash = absoluteUrl.split('#')[0];
         if (currentUrlNoHash === targetUrlNoHash) return;
@@ -245,7 +245,7 @@ var LinkPreviewManager = class LinkPreviewManager {
             let domain = 'Link';
             try {
                 domain = new URL(url).hostname;
-            } catch (e) {}
+            } catch {}
             container.innerHTML = `
                     <div class="hint-preview-header">
                         <span class="hint-preview-title">${chrome.i18n.getMessage('previewTitlePrefix') || 'Preview:'} ${domain}</span>
@@ -598,7 +598,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                     },
                     '*',
                 );
-            } catch (e) {}
+            } catch {}
             // FIX: Definitively stop all background media/audio by clearing the iframe source
             iframe.src = 'about:blank';
         }
@@ -638,7 +638,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                         if (targetIframe) targetIframe.src = 'about:blank';
                         el.parentNode.removeChild(el);
                     }
-                } catch (err) {}
+                } catch {}
             }, 250);
         }
         this.activeAnchor = null;

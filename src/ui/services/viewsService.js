@@ -1172,7 +1172,7 @@ export async function openUrlInPanel(url, context = null) {
         } else {
             fetchContentForReaderView(url);
         }
-    } catch (e) {
+    } catch {
         fetchContentForReaderView(url);
     }
 }
@@ -1260,7 +1260,7 @@ export function showReaderView(htmlContent, baseUrl) {
     cleanContent.querySelectorAll('img').forEach((img) => {
         try {
             img.src = new URL(img.getAttribute('src'), baseUrl).href;
-        } catch (e) {}
+        } catch {}
     });
     readerContentEl.appendChild(cleanContent);
     if (videoId) {
@@ -1658,7 +1658,7 @@ export async function updateBackButtonTooltip() {
                 } else {
                     tooltipKey = 'backToHome';
                 }
-            } catch (e) {
+            } catch {
                 tooltipKey = 'backToHome';
             }
         }

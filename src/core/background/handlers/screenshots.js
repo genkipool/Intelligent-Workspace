@@ -64,7 +64,7 @@ async function updateScreenshotSessionIndex(tab, screenshotId) {
             tab.groupId === -1 || tab.groupId === -100 ? `s_ungrouped_${domain}` : `s_${tab.groupId}_${domain}`;
         if (!storedScreenshotIndexes[subgroupKey]) storedScreenshotIndexes[subgroupKey] = [];
         storedScreenshotIndexes[subgroupKey].push(screenshotId);
-    } catch (e) {
+    } catch {
         /* Not a valid URL */
     }
 

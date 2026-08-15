@@ -14,7 +14,7 @@
                     ([k, v]) => `--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v}`,
                 );
                 root.style.cssText = vars.join(';');
-            } catch (e) {}
+            } catch {}
         }
     }
 })();

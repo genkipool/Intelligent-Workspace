@@ -64,7 +64,7 @@ function isValidUrl(urlString) {
             return true;
         }
         return false;
-    } catch (e) {
+    } catch {
         return false;
     }
 }
@@ -402,7 +402,7 @@ const setupContextMenus = async () => {
                     }
                     domainCountMap.set(domain, (domainCountMap.get(domain) || 0) + 1);
                 }
-            } catch (e) {
+            } catch {
                 /* Ignore invalid URLs */
             }
         }
@@ -1415,7 +1415,7 @@ async function removeTabsByDomainCommand(domain) {
             try {
                 const tabDomain = new URL(tab.url).hostname;
                 return tabDomain === domain;
-            } catch (e) {
+            } catch {
                 // Ignore URLs that cannot be parsed.
                 return false;
             }
@@ -1495,7 +1495,7 @@ function faviconCacheKeyFor(faviconUrl) {
         const url = new URL(faviconUrl);
         const pageUrl = url.searchParams.get('pageUrl');
         if (pageUrl) return new URL(pageUrl).origin;
-    } catch (e) {}
+    } catch {}
     return faviconUrl;
 }
 
@@ -1607,7 +1607,7 @@ async function getFaviconColor(faviconUrl) {
             }
         }
         return remember(closestColor.name);
-    } catch (error) {
+    } catch {
         return remember(null);
     }
 }
@@ -1643,7 +1643,7 @@ function openCreateRuleModalForUrl(pageUrl, windowId, isFullUrl = false) {
     if (!isFullUrl) {
         try {
             targetUrl = new URL(pageUrl).origin;
-        } catch (e) {
+        } catch {
             console.warn('Could not parse origin from URL:', pageUrl);
         }
     }

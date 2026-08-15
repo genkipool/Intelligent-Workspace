@@ -786,7 +786,7 @@ export function initSettingsEvents() {
         historyDateFilterBtn.addEventListener('click', (e) => {
             try {
                 historyDateInput.showPicker();
-            } catch (err) {
+            } catch {
                 historyDateInput.click();
             }
         });

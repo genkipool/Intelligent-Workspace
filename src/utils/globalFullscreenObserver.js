@@ -14,7 +14,7 @@
                     action: 'fullscreenChanged',
                     isFullscreen: isFullscreen,
                 });
-            } catch (e) {
+            } catch {
                 // Extension context invalidated, remove listener to clean up
                 document.removeEventListener('fullscreenchange', handleFullscreenChange);
                 window.__itgGlobalFullscreenObserver = false;

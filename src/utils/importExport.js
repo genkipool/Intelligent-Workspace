@@ -782,7 +782,7 @@ export async function addImportedBookmarks(file) {
             },
         );
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
@@ -810,7 +810,7 @@ export async function overwriteBookmarks(file) {
             },
         );
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
@@ -997,7 +997,7 @@ export async function importHintsConfig(file, utils) {
                 let json;
                 try {
                     json = JSON.parse(event.target.result);
-                } catch (e) {
+                } catch {
                     // Translation: "Invalid JSON format"
                     const msg = chrome.i18n.getMessage('val_invalid_json_format') || 'Invalid JSON format';
                     throw new Error(msg);

@@ -48,7 +48,7 @@ function mirrorThemeToLocalStorage(theme) {
                 localStorage.removeItem('theme-custom-colors');
             }
         }
-    } catch (e) {
+    } catch {
         // Silently fail if localStorage is not available
     }
 }
@@ -71,7 +71,7 @@ function applyMirroredTheme() {
         if (colors) applyCustomTheme(JSON.parse(colors));
         else applyTheme(name);
         return true;
-    } catch (e) {
+    } catch {
         return false;
     }
 }

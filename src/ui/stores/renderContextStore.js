@@ -50,7 +50,7 @@ async function doLoadRenderContext() {
         let pageModes = {};
         try {
             pageModes = await chrome.runtime.sendMessage({ action: 'getPageModes' });
-        } catch (e) {
+        } catch {
             // Silently ignore if background is not available
         }
 
@@ -59,7 +59,7 @@ async function doLoadRenderContext() {
         try {
             const sessionData = await chrome.storage.session.get('tabsEverActive');
             seenTabIds = new Set(sessionData.tabsEverActive || []);
-        } catch (e) {}
+        } catch {}
 
         // 3. Screenshots and notes index
         let screenshotData = {};
@@ -70,7 +70,7 @@ async function doLoadRenderContext() {
 
             const notesResult = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
             notesData = notesResult[STORAGE_KEYS.NOTES] || {};
-        } catch (e) {}
+        } catch {}
 
         // 4. Group info map and prefix state
         let groupInfoMap = new Map();
@@ -78,14 +78,14 @@ async function doLoadRenderContext() {
         try {
             groupInfoMap = await getGroupInfoMap();
             groupPrefixState = await getGroupPrefixState();
-        } catch (e) {}
+        } catch {}
 
         // 5. Custom rules (for matching tabs to rules)
         let customRules = [];
         try {
             const { customTabGroupingRules = [] } = await chrome.storage.local.get('customTabGroupingRules');
             customRules = customTabGroupingRules;
-        } catch (e) {}
+        } catch {}
 
         // 6. Compute duplicate URLs
         let duplicateUrlSet = new Set();
@@ -103,7 +103,7 @@ async function doLoadRenderContext() {
                     duplicateUrlSet.add(url);
                 }
             }
-        } catch (e) {}
+        } catch {}
 
         _renderContext.set({
             seenTabIds,

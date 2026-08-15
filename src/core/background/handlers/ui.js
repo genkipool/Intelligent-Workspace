@@ -118,7 +118,7 @@ function handleToggleSplitScreen(message, sendResponse) {
                 try {
                     if (state.originalWindowId) await chrome.windows.get(state.originalWindowId);
                     if (state.splitWindowId) await chrome.windows.get(state.splitWindowId);
-                } catch (e) {
+                } catch {
                     logMessage(`[Split Screen LOG] Resetting stale state.`);
                     state = {
                         isActive: false,

@@ -529,7 +529,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                             } else {
                                 nameEl.textContent = originalName;
                             }
-                        } catch (error) {
+                        } catch {
                             nameEl.textContent = originalName;
                         }
 

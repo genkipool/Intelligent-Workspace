@@ -675,7 +675,7 @@ function normalizeDomain(value) {
     if (!trimmed) return '';
     try {
         return new URL(RULE_URL_SCHEMES.test(trimmed) ? trimmed : `https://${trimmed}`).hostname;
-    } catch (_) {
+    } catch {
         return trimmed.replace(RULE_URL_SCHEMES, '').split('/')[0];
     }
 }

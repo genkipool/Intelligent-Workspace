@@ -30,7 +30,7 @@ async function getActivePipWindows() {
     try {
         const result = await chrome.storage.session.get('activePipWindows');
         return result.activePipWindows || {};
-    } catch (e) {
+    } catch {
         return {};
     }
 }
@@ -40,7 +40,7 @@ async function setActivePipWindows(data) {
         await chrome.storage.session.set({
             activePipWindows: data,
         });
-    } catch (e) {}
+    } catch {}
 }
 
 chrome.windows.onFocusChanged.addListener(async (windowId) => {
@@ -259,7 +259,7 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         document.querySelectorAll('video').forEach((v) => {
                             try {
                                 v.pause();
-                            } catch (e) {}
+                            } catch {}
                         });
 
                         const pipWindow = await window.documentPictureInPicture.requestWindow({
@@ -292,7 +292,7 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                                     if (!v.paused) {
                                         v.pause();
                                     }
-                                } catch (e) {}
+                                } catch {}
                             });
                         }, 100);
 
@@ -311,7 +311,7 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                                         lastKnownTime = pipVideo.currentTime;
                                     }
                                 }
-                            } catch (e) {}
+                            } catch {}
                         }, 250);
 
                         let didResume = false;
@@ -492,13 +492,13 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
                                 const urlObj = new URL(targetUrl);
                                 urlObj.searchParams.set('itg_video_pip', 'true');
                                 targetUrl = urlObj.toString();
-                            } catch (e2) {}
+                            } catch {}
                         }
 
                         document.querySelectorAll('video').forEach((v) => {
                             try {
                                 v.pause();
-                            } catch (e) {}
+                            } catch {}
                         });
 
                         try {
@@ -525,7 +525,7 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
                                     if (!v.paused) {
                                         v.pause();
                                     }
-                                } catch (e) {}
+                                } catch {}
                             });
                         }, 100);
 
@@ -544,7 +544,7 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
                                         lastKnownTime = pipVideo.currentTime;
                                     }
                                 }
-                            } catch (e) {
+                            } catch {
                                 // Suppress cross-origin warnings if they happen
                             }
                         }, 250);

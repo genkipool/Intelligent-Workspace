@@ -92,7 +92,7 @@ async function playPomodoroSoundBackground(soundType) {
         setTimeout(async () => {
             try {
                 await chrome.offscreen.closeDocument();
-            } catch (e) {}
+            } catch {}
         }, 3500);
     } catch (e) {
         console.warn('[Pomodoro] Offscreen audio error:', e);

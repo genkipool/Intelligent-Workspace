@@ -47,7 +47,7 @@ class MessagingService {
     notify(action, payload = {}) {
         try {
             chrome.runtime.sendMessage({ action, ...payload });
-        } catch (err) {
+        } catch {
             // Silently fail for fire-and-forget
         }
     }
@@ -82,7 +82,7 @@ class MessagingService {
             disconnect: () => {
                 try {
                     port.disconnect();
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
                 this._ports.delete(name);

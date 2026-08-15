@@ -111,7 +111,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
             document.querySelectorAll('video').forEach((v) => {
                 try {
                     v.pause();
-                } catch (e) {}
+                } catch {}
             });
             const urlObj = new URL(targetUrl);
             urlObj.searchParams.set('itg_video_pip', 'true');
@@ -158,7 +158,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
                         if (!v.paused) {
                             v.pause();
                         }
-                    } catch (e) {}
+                    } catch {}
                 });
             }, 100);
             const timeTrackerInterval = setInterval(() => {
@@ -176,7 +176,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
                             lastKnownTime = pipVideo.currentTime;
                         }
                     }
-                } catch (e) {
+                } catch {
                     // Suppress cross-origin warnings if they happen
                 }
             }, 250);
@@ -399,7 +399,7 @@ var Utils = class Utils {
             try {
                 const res = await fetch(chrome.runtime.getURL(path));
                 if (res.ok) return await res.text();
-            } catch (e) {
+            } catch {
                 // Falls through to the background, below.
             }
 

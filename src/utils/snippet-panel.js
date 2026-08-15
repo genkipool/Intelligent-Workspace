@@ -345,7 +345,7 @@
                     snippets[trigger].usageCount++;
                     await HintCommon.Snippets.saveAll(snippets);
                 }
-            } catch (e) {
+            } catch {
                 /* silent */
             }
         }
@@ -545,7 +545,7 @@
                                 sel.removeAllRanges();
                                 sel.addRange(this.savedSelection);
                             }
-                        } catch (e) {
+                        } catch {
                             /* ignore */
                         }
                     }

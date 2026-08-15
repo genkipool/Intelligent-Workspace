@@ -968,7 +968,7 @@ var OmniBar = class OmniBar {
                             try {
                                 const parsed = new URL(newUrl);
                                 if (parsed.hostname.length === 0) throw new Error();
-                            } catch (e) {
+                            } catch {
                                 error = chrome.i18n.getMessage('omnibarInvalidUrlFormat') || 'Invalid URL format.';
                             }
                         }
@@ -1449,7 +1449,7 @@ var OmniBar = class OmniBar {
                                 try {
                                     const parsed = new URL(url);
                                     if (parsed.hostname.length === 0) return true;
-                                } catch (e) {
+                                } catch {
                                     return true;
                                 }
                                 return false;
@@ -1943,7 +1943,7 @@ var OmniBar = class OmniBar {
                     if (selected && selected.classList.contains('add-all-filtered')) {
                         try {
                             urlsToAdd = JSON.parse(selected.dataset.rawUrls || '[]');
-                        } catch (e) {}
+                        } catch {}
                     } else if (selected && selected.dataset.type === 'atr-manual-preview') {
                         const qVal = currentValue.substring(pAtr.length).trim();
                         if (qVal) urlsToAdd = [qVal];
@@ -2019,11 +2019,11 @@ var OmniBar = class OmniBar {
                     if (selected && selected.classList.contains('add-all-filtered')) {
                         try {
                             urlsToAdd = JSON.parse(selected.dataset.rawUrls || '[]');
-                        } catch (e) {}
+                        } catch {}
                     } else if (selected && selected.dataset.itemSubtype === 'cr-add-manual') {
                         try {
                             urlsToAdd = JSON.parse(selected.dataset.urls || '[]');
-                        } catch (e) {}
+                        } catch {}
                     } else if (this.selectedActionItems && this.selectedActionItems.size > 0) {
                         urlsToAdd = Array.from(this.selectedActionItems);
                     } else if (selected && selected.dataset.type === 'cr-tab') {
@@ -2880,7 +2880,7 @@ var OmniBar = class OmniBar {
                 const parsed = new URL(u);
                 if (parsed.hostname.length === 0) throw new Error();
                 validatedUrls.push(u);
-            } catch (e) {
+            } catch {
                 invalidUrls.push(rawUrl);
             }
         }
@@ -3241,7 +3241,7 @@ var OmniBar = class OmniBar {
                 if (depth === 0) {
                     try {
                         return JSON.parse(s.substring(start, i + 1));
-                    } catch (_) {
+                    } catch {
                         return null;
                     }
                 }
@@ -3269,7 +3269,7 @@ var OmniBar = class OmniBar {
                               (() => {
                                   try {
                                       return new URL(params.url).hostname;
-                                  } catch (_) {
+                                  } catch {
                                       return params.url;
                                   }
                               })(),
@@ -3361,7 +3361,7 @@ var OmniBar = class OmniBar {
                 default:
                     return chrome.i18n.getMessage('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
             }
-        } catch (_) {
+        } catch {
             return chrome.i18n.getMessage('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
         }
     }
@@ -4442,7 +4442,7 @@ IMPORTANT RULES:
                             document.querySelectorAll('video').forEach((v) => {
                                 try {
                                     v.pause();
-                                } catch (e) {}
+                                } catch {}
                             });
                             const pipWindow = await requestItgPipWindow(targetUrl, 450, 600);
                             this.close();
@@ -4477,7 +4477,7 @@ IMPORTANT RULES:
                                             lastKnownTime = pipVideo.currentTime;
                                         }
                                     }
-                                } catch (e) {}
+                                } catch {}
                             }, 250);
                             let didResume = false;
                             const resumeOriginalVideo = (shouldPlay) => {
@@ -4632,7 +4632,7 @@ IMPORTANT RULES:
                                     try {
                                         const urls = JSON.parse(liEl.dataset.ruleUrls);
                                         urlsToOpen.push(...urls);
-                                    } catch (err) {}
+                                    } catch {}
                                 }
                             }
                         });
@@ -4698,7 +4698,7 @@ IMPORTANT RULES:
                             const parsed = new URL(u);
                             if (parsed.hostname.length === 0) throw new Error();
                             validatedUrls.push(u);
-                        } catch (ex) {
+                        } catch {
                             invalidUrls.push(rawUrl);
                         }
                     }
@@ -5002,7 +5002,7 @@ IMPORTANT RULES:
                     const url = itemData.url || '';
                     return regex.test(title) || regex.test(url);
                 }
-            } catch (e) {
+            } catch {
                 // Invalid regex, fallback to text search
             }
         }

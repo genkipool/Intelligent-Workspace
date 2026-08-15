@@ -648,7 +648,7 @@ export function initGeminiEvents() {
                             }
                         }
                         updateSubButtonVisibility();
-                    } catch (e) {
+                    } catch {
                         updateScheduledConversationBadge();
                     }
                 })();

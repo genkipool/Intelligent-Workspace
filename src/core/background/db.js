@@ -314,7 +314,7 @@ async function cleanupOrphanScreenshots() {
                 try {
                     const domain = new URL(tab.url).hostname.replace(/^www\./, '');
                     validKeys.add(`s_${group.id}_${domain}`);
-                } catch (e) {
+                } catch {
                     /* ignore invalid URLs */
                 }
             });

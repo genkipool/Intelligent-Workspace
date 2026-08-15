@@ -87,7 +87,7 @@ export async function getOrphanContent() {
                     .map((tab) => {
                         try {
                             return new URL(tab.url).hostname.replace(/^www\./, '');
-                        } catch (e) {
+                        } catch {
                             return null;
                         }
                     })
@@ -113,7 +113,7 @@ export async function getOrphanContent() {
                 .map((tab) => {
                     try {
                         return new URL(tab.url).hostname.replace(/^www\./, '');
-                    } catch (e) {
+                    } catch {
                         return null;
                     }
                 })

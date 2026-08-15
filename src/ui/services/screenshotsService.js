@@ -639,7 +639,7 @@ export async function clearAllContextDataUI(contextToDelete, config) {
                             .map((tab) => {
                                 try {
                                     return new URL(tab.url).hostname.replace(/^www\./, '');
-                                } catch (e) {
+                                } catch {
                                     return null;
                                 }
                             })
@@ -656,7 +656,7 @@ export async function clearAllContextDataUI(contextToDelete, config) {
                         .map((tab) => {
                             try {
                                 return new URL(tab.url).hostname.replace(/^www\./, '');
-                            } catch (e) {
+                            } catch {
                                 return null;
                             }
                         })
@@ -860,7 +860,7 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
             } else {
                 throw new Error('No focus or clipboard writeText failed');
             }
-        } catch (clipErr) {
+        } catch {
             const textarea = document.createElement('textarea');
             textarea.value = text;
             textarea.style.position = 'fixed';

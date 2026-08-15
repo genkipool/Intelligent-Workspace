@@ -149,7 +149,7 @@ async function startBrokenBookmarksScan(items) {
                 ) {
                     return { ...bookmark, status: response.status };
                 }
-            } catch (e) {
+            } catch {
                 return { ...bookmark, status: 'error' };
             }
             return null;

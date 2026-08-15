@@ -67,7 +67,7 @@ function extractJSON(text) {
             if (depth === 0) {
                 try {
                     return JSON.parse(s.substring(start, i + 1));
-                } catch (_) {
+                } catch {
                     return null;
                 }
             }
@@ -226,7 +226,7 @@ export function getToolLabel(tool, params) {
                           (() => {
                               try {
                                   return new URL(params.url).hostname;
-                              } catch (_) {
+                              } catch {
                                   return params.url;
                               }
                           })(),
@@ -354,7 +354,7 @@ export function getToolLabel(tool, params) {
             default:
                 return i18n('toolUnknown', [String(tool)]) || `⚙ ${tool}`;
         }
-    } catch (_) {
+    } catch {
         return `⚙ ${tool}`;
     }
 }

@@ -265,7 +265,7 @@ var SnippetManager = class SnippetManager {
                     checkOpacity: true,
                     checkVisibilityCSS: true,
                 });
-            } catch (e) {
+            } catch {
                 // Fallback
             }
         }
@@ -811,7 +811,7 @@ var SnippetManager = class SnippetManager {
                     iframe.dataset.snippetAttached = 'true';
                     console.log('[Snippet] [OK] Listener attached to GDocs iframe');
                 }
-            } catch (e) {}
+            } catch {}
         };
         const iframes = document.querySelectorAll('iframe.docs-texteventtarget-iframe');
         iframes.forEach(attachToIframe);
@@ -1733,7 +1733,7 @@ ${finalHtml}
                             sel.removeAllRanges();
                             sel.addRange(this.savedSelection);
                         }
-                    } catch (e) {}
+                    } catch {}
                 }
             }
 

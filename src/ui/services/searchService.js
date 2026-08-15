@@ -285,7 +285,7 @@ export function applySearchAndFilter() {
     if (isRegex && keywordSearch) {
         try {
             searchRegex = new RegExp(keywordSearch, 'i');
-        } catch (e) {
+        } catch {
             _searchInput.classList.add('invalid-regex');
             return;
         }

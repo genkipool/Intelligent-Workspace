@@ -881,7 +881,7 @@ async function findFilesOnPage(pageUrl) {
                     if (fileName && !foundFiles.has(absoluteUrl)) {
                         foundFiles.set(absoluteUrl, { name: decodeURIComponent(fileName), url: absoluteUrl });
                     }
-                } catch (e) {
+                } catch {
                     console.warn(`[findFilesOnPage] Invalid URL found and skipped: ${href}`);
                 }
             }
@@ -1055,7 +1055,7 @@ function getSpecialCategoryKeyForTab(url, config) {
         if (isIPAddress(hostname)) {
             return formatIPGroupName(hostname, portPrefix);
         }
-    } catch (e) {}
+    } catch {}
     return specialGroups.misc.key;
 }
 
@@ -1824,7 +1824,7 @@ async function toggleLinkPreviewOption(explicitState) {
 
     try {
         await chrome.contextMenus.update('toggle-link-preview', { checked: newState });
-    } catch (err) {}
+    } catch {}
 
     const msg = { action: 'linkPreviewStatusChanged', enabled: newState };
     chrome.runtime.sendMessage(msg);
@@ -1860,12 +1860,12 @@ async function toggleExtensionPopupCommand(tab = null) {
                 left = Math.round(workArea.left + (workArea.width - width) / 2);
                 top = Math.round(workArea.top + (workArea.height - height) / 2);
             }
-        } catch (e) {
+        } catch {
             try {
                 const currentWin = await chrome.windows.getLastFocused();
                 left = Math.round(currentWin.left + (currentWin.width - width) / 2);
                 top = Math.round(currentWin.top + (currentWin.height - height) / 2);
-            } catch (e2) {}
+            } catch {}
         }
 
         // 4. Create the window

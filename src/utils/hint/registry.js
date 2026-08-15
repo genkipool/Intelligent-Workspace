@@ -229,7 +229,7 @@ var CommandRegistry = class CommandRegistry {
                             document.querySelectorAll('video').forEach((v) => {
                                 try {
                                     v.pause();
-                                } catch (e) {}
+                                } catch {}
                             });
                             const width = Math.round(window.innerWidth * 0.8) || 800;
                             const height = Math.round(window.innerHeight * 0.8) || 600;
@@ -253,7 +253,7 @@ var CommandRegistry = class CommandRegistry {
                                         if (!v.paused) {
                                             v.pause();
                                         }
-                                    } catch (e) {}
+                                    } catch {}
                                 });
                             }, 100);
                             const timeTrackerInterval = setInterval(() => {
@@ -271,7 +271,7 @@ var CommandRegistry = class CommandRegistry {
                                             lastKnownTime = pipVideo.currentTime;
                                         }
                                     }
-                                } catch (e) {}
+                                } catch {}
                             }, 250);
                             let didResume = false;
                             const resumeOriginalVideo = (shouldPlay) => {

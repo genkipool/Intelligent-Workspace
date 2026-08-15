@@ -526,7 +526,7 @@ var HintCommon = {
                         if (previewArea === ancestor || previewArea.contains(ancestor)) {
                             this.savedRange = range.cloneRange();
                         }
-                    } catch (e) {
+                    } catch {
                         /* ignore */
                     }
                 };
@@ -1019,7 +1019,7 @@ var HintCommon = {
                 sel.removeAllRanges();
                 sel.addRange(this.savedRange);
                 return this.savedRange;
-            } catch (e) {
+            } catch {
                 return null;
             }
         },
@@ -1061,7 +1061,7 @@ var HintCommon = {
             // (justifyLeft, insertOrderedList, indent, outdent, etc.)
             try {
                 document.execCommand(command, false, value || null);
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
         },
@@ -1090,7 +1090,7 @@ var HintCommon = {
                 // Unwrap: use execCommand toggle (more reliable for unwrapping)
                 try {
                     document.execCommand(this._tagToCommand(tagName), false, null);
-                } catch (e) {}
+                } catch {}
             } else {
                 // Wrap: create element and insert
                 this._wrapRangeWithElement(range, document.createElement(tagName.toLowerCase()));
@@ -1134,11 +1134,11 @@ var HintCommon = {
 
                 // Update savedRange to the new selection
                 this.savedRange = newRange.cloneRange();
-            } catch (e) {
+            } catch {
                 // Fallback if range manipulation fails
                 try {
                     document.execCommand('bold', false, null);
-                } catch (e2) {
+                } catch {
                     /* ignore */
                 }
             }
@@ -1189,7 +1189,7 @@ var HintCommon = {
                         top = rangeRect.bottom + 5;
                         left = rangeRect.left;
                     }
-                } catch (e) {
+                } catch {
                     /* ignore */
                 }
             }
