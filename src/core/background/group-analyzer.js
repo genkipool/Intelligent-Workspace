@@ -591,34 +591,3 @@ function getMatchingRule(tabs, customRules) {
     logMessage(`[getMatchingRule] -> FINISHED: No single rule was found that covers all tabs in the group.`);
     return null;
 }
-
-function getSpecialCategory(tabs, config) {
-    if (tabs.length === 0) return null;
-
-    const effectiveConfig = config || DEFAULT_CLUSTER_CONFIG;
-    const specialGroups = effectiveConfig.specialGroups;
-    const firstUrlStr = tabs[0].url;
-
-    if (firstUrlStr.startsWith('chrome://')) {
-        return specialGroups.chrome.name;
-    } else if (firstUrlStr.startsWith('file://')) {
-        return specialGroups.files.name;
-    } else if (firstUrlStr.startsWith('chrome-extension://')) {
-        return specialGroups.extensions.name;
-    }
-
-    try {
-        const url = new URL(firstUrlStr);
-        const { hostname } = url;
-
-        if (isLocalhost(hostname)) {
-            const port = url.port ? `:${url.port}` : '';
-            return `Localhost${port}`;
-        } else if (isIPAddress(hostname)) {
-            const port = url.port ? `:${url.port}` : '';
-            return formatIPGroupName(hostname, port);
-        }
-    } catch (e) {}
-
-    return specialGroups.misc.name;
-}

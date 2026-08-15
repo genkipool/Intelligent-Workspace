@@ -240,34 +240,6 @@ function reconstructFullTitleFromInfo(baseTitle, groupId = null) {
     return fullTitle;
 }
 
-async function loadClusterConfig() {
-    try {
-        const storage = await getSettingsStorage();
-        const data = await storage.get(['clusterConfig', 'clusteringEnabled']);
-
-        const storedConfig = data.clusterConfig || {};
-
-        const mergedSpecialGroups = {};
-        for (const key in DEFAULT_CLUSTER_CONFIG.specialGroups) {
-            mergedSpecialGroups[key] = {
-                ...DEFAULT_CLUSTER_CONFIG.specialGroups[key],
-                ...(storedConfig.specialGroups?.[key] || {}),
-            };
-        }
-
-        clusterConfig = {
-            ...DEFAULT_CLUSTER_CONFIG,
-            ...storedConfig,
-            specialGroups: mergedSpecialGroups,
-        };
-
-        // A leftover from before the migration: `elements` was the popup's DOM cache
-        // and does not exist in the worker, so this could never run.
-    } catch (error) {
-        console.error('Error loading cluster config.', error);
-    }
-}
-
 function applyCustomRules(tabs, customRules) {
     const customGroupTabs = {};
     const groupedTabIds = new Set();
@@ -558,31 +530,6 @@ function getGroupType(title) {
     } else {
         return 'manual';
     }
-}
-
-function calculateAddSizeWithPromise(displayWidth) {
-    chrome.runtime
-        .getPlatformInfo()
-        .then((platformInfo) => {
-            let addsize = 0;
-
-            if (platformInfo.os === 'win' || platformInfo.os === 'mac') {
-                addsize = Math.round(displayWidth * 0.01);
-            } else if (platformInfo.os === 'linux') {
-                addsize = Math.round(displayWidth * 0.02);
-            } else {
-                addsize = Math.round(displayWidth * 0.01);
-            }
-
-            logMessage(`Sistema Operativo: ${platformInfo.os}, addsize calculado: ${addsize}`);
-            // You can use the addsize variable here
-            return addsize;
-        })
-        .catch((error) => {
-            console.error('Error obtaining platform information:', error);
-            // Handle the error, perhaps returning a default value
-            return Math.round(displayWidth * 0.01);
-        });
 }
 
 function planMiscGroup(miscTabs, existingGroups, windowId) {

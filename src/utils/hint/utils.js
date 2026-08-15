@@ -1,10 +1,3 @@
-var RESET_STYLES = `
-        * {
-            background: transparent !important;
-            background-color: transparent !important;
-            background-image: none !important;
-        }
-    `;
 async function requestItgPipWindow(targetUrl, defaultWidth, defaultHeight) {
     const isShort =
         (typeof targetUrl === 'string' && targetUrl.includes('/shorts/')) ||

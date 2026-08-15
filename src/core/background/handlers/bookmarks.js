@@ -81,54 +81,6 @@ async function handleGetOldBookmarks(sendResponse) {
     }
 }
 
-// Function to verify broken links
-async function handleGetBrokenBookmarks(sendResponse) {
-    try {
-        const bookmarks = await getAllBookmarkNodes();
-        // Limit to avoid saturation, e.g., first 500 or batching in a real implementation
-        // For this example, process with a simple concurrency limit
-        const brokenBookmarks = [];
-
-        // Helper function to check URL with timeout
-        const checkUrl = async (bm) => {
-            if (!bm.url.startsWith('http')) return null;
-            try {
-                const controller = new AbortController();
-                const id = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-                const response = await fetch(bm.url, {
-                    method: 'HEAD',
-                    signal: controller.signal,
-                    mode: 'no-cors', // Important to avoid CORS errors, though it limits status info
-                });
-                clearTimeout(id);
-                // With no-cors, response.status is 0 and type is opaque. Assume if no error, it "works".
-                return null;
-            } catch (err) {
-                return {
-                    id: bm.id,
-                    title: bm.title,
-                    url: bm.url,
-                    error: err.name === 'AbortError' ? 'Timeout' : 'Connection error',
-                };
-            }
-        };
-
-        // Process in batches of 10 to avoid blocking
-        const batchSize = 10;
-        for (let i = 0; i < bookmarks.length; i += batchSize) {
-            const batch = bookmarks.slice(i, i + batchSize);
-            const results = await Promise.all(batch.map(checkUrl));
-            brokenBookmarks.push(...results.filter((r) => r !== null));
-        }
-
-        sendResponse({ success: true, bookmarks: brokenBookmarks });
-    } catch (error) {
-        console.error('Error checking broken bookmarks:', error);
-        sendResponse({ success: false, error: error.message });
-    }
-}
-
 // Helper to flatten the tree
 async function getAllBookmarkNodes() {
     const tree = await chrome.bookmarks.getTree();

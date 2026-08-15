@@ -1,6 +1,3 @@
-function loadPrefixesOption() {
-    return extensionSettings.enablePrefixes;
-}
 async function saveGroupPrefixState() {
     if (isInitializing) {
         logMessage('[saveGroupPrefixState] State save deferred: Extension is currently initializing.');
@@ -651,26 +648,6 @@ async function suspendInactiveTabsIntelligently() {
         }
     } catch (error) {
         console.warn('[MemorySaver] Error during tab suspension interval:', error);
-    }
-}
-async function removeGroupCompletelyAndCleanLastActivity(groupId) {
-    try {
-        const tabsInGroup = await chrome.tabs.query({
-            groupId: groupId,
-        });
-        if (tabsInGroup.length > 0) {
-            await executeWithRetries(
-                async () => await chrome.tabs.ungroup(tabsInGroup.map((t) => t.id)),
-                `completely removing group ${groupId}`,
-            );
-        }
-        delete lastActivity[groupId];
-    } catch (e) {
-        if (e.message && (e.message.includes('No group with id') || e.message.includes('Invalid tab group ID'))) {
-            delete lastActivity[groupId];
-        } else {
-            console.warn(`Error removing group ${groupId} completely:`, e);
-        }
     }
 }
 async function executeWithRetries(action, operationDescription, maxRetries = MAX_RETRIES, retryDelay = RETRY_DELAY) {

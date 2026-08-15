@@ -17,11 +17,6 @@ function isCompactModeActive(groupsInWindow) {
     return groupCount >= threshold;
 }
 
-async function dataUrlToBlob(dataUrl) {
-    const response = await fetch(dataUrl);
-    return await response.blob();
-}
-
 function sendMessageToUI(message) {
     try {
         chrome.runtime.sendMessage(message, () => {
@@ -39,20 +34,6 @@ function sendMessageToUI(message) {
     } catch (error) {
         console.warn(`Failed to send message to UI, it might be closed. Error: ${error.message}`);
     }
-}
-
-/**
- * Broadcasts a message to all open tabs.
- * Useful for themes, hint states, etc.
- */
-function broadcastToAllTabs(action, extraData = {}) {
-    chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-            chrome.tabs.sendMessage(tab.id, { action, ...extraData }).catch(() => {
-                /* Ignore error: content script might not be in this tab */
-            });
-        });
-    });
 }
 
 function normalizeUrl(url) {
@@ -1112,11 +1093,6 @@ function getDeterministicColor(str) {
         hash |= 0;
     }
     return DOMAIN_PALETTE[Math.abs(hash) % DOMAIN_PALETTE.length];
-}
-
-function getRandomColor() {
-    const colors = ['red', 'yellow', 'green', 'blue', 'purple', 'pink', 'orange', 'cyan'];
-    return colors[Math.floor(Math.random() * colors.length)];
 }
 
 function capitalizeFirstLetter(string) {

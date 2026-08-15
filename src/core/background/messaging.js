@@ -291,11 +291,12 @@ const MESSAGE_HANDLERS = {
      * nothing at all.
      *
      * Debounced on purpose: the storage change fires its own regroup a moment later
-     * and both have to collapse into a single pass.
+     * and both have to collapse into a single pass. handlers/groups.js has held the
+     * handler all along; it was simply never reachable, and it is the one that
+     * reports a failure back as { error }, which is what the Rules page reads.
      */
     groupTabs: (message, sender, sendResponse) => {
-        debounceGroupTabs();
-        sendResponse({ success: true });
+        handleGroupTabs(message, sendResponse);
         return true;
     },
     clearFaviconCache: (message, sender, sendResponse) => {
@@ -983,39 +984,6 @@ function handleTogglePrefixes(message, sendResponse) {
         }
     })();
 }
-function handleUpdateOrResetPrefixes(message, sendResponse) {
-    (async () => {
-        try {
-            logMessage(`[onMessage] Received ${message.action}.`);
-            const prefixesWereEnabled = extensionSettings.enablePrefixes;
-            if (prefixesWereEnabled) {
-                await togglePrefixesCommand(false);
-                await new Promise((resolve) => setTimeout(resolve, 150));
-            }
-            if (message.newPrefixes) {
-                extensionSettings.userPrefixes = message.newPrefixes;
-                const storage = await getSettingsStorage();
-                await storage.set({
-                    userPrefixes: message.newPrefixes,
-                });
-            }
-            loadUserDefinedPrefixes();
-            if (prefixesWereEnabled) {
-                await togglePrefixesCommand(true);
-            }
-            sendResponse({
-                status: message.action === 'updatePrefixes' ? 'prefixes_updated' : 'prefixes_reset',
-            });
-        } catch (e) {
-            console.error(`Error processing ${message.action} in background.`, e);
-            sendResponse({
-                status: `error_processing_${message.action}`,
-                error: e.message,
-            });
-        }
-    })();
-}
-
 function trySendResponse(response, sendResponseCallback) {
     try {
         if (sendResponseCallback && typeof sendResponseCallback === 'function') {
