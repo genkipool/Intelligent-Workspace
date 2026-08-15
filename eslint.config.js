@@ -187,7 +187,25 @@ export default [
             'svelte/no-unused-props': 'warn',
             'svelte/button-has-type': 'warn',
             'svelte/prefer-class-directive': 'warn',
-            'svelte/prefer-destructured-store-props': 'warn',
+            /**
+             * Off, and not as a convenience: the rule does not apply to a Svelte 5
+             * runes codebase, checked three ways.
+             *
+             * Its fix is `$: ({ prop } = $store);`, which it also writes itself with
+             * --fix. That is a legacy reactive statement, and the compiler refuses it
+             * here: "`$:` is not allowed in runes mode, use `$derived` or `$effect`".
+             * Applying the rule as it stands breaks the build.
+             *
+             * Its stated benefit — "fewer redraws" — was true in Svelte 4. In Svelte 5
+             * `{$store.prop}` compiles to set_text, which diffs against the cached node
+             * value and only writes when it changed. There is no redraw to save, only a
+             * re-evaluated expression.
+             *
+             * And it fires on any member access, not just properties: it asked to
+             * destructure `get` off a store holding a Map (calling it unbound throws)
+             * and `length` off one holding an array.
+             */
+            'svelte/prefer-destructured-store-props': 'off',
             'svelte/require-stores-init': 'warn',
         },
     },
