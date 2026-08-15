@@ -282,6 +282,22 @@ function handleFocusSidePanel(sendResponse) {
 }
 
 const MESSAGE_HANDLERS = {
+    /**
+     * The Rules page asks for a regroup after changing the clustering settings.
+     * There was no handler for it, so every switch logged "Receiving end does not
+     * exist" and the regroup happened only because the settings write raised
+     * chrome.storage.onChanged — which is skipped while isInstallActive is set, so
+     * on a freshly installed profile the switches changed the setting and regrouped
+     * nothing at all.
+     *
+     * Debounced on purpose: the storage change fires its own regroup a moment later
+     * and both have to collapse into a single pass.
+     */
+    groupTabs: (message, sender, sendResponse) => {
+        debounceGroupTabs();
+        sendResponse({ success: true });
+        return true;
+    },
     clearFaviconCache: (message, sender, sendResponse) => {
         if (typeof clearFaviconColorCache === 'function') {
             clearFaviconColorCache();

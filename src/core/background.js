@@ -1,3 +1,34 @@
+/**
+ * The worker broadcasts a lot of "if anyone is listening" notices — rulesUpdated,
+ * themeChanged, bookmarksChanged, pageModeChanged and friends — from around fifty
+ * places, none of which care about the answer. When no page of the extension is
+ * open there is nobody to receive them, the promise rejects, and since nothing
+ * awaits it the console fills with "Could not establish connection. Receiving end
+ * does not exist.". It is harmless, but it buries the errors that do matter.
+ *
+ * Only that specific rejection is swallowed, and only for calls made in the
+ * promise form; anything else still propagates.
+ */
+((noReceiver) => {
+    for (const [api, method] of [
+        [chrome.runtime, 'sendMessage'],
+        [chrome.tabs, 'sendMessage'],
+    ]) {
+        if (!api || typeof api[method] !== 'function') continue;
+        const original = api[method].bind(api);
+        api[method] = function (...args) {
+            const result = original(...args);
+            if (result && typeof result.catch === 'function') {
+                return result.catch((error) => {
+                    if (noReceiver.test(error?.message || '')) return undefined;
+                    throw error;
+                });
+            }
+            return result;
+        };
+    }
+})(/Receiving end does not exist|message port closed|Could not establish connection/i);
+
 importScripts('/background/gemini-api.js');
 importScripts('/agent-backend.js');
 importScripts('/background/state.js');
