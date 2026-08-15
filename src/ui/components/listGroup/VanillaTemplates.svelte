@@ -1,5 +1,4 @@
 <script>
-    import { t } from '../../stores/i18nStore.js';
 </script>
 
 <template id="hidden-group-indicator-template">

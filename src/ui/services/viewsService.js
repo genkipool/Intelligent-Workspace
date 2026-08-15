@@ -12,7 +12,7 @@ import { extractYouTubeVideoId, createYouTubeEmbed } from '../../utils/youtubeEm
 
 import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
-import { groupHistoryByDate, linkifyHtml } from './utils.js';
+import { linkifyHtml } from './utils.js';
 import { prefetchUrl, prefetchData } from './prefetchService.js';
 import { openModal, showDeleteHistoryConfirmModal } from '../stores/modalStore.js';
 
@@ -42,12 +42,10 @@ import {
 } from '../stores/appStore.svelte.js';
 
 // ─── Svelte Stores (other) ───────────────────────────────────────
-import { t } from '../stores/i18nStore.js';
 import { geminiStore, conversationHistory } from '../stores/geminiStore.js';
-import { listGroupState } from '../stores/listGroupStore.js';
 
 // ─── Legacy state (transitional — for properties not yet in Svelte stores) ──
-import { state as legacyState, STORAGE_KEYS } from './constants.js';
+import { state as legacyState } from './constants.js';
 
 // ─── Direct Function Imports (replacing fn.X) ────────────────────
 import { applySearchAndFilter } from './searchService.js';

@@ -178,6 +178,11 @@ export default [
     {
         files: ['**/*.svelte'],
         rules: {
+            // The base block only covers .js/.mjs, so components were never checked
+            // for this and unused imports piled up unseen. The parser resolves names
+            // referenced from the markup, so a prop or a store used only in the
+            // template still counts as used.
+            'no-unused-vars': ['warn', { args: 'none' }],
             'svelte/no-reactive-functions': 'off',
             'svelte/no-unused-props': 'warn',
             'svelte/button-has-type': 'warn',

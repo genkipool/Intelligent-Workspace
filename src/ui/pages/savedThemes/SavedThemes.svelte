@@ -18,7 +18,6 @@
     import { initializeActiveTheme, applyCustomTheme, getActiveTheme, saveActiveTheme } from '../../../utils/theme.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import { exportThemes, processAndSaveImportedThemes } from '../../../utils/importExport.js';
-    import { prefetchUrl } from '../../services/prefetchService.js';
     import { i18nStore } from '../../stores/i18nStore.js';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
 

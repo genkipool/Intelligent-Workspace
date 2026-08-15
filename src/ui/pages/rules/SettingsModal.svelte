@@ -160,10 +160,6 @@
         onClusterChanged();
     }
 
-    function yieldForAnimation(ms = 350) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
     /** Any grouping change re-syncs the master switch and regroups the tabs. */
     async function onClusterChanged() {
         isClusterEnabled = isAnyClusterSwitchOn(clusterConfig);
@@ -201,8 +197,6 @@
         const { customRules = [] } = await getRuleStorage();
         allRulesActive = customRules.length > 0 && customRules.every((r) => r.active);
     }
-
-
 
     async function toggleAllRules() {
         const newState = !allRulesActive;

@@ -1,15 +1,10 @@
 <script>
-    import { onMount } from 'svelte';
-    import { geminiStore, pendingAttachments, agentModeEnabled } from '../../stores/geminiStore.js';
+    import { geminiStore, pendingAttachments } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { showNotification } from '../../../utils/i18n.js';
-
-    let { visible = false, apiKeyExists = false, onsend } = $props();
+    let { visible = false, onsend } = $props();
 
     let textarea = $state(null);
     let textareaValue = $state('');
-    let fileInput;
-
     let attachments = $derived($pendingAttachments);
 
     function autoResize() {
@@ -33,18 +28,6 @@
             e.preventDefault();
             handleSend();
         }
-    }
-
-    function handleAttachClick() {
-        fileInput?.click();
-    }
-
-    function handleFileChange(e) {
-        const files = e.target.files;
-        if (files?.length) {
-            geminiStore.addAttachments(files);
-        }
-        e.target.value = '';
     }
 
     function handlePaste(e) {
@@ -107,10 +90,6 @@
 
     function removeAttachment(index) {
         geminiStore.removeAttachment(index);
-    }
-
-    function handleAgentToggle() {
-        geminiStore.toggleAgentMode();
     }
 
     export function focus() {

@@ -23,8 +23,6 @@
     // Trailing spaces in this placeholder are intentional
     const urlsPlaceholder =
         'https://www.example.com \nhttps://192.168.1.1 \nhttps://192.168.1.1:9080 \nhttps://[2002::1] \nhttps://[2002::1]:9080 \nfile:///home/example.txt';
-    const validProtocols = ['http:', 'https:', 'file:', 'chrome:', 'chrome-extension:'];
-
     function initForm() {
         if (mode === 'edit' && rule) {
             ruleName = rule.name || '';

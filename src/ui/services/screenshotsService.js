@@ -24,12 +24,7 @@ async function waitForElement(selector, attempts = 30) {
 
 import { applyTranslations, showNotification, showPersistentProgressNotification } from '../../utils/i18n.js';
 
-import {
-    saveScreenshotToDb,
-    getScreenshotFromDb,
-    deleteScreenshotFromDb,
-    getAllScreenshotIdsFromDb,
-} from '../../utils/db.js';
+import { saveScreenshotToDb, getScreenshotFromDb, deleteScreenshotFromDb } from '../../utils/db.js';
 
 import { STORAGE_KEYS, screenshotConfig } from './constants.js';
 import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob } from './utils.js';

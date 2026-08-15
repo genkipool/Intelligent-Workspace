@@ -8,7 +8,6 @@
  */
 
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
-import { bindModalSaveButton } from '../../utils/modal-save-close.js';
 import {
     openModal,
     showAddToRuleModal as showAddToRuleModalStore,

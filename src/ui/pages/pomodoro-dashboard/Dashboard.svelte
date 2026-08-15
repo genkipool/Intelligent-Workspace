@@ -1,10 +1,10 @@
 <script>
-    import { onMount, onDestroy, tick, mount } from 'svelte';
+    import { onMount, onDestroy, mount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import { t, i18nStore, tt } from '../../stores/i18nStore.js';
+    import { t, i18nStore } from '../../stores/i18nStore.js';
     /* ===============================================================
    Pomodoro Dashboard -- Logic
    =============================================================== */
@@ -25,15 +25,12 @@
     import DashboardProjectAnalysisSection from './components/DashboardProjectAnalysisSection.svelte';
     import DashboardBreakdownSection from './components/DashboardBreakdownSection.svelte';
     import {
-        PROJECT_COLORS,
         fmtDur,
         fmtH,
-        fmtDate,
         fmtDateShort,
         fmtTime,
         dayKey,
         effColor,
-        projColor,
         computeKpis,
         computeStreak,
     } from './dashboardAnalytics.js';
@@ -60,7 +57,7 @@
         try {
             const stored = await chrome.storage.local.get('preferred-language');
             _lang = stored['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
-        } catch (_) {
+        } catch {
             _lang = 'en';
         }
         try {
@@ -70,13 +67,13 @@
                 _msgs = await res.json();
                 return;
             }
-        } catch (_) {}
+        } catch {}
         // Fallback to English
         try {
             const url = chrome.runtime.getURL('_locales/en/messages.json');
             const res = await fetch(url);
             if (res.ok) _msgs = await res.json();
-        } catch (_) {}
+        } catch {}
     }
 
     /** Returns the localized message for a key, substituting $1, $2... */
@@ -133,7 +130,7 @@
                     document.documentElement.setAttribute('data-theme', pref);
                 }
             }
-        } catch (_) {
+        } catch {
             document.documentElement.setAttribute('data-theme', 'dark');
         }
     }
@@ -152,7 +149,7 @@
                         Object.values(charts).forEach((c) => {
                             try {
                                 c.destroy();
-                            } catch (_) {}
+                            } catch {}
                         });
                         charts = {};
                         renderAll();
@@ -165,7 +162,7 @@
                     });
                 }
             });
-        } catch (_) {}
+        } catch {}
     }
 
     // --- DB ACCESS ----------------------------------------------------
@@ -307,7 +304,7 @@
             testCtx.fillRect(0, 0, 1, 1);
             const [r, g, b, a] = testCtx.getImageData(0, 0, 1, 1).data;
             return { r, g, b, a: a / 255 };
-        } catch (_) {
+        } catch {
             return { r: 52, g: 152, b: 219, a: 1 };
         }
     }
@@ -414,8 +411,6 @@
             }
         });
 
-        const q = sidebarQuery.toLowerCase();
-        const matchesQuery = (name) => !q || name.toLowerCase().includes(q);
         const scrollEl = document.getElementById('sidebar-scroll');
         const props = {
             folderNames: Object.keys(folderMap).sort(),
@@ -611,13 +606,6 @@
         const dowSnap = rangeStart.getDay();
         rangeStart.setDate(rangeStart.getDate() - (dowSnap === 0 ? 6 : dowSnap - 1));
 
-        // -- constants matching CSS ---------------------------------------
-        const CELL = 17; // px  (grid-template-rows cell size)
-        const GAP = 3; // px  (grid gap)
-        const STRIDE = CELL + GAP; // 20 px per column
-
-        const locale = _lang === 'es' ? 'es-ES' : 'en-GB';
-
         // -- iterate weeks -> collect cells + month positions -------------
         const cells = [];
         let colIdx = 0;
@@ -628,8 +616,6 @@
 
         const cur = new SvelteDate(rangeStart);
         while (cur <= rangeEnd) {
-            // 7 cells for this week column -- scan first to detect day-1 boundaries
-            const weekStart = new Date(cur);
             for (let d = 0; d < 7; d++) {
                 // Detect if this day is the 1st of a month we haven't seen yet
                 const dayOfMonth = cur.getDate();
@@ -805,13 +791,6 @@
         const rolling = vals.map((_, i) => {
             const s = vals.slice(Math.max(0, i - 4), i + 1);
             return +(s.reduce((a, b) => a + b, 0) / s.length).toFixed(1);
-        });
-
-        // Bar color by efficiency level: <40 error, 40-69 action, >=70 interactive
-        const barColors = vals.map((v) => {
-            if (v >= 70) return colorMix(cssVar('--interactive-color'), 0.75);
-            if (v >= 40) return colorMix(cssVar('--text-color'), 0.45);
-            return colorMix(cssVar('--error-color'), 0.65);
         });
 
         charts.eff = new Chart(ctx, {
@@ -1230,7 +1209,6 @@
                 const tx = db.transaction([STORE], 'readwrite');
                 const store = tx.objectStore(STORE);
 
-                let importedCount = 0;
                 for (const entry of data) {
                     if (!entry.id) continue;
                     await new Promise((res, rej) => {
@@ -1238,7 +1216,6 @@
                         req.onsuccess = () => res();
                         req.onerror = () => rej(req.error);
                     });
-                    importedCount++;
                 }
 
                 tx.oncomplete = () => {
@@ -1399,7 +1376,7 @@
                     triggerSyncLoad();
                 }
             };
-        } catch (_) {}
+        } catch {}
 
         _onMessageListener = (msg) => {
             if (msg.action === 'pomodoroStatsChanged' || msg.action === 'pomodoroStatsUpdated') {
@@ -1408,7 +1385,7 @@
         };
         try {
             chrome.runtime.onMessage.addListener(_onMessageListener);
-        } catch (_) {}
+        } catch {}
 
         _visibilityHandler = () => {
             if (document.visibilityState === 'visible') {
@@ -1438,7 +1415,7 @@
         if (_syncChannel) {
             try {
                 _syncChannel.close();
-            } catch (_) {}
+            } catch {}
             _syncChannel = null;
         }
         if (_dataSyncTimer) {
@@ -1448,7 +1425,7 @@
         if (_onMessageListener) {
             try {
                 chrome.runtime.onMessage.removeListener(_onMessageListener);
-            } catch (_) {}
+            } catch {}
         }
         if (_visibilityHandler) {
             document.removeEventListener('visibilitychange', _visibilityHandler);

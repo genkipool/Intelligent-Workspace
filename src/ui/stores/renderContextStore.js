@@ -1,4 +1,4 @@
-import { writable, derived } from 'svelte/store';
+import { writable } from 'svelte/store';
 import { STORAGE_KEYS } from '../services/constants.js';
 import { getGroupInfoMap, getGroupPrefixState } from '../services/utils.js';
 

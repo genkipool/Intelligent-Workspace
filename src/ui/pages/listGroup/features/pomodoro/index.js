@@ -1,11 +1,5 @@
 import { showNotification } from '../../../../../utils/i18n.js';
-import {
-    savePomoStatsToDb,
-    getAllPomoStatsFromDb,
-    getPomoStatsByProjectFromDb,
-    deletePomoStatsFromDb,
-    clearPomoStatsFromDb,
-} from '../../../../../utils/db.js';
+import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
 
 // ============================================================
 // POMODORO FRONTEND v3 — 3-division design, fixed sound, i18n

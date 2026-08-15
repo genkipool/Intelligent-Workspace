@@ -11,14 +11,13 @@ import { geminiStore } from '../stores/geminiStore.js';
 import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
 import '../../lib/marked.js';
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
-import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
-import { STORAGE_KEYS, MAX_GEMINI_SCHEDULES } from './constants.js';
-import { sanitizeFilename, copyRichTextToClipboard } from './utils.js';
+import { getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
+import { STORAGE_KEYS } from './constants.js';
+import { sanitizeFilename } from './utils.js';
 import {
     closeUrlInPanel,
     closeBookmarksView,
     manageViewVisibility,
-    showWelcomeMessage,
     updateExpandAllButtonState,
     updateBackButtonTooltip,
     updateHeaderButtonsVisibility,

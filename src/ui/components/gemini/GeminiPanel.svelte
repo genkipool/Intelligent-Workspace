@@ -1,28 +1,13 @@
 <script>
     import { onMount } from 'svelte';
-    import {
-        geminiStore,
-        isGeminiViewActive,
-        conversationHistory,
-        agentModeEnabled,
-        selectedModel,
-        availableModels,
-    } from '../../stores/geminiStore.js';
-    import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
+    import { geminiStore, isGeminiViewActive, agentModeEnabled } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { showNotification, applyTranslations } from '../../../utils/i18n.js';
-    import { cancelAgentQuery, setSendButtonBusy } from '../../../utils/agent-ui.js';
+    import { applyTranslations } from '../../../utils/i18n.js';
+    import { cancelAgentQuery } from '../../../utils/agent-ui.js';
     import GeminiConversationView from './GeminiConversationView.svelte';
     import GeminiInput from './GeminiInput.svelte';
     import ModelSelector from './ModelSelector.svelte';
-    import {
-        openModal,
-        showSaveConversationModal,
-        showViewConversationsModal,
-        showApiKeyModal,
-        showGeminiScheduleModal,
-    } from '../../stores/modalStore.js';
-    import { getAllGeminiEntriesFromDb } from '../../../utils/db.js';
+    import { openModal, showApiKeyModal } from '../../stores/modalStore.js';
     import {
         updateBackButtonTooltip,
         updateHeaderButtonsVisibility,
@@ -53,7 +38,6 @@
     $effect(() => {
         if ($isGeminiViewActive) anticipateBoot = false;
     });
-    let history = $derived($conversationHistory);
     let agentMode = $derived($agentModeEnabled);
 
     let previousActive = false;
@@ -136,44 +120,8 @@
         await geminiStore.handleQuery(query);
     }
 
-    async function openSaveConvModal() {
-        if (history.length === 0) {
-            showNotification('errorEmptyConversation', true);
-            return;
-        }
-        openModal(showSaveConversationModal);
-    }
-
-    function openViewConversations() {
-        const combined = geminiStore.getCombinedConversations();
-        openModal(showViewConversationsModal, { conversations: combined });
-    }
-
     function openApiKeyModal() {
         openModal(showApiKeyModal);
-    }
-
-    async function openScheduleModal() {
-        const data = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
-        if ((data.geminiApiKeysList?.length || 0) === 0 && !data[STORAGE_KEYS.API_KEY]) {
-            openModal(showApiKeyModal);
-            return;
-        }
-        const schedules =
-            (await chrome.storage.local.get(STORAGE_KEYS.GEMINI_SCHEDULES))[STORAGE_KEYS.GEMINI_SCHEDULES] || [];
-        openModal(showGeminiScheduleModal, { schedules });
-    }
-
-    async function handleNewConversation() {
-        await geminiStore.newConversation();
-    }
-
-    async function handleCycleConversation(direction) {
-        await geminiStore.cycleConversation(direction);
-    }
-
-    async function handleClearConversation() {
-        await geminiStore.deleteConversation();
     }
 
     let fileInput = $state(null);

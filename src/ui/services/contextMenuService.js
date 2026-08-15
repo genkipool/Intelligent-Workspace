@@ -6,7 +6,7 @@ import {
     bookmarkActionVisibilitySettings as bookmarkActionVisibilitySettingsStore,
 } from '../stores/appStore.svelte.js';
 export { activeContextMenu };
-import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS, STORAGE_KEYS } from './constants.js';
+import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS } from './constants.js';
 import { renderGroups } from './groupsService.js';
 import { withTabActivation } from './screenshotsService.js';
 import { dataUrlToBlob } from './utils.js';

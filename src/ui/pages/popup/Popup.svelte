@@ -72,7 +72,7 @@
         if (port) {
             try {
                 port.disconnect();
-            } catch (e) {
+            } catch {
                 /* ignore */
             }
         }

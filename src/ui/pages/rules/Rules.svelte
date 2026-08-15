@@ -24,7 +24,7 @@
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import RulesFooter from './RulesFooter.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
-    import { groupTabs, getRuleStorage, setRuleStorage, getSettings, saveSettings } from './modules/rules-api.js';
+    import { groupTabs, getSettings, saveSettings } from './modules/rules-api.js';
     import {
         defaultClusterConfig,
         mergeClusterConfig,
@@ -34,7 +34,6 @@
     } from './modules/clusterDefaults.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
-    import { ClusterPerfMonitor } from './modules/clusterPerf.js';
     import { duplicateMarkerFields } from './modules/prefixMarkers.js';
 
     let isLoading = $state(true);
@@ -66,7 +65,6 @@
     }
     let storageMode = $state('sync');
 
-    let miscSortOption = $state('start');
     let clusterConfig = $state(defaultClusterConfig());
     let userPrefixes = $state({ lock: '', openKey: '', loupe: '', checked: '', warning: '' });
     let timerInactiveTime = $state(1);
@@ -96,7 +94,6 @@
         return () => mq.removeEventListener('change', onChange);
     });
 
-    let isAllExpanded = $derived($isAllExpandedStore);
     // Active when there are rules and all of them are enabled; disabled when there are none
     let isAllRulesActive = $derived($rulesStore.length > 0 && $rulesStore.every((r) => r.active));
     let hasRules = $derived($rulesStore.length > 0);
@@ -753,17 +750,6 @@
         else if (popupName === 'storage') showStoragePopup = true;
         else if (popupName === 'color') showColorPopup = true;
         else if (popupName === 'discarding') showDiscardingPopup = true;
-    }
-
-    function closeAllPopups() {
-        showClusterPopup = false;
-        showSortGroupsPopup = false;
-        showPrefixPopup = false;
-        showTimerPopup = false;
-        showAllRulesPopup = false;
-        showStoragePopup = false;
-        showColorPopup = false;
-        showDiscardingPopup = false;
     }
 </script>
 

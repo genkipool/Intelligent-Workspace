@@ -1,11 +1,10 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
+    import { tt } from '../../stores/i18nStore.js';
     import { createPageModePopup } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
 
     let {
-        tab,
         tabEl,
         isSplitGroup = false,
         isSplitActive = false,

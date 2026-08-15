@@ -1,5 +1,5 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
+    import { tt } from '../../stores/i18nStore.js';
     import TabItem from './TabItem.svelte';
     import { listGroupState } from '../../stores/listGroupStore.js';
     import { listGroupStore } from '../../stores/listGroupStore.js';
@@ -9,17 +9,12 @@
     import { actionVisibilitySettings, expandedSubgroupStates } from '../../stores/appStore.svelte.js';
     import { showNotification } from '@/utils/i18n.js';
 
-    let { domain = '', tabs = [], groupId, isNew = false, renderContext = {} } = $props();
+    let { domain = '', tabs = [], groupId, renderContext = {} } = $props();
 
     // Derived values from renderContext
     let seenTabIds = $derived(renderContext.seenTabIds || new Set());
-    let duplicateUrlSet = $derived(renderContext.duplicateUrlSet || new Set());
     let screenshotData = $derived(renderContext.screenshotData || {});
     let notesData = $derived(renderContext.notesData || {});
-    let customRules = $derived(renderContext.customRules || []);
-    let pageModes = $derived(renderContext.pageModes || {});
-    let groupInfoMap = $derived(renderContext.groupInfoMap || new Map());
-
     let totalSubgroupTabs = $derived(tabs.length);
     let seenSubgroupTabsCount = $derived(tabs.filter((t) => seenTabIds.has(t.id)).length);
     let isAllSeen = $derived(seenSubgroupTabsCount === totalSubgroupTabs && totalSubgroupTabs > 0);
@@ -54,10 +49,10 @@
 
         try {
             updateExpandAllButtonState();
-        } catch (e) {}
+        } catch {}
         try {
             updateScrollButtons();
-        } catch (e) {}
+        } catch {}
     }
 
     function copyUrls(e) {

@@ -23,7 +23,6 @@ async function waitForElement(selector, attempts = 30) {
 }
 
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
-import { bindModalSaveButton } from '../../utils/modal-save-close.js';
 import { openModal, showNoteModal } from '@/ui/stores/modalStore.js';
 import { renderNoteEntry as renderNoteEntryFromModule } from '../content-renderer/content-renderer.js';
 
@@ -62,7 +61,6 @@ import {
     restoreMainView,
     openUrlInPanel,
     showWelcomeMessage,
-    updateExpandAllButtonState,
 } from './viewsService.js';
 import { applySearchAndFilter } from './searchService.js';
 import { showScreenshotGallery } from './screenshotsService.js';

@@ -19,25 +19,10 @@ import {
     showCookieEditorModal as showCookieEditorModalStore,
 } from '@/ui/stores/modalStore.js';
 
-import {
-    saveBackupToDb,
-    deleteBackupFromDb,
-    getAllNoteIdsFromDb,
-    getNoteFromDb,
-    getAllScreenshotIdsFromDb,
-    getScreenshotFromDb,
-} from '../../utils/db.js';
+import { saveBackupToDb, deleteBackupFromDb } from '../../utils/db.js';
 
-import { STORAGE_KEYS, colors, noteConfig, screenshotConfig } from './constants.js';
-import {
-    getGroupInfoMap,
-    getGroupPrefixState,
-    animateAndRemove,
-    correctFaviconUrl,
-    dataUrlToBlob,
-    linkedGroupIds,
-} from './utils.js';
-import { prefetchUrl } from './prefetchService.js';
+import { colors, noteConfig, screenshotConfig } from './constants.js';
+import { getGroupInfoMap, animateAndRemove, linkedGroupIds } from './utils.js';
 import { exportCookies, processCookieFile } from '../../utils/importExport.js';
 
 // Direct function imports (replacing fn.X())

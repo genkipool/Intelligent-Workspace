@@ -32,7 +32,6 @@
     } = $props();
 
     let isStarred = $derived(rule.isStarred || false);
-    let uniqueId = $derived(`rule-active-switch-${index}`);
     const _themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
     let groupColorHex = $derived(_themeColors[rule.color] || _themeColors.blue);
 
@@ -158,10 +157,6 @@
 
     function editRule() {
         oneditRule?.({ index });
-    }
-
-    function toggleActive(e) {
-        ontoggleActive?.({ index, active: e.target.checked });
     }
 
     function deleteDomain(url) {

@@ -1,7 +1,6 @@
 <script>
     import { get } from 'svelte/store';
-    import { t, tt } from '../../stores/i18nStore.js';
-    import { listGroupState } from '../../stores/listGroupStore.js';
+    import { tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
     import { isProgrammaticActivation, splitScreenState } from '../../stores/appStore.svelte.js';
     import {
@@ -49,7 +48,7 @@
         if (title === tab.url && tab.url.startsWith('http')) {
             try {
                 return new URL(tab.url).hostname;
-            } catch (e) {}
+            } catch {}
         }
         return title;
     });
@@ -322,7 +321,7 @@
                         if (tabInfo && tabInfo.groupId !== -1) {
                             await moveSplitGroup(tabInfo.groupId);
                         }
-                    } catch (err) {
+                    } catch {
                         console.warn(
                             `Could not find remaining active tab (${firstRemainingTabId}) to move Split group.`,
                         );

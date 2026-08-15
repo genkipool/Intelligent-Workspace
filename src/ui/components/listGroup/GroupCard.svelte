@@ -1,9 +1,8 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
+    import { tt } from '../../stores/i18nStore.js';
     import TabItem from './TabItem.svelte';
     import Subgroup from './Subgroup.svelte';
     import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
-    import { animateAndRemove } from '../../services/utils.js';
     import { showNotification } from '@/utils/i18n.js';
     import { deleteBackupFromDb } from '../../../utils/db.js';
     import { handleBackupGroup, handleRestoreGroup, toggleColorPopup } from '../../services/groupsService.js';
@@ -26,11 +25,8 @@
 
     // Derived values from renderContext
     let seenTabIds = $derived(renderContext.seenTabIds || new Set());
-    let duplicateUrlSet = $derived(renderContext.duplicateUrlSet || new Set());
     let screenshotData = $derived(renderContext.screenshotData || {});
     let notesData = $derived(renderContext.notesData || {});
-    let customRules = $derived(renderContext.customRules || []);
-    let pageModes = $derived(renderContext.pageModes || {});
     let groupInfoMap = $derived(renderContext.groupInfoMap || new Map());
     let groupPrefixState = $derived(renderContext.groupPrefixState || {});
 
@@ -99,7 +95,7 @@
             let domain = 'other';
             try {
                 domain = new URL(tab.url).hostname.replace(/^www\./, '');
-            } catch (e) {}
+            } catch {}
             if (!acc[domain]) acc[domain] = [];
             acc[domain].push(tab);
             return acc;
@@ -250,7 +246,7 @@
                     if (tabsToUngroup.length > 0) {
                         await chrome.tabs.ungroup(tabsToUngroup.map((t) => t.id));
                     }
-                } catch (err) {}
+                } catch {}
             }
             const remaining = { ...$backedUpGroupData };
             delete remaining[group.id];

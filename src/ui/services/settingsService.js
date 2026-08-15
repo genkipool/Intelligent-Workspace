@@ -17,7 +17,6 @@ import { STORAGE_KEYS, ACTION_GROUPS, BOOKMARK_ACTION_GROUPS } from './constants
 
 import { createOverflowMenu } from './contextMenuService.js';
 import { renderHistoryView } from './viewsService.js';
-import { applySearchAndFilter } from './searchService.js';
 
 import { userDefinedOrder, pinnedGroupIds, hiddenGroupIds } from './groupsService.js';
 
@@ -27,10 +26,6 @@ import {
     visibilitySettings,
     actionVisibilitySettings,
     bookmarkActionVisibilitySettings,
-    expandedGroupStates,
-    expandedSubgroupStates,
-    isAllExpanded,
-    viewExpandStates,
     persistentNoteIds,
     backedUpGroupData,
     settings as settingsStore,

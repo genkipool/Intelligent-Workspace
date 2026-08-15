@@ -1,5 +1,4 @@
 <script>
-    import { onMount } from 'svelte';
     import { geminiStore, conversationHistory } from '../../stores/geminiStore.js';
     import { t } from '../../stores/i18nStore.js';
     import GeminiEntry from './GeminiEntry.svelte';

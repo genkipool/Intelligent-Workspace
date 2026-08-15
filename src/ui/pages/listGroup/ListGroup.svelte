@@ -7,7 +7,6 @@
     import PomodoroPanel from '../../components/listGroup/PomodoroPanel.svelte';
     import PersistentConversationControls from '../../components/listGroup/PersistentConversationControls.svelte';
     import { onMount } from 'svelte';
-    import { copyText } from '../../../utils/copyText.js';
     import { groupStore, groupsStore } from '../../stores/groupStore.js';
     import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
     import { i18nStore, t, tt } from '../../stores/i18nStore.js';
@@ -41,8 +40,6 @@
     } from '../../stores/renderContextStore.js';
     import GeminiPanel from '../../components/gemini/GeminiPanel.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
-    import { currentMainView, isGeminiViewActive } from '../../stores/appStore.svelte.js';
-    import { isCtrlHeld } from '../../stores/modifierKeysStore.js';
     import { handleDownloadConversation, markdownToHtml, markdownToPlainText } from '../../services/geminiService.js';
     import { copyRichTextToClipboard } from '../../services/utils.js';
     import { showNotification } from '../../../utils/i18n.js';

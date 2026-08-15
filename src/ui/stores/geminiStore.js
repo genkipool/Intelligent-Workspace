@@ -1,13 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
-import { showNotification, getCurrentLang, loadMessages, applyTranslations } from '../../utils/i18n.js';
-import {
-    openModal,
-    showSaveConversationModal,
-    showViewConversationsModal,
-    showApiKeyModal,
-    showGeminiScheduleModal,
-} from './modalStore.js';
+import { showNotification, getCurrentLang, loadMessages } from '../../utils/i18n.js';
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
 import { parseMarkdown } from '../content-renderer/content-renderer.js';
 import {
