@@ -328,6 +328,227 @@ import {
 
 import { geminiStore, conversationHistory } from '../../stores/geminiStore.js';
 
+/**
+ * What the main back button does. It was 65 lines inline inside
+ * initializeAllEvents; it captures nothing from that scope.
+ */
+async function handleMainBackClick() {
+    const errorView = document.querySelector('.container')?.querySelector('.error-message-container.active-view');
+    if (errorView) {
+        errorView.remove();
+        switchToGeminiView();
+        return;
+    }
+
+    if (get(isUrlViewActive)) {
+        const activeView = document.querySelector('.container')?.querySelector('.active-view');
+        if (activeView?.dataset.containsYoutube === 'true') {
+            hideYoutubeView(activeView);
+            return;
+        }
+        if (get(previousIframeUrl)) {
+            const url = get(previousIframeUrl);
+            previousIframeUrl.set(null);
+            await openUrlInPanel(url);
+            return;
+        }
+        closeUrlInPanel();
+        return;
+    }
+
+    if (get(isNotesViewActive)) {
+        closeNotesView();
+        return;
+    }
+    if (get(isGalleryViewActive)) {
+        closeScreenshotGallery();
+        return;
+    }
+
+    if (get(isGeminiViewActive)) {
+        if (get(isStandaloneGemini) && get(navigationHistory).length === 0) {
+            const { navSource } = await chrome.storage.local.get('navSource');
+            if (navSource) {
+                window.location.href = navSource;
+                return;
+            }
+        }
+        geminiStore.closeView(true);
+        isGeminiViewActive.set(false);
+        await restoreMainView();
+        return;
+    }
+
+    if (get(navigationHistory).length > 0) {
+        const hist = get(navigationHistory);
+        const previousView = hist.pop();
+        navigationHistory.set(hist);
+        await switchMainView(previousView, false);
+        return;
+    }
+
+    const { navSource } = await chrome.storage.local.get('navSource');
+    const currentPage = window.location.pathname.split('/').pop();
+    await chrome.storage.local.set({ navSource: `../listGroup/${currentPage}?context=sidepanel` });
+    if (navSource) {
+        window.location.href = navSource;
+    } else {
+        window.location.href = '../rules/rules.html?context=sidepanel';
+        chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../rules/rules.html' });
+    }
+}
+
+/**
+ * Wiring of the "delete all" button of the context panel (64 lines inline).
+ */
+function initDeleteAllContextButton() {
+    const deleteAllContextBtn = document.getElementById('delete-all-context-btn');
+    if (!deleteAllContextBtn) return;
+    deleteAllContextBtn.addEventListener('click', async () => {
+        const view = get(currentMainView);
+        if (get(isGeminiViewActive)) {
+            // The store holds the conversation on screen; the service copy of this
+            // reads the legacy stores and always reported "nothing to delete".
+            await geminiStore.deleteConversation();
+        } else if (get(isGalleryViewActive)) {
+            clearAllContextDataUI(get(currentGalleryContext), screenshotConfig);
+        } else if (get(isNotesViewActive)) {
+            clearAllContextDataUI(get(currentNotesContext), noteConfig);
+        } else if (view === 'groups') {
+            if (await confirmAction({ messageKey: 'confirmDeleteOtherGroups' })) {
+                chrome.runtime.sendMessage({ action: 'deleteOtherGroups' }, (response) => {
+                    if (response.success) {
+                        showNotification('otherGroupsDeleted');
+                        renderGroups();
+                    }
+                });
+            }
+        } else if (view === 'bookmarks') {
+            const visibilityPanel = document.getElementById('visibility-controls-panel');
+            if (visibilityPanel) {
+                const isPanelVisible = !visibilityPanel.classList.contains('hidden');
+                const isDeleteActive = !!visibilityPanel.querySelector('.delete-option-btn:not(.hidden)');
+                if (isPanelVisible && isDeleteActive) {
+                    visibilityPanel.classList.add('hidden');
+                } else {
+                    visibilityPanel.classList.remove('hidden');
+                    document
+                        .querySelectorAll(
+                            '#toggle-group-actions-btn, #toggle-domain-headers-btn, #toggle-subgroup-actions-btn, #toggle-tab-actions-btn, #toggle-folder-actions-btn, #toggle-child-folders-btn, #toggle-child-folder-actions-btn, #toggle-bookmark-actions-btn',
+                        )
+                        .forEach((b) => b?.classList.add('hidden'));
+                    document.querySelectorAll('.sort-option-btn').forEach((b) => b?.classList.add('hidden'));
+                    visibilityPanel
+                        .querySelectorAll('.delete-option-btn')
+                        .forEach((b) => b?.classList.remove('hidden'));
+                }
+            }
+        } else if (view === 'history') {
+            if (await confirmAction({ messageKey: 'confirmDeleteAllHistory' })) {
+                chrome.history.deleteAll(() => {
+                    showNotification('historyDeleted');
+                    renderHistoryView();
+                });
+            }
+        } else if (view === 'recent') {
+            prefetchCache.update((c) => {
+                c.recent = [];
+                return c;
+            });
+            renderRecentlyClosedView();
+            showNotification('recentCleared');
+        } else if (view === 'reading') {
+            if (await confirmAction({ messageKey: 'confirmDeleteAllReadingList' })) {
+                const items = await chrome.readingList.query({});
+                for (const item of items) await chrome.readingList.removeEntry({ url: item.url });
+                renderReadingListView();
+                showNotification('readingListCleared');
+            }
+        }
+    });
+}
+
+/**
+ * Messages the side panel reacts to (75 lines inline).
+ */
+function initRuntimeMessageListener() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.action === 'refreshUI') {
+            if (window.isBulkOpening || get(isBookmarksViewActive)) return;
+            if (get(isProgrammaticActivation)) {
+                isProgrammaticActivation.set(false);
+                return;
+            }
+            renderGroups();
+        }
+
+        if (message.action === 'bookmarksChanged') {
+            if (get(isHandlingBookmarkChange)) return;
+            isHandlingBookmarkChange.set(true);
+            chrome.runtime.sendMessage({ action: 'forceClearBookmarkCache' }, () => {
+                if (get(isBookmarksViewActive)) {
+                    (async () => {
+                        await new Promise((r) => setTimeout(r, 50));
+                        const bookmarksList = document.getElementById('bookmarks-list');
+                        if (bookmarksList) {
+                            await initializeBookmarksView(
+                                bookmarksList,
+                                {
+                                    applyTranslations,
+                                    updateScrollButtons,
+                                    updateExpandAllButtonState,
+                                    createOverflowMenu,
+                                    showAddToRuleModal,
+                                    exportBookmarkFolder,
+                                    showNotification,
+                                    openAddToBookmarkModal,
+                                },
+                                get(currentBookmarkSort),
+                                get(viewExpandStates).bookmarks,
+                            );
+                        }
+                        updateDuplicateCountBadge();
+                    })();
+                }
+            });
+            if (message.notification?.key) showNotification(message.notification.key);
+            setTimeout(() => isHandlingBookmarkChange.set(false), 300);
+        }
+
+        if (message.action === 'noteUpdatedFromOmnibar') {
+            const updatedId = message.id;
+            if (!updatedId) return;
+            (async () => {
+                try {
+                    const freshNote = await getNoteFromDb(updatedId);
+                    if (!freshNote) return;
+                    const noteEl = document.querySelector(`.note-entry[data-note-id="${updatedId}"]`);
+                    if (!noteEl) return;
+                    const context = get(currentNotesContext) || {
+                        type: 'group',
+                        id: -1,
+                        title: chrome.i18n.getMessage('note') || 'Note',
+                    };
+                    const handlers = getNoteHandlers(context);
+                    const newNoteEl = renderNoteEntryFromModule(freshNote, context, handlers);
+                    if (newNoteEl) noteEl.replaceWith(newNoteEl);
+                } catch (e) {
+                    console.warn('noteUpdatedFromOmnibar: error refreshing note', e);
+                }
+            })();
+            return true;
+        }
+
+        if (message.action === 'focusContent') {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.focus();
+                searchInput.select();
+            }
+        }
+    });
+}
+
 export async function initializeAllEvents() {
     initSearchEvents();
     initNotesEvents();
@@ -347,10 +568,11 @@ export async function initializeAllEvents() {
                 searchInput.focus();
                 searchInput.select();
             }
-        } else if (message.command === 'setHintsState') {
-            if (message.active && typeof createLinkHints === 'function') createLinkHints();
-            else if (!message.active && typeof clearAllStates === 'function') clearAllStates();
         }
+        // A 'setHintsState' branch used to live here calling createLinkHints() and
+        // clearAllStates(). Neither function exists in this page — they belong to the
+        // hint content scripts — and nothing in the extension sends that command, so
+        // the branch could never run.
     });
 
     chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: 'src/ui/pages/listGroup/listGroup.html' });
@@ -475,71 +697,7 @@ export async function initializeAllEvents() {
             }
         });
     }
-    document.getElementById('main-back-btn').addEventListener('click', async () => {
-        const errorView = document.querySelector('.container')?.querySelector('.error-message-container.active-view');
-        if (errorView) {
-            errorView.remove();
-            switchToGeminiView();
-            return;
-        }
-
-        if (get(isUrlViewActive)) {
-            const activeView = document.querySelector('.container')?.querySelector('.active-view');
-            if (activeView?.dataset.containsYoutube === 'true') {
-                hideYoutubeView(activeView);
-                return;
-            }
-            if (get(previousIframeUrl)) {
-                const url = get(previousIframeUrl);
-                previousIframeUrl.set(null);
-                await openUrlInPanel(url);
-                return;
-            }
-            closeUrlInPanel();
-            return;
-        }
-
-        if (get(isNotesViewActive)) {
-            closeNotesView();
-            return;
-        }
-        if (get(isGalleryViewActive)) {
-            closeScreenshotGallery();
-            return;
-        }
-
-        if (get(isGeminiViewActive)) {
-            if (get(isStandaloneGemini) && get(navigationHistory).length === 0) {
-                const { navSource } = await chrome.storage.local.get('navSource');
-                if (navSource) {
-                    window.location.href = navSource;
-                    return;
-                }
-            }
-            geminiStore.closeView(true);
-            isGeminiViewActive.set(false);
-            await restoreMainView();
-            return;
-        }
-
-        if (get(navigationHistory).length > 0) {
-            const hist = get(navigationHistory);
-            const previousView = hist.pop();
-            navigationHistory.set(hist);
-            await switchMainView(previousView, false);
-            return;
-        }
-
-        const { navSource } = await chrome.storage.local.get('navSource');
-        const currentPage = window.location.pathname.split('/').pop();
-        await chrome.storage.local.set({ navSource: `../listGroup/${currentPage}?context=sidepanel` });
-        if (navSource) {
-            window.location.href = navSource;
-        } else {
-            window.location.href = '../rules/rules.html?context=sidepanel';
-            chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../rules/rules.html' });
-        }
-    });
+    document.getElementById('main-back-btn').addEventListener('click', handleMainBackClick);
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Control' || e.key === 'Meta') {
@@ -585,147 +743,9 @@ export async function initializeAllEvents() {
 
     window.addEventListener('message', handleIframeMessage);
 
-    const deleteAllContextBtn = document.getElementById('delete-all-context-btn');
-    if (deleteAllContextBtn) {
-        deleteAllContextBtn.addEventListener('click', async () => {
-            const view = get(currentMainView);
-            if (get(isGeminiViewActive)) {
-                // The store holds the conversation on screen; the service copy of this
-                // reads the legacy stores and always reported "nothing to delete".
-                await geminiStore.deleteConversation();
-            } else if (get(isGalleryViewActive)) {
-                clearAllContextDataUI(get(currentGalleryContext), screenshotConfig);
-            } else if (get(isNotesViewActive)) {
-                clearAllContextDataUI(get(currentNotesContext), noteConfig);
-            } else if (view === 'groups') {
-                if (await confirmAction({ messageKey: 'confirmDeleteOtherGroups' })) {
-                    chrome.runtime.sendMessage({ action: 'deleteOtherGroups' }, (response) => {
-                        if (response.success) {
-                            showNotification('otherGroupsDeleted');
-                            renderGroups();
-                        }
-                    });
-                }
-            } else if (view === 'bookmarks') {
-                const visibilityPanel = document.getElementById('visibility-controls-panel');
-                if (visibilityPanel) {
-                    const isPanelVisible = !visibilityPanel.classList.contains('hidden');
-                    const isDeleteActive = !!visibilityPanel.querySelector('.delete-option-btn:not(.hidden)');
-                    if (isPanelVisible && isDeleteActive) {
-                        visibilityPanel.classList.add('hidden');
-                    } else {
-                        visibilityPanel.classList.remove('hidden');
-                        document
-                            .querySelectorAll(
-                                '#toggle-group-actions-btn, #toggle-domain-headers-btn, #toggle-subgroup-actions-btn, #toggle-tab-actions-btn, #toggle-folder-actions-btn, #toggle-child-folders-btn, #toggle-child-folder-actions-btn, #toggle-bookmark-actions-btn',
-                            )
-                            .forEach((b) => b?.classList.add('hidden'));
-                        document.querySelectorAll('.sort-option-btn').forEach((b) => b?.classList.add('hidden'));
-                        visibilityPanel
-                            .querySelectorAll('.delete-option-btn')
-                            .forEach((b) => b?.classList.remove('hidden'));
-                    }
-                }
-            } else if (view === 'history') {
-                if (await confirmAction({ messageKey: 'confirmDeleteAllHistory' })) {
-                    chrome.history.deleteAll(() => {
-                        showNotification('historyDeleted');
-                        renderHistoryView();
-                    });
-                }
-            } else if (view === 'recent') {
-                prefetchCache.update((c) => {
-                    c.recent = [];
-                    return c;
-                });
-                renderRecentlyClosedView();
-                showNotification('recentCleared');
-            } else if (view === 'reading') {
-                if (await confirmAction({ messageKey: 'confirmDeleteAllReadingList' })) {
-                    const items = await chrome.readingList.query({});
-                    for (const item of items) await chrome.readingList.removeEntry({ url: item.url });
-                    renderReadingListView();
-                    showNotification('readingListCleared');
-                }
-            }
-        });
-    }
+    initDeleteAllContextButton();
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'refreshUI') {
-            if (window.isBulkOpening || get(isBookmarksViewActive)) return;
-            if (get(isProgrammaticActivation)) {
-                isProgrammaticActivation.set(false);
-                return;
-            }
-            renderGroups();
-        }
-
-        if (message.action === 'bookmarksChanged') {
-            if (get(isHandlingBookmarkChange)) return;
-            isHandlingBookmarkChange.set(true);
-            chrome.runtime.sendMessage({ action: 'forceClearBookmarkCache' }, () => {
-                if (get(isBookmarksViewActive)) {
-                    (async () => {
-                        await new Promise((r) => setTimeout(r, 50));
-                        const bookmarksList = document.getElementById('bookmarks-list');
-                        if (bookmarksList) {
-                            await initializeBookmarksView(
-                                bookmarksList,
-                                {
-                                    applyTranslations,
-                                    updateScrollButtons,
-                                    updateExpandAllButtonState,
-                                    createOverflowMenu,
-                                    showAddToRuleModal,
-                                    exportBookmarkFolder,
-                                    showNotification,
-                                    openAddToBookmarkModal,
-                                },
-                                get(currentBookmarkSort),
-                                get(viewExpandStates).bookmarks,
-                            );
-                        }
-                        updateDuplicateCountBadge();
-                    })();
-                }
-            });
-            if (message.notification?.key) showNotification(message.notification.key);
-            setTimeout(() => isHandlingBookmarkChange.set(false), 300);
-        }
-
-        if (message.action === 'noteUpdatedFromOmnibar') {
-            const updatedId = message.id;
-            if (!updatedId) return;
-            (async () => {
-                try {
-                    const freshNote = await getNoteFromDb(updatedId);
-                    if (!freshNote) return;
-                    const noteEl = document.querySelector(`.note-entry[data-note-id="${updatedId}"]`);
-                    if (!noteEl) return;
-                    const context = get(currentNotesContext) || {
-                        type: 'group',
-                        id: -1,
-                        title: chrome.i18n.getMessage('note') || 'Note',
-                    };
-                    const handlers = getNoteHandlers(context);
-                    const newNoteEl = renderNoteEntryFromModule(freshNote, context, handlers);
-                    if (newNoteEl) noteEl.replaceWith(newNoteEl);
-                } catch (e) {
-                    console.warn('noteUpdatedFromOmnibar: error refreshing note', e);
-                }
-            })();
-            return true;
-        }
-
-        if (message.action === 'focusContent') {
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.focus();
-                searchInput.select();
-            }
-        }
-    });
+    initRuntimeMessageListener();
 
     initAgentUI({
         getConversationHistory: () => get(geminiConversationHistory),
