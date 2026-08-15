@@ -22,6 +22,7 @@
         <FeatureItem isMaterial={true} iconName="import_export" textKey="featureImportExport" />
         <FeatureItem isMaterial={true} iconName="language" textKey="featureMultiLanguage" />
         <FeatureItem isMaterial={true} iconName="account_tree" textKey="featureDetailedClustering" />
+        <FeatureItem isMaterial={true} iconName="inbox" textKey="featureSingleTabGrouping" />
     </div>
 </section>
 
@@ -56,13 +57,19 @@
         <FeatureItem isMaterial={true} iconName="find_replace" textKey="feature_findNextInPage" />
         <FeatureItem isMaterial={true} iconName="picture_in_picture_alt" textKey="feature_listGroupPipPopup" />
         <FeatureItem isMaterial={true} iconName="video_settings" textKey="feature_listGroupVideoPip" />
+        <FeatureItem isMaterial={true} iconName="drive_file_rename_outline" textKey="feature_group_renaming" />
+        <FeatureItem isMaterial={true} iconName="format_color_fill" textKey="feature_group_coloring" />
+        <FeatureItem isMaterial={true} iconName="unfold_more" textKey="feature_group_collapsing" />
+        <FeatureItem isMaterial={true} iconName="analytics" textKey="feature_group_statistics" />
+        <FeatureItem isMaterial={true} iconName="drag_indicator" textKey="feature_list_dnd_reorder" />
     </div>
 </section>
 
 <section class="features-section card">
     <h3>{$t('sectionAIAssistant')}</h3>
     <div class="features-grid">
-        <FeatureItem isMaterial={false} svgId="icon-star" textKey="feature_geminiIntegration" />
+        <!-- icon-star does not exist in the sprite; icon-gemini is the one this feature is about. -->
+        <FeatureItem isMaterial={false} svgId="icon-gemini" textKey="feature_geminiIntegration" />
         <FeatureItem isMaterial={true} iconName="subject" textKey="feature_summarizeWithGemini" />
         <FeatureItem isMaterial={true} iconName="record_voice_over" textKey="feature_geminiReadAloud" />
         <FeatureItem isMaterial={true} iconName="schedule" textKey="feature_scheduleGeminiQuery" />
@@ -138,6 +145,10 @@
         <FeatureItem isMaterial={true} iconName="keyboard_command_key" textKey="feature_v095_keyboard_nav_rules" />
         <FeatureItem isMaterial={true} iconName="cookie" textKey="feature_v100_cookie_editor" />
         <FeatureItem isMaterial={true} iconName="text_snippet" textKey="feature_v100_text_snippets" />
+        <FeatureItem isMaterial={true} iconName="data_object" textKey="feature_snippet_variables" />
+        <FeatureItem isMaterial={true} iconName="text_format" textKey="feature_snippet_rich_text" />
+        <FeatureItem isMaterial={true} iconName="format_clear" textKey="feature_snippet_plain_text" />
+        <FeatureItem isMaterial={true} iconName="spellcheck" textKey="feature_snippet_realtime_validation" />
         <FeatureItem isMaterial={true} iconName="download" textKey="feature_showDownloads" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_custom_site_shortcuts" />
         <FeatureItem isMaterial={true} iconName="bolt" textKey="feature_page_action_shortcuts" />
@@ -167,6 +178,7 @@
             textKey="feature_v092_inline_rename_themes"
         />
         <FeatureItem isMaterial={true} iconName="colorize" textKey="featureFaviconColoring" />
+        <FeatureItem isMaterial={true} iconName="brightness_6" textKey="featureThemeCustomization" />
     </div>
 </section>
 

@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { i18nStore, t, tt } from '../../stores/i18nStore.js';
     import { themeStore } from '../../stores/themeStore.js';
+    import Icons from '../../components/Icons.svelte';
     import Notification from '../../components/common/Notification.svelte';
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
@@ -40,6 +41,13 @@
         }
     }
 </script>
+
+<!--
+    The sprite with the <symbol> definitions. Without it the five features drawn with
+    <use href="#icon-..."> rendered an empty 24x20 hole: the markup was there, the
+    symbols were not.
+-->
+<Icons />
 
 <div class="page-container">
     <Notification />
