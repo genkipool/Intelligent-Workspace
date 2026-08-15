@@ -21,6 +21,8 @@
     let labelEl = $state(null);
     let clickTimer = null;
 
+    const MAX_NAME_LENGTH = 20;
+
     function activateTheme() {
         if (isEditing) return;
         onactivate?.({ theme, index });
@@ -67,16 +69,25 @@
         }
     }
 
+    /**
+     * The cap is applied before the text lands, not by rewriting the element
+     * afterwards. Svelte renders {labelText} into this same node, so assigning to
+     * its textContent left the DOM and the component out of step, and the code that
+     * put the caret back at the end was only hiding that: typing in the middle of a
+     * full name jumped the caret to the end. Cancelling the event leaves the node
+     * the way Svelte expects it and the caret where the user put it.
+     */
+    function handleBeforeInput(e) {
+        const inserted = e.data ?? e.dataTransfer?.getData('text/plain') ?? '';
+        if (!inserted) return; // Deleting or reformatting never makes it longer.
+
+        const selection = window.getSelection();
+        const replaced = selection && !selection.isCollapsed ? selection.toString().length : 0;
+        const length = (labelEl?.textContent?.length || 0) - replaced + inserted.length;
+        if (length > MAX_NAME_LENGTH) e.preventDefault();
+    }
+
     function handleInput() {
-        if (labelEl.textContent.length > 20) {
-            labelEl.textContent = labelEl.textContent.substring(0, 20);
-            const newRange = document.createRange();
-            const sel = window.getSelection();
-            newRange.selectNodeContents(labelEl);
-            newRange.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(newRange);
-        }
         labelText = labelEl.textContent;
     }
 
@@ -113,7 +124,8 @@
 </script>
 
 <div
-    class="saved-theme-item {isActive ? 'active' : ''}"
+    class="saved-theme-item"
+    class:active={isActive}
     role="button"
     draggable="true"
     data-index={index}
@@ -135,6 +147,7 @@
         data-i18n-title="doubleClickToEdit"
         bind:this={labelEl}
         ondblclick={handleDblClick}
+        onbeforeinput={handleBeforeInput}
         oninput={handleInput}
         onblur={handleBlur}
         spellcheck="false"
