@@ -41,11 +41,10 @@
         if (hasActiveTab && group.id !== undefined) {
             const stored = $expandedGroupStates.get(group.id);
             if (stored === false) {
-                expandedGroupStates.update((map) => {
-                    const next = new Map(map);
-                    next.set(group.id, true);
-                    return next;
-                });
+                // Reactivity here belongs to the store, not to the Map: subscribers
+                // are notified because update replaces the value, so the new Map is
+                // built as one expression and never mutated afterwards.
+                expandedGroupStates.update((map) => new Map([...map, [group.id, true]]));
             }
         }
     });
