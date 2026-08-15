@@ -65,6 +65,10 @@
     }
     let storageMode = $state('sync');
 
+    // Loaded from the settings and kept in step with chrome.storage below. It has
+    // to reach MiscSortPopup or the popup opens with nothing marked.
+    let miscSortOption = $state('start');
+
     let clusterConfig = $state(defaultClusterConfig());
     let userPrefixes = $state({ lock: '', openKey: '', loupe: '', checked: '', warning: '' });
     let timerInactiveTime = $state(1);
@@ -1080,6 +1084,7 @@
     bind:discardingTime
     {selectedRuleColor}
     {storageMode}
+    {miscSortOption}
     {onClusterChanged}
     onResetCluster={resetClusterDefaults}
     onSelectMiscSort={(detail) => {

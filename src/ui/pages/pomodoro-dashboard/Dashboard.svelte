@@ -606,6 +606,8 @@
         const dowSnap = rangeStart.getDay();
         rangeStart.setDate(rangeStart.getDate() - (dowSnap === 0 ? 6 : dowSnap - 1));
 
+        const locale = _lang === 'es' ? 'es-ES' : 'en-GB';
+
         // -- iterate weeks -> collect cells + month positions -------------
         const cells = [];
         let colIdx = 0;

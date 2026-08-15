@@ -23,6 +23,7 @@
         discardingTime = $bindable(60),
         selectedRuleColor = 'blue',
         storageMode = 'sync',
+        miscSortOption = 'start',
         onClusterChanged = () => {},
         onResetCluster = () => {},
         onSelectMiscSort = () => {},
@@ -49,6 +50,7 @@
 <MiscSortPopup
     show={showSortGroupsPopup}
     position={popupPosition}
+    selected={miscSortOption}
     onclose={() => (showSortGroupsPopup = false)}
     onselect={(detail) => {
         showSortGroupsPopup = false;
