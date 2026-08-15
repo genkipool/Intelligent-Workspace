@@ -134,23 +134,42 @@ async function regroupAllTabsCommand() {
     logMessage('[regroupAllTabs] Full regrouping process completed.');
 }
 
-async function loadI18nMessages() {
-    try {
-        const result = await chrome.storage.local.get('preferred-language');
-        currentLang = result['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+// The messages file never changes while the worker is alive, but the context menus
+// are rebuilt on every group change and each rebuild used to re-read the language
+// from storage and re-fetch and re-parse the whole locale file.
+let loadedI18nLang = null;
+let loadI18nMessagesPromise = null;
 
-        const url = chrome.runtime.getURL(`_locales/${currentLang}/messages.json`);
-        const response = await fetch(url);
-        if (response.ok) {
-            currentLangMessages = await response.json();
-            logMessage(`[i18n] Loaded messages for: ${currentLang}`);
-        } else {
-            console.error(`[i18n] Failed to load messages for ${currentLang}`);
-            // Fallback to internal i18n if fetch fails
-        }
-    } catch (error) {
-        console.error('[i18n] Error loading messages:', error);
+async function loadI18nMessages(force = false) {
+    if (force) {
+        loadedI18nLang = null;
+        loadI18nMessagesPromise = null;
     }
+    if (loadedI18nLang && currentLang === loadedI18nLang) return;
+    if (loadI18nMessagesPromise) return loadI18nMessagesPromise;
+
+    loadI18nMessagesPromise = (async () => {
+        try {
+            const result = await chrome.storage.local.get('preferred-language');
+            currentLang = result['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+
+            const url = chrome.runtime.getURL(`_locales/${currentLang}/messages.json`);
+            const response = await fetch(url);
+            if (response.ok) {
+                currentLangMessages = await response.json();
+                loadedI18nLang = currentLang;
+                logMessage(`[i18n] Loaded messages for: ${currentLang}`);
+            } else {
+                console.error(`[i18n] Failed to load messages for ${currentLang}`);
+                // Fallback to internal i18n if fetch fails
+            }
+        } catch (error) {
+            console.error('[i18n] Error loading messages:', error);
+        } finally {
+            loadI18nMessagesPromise = null;
+        }
+    })();
+    return loadI18nMessagesPromise;
 }
 
 function getI18nMsg(key, params = []) {
@@ -890,7 +909,15 @@ async function addUrlToRuleAndNotify(urlBlock, targetRuleName) {
         .filter((u) => u && isValidUrl(u)); // Only valid and non-empty URLs
 
     if (urlsToAdd.length === 0) {
-        showNotification('errorInvalidUrlFormat', true);
+        // showNotification lives in src/utils/i18n.js, which the worker never loads:
+        // this path threw ReferenceError instead of warning. The success path of this
+        // same function already notifies the right way.
+        chrome.notifications.create({
+            type: 'basic',
+            iconUrl: '/assets/icons/icon128.png',
+            title: getI18nMsg('errorInvalidUrlFormat'),
+            message: getI18nMsg('errorInvalidUrlFormat'),
+        });
         return;
     }
 
@@ -1478,16 +1505,59 @@ function quantize(r, g, b, granularity = 15) {
 }
 
 const faviconColorCache = new Map();
+const FAVICON_COLOR_CACHE_KEY = 'faviconColorCache';
+let faviconColorCacheLoaded = false;
+let faviconColorSaveTimer = null;
+
+/**
+ * Two pages of the same site share a favicon, so the cache is keyed by origin.
+ * Keying it by the full page URL (which is what the `_favicon` URL carries) meant
+ * a miss — a fetch plus an image decode — for practically every group created.
+ */
+function faviconCacheKeyFor(faviconUrl) {
+    try {
+        const url = new URL(faviconUrl);
+        const pageUrl = url.searchParams.get('pageUrl');
+        if (pageUrl) return new URL(pageUrl).origin;
+    } catch (e) {}
+    return faviconUrl;
+}
+
+/** Survives the service worker being torn down between grouping runs. */
+async function ensureFaviconColorCacheLoaded() {
+    if (faviconColorCacheLoaded) return;
+    faviconColorCacheLoaded = true;
+    try {
+        const stored = await chrome.storage.session.get(FAVICON_COLOR_CACHE_KEY);
+        for (const [key, value] of Object.entries(stored[FAVICON_COLOR_CACHE_KEY] || {})) {
+            if (!faviconColorCache.has(key)) faviconColorCache.set(key, value);
+        }
+    } catch (e) {
+        logMessage('[Favicon] Could not restore the colour cache from session storage.', e);
+    }
+}
+
+function scheduleFaviconColorCacheSave() {
+    clearTimeout(faviconColorSaveTimer);
+    faviconColorSaveTimer = setTimeout(() => {
+        chrome.storage.session
+            .set({ [FAVICON_COLOR_CACHE_KEY]: Object.fromEntries(faviconColorCache) })
+            .catch(() => {});
+    }, 1000);
+}
 
 function clearFaviconColorCache() {
     faviconColorCache.clear();
+    chrome.storage.session.remove(FAVICON_COLOR_CACHE_KEY).catch(() => {});
     logMessage('[Favicon] Favicon color cache cleared successfully.');
 }
 
 async function getFaviconColor(faviconUrl) {
     if (!faviconUrl) return null;
-    if (faviconColorCache.has(faviconUrl)) {
-        return faviconColorCache.get(faviconUrl);
+    await ensureFaviconColorCacheLoaded();
+    const cacheKey = faviconCacheKeyFor(faviconUrl);
+    if (faviconColorCache.has(cacheKey)) {
+        return faviconColorCache.get(cacheKey);
     }
 
     const colors = [
@@ -1505,18 +1575,26 @@ async function getFaviconColor(faviconUrl) {
     const isGray = (r, g, b, threshold = 15) =>
         Math.abs(r - g) <= threshold && Math.abs(r - b) <= threshold && Math.abs(g - b) <= threshold;
 
+    // Remembering the failures too: without this every group creation paid the
+    // fetch (and, on an unreachable favicon, the full 180 ms timeout) again.
+    const remember = (color) => {
+        faviconColorCache.set(cacheKey, color);
+        scheduleFaviconColorCacheSave();
+        return color;
+    };
+
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 180);
         const response = await fetch(faviconUrl, { signal: controller.signal });
         clearTimeout(timeoutId);
-        if (!response.ok) return null;
+        if (!response.ok) return remember(null);
 
         const blob = await response.blob();
-        if (!blob || blob.size === 0) return null;
+        if (!blob || blob.size === 0) return remember(null);
 
         const imageBitmap = await createImageBitmap(blob);
-        if (!imageBitmap || imageBitmap.width === 0 || imageBitmap.height === 0) return null;
+        if (!imageBitmap || imageBitmap.width === 0 || imageBitmap.height === 0) return remember(null);
 
         const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
         const ctx = canvas.getContext('2d');
@@ -1536,7 +1614,7 @@ async function getFaviconColor(faviconUrl) {
             }
         }
 
-        if (!Object.keys(colorHistogram).length) return null;
+        if (!Object.keys(colorHistogram).length) return remember(null);
 
         const dominantColorKey = Object.keys(colorHistogram).reduce((a, b) =>
             colorHistogram[a] > colorHistogram[b] ? a : b,
@@ -1552,11 +1630,9 @@ async function getFaviconColor(faviconUrl) {
                 closestColor = colors[i];
             }
         }
-        faviconColorCache.set(faviconUrl, closestColor.name);
-        return closestColor.name;
+        return remember(closestColor.name);
     } catch (error) {
-        faviconColorCache.set(faviconUrl, null);
-        return null;
+        return remember(null);
     }
 }
 
