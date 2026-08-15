@@ -1,5 +1,5 @@
 <script>
-    import { popupScale } from './popupTransition.js';
+    import { popupVisibility } from './popupVisibility.svelte.js';
     import { onMount } from 'svelte';
     import { t } from '../../../stores/i18nStore.js';
     import { duplicateMarkerFields, firstCharacter } from '../modules/prefixMarkers.js';
@@ -15,6 +15,11 @@
         onclose,
         onreset,
     } = $props();
+
+    const popup = popupVisibility(
+        () => show,
+        () => position,
+    );
 
     let popupEl = $state(null);
 
@@ -69,11 +74,11 @@
     }
 </script>
 
-{#if show}
+{#if popup.render}
     <div
-        class="prefix-config-popup open"
-        transition:popupScale
-        style="left: {position.x}px; top: {position.y}px;"
+        class="prefix-config-popup"
+        class:open={popup.open}
+        style="left: {popup.position.x}px; top: {popup.position.y}px;"
         bind:this={popupEl}
     >
         <h3>{$t('configurePrefixesTitle')}</h3>

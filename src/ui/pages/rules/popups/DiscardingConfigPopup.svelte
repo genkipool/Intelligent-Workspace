@@ -1,9 +1,14 @@
 <script>
-    import { popupScale } from './popupTransition.js';
+    import { popupVisibility } from './popupVisibility.svelte.js';
     import { onMount } from 'svelte';
     import { t } from '../../../stores/i18nStore.js';
 
     let { show = false, position = { x: 0, y: 0 }, discardingTime = $bindable(10), onclose, onreset } = $props();
+
+    const popup = popupVisibility(
+        () => show,
+        () => position,
+    );
 
     let popupEl = $state(null);
 
@@ -47,11 +52,11 @@
     }
 </script>
 
-{#if show}
+{#if popup.render}
     <div
-        class="discarding-config-popup open"
-        transition:popupScale
-        style="left: {position.x}px; top: {position.y}px;"
+        class="discarding-config-popup"
+        class:open={popup.open}
+        style="left: {popup.position.x}px; top: {popup.position.y}px;"
         bind:this={popupEl}
     >
         <h3>{$t('configureDiscarding')}</h3>

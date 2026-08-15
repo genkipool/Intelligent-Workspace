@@ -1,5 +1,5 @@
 <script>
-    import { popupScale } from './popupTransition.js';
+    import { popupVisibility } from './popupVisibility.svelte.js';
     import { onMount } from 'svelte';
     import { defaultClusterConfig } from '../modules/clusterDefaults.js';
     import ClusterConfigSection from './ClusterConfigSection.svelte';
@@ -12,6 +12,11 @@
         onreset,
         onchange,
     } = $props();
+
+    const popup = popupVisibility(
+        () => show,
+        () => position,
+    );
 
     let popupEl = $state(null);
 
@@ -53,11 +58,11 @@
     });
 </script>
 
-{#if show}
+{#if popup.render}
     <div
-        class="cluster-config-popup open"
-        transition:popupScale
-        style="left: {position.x}px; top: {position.y}px;"
+        class="cluster-config-popup"
+        class:open={popup.open}
+        style="left: {popup.position.x}px; top: {popup.position.y}px;"
         bind:this={popupEl}
     >
         <ClusterConfigSection bind:clusterConfig {onchange} {onreset} />
