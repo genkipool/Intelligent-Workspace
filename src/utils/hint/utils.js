@@ -229,6 +229,9 @@ window.__itgOpenVideoPip = openVideoPip;
  * @description General utilities and DOM helpers.
  */
 var Utils = class Utils {
+    /** path -> Promise<cssText>, so each frame reads a stylesheet at most once. */
+    static _cssCache = new Map();
+
     static debounce(func, delay) {
         let timeout;
         return function (...args) {
@@ -379,37 +382,68 @@ var Utils = class Utils {
     }
 
     /**
+     * Reads a stylesheet that ships with the extension.
+     *
+     * These scripts run in every frame, so asking the service worker for the file
+     * meant two messages per frame: a page with a handful of iframes produced
+     * dozens, and every worker restart re-injected the scripts and repeated them
+     * all. Any message still in flight when the worker was torn down failed with
+     * "the message port closed before a response was received", which is what
+     * flooded the console.
+     *
+     * The files are in web_accessible_resources, so the content script can read
+     * them itself: from its isolated world the fetch works even under a hostile
+     * page CSP. The worker is only asked if that direct read fails.
+     */
+    static async readExtensionCss(path) {
+        if (!chrome.runtime || !chrome.runtime.id) {
+            throw new Error('Extension context invalidated.');
+        }
+
+        if (Utils._cssCache.has(path)) return Utils._cssCache.get(path);
+
+        const load = (async () => {
+            try {
+                const res = await fetch(chrome.runtime.getURL(path));
+                if (res.ok) return await res.text();
+            } catch (e) {
+                // Falls through to the background, below.
+            }
+
+            const response = await new Promise((resolve) => {
+                chrome.runtime.sendMessage({ action: 'getExtensionFileContent', path }, (res) => {
+                    if (chrome.runtime.lastError || !res || !res.success) {
+                        resolve({
+                            success: false,
+                            error: chrome.runtime.lastError?.message || 'Failed',
+                        });
+                    } else {
+                        resolve(res);
+                    }
+                });
+            });
+            if (!response.success) {
+                throw new Error(response.error || `Failed to fetch ${path}.`);
+            }
+            return response.text;
+        })();
+
+        // Cached as a promise so the frame never asks twice, not even concurrently.
+        Utils._cssCache.set(path, load);
+        try {
+            return await load;
+        } catch (e) {
+            Utils._cssCache.delete(path);
+            throw e;
+        }
+    }
+
+    /**
      * Loads and adapts themes.css for Shadow DOM.
      */
     static async loadThemes(shadow) {
         try {
-            if (!chrome.runtime || !chrome.runtime.id) {
-                throw new Error('Extension context invalidated.');
-            }
-
-            // Load themes via background script to bypass webpage CSP restrictions completely
-            const response = await new Promise((resolve) => {
-                chrome.runtime.sendMessage(
-                    {
-                        action: 'getExtensionFileContent',
-                        path: 'src/styles/themes.css',
-                    },
-                    (res) => {
-                        if (chrome.runtime.lastError || !res || !res.success) {
-                            resolve({
-                                success: false,
-                                error: chrome.runtime.lastError?.message || 'Failed',
-                            });
-                        } else {
-                            resolve(res);
-                        }
-                    },
-                );
-            });
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch themes from background.');
-            }
-            let cssText = response.text;
+            let cssText = await Utils.readExtensionCss('src/styles/themes.css');
 
             // Transform [data-theme="..."] to :host([data-theme="..."]) for shadow host support
             // We keep the original too just in case elements inside have the attribute
@@ -426,48 +460,24 @@ var Utils = class Utils {
     }
 
     /**
-     * Robustly loads a stylesheet into a shadow root using background messaging (CSP immune).
+     * Robustly loads a stylesheet into a shadow root (CSP immune). See
+     * readExtensionCss for why this no longer goes through the worker by default.
      */
     static async loadStyle(shadow, url) {
         try {
-            if (!chrome.runtime || !chrome.runtime.id) {
-                throw new Error('Extension context invalidated.');
-            }
             let path = url;
             if (url.startsWith('chrome-extension://')) {
                 const urlObj = new URL(url);
                 path = urlObj.pathname.startsWith('/') ? urlObj.pathname.slice(1) : urlObj.pathname;
             }
 
-            // Load style via background script to bypass webpage CSP restrictions completely
-            const response = await new Promise((resolve) => {
-                chrome.runtime.sendMessage(
-                    {
-                        action: 'getExtensionFileContent',
-                        path: path,
-                    },
-                    (res) => {
-                        if (chrome.runtime.lastError || !res || !res.success) {
-                            resolve({
-                                success: false,
-                                error: chrome.runtime.lastError?.message || 'Failed',
-                            });
-                        } else {
-                            resolve(res);
-                        }
-                    },
-                );
-            });
-            if (!response.success) {
-                throw new Error(response.error || 'Failed to fetch stylesheet from background.');
-            }
-            const cssText = response.text;
+            const cssText = await Utils.readExtensionCss(path);
             const styleElement = document.createElement('style');
             styleElement.textContent = cssText;
             shadow.appendChild(styleElement);
             return true;
         } catch (e) {
-            console.warn('[Hint] Failed to load style via background messaging, falling back to link', e);
+            console.warn('[Hint] Failed to load stylesheet, falling back to link', e);
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = url;
