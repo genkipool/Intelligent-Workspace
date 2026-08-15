@@ -91,7 +91,8 @@
                 id="toggle-sort-groups"
                 tabindex="0"
                 title={$tt(isSortGroupsEnabled ? 'disableSortGroups' : 'enableSortGroups')}
-                bind:checked={isSortGroupsEnabled}
+                checked={isSortGroupsEnabled}
+                onchange={onToggleSortGroups}
             />
             <span
                 class="slider slider-header-controls"
@@ -153,7 +154,8 @@
                 type="checkbox"
                 id="toggle-prefixes"
                 class="input-settings-container"
-                bind:checked={isPrefixesEnabled}
+                checked={isPrefixesEnabled}
+                onchange={onTogglePrefixes}
             />
             <span
                 class="slider slider-header-controls"
@@ -197,7 +199,8 @@
                 type="checkbox"
                 id="toggle-collapse-timer"
                 tabindex="0"
-                bind:checked={isCollapseTimerEnabled}
+                checked={isCollapseTimerEnabled}
+                onchange={onToggleCollapseTimer}
             />
             <span
                 class="slider slider-header-controls"

@@ -558,7 +558,7 @@
 
     async function toggleSortGroups() {
         isSortGroupsEnabled = !isSortGroupsEnabled;
-        await saveSettings({ sortGroups: isSortGroupsEnabled });
+        await saveSettings({ sortGroupsAlphabetically: isSortGroupsEnabled });
     }
 
     async function togglePrefixes() {
@@ -572,7 +572,7 @@
 
     async function toggleCollapseTimer() {
         isCollapseTimerEnabled = !isCollapseTimerEnabled;
-        await saveSettings({ collapseTimer: isCollapseTimerEnabled });
+        await saveSettings({ enableCollapseTimer: isCollapseTimerEnabled });
     }
 
     async function toggleAllRules() {
