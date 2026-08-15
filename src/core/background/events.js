@@ -14,13 +14,27 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
     if (shouldIgnoreEventDuringInitialization('tabs.onUpdated', tabId)) return;
     if (isGrouping) return;
-    const isPotentiallyRelevantChange =
+
+    // Which group a tab belongs to is decided by its URL, so only these can change
+    // it. A title or an audible change cannot: a page that updates its title (an
+    // unread counter, a clock, a player) was regrouping every tab in the browser
+    // every couple of seconds, one full pass per title change, for as long as the
+    // page kept ticking. Measured with pages that retitle themselves: a single
+    // click on the grouping switch chained 11 regroups; with static pages, 1.
+    const affectsGrouping =
         changeInfo.url ||
         changeInfo.pinned !== undefined ||
         changeInfo.groupId !== undefined ||
-        changeInfo.status === 'complete' ||
-        (changeInfo.title && tab.status === 'complete');
-    if ((isPotentiallyRelevantChange && tab.url && tab.title) || changeInfo.audible !== undefined) {
+        changeInfo.status === 'complete';
+
+    // A title or sound change is deliberately ignored here. Routing it to the prefix
+    // update instead was worse than useless: updateAllGroupPrefixes writes group
+    // titles, those writes raise tabGroups.onUpdated, and that handler asks for
+    // another prefix update — a loop that used to be held back only because the
+    // regroup running alongside it set isGrouping and made the handler bail out.
+    // The markers are refreshed by the next real event (a navigation, a group
+    // change, a regroup), which is soon enough and cannot feed itself.
+    if (affectsGrouping && tab.url && tab.title) {
         logMessage(`[tabs.onUpdated] Relevant change on tab ${tabId}. Triggering debounced regroup and prefix update.`);
         debounceGroupTabs();
         debounceUpdateAllGroupPrefixes(tab.windowId, {
@@ -124,9 +138,11 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
     const allGroupsInWindow = await chrome.tabGroups.query({
         windowId: group.windowId,
     });
-    const tabsInWindow = await chrome.tabs.query({
-        windowId: group.windowId,
-    });
+    // The tabs of the window are only needed to prime the prefix update below, and
+    // that one is debounced: querying them here meant a full scan of every tab in
+    // the window on every single group update. Measured on a 283-tab profile that
+    // was 56 queries adding up to 85 s. The debounced update fetches what it needs
+    // once, when it actually runs, and gets fresher data than this snapshot.
     lastActivity[group.id] = Date.now();
     let info = groupInfoMap.get(group.id);
     const identifier = groupIdentifierMap.get(group.id);
@@ -193,8 +209,6 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
         debounceUpdateAllGroupPrefixes(group.windowId, {
             targetGroupId: null,
             isEdit: groupEdit,
-            cachedGroups: allGroupsInWindow,
-            cachedTabs: tabsInWindow,
             groupNeedsWarning: true,
         });
     } else if (
@@ -208,15 +222,80 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
         debounceUpdateAllGroupPrefixes(group.windowId, {
             targetGroupId: group.id,
             isEdit: groupEdit,
-            cachedGroups: allGroupsInWindow,
-            cachedTabs: tabsInWindow,
         });
     }
     logMessage(`[tabGroups.onUpdated] Syncing state for group ${group.id} after update.`);
     debounceGroupTabs();
-    await setupContextMenus();
-    await saveGroupInfoMap();
+    // Rebuilding the menus and writing the map are whole-window jobs. Doing them per
+    // group update meant one full rebuild (plus a query of every tab) and one storage
+    // write for each of the updates a regroup produces.
+    debounceSetupContextMenus();
+    await debounceSaveGroupInfoMap();
 });
+/**
+ * Coalesces the writes of groupInfoMap. A regroup fires one group update per group,
+ * and each of them used to write the whole map to session storage: on a 283-tab
+ * profile that was 37 writes taking 101 s in total.
+ *
+ * Awaited by its callers on purpose: a bare timer does not keep a service worker
+ * alive, so the pending write could be lost when the worker is torn down.
+ */
+let pendingGroupInfoMapSave = null;
+
+function debounceSaveGroupInfoMap() {
+    if (pendingGroupInfoMapSave) return pendingGroupInfoMapSave;
+    pendingGroupInfoMapSave = (async () => {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        pendingGroupInfoMapSave = null;
+        try {
+            await saveGroupInfoMap();
+        } catch (error) {
+            console.error('[saveGroupInfoMap] Coalesced save failed:', error);
+        }
+    })();
+    return pendingGroupInfoMapSave;
+}
+
+// Groups disappear in bursts (switching the domain/subdomain grouping destroys
+// every group at once). The in-memory cleanup below is per group and cheap, but
+// persisting the state, rebuilding the context menus and re-syncing are whole-window
+// jobs: doing them once per removed group meant hundreds of queries and storage
+// writes for a single switch. They now run once for the whole burst.
+//
+// The listener awaits the shared flush on purpose. A bare setTimeout does not keep
+// a service worker alive, so the worker could be torn down before the pending flush
+// ran and the state would never be persisted; while an event listener is awaiting,
+// the worker stays up.
+let pendingGroupRemovalFlush = null;
+const windowsWithRemovedGroups = new Set();
+
+function flushGroupRemovals(windowId) {
+    windowsWithRemovedGroups.add(windowId);
+    if (pendingGroupRemovalFlush) return pendingGroupRemovalFlush;
+
+    pendingGroupRemovalFlush = (async () => {
+        // Short window to collect the rest of the burst.
+        await new Promise((resolve) => setTimeout(resolve, 120));
+        // Released before the work, so removals arriving during it get their own flush.
+        pendingGroupRemovalFlush = null;
+
+        const windowIds = [...windowsWithRemovedGroups];
+        windowsWithRemovedGroups.clear();
+        try {
+            await saveSessionState();
+            await setupContextMenus();
+            await syncWithExistingGroups();
+            for (const id of windowIds) {
+                debounceUpdateAllGroupPrefixes(id, { targetGroupId: null });
+            }
+            await saveGroupInfoMap();
+        } catch (error) {
+            console.error('[onRemoved] Error flushing removed group state:', error);
+        }
+    })();
+    return pendingGroupRemovalFlush;
+}
+
 chrome.tabGroups.onRemoved.addListener(async (group) => {
     logMessage(`[onRemoved] Group ${group.id} removed.`);
     getTypeGroup = false;
@@ -229,13 +308,7 @@ chrome.tabGroups.onRemoved.addListener(async (group) => {
     groupIdentifierMap.delete(group.id);
     groupExpandedEver.delete(group.id);
     groupInfoMap.delete(group.id);
-    await saveSessionState();
-    await setupContextMenus();
-    await syncWithExistingGroups();
-    debounceUpdateAllGroupPrefixes(group.windowId, {
-        targetGroupId: null,
-    });
-    await saveGroupInfoMap();
+    await flushGroupRemovals(group.windowId);
 });
 chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
     logMessage(`[onRemoved] Tab ${tabId} removed.`);
@@ -1049,6 +1122,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         }
         if (changes['preferred-language']) {
             logMessage('[i18n] Language change detected. Recreating context menus.');
+            await loadI18nMessages(true); // Drop the cached locale before rebuilding.
             await setupContextMenus();
         }
     }
