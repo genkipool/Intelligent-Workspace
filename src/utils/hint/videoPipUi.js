@@ -268,10 +268,14 @@ textarea::selection,
     top: auto !important;
     width: 100% !important;
     height: auto !important;
+    max-height: 84px !important;
+    overflow: hidden !important;
     z-index: 8 !important;
     pointer-events: none !important;
-    overflow: visible !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
     text-align: center !important;
     padding: 0 16px !important;
     box-sizing: border-box !important;
@@ -295,12 +299,16 @@ textarea::selection,
     width: auto !important;
     height: auto !important;
     min-height: 0 !important;
-    max-height: none !important;
+    max-height: 84px !important;
+    overflow: hidden !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
     pointer-events: none !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
     box-sizing: border-box !important;
 }
 .itg-pip-captions .caption-window:empty,
