@@ -1202,12 +1202,12 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
         if (this.buttons.more) this.buttons.more.innerHTML = ITG_PIP_ICONS.more;
 
-        this.buildRateMenu();
-        this.buildSizeMenu();
-        this.buildMoreMenu();
-        this.buildSearch();
-        this.updateTitlesAndLabels();
-        this.applyTheme();
+        if (typeof this.buildRateMenu === 'function') this.buildRateMenu();
+        if (typeof this.buildSizeMenu === 'function') this.buildSizeMenu();
+        if (typeof this.buildMoreMenu === 'function') this.buildMoreMenu();
+        if (typeof this.buildSearch === 'function') this.buildSearch();
+        if (typeof this.updateTitlesAndLabels === 'function') this.updateTitlesAndLabels();
+        if (typeof this.applyTheme === 'function') this.applyTheme();
     }
 
     updateTitlesAndLabels() {
