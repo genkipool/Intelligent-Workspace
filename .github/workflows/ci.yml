@@ -1,0 +1,68 @@
+# The checks this project actually has, run on the two long-lived branches and on
+# anything proposed for them. They are the same three commands the pre-commit hook
+# and `npm run check` use locally, so a green run here means the same thing it means
+# on a developer's machine.
+#
+# There is no unit test suite yet; when one arrives, add its script as a step below
+# and it will gate merges the same way.
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+# A new push makes the run in progress for the same branch pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, format and build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The repository is on a pnpm lockfile, so pnpm is what must install it —
+      # npm would resolve different versions and check a different tree.
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint --max-warnings=0
+
+      - name: Format
+        run: pnpm run format
+
+      - name: Build
+        run: pnpm run build
+
+      # Proof the build produced a loadable extension, not just files: the manifest
+      # has to be valid JSON and the content scripts it names have to exist.
+      - name: Check the built extension
+        run: |
+          node --input-type=module -e "
+            import { readFileSync, existsSync } from 'node:fs';
+            const manifest = JSON.parse(readFileSync('dist/manifest.json', 'utf8'));
+            const missing = (manifest.content_scripts ?? [])
+              .flatMap((entry) => [...(entry.js ?? []), ...(entry.css ?? [])])
+              .filter((file) => !existsSync('dist/' + file));
+            if (missing.length) {
+              console.error('Declared but not built:', missing.join(', '));
+              process.exit(1);
+            }
+            console.log('manifest v' + manifest.manifest_version + ', ' +
+              (manifest.content_scripts ?? []).length + ' content script blocks, all present');
+          "

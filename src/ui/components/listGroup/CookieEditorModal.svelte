@@ -33,6 +33,10 @@
         return workingCookies.filter((c) => c.name.toLowerCase().includes(q));
     });
 
+    // Complete and ready; what it is still waiting for is the "+" control in the
+    // modal that calls it. Kept deliberately rather than deleted — see the note in
+    // the project memory about the unfinished pieces.
+    // eslint-disable-next-line no-unused-vars
     function addCookie() {
         workingCookies = [
             ...workingCookies,

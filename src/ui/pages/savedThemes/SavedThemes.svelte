@@ -14,7 +14,6 @@
         getCurrentLang,
         loadMessages,
     } from '../../../utils/i18n.js';
-    import { bindModalSaveButton } from '../../../utils/modal-save-close.js';
     import { initializeActiveTheme, applyCustomTheme, getActiveTheme, saveActiveTheme } from '../../../utils/theme.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import { exportThemes, processAndSaveImportedThemes } from '../../../utils/importExport.js';

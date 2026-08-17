@@ -62,7 +62,6 @@
         }
     });
 
-
     function annotateTree(nodes, query) {
         if (!nodes || !Array.isArray(nodes)) return [];
         return nodes

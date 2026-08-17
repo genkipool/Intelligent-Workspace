@@ -5,7 +5,7 @@
         className = '',
         showOnParentHover = true,
         disabled = false,
-        onclick = null
+        onclick = null,
     } = $props();
 
     function handleClick(e) {
