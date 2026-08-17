@@ -928,7 +928,12 @@ var Main = class Main {
     _injectYoutubePipButton() {
         if (itgIsInsidePipWindow()) return;
         if (!window.location.hostname.includes('youtube.com')) return;
-        const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
+        const pipTitle =
+            (typeof itgPipMsg === 'function'
+                ? itgPipMsg('omnibarPrefixVideoPipTitle', 'Picture-in-Picture (Video)')
+                : null) ||
+            chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') ||
+            'Picture-in-Picture (Video)';
         // The old glyph was the screen-share one (a screen with an arrow beside it),
         // which reads as "cast", not picture-in-picture. ITG_PIP_ICON is the frame
         // with the inset screen every player uses for this, and it is the same icon
@@ -1039,7 +1044,12 @@ var Main = class Main {
                 `;
             document.head.appendChild(styleEl);
         }
-        const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
+        const pipTitle =
+            (typeof itgPipMsg === 'function'
+                ? itgPipMsg('omnibarPrefixVideoPipTitle', 'Picture-in-Picture (Video)')
+                : null) ||
+            chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') ||
+            'Picture-in-Picture (Video)';
         const videoSvgIcon = `<span style="display:block;width:24px;height:24px;">${ITG_PIP_ICON}</span>`;
         const handlePipClick = async (e) => {
             e.preventDefault();
@@ -1174,7 +1184,12 @@ var Main = class Main {
         // These two have buttons inside their own player controls already.
         if (window.location.hostname.includes('youtube.com') || window.location.hostname.includes('tiktok.com')) return;
 
-        const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
+        const pipTitle =
+            (typeof itgPipMsg === 'function'
+                ? itgPipMsg('omnibarPrefixVideoPipTitle', 'Picture-in-Picture (Video)')
+                : null) ||
+            chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') ||
+            'Picture-in-Picture (Video)';
         let button = null;
         let hoveredVideo = null;
         let hideTimer = null;

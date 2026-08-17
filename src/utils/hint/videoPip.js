@@ -38,6 +38,154 @@ var itgPipSavedDims = window.__itgPipSavedDims ?? {};
 window.__itgPipSavedDims = itgPipSavedDims;
 
 var itgPipTheme = window.__itgPipTheme ?? null;
+window.__itgPipTheme = itgPipTheme;
+
+var itgPipMessages = window.__itgPipMessages ?? null;
+window.__itgPipMessages = itgPipMessages;
+
+var itgPipLang = window.__itgPipLang ?? null;
+window.__itgPipLang = itgPipLang;
+
+var itgPipLoadPromise = null;
+
+function itgNormalizePipLang(lang) {
+    if (!lang || typeof lang !== 'string') return 'en';
+    return lang.trim().toLowerCase().startsWith('es') ? 'es' : 'en';
+}
+
+function itgPipMsg(key, fallback) {
+    if (itgPipMessages && itgPipMessages[key]?.message) {
+        return itgPipMessages[key].message;
+    }
+    try {
+        const msg = chrome.i18n.getMessage(key);
+        if (msg) return msg;
+    } catch {}
+    return fallback;
+}
+window.itgPipMsg = itgPipMsg;
+
+function itgLoadPipMessages(lang, force = false) {
+    if (!lang) {
+        try {
+            chrome.storage.local.get('preferred-language', (stored) => {
+                const raw = stored?.['preferred-language'] || chrome.i18n.getUILanguage() || 'en';
+                itgLoadPipMessages(itgNormalizePipLang(raw), force);
+            });
+            return;
+        } catch {
+            lang = itgNormalizePipLang(chrome.i18n.getUILanguage());
+        }
+    }
+    const normalized = itgNormalizePipLang(lang);
+    if (!force && itgPipMessages && itgPipLang === normalized) {
+        return Promise.resolve(itgPipMessages);
+    }
+    if (!force && itgPipLoadPromise) {
+        return itgPipLoadPromise;
+    }
+
+    itgPipLoadPromise = (async () => {
+        try {
+            const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
+            const res = await fetch(url);
+            if (res.ok) {
+                itgPipMessages = await res.json();
+                itgPipLang = normalized;
+                window.__itgPipMessages = itgPipMessages;
+                window.__itgPipLang = itgPipLang;
+            } else if (normalized !== 'en') {
+                const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                const fallbackRes = await fetch(fallbackUrl);
+                if (fallbackRes.ok) {
+                    itgPipMessages = await fallbackRes.json();
+                    itgPipLang = 'en';
+                    window.__itgPipMessages = itgPipMessages;
+                    window.__itgPipLang = itgPipLang;
+                }
+            }
+        } catch (e) {
+            console.warn('[videoPip] Error loading messages for', normalized, e);
+        } finally {
+            itgPipLoadPromise = null;
+        }
+        itgRefreshPipUiTranslations();
+        return itgPipMessages;
+    })();
+
+    return itgPipLoadPromise;
+}
+
+try {
+    itgLoadPipMessages();
+} catch {}
+
+function itgRefreshPipUiTranslations() {
+    const menu = document.getElementById('itg-autopip-menu');
+    if (menu) {
+        const scrollOpt = menu.querySelector('[data-itg-auto-pip-option="scroll"]');
+        if (scrollOpt) {
+            const strong = scrollOpt.querySelector('strong');
+            const small = scrollOpt.querySelector('small');
+            if (strong) strong.textContent = itgPipMsg('autoPipOnScrollTitle', 'Open automatically on scroll');
+            if (small) {
+                small.textContent = itgPipMsg(
+                    'autoPipOnScrollDesc',
+                    'When scrolling leaves the playing video off screen. Needs a recent click — pressing play yourself counts; otherwise it opens at your next click. It goes back when the video is in view again.',
+                );
+            }
+        }
+        const hiddenOpt = menu.querySelector('[data-itg-auto-pip-option="hidden"]');
+        if (hiddenOpt) {
+            const strong = hiddenOpt.querySelector('strong');
+            const small = hiddenOpt.querySelector('small');
+            if (strong)
+                strong.textContent = itgPipMsg('autoPipOnHiddenTitle', 'Open automatically when leaving the tab');
+            if (small) {
+                small.textContent = itgPipMsg(
+                    'autoPipOnHiddenDesc',
+                    'When switching to another tab or another program. It goes back on returning to the tab.',
+                );
+            }
+        }
+        const frameOpt = menu.querySelector('[data-itg-auto-pip-option="frame"]');
+        if (frameOpt) {
+            const strong = frameOpt.querySelector('strong');
+            const small = frameOpt.querySelector('small');
+            if (strong) strong.textContent = itgPipMsg('pipFrameTitle', 'Set position and size');
+            if (small) {
+                small.textContent = itgPipMsg(
+                    'pipFrameDesc',
+                    'Drag a rectangle where you want the floating window, at the size you want it.',
+                );
+            }
+        }
+    }
+
+    const pipTitle = itgPipMsg('omnibarPrefixVideoPipTitle', 'Picture-in-Picture (Video)');
+    const ytBtn = document.getElementById('itg-yt-pip-button');
+    if (ytBtn) {
+        ytBtn.setAttribute('title', pipTitle);
+        ytBtn.setAttribute('aria-label', pipTitle);
+    }
+    const shortsBtn = document.getElementById('itg-yt-shorts-pip-button')?.querySelector('button');
+    if (shortsBtn) {
+        shortsBtn.setAttribute('title', pipTitle);
+        shortsBtn.setAttribute('aria-label', pipTitle);
+    }
+    const genericBtn = document.getElementById('itg-generic-pip-button');
+    if (genericBtn) {
+        genericBtn.setAttribute('title', pipTitle);
+        genericBtn.setAttribute('aria-label', pipTitle);
+    }
+    const tiktokBtns = document.querySelectorAll('.itg-tiktok-pip-button');
+    for (const tBtn of tiktokBtns) {
+        tBtn.setAttribute('title', pipTitle);
+        tBtn.setAttribute('aria-label', pipTitle);
+    }
+
+    ItgVideoPip.current?.updateTitlesAndLabels();
+}
 
 /**
  * Document PiP needs the click's transient activation, and any `await` before
@@ -47,19 +195,37 @@ var itgPipTheme = window.__itgPipTheme ?? null;
 function itgPreloadPipDims() {
     try {
         chrome.storage.local.get(
-            ['lastNormalPipWidth', 'lastNormalPipHeight', 'lastShortPipWidth', 'lastShortPipHeight', 'activeTheme'],
+            [
+                'lastNormalPipWidth',
+                'lastNormalPipHeight',
+                'lastShortPipWidth',
+                'lastShortPipHeight',
+                'activeTheme',
+                'preferred-language',
+            ],
             (stored) => {
                 if (!stored) return;
                 Object.assign(itgPipSavedDims, stored);
                 itgPipTheme = stored.activeTheme ?? null;
                 window.__itgPipTheme = itgPipTheme;
+                const lang =
+                    stored['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                itgLoadPipMessages(lang);
             },
         );
         chrome.storage.onChanged.addListener((changes, area) => {
-            if (area !== 'local' || !changes.activeTheme) return;
-            itgPipTheme = changes.activeTheme.newValue ?? null;
-            window.__itgPipTheme = itgPipTheme;
-            ItgVideoPip.current?.applyTheme();
+            if (area !== 'local') return;
+            if (changes.activeTheme) {
+                itgPipTheme = changes.activeTheme.newValue ?? null;
+                window.__itgPipTheme = itgPipTheme;
+                ItgVideoPip.current?.applyTheme();
+            }
+            if (changes['preferred-language']) {
+                const newLang =
+                    changes['preferred-language'].newValue ||
+                    (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                itgLoadPipMessages(newLang, true);
+            }
         });
     } catch {}
 }
@@ -539,14 +705,6 @@ function itgShortsNavButton(direction) {
     return host?.querySelector('button') ?? null;
 }
 
-function itgPipMsg(key, fallback) {
-    try {
-        return chrome.i18n.getMessage(key) || fallback;
-    } catch {
-        return fallback;
-    }
-}
-
 // --- The PiP session ---------------------------------------------------------
 
 var ItgVideoPipSession = class ItgVideoPipSession {
@@ -1003,28 +1161,51 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.buttons[btn.dataset.act] = btn;
         }
 
-        this.buttons.playpause.title = itgPipMsg('pipPlayPause', 'Play / pause');
-        this.buttons.prev.title = itgPipMsg('pipPrevious', 'Previous video');
-        this.buttons.next.title = itgPipMsg('pipNext', 'Next video');
-        this.buttons.rewind.title = itgPipMsg('pipRewind', 'Back 10 seconds');
         this.buttons.rewind.innerHTML = ITG_PIP_ICONS.rewind;
-        this.buttons.forward.title = itgPipMsg('pipForward', 'Forward 10 seconds');
         this.buttons.forward.innerHTML = ITG_PIP_ICONS.forward;
         this.buttons.prev.innerHTML = ITG_PIP_ICONS.previous;
         this.buttons.next.innerHTML = ITG_PIP_ICONS.next;
-        this.buttons.rate.title = itgPipMsg('pipSpeed', 'Playback speed');
-        this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
         this.buttons.comments.innerHTML = ITG_PIP_ICONS.comments;
-        this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
         this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
-        this.buttons.size.title = itgPipMsg('pipSize', 'Window size');
-        doc.querySelector('.itg-pip-size-label-w').textContent = itgPipMsg('pipWidth', 'Width');
-        doc.querySelector('.itg-pip-size-label-h').textContent = itgPipMsg('pipHeight', 'Height');
 
         this.buildRateMenu();
         this.buildSizeMenu();
         this.buildSearch();
+        this.updateTitlesAndLabels();
         this.applyTheme();
+    }
+
+    updateTitlesAndLabels() {
+        if (!this.buttons || !this.pipWindow) return;
+        const doc = this.pipWindow.document;
+        if (this.buttons.playpause) this.buttons.playpause.title = itgPipMsg('pipPlayPause', 'Play / pause');
+        if (this.buttons.prev) this.buttons.prev.title = itgPipMsg('pipPrevious', 'Previous video');
+        if (this.buttons.next) this.buttons.next.title = itgPipMsg('pipNext', 'Next video');
+        if (this.buttons.rewind) this.buttons.rewind.title = itgPipMsg('pipRewind', 'Back 10 seconds');
+        if (this.buttons.forward) this.buttons.forward.title = itgPipMsg('pipForward', 'Forward 10 seconds');
+        if (this.buttons.rate) this.buttons.rate.title = itgPipMsg('pipSpeed', 'Playback speed');
+        if (this.buttons.comments) this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
+        if (this.buttons.captions) this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
+        if (this.buttons.size) this.buttons.size.title = itgPipMsg('pipSize', 'Window size');
+        if (this.buttons.mute) {
+            const muted = this.video?.muted || this.video?.volume === 0;
+            this.buttons.mute.title = itgPipMsg(muted ? 'pipUnmute' : 'pipMute', muted ? 'Unmute' : 'Mute');
+        }
+        const labelW = doc.querySelector('.itg-pip-size-label-w');
+        if (labelW) labelW.textContent = itgPipMsg('pipWidth', 'Width');
+        const labelH = doc.querySelector('.itg-pip-size-label-h');
+        if (labelH) labelH.textContent = itgPipMsg('pipHeight', 'Height');
+        this.renderSize();
+        const searchInput = doc.querySelector('.itg-pip-search-input');
+        if (searchInput) searchInput.placeholder = itgPipMsg('pipSearch', 'Search videos');
+        const liveBadge = doc.querySelector('.itg-pip-live-badge');
+        if (liveBadge) liveBadge.textContent = itgPipMsg('pipLive', 'Live');
+
+        if (this.sideArea && !this.sideArea.hidden && this.lists) {
+            const hasLists = this.lists.some((list) => list.items.length);
+            const canComment = this.isYouTube && !this.isShorts;
+            this.renderSideTabs(hasLists, canComment);
+        }
     }
 
     /**
@@ -2236,8 +2417,21 @@ var ITG_AUTO_PIP_MENU_STYLES = `
 .itg-autopip-menu.is-open { opacity: 1; visibility: visible; transform: translateY(0); }
 /* An invisible strip over the gap, so the pointer can travel from the button to
    the menu without passing through nothing and closing it on the way. */
-.itg-autopip-menu::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 14px; }
+.itg-autopip-menu::after { content: ''; position: absolute; left: -12px; right: -12px; top: 100%; height: 20px; }
 .itg-autopip-menu[data-place='below']::after { top: auto; bottom: 100%; }
+
+/* Keep YouTube, TikTok, and generic player control bars visible and active while the popup menu is open/hovered */
+html[data-itg-autopip-open='true'] .ytp-chrome-bottom,
+html[data-itg-autopip-open='true'] .ytp-gradient-bottom,
+html[data-itg-autopip-open='true'] .ytp-chrome-top,
+html[data-itg-autopip-open='true'] ytd-shorts-player-controls,
+html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="DivBottom"],
+html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="DivButtonContainer"],
+html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="ControlMask"] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
 
 /* Selectable buttons rather than checkboxes: the state is the button, which reads
    at a glance on a control bar and takes the theme's colours as its own. */
@@ -2303,6 +2497,31 @@ var ITG_AUTO_PIP_MENU_STYLES = `
 }
 `;
 
+var itgAutoPipKeepAliveTimer = null;
+
+function itgStartAutoPipKeepAlive() {
+    document.documentElement.setAttribute('data-itg-autopip-open', 'true');
+    if (!itgAutoPipKeepAliveTimer) {
+        const wake = () => {
+            const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+            if (player) {
+                player.wakeUpControls?.();
+                player.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true }));
+            }
+        };
+        wake();
+        itgAutoPipKeepAliveTimer = setInterval(wake, 800);
+    }
+}
+
+function itgStopAutoPipKeepAlive() {
+    document.documentElement.removeAttribute('data-itg-autopip-open');
+    if (itgAutoPipKeepAliveTimer) {
+        clearInterval(itgAutoPipKeepAliveTimer);
+        itgAutoPipKeepAliveTimer = null;
+    }
+}
+
 /**
  * The two automatic triggers, offered where the button for the manual one is.
  *
@@ -2318,6 +2537,12 @@ function itgAttachAutoPipMenu(button) {
     let hideTimer = null;
     const show = () => {
         clearTimeout(hideTimer);
+        itgStartAutoPipKeepAlive();
+        itgRefreshPipUiTranslations();
+        for (const name of ['scroll', 'hidden']) {
+            const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
+            opt?.itgPaint?.(itgAutoPipSettings[name] === true);
+        }
         const rect = button.getBoundingClientRect();
         menu.classList.add('is-open');
         const height = menu.offsetHeight || 120;
@@ -2329,12 +2554,18 @@ function itgAttachAutoPipMenu(button) {
         menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
     };
     const hide = () => {
-        hideTimer = setTimeout(() => menu.classList.remove('is-open'), 220);
+        hideTimer = setTimeout(() => {
+            menu.classList.remove('is-open');
+            itgStopAutoPipKeepAlive();
+        }, 350);
     };
 
     button.addEventListener('mouseenter', show);
     button.addEventListener('mouseleave', hide);
-    menu.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    menu.addEventListener('mouseenter', () => {
+        clearTimeout(hideTimer);
+        itgStartAutoPipKeepAlive();
+    });
     menu.addEventListener('mouseleave', hide);
 }
 
@@ -2359,14 +2590,14 @@ function itgAutoPipMenu() {
             'autoPipOnScrollTitle',
             'Open automatically on scroll',
             'autoPipOnScrollDesc',
-            'When scrolling leaves the playing video off screen. Needs a recent click — pressing play yourself counts; otherwise it opens at your next click.',
+            'When scrolling leaves the playing video off screen. Needs a recent click — pressing play yourself counts; otherwise it opens at your next click. It goes back when the video is in view again.',
         ],
         [
             'hidden',
             'autoPipOnHiddenTitle',
             'Open automatically when leaving the tab',
             'autoPipOnHiddenDesc',
-            'When switching to another tab or another program.',
+            'When switching to another tab or another program. It goes back on returning to the tab.',
         ],
     ]) {
         const option = document.createElement('button');
@@ -2406,6 +2637,7 @@ function itgAutoPipMenu() {
     const frameOption = document.createElement('button');
     frameOption.type = 'button';
     frameOption.className = 'itg-autopip-option';
+    frameOption.dataset.itgAutoPipOption = 'frame';
     const frameTitle = document.createElement('strong');
     frameTitle.textContent = itgPipMsg('pipFrameTitle', 'Set position and size');
     const frameDesc = document.createElement('small');
@@ -2610,17 +2842,38 @@ function itgLoadAutoPipSettings() {
                 scroll: stored?.[ITG_AUTO_PIP_KEYS.scroll] === true,
                 hidden: stored?.[ITG_AUTO_PIP_KEYS.hidden] === true,
             };
+            window.__itgAutoPipSettings = itgAutoPipSettings;
+            const menu = document.getElementById('itg-autopip-menu');
+            if (menu) {
+                for (const name of ['scroll', 'hidden']) {
+                    const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
+                    opt?.itgPaint?.(itgAutoPipSettings[name] === true);
+                }
+            }
             itgWatchAutoPipTriggers();
         });
         chrome.storage.onChanged.addListener((changes, area) => {
             if (area !== 'local') return;
-            if (changes[ITG_AUTO_PIP_KEYS.scroll]) {
+            let changed = false;
+            if (changes[ITG_AUTO_PIP_KEYS.scroll] !== undefined) {
                 itgAutoPipSettings.scroll = changes[ITG_AUTO_PIP_KEYS.scroll].newValue === true;
+                changed = true;
             }
-            if (changes[ITG_AUTO_PIP_KEYS.hidden]) {
+            if (changes[ITG_AUTO_PIP_KEYS.hidden] !== undefined) {
                 itgAutoPipSettings.hidden = changes[ITG_AUTO_PIP_KEYS.hidden].newValue === true;
+                changed = true;
             }
-            itgWatchAutoPipTriggers();
+            if (changed) {
+                window.__itgAutoPipSettings = itgAutoPipSettings;
+                const menu = document.getElementById('itg-autopip-menu');
+                if (menu) {
+                    for (const name of ['scroll', 'hidden']) {
+                        const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
+                        opt?.itgPaint?.(itgAutoPipSettings[name] === true);
+                    }
+                }
+                itgWatchAutoPipTriggers();
+            }
         });
     } catch {}
 }

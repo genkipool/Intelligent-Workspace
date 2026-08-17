@@ -1466,23 +1466,74 @@ function faviconURL(u) {
     }
 }
 
-function calculateDistance(color1, color2) {
-    const dr = color1.r - color2.r;
-    const dg = color1.g - color2.g;
-    const db = color1.b - color2.b;
-    return Math.sqrt(dr * dr + dg * dg + db * db);
+/**
+ * Converts RGB values to HSL representation.
+ * @param {number} r (0-255)
+ * @param {number} g (0-255)
+ * @param {number} b (0-255)
+ * @returns {{ h: number, s: number, l: number }} h in [0, 360), s and l in [0, 1]
+ */
+function rgbToHsl(r, g, b) {
+    const rNorm = r / 255;
+    const gNorm = g / 255;
+    const bNorm = b / 255;
+    const max = Math.max(rNorm, gNorm, bNorm);
+    const min = Math.min(rNorm, gNorm, bNorm);
+    const d = max - min;
+    const l = (max + min) / 2;
+
+    if (d === 0) {
+        return { h: 0, s: 0, l };
+    }
+
+    const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    let h;
+    switch (max) {
+        case rNorm:
+            h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0);
+            break;
+        case gNorm:
+            h = (bNorm - rNorm) / d + 2;
+            break;
+        case bNorm:
+            h = (rNorm - gNorm) / d + 4;
+            break;
+    }
+    h = Math.round(h * 60);
+    return { h, s, l };
 }
 
-function quantize(r, g, b, granularity = 15) {
-    return {
-        r: Math.round(r / granularity) * granularity,
-        g: Math.round(g / granularity) * granularity,
-        b: Math.round(b / granularity) * granularity,
-    };
+/**
+ * Maps HSL values to one of Chrome's official tab group colors:
+ * 'grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'.
+ */
+function classifyHslToChromeGroupColor(h, s, l) {
+    // Low saturation or extreme lightness is treated as neutral/grey
+    if (s < 0.14 || l < 0.08 || l > 0.94) {
+        return 'grey';
+    }
+
+    // Precise hue boundaries based on perceptual color appearance:
+    // - Orange: 15° to 44° (e.g. Reddit, SoundCloud, Substack, GitLab, Cloudflare)
+    // - Yellow: 45° to 68° (e.g. Snapchat, Google Keep, IMDb)
+    // - Green:  69° to 164°
+    // - Cyan:   165° to 194°
+    // - Blue:   195° to 254°
+    // - Purple: 255° to 294°
+    // - Pink:   295° to 344°
+    // - Red:    345° to 360° and 0° to 14°
+    if (h >= 15 && h < 45) return 'orange';
+    if (h >= 45 && h < 69) return 'yellow';
+    if (h >= 69 && h < 165) return 'green';
+    if (h >= 165 && h < 195) return 'cyan';
+    if (h >= 195 && h < 255) return 'blue';
+    if (h >= 255 && h < 295) return 'purple';
+    if (h >= 295 && h < 345) return 'pink';
+    return 'red';
 }
 
 const faviconColorCache = new Map();
-const FAVICON_COLOR_CACHE_KEY = 'faviconColorCache';
+const FAVICON_COLOR_CACHE_KEY = 'faviconColorCache_v2';
 let faviconColorCacheLoaded = false;
 let faviconColorSaveTimer = null;
 
@@ -1537,21 +1588,6 @@ async function getFaviconColor(faviconUrl) {
         return faviconColorCache.get(cacheKey);
     }
 
-    const colors = [
-        { name: 'blue', rgb: { r: 20, g: 100, b: 255 } },
-        { name: 'red', rgb: { r: 255, g: 40, b: 30 } },
-        { name: 'yellow', rgb: { r: 255, g: 170, b: 0 } },
-        { name: 'green', rgb: { r: 20, g: 130, b: 50 } },
-        { name: 'pink', rgb: { r: 200, g: 20, b: 130 } },
-        { name: 'purple', rgb: { r: 160, g: 60, b: 240 } },
-        { name: 'cyan', rgb: { r: 0, g: 130, b: 128 } },
-        { name: 'orange', rgb: { r: 255, g: 140, b: 60 } },
-    ];
-
-    const isIgnoredPixel = (r, g, b, a) => a === 0 || (r === 255 && g === 255 && b === 255);
-    const isGray = (r, g, b, threshold = 15) =>
-        Math.abs(r - g) <= threshold && Math.abs(r - b) <= threshold && Math.abs(g - b) <= threshold;
-
     // Remembering the failures too: without this every group creation paid the
     // fetch (and, on an unreachable favicon, the full 180 ms timeout) again.
     const remember = (color) => {
@@ -1578,36 +1614,63 @@ async function getFaviconColor(faviconUrl) {
         ctx.drawImage(imageBitmap, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
-        const colorHistogram = {};
-        for (let i = 0; i < imageData.length; i += 8) {
-            const r = imageData[i],
-                g = imageData[i + 1],
-                b = imageData[i + 2],
-                a = imageData[i + 3];
-            if (!isIgnoredPixel(r, g, b, a) && !isGray(r, g, b)) {
-                const quantizedColor = quantize(r, g, b);
-                const colorKey = `${quantizedColor.r}-${quantizedColor.g}-${quantizedColor.b}`;
-                colorHistogram[colorKey] = (colorHistogram[colorKey] || 0) + 1;
+        const votes = {
+            red: 0,
+            orange: 0,
+            yellow: 0,
+            green: 0,
+            cyan: 0,
+            blue: 0,
+            purple: 0,
+            pink: 0,
+            grey: 0,
+        };
+
+        let totalChromaticWeight = 0;
+
+        for (let i = 0; i < imageData.length; i += 4) {
+            const a = imageData[i + 3];
+            if (a < 30) continue; // Ignore transparent pixels
+
+            const r = imageData[i];
+            const g = imageData[i + 1];
+            const b = imageData[i + 2];
+
+            // Ignore pure white/near-white backgrounds and near-black pixels
+            if (r > 248 && g > 248 && b > 248) continue;
+            if (r < 8 && g < 8 && b < 8) continue;
+
+            const { h, s, l } = rgbToHsl(r, g, b);
+            const category = classifyHslToChromeGroupColor(h, s, l);
+
+            if (category === 'grey') {
+                votes.grey += (a / 255) * 0.5;
+            } else {
+                // Weight by saturation and alpha so vibrant brand colors dominate over dull tints
+                const weight = (a / 255) * Math.pow(s, 1.2) * (1 - Math.abs(l - 0.5) * 0.8);
+                votes[category] += weight;
+                totalChromaticWeight += weight;
             }
         }
 
-        if (!Object.keys(colorHistogram).length) return remember(null);
+        // If no significant chromatic pixels were found
+        if (totalChromaticWeight < 0.5) {
+            if (votes.grey > 1) return remember('grey');
+            return remember(null);
+        }
 
-        const dominantColorKey = Object.keys(colorHistogram).reduce((a, b) =>
-            colorHistogram[a] > colorHistogram[b] ? a : b,
-        );
-        const [rAvg, gAvg, bAvg] = dominantColorKey.split('-').map(Number);
-
-        let closestColor = colors[0];
-        let minDistance = calculateDistance({ r: rAvg, g: gAvg, b: bAvg }, closestColor.rgb);
-        for (let i = 1; i < colors.length; i++) {
-            const distance = calculateDistance({ r: rAvg, g: gAvg, b: bAvg }, colors[i].rgb);
-            if (distance < minDistance) {
-                minDistance = distance;
-                closestColor = colors[i];
+        // Find the chromatic category with the highest weighted vote
+        let bestColor = null;
+        let maxWeight = 0;
+        for (const [color, weight] of Object.entries(votes)) {
+            if (color === 'grey') continue;
+            if (weight > maxWeight) {
+                maxWeight = weight;
+                bestColor = color;
             }
         }
-        return remember(closestColor.name);
+
+        return remember(bestColor);
     } catch {
         return remember(null);
     }
