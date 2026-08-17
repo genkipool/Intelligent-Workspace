@@ -2250,6 +2250,27 @@ export function initPomodoro() {
             interruptions: stateToExport.interruptions || 0,
             taskLog: taskCompletionLog,
             noteCount: pomodoroNoteCount,
+            // The fields above are formatted for a person to read ("1h 20m"), which
+            // the importer cannot turn back into a session. It already knows how to
+            // read a `raw` block, so the numbers travel alongside the summary and the
+            // exported file can be imported again.
+            raw: {
+                stats: {
+                    sessionStarted: st.sessionStarted,
+                    totalFocusSeconds: st.totalFocusSeconds || 0,
+                    totalBreakSeconds: st.totalBreakSeconds || 0,
+                    totalInterruptionSeconds: st.totalInterruptionSeconds || 0,
+                    completedCycles: stateToExport.completedCycles || 0,
+                    interruptions: stateToExport.interruptions || 0,
+                    avgFocus: st.avgFocus || 0,
+                    sessionFocusList: st.sessionFocusList || [],
+                },
+                settings: {
+                    projectName: stateToExport.settings?.projectName || 'Unnamed',
+                    projectFolder: stateToExport.settings?.projectFolder || '',
+                    projectTag: stateToExport.settings?.projectTag || '',
+                },
+            },
         };
 
         try {
@@ -2272,6 +2293,44 @@ export function initPomodoro() {
     importBtn?.addEventListener('click', () => {
         importInput?.click();
     });
+
+    /**
+     * Checks one entry of an imported stats file and returns it in the shape the
+     * dashboard reads, or null when it is not a session at all.
+     *
+     * The dashboard sums these fields without checking them, so a string where a
+     * number belongs turns every total it feeds into `NaN`. Anything that cannot be
+     * read as a session is dropped rather than stored.
+     */
+    function sanitizePomoStatsEntry(entry) {
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
+        if (typeof entry.id !== 'string' || !entry.id) return null;
+
+        const num = (value) => {
+            const n = Number(value);
+            return Number.isFinite(n) && n >= 0 ? n : 0;
+        };
+        // A session with no timestamp cannot be placed on any chart, and every one of
+        // them would pile onto the same day.
+        const savedAt = Number(entry.savedAt);
+        if (!Number.isFinite(savedAt) || savedAt <= 0) return null;
+
+        return {
+            id: entry.id,
+            projectName: typeof entry.projectName === 'string' ? entry.projectName : '',
+            projectFolder: typeof entry.projectFolder === 'string' ? entry.projectFolder : '',
+            projectTag: typeof entry.projectTag === 'string' ? entry.projectTag : '',
+            sessionStarted: num(entry.sessionStarted),
+            savedAt,
+            totalFocusSeconds: num(entry.totalFocusSeconds),
+            totalBreakSeconds: num(entry.totalBreakSeconds),
+            totalInterruptionSeconds: num(entry.totalInterruptionSeconds),
+            completedCycles: num(entry.completedCycles),
+            interruptions: num(entry.interruptions),
+            avgFocus: num(entry.avgFocus),
+            sessionFocusList: Array.isArray(entry.sessionFocusList) ? entry.sessionFocusList.map(num) : [],
+        };
+    }
 
     importInput?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
@@ -2311,9 +2370,24 @@ export function initPomodoro() {
                     throw new Error('Unsupported format');
                 }
 
+                if (!Array.isArray(entries) || entries.length === 0) {
+                    throw new Error('Unsupported format');
+                }
+
+                // Entries were written with a `savePomoStats` message that no handler
+                // in the worker answers, so nothing was ever stored — and success was
+                // reported all the same. Sessions are saved straight to the database
+                // here, the same way the rest of this file does it.
+                let imported = 0;
                 for (const entry of entries) {
-                    if (!entry.id) continue;
-                    await chrome.runtime.sendMessage({ action: 'savePomoStats', stats: entry });
+                    const clean = sanitizePomoStatsEntry(entry);
+                    if (!clean) continue;
+                    await savePomoStatsToDb(clean);
+                    imported++;
+                }
+
+                if (imported === 0) {
+                    throw new Error('Unsupported format');
                 }
 
                 showNotification('pomodoroStatsSaved', false);
@@ -2512,9 +2586,14 @@ export function initPomodoro() {
     } catch {}
 
     try {
-        chrome.runtime.onMessage.addListener(async (msg) => {
+        // Deliberately not an `async` listener: an async function always returns a
+        // promise, and Chrome reads any truthy return as "this listener will answer".
+        // It never did, so with this page open every sendMessage that expected a
+        // reply — the omnibar asking for the open tabs, among others — got `null`
+        // back once this listener won the race. The work stays async inside.
+        chrome.runtime.onMessage.addListener((msg) => {
             if (msg.action === 'pomodoroStatsChanged' || msg.action === 'pomodoroStatsUpdated') {
-                await loadSavedProjects();
+                loadSavedProjects();
             }
         });
     } catch {}

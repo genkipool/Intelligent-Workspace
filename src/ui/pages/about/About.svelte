@@ -20,6 +20,14 @@
         initializeKeyboardNavigation();
     });
 
+    // `<title data-i18n="aboutApp">` is filled in by the page that loads
+    // `i18n-init.js`, and this one does not, so the browser tab came up nameless.
+    // Setting it from the store also keeps it right when the language changes.
+    $effect(() => {
+        const titulo = $t('aboutApp');
+        if (titulo) document.title = titulo;
+    });
+
     function goBack() {
         if (chrome && chrome.tabs) {
             chrome.tabs.query({ url: chrome.runtime.getURL('src/ui/pages/popup/popup.html') }, (popupTabs) => {

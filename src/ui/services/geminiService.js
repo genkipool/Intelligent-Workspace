@@ -7,7 +7,14 @@
 import { get, writable } from 'svelte/store';
 import { isGeminiViewActive, searchToggles } from '../stores/appStore.svelte.js';
 import { openModal, showApiKeyModal as showApiKeyModalStore } from '../stores/modalStore.js';
-import { geminiStore } from '../stores/geminiStore.js';
+import {
+    geminiStore,
+    conversationHistory,
+    combinedConversations,
+    sessionConversations,
+    persistentConversations,
+    currentCombinedIndex,
+} from '../stores/geminiStore.js';
 import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
 import '../../lib/marked.js';
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
@@ -28,11 +35,41 @@ import { closeNotesView } from './notesService.js';
 import { updateSubButtonVisibility } from './settingsService.js';
 import { updateDuplicateCountBadge } from './groupsService.js';
 
-export const geminiConversationHistory = writable([]);
-export const geminiPersistentConversations = writable([]);
-export const geminiCombinedConversations = writable([]);
-export const geminiCurrentCombinedIndex = writable(-1);
-export const geminiSessionConversations = writable([]);
+/**
+ * The entries on screen.
+ *
+ * This is a view onto `geminiStore`, not a store of its own. It used to be its own
+ * `writable`, which nothing rendered: the conversation view subscribes to
+ * `geminiStore.conversationHistory`, so everything written here — a scheduled answer
+ * above all — stayed invisible until the page was reloaded.
+ */
+export const geminiConversationHistory = {
+    subscribe: conversationHistory.subscribe,
+    set: (entries) => geminiStore.setConversationHistory(entries),
+    update: (fn) => geminiStore.setConversationHistory(fn(get(conversationHistory))),
+};
+/*
+ * The four below are views onto `geminiStore` for the same reason as the history: the
+ * conversation picker and the name on its button are drawn from that store. Keeping
+ * separate copies here meant a conversation could be loaded and shown while the
+ * picker still read "select a conversation", because its own list never heard of it.
+ */
+export const geminiPersistentConversations = {
+    subscribe: persistentConversations.subscribe,
+    set: (list) => geminiStore.setPersistentConversations(list),
+};
+export const geminiCombinedConversations = {
+    subscribe: combinedConversations.subscribe,
+    set: (list) => geminiStore.setCombinedConversations(list),
+};
+export const geminiCurrentCombinedIndex = {
+    subscribe: currentCombinedIndex.subscribe,
+    set: (index) => geminiStore.setCurrentCombinedIndex(index),
+};
+export const geminiSessionConversations = {
+    subscribe: sessionConversations.subscribe,
+    set: (list) => geminiStore.setSessionConversations(list),
+};
 export const geminiCurrentSessionConversationIndex = writable(-1);
 
 export async function handleDownloadConversation() {
@@ -74,56 +111,17 @@ ${entriesHtml}
     URL.revokeObjectURL(url);
 }
 
+/**
+ * Rebuilds the conversation list and the name shown on the picker.
+ *
+ * The work is done by `geminiStore`, which owns that list; this module used to repeat
+ * it against its own copies, so the two could — and did — disagree.
+ */
 export async function updateCombinedConversationDisplay() {
-    const { [STORAGE_KEYS.PERSISTENT_GEMINI]: persistentIds = [] } = await chrome.storage.local.get(
-        STORAGE_KEYS.PERSISTENT_GEMINI,
-    );
-    let finalPersistentConversations = [];
-    if (persistentIds.length > 0) {
-        const allEntries = await getAllGeminiEntriesFromDb();
-        const persistentIdSet = new Set(persistentIds);
-        const allPersistentEntries = allEntries.filter((entry) => persistentIdSet.has(entry.id) && entry.isPersistent);
-        const groupedByTitle = allPersistentEntries.reduce((acc, entry) => {
-            const title = entry.persistentTitle || 'Untitled';
-            if (!acc[title]) acc[title] = [];
-            acc[title].push(entry);
-            return acc;
-        }, {});
-        finalPersistentConversations = Object.entries(groupedByTitle).map(([title, entries]) => ({
-            title,
-            entries: entries.sort((a, b) => a.id - b.id),
-            timestamp: Math.max(...entries.map((e) => e.id)),
-            isTemporary: false,
-        }));
-    }
-    geminiPersistentConversations.set(finalPersistentConversations);
-
-    geminiCombinedConversations.set(
-        [...get(geminiPersistentConversations), ...get(geminiSessionConversations)].sort(
-            (a, b) => b.timestamp - a.timestamp,
-        ),
-    );
-
-    if (get(geminiConversationHistory).length > 0) {
-        const currentId = get(geminiConversationHistory)[0].id;
-        geminiCurrentCombinedIndex.set(
-            get(geminiCombinedConversations).findIndex(
-                (conv) => conv.entryIds?.includes(currentId) || conv.entries?.some((e) => e.id === currentId),
-            ),
-        );
-    } else {
-        geminiCurrentCombinedIndex.set(-1);
-    }
-
-    // The name on the button is rendered by the page component from the live store.
-    // Writing it here as well overwrote it with this module's own stores, which the
-    // assistant no longer keeps up to date: the button kept the previous conversation's
-    // name after starting a new one.
+    await geminiStore.refreshConversations();
 }
 
 export async function loadSelectedConversation(conversation) {
-    await geminiStore.archiveCurrentConversationIfNeeded();
-
     if (conversation.isScheduled && !conversation.isRead) {
         const sessionConv = get(geminiSessionConversations).find((c) => c.timestamp === conversation.timestamp);
         if (sessionConv) {
@@ -135,13 +133,9 @@ export async function loadSelectedConversation(conversation) {
         }
     }
 
-    if (conversation.isTemporary) {
-        const entryIds = new Set(conversation.entryIds);
-        const allEntries = await getAllGeminiEntriesFromDb();
-        geminiConversationHistory.set(allEntries.filter((e) => entryIds.has(e.id)).sort((a, b) => a.id - b.id));
-    } else {
-        geminiConversationHistory.set(conversation.entries);
-    }
+    // Loaded through geminiStore: that is the history the conversation view renders,
+    // and it already copes with a session conversation that carries only entry ids.
+    await geminiStore.loadConversation(conversation);
 
     geminiCurrentCombinedIndex.set(
         get(geminiCombinedConversations).findIndex((c) => c.timestamp === conversation.timestamp),
@@ -179,6 +173,47 @@ export async function updateScheduledConversationBadge() {
     updateSubButtonVisibility();
 }
 
+/**
+ * Puts the newest answer a scheduled query left behind on screen.
+ *
+ * The badge counts those answers, so the assistant has to show the newest of them —
+ * both when the view is opened and while it is already open and one arrives, which
+ * used to need a reload before anything appeared. `loadSelectedConversation` marks
+ * the one it shows as read; the rest are marked here so the count matches.
+ *
+ * @returns {Promise<boolean>} whether there was one to show
+ */
+export async function showNewestScheduledConversation() {
+    // Read from storage rather than the store: the answer may have landed a moment
+    // ago, in the service worker, with the store still holding the older list.
+    try {
+        const sessionData = await chrome.storage.session.get(STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS);
+        geminiSessionConversations.set(sessionData[STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS] || []);
+    } catch {
+        // The store's copy is the best available; carry on with it.
+    }
+
+    const unreadScheduled = get(geminiSessionConversations)
+        .filter((conv) => conv.isScheduled && !conv.isRead)
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    if (unreadScheduled.length === 0) return false;
+
+    await loadSelectedConversation(unreadScheduled[0]);
+
+    if (unreadScheduled.length > 1) {
+        const updated = get(geminiSessionConversations).map((conv) => {
+            if (conv.isScheduled && !conv.isRead) conv.isRead = true;
+            return conv;
+        });
+        geminiSessionConversations.set(updated);
+        chrome.storage.session
+            .set({ [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: get(geminiSessionConversations) })
+            .catch(() => {});
+    }
+    return true;
+}
+
 export async function switchToGeminiView() {
     isGeminiViewActive.set(true);
     closeUrlInPanel(true);
@@ -214,17 +249,7 @@ export async function switchToGeminiView() {
         ?.querySelector('.gemini-notification-badge');
     if (geminiNotificationBadge) geminiNotificationBadge.classList.add('hidden');
 
-    const hasUnread = get(geminiSessionConversations).some((conv) => conv.isScheduled && !conv.isRead);
-    if (hasUnread) {
-        const updated = get(geminiSessionConversations).map((conv) => {
-            if (conv.isScheduled && !conv.isRead) conv.isRead = true;
-            return conv;
-        });
-        geminiSessionConversations.set(updated);
-        chrome.storage.session
-            .set({ [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: get(geminiSessionConversations) })
-            .catch(() => {});
-    }
+    await showNewestScheduledConversation();
 
     const geminiInputContainer = document.getElementById('gemini-input-container');
     if (geminiInputContainer) {
@@ -605,7 +630,10 @@ export function initGeminiEvents() {
                 updateGeminiConversationButtonState();
             })();
             updateScheduledConversationBadge();
-            return true;
+            // No `return true` here: nothing below answers this message, and claiming
+            // the channel only leaves whoever sent it waiting for a reply that never
+            // comes.
+            return;
         }
 
         if (message.action === 'geminiQueryStarted') {
@@ -624,7 +652,11 @@ export function initGeminiEvents() {
             });
             updateHeaderButtonsVisibility();
             updateGeminiConversationButtonState();
-            if (!get(isGeminiViewActive)) {
+            if (get(isGeminiViewActive)) {
+                // The assistant is on screen: the answer belongs there now, not after
+                // a reload.
+                showNewestScheduledConversation().catch(() => {});
+            } else {
                 (async () => {
                     try {
                         const sessionData = await chrome.storage.session.get(STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS);

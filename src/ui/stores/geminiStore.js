@@ -134,6 +134,63 @@ function createGeminiStore() {
         }));
     }
 
+    /**
+     * Puts an answer onto the entry that asked for it.
+     *
+     * Shared by a new question and by a resend, so both finish the same way. The entry
+     * is replaced rather than written into: the view is keyed on these objects, and
+     * mutating one left the answer invisible.
+     *
+     * @param {number} entryId
+     * @param {object} response what the assistant sent back
+     * @param {{fallback?: object}} options `fallback` is the entry to put back when the
+     *   call fails; without one the entry is dropped, which is right for a question that
+     *   never got an answer but wrong for a resend, where the card was already there.
+     */
+    async function applyGeminiAnswer(entryId, response, { fallback = null } = {}) {
+        setSendButtonBusy(false);
+        const current = get(state).conversationHistory.find((e) => e.id === entryId);
+        if (!current) return;
+
+        let errorMsg = '';
+        if (chrome.runtime.lastError) {
+            errorMsg = chrome.runtime.lastError.message || 'Connection error';
+        } else if (!response || response.error) {
+            errorMsg = response && response.error ? response.error : 'Unknown error connecting to AI';
+        }
+
+        if (errorMsg) {
+            if (fallback) {
+                const restored = { ...fallback, isLoading: false };
+                update((st) => ({
+                    ...st,
+                    conversationHistory: st.conversationHistory.map((e) => (e.id === entryId ? restored : e)),
+                }));
+                await saveGeminiEntryToDb(restored);
+            } else {
+                update((st) => ({
+                    ...st,
+                    conversationHistory: st.conversationHistory.filter((e) => e.id !== entryId),
+                }));
+                await deleteGeminiEntryFromDb(entryId);
+            }
+            chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
+            // The reason has to be shown: a quota or connection error used to leave the
+            // question simply vanishing with no explanation.
+            const { showErrorView } = await import('../services/viewsService.js');
+            showErrorView(errorMsg);
+            return;
+        }
+
+        const answered = { ...current, isLoading: false, data: response };
+        update((st) => ({
+            ...st,
+            conversationHistory: st.conversationHistory.map((e) => (e.id === answered.id ? answered : e)),
+        }));
+        await saveGeminiEntryToDb(answered);
+        chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
+    }
+
     function buildGeminiHistoryContents(targetEntryId) {
         const s = get(state);
         const contents = [];
@@ -473,47 +530,7 @@ function createGeminiStore() {
                         contents: buildGeminiHistoryContents(newEntry.id),
                         attachments: currentAttachments,
                     },
-                    async (response) => {
-                        setSendButtonBusy(false);
-                        const s3 = get(state);
-                        const historyEntry = s3.conversationHistory.find((e) => e.id === newEntry.id);
-                        if (!historyEntry) return;
-
-                        let errorMsg = '';
-                        if (chrome.runtime.lastError) {
-                            errorMsg = chrome.runtime.lastError.message || 'Connection error';
-                        } else if (!response || response.error) {
-                            errorMsg = response && response.error ? response.error : 'Unknown error connecting to AI';
-                        }
-
-                        if (errorMsg) {
-                            update((st) => ({
-                                ...st,
-                                conversationHistory: st.conversationHistory.filter((e) => e.id !== newEntry.id),
-                            }));
-                            await deleteGeminiEntryFromDb(newEntry.id);
-                            chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-                            // The card is dropped so no half-answer is left behind, but the
-                            // reason has to be shown: a quota or connection error used to
-                            // leave the question simply vanishing with no explanation.
-                            const { showErrorView } = await import('../services/viewsService.js');
-                            showErrorView(errorMsg);
-                            return;
-                        }
-
-                        // Replaced rather than mutated: the view is keyed on these entry
-                        // objects, so writing into one in place left the answer invisible
-                        // and the entry stuck on "waiting for Gemini".
-                        const answered = { ...historyEntry, isLoading: false, data: response };
-                        update((st) => ({
-                            ...st,
-                            conversationHistory: st.conversationHistory.map((e) =>
-                                e.id === answered.id ? answered : e,
-                            ),
-                        }));
-                        await saveGeminiEntryToDb(answered);
-                        chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-                    },
+                    (response) => applyGeminiAnswer(newEntry.id, response),
                 );
             } catch (e) {
                 setSendButtonBusy(false);
@@ -553,6 +570,44 @@ function createGeminiStore() {
                 [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: s2.sessionConversations,
             });
             await updateCombinedConversationDisplay();
+        },
+
+        /** Rebuilds the conversation list the picker and its label are drawn from. */
+        refreshConversations: async () => {
+            await updateCombinedConversationDisplay();
+        },
+
+        /** @param {Array<object>} list */
+        setSessionConversations: (list) => {
+            update((st) => ({ ...st, sessionConversations: Array.isArray(list) ? list : [] }));
+        },
+
+        /** @param {Array<object>} list */
+        setPersistentConversations: (list) => {
+            update((st) => ({ ...st, persistentConversations: Array.isArray(list) ? list : [] }));
+        },
+
+        /** @param {Array<object>} list */
+        setCombinedConversations: (list) => {
+            update((st) => ({ ...st, combinedConversations: Array.isArray(list) ? list : [] }));
+        },
+
+        /** @param {number} index */
+        setCurrentCombinedIndex: (index) => {
+            update((st) => ({ ...st, currentCombinedIndex: index }));
+        },
+
+        /**
+         * Replaces the entries on screen.
+         *
+         * The conversation view renders this store and nothing else, so the imperative
+         * side of the assistant writes its history through here instead of keeping a
+         * second one of its own.
+         *
+         * @param {Array<object>} entries
+         */
+        setConversationHistory: (entries) => {
+            update((st) => ({ ...st, conversationHistory: Array.isArray(entries) ? entries : [] }));
         },
 
         newConversation: async () => {
@@ -762,15 +817,39 @@ function createGeminiStore() {
             await updateCombinedConversationDisplay();
         },
 
+        /**
+         * Asks the same question again on the same card.
+         *
+         * It used to delete the entry and ask afresh, so the card disappeared, the list
+         * closed the gap and a new card appeared at the bottom — a jump on screen for
+         * what the button calls "replace its answer". Now the card stays put and simply
+         * goes back to waiting.
+         */
         resendEntry: async (query, entryId) => {
-            await geminiStore.deleteEntry(entryId);
-            const s = get(state);
-            if (s.conversationHistory.length === 0) {
-                update((st) => ({ ...st, currentCombinedIndex: -1 }));
-            }
-            await updateCombinedConversationDisplay();
-            if (query) {
-                await geminiStore.handleQuery(query);
+            const previous = get(state).conversationHistory.find((e) => e.id === entryId);
+            if (!previous || !query) return;
+
+            const waiting = { ...previous, isLoading: true, data: null };
+            update((st) => ({
+                ...st,
+                conversationHistory: st.conversationHistory.map((e) => (e.id === entryId ? waiting : e)),
+            }));
+            await saveGeminiEntryToDb(waiting);
+            setSendButtonBusy(true);
+
+            try {
+                chrome.runtime.sendMessage(
+                    {
+                        action: 'searchGemini',
+                        query,
+                        contents: buildGeminiHistoryContents(entryId),
+                        attachments: [],
+                    },
+                    (response) => applyGeminiAnswer(entryId, response, { fallback: previous }),
+                );
+            } catch (e) {
+                setSendButtonBusy(false);
+                console.error('Error resending Gemini query:', e);
             }
         },
 
@@ -1142,8 +1221,10 @@ function createGeminiStore() {
                 showNotification('errorInvalidSchedule', true);
                 return;
             }
+            // The title is kept: the form demands one, the list of schedules shows it
+            // and editing reads it back. Dropping it here left every saved schedule
+            // nameless, both in the list and in the form when reopened.
             const newSchedule = { ...scheduleData.schedule };
-            delete newSchedule.title;
             const mode = scheduleData.mode || 'add';
             const editIndex = scheduleData.editIndex != null ? scheduleData.editIndex : -1;
             if (mode === 'edit' && editIndex !== -1 && editIndex < schedules.length) {
@@ -1168,10 +1249,19 @@ function createGeminiStore() {
             showNotification('scheduleDeleted');
         },
 
+        /**
+         * Validates and stores an API key.
+         *
+         * The reason for a refusal is returned rather than left in `#gemini-api-key-error`:
+         * the Svelte modal only renders that node once it already has an error, so
+         * writing into it announced nothing, and the caller closed the modal anyway.
+         *
+         * @returns {Promise<{ok: boolean, errorKey?: string}>}
+         */
         saveApiKey: async () => {
             const input = document.getElementById('gemini-api-key-input');
             const modal = input?.closest('.modal-content');
-            if (!modal) return false;
+            if (!modal) return { ok: false, errorKey: 'errorValidatingApiKey' };
 
             const lang = await getCurrentLang();
             const messages = await loadMessages(lang);
@@ -1195,7 +1285,7 @@ function createGeminiStore() {
                 }
                 input.classList.add('input-error');
                 saveBtn?.classList.add('error-state');
-                return false;
+                return { ok: false, errorKey: 'geminiApiKeyEmpty' };
             }
 
             saveBtn.disabled = true;
@@ -1217,7 +1307,7 @@ function createGeminiStore() {
                         saveBtn.classList.add('error-state');
                         saveBtn.disabled = false;
                         saveBtn.textContent = originalText;
-                        return false;
+                        return { ok: false, errorKey: 'duplicateApiKeyError' };
                     }
                     if (keysList.length >= 10) {
                         if (errorMsg) {
@@ -1228,7 +1318,7 @@ function createGeminiStore() {
                         saveBtn.classList.add('error-state');
                         saveBtn.disabled = false;
                         saveBtn.textContent = originalText;
-                        return false;
+                        return { ok: false, errorKey: 'geminiMaxApiKeysReached' };
                     }
                     keysList.push({
                         key: apiKey,
@@ -1244,7 +1334,7 @@ function createGeminiStore() {
                     saveBtn.disabled = false;
                     saveBtn.textContent = originalText;
                     input.value = '';
-                    return true;
+                    return { ok: true };
                 }
                 if (errorMsg) {
                     errorMsg.textContent = t('geminiInvalidApiKey');
@@ -1254,7 +1344,7 @@ function createGeminiStore() {
                 saveBtn.classList.add('error-state');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
-                return false;
+                return { ok: false, errorKey: 'geminiInvalidApiKey' };
             } catch {
                 if (errorMsg) {
                     errorMsg.textContent = t('geminiApiKeyValidationError');
@@ -1264,7 +1354,7 @@ function createGeminiStore() {
                 saveBtn.classList.add('error-state');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
-                return false;
+                return { ok: false, errorKey: 'geminiApiKeyValidationError' };
             }
         },
 
@@ -1315,6 +1405,9 @@ export const geminiStore = createGeminiStore();
 
 export const conversationHistory = derived(geminiStore, ($g) => $g.conversationHistory);
 export const combinedConversations = derived(geminiStore, ($g) => $g.combinedConversations);
+export const sessionConversations = derived(geminiStore, ($g) => $g.sessionConversations);
+export const persistentConversations = derived(geminiStore, ($g) => $g.persistentConversations);
+export const currentCombinedIndex = derived(geminiStore, ($g) => $g.currentCombinedIndex);
 export const isGeminiViewActive = derived(geminiStore, ($g) => $g.isViewActive);
 export const selectedModel = derived(geminiStore, ($g) => $g.selectedModel);
 export const availableModels = derived(geminiStore, ($g) => $g.availableModels);

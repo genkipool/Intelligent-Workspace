@@ -127,10 +127,14 @@
     let fileInput = $state(null);
 
     async function handleFilesPicked(e) {
-        const files = [...(e.currentTarget.files || [])];
+        // The input is taken and cleared before anything is awaited: once an await
+        // has passed, the event's `currentTarget` is null, so clearing it afterwards
+        // threw and left the file sitting in the input — picking the same file again
+        // fired no change event at all, and nothing was attached.
+        const input = e.currentTarget;
+        const files = [...(input.files || [])];
+        input.value = '';
         if (files.length > 0) await geminiStore.addAttachments(files);
-        // Reset so picking the same file twice in a row still fires a change.
-        e.currentTarget.value = '';
     }
 
     function handleVoiceClick() {

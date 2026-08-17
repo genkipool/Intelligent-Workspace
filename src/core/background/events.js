@@ -55,16 +55,14 @@ chrome.windows.onCreated.addListener(async (window) => {
 });
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
     await ensureSessionStateLoaded();
-    if (shouldIgnoreEventDuringInitialization('tabs.onActivated', activeInfo.tabId)) return;
-    logMessage(`[onActivated] Tab ${activeInfo.tabId} activated.`);
-    if (activeInfo.tabId !== currentActiveTabId) {
-        previousActiveTabId = currentActiveTabId;
-        currentActiveTabId = activeInfo.tabId;
-        logMessage(
-            `[Tab Swap Tracker] History updated. Previous: ${previousActiveTabId}, Current: ${currentActiveTabId}`,
-        );
-    }
-    getTypeGroup = false;
+
+    // Noting that the tab has been seen comes before the initialization guard on
+    // purpose. In MV3 the worker starts again on any event and re-runs the whole
+    // initialization each time, so the very activation that woke it always fell
+    // inside that window and was thrown away — and nothing ever replays it, so the
+    // tab stayed missing from the seen/total counter next to the group name for the
+    // rest of the session. Recording it is cheap and idempotent, unlike the grouping
+    // work the guard is there to defer.
     if (tabsEverActive.has(activeInfo.tabId)) {
         logMessage(
             `[tabs.onActivated] Tab ${activeInfo.tabId} was already active. tabsEverActive size: ${tabsEverActive.size}.`,
@@ -78,6 +76,17 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
         logMessage(`[tabs.onActivated] ADDED Tab ${activeInfo.tabId}. New size: ${tabsEverActive.size}.`);
         await saveSessionState();
     }
+
+    if (shouldIgnoreEventDuringInitialization('tabs.onActivated', activeInfo.tabId)) return;
+    logMessage(`[onActivated] Tab ${activeInfo.tabId} activated.`);
+    if (activeInfo.tabId !== currentActiveTabId) {
+        previousActiveTabId = currentActiveTabId;
+        currentActiveTabId = activeInfo.tabId;
+        logMessage(
+            `[Tab Swap Tracker] History updated. Previous: ${previousActiveTabId}, Current: ${currentActiveTabId}`,
+        );
+    }
+    getTypeGroup = false;
     let tab;
     try {
         tab = await chrome.tabs.get(activeInfo.tabId);
@@ -134,7 +143,30 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
 chrome.tabGroups.onUpdated.addListener(async (group) => {
     if (shouldIgnoreEventDuringInitialization('tabGroups.onUpdated', group.id)) return;
     if (isGrouping) return;
-    if (!group.title || group.title === undefined || group.title === '') return;
+    // A group must never be left nameless. Renaming one to blank used to stop right
+    // here, so the group kept an empty title until some unrelated event happened to
+    // run a prefix pass. The repair inside that pass rebuilds the title from the
+    // group's key, so all this has to do is ask for the pass.
+    //
+    // The pass is asked for *after* the naming grace period, not now: the browser
+    // writes the title on every keystroke, so an empty title usually means the old
+    // name has just been cleared to type a new one, and restoring it at that moment
+    // would drop the old name into what the user is typing. By the time the pass
+    // runs, either a real name has arrived — and there is nothing to repair — or the
+    // group was genuinely left without one.
+    if (hasNoVisibleName(group.title)) {
+        const restoreDelay = groupInfoMap.get(group.id)?.key ? TITLE_RESTORE_DELAY_MS : GROUP_NAMING_GRACE_MS;
+        // Deleting the name letter by letter is part of the same rename, so the
+        // strip stays as it is and no pass writes anything until the typing stops.
+        groupRenameSettlesAt = Date.now() + RENAME_SETTLE_MS;
+        // Starts the clock from the moment the name disappeared. Without this it
+        // would only start when the pass below looks at the group, which would find
+        // the wait untouched and postpone the repair for ever.
+        isTitleJustCleared(group, restoreDelay);
+        logMessage(`[tabGroups.onUpdated] Group ${group.id} has no name. Will ask for it back once naming settles.`);
+        debounceUpdateAllGroupPrefixes(group.windowId, { targetGroupId: null }, restoreDelay + 300);
+        return;
+    }
     const allGroupsInWindow = await chrome.tabGroups.query({
         windowId: group.windowId,
     });
@@ -153,9 +185,11 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
     const isCompactActive = isCompactModeActive(allGroupsInWindow);
     let groupEdit = false;
     let isGroupExpanded = false;
+    let nameChanged = false;
     if (info) {
         const storedBaseName = getBaseGroupName(info.title);
         if (storedBaseName !== currentBaseName) {
+            nameChanged = currentBaseName !== '';
             if (currentBaseName === '') {
                 logMessage(
                     `[onUpdated] Title update blocked for group ${group.id} because the new title "${currentBaseName}" is invalid (empty or prefix-only).`,
@@ -209,8 +243,24 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
         debounceUpdateAllGroupPrefixes(group.windowId, {
             targetGroupId: null,
             isEdit: groupEdit,
+            isEditGroupId: group.id,
             groupNeedsWarning: true,
         });
+    } else if (nameChanged && !isCompactActive) {
+        groupRenameSettlesAt = Date.now() + RENAME_SETTLE_MS;
+        // The rename may have settled a clash between two other names: the group that
+        // kept the repeated name is still wearing a warning about a duplicate that no
+        // longer exists, and nothing else was going to look at it. Only the group
+        // being renamed counts as edited, so the rest keep the marker their state
+        // calls for.
+        logMessage(
+            `[tabGroups.onUpdated] Group ${group.id} was renamed. Re-checking the whole window for stale warnings.`,
+        );
+        debounceUpdateAllGroupPrefixes(
+            group.windowId,
+            { targetGroupId: null, isEdit: groupEdit, isEditGroupId: group.id },
+            RENAME_SETTLE_MS + 300,
+        );
     } else if (
         (otherReasonsForUpdate && groupEdit && !isCompactActive && info && info.type !== 'manual') ||
         (needsPrefixRecalcWhileWarningIsStable && groupEdit && !isCompactActive && info && info.type !== 'manual') ||
@@ -225,7 +275,16 @@ chrome.tabGroups.onUpdated.addListener(async (group) => {
         });
     }
     logMessage(`[tabGroups.onUpdated] Syncing state for group ${group.id} after update.`);
-    debounceGroupTabs();
+    // While a name is being typed the pass is pushed back instead of running on every
+    // keystroke: it is the pass that reorders the strip, and reordering under the
+    // naming box moves the group the user is writing in. Each keystroke pushes it
+    // further, so the strip is sorted once, when the typing stops.
+    if (nameChanged) {
+        groupRenameSettlesAt = Date.now() + RENAME_SETTLE_MS;
+        debounceGroupTabs(RENAME_SETTLE_MS + 300);
+    } else {
+        debounceGroupTabs();
+    }
     // Rebuilding the menus and writing the map are whole-window jobs. Doing them per
     // group update meant one full rebuild (plus a query of every tab) and one storage
     // write for each of the updates a regroup produces.
@@ -300,6 +359,7 @@ chrome.tabGroups.onRemoved.addListener(async (group) => {
     logMessage(`[onRemoved] Group ${group.id} removed.`);
     getTypeGroup = false;
     delete lastActivity[group.id];
+    untitledGroupFirstSeen.delete(group.id);
     if (activeGroupId === group.id) activeGroupId = -1;
     const identifier = groupIdentifierMap.get(group.id);
     if (identifier) {
@@ -520,7 +580,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             await toggleAllGroupsCommand();
             break;
         case 'delete-other-groups-ctx':
-            await handleDeleteOtherGroups({}, () => {});
+            // The entry reads "close every group except the active one", and the
+            // group to spare has to be named: an empty message left `keepId` as NaN,
+            // which matches nothing, so the active group was closed along with the
+            // rest. When the active tab is in no group there is nothing to spare and
+            // every group goes, which is what the entry then means.
+            await handleDeleteOtherGroups({ groupId: tab?.groupId ?? chrome.tabGroups.TAB_GROUP_ID_NONE }, () => {});
             break;
         case 'regroup-all-tabs':
             await regroupAllTabsCommand();
@@ -1026,9 +1091,28 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // AUTOMATIC TAB DISCARDING / RAM MEMORY SAVER (1 Hour Inactivity)
 // ============================================================
 
-setInterval(suspendInactiveTabsIntelligently, 60000);
-setInterval(checkSchedules, 60000);
-setInterval(checkGeminiSchedules, 60000);
+/**
+ * The minute tick that drives tab suspension, scheduled themes and scheduled
+ * assistant queries.
+ *
+ * These three ran on `setInterval`, which does not survive in a service worker:
+ * the browser stops it after about thirty seconds of inactivity, so a schedule set
+ * for a time when nothing else was happening simply never fired. An alarm wakes the
+ * worker instead — the same mechanism the pomodoro timer already uses.
+ */
+const PERIODIC_TASKS_ALARM = 'itg-periodic-tasks';
+
+chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
+
+chrome.runtime.onStartup.addListener(() => {
+    chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
+});
+
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (alarm.name !== PERIODIC_TASKS_ALARM) return;
+    // Each one is independent: a failure in the first must not stop the others.
+    await Promise.allSettled([suspendInactiveTabsIntelligently(), checkSchedules(), checkGeminiSchedules()]);
+});
 chrome.runtime.onStartup.addListener(initializeExtensionStates);
 chrome.runtime.onInstalled.addListener(async (details) => {
     logMessage('chrome.runtime.onInstalled event fired.');

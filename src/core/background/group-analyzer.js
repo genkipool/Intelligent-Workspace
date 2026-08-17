@@ -225,7 +225,26 @@ async function repairEmptyGroupTitles(groupsInWindow, isEdit = false, tabsInWind
         tabsByGroupId ? tabsByGroupId.get(groupId) || [] : await chrome.tabs.query({ groupId });
 
     for (const group of groupsInWindow) {
-        let needsRepair = !group.title || group.title.trim() === '';
+        let needsRepair = hasNoVisibleName(group.title);
+
+        // Renaming a group in the browser writes the title on every keystroke, so
+        // clearing the old name to type a new one leaves it empty for a moment.
+        // Putting the old name back right then lands it in the box the user is typing
+        // into, and the two get mixed into a name nobody wrote. A title that has only
+        // just been emptied is left alone; if it is still empty once the grace period
+        // is over, the group really was left nameless and gets its name back.
+        // A group that already has a name of its own waits a short moment; one that
+        // never had a name is being typed into the browser's naming box, and waits
+        // the full grace period.
+        const restoreDelay = groupInfoMap.get(group.id)?.key ? TITLE_RESTORE_DELAY_MS : GROUP_NAMING_GRACE_MS;
+        if (needsRepair && isTitleJustCleared(group, restoreDelay)) {
+            logMessage(`[repairEmptyGroupTitles] Group ${group.id} may be mid-rename. Leaving its title alone.`);
+            needsRepair = false;
+            // Come back once that moment has passed. Any pass can run while a name is
+            // being typed, and without this the one chance to repair the title would
+            // be spent on a group that was only halfway through a rename.
+            debounceUpdateAllGroupPrefixes(group.windowId, { targetGroupId: null }, restoreDelay + 300);
+        }
 
         if (needsRepair) {
             logMessage(
@@ -320,6 +339,11 @@ async function updateAllGroupPrefixes(
     cachedGroupsInWindow = null,
     cachedTabsInWindow = null,
     groupNeedsWarning = false,
+    // Which group the "edit" applies to. Renaming one group can change what the
+    // others should show — a duplicate-name warning appears or goes away — so the
+    // pass has to cover the whole window, but only the group being typed into is
+    // left without a marker. Null keeps the old meaning: the edit covers them all.
+    isEditGroupId = null,
 ) {
     logMessage(
         `[updateAllGroupPrefixes START] Executing for windowId: ${windowId}. TargetGroupId: ${targetGroupId ?? 'All'}. IsEdit: ${isEdit}.`,
@@ -327,6 +351,19 @@ async function updateAllGroupPrefixes(
 
     if (shouldIgnoreEventDuringInitialization('updateAllGroupPrefixes', targetGroupId)) {
         logMessage(`[updateAllGroupPrefixes] Execution skipped during initialization.`);
+        return;
+    }
+
+    // Nothing is written to a title while a name is being typed. The browser stores
+    // the group title on every keystroke, so a pass that runs in the middle reads the
+    // half-typed text as the group's name, writes it back with the marker glued in
+    // front — letters nobody typed — and records that fragment as the group's name,
+    // which is then what a later repair would restore instead of the real one. The
+    // pass is put off until the typing has stopped.
+    if (Date.now() < groupRenameSettlesAt) {
+        const waitMs = groupRenameSettlesAt - Date.now() + 300;
+        logMessage(`[updateAllGroupPrefixes] A name is being typed; putting the pass off ${waitMs} ms.`);
+        debounceUpdateAllGroupPrefixes(windowId, { targetGroupId, isEdit, groupNeedsWarning, isEditGroupId }, waitMs);
         return;
     }
 
@@ -368,6 +405,14 @@ async function updateAllGroupPrefixes(
     const updatePromises = allGroupsInWindow.map(async (group) => {
         if (targetGroupId && group.id !== targetGroupId) return;
 
+        // A group the browser is still asking the user to name gets no title from
+        // us: writing one closes the naming box, and the name it would get is a
+        // bare marker, since a brand-new group has no base name to build on.
+        if (isBeingNamed(group)) {
+            logMessage(`[updateAllGroupPrefixes -> Loop] Group ${group.id} is being named. Leaving its title alone.`);
+            return;
+        }
+
         logMessage(`[updateAllGroupPrefixes -> Loop] Processing Group ID: ${group.id}, Title: "${group.title}".`);
 
         const groupInfo = groupInfoMap.get(group.id);
@@ -388,6 +433,9 @@ async function updateAllGroupPrefixes(
             `[updateAllGroupPrefixes -> Loop] Group ${group.id}: Definitive base name is "${definitiveBaseName}".`,
         );
 
+        // Only the group the user is actually renaming is treated as "being edited".
+        const groupIsEdit = isEdit && (isEditGroupId === null || group.id === isEditGroupId);
+
         const isCurrentlyExpanded = !group.collapsed;
         const wasEverExpanded = groupExpandedEver.get(group.id) || isCurrentlyExpanded;
         const anyTabInGroupEverActive = groupTabs.some((tab) => tabsEverActive.has(tab.id));
@@ -404,7 +452,7 @@ async function updateAllGroupPrefixes(
                     group.id,
                     groupTabs,
                     !group.collapsed,
-                    isEdit,
+                    groupIsEdit,
                     groupNeedsWarning,
                 );
                 const prefixMarker = finalPrefix.trim();
@@ -427,7 +475,7 @@ async function updateAllGroupPrefixes(
                     group.id,
                     groupTabs,
                     !group.collapsed,
-                    isEdit,
+                    groupIsEdit,
                     groupNeedsWarning,
                 );
                 const warningPrefix = needsWarningMap[group.id] ? CURRENT_PREFIX_WARNING : '';
@@ -448,7 +496,7 @@ async function updateAllGroupPrefixes(
             group.id,
             groupTabs,
             !group.collapsed,
-            isEdit,
+            groupIsEdit,
             groupNeedsWarning,
         );
 
@@ -483,7 +531,18 @@ async function updateAllGroupPrefixes(
 
         syncGroupState(group, newState, groupPrefixState, groupIdentifierMap, groupInfoMap, isCompactActive);
 
-        if (group.title !== newUiTitle && newUiTitle !== '') {
+        // A group whose name box is empty right now is off limits to this loop. The
+        // name it would write comes from what was last stored, and while someone is
+        // deleting a name letter by letter that store holds a fragment of it — "C"
+        // for a group called "Codigo" — so the loop kept putting the fragment back
+        // into the box the user was emptying. Only `repairEmptyGroupTitles`, which
+        // rebuilds the whole name from the group's key, fills an empty title, and it
+        // has already run by this point.
+        if (hasNoVisibleName(group.title) && !hasNoVisibleName(newUiTitle)) {
+            logMessage(
+                `[updateAllGroupPrefixes -> Loop] Group ${group.id} has no name in the box; not writing "${newUiTitle}" over it.`,
+            );
+        } else if (group.title !== newUiTitle && newUiTitle !== '') {
             logMessage(
                 `[updateAllGroupPrefixes -> Loop] Group ${group.id}: Title update needed. From: "${group.title}" To: "${newUiTitle}".`,
             );

@@ -978,6 +978,7 @@ function debounceUpdateAllGroupPrefixes(windowId, options = {}, delay = 250) {
                 mergedOptions.cachedGroups,
                 mergedOptions.cachedTabs,
                 mergedOptions.groupNeedsWarning,
+                mergedOptions.isEditGroupId ?? null,
             );
         } finally {
             // The map entry is removed once the operation has been executed.
@@ -1637,6 +1638,17 @@ function enhanceGroupsWithRealTitles(rawGroups) {
     });
 }
 
+/**
+ * Opens the rules page with the add-rule form ready for a URL.
+ *
+ * The panel is opened first — that call needs the click that is still in hand — and
+ * only then is the page asked to take over. If nobody answers, the panel is showing
+ * something else (the home view, say, which this page navigates to on its own while
+ * `setOptions` still says "rules"), and `setOptions` with the same path would not
+ * move it. So the request is put in the address instead: a path that differs makes
+ * the panel navigate, and the page reads it on the way in. That is why this used to
+ * work once and never again.
+ */
 function openCreateRuleModalForUrl(pageUrl, windowId, isFullUrl = false) {
     const rulesPath = 'src/ui/pages/rules/rules.html';
     let targetUrl = pageUrl;
@@ -1652,11 +1664,22 @@ function openCreateRuleModalForUrl(pageUrl, windowId, isFullUrl = false) {
     chrome.sidePanel.open({ windowId: windowId });
     activeSidePanelPath = rulesPath;
 
-    setTimeout(() => {
-        chrome.runtime.sendMessage({
-            action: 'create-rule-from-context',
-            url: targetUrl,
-        });
+    setTimeout(async () => {
+        let handled = false;
+        try {
+            const answer = await chrome.runtime.sendMessage({
+                action: 'create-rule-from-context',
+                url: targetUrl,
+            });
+            handled = Boolean(answer?.handled);
+        } catch {
+            // Nobody listening: the panel is not on the rules page.
+        }
+        if (handled) return;
+
+        const wanted = `${rulesPath}?action=create&url=${encodeURIComponent(targetUrl)}&t=${Date.now()}`;
+        chrome.sidePanel.setOptions({ path: wanted, enabled: true });
+        activeSidePanelPath = rulesPath;
     }, 500);
 }
 

@@ -34,6 +34,7 @@
     } from './modules/clusterDefaults.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
+    import { validateImportedRules, MAX_RULE_NAME_LENGTH } from './ruleValidation.js';
     import { duplicateMarkerFields } from './modules/prefixMarkers.js';
 
     let isLoading = $state(true);
@@ -42,6 +43,7 @@
     let modalMode = $state('add');
     let editingIndex = $state(-1);
     let ruleToEdit = $state(null);
+    let rulePrefill = $state(null);
 
     // Defaults shared with the background rule engine
     let isClusterEnabled = $state(true);
@@ -117,6 +119,7 @@
             await initializeActiveTheme();
             await i18nStore.init();
             await initializeRules();
+            openRuleModalFromQuery();
             const settings = await getSettings([
                 'clusteringEnabled',
                 'sortGroupsAlphabetically',
@@ -169,10 +172,25 @@
         });
 
         chrome.storage.onChanged.addListener(handleStorageChanged);
-        chrome.runtime.onMessage.addListener((request) => {
+        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (request.action === 'themeChanged' || request.action === 'languageChanged') {
                 initializeActiveTheme();
                 initializeRules();
+            }
+            // "Create a rule for this site" in the browser's context menu opens this
+            // page and then sends the URL here. Nothing was listening, so the entry
+            // opened the panel and stopped there.
+            // The answer matters: it tells the browser side that this page was on
+            // screen and dealt with it, so it does not have to send the panel here.
+            if (request.action === 'create-rule-from-context' && request.url) {
+                openRuleModalForUrl(request.url);
+                sendResponse({ handled: true });
+                return true;
+            }
+            // The "expand/collapse every rule" shortcut reaches this page as a
+            // message; nothing was listening, so the shortcut did nothing.
+            if (request.action === 'toggleAllExpand') {
+                toggleExpandAll();
             }
         });
     });
@@ -270,7 +288,70 @@
     function openAddModal() {
         modalMode = 'add';
         ruleToEdit = null;
+        rulePrefill = null;
         isModalOpen = true;
+    }
+
+    /**
+     * Suggests a rule name from a URL: the significant part of the hostname, capitalised.
+     *
+     * Trimmed to the length a name is allowed to be, so the suggestion never lands in
+     * the form already failing validation.
+     */
+    function suggestRuleNameFromUrl(url) {
+        try {
+            const parts = new URL(url).hostname.replace(/^www\./, '').split('.');
+            const mainPart = parts.length > 2 ? parts[parts.length - 2] : parts[0];
+            const name = mainPart.charAt(0).toUpperCase() + mainPart.slice(1);
+            return name.slice(0, MAX_RULE_NAME_LENGTH);
+        } catch {
+            return '';
+        }
+    }
+
+    /**
+     * Opens the add-rule form already filled in.
+     *
+     * @param {{urls: string, name?: string}} prefill `urls` may hold several,
+     *   one per line, which is what "create a rule from this folder" sends.
+     */
+    function openRuleModalPrefilled({ urls, name = '' }) {
+        modalMode = 'add';
+        ruleToEdit = null;
+        rulePrefill = {
+            name: (name || suggestRuleNameFromUrl(urls.split('\n')[0])).slice(0, MAX_RULE_NAME_LENGTH),
+            urls,
+            color: 'red',
+        };
+        isModalOpen = true;
+    }
+
+    /** Opens the add-rule form already filled in with a URL from the context menu. */
+    function openRuleModalForUrl(url) {
+        openRuleModalPrefilled({ urls: url });
+    }
+
+    /**
+     * Opens the form when this page was reached with the request in its address.
+     *
+     * "Create a rule from this bookmark" and "…from this domain" navigate here with
+     * `?action=create&url=…&name=…`. Nothing read those, so the page opened on the
+     * rule list and the request was lost. The query is wiped afterwards so going
+     * back or reloading does not open the form again.
+     */
+    function openRuleModalFromQuery() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('action') !== 'create') return;
+        const urls = params.get('url');
+        if (!urls) return;
+        openRuleModalPrefilled({ urls, name: params.get('name') || '' });
+        // Rebuilt rather than mutated: the request is dropped, anything else in the
+        // address is kept.
+        const rest = [...params.entries()]
+            .filter(([key]) => !['action', 'url', 'name', 't'].includes(key))
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
+        window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
     }
 
     function handleSaveRule(detail) {
@@ -498,6 +579,16 @@
     function handleOverflowChange({ name, hasHiddenUrls }) {
         if (hasHiddenUrls) overflowingRules.add(name);
         else overflowingRules.delete(name);
+
+        // "Expand all" is remembered across reloads, but a card can only be expanded
+        // once it has measured itself and knows it has URLs to reveal. Applying the
+        // saved state as each card reports in is what restores it — the original does
+        // the same, per card, at render time.
+        if (hasHiddenUrls && $isAllExpandedStore && !$expandedStatesStore.get(name)) {
+            const restored = new SvelteMap($expandedStatesStore);
+            restored.set(name, true);
+            expandedStatesStore.set(restored);
+        }
     }
 
     let expandableRuleNames = $derived(
@@ -517,6 +608,9 @@
         for (const name of expandableRuleNames) newMap.set(name, newState);
         expandedStatesStore.set(newMap);
         isAllExpandedStore.set(newState);
+        // The setting was being read back on every load and never written, so the
+        // list always came up collapsed no matter what the user had left it as.
+        saveSettings({ isAllExpanded: newState });
     }
 
     export function yieldForAnimation(ms = 350) {
@@ -609,28 +703,43 @@
         showDragDropPanel = false;
     }
 
+    /**
+     * Imports rules from a file, refusing the file outright if anything in it fails
+     * the checks a hand-typed rule has to pass.
+     *
+     * This used to write whatever the file parsed to straight into storage: a `null`
+     * entry was enough to leave the rule list throwing while it rendered, and the
+     * user saw nothing at all — the failures went to the console. Validation now runs
+     * before storage is touched, and every failure is reported.
+     */
     async function processImportedFile(file) {
         if (!file) return;
+
+        let importedData;
         try {
-            const text = await file.text();
-            const importedData = JSON.parse(text);
-            const importedRules =
-                importedData.customRules || importedData.rules || (Array.isArray(importedData) ? importedData : []);
-            if (!Array.isArray(importedRules) || importedRules.length === 0) {
-                console.error('No valid rules found in import file');
-                return;
-            }
-            let currentRules = [...$rulesStore];
-            if (importMode === 'overwrite') {
-                currentRules = importedRules;
-            } else {
-                currentRules = [...currentRules, ...importedRules];
-            }
-            await saveRulesToStorage(currentRules);
-            showDragDropPanel = false;
+            importedData = JSON.parse(await file.text());
         } catch (err) {
             console.error('Import error:', err);
+            showNotification('errorImportingRulesInvalid', true);
+            return;
         }
+
+        const result = validateImportedRules(importedData, $rulesStore, importMode);
+        if (!result.valid) {
+            // Queued, so a file failing several checks reports them one after another
+            // instead of the last one replacing the rest.
+            for (const error of result.errors) {
+                showNotification(error.message, true, error.params, true);
+            }
+            return;
+        }
+
+        const currentRules = importMode === 'overwrite' ? result.rules : [...$rulesStore, ...result.rules];
+        await saveRulesToStorage(currentRules);
+        showDragDropPanel = false;
+        showNotification(importMode === 'overwrite' ? 'rulesImported' : 'rulesAdded', false, [
+            result.rules.map((r) => r.name).join(', '),
+        ]);
     }
 
     function resetClusterDefaults() {
@@ -1086,6 +1195,7 @@
         isOpen={isModalOpen}
         mode={modalMode}
         rule={ruleToEdit}
+        prefill={rulePrefill}
         onclose={() => (isModalOpen = false)}
         onsave={handleSaveRule}
     />

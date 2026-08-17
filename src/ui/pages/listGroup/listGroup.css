@@ -2169,6 +2169,69 @@ body.show-domain-headers .subgroup-tab-list {
     opacity: 0.9;
 }
 
+/* One query can run at several times of day: one row per time, plus the button
+   that adds another. */
+.gemini-schedule-modal .schedule-times-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gemini-schedule-modal .schedule-time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gemini-schedule-modal .schedule-time-row > :first-child {
+    flex: 1;
+}
+
+.gemini-schedule-modal .remove-time-btn {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+    font-size: 1.1rem;
+    background: transparent;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.gemini-schedule-modal .remove-time-btn:hover:not(:disabled) {
+    border-color: var(--error-color);
+    color: var(--error-color);
+    opacity: 1;
+}
+
+.gemini-schedule-modal .remove-time-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.gemini-schedule-modal .add-time-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: transparent;
+    color: var(--interactive-color);
+    border: 1px dashed var(--interactive-color);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.gemini-schedule-modal .add-time-btn:hover:not(:disabled) {
+    background-color: var(--bg-panel-color);
+}
+
+.gemini-schedule-modal .add-time-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .gemini-schedule-modal #gemini-schedule-query {
     width: 100%;
     min-height: 80px;
@@ -4955,6 +5018,12 @@ body.bookmarks-view-active #view-toggle-panel {
     transform: scale(0.95);
     animation: zoomIn 0.15s ease-out forwards;
     text-align: left;
+    /* The menu grows with the number of actions — a tab offers eighteen — and the
+       overlay it sits in does not scroll, so past a certain height the last entries
+       fell below the window and could not be clicked at all. The overlay reserves
+       20vh above, hence the bound below. */
+    max-height: calc(80vh - 2 * var(--spacing-md, 16px));
+    overflow-y: auto;
 }
 
 /* Animations for a smooth appearance */
@@ -6352,11 +6421,43 @@ a.delete-item-title:hover {
     z-index: 2;
 }
 
+/* Two parts on one line: what is happening, and how much has turned up. The count
+   keeps its own weight and tabular figures so the line does not jitter as it climbs. */
 .scanning-status-text {
-    text-align: center;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
     font-size: 0.85rem;
+}
+
+.scanning-status-label {
     opacity: 0.7;
-    margin-top: 5px;
+}
+
+.scanning-status-label::after {
+    content: '…';
+}
+
+.scanning-status-found {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    opacity: 0.55;
+    padding: 1px 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition:
+        opacity 0.2s,
+        color 0.2s,
+        border-color 0.2s;
+}
+
+/* Once something has turned up, the count stops being a footnote. */
+.scanning-status-found.has-results {
+    opacity: 1;
+    color: var(--error-color);
+    border-color: var(--error-color);
 }
 
 /* --- Footer --- */
@@ -8894,4 +8995,387 @@ input.pomo-project-edit::placeholder {
 
 .add-to-bookmark-modal .bookmark-folder-summary:hover {
     background-color: var(--bg-color);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MUSIC PLAYER
+   The panel borrows the Pomodoro panel's shape — a stack of rows under the
+   toolbar — so both timers read as the same kind of drawer. Everything sizes
+   from the shared variables, and the rows wrap so a narrow popup keeps the
+   transport usable instead of clipping it.
+   ═══════════════════════════════════════════════════════════════════ */
+.music-panel {
+    background-color: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.music-panel.hidden,
+body:not(.groups-view-active) .music-panel,
+.gemini-view-active .music-panel,
+.reader-mode-active .music-panel {
+    display: none !important;
+}
+
+.music-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.music-row:last-of-type {
+    border-bottom: none;
+}
+
+/* ─── Row 1 · the track name, which is also the search box ─────────── */
+.music-title-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 3px 6px;
+    text-align: left;
+    transition:
+        border-color 0.15s,
+        background-color 0.15s;
+}
+
+.music-title-field:hover:not(:disabled) {
+    background-color: var(--bg-panel-color);
+    border-color: var(--border-color);
+}
+
+.music-title-field:disabled {
+    cursor: default;
+}
+
+.music-title-field.is-empty .music-track-name {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.music-track-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--medium-text, 13px);
+    font-weight: 600;
+}
+
+.music-track-position {
+    flex: 0 0 auto;
+    font-size: var(--small-text, 11px);
+    opacity: 0.65;
+}
+
+.music-search-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: var(--input-bg, var(--bg-panel-color));
+    border: 1px solid var(--interactive-color);
+    border-radius: var(--small-border-radius, 4px);
+    padding: 2px 6px;
+}
+
+.music-search-icon {
+    flex: 0 0 auto;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.music-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: var(--medium-text, 13px);
+    padding: 2px 0;
+}
+
+.music-search-input:focus {
+    outline: none;
+}
+
+.music-icon-btn {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 4px;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        opacity 0.15s;
+}
+
+.music-icon-btn:hover:not(:disabled) {
+    background-color: var(--action-color);
+    border-color: var(--border-color);
+}
+
+.music-icon-btn:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+/* ─── Row 2 · search results ───────────────────────────────────────── */
+/* A set height, not one that grows with the folder: the list always takes the same
+   room and the rest of the tracks are reached by scrolling. */
+.music-results {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    height: 200px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.music-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 4px 6px;
+    text-align: left;
+    width: 100%;
+}
+
+.music-result:hover,
+.music-result:focus-visible {
+    background-color: var(--action-color);
+    border-color: var(--border-color);
+    outline: none;
+}
+
+.music-result.active {
+    background-color: var(--action-color);
+    font-weight: 600;
+}
+
+.music-result-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--medium-text, 13px);
+}
+
+.music-results-empty {
+    margin: 0;
+    padding: 6px;
+    font-size: var(--small-text, 11px);
+    opacity: 0.7;
+    text-align: center;
+}
+
+/* ─── Row 3 · progress ─────────────────────────────────────────────── */
+.music-time {
+    flex: 0 0 auto;
+    font-size: var(--small-text, 11px);
+    font-variant-numeric: tabular-nums;
+    opacity: 0.8;
+    min-width: 34px;
+    text-align: center;
+}
+
+/* The bar carries the reading, so it is thick enough to see filling and the track
+   behind it is sunk rather than tinted — otherwise the played part and the rest tell
+   apart only by a shade. The row is taller than the bar so the handle has room. */
+.music-row-progress {
+    padding: 8px;
+}
+
+.music-progress {
+    position: relative;
+    flex: 1 1 auto;
+    height: 10px;
+    border-radius: 5px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 25%);
+    cursor: pointer;
+    touch-action: none;
+}
+
+.music-progress:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 3px;
+}
+
+.music-progress-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: 5px 0 0 5px;
+    background-image: linear-gradient(to bottom, var(--interactive-color), var(--interactive-color));
+    background-color: var(--interactive-color);
+    box-shadow: 0 0 4px var(--interactive-color);
+    pointer-events: none;
+}
+
+/* Always on show — the handle is where the track stands, not a hover nicety. */
+.music-progress-thumb {
+    position: absolute;
+    top: 50%;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    border-radius: 50%;
+    background-color: var(--interactive-color);
+    border: 2px solid var(--bg-color);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 35%);
+    transform: translateY(-50%);
+    transition: transform 0.12s ease-out;
+    pointer-events: none;
+}
+
+.music-progress:hover .music-progress-thumb,
+.music-progress:focus-visible .music-progress-thumb,
+.music-progress.scrubbing .music-progress-thumb {
+    transform: translateY(-50%) scale(1.15);
+}
+
+/* ─── Row 4 · transport ────────────────────────────────────────────── */
+/* Three columns so the transport sits in the true middle of the row whatever
+   the track counter beside it happens to say. */
+.music-row-controls {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 4px;
+    min-height: 34px;
+}
+
+.music-transport {
+    grid-column: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+}
+
+.music-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--small-border-radius, 5px);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 4px 6px;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        opacity 0.15s;
+}
+
+.music-action-btn:hover:not(:disabled) {
+    background-color: var(--action-color);
+    border-color: var(--border-color);
+}
+
+.music-action-btn:disabled {
+    cursor: default;
+    opacity: 0.35;
+}
+
+.music-play-btn {
+    background-color: var(--action-color);
+    border-color: var(--border-color);
+    padding: 4px 12px;
+}
+
+.music-count {
+    grid-column: 3;
+    justify-self: end;
+    font-size: var(--small-text, 11px);
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.music-empty-hint {
+    grid-column: 3;
+    justify-self: end;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: var(--small-text, 11px);
+    opacity: 0.75;
+    text-align: right;
+    text-decoration: underline dotted;
+}
+
+/* Narrow popups drop the running commentary and keep the buttons centred. */
+@media (max-width: 380px) {
+    .music-count,
+    .music-empty-hint,
+    .music-track-position {
+        display: none;
+    }
+}
+
+/* ─── The toolbar button and its hover controls ────────────────────── */
+#open-music-player-btn.music-btn-playing {
+    color: var(--interactive-color);
+}
+
+.music-quick-popup {
+    position: fixed;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 6px);
+    box-shadow: 0 0 5px var(--interactive-color);
+    padding: 4px;
+}
+
+.music-quick-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 4px;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s;
+}
+
+.music-quick-btn:hover,
+.music-quick-btn:focus-visible {
+    background-color: var(--action-color);
+    border-color: var(--border-color);
+    outline: none;
 }

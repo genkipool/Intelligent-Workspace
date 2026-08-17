@@ -809,8 +809,15 @@ export async function copyScreenshot(dataUrl) {
  */
 async function loadTesseract() {
     if (window.Tesseract) return window.Tesseract;
-    await import('../../lib/tesseract.min.js');
-    return window.Tesseract;
+    // The bundle is UMD. Loaded from a <script> it would assign `self.Tesseract`,
+    // but the bundler wraps it for CommonJS interop, so it takes its
+    // `module.exports` branch and the global is never set — reading it gave
+    // undefined and every OCR run stopped with "could not extract text" before it
+    // began. What the import hands back is the engine.
+    const mod = await import('../../lib/tesseract.min.js');
+    const Tesseract = mod?.default ?? mod?.Tesseract ?? window.Tesseract;
+    if (Tesseract) window.Tesseract = Tesseract;
+    return Tesseract;
 }
 
 export async function handleOcrScreenshot(dataUrl, buttonEl) {

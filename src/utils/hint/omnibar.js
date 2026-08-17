@@ -3889,7 +3889,13 @@ IMPORTANT RULES:
             }
             let title = chrome.i18n.getMessage('omnibarNoTitle') || 'No Title',
                 url = data.url || chrome.i18n.getMessage('omnibarNoUrl') || 'No URL',
-                favIcon = '../../assets/icons/default_favicon.png';
+                // No default icon: the path this used to hold points at a file the
+                // extension does not ship, and being relative it resolved against the
+                // visited site, so every row without a favicon fetched
+                // `<site>/assets/icons/default_favicon.png` and logged the failure.
+                // An empty value is what the rest of the branches below already use,
+                // and the renderer hides the image for it.
+                favIcon = '';
             if (data.isSpecialAction) {
                 title = data.title;
                 url = data.url || '';

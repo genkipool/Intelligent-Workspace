@@ -11,6 +11,81 @@ let isInitializing = false; // Flag to ignore events during startup.
 
 let enablePrefixes = false;
 let groupInfoMap = new Map(); // Session map: groupId -> {type, key, title, isCompact}. Tracks the "true" identity of a group.
+
+/**
+ * When each untitled group was first seen, so a group being named is left alone.
+ *
+ * "Add tab to new group" in the browser's own tab menu creates a group with no
+ * title and opens the box that lets the user name it. **Any** write to the tab
+ * strip closes that box, and the extension made two: it reordered the strip and
+ * it wrote its own title — the warning marker — onto the group the user was in
+ * the middle of naming. Nothing touches such a group during the grace period
+ * below; afterwards it is treated like any other, so a group left permanently
+ * untitled still gets ordered and marked.
+ */
+const untitledGroupFirstSeen = new Map();
+const GROUP_NAMING_GRACE_MS = 5000;
+
+/**
+ * Whether a group title has nothing left that anyone can read.
+ *
+ * The extension marks the titles it manages with zero-width characters, and the
+ * markers are emoji followed by a space. Someone deleting a name with the keyboard
+ * removes the visible letters and stops when the box looks empty, but one or two of
+ * those invisible marks are usually still in there. A plain `title === ''` check
+ * calls that a name, so the group was never given its own name back and just sat
+ * there looking nameless. `trim()` is no help either: a zero-width space is not
+ * whitespace as far as it is concerned.
+ */
+function hasNoVisibleName(title) {
+    return !title || title.replace(/[\u200B\u200C\u200D\u2060\uFEFF\s]/g, '') === '';
+}
+
+/**
+ * Whether a group's title has only just been cleared, within the given grace period.
+ *
+ * The clock starts the first time the group is seen without a title and is thrown
+ * away as soon as it has one again, so holding a key down while deleting does not
+ * make the wait longer.
+ */
+function isTitleJustCleared(group, graceMs, now = Date.now()) {
+    if (!group) return false;
+    if (!hasNoVisibleName(group.title)) {
+        untitledGroupFirstSeen.delete(group.id);
+        return false;
+    }
+    if (!untitledGroupFirstSeen.has(group.id)) {
+        untitledGroupFirstSeen.set(group.id, now);
+    }
+    return now - untitledGroupFirstSeen.get(group.id) < graceMs;
+}
+
+/** Whether a group is untitled and new enough that the user may still be naming it. */
+function isBeingNamed(group, now = Date.now()) {
+    return isTitleJustCleared(group, GROUP_NAMING_GRACE_MS, now);
+}
+
+/**
+ * How long a group that already has a name of its own is left blank before it is
+ * given back. Short, because the name reappearing is what the user is waiting for;
+ * long enough that clearing the box to type something else does not race it. A group
+ * that never had a name gets the longer `GROUP_NAMING_GRACE_MS` instead: there the
+ * browser's naming box is open and there is nothing to put back anyway.
+ */
+const TITLE_RESTORE_DELAY_MS = 3000;
+/**
+ * Until when the tab strip is left in the order it is in, because a name is being
+ * typed into one of its groups.
+ *
+ * The browser writes the group title on every keystroke, and each of those writes
+ * used to trigger a full pass that reordered the groups alphabetically — so a group
+ * being renamed jumped from one end of the strip to the other, letter by letter,
+ * under the box the user was typing in. The order is settled once, after the typing
+ * stops.
+ */
+let groupRenameSettlesAt = 0;
+const RENAME_SETTLE_MS = 2500;
+
 let getTypeGroup = false;
 let extensionSettings = {}; // Caches all user settings from storage.
 

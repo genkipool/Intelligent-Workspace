@@ -270,12 +270,12 @@
                             <use href="#icon-edit"></use>
                         </svg>
                     </div>
-                    <div class="copy-entry-btn action-btn" data-i18n-title="copyGeminiResponse">
+                    <div class="copy-entry-btn action-btn" data-i18n-title="copyNote">
                         <svg width="20" height="20">
                             <use href="#icon-copy"></use>
                         </svg>
                     </div>
-                    <div class="delete-entry-btn action-btn" data-i18n-title="deleteGeminiQuery">
+                    <div class="delete-entry-btn action-btn" data-i18n-title="deleteNote">
                         <svg width="20" height="20">
                             <use href="#icon-close-stroke"></use>
                         </svg>

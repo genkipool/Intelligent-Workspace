@@ -287,6 +287,21 @@ button:active {
     box-shadow: 0 0 8px var(--action-color);
 }
 
+/* The theme in use carries the same tick the colour grid of the rule form uses,
+   so which one is chosen reads at a glance and not only from a coloured border. */
+.saved-theme-item.active .theme-color-preview::after {
+    content: '\2713';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-on-color);
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    font-weight: bold;
+    text-shadow: 0 0 3px var(--bg-color);
+    pointer-events: none;
+}
+
 .saved-theme-item .theme-color-preview:focus-visible {
     outline: none;
     box-shadow:
@@ -839,13 +854,70 @@ button:focus-visible {
     color: var(--text-color);
 }
 
+/* The repeating block stacks the hours and the all-day toggle, and they need air
+   between them: as a plain block the toggle ended up touching the hour labels. */
+#repeating-schedule-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* "All day" sits under the two hour fields and takes their place when it is on.
+   Same toggle language as the weekday buttons right above it, across the full width
+   so it reads as the choice that replaces the hours rather than another day. */
+.all-day-toggle {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-on-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    user-select: none;
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.all-day-toggle:hover {
+    border-color: var(--interactive-color);
+}
+
+.all-day-toggle:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+}
+
+.all-day-toggle.selected {
+    background-color: var(--action-color);
+    border-color: var(--action-color);
+    color: var(--text-color);
+}
+
+@media (max-width: 420px) {
+    .all-day-toggle {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
 .time-range {
     display: flex;
-    gap: 15px;
+    /* Start and end used to sit almost touching, so which label belonged to which
+       box took a second look. They also wrap onto two rows on a narrow panel. */
+    gap: 28px;
+    flex-wrap: wrap;
 }
 
 .time {
-    width: 48%;
+    flex: 1 1 45%;
+    min-width: 130px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .time-range input[type='datetime-local'],

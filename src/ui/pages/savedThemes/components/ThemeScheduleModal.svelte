@@ -16,6 +16,7 @@
         endDateValue = $bindable(''),
         startTimeTrigger = $bindable('00:00'),
         endTimeTrigger = $bindable('00:00'),
+        allDay = $bindable(false),
         startTimeOneTimeTrigger = $bindable('00:00'),
         endTimeOneTimeTrigger = $bindable('00:00'),
         scheduleError = $bindable(''),
@@ -169,16 +170,32 @@
                             </div>
                         {:else}
                             <div id="repeating-schedule-group" class="form-group">
-                                <div class="time-range">
-                                    <div class="start-time time">
-                                        <label data-i18n="startTime"></label>
-                                        <TimeField id="start-time-trigger" bind:value={startTimeTrigger} />
+                                {#if !allDay}
+                                    <div class="time-range">
+                                        <div class="start-time time">
+                                            <label data-i18n="startTime"></label>
+                                            <TimeField id="start-time-trigger" bind:value={startTimeTrigger} />
+                                        </div>
+                                        <div class="end-time time">
+                                            <label data-i18n="endTime"></label>
+                                            <TimeField id="end-time-trigger" bind:value={endTimeTrigger} />
+                                        </div>
                                     </div>
-                                    <div class="end-time time">
-                                        <label data-i18n="endTime"></label>
-                                        <TimeField id="end-time-trigger" bind:value={endTimeTrigger} />
-                                    </div>
-                                </div>
+                                {/if}
+                                <!-- A whole-day schedule needs no hours, so the two
+                                     fields step aside instead of asking for times
+                                     that would only be ignored. It sits under them,
+                                     as the alternative to filling them in, and is the
+                                     same kind of toggle as the weekday buttons. -->
+                                <button
+                                    type="button"
+                                    id="schedule-all-day"
+                                    class="all-day-toggle"
+                                    class:selected={allDay}
+                                    aria-pressed={allDay}
+                                    onclick={() => (allDay = !allDay)}
+                                    data-i18n="scheduleAllDay"
+                                ></button>
                             </div>
                         {/if}
 

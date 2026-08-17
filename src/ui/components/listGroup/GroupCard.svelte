@@ -5,7 +5,12 @@
     import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
     import { showNotification } from '@/utils/i18n.js';
     import { deleteBackupFromDb } from '../../../utils/db.js';
-    import { handleBackupGroup, handleRestoreGroup, toggleColorPopup } from '../../services/groupsService.js';
+    import {
+        handleBackupGroup,
+        handleRestoreGroup,
+        toggleColorPopup,
+        makeGroupTitleEditable,
+    } from '../../services/groupsService.js';
     import { backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
     import GroupActions from './GroupActions.svelte';
 
@@ -204,6 +209,17 @@
         };
     }
 
+    /**
+     * Folds the group after a short wait when the click landed on its name.
+     *
+     * `<summary>` folds on every click, so the two clicks of a rename gesture made
+     * the card jump open and shut underneath the edit box. Holding the fold back
+     * lets the second click cancel it, which is how the original behaves; a single
+     * click on the name still folds the group, just a moment later.
+     */
+    const TITLE_FOLD_DELAY_MS = 250;
+    let titleFoldTimer = null;
+
     function handleToggleOpen(e) {
         if (isBackup || isUngrouped) {
             e.preventDefault();
@@ -213,7 +229,33 @@
         // to fold the group.
         if (e.target.closest('.group-actions, .color-indicator, .group-title-input')) {
             e.preventDefault();
+            return;
         }
+        if (e.target.closest('.group-title')) {
+            e.preventDefault();
+            clearTimeout(titleFoldTimer);
+            titleFoldTimer = setTimeout(() => {
+                titleFoldTimer = null;
+                if (groupEl) groupEl.open = !groupEl.open;
+            }, TITLE_FOLD_DELAY_MS);
+        }
+    }
+
+    /**
+     * Double-clicking the name renames the group, as in the original.
+     *
+     * `<summary>` folds the group on every click, so the two clicks of the gesture
+     * would leave it exactly as it was while the edit box opened underneath — hence
+     * the `preventDefault` here, which stops the second click from toggling.
+     */
+    function handleTitleDblClick(e) {
+        if (isBackup || isUngrouped) return;
+        e.stopPropagation();
+        e.preventDefault();
+        // The fold the first click asked for is called off: renaming is not folding.
+        clearTimeout(titleFoldTimer);
+        titleFoldTimer = null;
+        makeGroupTitleEditable(e.currentTarget, false);
     }
 
     /**
@@ -326,6 +368,7 @@
             data-base-name={displayTitle}
             data-prefix=""
             style:cursor={isUngrouped ? 'default' : null}
+            ondblclick={handleTitleDblClick}
         >
             {displayTitle}
         </h3>

@@ -269,6 +269,11 @@ function initRuntimeMessageListener() {
         if (message.action === 'bookmarksChanged') {
             if (get(isHandlingBookmarkChange)) return;
             isHandlingBookmarkChange.set(true);
+            // This page keeps its own copy of the bookmark tree for a fast first paint,
+            // and the view prefers it over asking the browser. Clearing the copy in the
+            // background was not enough: a deleted bookmark came straight back on the
+            // next repaint, and only reloading the page got rid of it.
+            prefetchCache.update((c) => ({ ...c, bookmarks: null }));
             chrome.runtime.sendMessage({ action: 'forceClearBookmarkCache' }, () => {
                 if (get(isBookmarksViewActive)) {
                     (async () => {

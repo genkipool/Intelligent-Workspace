@@ -7,6 +7,7 @@
 
     let searchTerm = $state('');
     let dropdownVisible = $state(false);
+    let searchInput = $state(null);
 
     let filteredModels = $derived($availableModels.filter((m) => m.toLowerCase().includes(searchTerm.toLowerCase())));
 
@@ -39,6 +40,12 @@
         if (e.target.closest('.gemini-model-selector-wrapper, .gemini-model-dropdown')) return;
         dropdownVisible = false;
     }
+
+    // Opening the list puts the caret in its search box: with a dozen models on offer,
+    // typing is the quick way in, and it used to need a second click to get there.
+    $effect(() => {
+        if (dropdownVisible && searchInput) searchInput.focus();
+    });
 
     onMount(() => {
         document.addEventListener('click', handleClickOutside);
@@ -92,6 +99,7 @@
                 {$t('searchModelPlaceholder')}
             </label>
             <input
+                bind:this={searchInput}
                 type="search"
                 id="gemini-model-search-input"
                 placeholder={$t('searchModelPlaceholder')}

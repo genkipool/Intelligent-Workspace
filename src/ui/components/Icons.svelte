@@ -714,6 +714,46 @@
         <symbol id="icon-play-solid" viewBox="0 0 24 24">
             <path d="M5 3l14 9-14 9V3z" fill="currentColor" />
         </symbol>
+        <symbol id="icon-music" viewBox="0 0 24 24">
+            <path
+                d="M9 18V6l11-2v12"
+                stroke="currentColor"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+            <circle cx="6" cy="18" r="3" fill="currentColor" />
+            <circle cx="17" cy="16" r="3" fill="currentColor" />
+        </symbol>
+        <symbol id="icon-track-prev" viewBox="0 0 24 24">
+            <path d="M20 5v14l-11-7 11-7z" fill="currentColor" />
+            <rect x="4" y="5" width="3" height="14" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="icon-track-next" viewBox="0 0 24 24">
+            <path d="M4 5v14l11-7-11-7z" fill="currentColor" />
+            <rect x="17" y="5" width="3" height="14" rx="1" fill="currentColor" />
+        </symbol>
+        <symbol id="icon-rewind" viewBox="0 0 24 24">
+            <path
+                d="M20 6l-7 6 7 6M12 6l-7 6 7 6"
+                stroke="currentColor"
+                stroke-width="2.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </symbol>
+        <symbol id="icon-fast-forward" viewBox="0 0 24 24">
+            <path
+                d="M4 6l7 6-7 6M12 6l7 6-7 6"
+                stroke="currentColor"
+                stroke-width="2.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </symbol>
         <symbol id="icon-pause-solid" viewBox="0 0 24 24">
             <path d="M10 4H6v16h4V4zM18 4h-4v16h4V4z" fill="currentColor" />
         </symbol>

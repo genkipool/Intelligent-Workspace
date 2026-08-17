@@ -1,5 +1,11 @@
+import { showNotification as notify } from './i18n.js';
+
 let elements;
 let globals;
+// Filled in by `initializeImportExport`, which nothing calls any more: the pages that
+// used it are Svelte now and import these functions directly. Anything reached from
+// those pages must therefore not go through `utils` — see the bookmark helpers below,
+// which report through `notify` instead.
 let utils;
 
 // Strict definition of limits per command according to customize_hints.js
@@ -704,7 +710,7 @@ export async function exportBookmarks() {
     try {
         const bookmarkTree = await chrome.bookmarks.getTree();
         if (!bookmarkTree || bookmarkTree.length === 0) {
-            utils.showNotification('noBookmarksToExport', true);
+            notify('noBookmarksToExport', true);
             return;
         }
 
@@ -718,10 +724,10 @@ export async function exportBookmarks() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        utils.showNotification('bookmarksExported');
+        notify('bookmarksExported');
     } catch (error) {
         console.error('Error exporting bookmarks:', error);
-        utils.showNotification('errorExportingBookmarks', true);
+        notify('errorExportingBookmarks', true);
     }
 }
 
@@ -747,12 +753,12 @@ async function parseAndValidateImportedBookmarks(file) {
                 }
             } catch (error) {
                 console.error('Error parsing bookmarks file:', error);
-                utils.showNotification('errorImportingBookmarksInvalid', true);
+                notify('errorImportingBookmarksInvalid', true);
                 reject(error);
             }
         };
         reader.onerror = () => {
-            utils.showNotification('errorReadingFile', true);
+            notify('errorReadingFile', true);
             reject('Error reading file');
         };
         reader.readAsText(file);
@@ -773,11 +779,11 @@ export async function addImportedBookmarks(file) {
             },
             (response) => {
                 if (chrome.runtime.lastError) {
-                    utils.showNotification('errorImportingBookmarks', true);
+                    notify('errorImportingBookmarks', true);
                     return;
                 }
                 if (!response.success) {
-                    utils.showNotification(response.errorKey || 'errorImportingBookmarks', true);
+                    notify(response.errorKey || 'errorImportingBookmarks', true);
                 }
             },
         );
@@ -801,11 +807,11 @@ export async function overwriteBookmarks(file) {
             },
             (response) => {
                 if (chrome.runtime.lastError) {
-                    utils.showNotification('errorOverwritingBookmarks', true);
+                    notify('errorOverwritingBookmarks', true);
                     return;
                 }
                 if (!response.success) {
-                    utils.showNotification(response.errorKey || 'errorOverwritingBookmarks', true);
+                    notify(response.errorKey || 'errorOverwritingBookmarks', true);
                 }
             },
         );

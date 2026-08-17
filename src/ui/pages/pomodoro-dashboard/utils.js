@@ -78,16 +78,22 @@ export const colorMix = (color, alpha) => {
 };
 
 // DB
-const DB_NAME = 'Intelligent_Workspace';
-const STORE = 'pomodoroStats';
-const DB_VER = 6;
+// Name, version and stores come from the one schema the whole extension shares.
+// This file used to name them itself, pinned at version 6: the day the schema moved
+// on, `indexedDB.open` refused to open the newer database and the dashboard showed
+// nothing at all.
+import '../../../core/services/dbSchema.js';
+
+const { name: DB_NAME, version: DB_VER, stores: ITG_STORES } = globalThis.ITG_DB_SCHEMA;
+const STORE = ITG_STORES.pomodoroStats;
 
 export function openDb() {
     return new Promise((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VER);
         req.onerror = () => reject(req.error);
         req.onsuccess = () => resolve(req.result);
-        req.onupgradeneeded = () => {};
+        req.onupgradeneeded = (event) =>
+            globalThis.ITG_DB_SCHEMA.upgrade(event.target.result, event.target.transaction);
     });
 }
 

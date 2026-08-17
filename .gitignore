@@ -36,3 +36,6 @@ yarn.lock
 .env
 .env.*
 !.env.example
+
+# Machine-local agent settings
+.claude/settings.local.json

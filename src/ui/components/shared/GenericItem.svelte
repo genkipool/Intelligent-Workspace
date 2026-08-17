@@ -6,7 +6,7 @@
      * `.delete-item-btn.action-btn` carrying an SVG icon, so it inherits the same
      * styling as a tab row.
      */
-    import { tt } from '../../stores/i18nStore.js';
+    import { t, tt } from '../../stores/i18nStore.js';
     import { isPopupWindow } from '../../stores/appStore.svelte.js';
     import { openUrlInPanel } from '../../services/viewsService.js';
     import { prefetchUrl } from '../../services/prefetchService.js';
@@ -55,7 +55,8 @@
             const p = (n) => String(n).padStart(2, '0');
             return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
         }
-        if (type === 'reading') return item.hasBeenRead ? 'Read' : 'Unread';
+        // These two were the only labels in the list left in English.
+        if (type === 'reading') return item.hasBeenRead ? $t('readingListItemRead') : $t('readingListItemUnread');
         return null;
     });
 

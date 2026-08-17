@@ -99,6 +99,11 @@ function handleArrowNavigation(event, focusableElements) {
         if (key === 'ArrowLeft' || key === 'ArrowRight') return;
     }
 
+    // A slider owns the horizontal arrows: on it they move the value, not the focus.
+    if (activeElement && activeElement.closest('[role="slider"], input[type="range"]')) {
+        if (key === 'ArrowLeft' || key === 'ArrowRight') return;
+    }
+
     if (focusableElements.length === 0) return;
 
     let targetElement = null;

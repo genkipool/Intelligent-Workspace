@@ -83,7 +83,11 @@ export function computeKpis(d, allData, i18n, lang) {
     const avgFocus = totalCycles > 0 ? Math.round(totalFocus / totalCycles) : 0;
     const activeDays = days.size;
     const projects = projs.size;
-    const projLabel = `${projects} ${projects === 1 ? i18n('dashboardProject') : i18n('dashboardProjects')}`;
+    // 'dashboardProject' (singular) does not exist in either locale, so with exactly
+    // one project the label read "1 dashboardProject". The pair below already carries
+    // the count and is what the project table uses for the same sentence.
+    const projLabel =
+        projects === 1 ? i18n('dashboardProjects_n', projects) : i18n('dashboardProjects_plural', projects);
     const cyclesPerSess = d.length > 0 ? (totalCycles / d.length).toFixed(1) : 0;
     const intPerSess = d.length > 0 ? (totalInt / d.length).toFixed(1) : 0;
 

@@ -2,6 +2,7 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { isCtrlHeld } from '../../../stores/modifierKeysStore.js';
     import { searchToggles } from '../../../stores/appStore.svelte.js';
+    import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
 
     let {
         initialTitleKey = 'titleTabGroups',
@@ -191,6 +192,7 @@
             </svg>
             <span class="gemini-notification-badge hidden">0</span>
         </button>
+        <MusicPlayerButton hidden={startsHidden('open-music-player-btn')} />
         <button
             id="open-pomodoro-btn"
             type="button"

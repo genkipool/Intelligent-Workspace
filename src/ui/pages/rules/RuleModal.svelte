@@ -3,9 +3,13 @@
     import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../stores/i18nStore.js';
     import { rulesStore } from './rulesStore.js';
+    import { normalizeUrl, isValidUrl, validateRule, toDisplayUrls, toStoredUrl } from './ruleValidation.js';
+    import { getSettings, saveSettings } from './modules/rules-api.js';
     import RuleColorPicker from './components/RuleColorPicker.svelte';
 
-    let { isOpen = false, mode = 'add', rule = null, onclose, onsave } = $props();
+    // `prefill` opens the add form already filled in — the "create a rule for this
+    // site" entry of the browser's context menu arrives that way.
+    let { isOpen = false, mode = 'add', rule = null, prefill = null, onclose, onsave } = $props();
     let dialogEl = $state(null);
     let textareaEl = $state(null);
     let overlayEl = $state(null);
@@ -22,12 +26,24 @@
     const colors = ['blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
     // Trailing spaces in this placeholder are intentional
     const urlsPlaceholder =
-        'https://www.example.com \nhttps://192.168.1.1 \nhttps://192.168.1.1:9080 \nhttps://[2002::1] \nhttps://[2002::1]:9080 \nfile:///home/example.txt';
+        'www.example.com \n192.168.1.1 \n192.168.1.1:9080 \n[2002::1] \n[2002::1]:9080 \nfile:///home/example.txt';
+
+    // The URLs the rule was opened with, kept whole so that saving gives an untouched
+    // line back the very scheme it had instead of the default one.
+    let previousUrls = $state([]);
+
     function initForm() {
+        previousUrls = mode === 'edit' && rule ? rule.urls || [] : [];
         if (mode === 'edit' && rule) {
             ruleName = rule.name || '';
             ruleColor = rule.color || 'blue';
-            ruleUrls = (rule.urls || []).join('\n');
+            ruleUrls = toDisplayUrls(rule.urls).join('\n');
+        } else if (prefill) {
+            ruleName = prefill.name || '';
+            ruleColor = prefill.color || 'red';
+            // The URL arrives whole from the context menu; the textarea shows it the
+            // same way as any other.
+            ruleUrls = toDisplayUrls((prefill.urls || '').split('\n')).join('\n');
         } else {
             ruleName = '';
             // Adding a rule preselects colors[1] ('red')
@@ -35,12 +51,21 @@
             ruleUrls = '';
         }
         errorMessage = '';
-        isRealTimeValidation = false;
         isNameInvalid = false;
         textareaInvalid = false;
         overlayLines = [];
-        if (mode === 'edit' && rule && rule.urls && rule.urls.length > 0) {
-            validateUrls(rule.urls.join('\n'));
+
+        if (isRealTimeValidation) {
+            if (ruleUrls) {
+                validateUrls(ruleUrls);
+            }
+            showFirstError();
+        } else if (ruleUrls) {
+            const lines = ruleUrls.split('\n');
+            overlayLines = lines.map((line) => ({
+                text: line || ' ',
+                classes: 'url-line',
+            }));
         }
     }
 
@@ -64,6 +89,40 @@
     });
 
     onMount(() => {
+        getSettings(['realTimeValidation']).then((settings) => {
+            if (settings && typeof settings.realTimeValidation === 'boolean') {
+                isRealTimeValidation = settings.realTimeValidation;
+            }
+        });
+
+        const handleStorageChange = (changes) => {
+            if (changes.realTimeValidation !== undefined) {
+                isRealTimeValidation = Boolean(changes.realTimeValidation.newValue);
+                if (isOpen && dialogEl && dialogEl.open) {
+                    if (isRealTimeValidation) {
+                        if (ruleUrls) {
+                            validateUrls(ruleUrls);
+                        }
+                        showFirstError();
+                    } else {
+                        errorMessage = '';
+                        if (ruleUrls) {
+                            const lines = ruleUrls.split('\n');
+                            overlayLines = lines.map((line) => ({
+                                text: line || ' ',
+                                classes: 'url-line',
+                            }));
+                            textareaInvalid = false;
+                        }
+                    }
+                }
+            }
+        };
+
+        if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+            chrome.storage.onChanged.addListener(handleStorageChange);
+        }
+
         if (dialogEl) {
             dialogEl.addEventListener('close', () => {
                 onclose?.();
@@ -74,50 +133,21 @@
                 }
             });
         }
+
+        return () => {
+            if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+                chrome.storage.onChanged.removeListener(handleStorageChange);
+            }
+        };
     });
 
-    function normalizeUrl(url) {
-        try {
-            // The fragment is dropped by cutting the normalised href rather than by
-            // assigning to u.hash, so the URL is never mutated after it is built.
-            // Checked to give the same answer for http, file, chrome and bracketed
-            // IPv6 addresses, with and without a fragment.
-            return new URL(url).href.split('#')[0].replace(/\/$/, '');
-        } catch {
-            return url.trim().toLowerCase();
-        }
-    }
-
-    // URL validation shared with the background rule matcher
-    function isValidUrl(urlString) {
-        if (!urlString || typeof urlString !== 'string') return false;
-        const trimmedUrl = urlString.trim();
-        if (trimmedUrl.includes(' ')) return false;
-        const isHttp = trimmedUrl.startsWith('http://');
-        const isHttps = trimmedUrl.startsWith('https://');
-        const isFile = trimmedUrl.startsWith('file:///');
-        const isChrome = trimmedUrl.startsWith('chrome://');
-        const isChromeExtensions = trimmedUrl.startsWith('chrome-extension://');
-        if (!(isHttp || isHttps || isFile || isChrome || isChromeExtensions)) return false;
-        try {
-            const url = new URL(trimmedUrl);
-            if (isFile) return true;
-            if (isChrome) return true;
-            if (isChromeExtensions) return true;
-            if ((isHttp || isHttps) && url.hostname && url.hostname.length > 0) return true;
-            return false;
-        } catch {
-            return false;
-        }
-    }
-
-    function validateUrls(content) {
+    function validateUrls(content, force = false) {
         if (!content) {
             overlayLines = [];
             textareaInvalid = false;
             return;
         }
-        if (!isRealTimeValidation && !(mode === 'edit')) {
+        if (!force && !isRealTimeValidation) {
             overlayLines = content.split('\n').map((line) => ({
                 text: line || ' ',
                 classes: 'url-line',
@@ -130,8 +160,12 @@
         const urls = lines.map((l) => l.trim()).filter((u) => u);
         const currentRules = $rulesStore;
 
+        // The lines are compared in the form they would be stored in — a line left
+        // untouched keeps its own scheme — while the sets stay keyed by what is on
+        // screen, which is what the overlay paints.
+        const storedUrls = urls.map((u) => toStoredUrl(u, previousUrls));
         const duplicatesInRule = new SvelteSet();
-        const normalizedUrls = urls.map(normalizeUrl);
+        const normalizedUrls = storedUrls.map(normalizeUrl);
         const urlCounts = {};
         normalizedUrls.forEach((normUrl, idx) => {
             urlCounts[normUrl] = (urlCounts[normUrl] || 0) + 1;
@@ -142,10 +176,9 @@
         currentRules.forEach((existingRule) => {
             if (mode === 'edit' && rule && existingRule.name === rule.name) return;
             existingRule.urls.forEach((ruleUrl) => {
-                if (normalizedUrls.includes(normalizeUrl(ruleUrl))) {
-                    const conflictingUrl = urls.find((u) => normalizeUrl(u) === normalizeUrl(ruleUrl));
-                    if (conflictingUrl) duplicatesInOtherRules.add(conflictingUrl);
-                }
+                const normalizedRuleUrl = normalizeUrl(ruleUrl);
+                const idx = normalizedUrls.indexOf(normalizedRuleUrl);
+                if (idx !== -1) duplicatesInOtherRules.add(urls[idx]);
             });
         });
 
@@ -176,50 +209,6 @@
         textareaInvalid = hasError;
     }
 
-    function validateRule(name, color, urls, rules, editingIdx) {
-        if (!name) return { valid: false, message: 'enterRuleName', params: [] };
-        if (name.length > 16) return { valid: false, message: 'ruleNameTooLongError', params: [name] };
-        if (!color) return { valid: false, message: 'selectColor', params: [] };
-        if (urls.length === 0) return { valid: false, message: 'enterOneUrl', params: [] };
-
-        const invalidUrls = urls.filter((u) => !isValidUrl(u));
-        if (invalidUrls.length > 0) return { valid: false, message: 'invalidUrls', params: [invalidUrls.join(', ')] };
-
-        const currentNameLower = name.toLowerCase();
-        const isDuplicateName = rules.some((r, idx) => r.name.toLowerCase() === currentNameLower && idx !== editingIdx);
-        if (isDuplicateName) return { valid: false, message: 'duplicateRuleName' };
-
-        const normUrls = urls.map(normalizeUrl);
-        const uniqueUrls = new Set(normUrls);
-        if (uniqueUrls.size !== normUrls.length) {
-            const counts = {};
-            const duplicates = [];
-            urls.forEach((u) => {
-                const norm = normalizeUrl(u);
-                counts[norm] = (counts[norm] || 0) + 1;
-                if (counts[norm] === 2) duplicates.push(u);
-            });
-            return { valid: false, message: 'duplicateUrlsInRule', params: [name, duplicates.join(', ')] };
-        }
-
-        for (let i = 0; i < rules.length; i++) {
-            if (i === editingIdx) continue;
-            const otherRule = rules[i];
-            for (const otherUrl of otherRule.urls) {
-                if (normUrls.includes(normalizeUrl(otherUrl))) {
-                    const conflictingUrl = urls.find((u) => normalizeUrl(u) === normalizeUrl(otherUrl));
-                    return {
-                        valid: false,
-                        message: 'urlInOtherRule',
-                        params: [conflictingUrl || otherUrl, otherRule.name],
-                    };
-                }
-            }
-        }
-
-        return { valid: true };
-    }
-
     function tMsg(key, params) {
         const val = params ? $t(key, params) : $t(key);
         if (val !== key) return val;
@@ -236,13 +225,19 @@
         return fallbacks[key] || key;
     }
 
+    /** The textarea read back as the URLs the rule would be saved with. */
+    function collectUrls() {
+        return ruleUrls
+            .split('\n')
+            .map((u) => u.trim())
+            .filter((u) => u)
+            .map((u) => toStoredUrl(u, previousUrls));
+    }
+
     function showFirstError() {
         const name = ruleName.trim();
         const color = ruleColor;
-        const urls = ruleUrls
-            .split('\n')
-            .map((u) => u.trim())
-            .filter((u) => u);
+        const urls = collectUrls();
         const currentRules = $rulesStore;
         const editingIdx = mode === 'edit' && rule ? currentRules.findIndex((r) => r.name === rule.name) : -1;
         const result = validateRule(name, color, urls, currentRules, editingIdx);
@@ -272,10 +267,7 @@
     function save() {
         const name = ruleName.trim();
         const color = ruleColor;
-        const urls = ruleUrls
-            .split('\n')
-            .map((u) => u.trim())
-            .filter((u) => u);
+        const urls = collectUrls();
         const currentRules = $rulesStore;
         const editingIdx = mode === 'edit' && rule ? currentRules.findIndex((r) => r.name === rule.name) : -1;
         const result = validateRule(name, color, urls, currentRules, editingIdx);
@@ -299,7 +291,7 @@
                 result.message !== 'ruleNameTooLongError' &&
                 result.message !== 'duplicateRuleName'
             ) {
-                validateUrls(ruleUrls);
+                validateUrls(ruleUrls, true);
             }
         }
     }
@@ -387,6 +379,7 @@
     });
 
     function handleRealTimeToggle() {
+        saveSettings({ realTimeValidation: isRealTimeValidation });
         if (isRealTimeValidation) {
             if (ruleUrls) {
                 validateUrls(ruleUrls);
@@ -394,6 +387,14 @@
             showFirstError();
         } else {
             errorMessage = '';
+            if (ruleUrls) {
+                const lines = ruleUrls.split('\n');
+                overlayLines = lines.map((line) => ({
+                    text: line || ' ',
+                    classes: 'url-line',
+                }));
+                textareaInvalid = false;
+            }
         }
     }
 </script>

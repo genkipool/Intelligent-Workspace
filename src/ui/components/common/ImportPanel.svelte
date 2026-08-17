@@ -44,6 +44,22 @@
         document.getElementById(fileInputId)?.click();
     }
 
+    // Choosing "add" or "overwrite" is already the decision to pick a file, so the
+    // browser's file dialog opens with the panel instead of asking for a second
+    // click on the drop zone. Panels that stay mounted and are shown by the
+    // imperative services are left alone: they open their own dialog.
+    let wasShown = false;
+    $effect(() => {
+        if (alwaysMounted) return;
+        if (show && !wasShown) {
+            wasShown = true;
+            // A tick after the panel is in the DOM, or the input is not there to click.
+            setTimeout(openFileInput, 100);
+        } else if (!show) {
+            wasShown = false;
+        }
+    });
+
     function handleFileChange(e) {
         const file = e.target.files?.[0];
         if (file) onfile?.(file);

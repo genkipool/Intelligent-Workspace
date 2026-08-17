@@ -1,4 +1,5 @@
 <script>
+    import '../../../core/services/dbSchema.js';
     import { onMount, onDestroy, mount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
@@ -166,16 +167,19 @@
     }
 
     // --- DB ACCESS ----------------------------------------------------
-    const DB_NAME = 'Intelligent_Workspace';
-    const STORE = 'pomodoroStats';
-    const DB_VER = 6;
+    // Name, version and store come from the one schema the extension shares. Naming
+    // them here as well — pinned at a version — meant that the day the schema moved
+    // on, `indexedDB.open` refused the newer database and the panel showed nothing.
+    const { name: DB_NAME, version: DB_VER, stores: ITG_STORES } = globalThis.ITG_DB_SCHEMA;
+    const STORE = ITG_STORES.pomodoroStats;
 
     function openDb() {
         return new Promise((resolve, reject) => {
             const req = indexedDB.open(DB_NAME, DB_VER);
             req.onerror = () => reject(req.error);
             req.onsuccess = () => resolve(req.result);
-            req.onupgradeneeded = () => {};
+            req.onupgradeneeded = (event) =>
+                globalThis.ITG_DB_SCHEMA.upgrade(event.target.result, event.target.transaction);
         });
     }
 

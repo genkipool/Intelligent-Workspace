@@ -60,7 +60,18 @@
     let scheduleEditorState = $state({ mode: 'add', themeName: null, scheduleIndex: -1 });
 
     let selectedDays = $state([]);
-    let scheduleType = 'onetime'; // 'onetime' | 'repeating'
+    // Picking a weekday turns the schedule into a repeating one, and the form then
+    // asks only for the start and end time — a repeating schedule has no dates.
+    // Declared plain, this switch was invisible to the form: it kept showing the
+    // date fields of a one-off schedule while `saveSchedule`, which had already
+    // switched, read the repeating times nobody could fill and refused to save,
+    // saying start and end times were required with both on screen.
+    let scheduleType = $state('onetime'); // 'onetime' | 'repeating'
+    /**
+     * "All day" for a weekday schedule: the theme is on from midnight to the last
+     * minute of the day, so there are no hours to fill in.
+     */
+    let allDay = $state(false);
     let scheduleReminder = $state('');
 
     // Custom Datetime pickers state
@@ -75,6 +86,20 @@
     let endDateTrigger = $derived(endDateValue || 'YYYY-MM-DD');
 
     let scheduleError = $state('');
+
+    // Switching between a one-off and a repeating schedule swaps in a different set
+    // of fields, and their labels carry `data-i18n`, which is resolved by a pass that
+    // only ran when the modal opened. The times of a repeating schedule therefore
+    // appeared under two blank labels.
+    // The repeating block swaps its fields around — the hours disappear when the
+    // schedule covers the whole day — and whatever is mounted next carries untouched
+    // `data-i18n` attributes, so the labels have to be filled in again each time.
+    $effect(() => {
+        scheduleType;
+        allDay;
+        if (!showScheduleModal) return;
+        tick().then(() => applyTranslations(document.getElementById('schedule-modal')));
+    });
 
     onMount(async () => {
         initNumberSpinnerArrows();
@@ -182,12 +207,17 @@
         showThemeEditor = false;
     }
 
+    /**
+     * Shows the colour being edited, on this page only.
+     *
+     * The preview used to be written into `activeTheme` and announced to every
+     * page, so half-finished colours became the theme of the whole extension and
+     * stayed that way. Painting the document here is enough to see the result, and
+     * leaves the chosen theme untouched until the user actually applies one.
+     */
     async function handleColorInput(e, key) {
         editorColors[key] = e.target.value;
         applyCustomTheme(editorColors);
-        const previewTheme = { name: 'Theme Preview', colors: editorColors };
-        await saveActiveTheme(previewTheme);
-        chrome.runtime.sendMessage({ action: 'themeChanged' });
     }
 
     async function saveEditedTheme() {
@@ -199,7 +229,12 @@
                 const themeName = currentThemes[editorState.themeIndex].name;
                 currentThemes[editorState.themeIndex].colors = editorColors;
                 await storage.set({ savedThemes: currentThemes });
-                await saveActiveTheme(currentThemes[editorState.themeIndex]);
+                // Editing the theme in use updates what is on screen; editing any
+                // other one must not quietly make it the chosen theme.
+                if (activeTheme && activeTheme.name === themeName) {
+                    await saveActiveTheme(currentThemes[editorState.themeIndex]);
+                    chrome.runtime.sendMessage({ action: 'themeChanged' });
+                }
                 showNotification('themeUpdatedSuccessfully', false, [themeName]);
             }
         } else {
@@ -228,11 +263,15 @@
             const newTheme = { name: newThemeName, colors: editorColors };
             currentThemes.push(newTheme);
             await storage.set({ savedThemes: currentThemes });
-            await saveActiveTheme(newTheme);
+            // Saving keeps the theme; it does not choose it. What is on screen is
+            // still only the preview, and the chosen theme comes back as soon as
+            // this page is left — clicking the theme is what applies it.
             showNotification('customThemeSaved', false, [newThemeName]);
         }
         await fetchThemes();
         closeThemeEditor();
+        // Drop the preview and show whatever is actually in use.
+        await initializeActiveTheme();
     }
 
     async function randomTheme() {
@@ -251,16 +290,44 @@
             errorColor: rc(),
             headerColor: rc(),
         };
+        // Same as editing a colour by hand: a preview of this page, not a choice.
         applyCustomTheme(editorColors);
-        const previewTheme = { name: 'Theme Preview', colors: editorColors };
-        await saveActiveTheme(previewTheme);
-        chrome.runtime.sendMessage({ action: 'themeChanged' });
         showNotification('randomThemeApplied');
     }
 
     // --- Theme Item Actions ---
+    /**
+     * Drops the theme in use and goes back to the one chosen before it, or to the
+     * default look when there was none. Shared by deselecting and by deleting,
+     * which both leave the page without a theme to show.
+     */
+    async function revertToPreviousTheme(themeName) {
+        const { previousActiveTheme } = await chrome.storage.local.get('previousActiveTheme');
+        const fallback = previousActiveTheme && previousActiveTheme.name !== themeName ? previousActiveTheme : null;
+        if (fallback) {
+            await saveActiveTheme(fallback);
+        } else {
+            await chrome.storage.local.remove('activeTheme');
+        }
+        await chrome.storage.local.remove('previousActiveTheme');
+        chrome.runtime.sendMessage({ action: 'themeChanged' });
+        await initializeActiveTheme();
+    }
+
     async function handleActivate(e) {
         const { theme } = e;
+        // Clicking the theme already in use takes it off again.
+        if (activeTheme && activeTheme.name === theme.name) {
+            await revertToPreviousTheme(theme.name);
+            showNotification('themeDeselected', false, [theme.name]);
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+            fetchThemes();
+            return;
+        }
+        // Remembered so deselecting or deleting the theme in use can go back to the one before it.
+        if (activeTheme) {
+            await chrome.storage.local.set({ previousActiveTheme: activeTheme });
+        }
         applyCustomTheme(theme.colors);
         saveActiveTheme(theme);
         showNotification('themeApplied', false, [theme.name]);
@@ -308,6 +375,12 @@
             await chrome.storage.local.set({ schedules: scheds });
             chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
         }
+        // A theme that no longer exists cannot stay in use: the look goes back to
+        // the one chosen before it, or to the default when there was none.
+        if (activeTheme && activeTheme.name === theme.name) {
+            await revertToPreviousTheme(theme.name);
+        }
+
         showNotification('themeDeleted', false, [theme.name]);
         fetchThemes();
     }
@@ -355,6 +428,7 @@
     function resetScheduleForm() {
         selectedDays = [];
         scheduleType = 'onetime';
+        allDay = false;
         scheduleReminder = '';
         startTimeTrigger = '00:00';
         endTimeTrigger = '00:00';
@@ -384,13 +458,22 @@
         let newSchedule;
 
         if (scheduleType === 'repeating') {
-            if (startTimeTrigger === '00:00' && endTimeTrigger === '00:00') {
+            // "All day" fills the hours in itself, so there is nothing missing.
+            if (allDay) {
+                startTimeTrigger = '00:00';
+                endTimeTrigger = '23:59';
+            } else if (startTimeTrigger === '00:00' && endTimeTrigger === '00:00') {
                 scheduleError = chrome.i18n.getMessage('scheduleTimeMissing') || 'scheduleTimeMissing';
                 return false;
             }
             newSchedule = {
                 type: 'repeating',
-                days: selectedDays,
+                allDay,
+                // A plain array, not the reactive proxy: stored straight, it came back
+                // out of chrome.storage as an object ({"0":1}) and the background
+                // check does `schedule.days.includes(today)`, which then threw and
+                // stopped every theme schedule from ever firing.
+                days: [...$state.snapshot(selectedDays)],
                 startTime: startTimeTrigger,
                 endTime: endTimeTrigger,
                 reminder,
@@ -422,7 +505,9 @@
         allSchedules[themeName] = themeSchedules;
         await chrome.storage.local.set({ schedules: allSchedules });
         chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
-        showNotification(mode === 'add' ? 'scheduleAdded' : 'scheduleUpdated', false);
+        // Both messages name the theme through $1; without the parameter the notice
+        // read "Schedule added for theme $1".
+        showNotification(mode === 'add' ? 'scheduleAdded' : 'scheduleUpdated', false, [themeName]);
         return true;
     }
 
@@ -445,6 +530,7 @@
             scheduleType = 'repeating';
             startTimeTrigger = sch.startTime;
             endTimeTrigger = sch.endTime;
+            allDay = sch.allDay === true || (sch.startTime === '00:00' && sch.endTime === '23:59');
         } else {
             scheduleType = 'onetime';
             const [sD, sT] = sch.startDateTime.split('T');
@@ -625,6 +711,7 @@
     {scheduleEditorState}
     {selectedDays}
     {scheduleType}
+    bind:allDay
     bind:scheduleReminder
     bind:startDateValue
     bind:endDateValue

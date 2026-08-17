@@ -76,21 +76,50 @@ function broadcastPomodoro(state, event, completedMode) {
 }
 
 // ---- Offscreen audio playback ----
+/**
+ * Makes sure the offscreen document exists. It is shared: the Pomodoro chimes and the
+ * music player both sound through it.
+ *
+ * @param {string} justification what it is being opened for, for the browser's log
+ * @returns {Promise<boolean>} whether it had to be created — a fresh one knows
+ *   nothing, so whoever asked has to tell it what to play again
+ */
+async function ensureOffscreenDocument(justification = 'Play audio in the background') {
+    const existing = await chrome.offscreen.hasDocument().catch(() => false);
+    if (existing) return false;
+    try {
+        await chrome.offscreen.createDocument({
+            url: chrome.runtime.getURL('src/ui/pages/offscreen/offscreen.html'),
+            reasons: ['AUDIO_PLAYBACK'],
+            justification,
+        });
+    } catch (error) {
+        // Two callers can race into creating it; losing that race is not a failure.
+        if (!String(error).includes('Only a single offscreen')) throw error;
+        return false;
+    }
+    return true;
+}
+
+/** Is the offscreen document playing music right now? */
+async function isMusicPlayingOffscreen() {
+    try {
+        const answer = await chrome.runtime.sendMessage({ action: 'musicIsBusy' });
+        return Boolean(answer?.busy);
+    } catch {
+        return false;
+    }
+}
+
 async function playPomodoroSoundBackground(soundType) {
     try {
-        // Close any existing offscreen document first
-        const existing = await chrome.offscreen.hasDocument().catch(() => false);
-        if (!existing) {
-            await chrome.offscreen.createDocument({
-                url: chrome.runtime.getURL('src/ui/pages/offscreen/offscreen.html'),
-                reasons: ['AUDIO_PLAYBACK'],
-                justification: 'Play Pomodoro completion sound',
-            });
-        }
+        await ensureOffscreenDocument('Play Pomodoro completion sound');
         chrome.runtime.sendMessage({ action: 'pomodoroPlaySound', soundType });
-        // Close after sounds finish
+        // Closed once the chime is over — unless music is playing through the same
+        // document, in which case closing it would cut the track off.
         setTimeout(async () => {
             try {
+                if (await isMusicPlayingOffscreen()) return;
                 await chrome.offscreen.closeDocument();
             } catch {}
         }, 3500);

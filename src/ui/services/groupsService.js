@@ -248,15 +248,18 @@ export function handleRuleActionClick(e) {
             urlsArray = Array.from(tabs).map((t) => t.dataset.url);
             const titleEl = groupItem.querySelector('.group-title');
             ruleName = titleEl.dataset.baseName || titleEl.textContent.trim();
+        } else if (bookmarkItem && !bookmarkItem.classList.contains('bookmark-folder')) {
+            // Asked before the folder: a bookmark sits inside its folder's markup, so
+            // checking the folder first named every single-bookmark rule after the
+            // folder it happened to live in.
+            urlsArray = [bookmarkItem.querySelector('.bookmark-title').title.split('\n')[1] || ''];
+            ruleName = bookmarkItem.querySelector('.bookmark-title').textContent.trim();
         } else if (bookmarkFolder) {
             const bookmarks = bookmarkFolder.querySelectorAll('.bookmark-title');
             urlsArray = Array.from(bookmarks).map(
                 (b) => b.title.split('\n')[1] || b.closest('.bookmark-item').dataset.url || '',
             );
             ruleName = bookmarkFolder.querySelector('.folder-name').textContent.trim();
-        } else if (bookmarkItem && !bookmarkItem.classList.contains('bookmark-folder')) {
-            urlsArray = [bookmarkItem.querySelector('.bookmark-title').title.split('\n')[1] || ''];
-            ruleName = bookmarkItem.querySelector('.bookmark-title').textContent.trim();
         }
 
         const uniqueUrls = [...new Set(urlsArray)]
@@ -433,11 +436,26 @@ export async function deleteAllUngroupedTabs() {
     }
 }
 
+/**
+ * Counts how many runs of `updateDuplicateCountBadge` have started.
+ *
+ * Both branches of that function reach their number asynchronously — the bookmark
+ * one waits for the worker, the tab one for `chrome.tabs.query` — and several
+ * callers fire it back to back while a view is being switched. Whichever answer
+ * arrived last used to win, so opening the bookmarks view showed the tab count:
+ * the bookmark total was written first and a later run, still on the tab branch,
+ * overwrote it. A run only writes if it is still the most recent one.
+ */
+let duplicateBadgeRun = 0;
+
 export async function updateDuplicateCountBadge() {
     const duplicateBadge = document.getElementById('duplicate-badge');
     const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
 
     if (!duplicateBadge || !removeDuplicatesBtn) return;
+
+    const run = ++duplicateBadgeRun;
+    const isStale = () => run !== duplicateBadgeRun;
 
     const $isBookmarksViewActive = get(isBookmarksViewActive);
     const isGroupsViewActive =
@@ -459,6 +477,7 @@ export async function updateDuplicateCountBadge() {
 
     if ($isBookmarksViewActive) {
         chrome.runtime.sendMessage({ action: 'getDuplicateBookmarkCount' }, (response) => {
+            if (isStale()) return;
             if (chrome.runtime.lastError) {
                 console.error('Error getting duplicate bookmark count:', chrome.runtime.lastError.message);
                 duplicateBadge.classList.add('hidden');
@@ -501,6 +520,7 @@ export async function updateDuplicateCountBadge() {
                 return sum + (count > 1 ? count - 1 : 0);
             }, 0);
 
+            if (isStale()) return;
             if (duplicateCount > 0) {
                 duplicateBadge.textContent = duplicateCount > 999 ? '999+' : String(duplicateCount);
                 duplicateBadge.classList.remove('hidden');

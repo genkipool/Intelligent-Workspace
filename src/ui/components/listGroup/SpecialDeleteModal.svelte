@@ -165,9 +165,16 @@
                                 <span class="progress-percentage">{progressPercent}%</span>
                             </div>
                         </div>
+                        <!-- The count is substituted into its own message. It used to be
+                             glued on as a second message that carried its own "$1" and its
+                             own brackets, so the line read "Escaneando (0 ($1 encontrados))". -->
                         <p class="scanning-status-text">
-                            {$t('scanningBookmarks') || 'Scanning...'} ({filteredItems.length}
-                            {$t('itemsFound') || 'found'})
+                            <span class="scanning-status-label">{$t('scanningBookmarks')}</span>
+                            <span class="scanning-status-found" class:has-results={filteredItems.length > 0}>
+                                {filteredItems.length === 1
+                                    ? $t('itemsFoundOne')
+                                    : $t('itemsFoundCount', [filteredItems.length])}
+                            </span>
                         </p>
                     </div>
                 {:else if filteredItems.length > 0}

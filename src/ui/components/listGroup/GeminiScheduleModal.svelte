@@ -10,14 +10,23 @@
     let formTitle = $state('');
     let formQuery = $state('');
     let selectedDays = $state([]);
-    let formTime = $state('00:00');
+    /**
+     * Every time of day the query runs at. One query can be launched several times
+     * on the same date or on each of the chosen weekdays, so this is a list rather
+     * than a single value; a schedule saved before this existed comes back as a list
+     * of one.
+     */
+    let formTimes = $state(['00:00']);
     let formDate = $state('');
     let formMode = $state('add'); // 'add' | 'edit'
     let editIndex = $state(-1);
     let formError = $state('');
 
+    const MAX_TIMES = 6;
+
     // ─── Derived ─────────────────────────────────────────────────────────────
     let isRepeating = $derived(selectedDays.length > 0);
+    let canAddTime = $derived(formTimes.length < MAX_TIMES);
 
     // Day name translation keys (JS Date.getDay(): 0=Sunday)
     const dayKeys = ['daySun', 'dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat'];
@@ -30,6 +39,24 @@
     });
 
     // ─── Handlers ────────────────────────────────────────────────────────────
+    /** The times a saved schedule runs at, whichever shape it was stored in. */
+    function timesOf(schedule) {
+        if (Array.isArray(schedule.times) && schedule.times.length > 0) return [...schedule.times];
+        if (schedule.startTime) return [schedule.startTime];
+        if (schedule.startDateTime) return [schedule.startDateTime.split('T')[1]?.substring(0, 5) || '00:00'];
+        return ['00:00'];
+    }
+
+    function addTime() {
+        if (!canAddTime) return;
+        formTimes = [...formTimes, '00:00'];
+    }
+
+    function removeTime(index) {
+        if (formTimes.length <= 1) return;
+        formTimes = formTimes.filter((_, i) => i !== index);
+    }
+
     function handleDayToggle(day) {
         if (selectedDays.includes(day)) {
             selectedDays = selectedDays.filter((d) => d !== day);
@@ -48,17 +75,14 @@
         formQuery = schedule.query || '';
         formError = '';
 
+        formTimes = timesOf(schedule);
+
         if (schedule.type === 'repeating') {
             selectedDays = [...(schedule.days || [])];
-            formTime = schedule.startTime || '00:00';
             formDate = '';
         } else {
             selectedDays = [];
-            if (schedule.startDateTime) {
-                const [date, time] = schedule.startDateTime.split('T');
-                formDate = date;
-                formTime = time ? time.substring(0, 5) : '00:00';
-            }
+            formDate = schedule.startDate || (schedule.startDateTime || '').split('T')[0] || '';
         }
     }
 
@@ -83,28 +107,43 @@
             return;
         }
 
+        // Two rows set to the same time would only ever fire once, so they are
+        // folded together instead of being saved as a duplicate that never runs.
+        const times = [...new Set(formTimes)].sort();
+
         let schedule;
 
         if (isRepeating) {
             schedule = {
                 type: 'repeating',
                 days: [...selectedDays],
-                startTime: formTime,
+                times,
+                // Kept so a build that does not know about several times still finds
+                // the first one where it expects it.
+                startTime: times[0],
                 query,
                 title,
+                firedSlots: [],
             };
         } else {
-            const startDateTime = formDate ? `${formDate}T${formTime}:00` : '';
-            if (!startDateTime || new Date(startDateTime) <= new Date()) {
+            if (!formDate) {
+                formError = tFn('scheduleDateTimeMissing');
+                return;
+            }
+            const moments = times.map((time) => new Date(`${formDate}T${time}:00`));
+            if (moments.every((moment) => moment <= new Date())) {
                 formError = tFn('scheduleDateTimeMissing');
                 return;
             }
             schedule = {
                 type: 'onetime',
-                startDateTime,
+                startDate: formDate,
+                times,
+                startDateTime: `${formDate}T${times[0]}:00`,
                 query,
                 hasBeenTriggered: false,
                 title,
+                firedSlots: [],
             };
         }
 
@@ -119,7 +158,7 @@
         formTitle = '';
         formQuery = '';
         selectedDays = [];
-        formTime = '00:00';
+        formTimes = ['00:00'];
         formDate = '';
         formMode = 'add';
         editIndex = -1;
@@ -186,9 +225,13 @@
                                 </div>
                                 <div class="schedule-details">
                                     {#if schedule.type === 'repeating'}
-                                        {schedule.days.map((d) => $t(dayKeys[d])).join(', ')} - {schedule.startTime}
+                                        {schedule.days.map((d) => $t(dayKeys[d])).join(', ')} - {timesOf(schedule).join(
+                                            ', ',
+                                        )}
                                     {:else}
-                                        {new Date(schedule.startDateTime).toLocaleString()}
+                                        {new Date(schedule.startDateTime).toLocaleDateString()} - {timesOf(
+                                            schedule,
+                                        ).join(', ')}
                                     {/if}
                                 </div>
                             </li>
@@ -274,22 +317,42 @@
                                         <div class="field-label">{$t('scheduleDateTime')}</div>
                                         <DateField id="gemini-start-date-trigger" bind:value={formDate} />
                                     </div>
-                                    <div class="field-container time-width">
-                                        <div class="field-label">{$t('startTime')}</div>
-                                        <TimeField id="gemini-start-time-trigger" bind:value={formTime} />
-                                    </div>
-                                </div>
-                            </div>
-                        {:else}
-                            <div id="repeating-gemini-schedule-group" class="form-group">
-                                <div class="time-range">
-                                    <div class="time">
-                                        <div class="field-label">{$t('scheduleTime')}</div>
-                                        <TimeField id="gemini-start-time-trigger" bind:value={formTime} />
-                                    </div>
                                 </div>
                             </div>
                         {/if}
+
+                        <!-- The same query can be launched at several times of day, on
+                             the chosen date or on each of the chosen weekdays. -->
+                        <div id="gemini-schedule-times" class="form-group">
+                            <div class="field-label">{$t('scheduleTimes')}</div>
+                            <div class="schedule-times-list">
+                                {#each formTimes as _, index (index)}
+                                    <div class="schedule-time-row">
+                                        <TimeField
+                                            id={`gemini-start-time-trigger${index === 0 ? '' : `-${index}`}`}
+                                            bind:value={formTimes[index]}
+                                        />
+                                        <button
+                                            type="button"
+                                            class="remove-time-btn"
+                                            disabled={formTimes.length <= 1}
+                                            onclick={() => removeTime(index)}
+                                            title={$tt('removeScheduleTime')}
+                                            aria-label={$tt('removeScheduleTime')}>&times;</button
+                                        >
+                                    </div>
+                                {/each}
+                            </div>
+                            <button
+                                type="button"
+                                id="add-gemini-schedule-time"
+                                class="add-time-btn"
+                                disabled={!canAddTime}
+                                onclick={addTime}
+                            >
+                                + {$t('addScheduleTime')}
+                            </button>
+                        </div>
                     </div>
                 {/if}
             </div>

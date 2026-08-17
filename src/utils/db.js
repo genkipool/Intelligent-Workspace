@@ -9,6 +9,7 @@ const CONVERSATION_STORE_NAME = ITG_STORES.conversations;
 const NOTES_STORE_NAME = ITG_STORES.notes;
 const BACKUPS_STORE_NAME = ITG_STORES.backups;
 const POMO_STATS_STORE_NAME = ITG_STORES.pomodoroStats;
+const MUSIC_TRACKS_STORE_NAME = ITG_STORES.musicTracks;
 let dbPromise = null;
 
 function openDb() {
@@ -528,5 +529,53 @@ export async function clearPomoStatsFromDb(projectName) {
         } catch (e) {
             reject(e);
         }
+    });
+}
+
+// ─── Music player ────────────────────────────────────────────────────
+// The picked folder's audio is kept here, keyed by its place in the playlist, so the
+// offscreen document that actually plays it can read a track without the page that
+// picked the folder still being open. The names and order live in
+// `chrome.storage.local` instead: they are small, and listing the folder should not
+// mean reading every blob back.
+
+/**
+ * Replaces the stored folder with a new one.
+ *
+ * @param {Array<{index: number, blob: Blob}>} records
+ */
+export async function saveMusicTracksToDb(records) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        store.clear();
+        for (const record of records) store.put(record);
+        transaction.oncomplete = () => resolve(records.length);
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * @param {number} index
+ * @returns {Promise<Blob|undefined>}
+ */
+export async function getMusicTrackFromDb(index) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readonly');
+        const request = transaction.objectStore(MUSIC_TRACKS_STORE_NAME).get(index);
+        request.onsuccess = (event) => resolve(event.target.result?.blob);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+export async function clearMusicTracksInDb() {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const request = transaction.objectStore(MUSIC_TRACKS_STORE_NAME).clear();
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
     });
 }

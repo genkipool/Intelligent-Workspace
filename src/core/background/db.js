@@ -108,13 +108,60 @@ async function saveGeminiEntryToDb(entry) {
     });
 }
 
+/** The times of day a scheduled query runs at, whichever shape it was saved in. */
+function geminiScheduleTimes(schedule) {
+    if (Array.isArray(schedule.times) && schedule.times.length > 0) return schedule.times;
+    if (schedule.startTime) return [schedule.startTime];
+    if (schedule.startDateTime) return [schedule.startDateTime.split('T')[1]?.substring(0, 5) || '00:00'];
+    return [];
+}
+
+/**
+ * The runs of a scheduled query that are due and have not happened yet.
+ *
+ * A query can be set to several times of day, so "has it run today" is no longer
+ * enough to tell: each date-and-time is its own run, remembered in `firedSlots`.
+ * Schedules saved before that existed carry `lastTriggered` or `hasBeenTriggered`
+ * instead, and those are honoured so an upgrade does not replay them.
+ */
+function dueGeminiSlots(schedule, now) {
+    const times = geminiScheduleTimes(schedule);
+    if (times.length === 0) return [];
+
+    const pad = (n) => String(n).padStart(2, '0');
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const currentTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+    let candidates = [];
+    if (schedule.type === 'repeating') {
+        if (!Array.isArray(schedule.days) || !schedule.days.includes(now.getDay())) return [];
+        candidates = times.filter((time) => currentTime >= time).map((time) => `${today}T${time}`);
+    } else {
+        const date = schedule.startDate || (schedule.startDateTime || '').split('T')[0];
+        if (!date) return [];
+        candidates = times.filter((time) => new Date(`${date}T${time}:00`) <= now).map((time) => `${date}T${time}`);
+    }
+
+    const fired = new Set(schedule.firedSlots || []);
+    if (!schedule.firedSlots) {
+        // Nothing was recorded slot by slot before, so the old marks stand in for it.
+        if (schedule.type === 'repeating') {
+            const lastTriggeredToday =
+                schedule.lastTriggered && new Date(schedule.lastTriggered).toDateString() === now.toDateString();
+            if (lastTriggeredToday) candidates.forEach((slot) => fired.add(slot));
+        } else if (schedule.hasBeenTriggered) {
+            candidates.forEach((slot) => fired.add(slot));
+        }
+    }
+
+    return candidates.filter((slot) => !fired.has(slot));
+}
+
 async function checkGeminiSchedules() {
     const { [GEMINI_SCHEDULES_KEY]: schedules = [] } = await chrome.storage.local.get(GEMINI_SCHEDULES_KEY);
     if (schedules.length === 0) return;
 
     const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = now.toTimeString().slice(0, 5); // HH:MM format
     let storageNeedsUpdate = false;
 
     // We get the session conversations ONLY ONCE at the start.
@@ -123,24 +170,12 @@ async function checkGeminiSchedules() {
     );
 
     const updatedSchedulesPromises = schedules.map(async (schedule) => {
-        let shouldTrigger = false;
-
         // Trigger logic (unchanged)
         if (schedule.lastTriggered && now.getTime() - new Date(schedule.lastTriggered).getTime() < 60000) {
             return schedule;
         }
-        if (schedule.type === 'repeating') {
-            const hasBeenTriggeredToday =
-                schedule.lastTriggered && new Date(schedule.lastTriggered).toDateString() === now.toDateString();
-            if (schedule.days.includes(currentDay) && currentTime >= schedule.startTime && !hasBeenTriggeredToday) {
-                shouldTrigger = true;
-            }
-        } else {
-            // onetime
-            if (now >= new Date(schedule.startDateTime) && !schedule.hasBeenTriggered) {
-                shouldTrigger = true;
-            }
-        }
+        const pendingSlots = dueGeminiSlots(schedule, now);
+        const shouldTrigger = pendingSlots.length > 0;
 
         if (shouldTrigger) {
             logMessage(
@@ -213,10 +248,15 @@ async function checkGeminiSchedules() {
                     message: `Query: "${schedule.query}"\nAnswer: ${shortAnswer}`,
                 });
 
+                // Every run that was due is written off, not just the one that fired:
+                // if the browser was closed over two of them, the query is launched
+                // once rather than firing a burst on the way back.
+                schedule.firedSlots = [...(schedule.firedSlots || []), ...pendingSlots].slice(-50);
                 if (schedule.type === 'repeating') {
                     schedule.lastTriggered = now.toISOString();
                 } else {
-                    schedule.hasBeenTriggered = true;
+                    const allTimes = geminiScheduleTimes(schedule);
+                    schedule.hasBeenTriggered = schedule.firedSlots.length >= allTimes.length;
                 }
                 storageNeedsUpdate = true;
             } else {

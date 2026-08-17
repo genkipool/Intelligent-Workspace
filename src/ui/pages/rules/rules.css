@@ -2878,10 +2878,6 @@ form {
     color: var(--error-color);
     font-size: var(--small-text);
     margin-top: var(--spacing-sm);
-    padding: var(--spacing-sm);
-    border: 1px solid var(--error-color);
-    border-radius: var(--small-border-radius);
-    background-color: var(--bg-color);
     display: none;
     word-break: break-word;
 }

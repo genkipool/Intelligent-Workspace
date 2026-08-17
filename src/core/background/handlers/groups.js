@@ -282,9 +282,21 @@ async function handleDeleteCurrentTabGroup(sender) {
 }
 
 /** Closes every group except the one named in the message. */
+/**
+ * Closes every group but one — the active tab's, unless the caller names another.
+ *
+ * Callers that left `groupId` out got `NaN`, which no group id ever equals, so the
+ * group the user was working in was closed along with the rest. Resolving the active
+ * tab here covers both the context-menu entry and the toolbar button, which are the
+ * two ways in and both promise to spare the active group.
+ */
 async function handleDeleteOtherGroups(message, sendResponse) {
     try {
-        const keepId = Number.parseInt(message.groupId, 10);
+        let keepId = Number.parseInt(message?.groupId, 10);
+        if (!Number.isFinite(keepId)) {
+            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            keepId = activeTab?.groupId ?? chrome.tabGroups.TAB_GROUP_ID_NONE;
+        }
         const groups = await chrome.tabGroups.query({});
         const others = groups.map((group) => group.id).filter((id) => id !== keepId);
         const closed = await closeGroups(others);

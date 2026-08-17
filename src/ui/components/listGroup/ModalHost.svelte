@@ -11,6 +11,7 @@
     import DeleteAllBookmarksConfirmModal from './DeleteAllBookmarksConfirmModal.svelte';
     import AddToBookmarkModal from './AddToBookmarkModal.svelte';
     import DeleteHistoryConfirmModal from './DeleteHistoryConfirmModal.svelte';
+    import { t } from '../../stores/i18nStore.js';
 
     import {
         showApiKeyModal,
@@ -47,7 +48,10 @@
         apiKeys={$modalData?.apiKeys || []}
         onClose={() => closeModal(showApiKeyModal)}
         onSave={async () => {
-            await geminiStore.saveApiKey();
+            // Closing regardless threw away the refusal: a key the service rejects
+            // has to leave the modal open with the reason on screen.
+            const result = await geminiStore.saveApiKey();
+            if (!result?.ok) throw new Error($t(result?.errorKey || 'errorValidatingApiKey'));
             closeModal(showApiKeyModal);
         }}
         onDelete={async (index) => {

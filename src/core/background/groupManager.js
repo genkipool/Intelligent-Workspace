@@ -737,6 +737,22 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
     try {
         if (groupsInWindow.length === 0) return;
 
+        // A name is being typed somewhere in the strip: leave the order alone until
+        // the typing settles, or the group being renamed slides away under the box.
+        if (Date.now() < groupRenameSettlesAt) {
+            logMessage(`[sortGroups] A group is being renamed; leaving the order alone.`);
+            return;
+        }
+
+        // Reordering while the browser is showing its "name this group" bubble closes
+        // it, so the whole pass waits: moving the other groups shifts the strip under
+        // the bubble and dismisses it just the same.
+        const now = Date.now();
+        if (groupsInWindow.some((group) => isBeingNamed(group, now))) {
+            logMessage(`[sortGroups] Window ${windowId} has a group being named; leaving the order alone.`);
+            return;
+        }
+
         const groupDetails = new Map();
         const tabsByGroupId = new Map();
 
@@ -1361,12 +1377,33 @@ async function finalizeWindowProcessing(
     // cost, so it showed up just as badly with few tabs as with many, and equally
     // when switching the grouping on and off. Only act when something is actually
     // out of place.
-    const newTabTabs = finalTabs.filter((t) => t.url === 'chrome://newtab/');
+    //
+    // A new tab the user put in a group on purpose is left alone. "Add tab to group"
+    // in the browser's own tab menu is the usual way in, and the group it creates is
+    // untitled while the naming box is open, so pulling the tab straight back out
+    // destroyed the group before there was time to name it — and a new tab could
+    // never be filed by hand into any group either.
+    const groupById = new Map(finalGroups.map((g) => [g.id, g]));
+    const isUserGroup = (groupId) => {
+        if (groupId === -1) return false;
+        if (isBeingNamed(groupById.get(groupId))) return true;
+        return groupInfoMap.get(groupId)?.type === 'manual';
+    };
+
+    // The exempt tabs are taken out of the picture entirely, positions included, so
+    // the "already at the end" check still settles after one move instead of firing
+    // again on every pass.
+    const exemptIds = new Set(
+        finalTabs.filter((t) => t.url === 'chrome://newtab/' && isUserGroup(t.groupId)).map((t) => t.id),
+    );
+    const strip = exemptIds.size ? finalTabs.filter((t) => !exemptIds.has(t.id)) : finalTabs;
+
+    const newTabTabs = strip.filter((t) => t.url === 'chrome://newtab/');
     if (newTabTabs.length > 0) {
         const grouped = newTabTabs.filter((t) => t.groupId !== -1);
 
         // They are in place when they occupy the last positions of the strip.
-        const lastIndex = finalTabs.reduce((max, t) => Math.max(max, t.index), -1);
+        const lastIndex = strip.reduce((max, t) => Math.max(max, t.index), -1);
         const byIndex = [...newTabTabs].sort((a, b) => a.index - b.index);
         const alreadyAtEnd = byIndex.every((t, i) => t.index === lastIndex - (byIndex.length - 1 - i));
 

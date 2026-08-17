@@ -94,7 +94,11 @@ async function loadSessionState() {
                 `%c[loadSessionState] SUCCESS: Found valid session data. Loading ${data.tabsEverActive.length} active tabs.`,
                 'color: green;',
             );
-            tabsEverActive = new Set(data.tabsEverActive);
+            // Merged, not replaced: an event handler can add a tab while this load
+            // is still in flight (the initialization runs on every worker start, and
+            // the event that woke the worker races it), and replacing the set would
+            // drop what the handler just recorded.
+            for (const tabId of data.tabsEverActive) tabsEverActive.add(tabId);
             if (data.groupExpandedEver && typeof data.groupExpandedEver === 'object') {
                 const entries = Object.entries(data.groupExpandedEver).map(([key, value]) => [
                     parseInt(key, 10),
@@ -228,10 +232,17 @@ async function rebuildGroupInfoMap() {
                 continue;
             }
 
-            // Identification logic (no changes)
+            // Identification logic
             let identifiedInfo = null;
             const identifier = generateGroupIdentifier(baseUiTitle, null, group.id);
-            const persistentState = groupPrefixState.get(identifier);
+            // Chrome hands out new group ids when it restores a session, so the
+            // identifier built from the id cannot match once the browser has been
+            // closed. The state is written under a second identifier — the name plus
+            // the number of tabs — which does not depend on the id, so it is worth
+            // asking for it before falling back to guessing the group from its tabs.
+            const persistentState =
+                groupPrefixState.get(identifier) ||
+                groupPrefixState.get(generateGroupIdentifier(baseUiTitle, tabsInGroup.length));
             if (persistentState && persistentState.type && persistentState.key) {
                 identifiedInfo = {
                     type: persistentState.type,
@@ -590,17 +601,23 @@ async function checkSchedules() {
                 chrome.runtime.sendMessage({
                     action: 'themeChanged',
                 });
-                if (activeScheduleInfo && activeScheduleInfo.reminder) {
-                    const title =
-                        getI18nMsg('themeReminderNotificationTitle', [themeNameToActivate]) ||
-                        `Theme Reminder: ${themeNameToActivate}`;
-                    chrome.notifications.create({
-                        type: 'basic',
-                        iconUrl: '/assets/icons/icon128.png',
-                        title: title,
-                        message: activeScheduleInfo.reminder,
-                    });
-                }
+                // A scheduled theme changes the look of every page on its own, so it
+                // says so. The reminder the user wrote takes the place of the default
+                // line when there is one; before, no reminder meant no notice at all
+                // and the theme just changed with nothing to explain it.
+                const reminder = activeScheduleInfo?.reminder;
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: '/assets/icons/icon128.png',
+                    title: reminder
+                        ? getI18nMsg('themeReminderNotificationTitle', [themeNameToActivate]) ||
+                          `Theme Reminder: ${themeNameToActivate}`
+                        : getI18nMsg('themeScheduleActivated') || 'Scheduled theme applied',
+                    message:
+                        reminder ||
+                        getI18nMsg('themeScheduleActivatedBody', [themeNameToActivate]) ||
+                        `${themeNameToActivate} is now in use`,
+                });
             }
         }
     } else {
@@ -612,6 +629,14 @@ async function checkSchedules() {
             await chrome.storage.local.remove(['activeScheduledThemeName', 'themeToRevertTo']);
             chrome.runtime.sendMessage({
                 action: 'themeChanged',
+            });
+            // The end of the window changes the look back, which is just as worth
+            // saying as the start.
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: '/assets/icons/icon128.png',
+                title: getI18nMsg('themeScheduleDeactivated') || 'Scheduled theme ended',
+                message: getI18nMsg('themeScheduleDeactivatedBody') || 'Back to your previous theme',
             });
         }
     }

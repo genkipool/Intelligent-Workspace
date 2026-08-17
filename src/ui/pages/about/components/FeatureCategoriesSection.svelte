@@ -93,6 +93,18 @@
 </section>
 
 <section class="features-section card">
+    <h3>{$t('sectionMusicPlayer')}</h3>
+    <div class="features-grid">
+        <FeatureItem isMaterial={true} iconName="library_music" textKey="feature_music_local_folder" />
+        <FeatureItem isMaterial={true} iconName="play_circle" textKey="feature_music_playback" />
+        <FeatureItem isMaterial={true} iconName="fast_forward" textKey="feature_music_seek" />
+        <FeatureItem isMaterial={true} iconName="search" textKey="feature_music_search" />
+        <FeatureItem isMaterial={true} iconName="queue_music" textKey="feature_music_playlist" />
+        <FeatureItem isMaterial={true} iconName="headphones" textKey="feature_music_keeps_playing" />
+    </div>
+</section>
+
+<section class="features-section card">
     <h3>{$t('sectionListBookmarks')}</h3>
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="bookmarks" textKey="feature_bookmarks_search" />
