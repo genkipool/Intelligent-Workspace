@@ -723,6 +723,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.isYouTube = itgIsYouTube();
         this.isShorts = itgIsYouTubeShorts();
         this.mode = itgPipModeFor(video);
+        this.configuredSize = { mode: 'max', w: 800, h: 600 };
     }
 
     // -- lifecycle --
@@ -757,8 +758,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.isYouTube) this.watchLists();
         this.refreshLists();
         this.render();
-        await this.loadConfiguredSize();
-        await this.loadMaxSize();
+        this.loadConfiguredSize();
+        this.loadMaxSize();
         this.watchForReturn();
         this.wake();
 
@@ -1594,7 +1595,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     buildSizeMenu() {
-        const doc = this.pipWindow.document;
+        const doc = this.pipWindow?.document;
+        if (!doc) return;
         this.sizeWrap = doc.querySelector('.itg-pip-size-wrap');
         this.sizeMenu = doc.querySelector('.itg-pip-size-menu');
         this.sizeMaxButton = doc.querySelector('.itg-pip-size-max');
@@ -1602,11 +1604,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.sizeHeight = doc.querySelector('.itg-pip-size-h');
         this.sizeNote = doc.querySelector('.itg-pip-size-note');
 
+        if (!this.sizeMaxButton || !this.sizeWidth || !this.sizeHeight) return;
+
         const config = this.configuredSize || { mode: 'max', w: 800, h: 600 };
+        const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth || 1920;
+        const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight || 1080;
+
         if (config.mode === 'max') {
             this.sizeMaxButton.classList.add('is-on');
-            const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth;
-            const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight;
             this.sizeWidth.value = String(maxW);
             this.sizeHeight.value = String(maxH);
         } else {
@@ -1615,6 +1620,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.sizeHeight.value = String(config.h || this.pipWindow.innerHeight);
         }
 
+        // Toggle Maximum mode button
         this.sizeMaxButton.addEventListener('click', (e) => {
             e.stopPropagation();
             this.wake();
@@ -1623,19 +1629,21 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             if (!this.configuredSize) this.configuredSize = {};
             if (isNowMax) {
                 this.configuredSize.mode = 'max';
-                const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth;
-                const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight;
-                this.sizeWidth.value = String(maxW);
-                this.sizeHeight.value = String(maxH);
+                const curMaxW = this.maxSize?.w || this.pipWindow.screen.availWidth || 1920;
+                const curMaxH = this.maxSize?.h || this.pipWindow.screen.availHeight || 1080;
+                this.sizeWidth.value = String(curMaxW);
+                this.sizeHeight.value = String(curMaxH);
             } else {
                 this.configuredSize.mode = 'custom';
-                this.configuredSize.w = +this.sizeWidth.value || this.pipWindow.innerWidth;
-                this.configuredSize.h = +this.sizeHeight.value || this.pipWindow.innerHeight;
+                this.configuredSize.w = Math.round(+this.sizeWidth.value) || this.pipWindow.innerWidth;
+                this.configuredSize.h = Math.round(+this.sizeHeight.value) || this.pipWindow.innerHeight;
             }
             this.saveConfiguredSize();
+            this.renderSize();
         });
 
-        const commitAndApply = () => {
+        // Save dimensions when user finishes editing and leaves popup or presses Enter
+        const commitConfiguredSize = () => {
             if (!this.configuredSize) this.configuredSize = {};
             if (this.sizeMaxButton.classList.contains('is-on')) {
                 this.configuredSize.mode = 'max';
@@ -1647,14 +1655,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 if (h > 0) this.configuredSize.h = h;
             }
             this.saveConfiguredSize();
-            this.applyConfiguredSize();
+            this.renderSize();
         };
 
         for (const field of [this.sizeWidth, this.sizeHeight]) {
             field.addEventListener('focus', () => this.wake());
             field.addEventListener('input', () => {
                 this.wake();
-                // Custom number entered: deactivate max mode button
+                // When typing custom dimensions, deactivate max mode button
                 this.sizeMaxButton.classList.remove('is-on');
                 if (!this.configuredSize) this.configuredSize = {};
                 this.configuredSize.mode = 'custom';
@@ -1663,7 +1671,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 this.wake();
                 if (e.key === 'Enter') {
                     field.blur();
-                    commitAndApply();
+                    commitConfiguredSize();
                 }
                 e.stopPropagation();
             });
@@ -1682,7 +1690,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                     currentDoc.activeElement === this.sizeWidth ||
                     currentDoc.activeElement === this.sizeHeight;
                 if (!isHovered && !isFocused) {
-                    commitAndApply();
+                    commitConfiguredSize();
                 }
             }, 300);
         };
@@ -1743,7 +1751,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      */
     async applyConfiguredSize() {
         const win = this.pipWindow;
-        if (!win) return;
+        if (!win || win.closed) return;
         const config = this.configuredSize || { mode: 'max' };
 
         if (config.mode === 'max') {
@@ -1753,13 +1761,15 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 console.warn('[ITG PiP] The window refused to resize:', e);
             }
             await new Promise((resolve) => setTimeout(resolve, 250));
-            this.maxSize = { w: win.innerWidth, h: win.innerHeight };
-            try {
-                chrome.storage.local.set({ [this.maxSizeKey()]: this.maxSize });
-            } catch {}
+            if (win && !win.closed) {
+                this.maxSize = { w: win.innerWidth, h: win.innerHeight };
+                try {
+                    chrome.storage.local.set({ [this.maxSizeKey()]: this.maxSize });
+                } catch {}
+            }
         } else {
-            const w = Math.max(200, +config.w || 640);
-            const h = Math.max(150, +config.h || 360);
+            const w = Math.max(200, Math.round(+config.w) || 800);
+            const h = Math.max(150, Math.round(+config.h) || 600);
             try {
                 win.resizeTo(w, h);
             } catch (e) {
@@ -1772,14 +1782,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     /**
      * Toggles between the configured size (maximum or custom) and the default initial size.
      */
-    toggleFullscreenSize() {
+    async toggleFullscreenSize() {
         const win = this.pipWindow;
-        if (!win) return;
+        if (!win || win.closed) return;
         const config = this.configuredSize || { mode: 'max' };
-        const maxW = this.maxSize?.w || win.screen.availWidth;
-        const maxH = this.maxSize?.h || win.screen.availHeight;
-        const targetW = config.mode === 'max' ? maxW : +config.w || 640;
-        const targetH = config.mode === 'max' ? maxH : +config.h || 360;
+        const maxW = this.maxSize?.w || win.screen.availWidth || 1920;
+        const maxH = this.maxSize?.h || win.screen.availHeight || 1080;
+        const targetW = config.mode === 'max' ? maxW : +config.w || 800;
+        const targetH = config.mode === 'max' ? maxH : +config.h || 600;
 
         const isAtTarget =
             config.mode === 'max'
@@ -1787,19 +1797,19 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
 
         if (isAtTarget) {
-            const defW = this.defaultSize?.width || this.defaultSize?.w || 480;
-            const defH = this.defaultSize?.height || this.defaultSize?.h || 270;
+            const defW = this.defaultSize?.width || this.defaultSize?.w || 800;
+            const defH = this.defaultSize?.height || this.defaultSize?.h || 450;
             this.applySize(defW, defH);
         } else {
-            this.applyConfiguredSize();
+            await this.applyConfiguredSize();
         }
     }
 
     /** Resizes the window to specific dimensions. */
     applySize(width, height) {
-        if (!width || !height) return;
-        const w = Math.max(200, width);
-        const h = Math.max(150, height);
+        if (!width || !height || !this.pipWindow || this.pipWindow.closed) return;
+        const w = Math.max(200, Math.round(width));
+        const h = Math.max(150, Math.round(height));
         try {
             this.pipWindow.resizeTo(w, h);
         } catch {}
@@ -1807,7 +1817,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     renderSize() {
-        if (!this.sizeMenu) return;
+        if (!this.sizeMenu || !this.pipWindow || this.pipWindow.closed) return;
         const win = this.pipWindow;
         const max = this.maxSize;
         const doc = win?.document;
@@ -1822,8 +1832,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (!isEditing) {
             if (config.mode === 'max') {
                 this.sizeMaxButton.classList.add('is-on');
-                const maxW = max?.w || win.screen.availWidth;
-                const maxH = max?.h || win.screen.availHeight;
+                const maxW = max?.w || win.screen.availWidth || 1920;
+                const maxH = max?.h || win.screen.availHeight || 1080;
                 this.sizeWidth.value = String(maxW);
                 this.sizeHeight.value = String(maxH);
             } else {
@@ -1859,7 +1869,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
 
         if (moreSize) moreSize.classList.toggle('is-on', isAtTarget);
-        this.buttons.size.innerHTML = isAtTarget ? ITG_PIP_ICONS.fullscreenExit : ITG_PIP_ICONS.fullscreen;
+        if (this.buttons.size) {
+            this.buttons.size.innerHTML = isAtTarget ? ITG_PIP_ICONS.fullscreenExit : ITG_PIP_ICONS.fullscreen;
+        }
     }
 
     /**
