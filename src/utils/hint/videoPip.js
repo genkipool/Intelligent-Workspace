@@ -1949,9 +1949,22 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * the language and styling the user already chose are the ones that show up.
      */
     toggleCaptions() {
-        const control = this.captionsControl();
-        if (control) control.click();
-        setTimeout(() => this.renderCaptions(), 150);
+        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+        if (player && typeof player.toggleSubtitles === 'function') {
+            try {
+                player.toggleSubtitles();
+            } catch {
+                const control = this.captionsControl();
+                if (control) control.click();
+            }
+        } else {
+            const control = this.captionsControl();
+            if (control) control.click();
+        }
+        setTimeout(() => {
+            this.adoptCaptions();
+            this.renderCaptions();
+        }, 150);
     }
 
     captionsControl() {

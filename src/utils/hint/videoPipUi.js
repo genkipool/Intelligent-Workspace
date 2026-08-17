@@ -261,9 +261,66 @@ textarea::selection,
 
 /* YouTube's own caption container, moved in beside the video. */
 .itg-pip-captions {
-    position: absolute; inset: 0; z-index: 5; pointer-events: none; overflow: hidden;
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 8 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    padding-bottom: 48px !important;
+    box-sizing: border-box !important;
 }
-.itg-pip-captions .caption-window { pointer-events: none; }
+.itg-pip-root[data-active='true'] .itg-pip-captions {
+    padding-bottom: 64px !important;
+}
+.itg-pip-captions .caption-window,
+.itg-pip-captions .ytp-caption-window-bottom,
+.itg-pip-captions .ytp-caption-window-rollup {
+    position: relative !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    margin: 0 auto 4px auto !important;
+    text-align: center !important;
+    max-width: 90% !important;
+    width: auto !important;
+    height: auto !important;
+    pointer-events: none !important;
+    display: block !important;
+    box-sizing: border-box !important;
+}
+.itg-pip-captions .captions-text {
+    display: inline-block !important;
+    text-align: center !important;
+}
+.itg-pip-captions .ytp-caption-segment {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.9) !important;
+    white-space: pre-wrap !important;
+}
+
+/* Hide bezel animations (gear icons, speed icons, caption toast animations) inside PiP window */
+.itg-pip-root .ytp-bezel,
+.itg-pip-root .ytp-bezel-text,
+.itg-pip-root .ytp-settings-menu,
+.itg-pip-root .ytp-popup,
+.itg-pip-holder .ytp-bezel,
+.itg-pip-holder .ytp-bezel-text,
+.itg-pip-holder .ytp-settings-menu,
+.itg-pip-captions .ytp-bezel,
+.itg-pip-captions .ytp-bezel-text,
+.itg-pip-captions .ytp-settings-menu {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
 
 /* The slider stays out of the way until the volume button is reached. */
 .itg-pip-volume { display: flex; align-items: center; }
