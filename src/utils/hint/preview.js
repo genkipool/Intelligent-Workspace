@@ -250,6 +250,12 @@ var LinkPreviewManager = class LinkPreviewManager {
                     <div class="hint-preview-header">
                         <span class="hint-preview-title">${chrome.i18n.getMessage('previewTitlePrefix') || 'Preview:'} ${domain}</span>
                         <div class="hint-preview-actions" style="display: flex; align-items: center; gap: 8px;">
+                            <button class="hint-preview-action-btn hint-preview-video-pip-btn" title="${chrome.i18n.getMessage('openVideoPipTitle') || 'Picture-in-Picture de solo vídeo'}">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                </svg>
+                            </button>
                             <button class="hint-preview-action-btn hint-preview-pip-btn" title="${chrome.i18n.getMessage('openAsPipTitle') || 'Open as Picture-in-Picture'}">
                                 <span style="display:block;width:14px;height:14px;">${ITG_PIP_ICON}</span>
                             </button>
@@ -368,7 +374,20 @@ var LinkPreviewManager = class LinkPreviewManager {
             this._activeVideoMsgListener = (event) => {
                 if (event.data?.action === 'ITG_PREVIEW_HAS_VIDEO') container.dataset.hasVideo = 'true';
             };
-            window.addEventListener('message', this._activeVideoMsgListener);
+            const videoPipBtn = container.querySelector('.hint-preview-video-pip-btn');
+            if (videoPipBtn) {
+                videoPipBtn.style.display = 'flex';
+                videoPipBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const previewIframe = container.querySelector('.hint-preview-iframe');
+                    if (!previewIframe || !previewIframe.src) return;
+                    const rect = container.getBoundingClientRect();
+                    const width = Math.round(rect.width) || 640;
+                    const height = Math.round(rect.height) || 360;
+                    await openVideoPip(previewIframe.src, width, height);
+                    this.removePreview(true, container);
+                });
+            }
             const pipBtn = container.querySelector('.hint-preview-pip-btn');
             if (pipBtn) {
                 pipBtn.addEventListener('click', async (e) => {

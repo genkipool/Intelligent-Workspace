@@ -133,7 +133,78 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
         return;
     }
 
-    return ItgVideoPip.open();
+    const localVideo = document.querySelector('video');
+    if (!url && localVideo && typeof window.ItgVideoPip?.open === 'function') {
+        return ItgVideoPip.open(localVideo);
+    }
+
+    if (url && 'documentPictureInPicture' in window) {
+        try {
+            if (window.documentPictureInPicture.window) {
+                window.documentPictureInPicture.window.close();
+            }
+            let targetUrl = url;
+            try {
+                const currentCleanUrl = window.location.href.split('#')[0].split('?')[0];
+                const urlObj = new URL(url);
+                const targetCleanUrl = urlObj.href.split('#')[0].split('?')[0];
+                if (currentCleanUrl === targetCleanUrl && localVideo && localVideo.currentTime > 0) {
+                    const secs = Math.floor(localVideo.currentTime);
+                    urlObj.searchParams.set('t', secs);
+                    targetUrl = urlObj.toString();
+                }
+            } catch (e) {
+                console.warn('Failed to append current video time:', e);
+            }
+
+            document.querySelectorAll('video').forEach((v) => {
+                try {
+                    v.pause();
+                } catch {}
+            });
+
+            const urlObj = new URL(targetUrl);
+            urlObj.searchParams.set('itg_video_pip', 'true');
+            targetUrl = urlObj.toString();
+            const isShort = targetUrl.includes('/shorts/');
+            const width = defaultWidth || (isShort ? 318 : 800);
+            const height = defaultHeight || (isShort ? 571 : 600);
+            const pipWindow = await requestItgPipWindow(targetUrl, width, height);
+            pipWindow.document.body.style.margin = '0';
+            pipWindow.document.body.style.padding = '0';
+            pipWindow.document.body.style.overflow = 'hidden';
+            pipWindow.document.body.style.backgroundColor = '#000';
+            pipWindow.document.body.style.position = 'relative';
+            pipWindow.document.body.style.width = '100vw';
+            pipWindow.document.body.style.height = '100vh';
+
+            await chrome.runtime.sendMessage({
+                action: 'prepareVideoUrlForPip',
+                url: targetUrl,
+            });
+
+            const iframe = document.createElement('iframe');
+            iframe.name = 'itg-video-pip-iframe';
+            iframe.style.cssText =
+                'position:absolute;top:0;left:0;width:100vw;height:100vh;border:none;z-index:1;border-radius:0';
+            iframe.setAttribute(
+                'allow',
+                'picture-in-picture; autoplay; fullscreen; encrypted-media; accelerometer; clipboard-write; gyroscope',
+            );
+            iframe.setAttribute('fetchpriority', 'high');
+            iframe.setAttribute('loading', 'eager');
+            iframe.src = targetUrl;
+            pipWindow.document.body.appendChild(iframe);
+
+            return pipWindow;
+        } catch (err) {
+            console.warn('Video Document PiP failed:', err);
+        }
+    }
+
+    if (typeof window.ItgVideoPip?.open === 'function') {
+        return ItgVideoPip.open();
+    }
 }
 window.__itgOpenVideoPip = openVideoPip;
 /**
