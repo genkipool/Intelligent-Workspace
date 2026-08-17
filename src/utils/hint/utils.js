@@ -163,9 +163,13 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
                 console.warn('Failed to append current video time:', e);
             }
 
+            const pausedVideos = [];
             document.querySelectorAll('video').forEach((v) => {
                 try {
-                    v.pause();
+                    if (!v.paused) {
+                        v.pause();
+                        pausedVideos.push(v);
+                    }
                 } catch {}
             });
 
@@ -183,6 +187,24 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
             pipWindow.document.body.style.position = 'relative';
             pipWindow.document.body.style.width = '100vw';
             pipWindow.document.body.style.height = '100vh';
+
+            const resumePausedVideos = () => {
+                pausedVideos.forEach((v) => {
+                    try {
+                        if (v.isConnected) {
+                            v.play().catch(() => {});
+                        }
+                    } catch {}
+                });
+                const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+                if (player && typeof player.playVideo === 'function') {
+                    try {
+                        player.playVideo();
+                    } catch {}
+                }
+            };
+            pipWindow.addEventListener('pagehide', resumePausedVideos, { once: true });
+            pipWindow.addEventListener('unload', resumePausedVideos, { once: true });
 
             await chrome.runtime.sendMessage({
                 action: 'prepareVideoUrlForPip',
