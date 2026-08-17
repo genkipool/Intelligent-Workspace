@@ -353,7 +353,6 @@ async function injectContentScriptsInAllTabs() {
         logMessage(`[Injector LOG] Found ${contentScripts.length} content script configurations in manifest.`);
 
         const tabs = await chrome.tabs.query({
-            status: 'complete',
             url: ['http://*/*', 'https://*/*', 'file://*/*'],
         });
 

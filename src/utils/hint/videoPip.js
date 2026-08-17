@@ -3477,12 +3477,26 @@ function itgSyncNativePipHookFlag() {
     } catch {}
 }
 
+function itgCleanupOldPipDom() {
+    try {
+        document.getElementById('itg-autopip-menu')?.remove();
+        document.getElementById('itg-autopip-menu-styles')?.remove();
+        document.getElementById('itg-pip-frame')?.remove();
+        document.getElementById('itg-pip-frame-styles')?.remove();
+        for (const btn of document.querySelectorAll('[data-itg-auto-pip-menu]')) {
+            delete btn.dataset.itgAutoPipMenu;
+        }
+    } catch {}
+}
+
 /**
  * The content scripts are injected again when the extension reloads, into tabs that
  * already have them, so this file runs twice in one document. Top-level bindings are
  * `var` for that reason.
  */
 if (window.top === window) {
+    itgCleanupOldPipDom();
+    itgLoadPipMessages(null, true);
     itgPreloadPipDims();
     itgListenForNativePipRequests();
     itgSyncNativePipHookFlag();

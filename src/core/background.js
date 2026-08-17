@@ -91,13 +91,9 @@ importScripts('/background/pomodoro.js');
     }
     await initializeExtensionStates();
 
-    // Inject content scripts if it's the first start of this session (e.g., when activating the extension)
-    const sessionData = await chrome.storage.session.get('contentScriptsInjected');
-    if (!sessionData.contentScriptsInjected) {
-        logMessage('[Service Worker Startup] First run this session. Injecting content scripts.');
-        await injectContentScriptsInAllTabs();
-        await chrome.storage.session.set({ contentScriptsInjected: true });
-    }
+    // Inject content scripts into open tabs upon reload / startup so changes apply immediately without manual refresh
+    logMessage('[Service Worker Startup] Injecting content scripts into open tabs.');
+    await injectContentScriptsInAllTabs();
 
     logMessage('[Service Worker Startup] Initialization complete.');
 })();
