@@ -4420,10 +4420,21 @@ IMPORTANT RULES:
                     this.close();
                 } else if (type === 'pip-tab') {
                     const url = li.dataset.url;
-                    const tabId = parseInt(li.dataset.tabId);
-                    const windowId = parseInt(li.dataset.windowId);
-                    const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-                    if (!isYouTube && 'documentPictureInPicture' in window) {
+                    const tabId = li.dataset.tabId ? parseInt(li.dataset.tabId) : null;
+                    const windowId = li.dataset.windowId ? parseInt(li.dataset.windowId) : null;
+                    const isVideoSite =
+                        url && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('tiktok.com'));
+                    if (isVideoSite && tabId && windowId) {
+                        chrome.runtime.sendMessage({
+                            action: 'openVideoPipWindow',
+                            tabId: tabId,
+                            windowId: windowId,
+                            url: url,
+                        });
+                        this.close();
+                        return;
+                    }
+                    if (!isVideoSite && 'documentPictureInPicture' in window) {
                         try {
                             if (window.documentPictureInPicture.window) {
                                 window.documentPictureInPicture.window.close();

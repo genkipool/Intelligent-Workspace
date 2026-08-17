@@ -239,8 +239,22 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
     const originalWindowId = msgWinId || sender?.tab?.windowId;
     const originalTabId = msgTabId || sender?.tab?.id;
 
-    const isYouTube = url && (url.includes('youtube.com') || url.includes('youtu.be'));
-    const execTabId = isYouTube ? tabId : originalTabId;
+    const isVideoSite = url && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('tiktok.com'));
+    if (isVideoSite && tabId && windowId) {
+        return handleOpenVideoPipWindow(
+            {
+                tabId,
+                windowId,
+                url,
+                originalTabId,
+                originalWindowId,
+            },
+            sender,
+            sendResponse,
+        );
+    }
+
+    const execTabId = originalTabId;
 
     const { promise: pipOpenedPromise, listener: messageListener } = createPipListenerPair(
         'ITG_PIP_STARTED',
@@ -248,12 +262,6 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
     );
 
     try {
-        if (isYouTube) {
-            // Synchronously schedule tab activation and script execution to preserve user gesture
-            chrome.windows.update(windowId, { focused: true });
-            chrome.tabs.update(tabId, { active: true });
-        }
-
         chrome.scripting.executeScript({
             target: { tabId: execTabId },
             injectImmediately: true,
@@ -396,9 +404,6 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
         sendResponse({ success: false });
     } finally {
         chrome.runtime.onMessage.removeListener(messageListener);
-        if (isYouTube) {
-            await restoreOriginalFocus(originalWindowId, originalTabId);
-        }
     }
 }
 
