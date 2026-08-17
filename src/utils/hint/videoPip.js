@@ -1565,11 +1565,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     /**
-     * The size menu.
-     *
-     * A floating player cannot be made full screen: the Fullscreen API does not exist
-     * inside a document picture-in-picture window, and the window itself is capped by
-     * the browser — asking for the whole screen gets a smaller window back. So rather
+     * The size menu and dimensions configuration.
+     */
     async loadConfiguredSize() {
         try {
             const res = await chrome.storage.local.get(['itgPipConfiguredSize']);
@@ -1687,8 +1684,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                     currentDoc.querySelector('.itg-pip-size-wrap:hover') ||
                     currentDoc.querySelector('.itg-pip-size-menu:hover');
                 const isFocused =
-                    currentDoc.activeElement === this.sizeWidth ||
-                    currentDoc.activeElement === this.sizeHeight;
+                    currentDoc.activeElement === this.sizeWidth || currentDoc.activeElement === this.sizeHeight;
                 if (!isHovered && !isFocused) {
                     commitConfiguredSize();
                 }
