@@ -264,7 +264,7 @@ textarea::selection,
     position: absolute !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 48px !important;
+    bottom: 50px !important;
     top: auto !important;
     width: 100% !important;
     height: auto !important;
@@ -276,10 +276,11 @@ textarea::selection,
     justify-content: flex-end !important;
     align-items: center !important;
     text-align: center !important;
+    padding: 8px 16px !important;
     box-sizing: border-box !important;
 }
 .itg-pip-root[data-active='true'] .itg-pip-captions {
-    bottom: 64px !important;
+    bottom: 68px !important;
 }
 .itg-pip-captions .caption-window,
 .itg-pip-captions .ytp-caption-window-bottom,
@@ -292,10 +293,10 @@ textarea::selection,
     transform: none !important;
     margin: 0 auto !important;
     text-align: center !important;
-    max-width: min(88%, 560px) !important;
+    max-width: min(88%, 580px) !important;
     width: auto !important;
     background: transparent !important;
-    padding: 0 !important;
+    padding: 4px 8px !important;
     pointer-events: none !important;
     display: inline-block !important;
     box-sizing: border-box !important;
@@ -313,16 +314,16 @@ textarea::selection,
     text-align: center !important;
     background: transparent !important;
     white-space: normal !important;
-    line-height: 1.4 !important;
+    line-height: 1.55 !important;
 }
 .itg-pip-captions .ytp-caption-segment {
     font-size: 19px !important;
     font-weight: 500 !important;
-    line-height: 1.4 !important;
+    line-height: 1.55 !important;
     color: #ffffff !important;
     background: rgba(8, 8, 8, 0.85) !important;
-    padding: 3px 8px !important;
-    border-radius: 4px !important;
+    padding: 4px 10px !important;
+    border-radius: 5px !important;
     box-decoration-break: clone !important;
     -webkit-box-decoration-break: clone !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95) !important;
