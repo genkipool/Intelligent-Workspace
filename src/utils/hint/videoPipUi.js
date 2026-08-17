@@ -264,28 +264,26 @@ textarea::selection,
     position: absolute !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 50px !important;
+    bottom: 48px !important;
     top: auto !important;
     width: 100% !important;
     height: auto !important;
     z-index: 8 !important;
     pointer-events: none !important;
     overflow: visible !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
+    display: block !important;
     text-align: center !important;
-    padding: 8px 16px !important;
+    padding: 0 16px !important;
     box-sizing: border-box !important;
 }
 .itg-pip-root[data-active='true'] .itg-pip-captions {
-    bottom: 68px !important;
+    bottom: 66px !important;
 }
 .itg-pip-captions .caption-window,
 .itg-pip-captions .ytp-caption-window-bottom,
-.itg-pip-captions .ytp-caption-window-rollup {
-    position: relative !important;
+.itg-pip-captions .ytp-caption-window-rollup,
+.itg-pip-captions div[class*='caption-window'] {
+    position: static !important;
     left: auto !important;
     right: auto !important;
     top: auto !important;
@@ -293,19 +291,22 @@ textarea::selection,
     transform: none !important;
     margin: 0 auto !important;
     text-align: center !important;
-    max-width: min(88%, 580px) !important;
+    max-width: min(90%, 600px) !important;
     width: auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     background: transparent !important;
-    padding: 4px 8px !important;
+    border: none !important;
+    padding: 0 !important;
     pointer-events: none !important;
-    display: inline-block !important;
+    display: block !important;
     box-sizing: border-box !important;
-    white-space: normal !important;
-    overflow-wrap: break-word !important;
-    word-break: normal !important;
 }
 .itg-pip-captions .caption-window:empty,
 .itg-pip-captions .caption-window[aria-hidden='true'],
+.itg-pip-captions .caption-window[style*='display: none'],
+.itg-pip-captions .caption-window[style*='visibility: hidden'],
 .itg-pip-captions .captions-text:empty {
     display: none !important;
 }
@@ -313,22 +314,32 @@ textarea::selection,
     display: inline-block !important;
     text-align: center !important;
     background: transparent !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
     white-space: normal !important;
-    line-height: 1.55 !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.45 !important;
 }
 .itg-pip-captions .ytp-caption-segment {
-    font-size: 19px !important;
+    font-size: 18px !important;
     font-weight: 500 !important;
-    line-height: 1.55 !important;
+    line-height: 1.45 !important;
     color: #ffffff !important;
-    background: rgba(8, 8, 8, 0.85) !important;
-    padding: 4px 10px !important;
-    border-radius: 5px !important;
+    background-color: rgba(10, 10, 10, 0.85) !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
     box-decoration-break: clone !important;
     -webkit-box-decoration-break: clone !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95) !important;
     white-space: normal !important;
     display: inline !important;
+    box-sizing: border-box !important;
+}
+.itg-pip-captions br {
+    display: block !important;
+    content: '' !important;
+    margin-top: 4px !important;
 }
 
 /* Compact, stylish YouTube bezel overlay (gear/subtitles/volume animations) */
