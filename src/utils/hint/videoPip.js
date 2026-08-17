@@ -1575,8 +1575,12 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         this.sizeMaxButton.addEventListener('click', (e) => {
             e.stopPropagation();
+            this.wake();
             this.applyMaxSize();
         });
+
+        this.sizeMenu.addEventListener('mouseenter', () => this.wake());
+        this.sizeMenu.addEventListener('mouseleave', () => this.wake());
 
         // Clamped while typing, not only when applied: a field that accepts 9999 and
         // silently does something else is worse than one that will not take it.
@@ -1584,12 +1588,19 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             [this.sizeWidth, 'w'],
             [this.sizeHeight, 'h'],
         ]) {
+            field.addEventListener('focus', () => this.wake());
+            field.addEventListener('blur', () => this.wake());
             field.addEventListener('input', () => {
+                this.wake();
                 const limit = this.maxSize?.[axis];
                 if (limit && Number(field.value) > limit) field.value = String(limit);
             });
-            field.addEventListener('change', () => this.applySize(+this.sizeWidth.value, +this.sizeHeight.value));
+            field.addEventListener('change', () => {
+                this.wake();
+                this.applySize(+this.sizeWidth.value, +this.sizeHeight.value);
+            });
             field.addEventListener('keydown', (e) => {
+                this.wake();
                 if (e.key === 'Enter') this.applySize(+this.sizeWidth.value, +this.sizeHeight.value);
                 e.stopPropagation();
             });
@@ -2419,6 +2430,34 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
     sleep() {
         if (this.video.paused || this.dragging) return;
+        const doc = this.pipWindow?.document;
+        if (!doc) return;
+
+        const active = doc.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) {
+            return;
+        }
+
+        const isHovered = (sel) => {
+            try {
+                return !!doc.querySelector(sel);
+            } catch {
+                return false;
+            }
+        };
+
+        if (
+            isHovered('.itg-pip-size-wrap:hover') ||
+            isHovered('.itg-pip-size-menu:hover') ||
+            isHovered('.itg-pip-rate-wrap:hover') ||
+            isHovered('.itg-pip-rate-menu:hover') ||
+            isHovered('.itg-pip-more-wrap:hover') ||
+            isHovered('.itg-pip-more-menu:hover') ||
+            isHovered('.itg-pip-bar:hover')
+        ) {
+            return;
+        }
+
         this.root.dataset.active = 'false';
     }
 };

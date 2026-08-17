@@ -114,7 +114,13 @@ html, body {
     transition: opacity 0.2s ease, transform 0.2s ease;
     pointer-events: none;
 }
-.itg-pip-root[data-active='true'] .itg-pip-bar { opacity: 1; transform: none; pointer-events: auto; }
+.itg-pip-root[data-active='true'] .itg-pip-bar,
+.itg-pip-root .itg-pip-bar:hover,
+.itg-pip-root .itg-pip-bar:focus-within {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+}
 
 .itg-pip-progress { padding: 6px 4px; cursor: pointer; touch-action: none; }
 .itg-pip-progress-track { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.28); }
@@ -181,17 +187,21 @@ html, body {
 
 /* Size menu, opened by hovering the size button. */
 .itg-pip-size-wrap { position: relative; display: inline-flex; align-items: center; }
-.itg-pip-size-wrap::after { content: ''; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 12px; }
+.itg-pip-size-wrap::after { content: ''; position: absolute; left: -10px; right: -10px; bottom: 100%; height: 16px; }
 .itg-pip-size-menu {
     position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
     width: max-content; min-width: 216px; max-width: calc(100vw - 16px); padding: 8px;
     border-radius: 8px; background: rgba(20, 20, 20, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     opacity: 0; pointer-events: none; transform: translateY(4px);
     transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 20;
 }
 .itg-pip-size-wrap:hover .itg-pip-size-menu,
-.itg-pip-size-menu:hover { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-size-wrap:focus-within .itg-pip-size-menu,
+.itg-pip-size-menu:hover,
+.itg-pip-size-menu:focus-within { opacity: 1; pointer-events: auto; transform: translateY(0); }
 .itg-pip-size-max {
     display: block; width: 100%; margin-bottom: 6px; padding: 5px 8px;
     border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 6px;
@@ -210,6 +220,10 @@ html, body {
     width: 100%; padding: 5px 6px; border-radius: 6px; color: #fff; font: inherit; font-size: 12px;
     border: 1px solid var(--interactive-color, rgba(255, 255, 255, 0.25));
     background: rgba(255, 255, 255, 0.08); outline: none;
+}
+.itg-pip-size-fields input:focus {
+    border-color: var(--interactive-color, #fff);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #fff) 35%, transparent);
 }
 .itg-pip-size-note { display: block; margin-top: 6px; font-size: 10px; color: rgba(255, 255, 255, 0.6); }
 /* The browser's own spinner cannot be tinted, so it is hidden and the arrows come
