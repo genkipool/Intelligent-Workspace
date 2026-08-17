@@ -1605,14 +1605,20 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             if (res?.itgPipConfiguredSize) {
                 this.configuredSize = res.itgPipConfiguredSize;
             } else {
+                const w = this.pipWindow?.innerWidth || 800;
+                const h = this.pipWindow?.innerHeight || 450;
                 this.configuredSize = {
-                    mode: 'max',
-                    w: this.pipWindow?.screen.availWidth || 800,
-                    h: this.pipWindow?.screen.availHeight || 600,
+                    mode: this.maxSize ? 'max' : 'custom',
+                    w: this.maxSize?.w || w,
+                    h: this.maxSize?.h || h,
                 };
             }
         } catch {
-            this.configuredSize = { mode: 'max', w: 800, h: 600 };
+            this.configuredSize = {
+                mode: 'custom',
+                w: this.pipWindow?.innerWidth || 800,
+                h: this.pipWindow?.innerHeight || 450,
+            };
         }
     }
 
@@ -1635,18 +1641,24 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         if (!this.sizeMaxButton || !this.sizeWidth || !this.sizeHeight) return;
 
-        const config = this.configuredSize || { mode: 'max', w: 800, h: 600 };
-        const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth || 1920;
-        const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight || 1080;
+        const win = this.pipWindow;
+        const curW = win?.innerWidth || 800;
+        const curH = win?.innerHeight || 450;
+        const config = this.configuredSize || { mode: 'custom', w: curW, h: curH };
+        const max = this.maxSize;
 
-        if (config.mode === 'max') {
+        if (config.mode === 'max' && max) {
             this.sizeMaxButton.classList.add('is-on');
-            this.sizeWidth.value = String(maxW);
-            this.sizeHeight.value = String(maxH);
+            this.sizeWidth.value = String(max.w);
+            this.sizeHeight.value = String(max.h);
+        } else if (config.mode === 'max') {
+            this.sizeMaxButton.classList.add('is-on');
+            this.sizeWidth.value = String(config.w || curW);
+            this.sizeHeight.value = String(config.h || curH);
         } else {
             this.sizeMaxButton.classList.remove('is-on');
-            this.sizeWidth.value = String(config.w || this.pipWindow.innerWidth);
-            this.sizeHeight.value = String(config.h || this.pipWindow.innerHeight);
+            this.sizeWidth.value = String(config.w || curW);
+            this.sizeHeight.value = String(config.h || curH);
         }
 
         // Toggle Maximum mode button
@@ -1658,14 +1670,16 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             if (!this.configuredSize) this.configuredSize = {};
             if (isNowMax) {
                 this.configuredSize.mode = 'max';
-                const curMaxW = this.maxSize?.w || this.pipWindow.screen.availWidth || 1920;
-                const curMaxH = this.maxSize?.h || this.pipWindow.screen.availHeight || 1080;
-                this.sizeWidth.value = String(curMaxW);
-                this.sizeHeight.value = String(curMaxH);
+                if (this.maxSize) {
+                    this.sizeWidth.value = String(this.maxSize.w);
+                    this.sizeHeight.value = String(this.maxSize.h);
+                    this.configuredSize.w = this.maxSize.w;
+                    this.configuredSize.h = this.maxSize.h;
+                }
             } else {
                 this.configuredSize.mode = 'custom';
-                this.configuredSize.w = Math.round(+this.sizeWidth.value) || this.pipWindow.innerWidth;
-                this.configuredSize.h = Math.round(+this.sizeHeight.value) || this.pipWindow.innerHeight;
+                this.configuredSize.w = Math.round(+this.sizeWidth.value) || win?.innerWidth || 800;
+                this.configuredSize.h = Math.round(+this.sizeHeight.value) || win?.innerHeight || 450;
             }
             this.saveConfiguredSize();
             this.renderSize();
@@ -1813,15 +1827,16 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     async toggleFullscreenSize() {
         const win = this.pipWindow;
         if (!win || win.closed) return;
-        const config = this.configuredSize || { mode: 'max' };
-        const maxW = this.maxSize?.w || win.screen.availWidth || 1920;
-        const maxH = this.maxSize?.h || win.screen.availHeight || 1080;
-        const targetW = config.mode === 'max' ? maxW : +config.w || 800;
-        const targetH = config.mode === 'max' ? maxH : +config.h || 600;
+        const config = this.configuredSize || { mode: 'custom' };
+        const max = this.maxSize;
+        const curW = win.innerWidth;
+        const curH = win.innerHeight;
+        const targetW = config.mode === 'max' && max ? max.w : +config.w || curW;
+        const targetH = config.mode === 'max' && max ? max.h : +config.h || curH;
 
         const isAtTarget =
-            config.mode === 'max'
-                ? win.innerWidth >= targetW - 20 && win.innerHeight >= targetH - 20
+            config.mode === 'max' && max
+                ? win.innerWidth >= max.w - 20 && win.innerHeight >= max.h - 20
                 : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
 
         if (isAtTarget) {
@@ -1849,7 +1864,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const win = this.pipWindow;
         const max = this.maxSize;
         const doc = win?.document;
-        const config = this.configuredSize || { mode: 'max' };
+        const curW = win.innerWidth;
+        const curH = win.innerHeight;
+        const config = this.configuredSize || { mode: 'custom', w: curW, h: curH };
 
         const isEditing =
             doc?.activeElement === this.sizeWidth ||
@@ -1858,24 +1875,26 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             doc?.querySelector('.itg-pip-size-menu:hover');
 
         if (!isEditing) {
-            if (config.mode === 'max') {
+            if (config.mode === 'max' && max) {
                 this.sizeMaxButton.classList.add('is-on');
-                const maxW = max?.w || win.screen.availWidth || 1920;
-                const maxH = max?.h || win.screen.availHeight || 1080;
-                this.sizeWidth.value = String(maxW);
-                this.sizeHeight.value = String(maxH);
+                this.sizeWidth.value = String(max.w);
+                this.sizeHeight.value = String(max.h);
+            } else if (config.mode === 'max') {
+                this.sizeMaxButton.classList.add('is-on');
+                this.sizeWidth.value = String(config.w || curW);
+                this.sizeHeight.value = String(config.h || curH);
             } else {
                 this.sizeMaxButton.classList.remove('is-on');
-                this.sizeWidth.value = String(config.w || win.innerWidth);
-                this.sizeHeight.value = String(config.h || win.innerHeight);
+                this.sizeWidth.value = String(config.w || curW);
+                this.sizeHeight.value = String(config.h || curH);
             }
         }
 
         const moreSize = doc?.querySelector('.itg-pip-more-item[data-act="sizemax"]');
         const moreSizeLabel = moreSize?.querySelector('.itg-pip-more-label');
 
-        const targetW = config.mode === 'max' ? max?.w || win.screen.availWidth || 1920 : +config.w || 800;
-        const targetH = config.mode === 'max' ? max?.h || win.screen.availHeight || 1080 : +config.h || 600;
+        const targetW = config.mode === 'max' && max ? max.w : +config.w || curW;
+        const targetH = config.mode === 'max' && max ? max.h : +config.h || curH;
 
         if (max) {
             this.sizeWidth.max = String(max.w);
@@ -1895,8 +1914,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
 
         const isAtTarget =
-            config.mode === 'max'
-                ? win.innerWidth >= targetW - 20 && win.innerHeight >= targetH - 20
+            config.mode === 'max' && max
+                ? win.innerWidth >= max.w - 20 && win.innerHeight >= max.h - 20
                 : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
 
         if (moreSize) moreSize.classList.toggle('is-on', isAtTarget);
