@@ -262,24 +262,26 @@ textarea::selection,
 /* YouTube's own caption container, moved in beside the video. */
 .itg-pip-captions {
     position: absolute !important;
-    inset: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 48px !important;
+    top: auto !important;
+    width: 100% !important;
+    height: auto !important;
     z-index: 8 !important;
     pointer-events: none !important;
-    overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    padding-bottom: 48px !important;
+    overflow: visible !important;
+    display: block !important;
+    text-align: center !important;
     box-sizing: border-box !important;
 }
 .itg-pip-root[data-active='true'] .itg-pip-captions {
-    padding-bottom: 64px !important;
+    bottom: 64px !important;
 }
 .itg-pip-captions .caption-window,
 .itg-pip-captions .ytp-caption-window-bottom,
 .itg-pip-captions .ytp-caption-window-rollup {
-    position: relative !important;
+    position: static !important;
     left: auto !important;
     right: auto !important;
     top: auto !important;
@@ -287,39 +289,61 @@ textarea::selection,
     transform: none !important;
     margin: 0 auto 4px auto !important;
     text-align: center !important;
-    max-width: 90% !important;
-    width: auto !important;
+    max-width: 92% !important;
+    width: fit-content !important;
     height: auto !important;
+    background: rgba(0, 0, 0, 0.75) !important;
+    border-radius: 6px !important;
+    padding: 5px 12px !important;
     pointer-events: none !important;
-    display: block !important;
+    display: inline-block !important;
     box-sizing: border-box !important;
 }
+.itg-pip-captions .caption-window:empty,
+.itg-pip-captions .caption-window[aria-hidden='true'],
+.itg-pip-captions .caption-window:not(:last-child) {
+    display: none !important;
+}
 .itg-pip-captions .captions-text {
-    display: inline-block !important;
+    display: inline !important;
     text-align: center !important;
+    background: transparent !important;
 }
 .itg-pip-captions .ytp-caption-segment {
-    font-size: 14px !important;
-    line-height: 1.35 !important;
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.9) !important;
+    font-size: 19px !important;
+    font-weight: 500 !important;
+    line-height: 1.4 !important;
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95) !important;
+    background: transparent !important;
     white-space: pre-wrap !important;
+    display: inline !important;
 }
 
 /* Hide bezel animations (gear icons, speed icons, caption toast animations) inside PiP window */
 .itg-pip-root .ytp-bezel,
+.itg-pip-root .ytp-bezel-icon,
 .itg-pip-root .ytp-bezel-text,
+.itg-pip-root .ytp-bezel-text-wrapper,
 .itg-pip-root .ytp-settings-menu,
 .itg-pip-root .ytp-popup,
+.itg-pip-root .ytp-panel-menu,
+.itg-pip-root .ytp-tooltip,
+.itg-pip-root .ytp-spinner,
+.itg-pip-root div[class*='ytp-bezel'],
 .itg-pip-holder .ytp-bezel,
+.itg-pip-holder .ytp-bezel-icon,
 .itg-pip-holder .ytp-bezel-text,
 .itg-pip-holder .ytp-settings-menu,
 .itg-pip-captions .ytp-bezel,
+.itg-pip-captions .ytp-bezel-icon,
 .itg-pip-captions .ytp-bezel-text,
 .itg-pip-captions .ytp-settings-menu {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
+    transform: scale(0) !important;
 }
 
 /* The slider stays out of the way until the volume button is reached. */

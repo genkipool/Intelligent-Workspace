@@ -1949,6 +1949,24 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * the language and styling the user already chose are the ones that show up.
      */
     toggleCaptions() {
+        const suppress = () => {
+            try {
+                document
+                    .querySelectorAll('.ytp-bezel, .ytp-bezel-icon, .ytp-bezel-text, .ytp-bezel-text-wrapper')
+                    .forEach((el) => {
+                        el.style.display = 'none';
+                        el.style.opacity = '0';
+                    });
+                this.pipWindow?.document
+                    ?.querySelectorAll('.ytp-bezel, .ytp-bezel-icon, .ytp-bezel-text, .ytp-bezel-text-wrapper')
+                    .forEach((el) => {
+                        el.style.display = 'none';
+                        el.style.opacity = '0';
+                    });
+            } catch {}
+        };
+        suppress();
+
         const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
         if (player && typeof player.toggleSubtitles === 'function') {
             try {
@@ -1961,7 +1979,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             const control = this.captionsControl();
             if (control) control.click();
         }
+        suppress();
         setTimeout(() => {
+            suppress();
             this.adoptCaptions();
             this.renderCaptions();
         }, 150);
