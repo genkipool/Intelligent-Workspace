@@ -5473,6 +5473,15 @@
     "errorTriggerTaken": {
         "message": "Este activador ya está en uso por otro comando."
     },
+    "errorTriggerTakenBy": {
+        "message": "Este activador ya está en uso por: $1",
+        "description": "Notificación cuando un atajo ya está en uso por otro comando específico",
+        "placeholders": {
+            "command": {
+                "content": "$1"
+            }
+        }
+    },
     "errorSnippetVarNotFound": {
         "message": "Alguna palabra de variable no existe en el texto a expandir."
     },

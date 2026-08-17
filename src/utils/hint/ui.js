@@ -444,6 +444,7 @@ var HelpModal = class HelpModal {
                         }
                         if (e.key === 'Backspace' || e.key === 'Delete') {
                             inputEl.value = '';
+                            inputEl.classList.remove('itg-input-error');
                             chrome.runtime.sendMessage({
                                 action: 'setLinkPreviewTriggerKey',
                                 triggerKey: '',
@@ -452,6 +453,23 @@ var HelpModal = class HelpModal {
                         }
                         let keyVal = e.key.toLowerCase();
                         if (keyVal === ' ') keyVal = 'space';
+                        if (
+                            window.HintCommon &&
+                            window.HintCommon.isKeyInUse &&
+                            window.HintCommon.isKeyInUse(keyVal, 'mapping', null, {
+                                checkMapping: (k) => {
+                                    for (const catKey in window.HintCommon.BUILT_IN_COMMANDS) {
+                                        if (catKey === 'categoryOmnibarPrefixes') continue;
+                                        if (window.HintCommon.BUILT_IN_COMMANDS[catKey][k]) return true;
+                                    }
+                                    return false;
+                                },
+                            })
+                        ) {
+                            inputEl.classList.add('itg-input-error');
+                            return;
+                        }
+                        inputEl.classList.remove('itg-input-error');
                         inputEl.value = keyVal;
                         chrome.runtime.sendMessage({
                             action: 'setLinkPreviewTriggerKey',
@@ -459,7 +477,7 @@ var HelpModal = class HelpModal {
                         });
                     });
                     inputEl.addEventListener('blur', () => {
-                        inputEl.value = inputEl.value.trim().toLowerCase();
+                        inputEl.classList.remove('itg-input-error');
                     });
                     tdInput.appendChild(inputEl);
                     const tdDesc = h(

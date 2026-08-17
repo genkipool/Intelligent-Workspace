@@ -14,6 +14,7 @@
     import BlacklistSection from './components/BlacklistSection.svelte';
     import AutoPipSection from './components/AutoPipSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
+    import Notification from '../../components/common/Notification.svelte';
 
     // Link preview on/off. The same flag the keyboard shortcut and the context menu
     // toggle, so all three always agree.
@@ -57,6 +58,7 @@
 </script>
 
 <div class="container option-page">
+    <Notification />
     <header class="header">
         <h1 data-i18n="customizeCommandsTitle"></h1>
         <button

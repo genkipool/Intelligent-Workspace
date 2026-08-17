@@ -394,6 +394,10 @@ const MESSAGE_HANDLERS = {
         handleOpenVideoPipWindow(message, sender, sendResponse);
         return true;
     },
+    playYouTubeVideoInPage: (message, sender, sendResponse) => {
+        handlePlayYouTubeVideoInPage(message, sender, sendResponse);
+        return true;
+    },
     validateApiKey: (message, sender, sendResponse) => {
         handleValidateApiKey(message, sendResponse);
         return true;

@@ -138,41 +138,69 @@ export async function initCustomizeHints() {
         if (!options.skipRender) renderBuiltInCommands();
     };
 
-    // --- VALIDATION ---
+    // --- VALIDATION & CONFLICT INFO ---
+    const getKeyConflictInfo = (keys, type, excludingKey, category = 'global') => {
+        if (!keys) return null;
+        const k = keys.trim().toLowerCase();
+        const ex = excludingKey ? excludingKey.trim().toLowerCase() : null;
+
+        if (category === 'omnibar') {
+            for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS.categoryOmnibarPrefixes)) {
+                const currentKey = (customShortcutsOverrides[descKey] || defKey).toLowerCase();
+                if (currentKey === k && currentKey !== ex) {
+                    return chrome.i18n.getMessage(descKey) || defKey;
+                }
+            }
+            return null;
+        }
+
+        // 1. Check built-in commands
+        for (const catKey in COMMON_COMMANDS) {
+            if (catKey === 'categoryOmnibarPrefixes') continue;
+            for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS[catKey])) {
+                const currentKey = (customShortcutsOverrides[descKey] || defKey).toLowerCase();
+                if (currentKey === k && currentKey !== ex) {
+                    return chrome.i18n.getMessage(descKey) || defKey;
+                }
+            }
+        }
+
+        // 2. Check link preview trigger key
+        if (
+            category !== 'triggerKey' &&
+            linkPreviewTriggerKey &&
+            linkPreviewTriggerKey.toLowerCase() === k &&
+            linkPreviewTriggerKey.toLowerCase() !== ex
+        ) {
+            return chrome.i18n.getMessage('previewTriggerKeyLabel') || 'Link preview';
+        }
+
+        // 3. Check custom site commands
+        if (customCommands) {
+            const foundCmd = customCommands.find(
+                (cmd) => cmd.keys.toLowerCase() === k && cmd.keys.toLowerCase() !== ex,
+            );
+            if (foundCmd) {
+                const title = foundCmd.description ? HintCommon.stripHtml(foundCmd.description) : foundCmd.url;
+                return title || foundCmd.keys;
+            }
+        }
+
+        // 4. Check snippets
+        if (snippets) {
+            const foundTrigger = Object.keys(snippets).find(
+                (trig) => trig.toLowerCase() === k && trig.toLowerCase() !== ex,
+            );
+            if (foundTrigger) {
+                return `Snippet (${foundTrigger})`;
+            }
+        }
+
+        return null;
+    };
+
     const isKeySequenceTaken = (keys, type, excludingKey, category = 'global') => {
-        const context = {
-            checkMapping: (k, ex) => {
-                // If we are validating an Omnibar prefix
-                if (category === 'omnibar') {
-                    // Validate ONLY against other Omnibar prefixes
-                    for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS.categoryOmnibarPrefixes)) {
-                        const currentKey = customShortcutsOverrides[descKey] || defKey;
-                        // Exact match (prefix or not, they are strings in an input)
-                        if (currentKey === k && currentKey !== ex) return true;
-                    }
-                    return false;
-                }
-
-                // If expansion is empty, remove the row entirely
-                // If validating global shortcuts (Mapping)
-                for (const catKey in COMMON_COMMANDS) {
-                    if (catKey === 'categoryOmnibarPrefixes') continue; // IGNORE Omnibar
-
-                    for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS[catKey])) {
-                        const currentKey = customShortcutsOverrides[descKey] || defKey;
-                        if (currentKey === k && currentKey !== ex) return true;
-                    }
-                }
-                return false;
-            },
-            customCommands: customCommands,
-            snippets: snippets,
-        };
-
-        // If it is Omnibar, we pass a dummy type or handle the logic above.
-        // HintCommon.isKeyInUse uses 'mapping' to activate checkMapping.
-        // We pass category within the context if necessary, but here we already filter it in checkMapping.
-        return HintCommon.isKeyInUse(keys, type, excludingKey, context);
+        return getKeyConflictInfo(keys, type, excludingKey, category) !== null;
     };
 
     // --- RENDERING ---
@@ -304,6 +332,23 @@ export async function initCustomizeHints() {
                         }
                     }
                     return true;
+                },
+                onError: (val) => {
+                    if (!val && type !== 'description') {
+                        showNotification('errorFieldRequired', true);
+                    } else if (type === 'keys' || type === 'builtin') {
+                        const oldKey = isCustom
+                            ? li.dataset.keys
+                            : customShortcutsOverrides[extraData.originalDesc] || extraData.originalKey;
+                        const isOmnibar = extraData.category === 'omnibar';
+                        const checkCat = isOmnibar ? 'omnibar' : 'global';
+                        const conflict = getKeyConflictInfo(val, 'mapping', oldKey, checkCat);
+                        if (conflict) {
+                            showNotification('errorTriggerTakenBy', true, [conflict]);
+                        } else {
+                            showNotification('errorTriggerTaken', true);
+                        }
+                    }
                 },
                 onSave: async (newVal) => {
                     // Built-in saving logic
@@ -714,6 +759,22 @@ export async function initCustomizeHints() {
                     }
                     return true;
                 },
+                onError: (val) => {
+                    if (type === 'trigger') {
+                        if (!val) {
+                            showNotification('errorFieldRequired', true);
+                        } else {
+                            const conflict = getKeyConflictInfo(val, 'snippet', li.dataset.trigger, 'snippet');
+                            if (conflict) {
+                                showNotification('errorTriggerTakenBy', true, [conflict]);
+                            } else {
+                                showNotification('errorTriggerTaken', true);
+                            }
+                        }
+                    } else if (type === 'expansion') {
+                        showNotification('errorVarWordNotFound', true);
+                    }
+                },
                 onSave: async (newVal) => {
                     const originalTrigger = li.dataset.trigger;
                     const newSnippets = { ...snippets };
@@ -892,13 +953,21 @@ export async function initCustomizeHints() {
                 domainSpan.addEventListener('blur', () => {
                     const currentDomain = item.dataset.domain;
                     const newDomain = domainSpan.textContent.trim().toLowerCase();
-                    if (newDomain && newDomain !== currentDomain) {
-                        item.dataset.domain = newDomain;
-                        chrome.runtime.sendMessage({
-                            action: 'editLinkPreviewBlacklist',
-                            oldDomain: currentDomain,
-                            newDomain: newDomain,
-                        });
+                    if (!newDomain) {
+                        domainSpan.textContent = currentDomain;
+                        showNotification('errorFieldRequired', true);
+                    } else if (newDomain !== currentDomain) {
+                        if (linkPreviewBlacklist.includes(newDomain)) {
+                            domainSpan.textContent = currentDomain;
+                            showNotification('errorTriggerTaken', true);
+                        } else {
+                            item.dataset.domain = newDomain;
+                            chrome.runtime.sendMessage({
+                                action: 'editLinkPreviewBlacklist',
+                                oldDomain: currentDomain,
+                                newDomain: newDomain,
+                            });
+                        }
                     } else {
                         domainSpan.textContent = currentDomain;
                     }
@@ -1038,6 +1107,8 @@ export async function initCustomizeHints() {
                             }
                             if (e.key === 'Backspace' || e.key === 'Delete') {
                                 input.value = '';
+                                input.classList.remove('error');
+                                linkPreviewTriggerKey = '';
                                 chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
                                 return;
                             }
@@ -1045,11 +1116,21 @@ export async function initCustomizeHints() {
                             let keyVal = e.key.toLowerCase();
                             if (keyVal === ' ') keyVal = 'space';
 
+                            const conflict = getKeyConflictInfo(keyVal, 'mapping', linkPreviewTriggerKey, 'triggerKey');
+                            if (conflict) {
+                                input.classList.add('error');
+                                showNotification('errorTriggerTakenBy', true, [conflict]);
+                                return;
+                            }
+
+                            input.classList.remove('error');
                             input.value = keyVal;
+                            linkPreviewTriggerKey = keyVal;
                             chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: keyVal });
                         });
                         input.addEventListener('blur', () => {
-                            input.value = input.value.trim().toLowerCase();
+                            input.classList.remove('error');
+                            input.value = linkPreviewTriggerKey;
                         });
 
                         const descContainer = document.createElement('div');
@@ -1119,10 +1200,18 @@ export async function initCustomizeHints() {
         const domainInput = document.getElementById('blacklist-domain');
         const tryAddDomain = () => {
             const domain = domainInput.value.trim().toLowerCase();
-            if (domain) {
-                chrome.runtime.sendMessage({ action: 'addLinkPreviewBlacklist', domain });
-                domainInput.value = '';
+            if (!domain) {
+                showNotification('errorFieldRequired', true);
+                return;
             }
+            if (linkPreviewBlacklist.includes(domain)) {
+                domainInput.classList.add('itg-input-error');
+                setTimeout(() => domainInput.classList.remove('itg-input-error'), 1500);
+                showNotification('errorTriggerTaken', true);
+                return;
+            }
+            chrome.runtime.sendMessage({ action: 'addLinkPreviewBlacklist', domain });
+            domainInput.value = '';
         };
 
         addBlacklistBtn.addEventListener('click', (e) => {
@@ -1151,10 +1240,17 @@ export async function initCustomizeHints() {
                 ? ''
                 : descInput.dataset.html || descInput.innerHTML;
 
-        if (isKeySequenceTaken(keys, 'mapping', null, 'global')) {
+        if (!keys || !url) {
+            showNotification('errorFieldRequired', true);
+            return;
+        }
+
+        const conflict = getKeyConflictInfo(keys, 'mapping', null, 'global');
+        if (conflict) {
             // Force global category for sites
             keysInput.classList.add('error');
             setTimeout(() => keysInput.classList.remove('error'), 1500);
+            showNotification('errorTriggerTakenBy', true, [conflict]);
             return;
         }
 
@@ -1273,6 +1369,14 @@ export async function initCustomizeHints() {
 
             if (!trigger || !expansion) {
                 showNotification('errorEmptyFields', true);
+                return;
+            }
+
+            const conflict = getKeyConflictInfo(trigger, 'snippet', null, 'snippet');
+            if (conflict) {
+                triggerInput.classList.add('itg-input-error');
+                setTimeout(() => triggerInput.classList.remove('itg-input-error'), 1500);
+                showNotification('errorTriggerTakenBy', true, [conflict]);
                 return;
             }
 
@@ -1429,6 +1533,13 @@ export async function initCustomizeHints() {
     // --- RESTORE ---
     restoreButton.addEventListener('click', async () => {
         await saveCustomShortcuts({});
+        linkPreviewTriggerKey = '';
+        await chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
+        const triggerInput = document.getElementById('preview-trigger-key');
+        if (triggerInput) {
+            triggerInput.value = '';
+            triggerInput.classList.remove('error');
+        }
         showNotification('restoredDefaults');
     });
 

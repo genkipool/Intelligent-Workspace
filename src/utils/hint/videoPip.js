@@ -781,16 +781,47 @@ async function itgSearchYouTube(query) {
 }
 
 /**
- * Opens a video the same way the side list does — by clicking a link in the page, so
- * YouTube routes it itself and the floating window survives the change.
+ * Opens a video seamlessly inside the current tab and PiP player without a full-page reload,
+ * keeping the floating Picture-in-Picture window alive and playing.
  */
-function itgOpenYouTubeVideo(videoId) {
-    const link = document.createElement('a');
-    link.href = `/watch?v=${encodeURIComponent(videoId)}`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => link.remove(), 0);
+function itgOpenYouTubeVideo(videoId, session = null) {
+    if (!videoId) return;
+
+    if (itgIsYouTube()) {
+        // 1. If an anchor with this video exists in the YouTube DOM, clicking it works via YouTube's native handlers
+        const inDomLink = document.querySelector(
+            `a[href*="${videoId}"], a[href*="/watch?v=${videoId}"], a[href*="/shorts/${videoId}"]`,
+        );
+        if (inDomLink) {
+            inDomLink.click();
+        } else {
+            // 2. Request background service worker to execute in MAIN world (bypassing YouTube's CSP)
+            try {
+                chrome.runtime.sendMessage({ action: 'playYouTubeVideoInPage', videoId }, () => {
+                    if (chrome.runtime.lastError) {
+                        console.warn('[ITG PiP] Background script error:', chrome.runtime.lastError);
+                    }
+                });
+            } catch (err) {
+                console.warn('[ITG PiP] sendMessage error:', err);
+            }
+        }
+
+        // Also trigger PiP UI update
+        if (session) {
+            setTimeout(() => {
+                session.comments = [];
+                if (session.sideTab === 'comments') {
+                    session.loadComments();
+                    session.renderSide();
+                }
+                session.refreshLists();
+            }, 600);
+        }
+    } else if (session) {
+        // Non-YouTube page: embed the YouTube video directly in the PiP window
+        session.embedYouTubeVideo(videoId);
+    }
 }
 
 /** Shorts has no side list: its next/previous are the feed's own arrows. */
@@ -2343,6 +2374,28 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.sideTab === 'search') this.renderSide();
     }
 
+    playYouTubeVideo(videoId) {
+        itgOpenYouTubeVideo(videoId, this);
+    }
+
+    embedYouTubeVideo(videoId) {
+        const doc = this.pipWindow?.document;
+        if (!doc || !this.holder) return;
+
+        this.unbindVideo?.();
+        this.removePlaceholder?.();
+
+        this.holder.innerHTML = '';
+        const iframe = doc.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&enablejsapi=1`;
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
+        iframe.allowFullscreen = true;
+        this.holder.appendChild(iframe);
+    }
+
     renderSearch() {
         const doc = this.pipWindow.document;
         this.sideBody.innerHTML = '';
@@ -2358,7 +2411,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.renderItems([
             {
                 category: itgPipMsg('pipResults', 'Results'),
-                items: this.searchResults.map((r) => ({ ...r, open: () => itgOpenYouTubeVideo(r.id) })),
+                items: this.searchResults.map((r) => ({ ...r, open: () => this.playYouTubeVideo(r.id) })),
             },
         ]);
     }

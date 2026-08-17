@@ -955,13 +955,24 @@ export async function exportHintsConfig(utils) {
             'userHintCommands', // Custom Sites: [{keys, url, description}, ...]
             'itg-user-snippets', // Snippets: { trigger: expansion, ... }
             'itg-ui-custom-shortcuts', // Built-in Overrides: { descriptionKey: customKey, ... }
+            'linkPreviewTriggerKey', // Link preview trigger key
+            'linkPreviewBlacklist', // Link preview blacklist
         ]);
 
         const sites = storageData['userHintCommands'] || [];
         const snippets = storageData['itg-user-snippets'] || {};
         const overrides = storageData['itg-ui-custom-shortcuts'] || {};
+        const linkPreviewTriggerKey = storageData['linkPreviewTriggerKey'] || '';
+        const linkPreviewBlacklist = storageData['linkPreviewBlacklist'] || [];
 
-        if (sites.length === 0 && Object.keys(snippets).length === 0 && Object.keys(overrides).length === 0) {
+        const hasCustomConfig =
+            sites.length > 0 ||
+            Object.keys(snippets).length > 0 ||
+            Object.keys(overrides).length > 0 ||
+            Boolean(linkPreviewTriggerKey) ||
+            (Array.isArray(linkPreviewBlacklist) && linkPreviewBlacklist.length > 0);
+
+        if (!hasCustomConfig) {
             utils.showNotification('noConfigToExport', true);
             return;
         }
@@ -974,6 +985,8 @@ export async function exportHintsConfig(utils) {
                 sites,
                 snippets,
                 overrides,
+                linkPreviewTriggerKey,
+                linkPreviewBlacklist,
             },
         };
 
@@ -1017,7 +1030,13 @@ export async function importHintsConfig(file, utils) {
                     throw new Error(msg);
                 }
 
-                const { sites = [], snippets = {}, overrides = {} } = json.data;
+                const {
+                    sites = [],
+                    snippets = {},
+                    overrides = {},
+                    linkPreviewTriggerKey = '',
+                    linkPreviewBlacklist = [],
+                } = json.data;
                 const errors = [];
 
                 if (Array.isArray(sites)) {
@@ -1069,14 +1088,32 @@ export async function importHintsConfig(file, utils) {
                 // Convert back to array
                 const mergedSites = Array.from(sitesMap.values());
 
-                await chrome.storage.sync.set({
+                const syncUpdates = {
                     userHintCommands: mergedSites, // Use the sanitized list
                     'itg-user-snippets': { ...(currentData['itg-user-snippets'] || {}), ...snippets },
                     'itg-ui-custom-shortcuts': { ...(currentData['itg-ui-custom-shortcuts'] || {}), ...overrides },
-                });
+                };
+
+                if (typeof linkPreviewTriggerKey === 'string') {
+                    syncUpdates.linkPreviewTriggerKey = linkPreviewTriggerKey.trim().toLowerCase();
+                    await chrome.storage.local.set({ linkPreviewTriggerKey: syncUpdates.linkPreviewTriggerKey });
+                }
+
+                if (Array.isArray(linkPreviewBlacklist)) {
+                    syncUpdates.linkPreviewBlacklist = linkPreviewBlacklist;
+                    await chrome.storage.local.set({ linkPreviewBlacklist });
+                }
+
+                await chrome.storage.sync.set(syncUpdates);
 
                 chrome.runtime.sendMessage({ action: 'hintCommandsUpdated' });
                 chrome.runtime.sendMessage({ action: 'snippetsUpdated' });
+                if (syncUpdates.linkPreviewTriggerKey !== undefined) {
+                    chrome.runtime.sendMessage({
+                        action: 'linkPreviewTriggerKeyUpdated',
+                        triggerKey: syncUpdates.linkPreviewTriggerKey,
+                    });
+                }
 
                 utils.showNotification('configImported', false);
                 resolve(true);

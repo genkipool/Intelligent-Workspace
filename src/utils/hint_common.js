@@ -1760,6 +1760,7 @@ var HintCommon = {
                       : true;
 
             if (!isValid || el.classList.contains('itg-input-error')) {
+                const hadError = hasChanged || el.classList.contains('itg-input-error') || !isValid;
                 // Restore original value
                 if (isInput) el.value = el.dataset.originalVal;
                 else {
@@ -1769,8 +1770,11 @@ var HintCommon = {
 
                 el.classList.remove('itg-input-error');
 
-                // Force visual re-validation (clear red)
-                if (options.onRestore) options.onRestore();
+                if (hadError && options.onError) {
+                    options.onError(currentPlainText);
+                } else if (options.onRestore) {
+                    options.onRestore();
+                }
             } else if (hasChanged) {
                 // Save
                 if (options.onSave) await options.onSave(valueToSave);

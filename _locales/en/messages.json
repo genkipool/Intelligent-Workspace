@@ -5415,6 +5415,15 @@
   "errorTriggerTaken": {
     "message": "This trigger is already in use by another command."
   },
+  "errorTriggerTakenBy": {
+    "message": "This trigger is already in use by: $1",
+    "description": "Notification when a shortcut/trigger key is already in use by another specific command",
+    "placeholders": {
+      "command": {
+        "content": "$1"
+      }
+    }
+  },
   "errorSnippetVarNotFound": {
     "message": "One or more variable words were not found in the expansion text."
   },

@@ -470,3 +470,87 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
         await restoreOriginalFocus(originalWindowId, originalTabId);
     }
 }
+
+async function handlePlayYouTubeVideoInPage(message, sender, sendResponse) {
+    const { videoId } = message;
+    const tabId = sender?.tab?.id;
+    if (!tabId || !videoId) {
+        sendResponse?.({ success: false });
+        return;
+    }
+
+    try {
+        await chrome.scripting.executeScript({
+            target: { tabId },
+            world: 'MAIN',
+            args: [videoId],
+            func: (id) => {
+                // 1. YouTube HTML5 Player API (direct in-page control)
+                const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+                if (player && typeof player.loadVideoById === 'function') {
+                    try {
+                        player.loadVideoById(id);
+                        const targetUrl = `/watch?v=${encodeURIComponent(id)}`;
+                        window.history.pushState(null, '', targetUrl);
+                        window.dispatchEvent(
+                            new CustomEvent('yt-navigate-finish', {
+                                detail: { endpoint: { watchEndpoint: { videoId: id } } },
+                            }),
+                        );
+                        return true;
+                    } catch (err) {
+                        console.warn('[ITG PiP MainWorld] player.loadVideoById failed:', err);
+                    }
+                }
+
+                // 2. YouTube Polymer SPA navigation
+                const ytdApp = document.querySelector('ytd-app');
+                if (ytdApp) {
+                    if (typeof ytdApp.navigate === 'function') {
+                        try {
+                            ytdApp.navigate({
+                                commandMetadata: {
+                                    webCommandMetadata: {
+                                        url: `/watch?v=${encodeURIComponent(id)}`,
+                                        webPageType: 'WEB_PAGE_TYPE_WATCH',
+                                    },
+                                },
+                                watchEndpoint: { videoId: id },
+                            });
+                            return true;
+                        } catch (err) {}
+                    }
+                    if (typeof ytdApp.fire === 'function') {
+                        try {
+                            ytdApp.fire('yt-navigate', {
+                                endpoint: {
+                                    commandMetadata: {
+                                        webCommandMetadata: {
+                                            url: `/watch?v=${encodeURIComponent(id)}`,
+                                            webPageType: 'WEB_PAGE_TYPE_WATCH',
+                                        },
+                                    },
+                                    watchEndpoint: { videoId: id },
+                                },
+                            });
+                            return true;
+                        } catch (err) {}
+                    }
+                }
+
+                // 3. Fallback: simulate click on existing video link
+                const existingLink = document.querySelector(`a[href*="${id}"]`);
+                if (existingLink) {
+                    existingLink.click();
+                    return true;
+                }
+
+                return false;
+            },
+        });
+        sendResponse?.({ success: true });
+    } catch (e) {
+        console.warn('Failed to execute playYouTubeVideoInPage:', e);
+        sendResponse?.({ success: false });
+    }
+}
