@@ -151,9 +151,14 @@ async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clust
     //    is going to be on, write the compact title straight away: writing the long
     //    one first only to rename it a moment later costs one extra tab-strip write
     //    per group and makes the names visibly flicker.
+    // Ensure 'grey' is strictly reserved for the misc group
+    const isMisc = groupType === 'misc' || groupKey === 'Misc';
+    const effectiveColor =
+        !isMisc && color === 'grey' ? getDeterministicColor(groupKey) : color || getDeterministicColor(groupKey);
+
     const uiTitle = buildUiTitleForNewGroup(groupType, groupKey, fullTitle, tabIds, willBeCompact);
     await executeWithRetries(
-        async () => await chrome.tabGroups.update(groupId, { title: uiTitle, color, collapsed: true }),
+        async () => await chrome.tabGroups.update(groupId, { title: uiTitle, color: effectiveColor, collapsed: true }),
         `create group ${groupId} (${uiTitle})`,
     );
 
@@ -478,7 +483,7 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
             } else {
                 const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
                 const extractedColor = await getFaviconColor(favIconUrl);
-                color = extractedColor || getDeterministicColor(domain);
+                color = extractedColor && extractedColor !== 'grey' ? extractedColor : getDeterministicColor(domain);
             }
             return {
                 plan: {
@@ -613,7 +618,7 @@ async function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, ex
             } else {
                 const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
                 const extractedColor = await getFaviconColor(favIconUrl);
-                color = extractedColor || getDeterministicColor(name);
+                color = extractedColor && extractedColor !== 'grey' ? extractedColor : getDeterministicColor(name);
             }
 
             return {

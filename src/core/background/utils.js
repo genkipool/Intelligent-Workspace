@@ -1585,15 +1585,18 @@ async function getFaviconColor(faviconUrl) {
     await ensureFaviconColorCacheLoaded();
     const cacheKey = faviconCacheKeyFor(faviconUrl);
     if (faviconColorCache.has(cacheKey)) {
-        return faviconColorCache.get(cacheKey);
+        const cached = faviconColorCache.get(cacheKey);
+        if (cached === 'grey') return null;
+        return cached;
     }
 
     // Remembering the failures too: without this every group creation paid the
     // fetch (and, on an unreachable favicon, the full 180 ms timeout) again.
     const remember = (color) => {
-        faviconColorCache.set(cacheKey, color);
+        const finalColor = color === 'grey' ? null : color;
+        faviconColorCache.set(cacheKey, finalColor);
         scheduleFaviconColorCacheSave();
-        return color;
+        return finalColor;
     };
 
     try {
@@ -1653,9 +1656,8 @@ async function getFaviconColor(faviconUrl) {
             }
         }
 
-        // If no significant chromatic pixels were found
+        // If no significant chromatic pixels were found, return null (grey is reserved strictly for misc)
         if (totalChromaticWeight < 0.5) {
-            if (votes.grey > 1) return remember('grey');
             return remember(null);
         }
 
@@ -1670,6 +1672,7 @@ async function getFaviconColor(faviconUrl) {
             }
         }
 
+        if (bestColor === 'grey') return remember(null);
         return remember(bestColor);
     } catch {
         return remember(null);
