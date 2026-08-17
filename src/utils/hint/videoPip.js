@@ -1993,34 +1993,6 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         };
         container.classList.add('itg-pip-captions');
         this.holder.appendChild(container);
-
-        const pruneCaptions = () => {
-            try {
-                const windows = container.querySelectorAll('.caption-window');
-                if (windows.length > 1) {
-                    for (let i = 0; i < windows.length - 1; i++) {
-                        windows[i].style.display = 'none';
-                    }
-                }
-                const activeWindow = windows[windows.length - 1];
-                if (activeWindow) {
-                    activeWindow.style.display = '';
-                    const segments = activeWindow.querySelectorAll('.ytp-caption-segment');
-                    if (segments.length > 6) {
-                        for (let i = 0; i < segments.length - 6; i++) {
-                            segments[i].style.display = 'none';
-                        }
-                        for (let i = Math.max(0, segments.length - 6); i < segments.length; i++) {
-                            segments[i].style.display = 'inline';
-                        }
-                    }
-                }
-            } catch {}
-        };
-        pruneCaptions();
-        const contentObserver = new MutationObserver(() => pruneCaptions());
-        contentObserver.observe(container, { childList: true, subtree: true, characterData: true });
-        this.disposers.push(() => contentObserver.disconnect());
     }
 
     /** Picks the caption layer up the moment the page finally creates it. */

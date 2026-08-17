@@ -284,7 +284,7 @@ textarea::selection,
 .itg-pip-captions .caption-window,
 .itg-pip-captions .ytp-caption-window-bottom,
 .itg-pip-captions .ytp-caption-window-rollup {
-    position: static !important;
+    position: relative !important;
     left: auto !important;
     right: auto !important;
     top: auto !important;
@@ -292,18 +292,12 @@ textarea::selection,
     transform: none !important;
     margin: 0 auto !important;
     text-align: center !important;
-    max-width: min(85%, 520px) !important;
+    max-width: min(88%, 560px) !important;
     width: auto !important;
-    max-height: 3.2em !important;
-    overflow: hidden !important;
-    background: rgba(0, 0, 0, 0.82) !important;
-    border-radius: 8px !important;
-    padding: 4px 12px !important;
+    background: transparent !important;
+    padding: 0 !important;
     pointer-events: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
+    display: inline-block !important;
     box-sizing: border-box !important;
     white-space: normal !important;
     overflow-wrap: break-word !important;
@@ -311,23 +305,27 @@ textarea::selection,
 }
 .itg-pip-captions .caption-window:empty,
 .itg-pip-captions .caption-window[aria-hidden='true'],
-.itg-pip-captions .caption-window:not(:last-child) {
+.itg-pip-captions .captions-text:empty {
     display: none !important;
 }
 .itg-pip-captions .captions-text {
-    display: block !important;
+    display: inline-block !important;
     text-align: center !important;
     background: transparent !important;
     white-space: normal !important;
-    line-height: 1.35 !important;
+    line-height: 1.4 !important;
 }
 .itg-pip-captions .ytp-caption-segment {
     font-size: 19px !important;
     font-weight: 500 !important;
-    line-height: 1.35 !important;
+    line-height: 1.4 !important;
     color: #ffffff !important;
+    background: rgba(8, 8, 8, 0.85) !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    box-decoration-break: clone !important;
+    -webkit-box-decoration-break: clone !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95) !important;
-    background: transparent !important;
     white-space: normal !important;
     display: inline !important;
 }
