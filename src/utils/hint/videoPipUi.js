@@ -179,7 +179,7 @@ html, body {
 .itg-pip-size-wrap::after { content: ''; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 12px; }
 .itg-pip-size-menu {
     position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
-    width: max-content; max-width: calc(100vw - 16px); padding: 8px;
+    width: max-content; min-width: 216px; max-width: calc(100vw - 16px); padding: 8px;
     border-radius: 8px; background: rgba(20, 20, 20, 0.96);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     opacity: 0; pointer-events: none; transform: translateY(4px);
@@ -199,9 +199,10 @@ html, body {
     border-color: var(--interactive-color, #ff4444);
 }
 .itg-pip-size-fields { display: flex; gap: 6px; }
-.itg-pip-size-fields label { display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: rgba(255, 255, 255, 0.65); }
+/* Each field takes half of whatever the menu is, so the pair fills it. */
+.itg-pip-size-fields label { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: rgba(255, 255, 255, 0.65); }
 .itg-pip-size-fields input {
-    width: 92px; padding: 5px 6px; border-radius: 6px; color: #fff; font: inherit; font-size: 12px;
+    width: 100%; padding: 5px 6px; border-radius: 6px; color: #fff; font: inherit; font-size: 12px;
     border: 1px solid var(--interactive-color, rgba(255, 255, 255, 0.25));
     background: rgba(255, 255, 255, 0.08); outline: none;
 }

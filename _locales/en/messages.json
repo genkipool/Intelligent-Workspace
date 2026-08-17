@@ -4178,13 +4178,28 @@
     "message": "Open automatically on scroll"
   },
   "autoPipOnScrollDesc": {
-    "message": "When scrolling leaves the playing video off screen. It goes back when the video is in view again."
+    "message": "When scrolling leaves the playing video off screen. Needs a recent click — pressing play yourself counts; otherwise it opens at your next click. It goes back when the video is in view again."
   },
   "autoPipOnHiddenTitle": {
     "message": "Open automatically when leaving the tab"
   },
   "autoPipOnHiddenDesc": {
     "message": "When switching to another tab or another program. It goes back on returning to the tab."
+  },
+  "pipFrameTitle": {
+    "message": "Set position and size"
+  },
+  "pipFrameDesc": {
+    "message": "Drag a rectangle where you want the floating window, at the size you want it."
+  },
+  "pipFrameHint": {
+    "message": "Move and resize the rectangle, then save. Its size is the size the floating window opens at."
+  },
+  "pipFrameSave": {
+    "message": "Save"
+  },
+  "pipFrameCancel": {
+    "message": "Cancel"
   },
   "autoPipOnScrollEnabledNotify": {
     "message": "Automatic Picture-in-Picture on scroll enabled"

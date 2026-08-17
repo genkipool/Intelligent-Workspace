@@ -25,11 +25,19 @@ var ITG_PIP_TARGET_ATTR = 'data-itg-pip-target';
 /** Offered in the speed menu, slowest first, so the strip reads left to right. */
 var ITG_PIP_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
-/** Last window size the user settled on, preloaded so opening stays synchronous. */
-var itgPipSavedDims = {};
+/**
+ * Last window size the user settled on, and the theme in force, preloaded so opening
+ * stays synchronous.
+ *
+ * Anchored to the window for the same reason the player object is: a second
+ * injection of this file re-runs these declarations, and a plain `var` would blank
+ * them while the loader that fills them only ever runs once — which is how a window
+ * reopened after an extension reload came back with none of the theme's colours.
+ */
+var itgPipSavedDims = window.__itgPipSavedDims ?? {};
+window.__itgPipSavedDims = itgPipSavedDims;
 
-/** The theme in force, preloaded for the same reason. */
-var itgPipTheme = null;
+var itgPipTheme = window.__itgPipTheme ?? null;
 
 /**
  * Document PiP needs the click's transient activation, and any `await` before
@@ -42,13 +50,15 @@ function itgPreloadPipDims() {
             ['lastNormalPipWidth', 'lastNormalPipHeight', 'lastShortPipWidth', 'lastShortPipHeight', 'activeTheme'],
             (stored) => {
                 if (!stored) return;
-                itgPipSavedDims = stored;
+                Object.assign(itgPipSavedDims, stored);
                 itgPipTheme = stored.activeTheme ?? null;
+                window.__itgPipTheme = itgPipTheme;
             },
         );
         chrome.storage.onChanged.addListener((changes, area) => {
             if (area !== 'local' || !changes.activeTheme) return;
             itgPipTheme = changes.activeTheme.newValue ?? null;
+            window.__itgPipTheme = itgPipTheme;
             ItgVideoPip.current?.applyTheme();
         });
     } catch {}
@@ -571,6 +581,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             disallowReturnToOpener: false,
         });
 
+        this.placeAtChosenFrame();
         this.buildDocument();
         if (this.mode === 'stream') {
             this.streamVideoIn(this.video);
@@ -597,8 +608,31 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         return this.pipWindow;
     }
 
+    /**
+     * Puts the window where the rectangle was left.
+     *
+     * Chrome ignores moveTo on a picture-in-picture window — measured: the same call
+     * that resized it left its position untouched — and places it where the user last
+     * dragged one instead. The request is made anyway, in case that changes, and
+     * costs nothing when it is refused.
+     */
+    placeAtChosenFrame() {
+        if (!itgPipFrame || !this.pipWindow) return;
+        const { screenLeft, screenTop } = itgPipFrame;
+        if (typeof screenLeft !== 'number' || typeof screenTop !== 'number') return;
+        try {
+            this.pipWindow.moveTo(Math.max(0, Math.round(screenLeft)), Math.max(0, Math.round(screenTop)));
+        } catch {
+            /* not allowed for this kind of window */
+        }
+    }
+
     /** Aspect ratio of the media, scaled to the last size the user chose. */
     preferredSize() {
+        // A shape the user drew is the most explicit answer there is.
+        if (itgPipFrame?.width && itgPipFrame?.height) {
+            return { width: itgPipFrame.width, height: itgPipFrame.height };
+        }
         const vw = this.video.videoWidth || this.video.clientWidth || 16;
         const vh = this.video.videoHeight || this.video.clientHeight || 9;
         const portrait = vh > vw;
@@ -994,6 +1028,19 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.applySpinnerArrows();
         } catch (e) {
             console.warn('[ITG PiP] Could not apply the theme:', e);
+        }
+
+        // Painted with nothing means the cache was lost somewhere along the way;
+        // read it again and paint properly rather than leave the window colourless.
+        if (!itgPipTheme) {
+            try {
+                chrome.storage.local.get(['activeTheme'], (res) => {
+                    if (!res?.activeTheme || itgPipTheme) return;
+                    itgPipTheme = res.activeTheme;
+                    window.__itgPipTheme = itgPipTheme;
+                    if (this.root) this.applyTheme();
+                });
+            } catch {}
         }
     }
 
@@ -2198,18 +2245,48 @@ var ITG_AUTO_PIP_MENU_STYLES = `
     border-color: var(--interactive-color, #ff4444);
     color: var(--text-color, #fff);
 }
-.itg-autopip-option strong { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.itg-autopip-option strong { display: block; font-weight: 600; }
 .itg-autopip-option small { display: block; opacity: 0.75; font-weight: 400; margin-top: 3px; }
-.itg-autopip-state {
-    margin-left: auto; padding: 1px 6px; border-radius: 999px;
-    border: 1px solid currentColor; font-size: 10px; font-weight: 700; text-transform: uppercase;
-    opacity: 0.7;
+
+/* --- The frame the window is cut to --- */
+.itg-pip-frame-backdrop {
+    position: fixed; inset: 0; z-index: 2147483646; background: rgba(0, 0, 0, 0.45);
+    font: 500 12px/1.35 'Roboto', system-ui, -apple-system, sans-serif;
 }
-.itg-autopip-option.is-on .itg-autopip-state {
+.itg-pip-frame {
+    position: absolute; box-sizing: border-box; cursor: move;
+    border: 2px solid var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 14%, transparent);
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.12);
+}
+.itg-pip-frame-size {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    padding: 4px 10px; border-radius: 6px; white-space: nowrap;
+    background: var(--bg-panel-color, #1c1c1c); color: var(--text-color, #fff);
+    font-variant-numeric: tabular-nums;
+}
+.itg-pip-frame-grip {
+    position: absolute; right: -7px; bottom: -7px; width: 16px; height: 16px;
+    border-radius: 3px; cursor: nwse-resize;
     background: var(--interactive-color, #ff4444);
-    border-color: transparent;
-    color: var(--bg-panel-color, #111);
-    opacity: 1;
+}
+.itg-pip-frame-actions {
+    position: absolute; left: 0; top: calc(100% + 8px); display: flex; gap: 6px;
+}
+.itg-pip-frame-actions button {
+    padding: 5px 12px; border-radius: 6px; cursor: pointer; font: inherit;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
+    background: var(--bg-panel-color, #1c1c1c); color: var(--text-color, #fff);
+}
+.itg-pip-frame-actions button.primary {
+    border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 30%, transparent);
+}
+.itg-pip-frame-hint {
+    position: absolute; left: 50%; top: 24px; transform: translateX(-50%);
+    padding: 8px 14px; border-radius: 8px; max-width: 70vw; text-align: center;
+    background: var(--bg-panel-color, #1c1c1c); color: var(--text-color, #fff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
 }
 `;
 
@@ -2269,7 +2346,7 @@ function itgAutoPipMenu() {
             'autoPipOnScrollTitle',
             'Open automatically on scroll',
             'autoPipOnScrollDesc',
-            'When scrolling leaves the playing video off screen.',
+            'When scrolling leaves the playing video off screen. Needs a recent click — pressing play yourself counts; otherwise it opens at your next click.',
         ],
         [
             'hidden',
@@ -2286,10 +2363,6 @@ function itgAutoPipMenu() {
 
         const title = document.createElement('strong');
         title.textContent = itgPipMsg(titleKey, titleFallback);
-        const state = document.createElement('span');
-        state.className = 'itg-autopip-state';
-        title.appendChild(state);
-
         const desc = document.createElement('small');
         desc.textContent = itgPipMsg(descKey, descFallback);
         option.append(title, desc);
@@ -2297,7 +2370,6 @@ function itgAutoPipMenu() {
         const paint = (on) => {
             option.classList.toggle('is-on', on);
             option.setAttribute('aria-pressed', String(on));
-            state.textContent = itgPipMsg(on ? 'autoPipOn' : 'autoPipOff', on ? 'On' : 'Off');
         };
         paint(itgAutoPipSettings[name]);
 
@@ -2316,6 +2388,26 @@ function itgAutoPipMenu() {
         option.itgPaint = paint;
         menu.appendChild(option);
     }
+
+    // Draw the window's shape rather than type it.
+    const frameOption = document.createElement('button');
+    frameOption.type = 'button';
+    frameOption.className = 'itg-autopip-option';
+    const frameTitle = document.createElement('strong');
+    frameTitle.textContent = itgPipMsg('pipFrameTitle', 'Set position and size');
+    const frameDesc = document.createElement('small');
+    frameDesc.textContent = itgPipMsg(
+        'pipFrameDesc',
+        'Drag a rectangle where you want the floating window, at the size you want it.',
+    );
+    frameOption.append(frameTitle, frameDesc);
+    frameOption.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        menu.classList.remove('is-open');
+        itgOpenFramePicker();
+    });
+    menu.appendChild(frameOption);
 
     // The menu is a page-level element with no stylesheet of its own, so the theme
     // variables its colours are written against are put on it directly.
@@ -2339,6 +2431,145 @@ function itgAutoPipMenu() {
     } catch {}
 
     return menu;
+}
+
+/** The shape the user drew for the floating window, if they drew one. */
+var itgPipFrame = window.__itgPipFrame ?? null;
+
+function itgLoadPipFrame() {
+    try {
+        chrome.storage.local.get(['itgPipFrame'], (res) => {
+            itgPipFrame = res?.itgPipFrame ?? null;
+            window.__itgPipFrame = itgPipFrame;
+        });
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local' || !changes.itgPipFrame) return;
+            itgPipFrame = changes.itgPipFrame.newValue ?? null;
+            window.__itgPipFrame = itgPipFrame;
+        });
+    } catch {}
+}
+
+/**
+ * Lets the user draw the floating window instead of typing numbers at it.
+ *
+ * A rectangle over the page, dragged and resized to taste; where it is left and how
+ * big it is left is what the window is asked for. Size is honoured exactly. Position
+ * is remembered and asked for, but the browser has the last word there: a document
+ * picture-in-picture window ignores moveTo, and Chrome places it where the user last
+ * dragged one — measured, not assumed.
+ */
+function itgOpenFramePicker() {
+    document.getElementById('itg-pip-frame-backdrop')?.remove();
+
+    const maxKey = `itgPipMax_${window.screen.availWidth}x${window.screen.availHeight}`;
+    chrome.storage.local.get([maxKey], (stored) => {
+        const max = stored?.[maxKey] ?? null;
+        const start = itgPipFrame ?? {
+            width: Math.min(800, Math.round(window.innerWidth * 0.5)),
+            height: Math.min(450, Math.round(window.innerHeight * 0.5)),
+            left: Math.round(window.innerWidth * 0.25),
+            top: Math.round(window.innerHeight * 0.25),
+        };
+
+        const backdrop = document.createElement('div');
+        backdrop.id = 'itg-pip-frame-backdrop';
+        backdrop.className = 'itg-pip-frame-backdrop';
+        backdrop.innerHTML = `
+            <div class="itg-pip-frame-hint"></div>
+            <div class="itg-pip-frame">
+                <span class="itg-pip-frame-size"></span>
+                <span class="itg-pip-frame-grip"></span>
+                <div class="itg-pip-frame-actions">
+                    <button type="button" class="primary" data-act="save"></button>
+                    <button type="button" data-act="cancel"></button>
+                </div>
+            </div>`;
+
+        const frame = backdrop.querySelector('.itg-pip-frame');
+        const readout = backdrop.querySelector('.itg-pip-frame-size');
+        backdrop.querySelector('.itg-pip-frame-hint').textContent = itgPipMsg(
+            'pipFrameHint',
+            'Move and resize the rectangle, then save. Its size is the size the floating window opens at.',
+        );
+        backdrop.querySelector('[data-act="save"]').textContent = itgPipMsg('pipFrameSave', 'Save');
+        backdrop.querySelector('[data-act="cancel"]').textContent = itgPipMsg('pipFrameCancel', 'Cancel');
+
+        const box = { ...start };
+        const paint = () => {
+            // Never larger than the window can actually be, when that is known.
+            if (max) {
+                box.width = Math.min(box.width, max.w);
+                box.height = Math.min(box.height, max.h);
+            }
+            box.width = Math.max(200, box.width);
+            box.height = Math.max(150, box.height);
+            box.left = Math.max(0, Math.min(window.innerWidth - box.width, box.left));
+            box.top = Math.max(0, Math.min(window.innerHeight - box.height, box.top));
+
+            frame.style.left = `${box.left}px`;
+            frame.style.top = `${box.top}px`;
+            frame.style.width = `${box.width}px`;
+            frame.style.height = `${box.height}px`;
+            readout.textContent = `${box.width} × ${box.height}`;
+        };
+        paint();
+
+        let drag = null;
+        const onDown = (e, mode) => {
+            e.preventDefault();
+            e.stopPropagation();
+            drag = { mode, x: e.clientX, y: e.clientY, ...box };
+            backdrop.setPointerCapture?.(e.pointerId);
+        };
+        frame.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.itg-pip-frame-actions')) return;
+            onDown(e, e.target.classList.contains('itg-pip-frame-grip') ? 'resize' : 'move');
+        });
+        backdrop.addEventListener('pointermove', (e) => {
+            if (!drag) return;
+            const dx = e.clientX - drag.x;
+            const dy = e.clientY - drag.y;
+            if (drag.mode === 'move') {
+                box.left = drag.left + dx;
+                box.top = drag.top + dy;
+            } else {
+                box.width = drag.width + dx;
+                box.height = drag.height + dy;
+            }
+            paint();
+        });
+        const stop = () => (drag = null);
+        backdrop.addEventListener('pointerup', stop);
+        backdrop.addEventListener('pointercancel', stop);
+
+        const close = () => backdrop.remove();
+        backdrop.querySelector('[data-act="cancel"]').addEventListener('click', close);
+        backdrop.querySelector('[data-act="save"]').addEventListener('click', () => {
+            itgPipFrame = { ...box, screenLeft: window.screenX + box.left, screenTop: window.screenY + box.top };
+            window.__itgPipFrame = itgPipFrame;
+            try {
+                chrome.storage.local.set({ itgPipFrame });
+            } catch {}
+            close();
+        });
+        // Clicking the dimmed area outside the rectangle gives up on it.
+        backdrop.addEventListener('pointerdown', (e) => {
+            if (e.target === backdrop) close();
+        });
+        document.addEventListener(
+            'keydown',
+            (e) => {
+                if (e.key === 'Escape' && backdrop.isConnected) close();
+            },
+            { once: true },
+        );
+
+        document.documentElement.appendChild(backdrop);
+        try {
+            Utils.applyThemeToHost(backdrop, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
+        } catch {}
+    });
 }
 
 // --- Opening it without being asked ------------------------------------------
@@ -2635,4 +2866,5 @@ if (window.top === window && !window.__itgVideoPipReady) {
     itgListenForNativePipRequests();
     itgSyncNativePipHookFlag();
     itgLoadAutoPipSettings();
+    itgLoadPipFrame();
 }

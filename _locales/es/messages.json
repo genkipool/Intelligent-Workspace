@@ -4181,13 +4181,28 @@
         "message": "Activar automáticamente al hacer scroll"
     },
     "autoPipOnScrollDesc": {
-        "message": "Cuando el scroll deja fuera de la pantalla el vídeo que se está reproduciendo. Vuelve a su sitio al verse de nuevo."
+        "message": "Cuando el scroll deja fuera de la pantalla el vídeo que se está reproduciendo. Necesita un clic reciente: darle tú al play cuenta; si no, se abrirá en tu siguiente clic. Vuelve a su sitio al verse de nuevo."
     },
     "autoPipOnHiddenTitle": {
         "message": "Activar automáticamente al salir de la pestaña"
     },
     "autoPipOnHiddenDesc": {
         "message": "Al cambiar a otra pestaña o a otro programa. Vuelve a su sitio al regresar a la pestaña."
+    },
+    "pipFrameTitle": {
+        "message": "Elegir posición y tamaño"
+    },
+    "pipFrameDesc": {
+        "message": "Coloca un rectángulo donde quieras la ventana flotante, con el tamaño que quieras."
+    },
+    "pipFrameHint": {
+        "message": "Mueve y redimensiona el rectángulo y guarda. Su tamaño es el que tendrá la ventana flotante."
+    },
+    "pipFrameSave": {
+        "message": "Guardar"
+    },
+    "pipFrameCancel": {
+        "message": "Cancelar"
     },
     "autoPipOnScrollEnabledNotify": {
         "message": "Picture-in-Picture automático al hacer scroll activado"
