@@ -5991,6 +5991,9 @@
     "pipHeight": {
         "message": "Alto"
     },
+    "pipFullscreenSizeHeader": {
+        "message": "Configurar tamaño de pantalla completa"
+    },
     "pipMaxSize": {
         "message": "Máximo"
     },

@@ -5908,6 +5908,9 @@
   "pipHeight": {
     "message": "Height"
   },
+  "pipFullscreenSizeHeader": {
+    "message": "Configure fullscreen size"
+  },
   "pipMaxSize": {
     "message": "Maximum"
   },

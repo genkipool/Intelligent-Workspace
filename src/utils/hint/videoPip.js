@@ -1131,6 +1131,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         </span>
                         <span class="itg-pip-size-wrap">
                             <div class="itg-pip-size-menu">
+                                <div class="itg-pip-size-header" data-i18n-text="pipFullscreenSizeHeader">Configure fullscreen size</div>
                                 <button class="itg-pip-size-max" data-act="sizemax" type="button"></button>
                                 <div class="itg-pip-size-fields">
                                     <label><span class="itg-pip-size-label-w"></span><input class="itg-pip-size-w" type="number" min="200" step="10" /></label>
@@ -3428,6 +3429,8 @@ function itgAutoPipClose(reason) {
  * so `open()` can request the window from here.
  */
 function itgListenForNativePipRequests() {
+    if (window.__itgPipListenerAttached) return;
+    window.__itgPipListenerAttached = true;
     window.addEventListener('message', async (event) => {
         if (event.source !== window || event.data?.__itgPip !== 'request') return;
         const video = document.querySelector(`video[${ITG_PIP_TARGET_ATTR}]`);
@@ -3458,12 +3461,9 @@ function itgSyncNativePipHookFlag() {
 /**
  * The content scripts are injected again when the extension reloads, into tabs that
  * already have them, so this file runs twice in one document. Top-level bindings are
- * `var` for that reason — a second `const` of the same name is a SyntaxError that
- * kills the whole file — and the listeners are set up once, or every message would
- * be answered twice over.
+ * `var` for that reason.
  */
-if (window.top === window && !window.__itgVideoPipReady) {
-    window.__itgVideoPipReady = true;
+if (window.top === window) {
     itgPreloadPipDims();
     itgListenForNativePipRequests();
     itgSyncNativePipHookFlag();

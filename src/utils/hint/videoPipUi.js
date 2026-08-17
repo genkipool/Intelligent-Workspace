@@ -212,6 +212,18 @@ textarea::selection,
 .itg-pip-size-wrap:focus-within .itg-pip-size-menu,
 .itg-pip-size-menu:hover,
 .itg-pip-size-menu:focus-within { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-size-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-color, #ffffff);
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    letter-spacing: 0.2px;
+}
 .itg-pip-size-max {
     display: block; width: 100%; margin-bottom: 6px; padding: 5px 8px;
     border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 6px;

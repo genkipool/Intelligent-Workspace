@@ -386,6 +386,7 @@ async function injectContentScriptsInAllTabs() {
                                 await chrome.scripting.executeScript({
                                     target: { tabId: tab.id, allFrames: script.all_frames || false },
                                     files: script.js,
+                                    world: script.world || 'ISOLATED',
                                 });
                             }
                         } catch (err) {
