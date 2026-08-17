@@ -5866,6 +5866,9 @@
   "omnibarPrefixVideoPipDesc": {
     "message": "Select a tab to open as Video Picture-in-Picture window"
   },
+  "pipMoreOptions": {
+    "message": "More options"
+  },
   "pipPlayPause": {
     "message": "Play / pause"
   },

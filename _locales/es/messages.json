@@ -5949,6 +5949,9 @@
     "omnibarPrefixVideoPipDesc": {
         "message": "Selecciona una pestaña para abrirla en modo picture video"
     },
+    "pipMoreOptions": {
+        "message": "Más opciones"
+    },
     "pipPlayPause": {
         "message": "Reproducir / pausar"
     },

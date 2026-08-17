@@ -69,6 +69,11 @@ var ITG_PIP_ICONS = {
         <circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path>
     </svg>`,
     chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-5 6 5 6"></path></svg>`,
+    more: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <circle cx="12" cy="5" r="2"></circle>
+        <circle cx="12" cy="12" r="2"></circle>
+        <circle cx="12" cy="19" r="2"></circle>
+    </svg>`,
 };
 
 var ITG_PIP_STYLES = `
@@ -371,4 +376,78 @@ html, body {
     border-left: 2px solid rgba(255, 255, 255, 0.15);
 }
 .itg-pip-comment.itg-pip-reply .itg-pip-comment-avatar { flex: 0 0 22px; width: 22px; height: 22px; }
+
+/* --- More options menu (3 vertical dots) --- */
+.itg-pip-more-wrap { position: relative; display: none; align-items: center; }
+.itg-pip-more-wrap::after { content: ''; position: absolute; left: -10px; right: -10px; bottom: 100%; height: 16px; }
+.itg-pip-more-menu {
+    position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
+    width: max-content; min-width: 190px; max-width: calc(100vw - 16px);
+    padding: 8px 6px; border-radius: 10px;
+    background: rgba(20, 20, 20, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    opacity: 0; pointer-events: none; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 20;
+}
+.itg-pip-more-wrap:hover .itg-pip-more-menu,
+.itg-pip-more-menu:hover { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+.itg-pip-more-section-title {
+    display: block; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.6);
+    padding: 2px 6px 6px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.itg-pip-more-speed-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 0 2px 4px;
+}
+.itg-pip-more-speed-btn {
+    padding: 4px 0; border: 0; border-radius: 5px; background: rgba(255, 255, 255, 0.08);
+    color: #fff; font-size: 11.5px; font-variant-numeric: tabular-nums; cursor: pointer;
+    transition: background 0.15s ease; text-align: center;
+}
+.itg-pip-more-speed-btn:hover { background: rgba(255, 255, 255, 0.22); }
+.itg-pip-more-speed-btn.is-active { background: var(--interactive-color, #ff4444); font-weight: 600; }
+
+.itg-pip-more-divider {
+    height: 1px; margin: 6px 0; background: rgba(255, 255, 255, 0.12);
+}
+
+.itg-pip-more-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 8px;
+    border: 0; border-radius: 6px; background: transparent; color: #fff;
+    font: inherit; font-size: 12px; cursor: pointer; text-align: left;
+    transition: background 0.15s ease;
+}
+.itg-pip-more-item:hover { background: rgba(255, 255, 255, 0.14); }
+.itg-pip-more-item.is-on { color: var(--interactive-color, #ff4444); font-weight: 600; }
+.itg-pip-more-item[hidden] { display: none; }
+.itg-pip-more-icon { width: 16px; height: 16px; flex: 0 0 16px; display: flex; align-items: center; justify-content: center; }
+.itg-pip-more-icon svg { width: 100%; height: 100%; }
+.itg-pip-more-label { flex: 1 1 auto; white-space: nowrap; }
+
+/* Responsive adjustments when player is narrow */
+@media (max-width: 520px) {
+    .itg-pip-more-wrap { display: inline-flex; }
+    .itg-pip-rate-wrap,
+    .itg-pip-size-wrap,
+    .itg-pip-btn[data-act='comments'],
+    .itg-pip-btn[data-act='captions'] {
+        display: none !important;
+    }
+}
+@media (max-width: 400px) {
+    .itg-pip-btn[data-act='rewind'],
+    .itg-pip-btn[data-act='forward'],
+    .itg-pip-volume-slider {
+        display: none !important;
+    }
+}
+@media (min-width: 401px) {
+    .itg-pip-more-rewind,
+    .itg-pip-more-forward {
+        display: none !important;
+    }
+}
 `;

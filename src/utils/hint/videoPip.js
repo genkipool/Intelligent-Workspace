@@ -1137,6 +1137,36 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                             </div>
                             <button class="itg-pip-btn" data-act="size" type="button"></button>
                         </span>
+                        <span class="itg-pip-more-wrap">
+                            <div class="itg-pip-more-menu">
+                                <div class="itg-pip-more-speed-section">
+                                    <span class="itg-pip-more-section-title"></span>
+                                    <div class="itg-pip-more-speed-grid"></div>
+                                </div>
+                                <div class="itg-pip-more-divider"></div>
+                                <button class="itg-pip-more-item" data-act="sizemax" type="button">
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.fullscreen}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipMaxSize">Maximize</span>
+                                </button>
+                                <button class="itg-pip-more-item" data-act="captions" type="button" hidden>
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.captions}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipCaptions">Subtitles</span>
+                                </button>
+                                <button class="itg-pip-more-item" data-act="comments" type="button" hidden>
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.comments}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipComments">Comments</span>
+                                </button>
+                                <button class="itg-pip-more-item itg-pip-more-rewind" data-act="rewind" type="button">
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.rewind}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipRewind">Back 10s</span>
+                                </button>
+                                <button class="itg-pip-more-item itg-pip-more-forward" data-act="forward" type="button">
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.forward}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipForward">Forward 10s</span>
+                                </button>
+                            </div>
+                            <button class="itg-pip-btn itg-pip-more" data-act="more" type="button"></button>
+                        </span>
                     </div>
                 </div>
             </div>`;
@@ -1167,9 +1197,11 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.buttons.next.innerHTML = ITG_PIP_ICONS.next;
         this.buttons.comments.innerHTML = ITG_PIP_ICONS.comments;
         this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
+        if (this.buttons.more) this.buttons.more.innerHTML = ITG_PIP_ICONS.more;
 
         this.buildRateMenu();
         this.buildSizeMenu();
+        this.buildMoreMenu();
         this.buildSearch();
         this.updateTitlesAndLabels();
         this.applyTheme();
@@ -1187,6 +1219,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.buttons.comments) this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
         if (this.buttons.captions) this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
         if (this.buttons.size) this.buttons.size.title = itgPipMsg('pipSize', 'Window size');
+        if (this.buttons.more) this.buttons.more.title = itgPipMsg('pipMoreOptions', 'More options');
         if (this.buttons.mute) {
             const muted = this.video?.muted || this.video?.volume === 0;
             this.buttons.mute.title = itgPipMsg(muted ? 'pipUnmute' : 'pipMute', muted ? 'Unmute' : 'Mute');
@@ -1195,6 +1228,12 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (labelW) labelW.textContent = itgPipMsg('pipWidth', 'Width');
         const labelH = doc.querySelector('.itg-pip-size-label-h');
         if (labelH) labelH.textContent = itgPipMsg('pipHeight', 'Height');
+        const moreSectionTitle = doc.querySelector('.itg-pip-more-section-title');
+        if (moreSectionTitle) moreSectionTitle.textContent = itgPipMsg('pipSpeed', 'Playback speed');
+        for (const el of doc.querySelectorAll('[data-i18n-text]')) {
+            const key = el.getAttribute('data-i18n-text');
+            if (key) el.textContent = itgPipMsg(key, el.textContent);
+        }
         this.renderSize();
         const searchInput = doc.querySelector('.itg-pip-search-input');
         if (searchInput) searchInput.placeholder = itgPipMsg('pipSearch', 'Search videos');
@@ -1205,6 +1244,37 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             const hasLists = this.lists.some((list) => list.items.length);
             const canComment = this.isYouTube && !this.isShorts;
             this.renderSideTabs(hasLists, canComment);
+        }
+    }
+
+    buildMoreMenu() {
+        const doc = this.pipWindow.document;
+        const grid = doc.querySelector('.itg-pip-more-speed-grid');
+        if (grid) {
+            grid.innerHTML = '';
+            for (const rate of ITG_PIP_RATES) {
+                const opt = doc.createElement('button');
+                opt.type = 'button';
+                opt.className = 'itg-pip-more-speed-btn';
+                opt.dataset.rate = String(rate);
+                opt.textContent = `${rate}x`;
+                opt.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.video.playbackRate = rate;
+                });
+                grid.appendChild(opt);
+            }
+        }
+        for (const item of doc.querySelectorAll('.itg-pip-more-item')) {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const act = item.dataset.act;
+                if (act === 'sizemax') {
+                    this.applyMaxSize();
+                } else {
+                    this.runAction(act);
+                }
+            });
         }
     }
 
@@ -1615,9 +1685,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (!this.sizeMenu) return;
         const win = this.pipWindow;
         const max = this.maxSize;
+        const doc = win?.document;
 
         this.sizeWidth.value = String(win.innerWidth);
         this.sizeHeight.value = String(win.innerHeight);
+        const moreSize = doc?.querySelector('.itg-pip-more-item[data-act="sizemax"]');
+        const moreSizeLabel = moreSize?.querySelector('.itg-pip-more-label');
+
         if (max) {
             this.sizeWidth.max = String(max.w);
             this.sizeHeight.max = String(max.h);
@@ -1625,12 +1699,15 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.sizeNote.textContent = `${itgPipMsg('pipMaxSizeNote', 'Largest a floating window can be')}: ${max.w}×${max.h}`;
             const atMax = win.innerWidth >= max.w - 8 && win.innerHeight >= max.h - 8;
             this.sizeMaxButton.classList.toggle('is-on', atMax);
+            if (moreSize) moreSize.classList.toggle('is-on', atMax);
+            if (moreSizeLabel) moreSizeLabel.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
         } else {
             this.sizeMaxButton.textContent = itgPipMsg('pipMaxSize', 'Maximum');
             this.sizeNote.textContent = itgPipMsg(
                 'pipMaxSizeUnknown',
                 'Press Maximum to find the largest size allowed',
             );
+            if (moreSizeLabel) moreSizeLabel.textContent = itgPipMsg('pipMaxSize', 'Maximum');
         }
         this.buttons.size.innerHTML = ITG_PIP_ICONS.fullscreen;
     }
@@ -1801,6 +1878,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.loadComments();
         }
         this.buttons.comments.classList.toggle('is-on', !showing);
+        const doc = this.pipWindow?.document;
+        const moreComments = doc?.querySelector('.itg-pip-more-item[data-act="comments"]');
+        if (moreComments) moreComments.classList.toggle('is-on', !showing);
         this.renderSide();
     }
 
@@ -2239,9 +2319,20 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const hasNav = this.isShorts || !!this.siblingItem(1) || !!this.siblingItem(-1);
         this.buttons.next.hidden = !hasNav;
         this.buttons.prev.hidden = !hasNav;
-        if (!hasNav) return;
-        this.buttons.next.disabled = !this.isShorts && !this.siblingItem(1);
-        this.buttons.prev.disabled = !this.isShorts && !this.siblingItem(-1);
+        if (hasNav) {
+            this.buttons.next.disabled = !this.isShorts && !this.siblingItem(1);
+            this.buttons.prev.disabled = !this.isShorts && !this.siblingItem(-1);
+        }
+        const canComment = this.isYouTube && !this.isShorts;
+        const doc = this.pipWindow?.document;
+        const moreComments = doc?.querySelector('.itg-pip-more-item[data-act="comments"]');
+        if (moreComments) {
+            moreComments.hidden = !canComment;
+            moreComments.classList.toggle(
+                'is-on',
+                this.sideTab === 'comments' && this.sideArea?.dataset.pinned === 'true',
+            );
+        }
     }
 
     // -- rendering --
@@ -2259,7 +2350,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     renderCaptions() {
         const control = this.captionsControl();
         this.buttons.captions.hidden = !control;
-        this.buttons.captions.classList.toggle('is-on', control?.getAttribute('aria-pressed') === 'true');
+        const isOn = control?.getAttribute('aria-pressed') === 'true';
+        this.buttons.captions.classList.toggle('is-on', isOn);
+        const doc = this.pipWindow?.document;
+        const moreCaptions = doc?.querySelector('.itg-pip-more-item[data-act="captions"]');
+        if (moreCaptions) {
+            moreCaptions.hidden = !control;
+            moreCaptions.classList.toggle('is-on', isOn);
+        }
     }
 
     renderPlayState() {
@@ -2293,8 +2391,16 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     renderRate() {
         const rate = this.video.playbackRate;
         this.buttons.rate.textContent = `${rate}x`;
-        for (const option of this.rateMenu.children) {
-            option.classList.toggle('is-active', Number(option.dataset.rate) === rate);
+        if (this.rateMenu) {
+            for (const option of this.rateMenu.children) {
+                option.classList.toggle('is-active', Number(option.dataset.rate) === rate);
+            }
+        }
+        const doc = this.pipWindow?.document;
+        if (doc) {
+            for (const option of doc.querySelectorAll('.itg-pip-more-speed-btn')) {
+                option.classList.toggle('is-active', Number(option.dataset.rate) === rate);
+            }
         }
     }
 
