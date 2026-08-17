@@ -733,6 +733,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      */
     async open() {
         const { width, height } = this.preferredSize();
+        this.defaultSize = { width, height };
         this.pipWindow = await window.documentPictureInPicture.requestWindow({
             width,
             height,
@@ -756,7 +757,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.isYouTube) this.watchLists();
         this.refreshLists();
         this.render();
-        this.loadMaxSize();
+        await this.loadConfiguredSize();
+        await this.loadMaxSize();
         this.watchForReturn();
         this.wake();
 
@@ -1270,7 +1272,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 e.stopPropagation();
                 const act = item.dataset.act;
                 if (act === 'sizemax') {
-                    this.applyMaxSize();
+                    this.toggleFullscreenSize();
                 } else {
                     this.runAction(act);
                 }
@@ -1318,15 +1320,17 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      */
     applySpinnerArrows() {
         const win = this.pipWindow;
+        if (!win || !this.root) return;
         const style = win.getComputedStyle(this.root);
-        const color = (
+        const interactiveColor = (
+            style.getPropertyValue('--interactive-color') ||
             style.getPropertyValue('--text-on-color') ||
-            style.getPropertyValue('--text-color') ||
-            '#ffffff'
+            '#ff4444'
         ).trim();
+        const textOnColor = (style.getPropertyValue('--text-on-color') || '#ffffff').trim();
         const arrows =
             `url("data:image/svg+xml,<svg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'>` +
-            `<path fill='${color.replace('#', '%23')}' d='m620.6 562.3 36.2 36.2L512 743.3 367.2 598.5l36.2-36.2L512 670.9zM512 353.1l108.6 108.6 36.2-36.2L512 280.7 367.2 425.5l36.2 36.2z'/></svg>")`;
+            `<path fill='${interactiveColor.replace('#', '%23')}' d='m620.6 562.3 36.2 36.2L512 743.3 367.2 598.5l36.2-36.2L512 670.9zM512 353.1l108.6 108.6 36.2-36.2L512 280.7 367.2 425.5l36.2 36.2z'/></svg>")`;
 
         let tag = win.document.getElementById('itg-pip-spinner-styles');
         if (!tag) {
@@ -1335,6 +1339,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             win.document.head.appendChild(tag);
         }
         tag.textContent = `
+            ::selection { background: ${interactiveColor} !important; color: ${textOnColor} !important; }
+            input::selection, textarea::selection { background: ${interactiveColor} !important; color: ${textOnColor} !important; }
             .itg-pip-size-fields input::-webkit-inner-spin-button,
             .itg-pip-size-fields input::-webkit-outer-spin-button { background-image: ${arrows}; }
         `;
@@ -1459,7 +1465,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 l: () => this.seekBy(10),
                 ArrowUp: () => this.nudgeVolume(0.05),
                 ArrowDown: () => this.nudgeVolume(-0.05),
-                f: () => this.applyMaxSize(),
+                f: () => this.toggleFullscreenSize(),
                 m: () => this.runAction('mute'),
                 n: () => this.runAction('next'),
                 p: () => this.runAction('prev'),
@@ -1529,7 +1535,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 this.goToSibling(-1);
                 break;
             case 'size':
-                this.applyMaxSize();
+            case 'sizemax':
+                this.toggleFullscreenSize();
                 break;
         }
     }
@@ -1562,59 +1569,138 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * A floating player cannot be made full screen: the Fullscreen API does not exist
      * inside a document picture-in-picture window, and the window itself is capped by
      * the browser — asking for the whole screen gets a smaller window back. So rather
-     * than a button that pretends, this offers the sizes that are actually available,
-     * with the ceiling written on it.
-     */
+    async loadConfiguredSize() {
+        try {
+            const res = await chrome.storage.local.get(['itgPipConfiguredSize']);
+            if (res?.itgPipConfiguredSize) {
+                this.configuredSize = res.itgPipConfiguredSize;
+            } else {
+                this.configuredSize = {
+                    mode: 'max',
+                    w: this.pipWindow?.screen.availWidth || 800,
+                    h: this.pipWindow?.screen.availHeight || 600,
+                };
+            }
+        } catch {
+            this.configuredSize = { mode: 'max', w: 800, h: 600 };
+        }
+    }
+
+    saveConfiguredSize() {
+        if (!this.configuredSize) return;
+        try {
+            chrome.storage.local.set({ itgPipConfiguredSize: this.configuredSize });
+        } catch {}
+    }
+
     buildSizeMenu() {
         const doc = this.pipWindow.document;
+        this.sizeWrap = doc.querySelector('.itg-pip-size-wrap');
         this.sizeMenu = doc.querySelector('.itg-pip-size-menu');
         this.sizeMaxButton = doc.querySelector('.itg-pip-size-max');
         this.sizeWidth = doc.querySelector('.itg-pip-size-w');
         this.sizeHeight = doc.querySelector('.itg-pip-size-h');
         this.sizeNote = doc.querySelector('.itg-pip-size-note');
 
+        const config = this.configuredSize || { mode: 'max', w: 800, h: 600 };
+        if (config.mode === 'max') {
+            this.sizeMaxButton.classList.add('is-on');
+            const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth;
+            const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight;
+            this.sizeWidth.value = String(maxW);
+            this.sizeHeight.value = String(maxH);
+        } else {
+            this.sizeMaxButton.classList.remove('is-on');
+            this.sizeWidth.value = String(config.w || this.pipWindow.innerWidth);
+            this.sizeHeight.value = String(config.h || this.pipWindow.innerHeight);
+        }
+
         this.sizeMaxButton.addEventListener('click', (e) => {
             e.stopPropagation();
             this.wake();
-            this.applyMaxSize();
+            const isNowMax = !this.sizeMaxButton.classList.contains('is-on');
+            this.sizeMaxButton.classList.toggle('is-on', isNowMax);
+            if (!this.configuredSize) this.configuredSize = {};
+            if (isNowMax) {
+                this.configuredSize.mode = 'max';
+                const maxW = this.maxSize?.w || this.pipWindow.screen.availWidth;
+                const maxH = this.maxSize?.h || this.pipWindow.screen.availHeight;
+                this.sizeWidth.value = String(maxW);
+                this.sizeHeight.value = String(maxH);
+            } else {
+                this.configuredSize.mode = 'custom';
+                this.configuredSize.w = +this.sizeWidth.value || this.pipWindow.innerWidth;
+                this.configuredSize.h = +this.sizeHeight.value || this.pipWindow.innerHeight;
+            }
+            this.saveConfiguredSize();
         });
 
-        this.sizeMenu.addEventListener('mouseenter', () => this.wake());
-        this.sizeMenu.addEventListener('mouseleave', () => this.wake());
+        const commitAndApply = () => {
+            if (!this.configuredSize) this.configuredSize = {};
+            if (this.sizeMaxButton.classList.contains('is-on')) {
+                this.configuredSize.mode = 'max';
+            } else {
+                this.configuredSize.mode = 'custom';
+                const w = Math.round(+this.sizeWidth.value);
+                const h = Math.round(+this.sizeHeight.value);
+                if (w > 0) this.configuredSize.w = w;
+                if (h > 0) this.configuredSize.h = h;
+            }
+            this.saveConfiguredSize();
+            this.applyConfiguredSize();
+        };
 
-        // Clamped while typing, not only when applied: a field that accepts 9999 and
-        // silently does something else is worse than one that will not take it.
-        for (const [field, axis] of [
-            [this.sizeWidth, 'w'],
-            [this.sizeHeight, 'h'],
-        ]) {
+        for (const field of [this.sizeWidth, this.sizeHeight]) {
             field.addEventListener('focus', () => this.wake());
-            field.addEventListener('blur', () => this.wake());
             field.addEventListener('input', () => {
                 this.wake();
-                const limit = this.maxSize?.[axis];
-                if (limit && Number(field.value) > limit) field.value = String(limit);
-            });
-            field.addEventListener('change', () => {
-                this.wake();
-                this.applySize(+this.sizeWidth.value, +this.sizeHeight.value);
+                // Custom number entered: deactivate max mode button
+                this.sizeMaxButton.classList.remove('is-on');
+                if (!this.configuredSize) this.configuredSize = {};
+                this.configuredSize.mode = 'custom';
             });
             field.addEventListener('keydown', (e) => {
                 this.wake();
-                if (e.key === 'Enter') this.applySize(+this.sizeWidth.value, +this.sizeHeight.value);
+                if (e.key === 'Enter') {
+                    field.blur();
+                    commitAndApply();
+                }
                 e.stopPropagation();
             });
+        }
+
+        let leaveTimer = null;
+        const handleWrapLeave = () => {
+            clearTimeout(leaveTimer);
+            leaveTimer = setTimeout(() => {
+                const currentDoc = this.pipWindow?.document;
+                if (!currentDoc) return;
+                const isHovered =
+                    currentDoc.querySelector('.itg-pip-size-wrap:hover') ||
+                    currentDoc.querySelector('.itg-pip-size-menu:hover');
+                const isFocused =
+                    currentDoc.activeElement === this.sizeWidth ||
+                    currentDoc.activeElement === this.sizeHeight;
+                if (!isHovered && !isFocused) {
+                    commitAndApply();
+                }
+            }, 300);
+        };
+
+        if (this.sizeWrap) {
+            this.sizeWrap.addEventListener('mouseleave', handleWrapLeave);
+        }
+        if (this.sizeMenu) {
+            this.sizeMenu.addEventListener('mouseenter', () => {
+                clearTimeout(leaveTimer);
+                this.wake();
+            });
+            this.sizeMenu.addEventListener('mouseleave', handleWrapLeave);
         }
     }
 
     /**
      * Closes the window when the user scrolls back to where the video was.
-     *
-     * What is watched is the frozen frame, not the video: the video is in this window
-     * now, and an observer in the page cannot say anything useful about it. The frame
-     * sits in the page exactly where the video sat, so it is the honest answer to
-     * "is the user looking at the player again". Only for a window that scrolling
-     * opened — one opened on purpose stays until it is closed on purpose.
      */
     watchForReturn() {
         if (this.auto !== 'scroll' || !this.placeholder) return;
@@ -1622,7 +1708,6 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         let first = true;
         const observer = new IntersectionObserver(
             ([entry]) => {
-                // The first report is the current state, not a change.
                 if (first) {
                     first = false;
                     return;
@@ -1654,41 +1739,70 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     /**
-     * Grows the window as far as the browser allows, and learns the limit from what
-     * comes back.
-     *
-     * The limit cannot be looked up or measured quietly: `resizeTo` inside a document
-     * picture-in-picture window "requires user activation", so it only works from a
-     * real press — which is why this doubles as the maximum button rather than
-     * running on its own when the window opens. The result is kept per screen size,
-     * so the figure is shown from then on without asking again.
+     * Applies the user-configured size: either maximum screen size or the specified custom dimensions.
      */
-    async applyMaxSize() {
+    async applyConfiguredSize() {
         const win = this.pipWindow;
-        try {
-            win.resizeTo(win.screen.availWidth, win.screen.availHeight);
-        } catch (e) {
-            console.warn('[ITG PiP] The window refused to resize:', e);
-            return;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 250));
+        if (!win) return;
+        const config = this.configuredSize || { mode: 'max' };
 
-        // Inner, not outer: from the opening tab's script a picture-in-picture window
-        // reports outerWidth/outerHeight as 0.
-        this.maxSize = { w: win.innerWidth, h: win.innerHeight };
-        try {
-            chrome.storage.local.set({ [this.maxSizeKey()]: this.maxSize });
-        } catch {}
-        this.renderSize();
+        if (config.mode === 'max') {
+            try {
+                win.resizeTo(win.screen.availWidth, win.screen.availHeight);
+            } catch (e) {
+                console.warn('[ITG PiP] The window refused to resize:', e);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            this.maxSize = { w: win.innerWidth, h: win.innerHeight };
+            try {
+                chrome.storage.local.set({ [this.maxSizeKey()]: this.maxSize });
+            } catch {}
+        } else {
+            const w = Math.max(200, +config.w || 640);
+            const h = Math.max(150, +config.h || 360);
+            try {
+                win.resizeTo(w, h);
+            } catch (e) {
+                console.warn('[ITG PiP] The window refused to resize:', e);
+            }
+        }
+        setTimeout(() => this.renderSize(), 200);
     }
 
-    /** Resizes the window, never past what it will accept. */
+    /**
+     * Toggles between the configured size (maximum or custom) and the default initial size.
+     */
+    toggleFullscreenSize() {
+        const win = this.pipWindow;
+        if (!win) return;
+        const config = this.configuredSize || { mode: 'max' };
+        const maxW = this.maxSize?.w || win.screen.availWidth;
+        const maxH = this.maxSize?.h || win.screen.availHeight;
+        const targetW = config.mode === 'max' ? maxW : +config.w || 640;
+        const targetH = config.mode === 'max' ? maxH : +config.h || 360;
+
+        const isAtTarget =
+            config.mode === 'max'
+                ? win.innerWidth >= targetW - 20 && win.innerHeight >= targetH - 20
+                : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
+
+        if (isAtTarget) {
+            const defW = this.defaultSize?.width || this.defaultSize?.w || 480;
+            const defH = this.defaultSize?.height || this.defaultSize?.h || 270;
+            this.applySize(defW, defH);
+        } else {
+            this.applyConfiguredSize();
+        }
+    }
+
+    /** Resizes the window to specific dimensions. */
     applySize(width, height) {
-        const max = this.maxSize;
         if (!width || !height) return;
-        const w = Math.max(200, max ? Math.min(width, max.w) : width);
-        const h = Math.max(150, max ? Math.min(height, max.h) : height);
-        this.pipWindow.resizeTo(w, h);
+        const w = Math.max(200, width);
+        const h = Math.max(150, height);
+        try {
+            this.pipWindow.resizeTo(w, h);
+        } catch {}
         setTimeout(() => this.renderSize(), 200);
     }
 
@@ -1697,9 +1811,28 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const win = this.pipWindow;
         const max = this.maxSize;
         const doc = win?.document;
+        const config = this.configuredSize || { mode: 'max' };
 
-        this.sizeWidth.value = String(win.innerWidth);
-        this.sizeHeight.value = String(win.innerHeight);
+        const isEditing =
+            doc?.activeElement === this.sizeWidth ||
+            doc?.activeElement === this.sizeHeight ||
+            doc?.querySelector('.itg-pip-size-wrap:hover') ||
+            doc?.querySelector('.itg-pip-size-menu:hover');
+
+        if (!isEditing) {
+            if (config.mode === 'max') {
+                this.sizeMaxButton.classList.add('is-on');
+                const maxW = max?.w || win.screen.availWidth;
+                const maxH = max?.h || win.screen.availHeight;
+                this.sizeWidth.value = String(maxW);
+                this.sizeHeight.value = String(maxH);
+            } else {
+                this.sizeMaxButton.classList.remove('is-on');
+                this.sizeWidth.value = String(config.w || win.innerWidth);
+                this.sizeHeight.value = String(config.h || win.innerHeight);
+            }
+        }
+
         const moreSize = doc?.querySelector('.itg-pip-more-item[data-act="sizemax"]');
         const moreSizeLabel = moreSize?.querySelector('.itg-pip-more-label');
 
@@ -1708,9 +1841,6 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.sizeHeight.max = String(max.h);
             this.sizeMaxButton.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
             this.sizeNote.textContent = `${itgPipMsg('pipMaxSizeNote', 'Largest a floating window can be')}: ${max.w}×${max.h}`;
-            const atMax = win.innerWidth >= max.w - 8 && win.innerHeight >= max.h - 8;
-            this.sizeMaxButton.classList.toggle('is-on', atMax);
-            if (moreSize) moreSize.classList.toggle('is-on', atMax);
             if (moreSizeLabel) moreSizeLabel.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
         } else {
             this.sizeMaxButton.textContent = itgPipMsg('pipMaxSize', 'Maximum');
@@ -1720,7 +1850,16 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             );
             if (moreSizeLabel) moreSizeLabel.textContent = itgPipMsg('pipMaxSize', 'Maximum');
         }
-        this.buttons.size.innerHTML = ITG_PIP_ICONS.fullscreen;
+
+        const targetW = config.mode === 'max' ? max?.w || win.screen.availWidth : +config.w || 640;
+        const targetH = config.mode === 'max' ? max?.h || win.screen.availHeight : +config.h || 360;
+        const isAtTarget =
+            config.mode === 'max'
+                ? win.innerWidth >= targetW - 20 && win.innerHeight >= targetH - 20
+                : Math.abs(win.innerWidth - targetW) <= 20 && Math.abs(win.innerHeight - targetH) <= 20;
+
+        if (moreSize) moreSize.classList.toggle('is-on', isAtTarget);
+        this.buttons.size.innerHTML = isAtTarget ? ITG_PIP_ICONS.fullscreenExit : ITG_PIP_ICONS.fullscreen;
     }
 
     /**

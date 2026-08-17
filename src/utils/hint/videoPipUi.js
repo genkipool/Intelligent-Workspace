@@ -85,6 +85,15 @@ html, body {
     overflow: hidden; background: #000; color: #fff;
     font-family: 'Roboto', system-ui, -apple-system, sans-serif;
 }
+::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: var(--text-on-color, #ffffff) !important;
+}
+input::selection,
+textarea::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: var(--text-on-color, #ffffff) !important;
+}
 .itg-pip-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
 
 .itg-pip-stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
