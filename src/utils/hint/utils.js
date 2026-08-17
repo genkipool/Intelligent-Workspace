@@ -133,6 +133,11 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
         return;
     }
 
+    const isYouTubeUrl = url && (url.includes('youtube.com') || url.includes('youtu.be'));
+    if (isYouTubeUrl && typeof window.ItgVideoPip?.open === 'function') {
+        return window.ItgVideoPip.open(null, { youtubeUrl: url });
+    }
+
     const localVideo = document.querySelector('video');
     const isCurrentPage =
         !url ||

@@ -824,6 +824,32 @@ function itgOpenYouTubeVideo(videoId, session = null) {
     }
 }
 
+/** Extracts YouTube video ID from various YouTube URL formats. */
+function itgExtractYouTubeVideoId(urlStr) {
+    if (!urlStr) return '';
+    try {
+        const url = new URL(urlStr, window.location.href);
+        if (url.hostname.includes('youtube.com') || url.hostname.includes('youtu.be')) {
+            if (url.pathname.startsWith('/shorts/')) {
+                return url.pathname.slice(8).split('/')[0].split('?')[0];
+            }
+            if (url.pathname.startsWith('/embed/')) {
+                return url.pathname.slice(7).split('/')[0].split('?')[0];
+            }
+            if (url.pathname.startsWith('/v/')) {
+                return url.pathname.slice(3).split('/')[0].split('?')[0];
+            }
+            if (url.searchParams.has('v')) {
+                return url.searchParams.get('v');
+            }
+            if (url.hostname.includes('youtu.be')) {
+                return url.pathname.slice(1).split('/')[0].split('?')[0];
+            }
+        }
+    } catch {}
+    return '';
+}
+
 /** Shorts has no side list: its next/previous are the feed's own arrows. */
 function itgShortsNavButton(direction) {
     const id = direction === 'next' ? 'navigation-button-down' : 'navigation-button-up';
@@ -834,8 +860,9 @@ function itgShortsNavButton(direction) {
 // --- The PiP session ---------------------------------------------------------
 
 var ItgVideoPipSession = class ItgVideoPipSession {
-    constructor(video) {
-        this.video = video;
+    constructor(video, { initialYouTubeVideoId = null } = {}) {
+        this.video = video || (initialYouTubeVideoId ? document.createElement('video') : null);
+        this.initialYouTubeVideoId = initialYouTubeVideoId;
         this.pipWindow = null;
         this.origin = null;
         this.lists = [];
@@ -848,7 +875,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.dragging = false;
         this.isYouTube = itgIsYouTube();
         this.isShorts = itgIsYouTubeShorts();
-        this.mode = itgPipModeFor(video);
+        this.mode = video ? itgPipModeFor(video) : 'embed';
         this.configuredSize = { mode: 'max', w: 800, h: 600 };
     }
 
@@ -869,7 +896,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         this.placeAtChosenFrame();
         this.buildDocument();
-        if (this.mode === 'stream') {
+        if (this.initialYouTubeVideoId) {
+            this.embedYouTubeVideo(this.initialYouTubeVideoId);
+        } else if (this.mode === 'stream') {
             this.streamVideoIn(this.video);
         } else {
             this.captureOrigin(this.video);
@@ -878,9 +907,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.moveVideoIn(this.video);
             this.adoptCaptions();
         }
-        this.bindVideo();
+        if (this.video && !this.initialYouTubeVideoId) {
+            this.bindVideo();
+        }
         this.bindWindow();
-        this.watchForVideoSwap();
+        if (!this.initialYouTubeVideoId) {
+            this.watchForVideoSwap();
+        }
         if (this.isYouTube) this.watchLists();
         this.refreshLists();
         this.render();
@@ -933,8 +966,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (itgPipFrame?.width && itgPipFrame?.height) {
             return { width: itgPipFrame.width, height: itgPipFrame.height };
         }
-        const vw = this.video.videoWidth || this.video.clientWidth || 16;
-        const vh = this.video.videoHeight || this.video.clientHeight || 9;
+        const vw = this.video?.videoWidth || this.video?.clientWidth || 16;
+        const vh = this.video?.videoHeight || this.video?.clientHeight || 9;
         const portrait = vh > vw;
         const savedW = portrait ? itgPipSavedDims.lastShortPipWidth : itgPipSavedDims.lastNormalPipWidth;
         const savedH = portrait ? itgPipSavedDims.lastShortPipHeight : itgPipSavedDims.lastNormalPipHeight;
@@ -3029,33 +3062,56 @@ var ItgVideoPip = {
      * Opens (or closes, when already open) the floating player. Called straight
      * from a click handler so the activation is still live.
      */
-    async open(video, { auto = null } = {}) {
+    async open(video, { auto = null, youtubeUrl = null, videoId = null } = {}) {
         if (!this.supported()) return false;
 
-        if (window.documentPictureInPicture.window) {
-            // Pressing the button again closes the window — that is the toggle a
-            // button should have. An automatic trigger must never do it: a second
-            // trigger arriving behind the first would close the very window the
-            // first had just opened, which is exactly what "it opened and shut
-            // again instantly" is.
+        let targetId = videoId || (youtubeUrl ? itgExtractYouTubeVideoId(youtubeUrl) : null);
+        if (typeof video === 'string') {
+            targetId = itgExtractYouTubeVideoId(video) || video;
+            video = null;
+        }
+
+        // If a session is already active in the floating window
+        if (this.current) {
+            if (targetId) {
+                this.current.playYouTubeVideo(targetId);
+                return true;
+            }
             if (auto) return true;
-            window.documentPictureInPicture.window.close();
+            try {
+                window.documentPictureInPicture.window?.close();
+            } catch {}
+            return true;
+        }
+
+        if (window.documentPictureInPicture.window) {
+            if (auto) return true;
+            try {
+                window.documentPictureInPicture.window.close();
+            } catch {}
             if (this.current) return true;
         }
 
-        const target = video && itgIsUsableVideo(video) ? video : itgPickBestVideo();
-        if (!target) {
+        let target = video && itgIsUsableVideo(video) ? video : itgPickBestVideo();
+        if (!target && !targetId) {
             console.warn('[ITG PiP] No playable video found on this page.');
             return false;
         }
 
-        if (this.current) return true;
+        if (!target && targetId) {
+            target = document.createElement('video');
+        }
 
-        const session = new ItgVideoPipSession(target);
+        const session = new ItgVideoPipSession(target, {
+            initialYouTubeVideoId: itgIsYouTube() ? null : targetId,
+        });
         session.auto = auto;
         this.current = session;
         try {
             await session.open();
+            if (targetId && itgIsYouTube()) {
+                session.playYouTubeVideo(targetId);
+            }
             return true;
         } catch (e) {
             // A DOMException logs as "[object DOMException]" and says nothing; the

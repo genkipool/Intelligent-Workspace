@@ -382,6 +382,12 @@ var LinkPreviewManager = class LinkPreviewManager {
                         container.dataset.hasVideo === 'true';
 
                     if (isYouTubeOrVideo) {
+                        const isYouTube = targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be');
+                        if (isYouTube && typeof window.ItgVideoPip?.open === 'function') {
+                            await window.ItgVideoPip.open(null, { youtubeUrl: targetUrl });
+                            this.removePreview(true, container);
+                            return;
+                        }
                         const width = Math.round(rect.width) || 640;
                         const height = Math.round(rect.height) || 360;
                         await openVideoPip(targetUrl, width, height);
