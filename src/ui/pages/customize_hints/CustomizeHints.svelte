@@ -12,6 +12,7 @@
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
     import SnippetsSection from './components/SnippetsSection.svelte';
     import BlacklistSection from './components/BlacklistSection.svelte';
+    import AutoPipSection from './components/AutoPipSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
 
     // Link preview on/off. The same flag the keyboard shortcut and the context menu
@@ -112,6 +113,9 @@
 
         <!-- Comandos Personalizados (Site Shortcuts) -->
         <SiteShortcutsSection />
+
+        <!-- Automatic Picture-in-Picture -->
+        <AutoPipSection />
 
         <!-- Snippets Section -->
         <SnippetsSection />

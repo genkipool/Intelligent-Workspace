@@ -402,6 +402,10 @@ const MESSAGE_HANDLERS = {
         handleToggleLinkPreviewFromKey(message, sendResponse);
         return true;
     },
+    toggleAutoPipFromKey: (message, sender, sendResponse) => {
+        handleToggleAutoPipFromKey(message, sendResponse);
+        return true;
+    },
     removeDuplicateTabs: (message, sender, sendResponse) => {
         handleRemoveDuplicateTabs(sendResponse);
         return true;
@@ -740,6 +744,8 @@ const MESSAGE_HANDLERS = {
     },
     hintStatusChanged: (message, sender, sendResponse) => {
         handleHintStatusChanged(message);
+        // Sólo un aviso: nadie espera respuesta.
+        return false;
     },
     muteAllTabs: (message, sender, sendResponse) => {
         handleMuteAllTabs();
@@ -751,9 +757,13 @@ const MESSAGE_HANDLERS = {
     },
     hintCommandsUpdated: (message, sender, sendResponse) => {
         handleHintCommandsUpdated();
+        // Sólo un aviso: nadie espera respuesta.
+        return false;
     },
     themeChanged: (message, sender, sendResponse) => {
         handleThemeChanged();
+        // Sólo un aviso: nadie espera respuesta.
+        return false;
     },
     printHtmlAsPdf: (message, sender, sendResponse) => {
         printHtmlAsPdf(message, sendResponse);
@@ -907,13 +917,31 @@ const MESSAGE_HANDLERS = {
         handleSetLinkPreviewTriggerKey(message.triggerKey, sendResponse);
         return true;
     },
+    // Only the worker may create the offscreen document, so the player asks for it
+    // here before sending it anything.
+    musicEnsureOffscreen: (message, sender, sendResponse) => {
+        ensureOffscreenDocument('Play the music folder the player was given')
+            .then((created) => sendResponse({ success: true, created }))
+            .catch((error) => sendResponse({ success: false, error: String(error) }));
+        return true;
+    },
+    // The offscreen player cannot reach storage, so what it reports is filed here.
+    // A page opened later reads this and shows what is playing straight away.
+    musicState: (message) => {
+        chrome.storage.session.set({ musicPlayerState: message.state }).catch(() => {});
+        return false;
+    },
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const handler = MESSAGE_HANDLERS[message.action];
     if (handler) {
-        const result = handler(message, sender, sendResponse);
-        return result !== false;
+        // The channel is only held open when the handler asks for it by returning true.
+        // It used to be held open for anything that did not return false — including the
+        // handlers that answer nothing — and the sender was left waiting for a reply
+        // that never came: "a listener indicated an asynchronous response ... but the
+        // message channel closed before a response was received".
+        return handler(message, sender, sendResponse) === true;
     }
     // Actions broadcast to every page so the UI can keep in step. The worker is not
     // meant to answer them — the list was here from the start but nothing read it, so

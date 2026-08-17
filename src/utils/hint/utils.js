@@ -63,6 +63,48 @@ async function requestItgPipWindow(targetUrl, defaultWidth, defaultHeight) {
     setupResizeListener(pipWindow);
     return pipWindow;
 }
+/**
+ * Moves TikTok's mini player on to the next video when one finishes.
+ *
+ * TikTok loops its clips, so `ended` never fires on its own — clearing `loop` is
+ * what turns the end of a video into an event. The step itself is TikTok's own
+ * arrow: clicking it keeps the account controls the native mini player is kept for.
+ */
+function itgAutoAdvanceTiktok() {
+    if (window.__itgTiktokAutoAdvance) return;
+
+    const nextButton = () =>
+        document.querySelector(
+            '[data-e2e="arrow-right"] button, button[data-e2e="arrow-right"], [data-e2e="arrow-right"]',
+        );
+
+    const attach = () => {
+        for (const video of document.querySelectorAll('video')) {
+            if (video.dataset.itgAutoAdvance) continue;
+            video.dataset.itgAutoAdvance = 'true';
+            video.loop = false;
+            video.addEventListener('ended', () => {
+                if (!document.pictureInPictureElement) return;
+                nextButton()?.click();
+            });
+        }
+    };
+
+    attach();
+    // TikTok swaps the video element on every step, so each new one needs the same.
+    const observer = new MutationObserver(() => attach());
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+    window.__itgTiktokAutoAdvance = () => observer.disconnect();
+}
+
+/**
+ * Detaches the page's video into a floating window.
+ *
+ * TikTok keeps its own path: its native mini player carries the account controls
+ * (follow, like, comments) that a bare video element cannot, so it stays the better
+ * option there. Everywhere else the video node itself is moved into a Document PiP
+ * window by ItgVideoPip — no iframe, no second page load, no lost position.
+ */
 async function openVideoPip(url, defaultWidth, defaultHeight) {
     if (window.location.hostname.includes('tiktok.com')) {
         try {
@@ -70,6 +112,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
             let miniPlayerBtn = document.querySelector('[data-e2e="more-menu-popover_mini-player"]');
             if (miniPlayerBtn) {
                 miniPlayerBtn.click();
+                itgAutoAdvanceTiktok();
                 return;
             }
             // If popover is not open, open the "more" menu first
@@ -80,141 +123,17 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
                 miniPlayerBtn = document.querySelector('[data-e2e="more-menu-popover_mini-player"]');
                 if (miniPlayerBtn) {
                     miniPlayerBtn.click();
+                    itgAutoAdvanceTiktok();
                     return;
                 }
             }
         } catch (e) {
             console.warn('Failed to trigger TikTok native mini-player:', e);
         }
+        return;
     }
-    if ('documentPictureInPicture' in window) {
-        try {
-            if (window.documentPictureInPicture.window) {
-                window.documentPictureInPicture.window.close();
-            }
-            let targetUrl = url;
-            try {
-                const currentCleanUrl = window.location.href.split('#')[0].split('?')[0];
-                const urlObj = new URL(url);
-                const targetCleanUrl = urlObj.href.split('#')[0].split('?')[0];
-                if (currentCleanUrl === targetCleanUrl) {
-                    const video = document.querySelector('video');
-                    if (video && video.currentTime > 0) {
-                        const secs = Math.floor(video.currentTime);
-                        urlObj.searchParams.set('t', secs);
-                        targetUrl = urlObj.toString();
-                    }
-                }
-            } catch (e) {
-                console.warn('Failed to append current video time:', e);
-            }
-            document.querySelectorAll('video').forEach((v) => {
-                try {
-                    v.pause();
-                } catch {}
-            });
-            const urlObj = new URL(targetUrl);
-            urlObj.searchParams.set('itg_video_pip', 'true');
-            targetUrl = urlObj.toString();
-            const isShort = targetUrl.includes('/shorts/');
-            const width = defaultWidth || (isShort ? 318 : 800);
-            const height = defaultHeight || (isShort ? 571 : 600);
-            const pipWindow = await requestItgPipWindow(targetUrl, width, height);
-            pipWindow.document.body.style.margin = '0';
-            pipWindow.document.body.style.padding = '0';
-            pipWindow.document.body.style.overflow = 'hidden';
-            pipWindow.document.body.style.backgroundColor = '#000';
-            pipWindow.document.body.style.position = 'relative';
-            pipWindow.document.body.style.width = '100vw';
-            pipWindow.document.body.style.height = '100vh';
 
-            // Wait for the DNR rules to be fully registered in the background script
-            // before setting the iframe src, preventing race conditions where the initial
-            // HTML fetch is not intercepted (which causes X-Frame-Options or CSP blocks).
-            await chrome.runtime.sendMessage({
-                action: 'prepareVideoUrlForPip',
-                url: targetUrl,
-            });
-            const iframe = document.createElement('iframe');
-            iframe.name = 'itg-video-pip-iframe';
-            iframe.style.cssText =
-                'position:absolute;top:0;left:0;width:100vw;height:100vh;border:none;z-index:1;border-radius:0';
-            // Use the exact same attributes as the preview window's iframe to ensure identical sandbox/media policies,
-            // but omit referrerpolicy to allow the default referrer to be sent (enabling YouTube cookie/login sharing).
-            iframe.setAttribute(
-                'allow',
-                'picture-in-picture; autoplay; fullscreen; encrypted-media; accelerometer; clipboard-write; gyroscope',
-            );
-            iframe.setAttribute('fetchpriority', 'high');
-            iframe.setAttribute('loading', 'eager');
-            iframe.src = targetUrl;
-            pipWindow.document.body.appendChild(iframe);
-
-            // Track PiP video time to resume the original video at the exact time when PiP window is closed
-            let lastKnownTime = 0;
-            const originalPauseInterval = setInterval(() => {
-                document.querySelectorAll('video').forEach((v) => {
-                    try {
-                        if (!v.paused) {
-                            v.pause();
-                        }
-                    } catch {}
-                });
-            }, 100);
-            const timeTrackerInterval = setInterval(() => {
-                try {
-                    if (!pipWindow || pipWindow.closed) {
-                        clearInterval(timeTrackerInterval);
-                        clearInterval(originalPauseInterval);
-                        return;
-                    }
-                    const pipIframe = pipWindow.document.querySelector('iframe');
-                    if (pipIframe) {
-                        const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
-                        const pipVideo = innerDoc?.querySelector('video');
-                        if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
-                            lastKnownTime = pipVideo.currentTime;
-                        }
-                    }
-                } catch {
-                    // Suppress cross-origin warnings if they happen
-                }
-            }, 250);
-            let didResume = false;
-            const resumeOriginalVideo = (shouldPlay) => {
-                if (didResume) return;
-                didResume = true;
-                clearInterval(timeTrackerInterval);
-                clearInterval(originalPauseInterval);
-                try {
-                    const localVideo = document.querySelector('video');
-                    if (localVideo) {
-                        if (lastKnownTime > 0) {
-                            localVideo.currentTime = lastKnownTime;
-                        }
-                        if (shouldPlay) {
-                            localVideo.play().catch((e) => {
-                                console.warn('Failed to autoplay original video on PiP close:', e);
-                            });
-                        } else {
-                            localVideo.pause();
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Error resuming original video:', e);
-                }
-            };
-            pipWindow.addEventListener('pagehide', () => {
-                resumeOriginalVideo(!document.hidden);
-            });
-            pipWindow.addEventListener('unload', () => {
-                resumeOriginalVideo(!document.hidden);
-            });
-            return pipWindow;
-        } catch (err) {
-            console.warn('Video Document PiP failed:', err);
-        }
-    }
+    return ItgVideoPip.open();
 }
 window.__itgOpenVideoPip = openVideoPip;
 /**

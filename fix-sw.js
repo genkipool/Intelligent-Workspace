@@ -31,10 +31,21 @@ try {
         "run_at": "document_idle"
       },
       {
+        // Main world, so it can replace HTMLVideoElement.prototype.requestPictureInPicture
+        // and hand a site's own picture-in-picture button to our floating player.
+        "matches": ["<all_urls>"],
+        "js": ["src/utils/hint/videoPipHook.js"],
+        "all_frames": false,
+        "run_at": "document_start",
+        "world": "MAIN"
+      },
+      {
         "matches": ["<all_urls>"],
         "js": [
           "src/utils/hint_common.js",
           "src/utils/hint/utils.js",
+          "src/utils/hint/videoPipUi.js",
+          "src/utils/hint/videoPip.js",
           "src/utils/hint/ui.js",
           "src/utils/hint/snippets.js",
           "src/utils/hint/omnibar.js",
@@ -56,6 +67,9 @@ try {
     const war = manifest.web_accessible_resources.find(w => w.matches.includes("<all_urls>")) || { matches: ["<all_urls>"], resources: [] };
     const hintScripts = [
         "src/utils/hint/utils.js",
+        "src/utils/hint/videoPipUi.js",
+        "src/utils/hint/videoPip.js",
+        "src/utils/hint/videoPipHook.js",
         "src/utils/hint/ui.js",
         "src/utils/hint/snippets.js",
         "src/utils/hint/omnibar.js",

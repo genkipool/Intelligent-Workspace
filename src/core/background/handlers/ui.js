@@ -384,6 +384,32 @@ function handleToggleLinkPreviewFromKey(message, sendResponse) {
     });
 }
 
+/**
+ * Flips one of the automatic picture-in-picture triggers from a keyboard command.
+ *
+ * The flag is the same one the button's hover menu and the navigation settings page
+ * write, so wherever it is changed the other two follow.
+ */
+function handleToggleAutoPipFromKey(message, sendResponse) {
+    const key = message.trigger === 'scroll' ? 'itgAutoPipOnScroll' : 'itgAutoPipOnHidden';
+    chrome.storage.local.get([key], (res) => {
+        const enabled = res[key] !== true;
+        chrome.storage.local.set({ [key]: enabled }, () => {
+            const scroll = message.trigger === 'scroll';
+            const msgStr = enabled
+                ? getI18nMsg(scroll ? 'autoPipOnScrollEnabledNotify' : 'autoPipOnHiddenEnabledNotify', [], 'On')
+                : getI18nMsg(scroll ? 'autoPipOnScrollDisabledNotify' : 'autoPipOnHiddenDisabledNotify', [], 'Off');
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: '/assets/icons/icon128.png',
+                title: 'Intelligent Tab Group',
+                message: msgStr,
+            });
+            sendResponse({ success: true, enabled });
+        });
+    });
+}
+
 function handleShowOmnibarNotification(message, sender, sendResponse) {
     chrome.notifications.create(`omnibar - notify - ${Date.now()} `, {
         type: 'basic',

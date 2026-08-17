@@ -4156,8 +4156,56 @@
     "description": "Unarchive the image so it can be cleared when starting a new session."
   },
   "customizeCommandsTitle": {
-    "message": "Customize Commands",
+    "message": "Navigation Settings",
     "description": "Title for the page where users customize their hint commands."
+  },
+  "hintDesc_as": {
+    "message": "Toggle automatic Picture-in-Picture when scrolling past the video"
+  },
+  "hintDesc_ah": {
+    "message": "Toggle automatic Picture-in-Picture when leaving the tab"
+  },
+  "autoPipSectionTitle": {
+    "message": "Automatic Picture-in-Picture"
+  },
+  "autoPipOn": {
+    "message": "On"
+  },
+  "autoPipOff": {
+    "message": "Off"
+  },
+  "autoPipOnScrollTitle": {
+    "message": "Open automatically on scroll"
+  },
+  "autoPipOnScrollDesc": {
+    "message": "When scrolling leaves the playing video off screen. It goes back when the video is in view again."
+  },
+  "autoPipOnHiddenTitle": {
+    "message": "Open automatically when leaving the tab"
+  },
+  "autoPipOnHiddenDesc": {
+    "message": "When switching to another tab or another program. It goes back on returning to the tab."
+  },
+  "autoPipOnScrollEnabledNotify": {
+    "message": "Automatic Picture-in-Picture on scroll enabled"
+  },
+  "autoPipOnScrollDisabledNotify": {
+    "message": "Automatic Picture-in-Picture on scroll disabled"
+  },
+  "autoPipOnHiddenEnabledNotify": {
+    "message": "Automatic Picture-in-Picture when leaving the tab enabled"
+  },
+  "autoPipOnHiddenDisabledNotify": {
+    "message": "Automatic Picture-in-Picture when leaving the tab disabled"
+  },
+  "pipShowReplies": {
+    "message": "Show replies"
+  },
+  "pipHideReplies": {
+    "message": "Hide replies"
+  },
+  "pipNoReplies": {
+    "message": "No replies"
   },
   "searchCommandsPlaceholder": {
     "message": "Filter commands by keyword or description...",
@@ -5799,6 +5847,90 @@
   },
   "omnibarPrefixVideoPipDesc": {
     "message": "Select a tab to open as Video Picture-in-Picture window"
+  },
+  "pipPlayPause": {
+    "message": "Play / pause"
+  },
+  "pipPrevious": {
+    "message": "Previous video"
+  },
+  "pipNext": {
+    "message": "Next video"
+  },
+  "pipRewind": {
+    "message": "Back 10 seconds"
+  },
+  "pipForward": {
+    "message": "Forward 10 seconds"
+  },
+  "pipMute": {
+    "message": "Mute"
+  },
+  "pipUnmute": {
+    "message": "Unmute"
+  },
+  "pipSpeed": {
+    "message": "Playback speed"
+  },
+  "pipCaptions": {
+    "message": "Subtitles"
+  },
+  "pipFullscreen": {
+    "message": "Full screen"
+  },
+  "pipSize": {
+    "message": "Window size"
+  },
+  "pipWidth": {
+    "message": "Width"
+  },
+  "pipHeight": {
+    "message": "Height"
+  },
+  "pipMaxSize": {
+    "message": "Maximum"
+  },
+  "pipMaxSizeNote": {
+    "message": "Largest a floating window can be"
+  },
+  "pipMaxSizeUnknown": {
+    "message": "Press Maximum to find the largest size allowed"
+  },
+  "pipComments": {
+    "message": "Comments"
+  },
+  "pipCommentsLoading": {
+    "message": "Loading comments…"
+  },
+  "pipReply": {
+    "message": "Reply"
+  },
+  "pipReplySent": {
+    "message": "Reply sent"
+  },
+  "pipReplyFailed": {
+    "message": "Reply in the tab"
+  },
+  "pipPlaylist": {
+    "message": "Playlist"
+  },
+  "pipRecommended": {
+    "message": "Recommended"
+  },
+  "pipSearch": {
+    "message": "Search videos"
+  },
+  "pipSearching": {
+    "message": "Searching…"
+  },
+  "pipNoResults": {
+    "message": "Nothing found"
+  },
+  "pipResults": {
+    "message": "Results"
+  },
+  "pipLive": {
+    "message": "Live"
   },
   "omnibarPrefixBookmarksTitle": {
     "message": "Bookmarks"

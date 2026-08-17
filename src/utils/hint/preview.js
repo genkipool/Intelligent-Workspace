@@ -250,16 +250,8 @@ var LinkPreviewManager = class LinkPreviewManager {
                     <div class="hint-preview-header">
                         <span class="hint-preview-title">${chrome.i18n.getMessage('previewTitlePrefix') || 'Preview:'} ${domain}</span>
                         <div class="hint-preview-actions" style="display: flex; align-items: center; gap: 8px;">
-                            <button class="hint-preview-action-btn hint-preview-video-pip-btn" title="${chrome.i18n.getMessage('openVideoPipTitle') || 'Picture-in-Picture de solo vídeo'}">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
-                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                                </svg>
-                            </button>
                             <button class="hint-preview-action-btn hint-preview-pip-btn" title="${chrome.i18n.getMessage('openAsPipTitle') || 'Open as Picture-in-Picture'}">
-                                <svg width="14" height="14" viewBox="0 0 256 256" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M216 44H40a20.02 20.02 0 0 0-20 20v128a20.02 20.02 0 0 0 20 20h176a20.02 20.02 0 0 0 20-20V64a20.02 20.02 0 0 0-20-20M44 68h168v48h-68a20.02 20.02 0 0 0-20 20v52H44Zm104 120v-48h64v48Z"/>
-                                </svg>
+                                <span style="display:block;width:14px;height:14px;">${ITG_PIP_ICON}</span>
                             </button>
                             <button class="hint-preview-action-btn hint-preview-popup-btn" title="${chrome.i18n.getMessage('openAsPopupTitle') || 'Open as popup window'}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -373,27 +365,23 @@ var LinkPreviewManager = class LinkPreviewManager {
                 window.removeEventListener('message', this._activeVideoMsgListener);
                 this._activeVideoMsgListener = null;
             }
-            const videoPipBtn = container.querySelector('.hint-preview-video-pip-btn');
-            if (videoPipBtn) {
-                videoPipBtn.style.display = 'flex';
-                videoPipBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const previewIframe = container.querySelector('.hint-preview-iframe');
-                    if (!previewIframe || !previewIframe.src) return;
-                    const rect = container.getBoundingClientRect();
-                    const width = Math.round(rect.width) || 640;
-                    const height = Math.round(rect.height) || 360;
-                    await openVideoPip(previewIframe.src, width, height);
-                    this.removePreview(true, container);
-                });
-            }
+            this._activeVideoMsgListener = (event) => {
+                if (event.data?.action === 'ITG_PREVIEW_HAS_VIDEO') container.dataset.hasVideo = 'true';
+            };
+            window.addEventListener('message', this._activeVideoMsgListener);
             const pipBtn = container.querySelector('.hint-preview-pip-btn');
             if (pipBtn) {
                 pipBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const rect = container.getBoundingClientRect();
                     const width = Math.round(rect.width);
-                    const height = Math.round(rect.height);
+                    // A single button, deciding for itself: the frames report whether
+                    // they hold a video, and a video preview is opened at 16:9 rather
+                    // than at the preview panel's own shape. Either way the iframe is
+                    // moved across instead of reloaded, which is the one thing that
+                    // works for a video page and a plain page alike.
+                    const hasVideo = container.dataset.hasVideo === 'true';
+                    const height = hasVideo ? Math.round((width * 9) / 16) : Math.round(rect.height);
                     try {
                         if ('documentPictureInPicture' in window) {
                             const existingIframe = container.querySelector('.hint-preview-iframe');

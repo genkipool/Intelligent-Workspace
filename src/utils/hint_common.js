@@ -37,6 +37,8 @@ var HintCommon = {
             wp: 'hintDesc_wp',
             wv: 'hintDesc_wv',
             we: 'hintDesc_we',
+            as: 'hintDesc_as',
+            ah: 'hintDesc_ah',
         },
         categoryTabs: {
             t: 'hintDesc_t',

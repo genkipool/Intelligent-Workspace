@@ -1,0 +1,2638 @@
+/**
+ * NATIVE VIDEO PICTURE-IN-PICTURE
+ *
+ * The previous implementation reloaded the whole page inside an <iframe> placed in
+ * the Document PiP window, then hid everything but the player with DOM surgery.
+ * That is what made YouTube behave oddly: a second page load (ads, cookie walls,
+ * black bands, live chat re-initialising the player) racing against the hiding.
+ *
+ * This one moves the *real* <video> node into the PiP document instead. There is no
+ * reload, no second player, no lost playback position: the same media element keeps
+ * playing, it just lives in another window for a while. The site's own JavaScript
+ * still holds its reference, so YouTube's player API keeps working — which is what
+ * makes the side list able to switch videos by clicking the real links in the tab.
+ *
+ * On close the node goes back to the exact slot it came from (parent + next sibling,
+ * plus its original `controls` flag and inline style), so the page is left as found.
+ *
+ * Player chrome is ours: the video is stripped of native controls and we draw the
+ * bar, so it looks the same on every site.
+ */
+
+/** Marks the video a page's own PiP button asked for, so we can pick it up. */
+var ITG_PIP_TARGET_ATTR = 'data-itg-pip-target';
+
+/** Offered in the speed menu, slowest first, so the strip reads left to right. */
+var ITG_PIP_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+/** Last window size the user settled on, preloaded so opening stays synchronous. */
+var itgPipSavedDims = {};
+
+/** The theme in force, preloaded for the same reason. */
+var itgPipTheme = null;
+
+/**
+ * Document PiP needs the click's transient activation, and any `await` before
+ * `requestWindow()` risks losing it. The sizes are read once, up front, so the
+ * open path never has to wait on storage.
+ */
+function itgPreloadPipDims() {
+    try {
+        chrome.storage.local.get(
+            ['lastNormalPipWidth', 'lastNormalPipHeight', 'lastShortPipWidth', 'lastShortPipHeight', 'activeTheme'],
+            (stored) => {
+                if (!stored) return;
+                itgPipSavedDims = stored;
+                itgPipTheme = stored.activeTheme ?? null;
+            },
+        );
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local' || !changes.activeTheme) return;
+            itgPipTheme = changes.activeTheme.newValue ?? null;
+            ItgVideoPip.current?.applyTheme();
+        });
+    } catch {}
+}
+
+// --- Video discovery ---------------------------------------------------------
+
+/**
+ * Every video reachable from `root`, including the ones inside shadow roots and
+ * same-origin iframes.
+ *
+ * Sites that never showed a PiP button in this extension were mostly the ones that
+ * put their player in a shadow root or in an iframe of their own domain: a plain
+ * `document.querySelector('video')` cannot see either.
+ */
+function itgFindVideos(root = document, depth = 0) {
+    if (depth > 4) return [];
+    const found = [];
+    try {
+        found.push(...root.querySelectorAll('video'));
+    } catch {}
+
+    // Shadow roots: querySelectorAll stops at the boundary, so walk them explicitly.
+    try {
+        for (const el of root.querySelectorAll('*')) {
+            if (el.shadowRoot) found.push(...itgFindVideos(el.shadowRoot, depth + 1));
+        }
+    } catch {}
+
+    // Same-origin iframes only — a cross-origin one throws on contentDocument.
+    try {
+        for (const frame of root.querySelectorAll('iframe')) {
+            try {
+                const doc = frame.contentDocument;
+                if (doc) found.push(...itgFindVideos(doc, depth + 1));
+            } catch {}
+        }
+    } catch {}
+
+    return found;
+}
+
+/** A video worth detaching: attached, sized, and actually carrying media. */
+function itgIsUsableVideo(video) {
+    if (!video || video.tagName !== 'VIDEO' || !video.isConnected) return false;
+    if (!video.currentSrc && !video.src && !video.querySelector('source') && !video.srcObject) return false;
+    const rect = video.getBoundingClientRect();
+    return rect.width >= 80 && rect.height >= 60;
+}
+
+/**
+ * The video the user means: whatever a page's own PiP button flagged, else the
+ * biggest one on screen — the same "largest clientHeight wins" rule that makes
+ * detection work without a per-site selector.
+ */
+function itgPickBestVideo() {
+    const flagged = document.querySelector(`video[${ITG_PIP_TARGET_ATTR}]`);
+    if (flagged && itgIsUsableVideo(flagged)) return flagged;
+
+    const candidates = itgFindVideos().filter(itgIsUsableVideo);
+    if (!candidates.length) return null;
+
+    const playing = candidates.filter((v) => !v.paused && !v.ended);
+    const pool = playing.length ? playing : candidates;
+    return pool.reduce((best, v) => (best.clientHeight * best.clientWidth < v.clientHeight * v.clientWidth ? v : best));
+}
+
+/**
+ * The deepest element under the pointer, following shadow roots down. `e.target`
+ * stops at the host of a closed-over player, which is exactly the case that used
+ * to hide the video from us.
+ */
+function itgDeepElementFromPoint(x, y) {
+    let node = document.elementFromPoint(x, y);
+    let guard = 0;
+    while (node?.shadowRoot && guard++ < 10) {
+        const inner = node.shadowRoot.elementFromPoint?.(x, y);
+        if (!inner || inner === node) break;
+        node = inner;
+    }
+    return node;
+}
+
+/** The video under the pointer, whether the cursor is on it or on its wrapper. */
+function itgVideoFromPoint(x, y) {
+    const node = itgDeepElementFromPoint(x, y);
+    if (!node) return null;
+    if (node.tagName === 'VIDEO') return node;
+    const inside = node.querySelector?.('video');
+    if (inside) return inside;
+    // Overlays sit on top of the player, so look outwards too.
+    const container = node.closest?.('*:has(> video)');
+    return container?.querySelector('video') ?? null;
+}
+
+// --- Site adapters -----------------------------------------------------------
+
+/**
+ * True when this document is the floating player's own window.
+ *
+ * That window is an about:blank auxiliary context of a matched page, so the content
+ * scripts load into it as well. Nothing of ours belongs there: it already *is* the
+ * picture-in-picture, and hints or another PiP button on top of it are noise.
+ */
+function itgIsInsidePipWindow() {
+    return document.documentElement.hasAttribute('data-itg-pip-window');
+}
+
+/**
+ * Sites whose player must not have its <video> taken away.
+ *
+ * X rebuilds its player from a component tree that owns those nodes: move the video
+ * out and the next render finds the DOM it expected gone, which is what breaks the
+ * player there. For these the node stays exactly where it is and the floating window
+ * shows a capture of it instead — the page is never touched, so nothing can break.
+ */
+var ITG_PIP_STREAM_HOSTS = [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/];
+
+function itgPipModeFor(video) {
+    if (ITG_PIP_STREAM_HOSTS.some((rule) => rule.test(location.hostname))) return 'stream';
+    // Without captureStream there is no alternative to moving the node anyway.
+    return typeof video.captureStream === 'function' || typeof video.mozCaptureStream === 'function' ? 'move' : 'move';
+}
+
+function itgIsYouTube() {
+    return /(^|\.)youtube\.com$/.test(location.hostname) || location.hostname === 'youtu.be';
+}
+
+function itgIsYouTubeShorts() {
+    return itgIsYouTube() && location.pathname.startsWith('/shorts/');
+}
+
+/** Text of the first matching child, trimmed, or ''. */
+function itgText(root, selectors) {
+    for (const selector of selectors) {
+        const el = root.querySelector(selector);
+        const text = el?.textContent?.trim();
+        if (text) return text;
+    }
+    return '';
+}
+
+/**
+ * One entry of the side list. `linkEl` is the anchor *in the tab*, not a copy:
+ * clicking it lets YouTube do its own SPA navigation, which is why switching
+ * video keeps the PiP window alive instead of reloading anything.
+ */
+function itgReadYouTubeItem(el) {
+    const link = el.querySelector('a[href*="/watch"], a[href*="/shorts/"], a#thumbnail, a');
+    if (!link) return null;
+    const title =
+        itgText(el, [
+            '#video-title',
+            '.yt-lockup-metadata-view-model-wiz__title',
+            '.yt-lockup-metadata-view-model__title',
+            'h3 span[role="text"]',
+            'h3',
+        ]) ||
+        link.title ||
+        link.getAttribute('aria-label') ||
+        '';
+    if (!title) return null;
+    return {
+        el,
+        linkEl: link,
+        title,
+        cover: itgYouTubeCover(el, link),
+        user: itgText(el, [
+            '.ytd-channel-name',
+            // Current sidebar markup; the -wiz- variants are the older rollout.
+            '.ytContentMetadataViewModelMetadataText',
+            '.yt-content-metadata-view-model-wiz__metadata-text',
+            '.yt-content-metadata-view-model__metadata-text',
+        ]),
+        duration: itgText(el, [
+            '.ytd-thumbnail-overlay-time-status-renderer',
+            // Not plain `badge-shape`: the second badge on a video can be something
+            // else entirely ("fundraising"), and that is what would show as a length.
+            '.ytBadgeShapeThumbnailBadge',
+            '.badge-shape-wiz__text',
+            '.ytThumbnailOverlayBadgeViewModelBadge',
+        ]),
+    };
+}
+
+/**
+ * YouTube only fills in a thumbnail's `src` once the row is close to the viewport,
+ * so every entry below the fold arrived here with no image at all. The address is
+ * derivable from the video id, which the link always carries, so the side list can
+ * show a cover for a row the page itself has not bothered to load yet.
+ */
+function itgYouTubeCover(el, link) {
+    const loaded = el.querySelector('img[src*="ytimg.com"], img[src^="data:"]');
+    if (loaded?.src) return loaded.src;
+    try {
+        const href = link.getAttribute('href') || '';
+        const url = new URL(href, location.origin);
+        const id = url.searchParams.get('v') || (url.pathname.startsWith('/shorts/') ? url.pathname.slice(8) : '');
+        if (id) return `https://i.ytimg.com/vi/${encodeURIComponent(id)}/mqdefault.jpg`;
+    } catch {}
+    return '';
+}
+
+/**
+ * The lists YouTube already has in the page: the playlist panel, when a playlist is
+ * open, and the watch-next sidebar. Both markups are read because YouTube has been
+ * migrating the sidebar from `ytd-compact-video-renderer` to `yt-lockup-view-model`
+ * and either can be live depending on the rollout.
+ */
+function itgReadYouTubeLists() {
+    const lists = [];
+
+    const playlist = [...document.querySelectorAll('ytd-playlist-panel-video-renderer')]
+        .map((el) => {
+            const item = itgReadYouTubeItem(el);
+            if (item) item.isActive = el.hasAttribute('selected');
+            return item;
+        })
+        .filter(Boolean);
+    if (playlist.length) {
+        lists.push({ category: itgPipMsg('pipPlaylist', 'Playlist'), items: playlist, mainList: true });
+    }
+
+    const secondary = document.querySelector('ytd-watch-next-secondary-results-renderer') || document;
+    const seen = new Set();
+    const recommended = [
+        ...secondary.querySelectorAll('ytd-compact-video-renderer, yt-lockup-view-model, ytd-compact-radio-renderer'),
+    ]
+        .map(itgReadYouTubeItem)
+        .filter((item) => {
+            if (!item) return false;
+            const href = item.linkEl.getAttribute('href') || item.title;
+            if (seen.has(href)) return false;
+            seen.add(href);
+            return true;
+        });
+    if (recommended.length) {
+        lists.push({ category: itgPipMsg('pipRecommended', 'Recommended'), items: recommended });
+    }
+
+    return lists;
+}
+
+/**
+ * The comment threads YouTube has already rendered into the page.
+ *
+ * They are read rather than fetched: the page is signed in and its threads are
+ * already there, so there is no API key, no quota and no second copy of the data to
+ * keep in step. `el` is kept because replying drives that same thread's own box.
+ */
+function itgReadYouTubeComments(limit = 40) {
+    const threads = [...document.querySelectorAll('ytd-comment-thread-renderer')].slice(0, limit);
+    return threads
+        .map((el) => {
+            const text = itgText(el, ['#content-text', 'yt-attributed-string#content-text']);
+            if (!text) return null;
+            return {
+                el,
+                author: itgText(el, ['#author-text', 'a#author-text span', '#header-author a']),
+                text,
+                avatar: el.querySelector('#author-thumbnail img')?.src || '',
+                likes: itgText(el, ['#vote-count-middle', '#vote-count-left']),
+                when: itgText(el, ['.published-time-text a', '#published-time-text a']),
+            };
+        })
+        .filter(Boolean);
+}
+
+/**
+ * The replies already loaded under a thread.
+ *
+ * Scoped to `#replies`, because the top-level comment is a `ytd-comment-view-model`
+ * of its own and would otherwise come back as the first reply to itself.
+ */
+function itgReadYouTubeReplies(thread) {
+    return [...thread.querySelectorAll('#replies ytd-comment-view-model, #replies ytd-comment-renderer')]
+        .map((el) => {
+            const text = itgText(el, ['#content-text']);
+            if (!text) return null;
+            return {
+                el,
+                author: itgText(el, ['#author-text', 'a#author-text span']),
+                text,
+                avatar: el.querySelector('#author-thumbnail img')?.src || '',
+                likes: itgText(el, ['#vote-count-middle', '#vote-count-left']),
+                when: itgText(el, ['.published-time-text a', '#published-time-text a']),
+            };
+        })
+        .filter(Boolean);
+}
+
+/**
+ * The thread as it exists right now.
+ *
+ * YouTube recycles the comment list as the page scrolls, so the element captured
+ * when the panel was built may already be detached by the time the user asks for its
+ * replies — and expanding a detached thread does nothing, which is exactly what
+ * "the replies do not appear" looks like. Matching on the comment's own text finds
+ * the live node that replaced it.
+ */
+function itgResolveThread(comment) {
+    if (comment.el?.isConnected) return comment.el;
+    const match = [...document.querySelectorAll('ytd-comment-thread-renderer')].find(
+        (el) => itgText(el, ['#content-text']) === comment.text,
+    );
+    if (match) comment.el = match;
+    return match ?? null;
+}
+
+/** The "N replies" control, when the thread has replies still to load. */
+function itgYouTubeRepliesButton(thread) {
+    return (
+        thread.querySelector('#more-replies yt-button-shape button') ||
+        thread.querySelector('#more-replies button') ||
+        null
+    );
+}
+
+/**
+ * Makes YouTube fetch a thread's replies.
+ *
+ * They are not in the page until its own button is pressed — the placeholder it
+ * leaves behind is literally called `yt-ghost-comments` — so the button is pressed
+ * and the result waited for, rather than guessed at.
+ */
+async function itgExpandYouTubeReplies(thread) {
+    const button = itgYouTubeRepliesButton(thread);
+    if (!button) return itgReadYouTubeReplies(thread);
+
+    // Pressing the button on a thread the tab is not showing loads nothing at all:
+    // the comment list is virtualised, and YouTube only fetches for what is on
+    // screen. Bringing it into view first is the difference between ten replies and
+    // none, which is why the button appeared to do nothing.
+    try {
+        thread.scrollIntoView({ block: 'center' });
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
+    (itgYouTubeRepliesButton(thread) ?? button).click();
+    await itgWaitFor(() => itgReadYouTubeReplies(thread).length > 0, 8000);
+    return itgReadYouTubeReplies(thread);
+}
+
+/** Waits for something to appear, polling, and gives up rather than hanging. */
+function itgWaitFor(get, timeoutMs = 3000) {
+    return new Promise((resolve) => {
+        const started = Date.now();
+        const tick = () => {
+            let value = null;
+            try {
+                value = get();
+            } catch {}
+            if (value) return resolve(value);
+            if (Date.now() - started > timeoutMs) return resolve(null);
+            setTimeout(tick, 120);
+        };
+        tick();
+    });
+}
+
+/**
+ * Posts a reply by driving YouTube's own reply box in the tab.
+ *
+ * Nothing here talks to an API: it opens the box the page already has, types into
+ * it and presses its send button, so the comment is posted as the signed-in user
+ * with whatever checks YouTube applies to a real one.
+ *
+ * The typing is done twice over because the editor is a contenteditable that only
+ * reacts to real edits: execCommand is the one that behaves like typing, but it
+ * needs the tab focused, and the tab is not focused while the floating player is —
+ * so assigning the text and firing `input` is the fallback. Whether either worked is
+ * decided by the send button, which YouTube keeps disabled until it sees content.
+ */
+async function itgReplyToYouTubeComment(thread, text) {
+    const replyButton = thread.querySelector(
+        '#reply-button-end button, ytd-button-renderer#reply-button-end button, #reply-button button',
+    );
+    if (!replyButton) return false;
+    replyButton.click();
+
+    const editor = await itgWaitFor(() => thread.querySelector('ytd-commentbox #contenteditable-root'));
+    if (!editor) return false;
+
+    editor.focus();
+    let typed = false;
+    try {
+        typed = document.execCommand('insertText', false, text);
+    } catch {}
+    if (!typed) {
+        editor.textContent = text;
+        editor.dispatchEvent(new InputEvent('input', { bubbles: true, data: text, inputType: 'insertText' }));
+    }
+
+    const submit = await itgWaitFor(() => {
+        const button = thread.querySelector('ytd-commentbox #submit-button button');
+        return button && !button.disabled && button.getAttribute('aria-disabled') !== 'true' ? button : null;
+    });
+    if (!submit) return false;
+    submit.click();
+    return true;
+}
+
+/**
+ * Searches YouTube without touching the page.
+ *
+ * The results page is fetched and read rather than navigated to: opening it in the
+ * tab would tear down the player, and the player is the video currently in the
+ * floating window. YouTube ships its data as a `ytInitialData` blob in the HTML, and
+ * the tab is already on youtube.com, so the request is same-origin and carries the
+ * user's session — the results are the ones they would see themselves.
+ */
+async function itgSearchYouTube(query) {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const response = await fetch(url, { credentials: 'include' });
+    const html = await response.text();
+
+    const match = html.match(/var ytInitialData\s*=\s*({.+?});\s*<\/script>/s);
+    if (!match) return [];
+
+    let data;
+    try {
+        data = JSON.parse(match[1]);
+    } catch {
+        return [];
+    }
+
+    // The shape of that blob changes often, so the videos are collected by walking it
+    // for anything carrying a videoId and a title rather than by a fixed path.
+    const found = [];
+    const seen = new Set();
+    const walk = (node, depth = 0) => {
+        if (!node || depth > 14 || found.length >= 30) return;
+        if (Array.isArray(node)) {
+            for (const child of node) walk(child, depth + 1);
+            return;
+        }
+        if (typeof node !== 'object') return;
+
+        const renderer = node.videoRenderer || node.compactVideoRenderer;
+        if (renderer?.videoId && !seen.has(renderer.videoId)) {
+            const title = renderer.title?.runs?.[0]?.text ?? renderer.title?.simpleText ?? '';
+            if (title) {
+                seen.add(renderer.videoId);
+                found.push({
+                    id: renderer.videoId,
+                    title,
+                    user: renderer.ownerText?.runs?.[0]?.text ?? renderer.shortBylineText?.runs?.[0]?.text ?? '',
+                    duration: renderer.lengthText?.simpleText ?? '',
+                    cover:
+                        renderer.thumbnail?.thumbnails?.at(-1)?.url ??
+                        `https://i.ytimg.com/vi/${renderer.videoId}/mqdefault.jpg`,
+                });
+            }
+        }
+        for (const value of Object.values(node)) walk(value, depth + 1);
+    };
+    walk(data);
+    return found;
+}
+
+/**
+ * Opens a video the same way the side list does — by clicking a link in the page, so
+ * YouTube routes it itself and the floating window survives the change.
+ */
+function itgOpenYouTubeVideo(videoId) {
+    const link = document.createElement('a');
+    link.href = `/watch?v=${encodeURIComponent(videoId)}`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    setTimeout(() => link.remove(), 0);
+}
+
+/** Shorts has no side list: its next/previous are the feed's own arrows. */
+function itgShortsNavButton(direction) {
+    const id = direction === 'next' ? 'navigation-button-down' : 'navigation-button-up';
+    const host = document.querySelector(`#${id}`);
+    return host?.querySelector('button') ?? null;
+}
+
+function itgPipMsg(key, fallback) {
+    try {
+        return chrome.i18n.getMessage(key) || fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+// --- The PiP session ---------------------------------------------------------
+
+var ItgVideoPipSession = class ItgVideoPipSession {
+    constructor(video) {
+        this.video = video;
+        this.pipWindow = null;
+        this.origin = null;
+        this.lists = [];
+        this.comments = [];
+        this.searchResults = [];
+        this.sideTab = 'videos';
+        this.adoptions = [];
+        this.disposers = [];
+        this.hideTimer = null;
+        this.dragging = false;
+        this.isYouTube = itgIsYouTube();
+        this.isShorts = itgIsYouTubeShorts();
+        this.mode = itgPipModeFor(video);
+    }
+
+    // -- lifecycle --
+
+    /**
+     * Must run inside the click that triggered it: `requestWindow()` consumes the
+     * transient activation and nothing may be awaited before it.
+     */
+    async open() {
+        const { width, height } = this.preferredSize();
+        this.pipWindow = await window.documentPictureInPicture.requestWindow({
+            width,
+            height,
+            disallowReturnToOpener: false,
+        });
+
+        this.buildDocument();
+        if (this.mode === 'stream') {
+            this.streamVideoIn(this.video);
+        } else {
+            this.captureOrigin(this.video);
+            // Before the move, while the node is still in place and has a painted frame.
+            this.freezeOriginalSlot(this.video);
+            this.moveVideoIn(this.video);
+            this.adoptCaptions();
+        }
+        this.bindVideo();
+        this.bindWindow();
+        this.watchForVideoSwap();
+        if (this.isYouTube) this.watchLists();
+        this.refreshLists();
+        this.render();
+        this.loadMaxSize();
+        this.watchForReturn();
+        this.wake();
+
+        try {
+            chrome.runtime.sendMessage({ action: 'registerPipWindow' });
+        } catch {}
+        return this.pipWindow;
+    }
+
+    /** Aspect ratio of the media, scaled to the last size the user chose. */
+    preferredSize() {
+        const vw = this.video.videoWidth || this.video.clientWidth || 16;
+        const vh = this.video.videoHeight || this.video.clientHeight || 9;
+        const portrait = vh > vw;
+        const savedW = portrait ? itgPipSavedDims.lastShortPipWidth : itgPipSavedDims.lastNormalPipWidth;
+        const savedH = portrait ? itgPipSavedDims.lastShortPipHeight : itgPipSavedDims.lastNormalPipHeight;
+        if (savedW && savedH) return { width: savedW, height: savedH };
+        const width = portrait ? 360 : 800;
+        return { width, height: Math.round((width * vh) / vw) };
+    }
+
+    close() {
+        try {
+            this.pipWindow?.close();
+        } catch {}
+    }
+
+    /**
+     * Puts everything back: the node in its slot, its controls flag, its inline
+     * style. Runs at most once, from whichever of pagehide/unload fires first.
+     */
+    restore() {
+        if (this.restored) return;
+        this.restored = true;
+
+        for (const dispose of this.disposers.splice(0)) {
+            try {
+                dispose();
+            } catch {}
+        }
+
+        this.releaseCaptions();
+        this.removePlaceholder();
+
+        if (this.mode === 'stream') {
+            try {
+                this.mirror?.srcObject?.getTracks?.().forEach((track) => track.stop());
+            } catch {}
+            this.mirror = null;
+        }
+
+        const origin = this.origin;
+        const video = this.video;
+        if (this.mode !== 'stream' && origin && video) {
+            try {
+                video.controls = origin.controls;
+                if (origin.style === null) video.removeAttribute('style');
+                else video.setAttribute('style', origin.style);
+                video.removeAttribute(ITG_PIP_TARGET_ATTR);
+                if (origin.parent.isConnected) {
+                    if (origin.nextSibling && origin.nextSibling.parentNode === origin.parent) {
+                        origin.parent.insertBefore(video, origin.nextSibling);
+                    } else {
+                        origin.parent.appendChild(video);
+                    }
+                }
+            } catch (e) {
+                console.warn('[ITG PiP] Could not return the video to the page:', e);
+            }
+        }
+
+        // Players that size themselves on layout (YouTube among them) need a nudge
+        // once the node is back, or they paint a black band where it used to be.
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
+
+        if (ItgVideoPip.current === this) ItgVideoPip.current = null;
+    }
+
+    // -- the video node --
+
+    captureOrigin(video) {
+        this.origin = {
+            parent: video.parentElement,
+            nextSibling: video.nextSibling,
+            controls: video.controls,
+            style: video.getAttribute('style'),
+        };
+    }
+
+    /**
+     * Leaves the last frame behind in the player's hole.
+     *
+     * Taking the node out is what makes this seamless, but it also leaves the page
+     * with an empty black rectangle where the video was, which reads as "it broke".
+     * A canvas holding the frame it was on keeps the tab looking like a paused
+     * video — which is exactly what it is.
+     *
+     * Painting a cross-origin frame taints the canvas, and that is fine: the canvas
+     * is only ever displayed, never read back.
+     */
+    freezeOriginalSlot(video) {
+        const origin = this.origin;
+        if (!origin?.parent || !video.videoWidth) return;
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const rect = video.getBoundingClientRect();
+            canvas.dataset.itgPipPlaceholder = 'true';
+            // Mirrors the box the video occupied, so the layout does not jump.
+            canvas.setAttribute(
+                'style',
+                `${origin.style ? origin.style + ';' : ''}width:${rect.width}px;height:${rect.height}px;` +
+                    'object-fit:contain;background:#000;pointer-events:none;',
+            );
+
+            if (origin.nextSibling && origin.nextSibling.parentNode === origin.parent) {
+                origin.parent.insertBefore(canvas, origin.nextSibling);
+            } else {
+                origin.parent.appendChild(canvas);
+            }
+            this.placeholder = canvas;
+        } catch (e) {
+            // A DRM-protected frame cannot be painted; the hole is the lesser evil.
+            console.warn('[ITG PiP] Could not freeze the original frame:', e);
+        }
+    }
+
+    removePlaceholder() {
+        try {
+            this.placeholder?.remove();
+        } catch {}
+        this.placeholder = null;
+    }
+
+    /**
+     * Shows the page's video without taking it out of the page.
+     *
+     * `captureStream()` hands back a live stream of what the element is playing,
+     * which a video in the floating window can render. The page keeps its own node,
+     * untouched, so a player that manages its own DOM has nothing to trip over.
+     *
+     * Sound stays with the page's element — the copy here is muted, because both
+     * playing the same audio is an echo — and every control still drives the page's
+     * video, which is what the stream is following.
+     */
+    streamVideoIn(source) {
+        const capture = source.captureStream?.bind(source) ?? source.mozCaptureStream?.bind(source);
+        if (!capture) {
+            // Nothing to capture with: moving the node is the only way left.
+            this.mode = 'move';
+            this.captureOrigin(source);
+            this.freezeOriginalSlot(source);
+            this.moveVideoIn(source);
+            return;
+        }
+
+        const mirror = this.pipWindow.document.createElement('video');
+        mirror.autoplay = true;
+        mirror.playsInline = true;
+        mirror.muted = true;
+        mirror.setAttribute('style', 'width:100%;height:100%;object-fit:contain;background:#000;display:block;');
+        try {
+            mirror.srcObject = capture();
+        } catch (e) {
+            console.warn('[ITG PiP] Could not capture the video:', e);
+        }
+        this.holder.appendChild(mirror);
+        this.mirror = mirror;
+        mirror.play?.().catch(() => {});
+    }
+
+    moveVideoIn(video) {
+        video.controls = false;
+        video.setAttribute(
+            'style',
+            'width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;background:#000;display:block;position:static;inset:auto;transform:none;',
+        );
+        this.holder.appendChild(video);
+    }
+
+    /**
+     * Sites that rebuild their player (YouTube does on every navigation) drop a
+     * brand-new <video> into the old container. Without this the PiP window would
+     * be left holding a detached, dead element.
+     *
+     * Only the original container is watched, never the whole page: YouTube's
+     * sidebar thumbnails are videos too, and adopting one of those would hijack
+     * the window on a mere hover.
+     */
+    watchForVideoSwap() {
+        // In stream mode the node was never moved, so its own parent is the one to watch.
+        const parent = this.origin?.parent ?? this.video.parentElement;
+        if (!parent) return;
+
+        const observer = new MutationObserver(() => {
+            const replacement = parent.querySelector('video') || this.youtubePlayerVideo();
+            if (replacement && replacement !== this.video && itgIsUsableVideo(replacement)) {
+                this.adopt(replacement);
+            }
+        });
+        observer.observe(parent, { childList: true });
+        this.disposers.push(() => observer.disconnect());
+
+        // The container itself can be replaced, which the observer above cannot see.
+        if (this.isYouTube) {
+            const onNavigate = () => {
+                setTimeout(() => {
+                    const replacement = this.youtubePlayerVideo();
+                    if (replacement && replacement !== this.video && itgIsUsableVideo(replacement)) {
+                        this.adopt(replacement);
+                    }
+                    // The comments belong to the video that just left.
+                    this.comments = [];
+                    if (this.sideTab === 'comments') {
+                        this.loadComments();
+                        this.renderSide();
+                    }
+                    this.refreshLists();
+                }, 400);
+            };
+            window.addEventListener('yt-navigate-finish', onNavigate);
+            this.disposers.push(() => window.removeEventListener('yt-navigate-finish', onNavigate));
+        }
+    }
+
+    youtubePlayerVideo() {
+        return document.querySelector('#movie_player video, #shorts-player video, .html5-video-container video');
+    }
+
+    /**
+     * Takes over the page's new video element. Rate limited the way dmMiniPlayer
+     * does it: a site that recreates the node on every steal would otherwise put us
+     * in a loop, so three swaps within five seconds ends the session instead.
+     */
+    adopt(next) {
+        const now = Date.now();
+        this.adoptions = this.adoptions.filter((t) => now - t < 5000);
+        this.adoptions.push(now);
+        if (this.adoptions.length > 3) {
+            console.warn('[ITG PiP] The page keeps replacing the video element; closing.');
+            this.close();
+            return;
+        }
+
+        const previous = this.video;
+        try {
+            previous.pause();
+        } catch {}
+        if (this.mode !== 'stream') {
+            try {
+                previous.remove();
+            } catch {}
+        }
+
+        this.unbindVideo?.();
+        this.removePlaceholder();
+        this.video = next;
+        if (this.mode === 'stream') {
+            this.mirror?.remove();
+            this.streamVideoIn(next);
+        } else {
+            this.captureOrigin(next);
+            this.freezeOriginalSlot(next);
+            this.moveVideoIn(next);
+        }
+        this.bindVideo();
+        this.render();
+        next.play?.().catch(() => {});
+    }
+
+    // -- the PiP document --
+
+    buildDocument() {
+        const doc = this.pipWindow.document;
+        doc.body.innerHTML = '';
+
+        // The content scripts also load into this window (it is an about:blank
+        // auxiliary context of a matched page), and without this marker they would
+        // inject the page's own picture-in-picture button on top of the player that
+        // already is the picture-in-picture. Set before anything else can run.
+        doc.documentElement.setAttribute('data-itg-pip-window', 'true');
+
+        const style = doc.createElement('style');
+        style.textContent = ITG_PIP_STYLES;
+        doc.head.appendChild(style);
+
+        doc.body.innerHTML = `
+            <div class="itg-pip-root" data-active="true">
+                <div class="itg-pip-stage">
+                    <div class="itg-pip-holder"></div>
+                    <div class="itg-pip-flash"></div>
+                </div>
+                <div class="itg-pip-side-area" hidden>
+                    <div class="itg-pip-side-grip">${ITG_PIP_ICONS.chevronLeft}</div>
+                    <div class="itg-pip-side">
+                        <div class="itg-pip-side-head">
+                            <span class="itg-pip-side-search-icon">${ITG_PIP_ICONS.search}</span>
+                            <input class="itg-pip-side-search" type="search" />
+                        </div>
+                        <div class="itg-pip-side-tabs"></div>
+                        <div class="itg-pip-side-body"></div>
+                    </div>
+                </div>
+                <div class="itg-pip-bar">
+                    <div class="itg-pip-progress" role="slider" tabindex="0">
+                        <div class="itg-pip-progress-track">
+                            <div class="itg-pip-buffered"></div>
+                            <div class="itg-pip-played"></div>
+                            <div class="itg-pip-knob"></div>
+                        </div>
+                    </div>
+                    <div class="itg-pip-buttons">
+                        <button class="itg-pip-btn" data-act="playpause" type="button"></button>
+                        <button class="itg-pip-btn" data-act="prev" type="button" hidden></button>
+                        <button class="itg-pip-btn" data-act="next" type="button" hidden></button>
+                        <button class="itg-pip-btn" data-act="rewind" type="button"></button>
+                        <button class="itg-pip-btn" data-act="forward" type="button"></button>
+                        <div class="itg-pip-volume">
+                            <button class="itg-pip-btn" data-act="mute" type="button"></button>
+                            <input class="itg-pip-volume-slider" type="range" min="0" max="100" step="1" />
+                        </div>
+                        <span class="itg-pip-time">0:00 / 0:00</span>
+                        <span class="itg-pip-spacer"></span>
+                        <button class="itg-pip-btn" data-act="comments" type="button" hidden></button>
+                        <button class="itg-pip-btn" data-act="captions" type="button" hidden></button>
+                        <span class="itg-pip-rate-wrap">
+                            <span class="itg-pip-rate-menu"></span>
+                            <button class="itg-pip-btn itg-pip-rate" data-act="rate" type="button">1x</button>
+                        </span>
+                        <span class="itg-pip-size-wrap">
+                            <div class="itg-pip-size-menu">
+                                <button class="itg-pip-size-max" data-act="sizemax" type="button"></button>
+                                <div class="itg-pip-size-fields">
+                                    <label><span class="itg-pip-size-label-w"></span><input class="itg-pip-size-w" type="number" min="200" step="10" /></label>
+                                    <label><span class="itg-pip-size-label-h"></span><input class="itg-pip-size-h" type="number" min="150" step="10" /></label>
+                                </div>
+                                <small class="itg-pip-size-note"></small>
+                            </div>
+                            <button class="itg-pip-btn" data-act="size" type="button"></button>
+                        </span>
+                    </div>
+                </div>
+            </div>`;
+
+        this.root = doc.querySelector('.itg-pip-root');
+        this.holder = doc.querySelector('.itg-pip-holder');
+        this.flash = doc.querySelector('.itg-pip-flash');
+        this.bar = doc.querySelector('.itg-pip-bar');
+        this.sideArea = doc.querySelector('.itg-pip-side-area');
+        this.side = doc.querySelector('.itg-pip-side');
+        this.sideTabs = doc.querySelector('.itg-pip-side-tabs');
+        this.sideSearchInput = doc.querySelector('.itg-pip-side-search');
+        this.sideBody = doc.querySelector('.itg-pip-side-body');
+        this.progress = doc.querySelector('.itg-pip-progress');
+        this.played = doc.querySelector('.itg-pip-played');
+        this.knob = doc.querySelector('.itg-pip-knob');
+        this.buffered = doc.querySelector('.itg-pip-buffered');
+        this.timeLabel = doc.querySelector('.itg-pip-time');
+        this.volumeSlider = doc.querySelector('.itg-pip-volume-slider');
+        this.buttons = {};
+        for (const btn of doc.querySelectorAll('.itg-pip-btn')) {
+            this.buttons[btn.dataset.act] = btn;
+        }
+
+        this.buttons.playpause.title = itgPipMsg('pipPlayPause', 'Play / pause');
+        this.buttons.prev.title = itgPipMsg('pipPrevious', 'Previous video');
+        this.buttons.next.title = itgPipMsg('pipNext', 'Next video');
+        this.buttons.rewind.title = itgPipMsg('pipRewind', 'Back 10 seconds');
+        this.buttons.rewind.innerHTML = ITG_PIP_ICONS.rewind;
+        this.buttons.forward.title = itgPipMsg('pipForward', 'Forward 10 seconds');
+        this.buttons.forward.innerHTML = ITG_PIP_ICONS.forward;
+        this.buttons.prev.innerHTML = ITG_PIP_ICONS.previous;
+        this.buttons.next.innerHTML = ITG_PIP_ICONS.next;
+        this.buttons.rate.title = itgPipMsg('pipSpeed', 'Playback speed');
+        this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
+        this.buttons.comments.innerHTML = ITG_PIP_ICONS.comments;
+        this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
+        this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
+        this.buttons.size.title = itgPipMsg('pipSize', 'Window size');
+        doc.querySelector('.itg-pip-size-label-w').textContent = itgPipMsg('pipWidth', 'Width');
+        doc.querySelector('.itg-pip-size-label-h').textContent = itgPipMsg('pipHeight', 'Height');
+
+        this.buildRateMenu();
+        this.buildSizeMenu();
+        this.buildSearch();
+        this.applyTheme();
+    }
+
+    /**
+     * The player wears the theme the rest of the extension wears. applyThemeToHost
+     * writes the same custom properties it writes for the hint overlay, so the
+     * progress bar and the active markers follow whatever the user picked instead of
+     * being a hard-coded red.
+     */
+    applyTheme() {
+        if (!this.root) return;
+        try {
+            const pageMode = document.documentElement.getAttribute('data-itg-page-mode');
+            Utils.applyThemeToHost(this.root, itgPipTheme, pageMode);
+            this.applySpinnerArrows();
+        } catch (e) {
+            console.warn('[ITG PiP] Could not apply the theme:', e);
+        }
+    }
+
+    /**
+     * Tints the number fields' arrows.
+     *
+     * A stylesheet cannot recolour the browser's spinner, so the arrows are a
+     * background image drawn in the theme's colour and written in here, where the
+     * resolved value is available — the same thing the rules page does for its own
+     * number inputs.
+     */
+    applySpinnerArrows() {
+        const win = this.pipWindow;
+        const style = win.getComputedStyle(this.root);
+        const color = (
+            style.getPropertyValue('--text-on-color') ||
+            style.getPropertyValue('--text-color') ||
+            '#ffffff'
+        ).trim();
+        const arrows =
+            `url("data:image/svg+xml,<svg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'>` +
+            `<path fill='${color.replace('#', '%23')}' d='m620.6 562.3 36.2 36.2L512 743.3 367.2 598.5l36.2-36.2L512 670.9zM512 353.1l108.6 108.6 36.2-36.2L512 280.7 367.2 425.5l36.2 36.2z'/></svg>")`;
+
+        let tag = win.document.getElementById('itg-pip-spinner-styles');
+        if (!tag) {
+            tag = win.document.createElement('style');
+            tag.id = 'itg-pip-spinner-styles';
+            win.document.head.appendChild(tag);
+        }
+        tag.textContent = `
+            .itg-pip-size-fields input::-webkit-inner-spin-button,
+            .itg-pip-size-fields input::-webkit-outer-spin-button { background-image: ${arrows}; }
+        `;
+    }
+
+    /**
+     * The speeds as a strip above the button rather than a cycle through them: a
+     * button that only steps forward makes going from 2x back to 1x a five-click
+     * trip. Hover opens it, so it costs nothing when unused.
+     */
+    buildRateMenu() {
+        const doc = this.pipWindow.document;
+        const menu = doc.querySelector('.itg-pip-rate-menu');
+        for (const rate of ITG_PIP_RATES) {
+            const option = doc.createElement('button');
+            option.type = 'button';
+            option.className = 'itg-pip-rate-option';
+            option.dataset.rate = String(rate);
+            option.textContent = `${rate}x`;
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.video.playbackRate = rate;
+            });
+            menu.appendChild(option);
+        }
+        this.rateMenu = menu;
+    }
+
+    // -- wiring --
+
+    bindVideo() {
+        const video = this.video;
+        const onUpdate = () => this.renderProgress();
+        const onState = () => this.renderPlayState();
+        const onVolume = () => this.renderVolume();
+        const onRate = () => this.renderRate();
+        const onEnded = () => this.handleEnded();
+
+        video.addEventListener('timeupdate', onUpdate);
+        video.addEventListener('progress', onUpdate);
+        video.addEventListener('durationchange', onUpdate);
+        video.addEventListener('play', onState);
+        video.addEventListener('pause', onState);
+        video.addEventListener('volumechange', onVolume);
+        video.addEventListener('ratechange', onRate);
+        video.addEventListener('ended', onEnded);
+
+        this.unbindVideo = () => {
+            video.removeEventListener('timeupdate', onUpdate);
+            video.removeEventListener('progress', onUpdate);
+            video.removeEventListener('durationchange', onUpdate);
+            video.removeEventListener('play', onState);
+            video.removeEventListener('pause', onState);
+            video.removeEventListener('volumechange', onVolume);
+            video.removeEventListener('ratechange', onRate);
+            video.removeEventListener('ended', onEnded);
+        };
+        this.disposers.push(() => this.unbindVideo());
+    }
+
+    bindWindow() {
+        const win = this.pipWindow;
+        const doc = win.document;
+
+        const finish = () => this.restore();
+        win.addEventListener('pagehide', finish);
+        win.addEventListener('unload', finish);
+
+        // Controls fade out while playing and come back on any pointer movement.
+        const wake = () => this.wake();
+        doc.addEventListener('mousemove', wake);
+        doc.addEventListener('mouseleave', () => this.sleep());
+
+        this.holder.addEventListener('click', () => this.togglePlay());
+
+        for (const [act, btn] of Object.entries(this.buttons)) {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.runAction(act);
+            });
+        }
+
+        this.volumeSlider.addEventListener('input', () => {
+            this.video.volume = Number(this.volumeSlider.value) / 100;
+            if (this.video.volume > 0) this.video.muted = false;
+        });
+
+        this.bindSeeking();
+        this.bindKeys();
+        this.bindResize();
+    }
+
+    bindSeeking() {
+        const seekTo = (clientX) => {
+            const rect = this.progress.getBoundingClientRect();
+            const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+            const duration = this.video.duration;
+            if (Number.isFinite(duration)) this.video.currentTime = ratio * duration;
+        };
+        this.progress.addEventListener('pointerdown', (e) => {
+            this.dragging = true;
+            this.progress.setPointerCapture(e.pointerId);
+            seekTo(e.clientX);
+        });
+        this.progress.addEventListener('pointermove', (e) => {
+            if (this.dragging) seekTo(e.clientX);
+        });
+        const stop = () => (this.dragging = false);
+        this.progress.addEventListener('pointerup', stop);
+        this.progress.addEventListener('pointercancel', stop);
+    }
+
+    bindKeys() {
+        const onKey = (e) => {
+            if (e.target?.tagName === 'INPUT') return;
+            const map = {
+                ' ': () => this.togglePlay(),
+                k: () => this.togglePlay(),
+                ArrowLeft: () => this.seekBy(-5),
+                ArrowRight: () => this.seekBy(5),
+                j: () => this.seekBy(-10),
+                l: () => this.seekBy(10),
+                ArrowUp: () => this.nudgeVolume(0.05),
+                ArrowDown: () => this.nudgeVolume(-0.05),
+                f: () => this.applyMaxSize(),
+                m: () => this.runAction('mute'),
+                n: () => this.runAction('next'),
+                p: () => this.runAction('prev'),
+                Escape: () => this.close(),
+            };
+            const action = map[e.key] || map[e.key.toLowerCase?.()];
+            if (action) {
+                e.preventDefault();
+                action();
+                this.wake();
+            }
+        };
+        this.pipWindow.document.addEventListener('keydown', onKey);
+    }
+
+    /** The size the user drags the window to is the size it reopens at. */
+    bindResize() {
+        let timer;
+        const onResize = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                const w = this.pipWindow.innerWidth;
+                const h = this.pipWindow.innerHeight;
+                if (!w || !h) return;
+                const portrait = h > w;
+                const dims = portrait
+                    ? { lastShortPipWidth: w, lastShortPipHeight: h }
+                    : { lastNormalPipWidth: w, lastNormalPipHeight: h };
+                Object.assign(itgPipSavedDims, dims);
+                try {
+                    chrome.storage.local.set(dims);
+                } catch {}
+            }, 500);
+        };
+        this.pipWindow.addEventListener('resize', onResize);
+    }
+
+    // -- actions --
+
+    runAction(act) {
+        switch (act) {
+            case 'playpause':
+                this.togglePlay();
+                break;
+            case 'rewind':
+                this.seekBy(-10);
+                break;
+            case 'forward':
+                this.seekBy(10);
+                break;
+            case 'mute':
+                this.video.muted = !this.video.muted;
+                break;
+            case 'rate':
+                this.cycleRate();
+                break;
+            case 'captions':
+                this.toggleCaptions();
+                break;
+            case 'comments':
+                this.toggleComments();
+                break;
+            case 'next':
+                this.goToSibling(1);
+                break;
+            case 'prev':
+                this.goToSibling(-1);
+                break;
+            case 'size':
+                this.applyMaxSize();
+                break;
+        }
+    }
+
+    togglePlay() {
+        if (this.video.paused) this.video.play().catch(() => {});
+        else this.video.pause();
+        this.showFlash(this.video.paused ? ITG_PIP_ICONS.pause : ITG_PIP_ICONS.play);
+    }
+
+    seekBy(seconds) {
+        const duration = this.video.duration;
+        const next = this.video.currentTime + seconds;
+        this.video.currentTime = Number.isFinite(duration) ? Math.min(duration, Math.max(0, next)) : Math.max(0, next);
+    }
+
+    nudgeVolume(delta) {
+        this.video.volume = Math.min(1, Math.max(0, this.video.volume + delta));
+        if (this.video.volume > 0) this.video.muted = false;
+    }
+
+    cycleRate() {
+        const index = ITG_PIP_RATES.indexOf(this.video.playbackRate);
+        this.video.playbackRate = ITG_PIP_RATES[(index + 1) % ITG_PIP_RATES.length];
+    }
+
+    /**
+     * The size menu.
+     *
+     * A floating player cannot be made full screen: the Fullscreen API does not exist
+     * inside a document picture-in-picture window, and the window itself is capped by
+     * the browser — asking for the whole screen gets a smaller window back. So rather
+     * than a button that pretends, this offers the sizes that are actually available,
+     * with the ceiling written on it.
+     */
+    buildSizeMenu() {
+        const doc = this.pipWindow.document;
+        this.sizeMenu = doc.querySelector('.itg-pip-size-menu');
+        this.sizeMaxButton = doc.querySelector('.itg-pip-size-max');
+        this.sizeWidth = doc.querySelector('.itg-pip-size-w');
+        this.sizeHeight = doc.querySelector('.itg-pip-size-h');
+        this.sizeNote = doc.querySelector('.itg-pip-size-note');
+
+        this.sizeMaxButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.applyMaxSize();
+        });
+
+        // Clamped while typing, not only when applied: a field that accepts 9999 and
+        // silently does something else is worse than one that will not take it.
+        for (const [field, axis] of [
+            [this.sizeWidth, 'w'],
+            [this.sizeHeight, 'h'],
+        ]) {
+            field.addEventListener('input', () => {
+                const limit = this.maxSize?.[axis];
+                if (limit && Number(field.value) > limit) field.value = String(limit);
+            });
+            field.addEventListener('change', () => this.applySize(+this.sizeWidth.value, +this.sizeHeight.value));
+            field.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this.applySize(+this.sizeWidth.value, +this.sizeHeight.value);
+                e.stopPropagation();
+            });
+        }
+    }
+
+    /**
+     * Closes the window when the user scrolls back to where the video was.
+     *
+     * What is watched is the frozen frame, not the video: the video is in this window
+     * now, and an observer in the page cannot say anything useful about it. The frame
+     * sits in the page exactly where the video sat, so it is the honest answer to
+     * "is the user looking at the player again". Only for a window that scrolling
+     * opened — one opened on purpose stays until it is closed on purpose.
+     */
+    watchForReturn() {
+        if (this.auto !== 'scroll' || !this.placeholder) return;
+
+        let first = true;
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // The first report is the current state, not a change.
+                if (first) {
+                    first = false;
+                    return;
+                }
+                if (entry.isIntersecting) this.close();
+            },
+            { threshold: 0 },
+        );
+        observer.observe(this.placeholder);
+        this.disposers.push(() => observer.disconnect());
+    }
+
+    /** Where the measured ceiling for this screen is kept between sessions. */
+    maxSizeKey() {
+        const screen = this.pipWindow.screen;
+        return `itgPipMax_${screen.availWidth}x${screen.availHeight}`;
+    }
+
+    /** Reads back a ceiling measured on an earlier run, if there is one. */
+    async loadMaxSize() {
+        try {
+            const key = this.maxSizeKey();
+            const cached = await chrome.storage.local.get([key]);
+            if (cached?.[key]?.w) {
+                this.maxSize = cached[key];
+                this.renderSize();
+            }
+        } catch {}
+    }
+
+    /**
+     * Grows the window as far as the browser allows, and learns the limit from what
+     * comes back.
+     *
+     * The limit cannot be looked up or measured quietly: `resizeTo` inside a document
+     * picture-in-picture window "requires user activation", so it only works from a
+     * real press — which is why this doubles as the maximum button rather than
+     * running on its own when the window opens. The result is kept per screen size,
+     * so the figure is shown from then on without asking again.
+     */
+    async applyMaxSize() {
+        const win = this.pipWindow;
+        try {
+            win.resizeTo(win.screen.availWidth, win.screen.availHeight);
+        } catch (e) {
+            console.warn('[ITG PiP] The window refused to resize:', e);
+            return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        // Inner, not outer: from the opening tab's script a picture-in-picture window
+        // reports outerWidth/outerHeight as 0.
+        this.maxSize = { w: win.innerWidth, h: win.innerHeight };
+        try {
+            chrome.storage.local.set({ [this.maxSizeKey()]: this.maxSize });
+        } catch {}
+        this.renderSize();
+    }
+
+    /** Resizes the window, never past what it will accept. */
+    applySize(width, height) {
+        const max = this.maxSize;
+        if (!width || !height) return;
+        const w = Math.max(200, max ? Math.min(width, max.w) : width);
+        const h = Math.max(150, max ? Math.min(height, max.h) : height);
+        this.pipWindow.resizeTo(w, h);
+        setTimeout(() => this.renderSize(), 200);
+    }
+
+    renderSize() {
+        if (!this.sizeMenu) return;
+        const win = this.pipWindow;
+        const max = this.maxSize;
+
+        this.sizeWidth.value = String(win.innerWidth);
+        this.sizeHeight.value = String(win.innerHeight);
+        if (max) {
+            this.sizeWidth.max = String(max.w);
+            this.sizeHeight.max = String(max.h);
+            this.sizeMaxButton.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
+            this.sizeNote.textContent = `${itgPipMsg('pipMaxSizeNote', 'Largest a floating window can be')}: ${max.w}×${max.h}`;
+            const atMax = win.innerWidth >= max.w - 8 && win.innerHeight >= max.h - 8;
+            this.sizeMaxButton.classList.toggle('is-on', atMax);
+        } else {
+            this.sizeMaxButton.textContent = itgPipMsg('pipMaxSize', 'Maximum');
+            this.sizeNote.textContent = itgPipMsg(
+                'pipMaxSizeUnknown',
+                'Press Maximum to find the largest size allowed',
+            );
+        }
+        this.buttons.size.innerHTML = ITG_PIP_ICONS.fullscreen;
+    }
+
+    /**
+     * Plays the next video when this one runs out.
+     *
+     * YouTube may do it on its own when autoplay is on, so this waits a moment and
+     * only steps in if nothing happened — otherwise both would fire and a video
+     * would be skipped.
+     */
+    handleEnded() {
+        if (!this.isYouTube) return;
+        if (!this.isShorts && !this.siblingItem(1)) return;
+        const endedAt = this.video.currentTime;
+        setTimeout(() => {
+            if (!this.pipWindow || this.pipWindow.closed) return;
+            const video = this.video;
+            const movedOn = video.currentTime < endedAt - 1 || !video.paused;
+            if (!movedOn) this.goToSibling(1);
+        }, 1200);
+    }
+
+    /**
+     * Subtitles stay YouTube's own: its caption container is moved into this window
+     * next to the video, and the button toggles the page's real subtitle control, so
+     * the language and styling the user already chose are the ones that show up.
+     */
+    toggleCaptions() {
+        const control = this.captionsControl();
+        if (control) control.click();
+        setTimeout(() => this.renderCaptions(), 150);
+    }
+
+    captionsControl() {
+        return document.querySelector('#movie_player .ytp-subtitles-button, #shorts-player .ytp-subtitles-button');
+    }
+
+    /**
+     * Brings YouTube's caption layer along with the video. It keeps being written to
+     * by the page's player wherever it lives, so moving the node is enough — there
+     * is no need to parse a subtitle track ourselves.
+     */
+    adoptCaptions() {
+        if (!this.isYouTube) return;
+        const container = document.querySelector('.ytp-caption-window-container');
+        if (!container) {
+            // YouTube does not build the caption layer until subtitles are switched
+            // on, which for most videos is after the window is already open.
+            this.watchForCaptions();
+            return;
+        }
+        this.captionsOrigin = {
+            node: container,
+            parent: container.parentElement,
+            nextSibling: container.nextSibling,
+            style: container.getAttribute('style'),
+        };
+        container.classList.add('itg-pip-captions');
+        this.holder.appendChild(container);
+    }
+
+    /** Picks the caption layer up the moment the page finally creates it. */
+    watchForCaptions() {
+        if (this.captionsWatcher) return;
+        const player = document.querySelector('#movie_player, #shorts-player');
+        if (!player) return;
+        this.captionsWatcher = new MutationObserver(() => {
+            if (this.captionsOrigin) return;
+            if (document.querySelector('.ytp-caption-window-container')) {
+                this.adoptCaptions();
+                this.renderCaptions();
+            }
+        });
+        this.captionsWatcher.observe(player, { childList: true, subtree: true });
+        this.disposers.push(() => {
+            this.captionsWatcher?.disconnect();
+            this.captionsWatcher = null;
+        });
+    }
+
+    releaseCaptions() {
+        const origin = this.captionsOrigin;
+        if (!origin) return;
+        this.captionsOrigin = null;
+        try {
+            origin.node.classList.remove('itg-pip-captions');
+            if (origin.style === null) origin.node.removeAttribute('style');
+            else origin.node.setAttribute('style', origin.style);
+            if (origin.parent?.isConnected) {
+                if (origin.nextSibling && origin.nextSibling.parentNode === origin.parent) {
+                    origin.parent.insertBefore(origin.node, origin.nextSibling);
+                } else {
+                    origin.parent.appendChild(origin.node);
+                }
+            }
+        } catch {}
+    }
+
+    /**
+     * Switching video is a click on the page's own link, not a navigation of ours:
+     * the site routes it, replaces the media, and `watchForVideoSwap` follows.
+     */
+    goToSibling(offset) {
+        if (this.isShorts) {
+            itgShortsNavButton(offset > 0 ? 'next' : 'prev')?.click();
+            return;
+        }
+        const target = this.siblingItem(offset);
+        if (target) target.linkEl.click();
+    }
+
+    siblingItem(offset) {
+        const main = this.lists.find((list) => list.mainList);
+        if (main) {
+            const index = main.items.findIndex((item) => item.isActive);
+            if (index !== -1) return main.items[index + offset] ?? null;
+        }
+        // With no playlist, "next" means the first recommendation — the same thing
+        // YouTube's own autoplay would pick. There is nothing sensible for "previous".
+        if (offset > 0) {
+            const recommended = this.lists.find((list) => !list.mainList);
+            return recommended?.items[0] ?? null;
+        }
+        return null;
+    }
+
+    // -- the side list --
+
+    watchLists() {
+        const secondary = document.querySelector('ytd-watch-next-secondary-results-renderer');
+        if (!secondary) return;
+        let timer;
+        const observer = new MutationObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => this.refreshLists(), 500);
+        });
+        observer.observe(secondary, { childList: true, subtree: true, attributes: true });
+        this.disposers.push(() => {
+            clearTimeout(timer);
+            observer.disconnect();
+        });
+    }
+
+    refreshLists() {
+        if (!this.pipWindow || this.pipWindow.closed) return;
+        this.lists = this.isYouTube && !this.isShorts ? itgReadYouTubeLists() : [];
+        // Rebuilding the panel while comments are open would wipe a reply half
+        // written in it, and the sidebar mutates constantly on YouTube.
+        if (this.sideTab !== 'comments') this.renderSide();
+        this.renderNavButtons();
+    }
+
+    /**
+     * Opens the comments in the side panel and pins it there.
+     *
+     * Pinned because the panel otherwise lives on hover, and a panel that slides away
+     * when the pointer drifts is no place to read a thread, let alone write in one.
+     */
+    toggleComments() {
+        const showing = this.sideTab === 'comments' && this.sideArea.dataset.pinned === 'true';
+        if (showing) {
+            this.sideArea.dataset.pinned = 'false';
+            this.sideTab = 'videos';
+        } else {
+            this.sideArea.dataset.pinned = 'true';
+            this.sideTab = 'comments';
+            this.loadComments();
+        }
+        this.buttons.comments.classList.toggle('is-on', !showing);
+        this.renderSide();
+    }
+
+    /**
+     * YouTube only builds the comment threads once they are scrolled near, so a
+     * video opened straight into the floating player has none in its DOM yet. The
+     * page is nudged down to make it render them, then watched for the result.
+     */
+    loadComments() {
+        this.comments = itgReadYouTubeComments();
+        if (this.comments.length) return;
+
+        const section = document.querySelector('ytd-comments#comments, #comments');
+        if (!section) return;
+        try {
+            section.scrollIntoView({ block: 'center' });
+        } catch {}
+
+        if (this.commentsObserver) return;
+        this.commentsObserver = new MutationObserver(() => {
+            const found = itgReadYouTubeComments();
+            if (!found.length) return;
+            this.comments = found;
+            if (this.sideTab === 'comments') this.renderSide();
+        });
+        this.commentsObserver.observe(section, { childList: true, subtree: true });
+        this.disposers.push(() => {
+            this.commentsObserver?.disconnect();
+            this.commentsObserver = null;
+        });
+    }
+
+    /** The search field, always present at the top of the panel. */
+    buildSearch() {
+        const input = this.sideSearchInput;
+        input.placeholder = itgPipMsg('pipSearch', 'Search videos');
+        // The player's own shortcuts must not fire while a query is being typed.
+        input.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') this.runSearch(input.value.trim());
+            if (e.key === 'Escape') input.blur();
+        });
+    }
+
+    async runSearch(query) {
+        if (!query) return;
+        this.sideTab = 'search';
+        this.searchResults = [];
+        this.searching = true;
+        this.renderSide();
+        try {
+            this.searchResults = await itgSearchYouTube(query);
+        } catch (e) {
+            console.warn('[ITG PiP] Search failed:', e);
+        }
+        this.searching = false;
+        if (this.sideTab === 'search') this.renderSide();
+    }
+
+    renderSearch() {
+        const doc = this.pipWindow.document;
+        this.sideBody.innerHTML = '';
+        if (this.searching || !this.searchResults.length) {
+            const note = doc.createElement('p');
+            note.className = 'itg-pip-side-note';
+            note.textContent = this.searching
+                ? itgPipMsg('pipSearching', 'Searching…')
+                : itgPipMsg('pipNoResults', 'Nothing found');
+            this.sideBody.appendChild(note);
+            return;
+        }
+        this.renderItems([
+            {
+                category: itgPipMsg('pipResults', 'Results'),
+                items: this.searchResults.map((r) => ({ ...r, open: () => itgOpenYouTubeVideo(r.id) })),
+            },
+        ]);
+    }
+
+    renderSide() {
+        const hasLists = this.lists.some((list) => list.items.length);
+        const canComment = this.isYouTube && !this.isShorts;
+        this.buttons.comments.hidden = !canComment;
+        this.sideArea.hidden = !hasLists && !canComment;
+        if (this.sideArea.hidden) return;
+
+        this.renderSideTabs(hasLists, canComment);
+        if (this.sideTab === 'comments') this.renderComments();
+        else if (this.sideTab === 'search') this.renderSearch();
+        else this.renderVideoLists();
+    }
+
+    renderSideTabs(hasLists, canComment) {
+        const doc = this.pipWindow.document;
+        this.sideTabs.innerHTML = '';
+        // A single available panel needs no chooser above it.
+        if (!hasLists || !canComment) return;
+
+        const tabs = [
+            ['videos', itgPipMsg('pipRecommended', 'Recommended')],
+            ['comments', itgPipMsg('pipComments', 'Comments')],
+        ];
+        if (this.sideTab === 'search' || this.searchResults.length) {
+            tabs.push(['search', itgPipMsg('pipResults', 'Results')]);
+        }
+        for (const [tab, label] of tabs) {
+            const button = doc.createElement('button');
+            button.type = 'button';
+            button.className = 'itg-pip-side-tab';
+            button.classList.toggle('is-active', this.sideTab === tab);
+            button.textContent = label;
+            button.addEventListener('click', () => {
+                this.sideTab = tab;
+                if (tab === 'comments') this.loadComments();
+                this.renderSide();
+            });
+            this.sideTabs.appendChild(button);
+        }
+    }
+
+    /**
+     * Builds the thread list, and keeps building it.
+     *
+     * Entries are appended rather than re-rendered because a reply may be half
+     * written in one of them, and rebuilding would throw it away every time YouTube
+     * touched the comment section — which it does constantly.
+     */
+    renderComments() {
+        const doc = this.pipWindow.document;
+        this.commentEntries ??= new Map();
+
+        // A tab switch empties the body, so anything remembered from before is gone.
+        if (!this.sideBody.querySelector('.itg-pip-comment')) {
+            this.sideBody.innerHTML = '';
+            this.commentEntries.clear();
+        }
+
+        // YouTube rebuilds the section on its own account, and every thread it
+        // replaces leaves an entry here pointing at a node that is no longer in the
+        // page: stale to look at, and — since the new threads are unknown keys — a
+        // second copy of the list waiting to be appended below it.
+        for (const [thread, entry] of this.commentEntries) {
+            if (thread.isConnected) continue;
+            entry.remove();
+            this.commentEntries.delete(thread);
+        }
+
+        if (!this.comments.length) {
+            if (!this.sideBody.querySelector('.itg-pip-side-note')) {
+                const note = doc.createElement('p');
+                note.className = 'itg-pip-side-note';
+                note.textContent = itgPipMsg('pipCommentsLoading', 'Loading comments…');
+                this.sideBody.appendChild(note);
+            }
+            return;
+        }
+        this.sideBody.querySelector('.itg-pip-side-note')?.remove();
+        this.watchCommentScroll();
+
+        for (const comment of this.comments) {
+            if (this.commentEntries.has(comment.el)) continue;
+            const entry = doc.createElement('div');
+            entry.className = 'itg-pip-comment';
+            entry.innerHTML = `
+                <span class="itg-pip-comment-avatar"></span>
+                <div class="itg-pip-comment-body">
+                    <div class="itg-pip-comment-head">
+                        <span class="itg-pip-comment-author"></span>
+                        <span class="itg-pip-comment-when"></span>
+                    </div>
+                    <div class="itg-pip-comment-text"></div>
+                    <div class="itg-pip-comment-meta">
+                        <span class="itg-pip-comment-likes"></span>
+                        <button class="itg-pip-comment-reply" type="button"></button>
+                    </div>
+                    <div class="itg-pip-reply-box">
+                        <textarea rows="2"></textarea>
+                        <button class="itg-pip-reply-send" type="button">${ITG_PIP_ICONS.send}</button>
+                    </div>
+                    <button class="itg-pip-show-replies" type="button" hidden></button>
+                    <div class="itg-pip-replies"></div>
+                </div>`;
+
+            // Comment bodies are other people's text: set as text, never as markup.
+            if (comment.avatar) {
+                const img = doc.createElement('img');
+                img.setAttribute('src', comment.avatar);
+                img.setAttribute('alt', '');
+                img.setAttribute('loading', 'lazy');
+                entry.querySelector('.itg-pip-comment-avatar').appendChild(img);
+            }
+            entry.querySelector('.itg-pip-comment-author').textContent = comment.author;
+            entry.querySelector('.itg-pip-comment-when').textContent = comment.when;
+            entry.querySelector('.itg-pip-comment-text').textContent = comment.text;
+            entry.querySelector('.itg-pip-comment-likes').textContent = comment.likes;
+
+            this.wireReplyBox(entry, () => itgResolveThread(comment));
+
+            this.wireReplies(entry, comment);
+            this.commentEntries.set(comment.el, entry);
+            this.sideBody.appendChild(entry);
+        }
+
+        this.fillCommentAvatars();
+    }
+
+    /**
+     * The reply control and its box, for a comment or for one of its replies.
+     *
+     * `getTarget` is called at send time rather than captured, because the node the
+     * reply belongs to may have been recycled by the page in between.
+     */
+    wireReplyBox(entry, getTarget) {
+        const replyButton = entry.querySelector('.itg-pip-comment-reply');
+        const box = entry.querySelector('.itg-pip-reply-box');
+        if (!replyButton || !box) return;
+        const field = box.querySelector('textarea');
+        const send = box.querySelector('.itg-pip-reply-send');
+        replyButton.textContent = itgPipMsg('pipReply', 'Reply');
+        field.placeholder = itgPipMsg('pipReply', 'Reply');
+
+        replyButton.addEventListener('click', () => {
+            box.classList.toggle('is-open');
+            if (box.classList.contains('is-open')) field.focus();
+        });
+        field.addEventListener('keydown', (e) => e.stopPropagation());
+        send.addEventListener('click', async () => {
+            const text = field.value.trim();
+            if (!text) return;
+            send.disabled = true;
+            const target = getTarget();
+            const posted = target ? await itgReplyToYouTubeComment(target, text) : false;
+            send.disabled = false;
+            if (posted) {
+                field.value = '';
+                box.classList.remove('is-open');
+                replyButton.textContent = itgPipMsg('pipReplySent', 'Reply sent');
+            } else {
+                replyButton.textContent = itgPipMsg('pipReplyFailed', 'Reply in the tab');
+            }
+        });
+    }
+
+    /** The "N replies" control, and the list it fills in when pressed. */
+    wireReplies(entry, comment) {
+        const doc = this.pipWindow.document;
+        const toggle = entry.querySelector('.itg-pip-show-replies');
+        const list = entry.querySelector('.itg-pip-replies');
+
+        const label = itgYouTubeRepliesButton(comment.el)?.textContent?.trim();
+        const already = itgReadYouTubeReplies(comment.el);
+        if (!label && !already.length) return;
+
+        toggle.hidden = false;
+        toggle.textContent = label || itgPipMsg('pipShowReplies', 'Show replies');
+
+        let open = false;
+        toggle.addEventListener('click', async () => {
+            if (open) {
+                list.innerHTML = '';
+                open = false;
+                toggle.textContent = label || itgPipMsg('pipShowReplies', 'Show replies');
+                return;
+            }
+            toggle.disabled = true;
+            const thread = itgResolveThread(comment);
+            const replies = thread ? await itgExpandYouTubeReplies(thread) : [];
+            toggle.disabled = false;
+            if (!replies.length) {
+                toggle.textContent = itgPipMsg('pipNoReplies', 'No replies');
+                return;
+            }
+            open = true;
+            toggle.textContent = itgPipMsg('pipHideReplies', 'Hide replies');
+            list.innerHTML = '';
+            for (const reply of replies) {
+                const node = doc.createElement('div');
+                node.className = 'itg-pip-comment itg-pip-reply';
+                node.innerHTML = `
+                    <span class="itg-pip-comment-avatar"></span>
+                    <div class="itg-pip-comment-body">
+                        <div class="itg-pip-comment-head">
+                            <span class="itg-pip-comment-author"></span>
+                            <span class="itg-pip-comment-when"></span>
+                        </div>
+                        <div class="itg-pip-comment-text"></div>
+                        <div class="itg-pip-comment-meta">
+                            <span class="itg-pip-comment-likes"></span>
+                            <button class="itg-pip-comment-reply" type="button"></button>
+                        </div>
+                        <div class="itg-pip-reply-box">
+                            <textarea rows="2"></textarea>
+                            <button class="itg-pip-reply-send" type="button">${ITG_PIP_ICONS.send}</button>
+                        </div>
+                    </div>`;
+                // Each reply has its own reply button in the page, so answering one
+                // answers that reply rather than the thread it sits under. If YouTube
+                // has recycled the node by then, the thread is the fallback.
+                this.wireReplyBox(node, () => (reply.el?.isConnected ? reply.el : itgResolveThread(comment)));
+                if (reply.avatar) {
+                    const img = doc.createElement('img');
+                    img.setAttribute('src', reply.avatar);
+                    img.setAttribute('alt', '');
+                    node.querySelector('.itg-pip-comment-avatar').appendChild(img);
+                }
+                node.querySelector('.itg-pip-comment-author').textContent = reply.author;
+                node.querySelector('.itg-pip-comment-when').textContent = reply.when;
+                node.querySelector('.itg-pip-comment-text').textContent = reply.text;
+                node.querySelector('.itg-pip-comment-likes').textContent = reply.likes;
+                list.appendChild(node);
+            }
+        });
+    }
+
+    /**
+     * Fills in the avatars YouTube had not loaded yet.
+     *
+     * Comment pictures arrive the same way the sidebar thumbnails do — only once the
+     * page decides to load them — but unlike a video thumbnail there is no address to
+     * derive from an id, so the only thing to do is look again later and put in
+     * whatever has turned up. The image is added to the entry already on screen, so
+     * nothing else about it is disturbed.
+     */
+    fillCommentAvatars() {
+        const doc = this.pipWindow.document;
+        const missing = [];
+        for (const [thread, entry] of this.commentEntries) {
+            const slot = entry.querySelector('.itg-pip-comment-avatar');
+            if (!slot || slot.querySelector('img')) continue;
+            const src = thread.querySelector('#author-thumbnail img')?.src;
+            if (!src) {
+                missing.push(thread);
+                continue;
+            }
+            const img = doc.createElement('img');
+            img.setAttribute('src', src);
+            img.setAttribute('alt', '');
+            slot.appendChild(img);
+        }
+
+        clearTimeout(this.avatarTimer);
+        if (!missing.length || this.sideTab !== 'comments') return;
+
+        // Waiting alone is not enough: YouTube loads a comment's picture when its
+        // thread comes near the tab's viewport, and our panel scrolls on its own, so
+        // for a thread the tab never reaches the picture never arrives. Bringing the
+        // thread into view in the tab is what makes it load — one at a time, since
+        // each one moves the page.
+        try {
+            missing[0].scrollIntoView({ block: 'nearest' });
+        } catch {}
+        this.avatarTimer = setTimeout(() => this.fillCommentAvatars(), 900);
+    }
+
+    /**
+     * More threads exist than YouTube has built. Reaching the end of our panel scrolls
+     * the tab on, which is what makes the page render the next batch for us to read.
+     */
+    watchCommentScroll() {
+        if (this.commentScrollBound) return;
+        this.commentScrollBound = true;
+        let loading = false;
+        this.side.addEventListener('scroll', () => {
+            if (this.sideTab !== 'comments' || loading) return;
+            const nearEnd = this.side.scrollTop + this.side.clientHeight >= this.side.scrollHeight - 120;
+            if (!nearEnd) return;
+            loading = true;
+            try {
+                const last = this.comments.at(-1)?.el;
+                last?.scrollIntoView({ block: 'end' });
+            } catch {}
+            setTimeout(() => {
+                loading = false;
+                const found = itgReadYouTubeComments(200);
+                if (found.length > this.comments.length) {
+                    this.comments = found;
+                    this.renderComments();
+                }
+            }, 900);
+        });
+    }
+
+    renderVideoLists() {
+        this.sideBody.innerHTML = '';
+        this.renderItems(this.lists);
+    }
+
+    renderItems(lists) {
+        const doc = this.pipWindow.document;
+        for (const list of lists) {
+            if (!list.items.length) continue;
+            const section = doc.createElement('section');
+            section.className = 'itg-pip-side-section';
+            const heading = doc.createElement('h3');
+            heading.textContent = list.category;
+            section.appendChild(heading);
+
+            for (const item of list.items) {
+                const entry = doc.createElement('button');
+                entry.type = 'button';
+                entry.className = 'itg-pip-side-item';
+                if (item.isActive) entry.classList.add('is-active');
+                entry.innerHTML = `
+                    <span class="itg-pip-thumb"></span>
+                    <span class="itg-pip-meta">
+                        <span class="itg-pip-item-title"></span>
+                        <span class="itg-pip-item-user"></span>
+                    </span>`;
+                // Everything below comes from the page, so it is set as text or through
+                // setAttribute — never interpolated into markup.
+                const thumb = entry.querySelector('.itg-pip-thumb');
+                if (item.cover) {
+                    const img = doc.createElement('img');
+                    img.setAttribute('src', item.cover);
+                    img.setAttribute('alt', '');
+                    img.setAttribute('loading', 'lazy');
+                    thumb.appendChild(img);
+                }
+                if (item.duration) {
+                    const badge = doc.createElement('span');
+                    badge.className = 'itg-pip-duration';
+                    badge.textContent = item.duration;
+                    thumb.appendChild(badge);
+                }
+                entry.querySelector('.itg-pip-item-title').textContent = item.title;
+                entry.querySelector('.itg-pip-item-user').textContent = item.user || '';
+                entry.title = item.title;
+                entry.addEventListener('click', () => (item.open ? item.open() : item.linkEl.click()));
+                section.appendChild(entry);
+            }
+            this.sideBody.appendChild(section);
+        }
+    }
+
+    renderNavButtons() {
+        const hasNav = this.isShorts || !!this.siblingItem(1) || !!this.siblingItem(-1);
+        this.buttons.next.hidden = !hasNav;
+        this.buttons.prev.hidden = !hasNav;
+        if (!hasNav) return;
+        this.buttons.next.disabled = !this.isShorts && !this.siblingItem(1);
+        this.buttons.prev.disabled = !this.isShorts && !this.siblingItem(-1);
+    }
+
+    // -- rendering --
+
+    render() {
+        this.renderPlayState();
+        this.renderProgress();
+        this.renderVolume();
+        this.renderRate();
+        this.renderCaptions();
+        this.renderSize();
+        this.renderNavButtons();
+    }
+
+    renderCaptions() {
+        const control = this.captionsControl();
+        this.buttons.captions.hidden = !control;
+        this.buttons.captions.classList.toggle('is-on', control?.getAttribute('aria-pressed') === 'true');
+    }
+
+    renderPlayState() {
+        this.buttons.playpause.innerHTML = this.video.paused ? ITG_PIP_ICONS.play : ITG_PIP_ICONS.pause;
+        if (this.video.paused) this.wake();
+    }
+
+    renderProgress() {
+        const { currentTime, duration } = this.video;
+        const live = !Number.isFinite(duration) || duration === 0;
+        const ratio = live ? 0 : currentTime / duration;
+        this.played.style.width = `${ratio * 100}%`;
+        this.knob.style.left = `${ratio * 100}%`;
+        try {
+            const buffered = this.video.buffered;
+            const end = buffered.length ? buffered.end(buffered.length - 1) : 0;
+            this.buffered.style.width = live ? '0%' : `${(end / duration) * 100}%`;
+        } catch {}
+        this.timeLabel.textContent = live
+            ? itgPipMsg('pipLive', 'Live')
+            : `${itgFormatTime(currentTime)} / ${itgFormatTime(duration)}`;
+    }
+
+    renderVolume() {
+        const muted = this.video.muted || this.video.volume === 0;
+        this.buttons.mute.innerHTML = muted ? ITG_PIP_ICONS.muted : ITG_PIP_ICONS.volume;
+        this.buttons.mute.title = itgPipMsg(muted ? 'pipUnmute' : 'pipMute', muted ? 'Unmute' : 'Mute');
+        this.volumeSlider.value = String(Math.round((muted ? 0 : this.video.volume) * 100));
+    }
+
+    renderRate() {
+        const rate = this.video.playbackRate;
+        this.buttons.rate.textContent = `${rate}x`;
+        for (const option of this.rateMenu.children) {
+            option.classList.toggle('is-active', Number(option.dataset.rate) === rate);
+        }
+    }
+
+    showFlash(icon) {
+        this.flash.innerHTML = icon;
+        this.flash.classList.remove('is-shown');
+        void this.flash.offsetWidth;
+        this.flash.classList.add('is-shown');
+    }
+
+    wake() {
+        this.root.dataset.active = 'true';
+        clearTimeout(this.hideTimer);
+        this.hideTimer = setTimeout(() => this.sleep(), 2500);
+    }
+
+    sleep() {
+        if (this.video.paused || this.dragging) return;
+        this.root.dataset.active = 'false';
+    }
+};
+
+function itgFormatTime(seconds) {
+    if (!Number.isFinite(seconds)) return '0:00';
+    const total = Math.floor(seconds);
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    const s = total % 60;
+    const pad = (n) => String(n).padStart(2, '0');
+    return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+
+// --- Entry point -------------------------------------------------------------
+
+/**
+ * One player per document, however many times this file is injected.
+ *
+ * Reloading the extension injects the content scripts again into tabs that already
+ * have them, and `var ItgVideoPip = {...}` on that second pass would replace this
+ * object with a fresh one whose `current` is null — orphaning a window that is open
+ * and playing, with nothing left holding the session that knows how to put the video
+ * back. Anchoring it to the window makes the second injection reuse the first.
+ */
+var ItgVideoPip = window.__itgVideoPip ?? {
+    current: null,
+
+    supported() {
+        return 'documentPictureInPicture' in window;
+    },
+
+    /**
+     * Opens (or closes, when already open) the floating player. Called straight
+     * from a click handler so the activation is still live.
+     */
+    async open(video, { auto = null } = {}) {
+        if (!this.supported()) return false;
+
+        if (window.documentPictureInPicture.window) {
+            // Pressing the button again closes the window — that is the toggle a
+            // button should have. An automatic trigger must never do it: a second
+            // trigger arriving behind the first would close the very window the
+            // first had just opened, which is exactly what "it opened and shut
+            // again instantly" is.
+            if (auto) return true;
+            window.documentPictureInPicture.window.close();
+            if (this.current) return true;
+        }
+
+        const target = video && itgIsUsableVideo(video) ? video : itgPickBestVideo();
+        if (!target) {
+            console.warn('[ITG PiP] No playable video found on this page.');
+            return false;
+        }
+
+        if (this.current) return true;
+
+        const session = new ItgVideoPipSession(target);
+        session.auto = auto;
+        this.current = session;
+        try {
+            await session.open();
+            return true;
+        } catch (e) {
+            // A DOMException logs as "[object DOMException]" and says nothing; the
+            // name is what distinguishes "the browser refused for want of a click"
+            // from anything else.
+            const detail = e?.name ? `${e.name}: ${e.message}` : String(e);
+            if (e?.name === 'NotAllowedError') {
+                console.warn(
+                    `[ITG PiP] The browser would not open the window without a recent click (${detail}). ` +
+                        'Playback started by the user is what earns it: press play yourself, or press the button.',
+                );
+            } else {
+                console.warn('[ITG PiP] Could not open the picture-in-picture window:', detail, e);
+            }
+            session.restore();
+            // Only if it is still ours: a failed attempt must not drop the reference
+            // to a session that is alive and working.
+            if (this.current === session) this.current = null;
+            return false;
+        }
+    },
+};
+window.__itgVideoPip = ItgVideoPip;
+
+// --- The button's hover menu -------------------------------------------------
+
+var ITG_AUTO_PIP_MENU_STYLES = `
+.itg-autopip-menu {
+    position: fixed; z-index: 2147483647; width: 264px; padding: 8px;
+    border-radius: 10px;
+    background: var(--bg-panel-color, #1c1c1c);
+    color: var(--text-color, #fff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    font: 500 12px/1.35 'Roboto', system-ui, -apple-system, sans-serif;
+    opacity: 0; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+.itg-autopip-menu.is-open { opacity: 1; visibility: visible; transform: translateY(0); }
+/* An invisible strip over the gap, so the pointer can travel from the button to
+   the menu without passing through nothing and closing it on the way. */
+.itg-autopip-menu::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 14px; }
+.itg-autopip-menu[data-place='below']::after { top: auto; bottom: 100%; }
+
+/* Selectable buttons rather than checkboxes: the state is the button, which reads
+   at a glance on a control bar and takes the theme's colours as its own. */
+.itg-autopip-option {
+    display: block; width: 100%; margin: 0; padding: 8px 10px; text-align: left;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    border-radius: 8px; background: transparent; color: inherit;
+    font: inherit; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.itg-autopip-option + .itg-autopip-option { margin-top: 6px; }
+.itg-autopip-option:hover { border-color: var(--interactive-color, #fff); }
+/* A tint of the accent rather than the accent itself, and the theme's ordinary text
+   colour on top: several themes set text-on-color to the same value as the accent,
+   and a selected option written in its own background colour cannot be read. */
+.itg-autopip-option.is-on {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 22%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+    color: var(--text-color, #fff);
+}
+.itg-autopip-option strong { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.itg-autopip-option small { display: block; opacity: 0.75; font-weight: 400; margin-top: 3px; }
+.itg-autopip-state {
+    margin-left: auto; padding: 1px 6px; border-radius: 999px;
+    border: 1px solid currentColor; font-size: 10px; font-weight: 700; text-transform: uppercase;
+    opacity: 0.7;
+}
+.itg-autopip-option.is-on .itg-autopip-state {
+    background: var(--interactive-color, #ff4444);
+    border-color: transparent;
+    color: var(--bg-panel-color, #111);
+    opacity: 1;
+}
+`;
+
+/**
+ * The two automatic triggers, offered where the button for the manual one is.
+ *
+ * One menu is built and shared by every picture-in-picture button on the page — the
+ * player's, the Shorts one, the floating one — because they all mean the same thing
+ * and the settings are global.
+ */
+function itgAttachAutoPipMenu(button) {
+    if (!button || button.dataset.itgAutoPipMenu) return;
+    button.dataset.itgAutoPipMenu = 'true';
+
+    const menu = itgAutoPipMenu();
+    let hideTimer = null;
+    const show = () => {
+        clearTimeout(hideTimer);
+        const rect = button.getBoundingClientRect();
+        menu.classList.add('is-open');
+        const height = menu.offsetHeight || 120;
+        // Above the button when there is room, below it when there is not.
+        const above = rect.top > height + 16;
+        menu.dataset.place = above ? 'above' : 'below';
+        menu.style.top = above ? `${rect.top - height - 10}px` : `${rect.bottom + 10}px`;
+        const width = menu.offsetWidth || 250;
+        menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
+    };
+    const hide = () => {
+        hideTimer = setTimeout(() => menu.classList.remove('is-open'), 220);
+    };
+
+    button.addEventListener('mouseenter', show);
+    button.addEventListener('mouseleave', hide);
+    menu.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+    menu.addEventListener('mouseleave', hide);
+}
+
+function itgAutoPipMenu() {
+    let menu = document.getElementById('itg-autopip-menu');
+    if (menu) return menu;
+
+    if (!document.getElementById('itg-autopip-menu-styles')) {
+        const style = document.createElement('style');
+        style.id = 'itg-autopip-menu-styles';
+        style.textContent = ITG_AUTO_PIP_MENU_STYLES;
+        document.head?.appendChild(style);
+    }
+
+    menu = document.createElement('div');
+    menu.id = 'itg-autopip-menu';
+    menu.className = 'itg-autopip-menu';
+
+    for (const [name, titleKey, titleFallback, descKey, descFallback] of [
+        [
+            'scroll',
+            'autoPipOnScrollTitle',
+            'Open automatically on scroll',
+            'autoPipOnScrollDesc',
+            'When scrolling leaves the playing video off screen.',
+        ],
+        [
+            'hidden',
+            'autoPipOnHiddenTitle',
+            'Open automatically when leaving the tab',
+            'autoPipOnHiddenDesc',
+            'When switching to another tab or another program.',
+        ],
+    ]) {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.className = 'itg-autopip-option';
+        option.dataset.itgAutoPipOption = name;
+
+        const title = document.createElement('strong');
+        title.textContent = itgPipMsg(titleKey, titleFallback);
+        const state = document.createElement('span');
+        state.className = 'itg-autopip-state';
+        title.appendChild(state);
+
+        const desc = document.createElement('small');
+        desc.textContent = itgPipMsg(descKey, descFallback);
+        option.append(title, desc);
+
+        const paint = (on) => {
+            option.classList.toggle('is-on', on);
+            option.setAttribute('aria-pressed', String(on));
+            state.textContent = itgPipMsg(on ? 'autoPipOn' : 'autoPipOff', on ? 'On' : 'Off');
+        };
+        paint(itgAutoPipSettings[name]);
+
+        option.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const on = !itgAutoPipSettings[name];
+            itgAutoPipSettings[name] = on;
+            paint(on);
+            try {
+                chrome.storage.local.set({ [ITG_AUTO_PIP_KEYS[name]]: on });
+            } catch {}
+            itgWatchAutoPipTriggers();
+        });
+
+        option.itgPaint = paint;
+        menu.appendChild(option);
+    }
+
+    // The menu is a page-level element with no stylesheet of its own, so the theme
+    // variables its colours are written against are put on it directly.
+    try {
+        Utils.applyThemeToHost(menu, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
+    } catch {}
+
+    document.documentElement.appendChild(menu);
+
+    // Toggled from the settings page or a keyboard command while this menu exists.
+    try {
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local') return;
+            for (const name of ['scroll', 'hidden']) {
+                const change = changes[ITG_AUTO_PIP_KEYS[name]];
+                if (!change) continue;
+                const option = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
+                option?.itgPaint?.(change.newValue === true);
+            }
+        });
+    } catch {}
+
+    return menu;
+}
+
+// --- Opening it without being asked ------------------------------------------
+
+/** The two automatic triggers, off unless the user turns them on. */
+var itgAutoPipSettings = window.__itgAutoPipSettings ?? { scroll: false, hidden: false };
+window.__itgAutoPipSettings = itgAutoPipSettings;
+
+var ITG_AUTO_PIP_KEYS = { scroll: 'itgAutoPipOnScroll', hidden: 'itgAutoPipOnHidden' };
+
+function itgLoadAutoPipSettings() {
+    try {
+        chrome.storage.local.get(Object.values(ITG_AUTO_PIP_KEYS), (stored) => {
+            itgAutoPipSettings = {
+                scroll: stored?.[ITG_AUTO_PIP_KEYS.scroll] === true,
+                hidden: stored?.[ITG_AUTO_PIP_KEYS.hidden] === true,
+            };
+            itgWatchAutoPipTriggers();
+        });
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local') return;
+            if (changes[ITG_AUTO_PIP_KEYS.scroll]) {
+                itgAutoPipSettings.scroll = changes[ITG_AUTO_PIP_KEYS.scroll].newValue === true;
+            }
+            if (changes[ITG_AUTO_PIP_KEYS.hidden]) {
+                itgAutoPipSettings.hidden = changes[ITG_AUTO_PIP_KEYS.hidden].newValue === true;
+            }
+            itgWatchAutoPipTriggers();
+        });
+    } catch {}
+}
+
+/**
+ * Opens the floating player when the video would otherwise be out of sight, and
+ * puts it back when it is in sight again.
+ *
+ * Two ways for a playing video to disappear, and one rule for each: scrolled past
+ * (an IntersectionObserver on the element) and the tab itself left for another tab
+ * or another program (`visibilitychange`). Coming back reverses whichever one fired
+ * — but only that one, so a window opened on purpose is never closed for the user.
+ *
+ * Whether the browser lets this happen at all is not up to us: requesting the
+ * window needs a recent interaction with the page, and a scroll or a switch away is
+ * not one. When it is refused, the video simply stays where it is.
+ */
+function itgWatchAutoPipTriggers() {
+    if (window.top !== window || itgIsInsidePipWindow()) return;
+
+    itgAutoPipState.dispose?.();
+    itgAutoPipState.dispose = null;
+    if (!itgAutoPipSettings.scroll && !itgAutoPipSettings.hidden) return;
+
+    const disposers = [];
+
+    if (itgAutoPipSettings.scroll) {
+        /**
+         * Watches whatever is playing right now, not whatever was playing when the
+         * setting was read; and once the window is open, watches the frame left in
+         * its place instead.
+         *
+         * Two things had to be got right here. Only a real transition counts —
+         * `observe()` reports the current state immediately, so re-attaching while
+         * the video is already off screen looked exactly like scrolling past it. And
+         * the element to watch changes the moment the window opens: the video itself
+         * leaves the page for the floating window, and the reports it produces from
+         * there are meaningless in this document — read as "it is back in view" they
+         * closed the window a moment after it opened. What stays behind in the page,
+         * in the same place and the same size, is the frozen frame, so that is what
+         * says when the user has scrolled back.
+         */
+        const seen = new WeakMap();
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (!itgAutoPipSettings.scroll) return;
+                for (const entry of entries) {
+                    const el = entry.target;
+                    const was = seen.get(el);
+                    seen.set(el, entry.isIntersecting);
+                    if (was === undefined || was === entry.isIntersecting) continue;
+
+                    if (entry.isIntersecting) {
+                        itgAutoPipClose('scroll');
+                    } else if (el instanceof HTMLVideoElement && !ItgVideoPip.current && !el.muted && !el.paused) {
+                        itgAutoPipOpen('scroll');
+                        // From here the session watches the frame left behind; this
+                        // element is about to leave the page for the other window.
+                        observer.unobserve(el);
+                        seen.delete(el);
+                        if (observed === el) observed = null;
+                    }
+                }
+            },
+            { threshold: 0 },
+        );
+
+        let observed = null;
+        const observe = (event) => {
+            const candidate = event?.target instanceof HTMLVideoElement ? event.target : itgPickBestVideo();
+            if (!candidate || candidate === observed) return;
+            if (observed) {
+                observer.unobserve(observed);
+                seen.delete(observed);
+            }
+            seen.delete(candidate);
+            observer.observe(candidate);
+            observed = candidate;
+        };
+
+        // Capture phase: these events do not bubble out of the media element.
+        document.addEventListener('play', observe, true);
+        document.addEventListener('volumechange', observe, true);
+        observe();
+
+        // The events alone are not enough: a video that was already playing before
+        // the setting was read never fires another `play`, so nothing would ever be
+        // attached to. A slow tick picks those up, and costs nothing when the element
+        // has not changed.
+        const recheck = setInterval(() => {
+            if (!ItgVideoPip.current) observe();
+        }, 3000);
+
+        disposers.push(() => {
+            clearInterval(recheck);
+            document.removeEventListener('play', observe, true);
+            document.removeEventListener('volumechange', observe, true);
+            observer.disconnect();
+        });
+    }
+
+    if (itgAutoPipSettings.hidden) {
+        /**
+         * Leaving the tab is handled through the media session, not through
+         * `visibilitychange`.
+         *
+         * Opening a floating window normally needs a recent click — measured here,
+         * neither a scroll, nor a tab switch, nor even a script injected from the
+         * background carries one, and the browser answers "requires user activation".
+         * The one exception the browser grants is this action: when the tab becomes
+         * occluded it calls the handler itself with the reason `contentoccluded`, and
+         * inside it the window may be opened. It is the same door the reference
+         * extension goes through, and it only exists while something is playing.
+         */
+        const handler = (details) => {
+            const reason = details?.enterPictureInPictureReason;
+            if (reason === 'contentoccluded' && !itgAutoPipSettings.hidden) return;
+            itgAutoPipOpen(reason === 'contentoccluded' ? 'hidden' : 'useraction');
+        };
+        const register = () => {
+            try {
+                navigator.mediaSession.setActionHandler('enterpictureinpicture', handler);
+            } catch {
+                /* the browser has no such action */
+            }
+        };
+
+        register();
+        // The site sets its own media session handlers, and there is only one slot:
+        // whoever registers last wins, so YouTube replacing ours on every navigation
+        // is enough to make this look broken. Claiming it again on the events that
+        // rebuild the session — and on a slow tick — keeps it ours.
+        const onPlay = () => register();
+        document.addEventListener('play', onPlay, true);
+        window.addEventListener('yt-navigate-finish', onPlay);
+        const reclaim = setInterval(register, 5000);
+        disposers.push(() => {
+            clearInterval(reclaim);
+            document.removeEventListener('play', onPlay, true);
+            window.removeEventListener('yt-navigate-finish', onPlay);
+            try {
+                navigator.mediaSession.setActionHandler('enterpictureinpicture', null);
+            } catch {}
+        });
+
+        // Coming back to the tab puts the video back where it was.
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') itgAutoPipClose('hidden');
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+        disposers.push(() => document.removeEventListener('visibilitychange', onVisibility));
+    }
+
+    itgAutoPipState.dispose = () => disposers.forEach((fn) => fn());
+}
+
+var itgAutoPipState = window.__itgAutoPipState ?? {
+    dispose: null,
+    armed: false,
+    disarm: null,
+    opening: false,
+};
+window.__itgAutoPipState = itgAutoPipState;
+
+async function itgAutoPipOpen(reason) {
+    // Two triggers can land at once (the tab is hidden *and* the video is off
+    // screen); the second must not take apart what the first just opened.
+    if (ItgVideoPip.current || itgAutoPipState.opening) return;
+    itgAutoPipState.opening = true;
+    setTimeout(() => (itgAutoPipState.opening = false), 1500);
+    const video = itgPickBestVideo();
+    // Only for something actually playing: a paused video nobody is watching has no
+    // business opening a window, and a muted one has no media session to open it with.
+    if (!video || video.paused || video.ended) return;
+
+    const opened = await ItgVideoPip.open(video, { auto: reason });
+    if (!opened) {
+        if (reason === 'scroll') itgArmAutoPipOnInteraction(video);
+        return;
+    }
+}
+
+/**
+ * Waits for a click to do what scrolling is not allowed to.
+ *
+ * The browser opens a floating window only from a recent interaction, and scrolling
+ * is not one — measured, not assumed: the request comes back "requires user
+ * activation" from a scroll handler, from a tab switch, and even from a script the
+ * background injects. Leaving the tab has a way around it (the media session's
+ * occlusion action); scrolling past a video has none. So instead of failing
+ * silently, the intent is remembered and honoured at the first press, and dropped
+ * as soon as the video is back in view.
+ */
+function itgArmAutoPipOnInteraction(video) {
+    if (itgAutoPipState.armed) return;
+
+    const disarm = () => {
+        itgAutoPipState.armed = false;
+        document.removeEventListener('pointerdown', onInteract, true);
+        document.removeEventListener('keydown', onInteract, true);
+    };
+    const onInteract = () => {
+        disarm();
+        // Still out of sight, still playing, or there is nothing to do.
+        const rect = video.getBoundingClientRect();
+        const visible = rect.bottom > 0 && rect.top < window.innerHeight;
+        if (visible || video.paused || !video.isConnected) return;
+        ItgVideoPip.open(video, { auto: 'scroll' });
+    };
+
+    itgAutoPipState.armed = true;
+    itgAutoPipState.disarm = disarm;
+    document.addEventListener('pointerdown', onInteract, true);
+    document.addEventListener('keydown', onInteract, true);
+}
+
+function itgAutoPipClose(reason) {
+    if (reason === 'scroll') itgAutoPipState.disarm?.();
+    const session = ItgVideoPip.current;
+    if (session?.auto === reason) session.close();
+}
+
+/**
+ * Bridge for the MAIN-world hook: a page's own picture-in-picture button flags its
+ * video and asks us to take over. The gesture that started it is still transient,
+ * so `open()` can request the window from here.
+ */
+function itgListenForNativePipRequests() {
+    window.addEventListener('message', async (event) => {
+        if (event.source !== window || event.data?.__itgPip !== 'request') return;
+        const video = document.querySelector(`video[${ITG_PIP_TARGET_ATTR}]`);
+        const ok = await ItgVideoPip.open(video);
+        video?.removeAttribute(ITG_PIP_TARGET_ATTR);
+        window.postMessage({ __itgPip: 'response', id: event.data.id, ok }, '*');
+    });
+}
+
+/**
+ * The main-world hook cannot read chrome.storage, so the preference is mirrored
+ * onto <html> for it. Off by default it is not: taking over a site's own PiP button
+ * is what makes videos reachable on pages we have no selector for.
+ */
+function itgSyncNativePipHookFlag() {
+    const apply = (enabled) => {
+        if (enabled === false) document.documentElement.setAttribute('data-itg-no-pip-hook', 'true');
+        else document.documentElement.removeAttribute('data-itg-no-pip-hook');
+    };
+    try {
+        chrome.storage.local.get('itgHijackNativePip', (res) => apply(res?.itgHijackNativePip));
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area === 'local' && changes.itgHijackNativePip) apply(changes.itgHijackNativePip.newValue);
+        });
+    } catch {}
+}
+
+/**
+ * The content scripts are injected again when the extension reloads, into tabs that
+ * already have them, so this file runs twice in one document. Top-level bindings are
+ * `var` for that reason — a second `const` of the same name is a SyntaxError that
+ * kills the whole file — and the listeners are set up once, or every message would
+ * be answered twice over.
+ */
+if (window.top === window && !window.__itgVideoPipReady) {
+    window.__itgVideoPipReady = true;
+    itgPreloadPipDims();
+    itgListenForNativePipRequests();
+    itgSyncNativePipHookFlag();
+    itgLoadAutoPipSettings();
+}

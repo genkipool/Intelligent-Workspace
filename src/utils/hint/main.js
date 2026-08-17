@@ -49,6 +49,8 @@ var Main = class Main {
         this._ytPipObserver = null;
     }
     async init() {
+        // The floating player's window loads these scripts too; it needs none of them.
+        if (itgIsInsidePipWindow()) return;
         // Robust PiP mode detection: check if window name matches, search param matches, or url contains itg_pip / itg_video_pip / itg_page_pip
         const isVideoPipMode =
             window.name === 'itg-video-pip-iframe' ||
@@ -93,6 +95,7 @@ var Main = class Main {
             checkForVideo();
             this._injectYoutubePipButton();
             this._injectTiktokPipButton();
+            this._injectGenericVideoPipButton();
         }
         if (isVideoPipMode) {
             document.documentElement.style.overflow = 'hidden';
@@ -384,6 +387,13 @@ var Main = class Main {
                     (async () => {
                         await this.commands.loadUserCommands();
                         this.hintEngine.updateHintChars(this.commands.getMappings());
+                        // The shortcuts panel opened with `?` is a view of the same
+                        // data, so a key changed from the customise page has to show
+                        // up here too. Reloading the mappings alone left the open
+                        // panel displaying the old key until it was closed and
+                        // reopened — the other direction already worked, because the
+                        // panel is what wrote the change.
+                        if (this.helpModal?.visible) this.helpModal._refreshUI();
                     })();
                 }
                 if (msg.action === 'themeChanged') {
@@ -916,12 +926,14 @@ var Main = class Main {
         document.addEventListener('keydown', this._boundMainKeyDownHandler, true);
     }
     _injectYoutubePipButton() {
+        if (itgIsInsidePipWindow()) return;
         if (!window.location.hostname.includes('youtube.com')) return;
         const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
-        const videoSvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;">
-                <polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polygon>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></rect>
-            </svg>`;
+        // The old glyph was the screen-share one (a screen with an arrow beside it),
+        // which reads as "cast", not picture-in-picture. ITG_PIP_ICON is the frame
+        // with the inset screen every player uses for this, and it is the same icon
+        // in the Shorts button, the TikTok button and the generic overlay.
+        const videoSvgIcon = ITG_PIP_ICON;
         const handlePipClick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -942,13 +954,9 @@ var Main = class Main {
             btn.className = 'ytp-button';
             btn.setAttribute('title', pipTitle);
             btn.setAttribute('aria-label', pipTitle);
-            btn.innerHTML = `
-                    <svg height="24" width="24" viewBox="0 0 24 24" fill="none">
-                        <polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polygon>
-                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></rect>
-                    </svg>
-                `;
+            btn.innerHTML = ITG_PIP_ICON_YTP;
             btn.addEventListener('click', handlePipClick);
+            itgAttachAutoPipMenu(btn);
             const fullscreenButton = document.querySelector('.ytp-fullscreen-button');
             if (fullscreenButton && fullscreenButton.parentNode) {
                 fullscreenButton.parentNode.insertBefore(btn, fullscreenButton);
@@ -988,6 +996,7 @@ var Main = class Main {
                     </div>
                 `;
             btn.addEventListener('click', handlePipClick);
+            itgAttachAutoPipMenu(btn);
             wrapper.appendChild(btn);
             shortsRightControls.insertBefore(wrapper, fullscreenShape);
         };
@@ -1005,6 +1014,7 @@ var Main = class Main {
         });
     }
     _injectTiktokPipButton() {
+        if (itgIsInsidePipWindow()) return;
         if (!window.location.hostname.includes('tiktok.com')) return;
         if (!document.getElementById('itg-tiktok-pip-styles')) {
             const styleEl = document.createElement('style');
@@ -1030,10 +1040,7 @@ var Main = class Main {
             document.head.appendChild(styleEl);
         }
         const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
-        const videoSvgIcon = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor">
-                <polygon points="23 7 16 12 23 17 23 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polygon>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></rect>
-            </svg>`;
+        const videoSvgIcon = `<span style="display:block;width:24px;height:24px;">${ITG_PIP_ICON}</span>`;
         const handlePipClick = async (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1149,6 +1156,113 @@ var Main = class Main {
             subtree: true,
         });
     }
+    /**
+     * Picture-in-Picture button for every other site.
+     *
+     * Injecting into a player's own control bar only works for players we have a
+     * selector for, which is why so many sites never showed the button. This finds
+     * the video the way the reference extension does — from the pointer, following
+     * shadow roots down — so a player hidden inside a custom element is reached
+     * without knowing anything about the site.
+     *
+     * One button element is reused and simply repositioned, and the whole thing is
+     * top-frame only: the content scripts run in every frame, and a per-frame
+     * mousemove listener would multiply the work for no gain.
+     */
+    _injectGenericVideoPipButton() {
+        if (window.top !== window || itgIsInsidePipWindow()) return;
+        // These two have buttons inside their own player controls already.
+        if (window.location.hostname.includes('youtube.com') || window.location.hostname.includes('tiktok.com')) return;
+
+        const pipTitle = chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Picture-in-Picture (Video)';
+        let button = null;
+        let hoveredVideo = null;
+        let hideTimer = null;
+
+        const ensureButton = () => {
+            if (button && button.isConnected) return button;
+            button = document.createElement('button');
+            button.type = 'button';
+            button.id = 'itg-generic-pip-button';
+            button.title = pipTitle;
+            button.setAttribute('aria-label', pipTitle);
+            button.style.cssText = [
+                'position:fixed',
+                'z-index:2147483646',
+                'display:none',
+                'align-items:center',
+                'justify-content:center',
+                'width:36px',
+                'height:36px',
+                'padding:7px',
+                'margin:0',
+                'border:0',
+                'border-radius:8px',
+                'background:rgba(0,0,0,0.62)',
+                'color:#fff',
+                'cursor:pointer',
+                'opacity:0.85',
+                'transition:opacity 0.15s ease, transform 0.15s ease',
+            ].join(';');
+            button.innerHTML = ITG_PIP_ICON;
+            button.addEventListener('mouseenter', () => {
+                button.style.opacity = '1';
+                button.style.transform = 'scale(1.08)';
+                clearTimeout(hideTimer);
+            });
+            button.addEventListener('mouseleave', () => {
+                button.style.opacity = '0.85';
+                button.style.transform = 'scale(1)';
+                scheduleHide();
+            });
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Straight from the click: Document PiP needs the live activation.
+                ItgVideoPip.open(hoveredVideo);
+                hide();
+            });
+            document.documentElement.appendChild(button);
+            itgAttachAutoPipMenu(button);
+            return button;
+        };
+
+        const hide = () => {
+            if (button) button.style.display = 'none';
+            hoveredVideo = null;
+        };
+
+        const scheduleHide = () => {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(hide, 1200);
+        };
+
+        const showFor = (video) => {
+            const rect = video.getBoundingClientRect();
+            // Thumbnails and autoplaying decorations are not what the button is for.
+            if (rect.width < 200 || rect.height < 140) return hide();
+            const el = ensureButton();
+            hoveredVideo = video;
+            el.style.display = 'flex';
+            el.style.top = `${Math.max(8, rect.top + 10)}px`;
+            el.style.left = `${Math.min(window.innerWidth - 44, rect.right - 46)}px`;
+            clearTimeout(hideTimer);
+            scheduleHide();
+        };
+
+        const onMove = Utils.debounce((e) => {
+            if (ItgVideoPip.current || itgIsInsidePipWindow()) return hide();
+            const video = itgVideoFromPoint(e.clientX, e.clientY);
+            if (video && itgIsUsableVideo(video)) showFor(video);
+        }, 180);
+
+        window.addEventListener('mousemove', onMove, { passive: true });
+        this._genericPipCleanup = () => {
+            window.removeEventListener('mousemove', onMove);
+            clearTimeout(hideTimer);
+            button?.remove();
+        };
+    }
     cleanup() {
         this._isCleanedUp = true;
         console.log('[HintMain] Cleaning up previous content script instance...');
@@ -1170,6 +1284,10 @@ var Main = class Main {
         if (this._tiktokPipObserver) {
             this._tiktokPipObserver.disconnect();
             this._tiktokPipObserver = null;
+        }
+        if (this._genericPipCleanup) {
+            this._genericPipCleanup();
+            this._genericPipCleanup = null;
         }
         try {
             document.body.classList.remove('itg-pip-shorts');

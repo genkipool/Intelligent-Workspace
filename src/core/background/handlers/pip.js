@@ -20,11 +20,47 @@
 
 // Picture-in-Picture window tracking helpers for session persistence (Manifest V3 compatible)
 let lastCreatedPopupId = null;
+let lastCreatedWindowId = null;
 chrome.windows.onCreated.addListener((win) => {
+    lastCreatedWindowId = win.id;
     if (win.type === 'popup') {
         lastCreatedPopupId = win.id;
     }
 });
+
+/**
+ * Finds the floating player's window.
+ *
+ * A document picture-in-picture window is reported by the windows API as `type:
+ * "normal"`, not "popup" — which is what the popup-only tracking above was waiting
+ * for, so the window was never registered and everything that needed its id (full
+ * screen, most visibly) quietly did nothing. What does single it out is its content:
+ * one tab, on about:blank, in a window that is not the one that opened it.
+ */
+async function findPipWindowId(openerTabId, openerWindowId) {
+    const activePipWindows = await getActivePipWindows();
+    for (const winId in activePipWindows) {
+        if (activePipWindows[winId].openerTabId === openerTabId) return Number(winId);
+    }
+
+    try {
+        const windows = await chrome.windows.getAll({ populate: true });
+        const candidate = windows.find(
+            (win) =>
+                win.id !== openerWindowId &&
+                (win.tabs || []).length === 1 &&
+                (win.tabs[0].url === 'about:blank' || win.tabs[0].url === ''),
+        );
+        if (candidate) {
+            activePipWindows[candidate.id] = { openerTabId, focusChangedBeforeClose: false };
+            await setActivePipWindows(activePipWindows);
+            return candidate.id;
+        }
+    } catch (e) {
+        console.warn('Could not look for the PiP window:', e);
+    }
+    return null;
+}
 
 async function getActivePipWindows() {
     try {
@@ -86,8 +122,10 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
 
 function handleRegisterPipWindow(message, sender, sendResponse) {
     (async () => {
-        let pipWinId = lastCreatedPopupId;
-        // Fallback: search for the currently focused popup window if lastCreatedPopupId is missing or wrong
+        // A document PiP window arrives as "normal", so the popup id is only the
+        // first guess; the last window created is the next one, and failing that the
+        // about:blank window gives it away.
+        let pipWinId = lastCreatedPopupId || lastCreatedWindowId;
         if (!pipWinId) {
             const windows = await chrome.windows.getAll({ populate: false });
             const focusedPopup = windows.find((w) => w.type === 'popup' && w.focused);
@@ -109,16 +147,10 @@ function handleRegisterPipWindow(message, sender, sendResponse) {
 
 function handleMinimizePipWindow(message, sender, sendResponse) {
     (async () => {
-        const activePipWindows = await getActivePipWindows();
-        let pipWinId = null;
-        if (sender.tab && sender.tab.id) {
-            for (const winId in activePipWindows) {
-                if (activePipWindows[winId].openerTabId === sender.tab.id) {
-                    pipWinId = Number(winId);
-                    break;
-                }
-            }
-        }
+        // Same lookup as everywhere else: a document PiP window is reported as
+        // "normal", so relying on the registration alone left this doing nothing
+        // whenever the popup-shaped guess had not caught it.
+        const pipWinId = await findPipWindowId(sender.tab?.id, sender.tab?.windowId);
         if (pipWinId) {
             try {
                 await chrome.windows.update(pipWinId, { state: 'minimized' });
@@ -374,7 +406,16 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
 
 /**
  * Opens a video-focused PiP window (wv: command).
- * Handles YouTube, TikTok (native mini-player), and generic video sites.
+ *
+ * The window itself is built in the page by ItgVideoPip, which moves the real
+ * <video> node into a Document PiP window instead of reloading the page inside an
+ * iframe. All this handler still does is focus the tab — which is what gives the
+ * injected script the transient activation requestWindow() insists on — and call
+ * the same opener the in-player buttons use.
+ *
+ * executeScript runs in the isolated world, the one the content scripts share, so
+ * `window.__itgOpenVideoPip` is already defined there; TikTok's own mini player is
+ * handled inside it too.
  */
 async function handleOpenVideoPipWindow(message, sender, sendResponse) {
     const { tabId, windowId, url, originalTabId: msgTabId, originalWindowId: msgWinId } = message;
@@ -387,50 +428,7 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
     );
 
     try {
-        // --- TikTok Native PiP: Use browser's native PiP API instead of Document PiP ---
-        const isTiktokUrl = url && (url.includes('tiktok.com') || url.includes('tiktok.'));
-        if (isTiktokUrl) {
-            chrome.windows.update(windowId, { focused: true });
-            chrome.tabs.update(tabId, { active: true });
-
-            chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                injectImmediately: true,
-                func: async () => {
-                    try {
-                        // Try to click the native TikTok "Reproductor flotante" (mini-player) button
-                        let miniPlayerBtn = document.querySelector('[data-e2e="more-menu-popover_mini-player"]');
-                        if (miniPlayerBtn) {
-                            miniPlayerBtn.click();
-                            chrome.runtime.sendMessage({ action: 'ITG_VIDEO_PIP_STARTED' });
-                            return true;
-                        }
-                        // If popover is not open, open the "more" menu first
-                        const moreBtn = document.querySelector('[data-e2e="more-menu-icon"]');
-                        if (moreBtn) {
-                            moreBtn.click();
-                            await new Promise((resolve) => setTimeout(resolve, 300));
-                            miniPlayerBtn = document.querySelector('[data-e2e="more-menu-popover_mini-player"]');
-                            if (miniPlayerBtn) {
-                                miniPlayerBtn.click();
-                                chrome.runtime.sendMessage({ action: 'ITG_VIDEO_PIP_STARTED' });
-                                return true;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('Failed to trigger TikTok native mini-player:', e);
-                    }
-                    return false;
-                },
-            });
-
-            await waitForPipOrTimeout(pipOpenedPromise);
-            sendResponse({ success: true });
-            return;
-        }
-
-        // --- Generic Video PiP (YouTube and others) ---
-        // Synchronously schedule tab activation and script execution to preserve user gesture
+        // Both calls stay synchronous so the user gesture is not lost on the way.
         chrome.windows.update(windowId, { focused: true });
         chrome.tabs.update(tabId, { active: true });
 
@@ -439,191 +437,18 @@ async function handleOpenVideoPipWindow(message, sender, sendResponse) {
             injectImmediately: true,
             args: [url],
             func: async (pipUrl) => {
-                if ('documentPictureInPicture' in window) {
-                    if (window.documentPictureInPicture.window) {
-                        window.documentPictureInPicture.window.close();
-                        chrome.runtime.sendMessage({ action: 'ITG_VIDEO_PIP_STARTED' });
-                        return true;
-                    }
-
-                    // If the document is still loading, wait a maximum of 600ms for DOMContentLoaded to protect user gesture
-                    if (document.readyState === 'loading') {
-                        await new Promise((resolve) => {
-                            document.addEventListener('DOMContentLoaded', resolve, { once: true });
-                            setTimeout(resolve, 600);
-                        });
-                    }
-
-                    const isShort = pipUrl.includes('/shorts/');
-                    const defaultW = isShort ? 318 : 800;
-                    const defaultH = isShort ? 571 : 600;
-
-                    try {
-                        // Must call requestWindow synchronously to use the active user gesture
-                        const pipWindow = await window.documentPictureInPicture.requestWindow({
-                            width: defaultW,
-                            height: defaultH,
-                            disallowReturnToOpener: false,
-                        });
-
-                        // Set up content
-                        pipWindow.document.body.style.margin = '0';
-                        pipWindow.document.body.style.padding = '0';
-                        pipWindow.document.body.style.overflow = 'hidden';
-                        pipWindow.document.body.style.backgroundColor = '#000';
-
-                        let targetUrl = window.location.href;
-                        try {
-                            const video = document.querySelector('video');
-                            if (video && video.currentTime > 0) {
-                                const secs = Math.floor(video.currentTime);
-                                const urlObj = new URL(targetUrl);
-                                urlObj.searchParams.set('t', secs);
-                                urlObj.searchParams.set('itg_video_pip', 'true');
-                                targetUrl = urlObj.toString();
-                            } else {
-                                const urlObj = new URL(targetUrl);
-                                urlObj.searchParams.set('itg_video_pip', 'true');
-                                targetUrl = urlObj.toString();
-                            }
-                        } catch (e) {
-                            console.warn('Failed to append current video time:', e);
-                            try {
-                                const urlObj = new URL(targetUrl);
-                                urlObj.searchParams.set('itg_video_pip', 'true');
-                                targetUrl = urlObj.toString();
-                            } catch {}
-                        }
-
-                        document.querySelectorAll('video').forEach((v) => {
-                            try {
-                                v.pause();
-                            } catch {}
-                        });
-
-                        try {
-                            await chrome.runtime.sendMessage({ action: 'prepareVideoUrlForPip', url: targetUrl });
-                        } catch (e) {
-                            console.warn('Failed to prepare video URL for PiP in executeScript:', e);
-                        }
-
-                        const iframe = document.createElement('iframe');
-                        iframe.name = 'itg-video-pip-iframe';
-                        iframe.src = targetUrl;
-                        iframe.style.width = '100vw';
-                        iframe.style.height = '100vh';
-                        iframe.style.border = 'none';
-                        iframe.allow = 'fullscreen; clipboard-write; encrypted-media; autoplay; picture-in-picture;';
-                        pipWindow.document.body.appendChild(iframe);
-
-                        // [AI NOTE] Video time tracking + resume logic — similar to page PiP but
-                        // includes resize persistence for video dimensions (shorts vs normal).
-                        let lastKnownTime = 0;
-                        const originalPauseInterval = setInterval(() => {
-                            document.querySelectorAll('video').forEach((v) => {
-                                try {
-                                    if (!v.paused) {
-                                        v.pause();
-                                    }
-                                } catch {}
-                            });
-                        }, 100);
-
-                        const timeTrackerInterval = setInterval(() => {
-                            try {
-                                if (!pipWindow || pipWindow.closed) {
-                                    clearInterval(timeTrackerInterval);
-                                    clearInterval(originalPauseInterval);
-                                    return;
-                                }
-                                const pipIframe = pipWindow.document.querySelector('iframe');
-                                if (pipIframe) {
-                                    const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
-                                    const pipVideo = innerDoc?.querySelector('video');
-                                    if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
-                                        lastKnownTime = pipVideo.currentTime;
-                                    }
-                                }
-                            } catch {
-                                // Suppress cross-origin warnings if they happen
-                            }
-                        }, 250);
-
-                        let didResume = false;
-                        const resumeOriginalVideo = (shouldPlay) => {
-                            if (didResume) return;
-                            didResume = true;
-                            clearInterval(timeTrackerInterval);
-                            clearInterval(originalPauseInterval);
-                            try {
-                                const localVideo = document.querySelector('video');
-                                if (localVideo) {
-                                    if (lastKnownTime > 0) {
-                                        localVideo.currentTime = lastKnownTime;
-                                    }
-                                    if (shouldPlay) {
-                                        localVideo.play().catch((e) => {
-                                            console.warn('Failed to autoplay original video on PiP close:', e);
-                                        });
-                                    } else {
-                                        localVideo.pause();
-                                    }
-                                }
-                            } catch (e) {
-                                console.warn('Error resuming original video:', e);
-                            }
-                        };
-
-                        pipWindow.addEventListener('pagehide', () => {
-                            resumeOriginalVideo(!document.hidden);
-                        });
-                        pipWindow.addEventListener('unload', () => {
-                            resumeOriginalVideo(!document.hidden);
-                        });
-
-                        // Resize asynchronously based on saved storage values
-                        const storageKeys = isShort
-                            ? ['lastShortPipWidth', 'lastShortPipHeight']
-                            : ['lastNormalPipWidth', 'lastNormalPipHeight'];
-                        chrome.storage.local.get(storageKeys, (dims) => {
-                            const savedW = isShort ? dims.lastShortPipWidth : dims.lastNormalPipWidth;
-                            const savedH = isShort ? dims.lastShortPipHeight : dims.lastNormalPipHeight;
-                            if (savedW && savedH) {
-                                pipWindow.resizeTo(savedW, savedH);
-                            }
-                        });
-
-                        // Save adjustments on manual resize
-                        let resizeTimeout;
-                        pipWindow.addEventListener('resize', () => {
-                            clearTimeout(resizeTimeout);
-                            resizeTimeout = setTimeout(() => {
-                                const innerW = pipWindow.innerWidth;
-                                const innerH = pipWindow.innerHeight;
-                                if (innerW > 0 && innerH > 0) {
-                                    if (isShort) {
-                                        chrome.storage.local.set({
-                                            lastShortPipWidth: innerW,
-                                            lastShortPipHeight: innerH,
-                                        });
-                                    } else {
-                                        chrome.storage.local.set({
-                                            lastNormalPipWidth: innerW,
-                                            lastNormalPipHeight: innerH,
-                                        });
-                                    }
-                                }
-                            }, 500);
-                        });
-
-                        chrome.runtime.sendMessage({ action: 'ITG_VIDEO_PIP_STARTED' });
-                        return true;
-                    } catch (e) {
-                        console.error('Synchronous PiP activation failed:', e);
-                        return false;
-                    }
+                if (typeof window.__itgOpenVideoPip !== 'function') {
+                    console.warn('ITG video PiP opener is not available in this tab.');
+                    return false;
                 }
-                return false;
+                try {
+                    await window.__itgOpenVideoPip(pipUrl);
+                    chrome.runtime.sendMessage({ action: 'ITG_VIDEO_PIP_STARTED' });
+                    return true;
+                } catch (e) {
+                    console.warn('Video PiP activation failed:', e);
+                    return false;
+                }
             },
         });
 

@@ -63,8 +63,21 @@
         "<all_urls>"
       ],
       "js": [
+        "src/utils/hint/videoPipHook.js"
+      ],
+      "all_frames": false,
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "src/utils/hint_common.js",
         "src/utils/hint/utils.js",
+        "src/utils/hint/videoPipUi.js",
+        "src/utils/hint/videoPip.js",
         "src/utils/hint/ui.js",
         "src/utils/hint/snippets.js",
         "src/utils/hint/omnibar.js",
@@ -87,6 +100,10 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "assets/icons/icon16.png",
+        "assets/icons/icon48.png",
+        "assets/icons/icon128.png",
+        "assets/*.png",
         "src/ui/pages/rules/rules.html",
         "src/ui/pages/rules/rules.css",
         "src/ui/pages/rules/rules.js",
@@ -122,6 +139,9 @@
         "src/ui/pages/savedThemes/savedThemes.html",
         "src/ui/pages/about/about.html",
         "src/utils/hint/utils.js",
+        "src/utils/hint/videoPipUi.js",
+        "src/utils/hint/videoPip.js",
+        "src/utils/hint/videoPipHook.js",
         "src/utils/hint/ui.js",
         "src/utils/hint/snippets.js",
         "src/utils/hint/omnibar.js",

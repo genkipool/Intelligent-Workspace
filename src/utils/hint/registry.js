@@ -147,6 +147,22 @@ var CommandRegistry = class CommandRegistry {
                     }),
                 description: 'hintDesc_vp',
             },
+            as: {
+                action: () =>
+                    chrome.runtime.sendMessage({
+                        action: 'toggleAutoPipFromKey',
+                        trigger: 'scroll',
+                    }),
+                description: 'hintDesc_as',
+            },
+            ah: {
+                action: () =>
+                    chrome.runtime.sendMessage({
+                        action: 'toggleAutoPipFromKey',
+                        trigger: 'hidden',
+                    }),
+                description: 'hintDesc_ah',
+            },
             bg: {
                 action: () =>
                     chrome.runtime.sendMessage({

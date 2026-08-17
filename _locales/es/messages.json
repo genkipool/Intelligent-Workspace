@@ -4159,8 +4159,56 @@
         "description": "Desarchivar la imagen para que pueda limpiarse al iniciar una nueva sesión."
     },
     "customizeCommandsTitle": {
-        "message": "Personalizar Comandos",
+        "message": "Ajustes de Navegación",
         "description": "Título de la página donde los usuarios personalizan sus comandos de atajos."
+    },
+    "hintDesc_as": {
+        "message": "Activar o desactivar el Picture-in-Picture automático al pasar el vídeo con el scroll"
+    },
+    "hintDesc_ah": {
+        "message": "Activar o desactivar el Picture-in-Picture automático al salir de la pestaña"
+    },
+    "autoPipSectionTitle": {
+        "message": "Picture-in-Picture automático"
+    },
+    "autoPipOn": {
+        "message": "Sí"
+    },
+    "autoPipOff": {
+        "message": "No"
+    },
+    "autoPipOnScrollTitle": {
+        "message": "Activar automáticamente al hacer scroll"
+    },
+    "autoPipOnScrollDesc": {
+        "message": "Cuando el scroll deja fuera de la pantalla el vídeo que se está reproduciendo. Vuelve a su sitio al verse de nuevo."
+    },
+    "autoPipOnHiddenTitle": {
+        "message": "Activar automáticamente al salir de la pestaña"
+    },
+    "autoPipOnHiddenDesc": {
+        "message": "Al cambiar a otra pestaña o a otro programa. Vuelve a su sitio al regresar a la pestaña."
+    },
+    "autoPipOnScrollEnabledNotify": {
+        "message": "Picture-in-Picture automático al hacer scroll activado"
+    },
+    "autoPipOnScrollDisabledNotify": {
+        "message": "Picture-in-Picture automático al hacer scroll desactivado"
+    },
+    "autoPipOnHiddenEnabledNotify": {
+        "message": "Picture-in-Picture automático al salir de la pestaña activado"
+    },
+    "autoPipOnHiddenDisabledNotify": {
+        "message": "Picture-in-Picture automático al salir de la pestaña desactivado"
+    },
+    "pipShowReplies": {
+        "message": "Ver respuestas"
+    },
+    "pipHideReplies": {
+        "message": "Ocultar respuestas"
+    },
+    "pipNoReplies": {
+        "message": "Sin respuestas"
     },
     "searchCommandsPlaceholder": {
         "message": "Filtrar comandos por tecla o descripción...",
@@ -5882,6 +5930,90 @@
     },
     "omnibarPrefixVideoPipDesc": {
         "message": "Selecciona una pestaña para abrirla en modo picture video"
+    },
+    "pipPlayPause": {
+        "message": "Reproducir / pausar"
+    },
+    "pipPrevious": {
+        "message": "Vídeo anterior"
+    },
+    "pipNext": {
+        "message": "Vídeo siguiente"
+    },
+    "pipRewind": {
+        "message": "Retroceder 10 segundos"
+    },
+    "pipForward": {
+        "message": "Avanzar 10 segundos"
+    },
+    "pipMute": {
+        "message": "Silenciar"
+    },
+    "pipUnmute": {
+        "message": "Activar el sonido"
+    },
+    "pipSpeed": {
+        "message": "Velocidad de reproducción"
+    },
+    "pipCaptions": {
+        "message": "Subtítulos"
+    },
+    "pipFullscreen": {
+        "message": "Pantalla completa"
+    },
+    "pipSize": {
+        "message": "Tamaño de la ventana"
+    },
+    "pipWidth": {
+        "message": "Ancho"
+    },
+    "pipHeight": {
+        "message": "Alto"
+    },
+    "pipMaxSize": {
+        "message": "Máximo"
+    },
+    "pipMaxSizeNote": {
+        "message": "Tamaño máximo de una ventana flotante"
+    },
+    "pipMaxSizeUnknown": {
+        "message": "Pulsa Máximo para averiguar el tamaño máximo permitido"
+    },
+    "pipComments": {
+        "message": "Comentarios"
+    },
+    "pipCommentsLoading": {
+        "message": "Cargando comentarios…"
+    },
+    "pipReply": {
+        "message": "Responder"
+    },
+    "pipReplySent": {
+        "message": "Respuesta enviada"
+    },
+    "pipReplyFailed": {
+        "message": "Responde en la pestaña"
+    },
+    "pipPlaylist": {
+        "message": "Lista de reproducción"
+    },
+    "pipRecommended": {
+        "message": "Recomendados"
+    },
+    "pipSearch": {
+        "message": "Buscar vídeos"
+    },
+    "pipSearching": {
+        "message": "Buscando…"
+    },
+    "pipNoResults": {
+        "message": "Sin resultados"
+    },
+    "pipResults": {
+        "message": "Resultados"
+    },
+    "pipLive": {
+        "message": "En directo"
     },
     "omnibarPrefixBookmarksTitle": {
         "message": "Marcadores"
