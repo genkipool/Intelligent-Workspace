@@ -87,12 +87,13 @@ html, body {
 }
 ::selection {
     background: var(--interactive-color, #ff4444) !important;
-    color: var(--text-on-color, #ffffff) !important;
+    color: #ffffff !important;
 }
 input::selection,
-textarea::selection {
+textarea::selection,
+.itg-pip-size-fields input::selection {
     background: var(--interactive-color, #ff4444) !important;
-    color: var(--text-on-color, #ffffff) !important;
+    color: #ffffff !important;
 }
 .itg-pip-root { position: relative; width: 100%; height: 100%; overflow: hidden; }
 

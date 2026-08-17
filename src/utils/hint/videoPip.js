@@ -1328,7 +1328,38 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             style.getPropertyValue('--text-on-color') ||
             '#ff4444'
         ).trim();
-        const textOnColor = (style.getPropertyValue('--text-on-color') || '#ffffff').trim();
+
+        // Calculate contrasting text color against interactiveColor
+        const getContrastText = (colorStr) => {
+            if (!colorStr) return '#ffffff';
+            let r = 255,
+                g = 68,
+                b = 68;
+            if (colorStr.startsWith('#')) {
+                let hex = colorStr.replace('#', '').trim();
+                if (hex.length === 3)
+                    hex = hex
+                        .split('')
+                        .map((c) => c + c)
+                        .join('');
+                if (hex.length === 6) {
+                    r = parseInt(hex.substring(0, 2), 16);
+                    g = parseInt(hex.substring(2, 4), 16);
+                    b = parseInt(hex.substring(4, 6), 16);
+                }
+            } else if (colorStr.startsWith('rgb')) {
+                const parts = colorStr.match(/\d+/g);
+                if (parts && parts.length >= 3) {
+                    r = +parts[0];
+                    g = +parts[1];
+                    b = +parts[2];
+                }
+            }
+            const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+            return yiq >= 140 ? '#000000' : '#ffffff';
+        };
+
+        const textOnColor = getContrastText(interactiveColor);
         const arrows =
             `url("data:image/svg+xml,<svg viewBox='0 0 1024 1024' xmlns='http://www.w3.org/2000/svg'>` +
             `<path fill='${interactiveColor.replace('#', '%23')}' d='m620.6 562.3 36.2 36.2L512 743.3 367.2 598.5l36.2-36.2L512 670.9zM512 353.1l108.6 108.6 36.2-36.2L512 280.7 367.2 425.5l36.2 36.2z'/></svg>")`;
@@ -1341,7 +1372,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
         tag.textContent = `
             ::selection { background: ${interactiveColor} !important; color: ${textOnColor} !important; }
-            input::selection, textarea::selection { background: ${interactiveColor} !important; color: ${textOnColor} !important; }
+            input::selection, textarea::selection, .itg-pip-size-fields input::selection { background: ${interactiveColor} !important; color: ${textOnColor} !important; }
             .itg-pip-size-fields input::-webkit-inner-spin-button,
             .itg-pip-size-fields input::-webkit-outer-spin-button { background-image: ${arrows}; }
         `;
