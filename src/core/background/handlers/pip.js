@@ -199,23 +199,26 @@ function waitForPipOrTimeout(pipPromise, timeoutMs = 3000) {
  * @param {number|null} originalTabId - Tab to reactivate
  * @param {number} [delayMs=800] - Delay before restoring focus
  */
-async function restoreOriginalFocus(originalWindowId, originalTabId, delayMs = 800) {
+async function restoreOriginalFocus(originalWindowId, originalTabId, delayMs = 250) {
     if (!originalWindowId && !originalTabId) return;
 
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    if (originalTabId) {
+        try {
+            await chrome.tabs.update(originalTabId, { active: true });
+        } catch (restoreErr) {
+            logMessage('Could not restore focus tab: ' + restoreErr.message);
+        }
+    }
 
     if (originalWindowId && originalWindowId !== -1) {
         try {
             await chrome.windows.update(originalWindowId, { focused: true });
         } catch (restoreErr) {
             logMessage('Could not focus original window: ' + restoreErr.message);
-        }
-    }
-    if (originalTabId) {
-        try {
-            await chrome.tabs.update(originalTabId, { active: true });
-        } catch (restoreErr) {
-            logMessage('Could not restore focus tab: ' + restoreErr.message);
         }
     }
 }
