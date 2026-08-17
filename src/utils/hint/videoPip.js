@@ -1972,64 +1972,78 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     /**
-     * Brings YouTube's caption layer along with the video. It keeps being written to
-     * by the page's player wherever it lives, so moving the node is enough — there
-     * is no need to parse a subtitle track ourselves.
+     * Replicates YouTube's captions cleanly in the PiP window without moving
+     * or mutating the original player's DOM. Watches YouTube's caption container
+     * in the host page and mirrors the active text into our own PiP subtitle element.
      */
     adoptCaptions() {
-        if (!this.isYouTube) return;
-        const container = document.querySelector('.ytp-caption-window-container');
-        if (!container) {
-            // YouTube does not build the caption layer until subtitles are switched
-            // on, which for most videos is after the window is already open.
-            this.watchForCaptions();
-            return;
+        if (!this.isYouTube || !this.pipWindow) return;
+        if (!this.subtitlesEl) {
+            this.subtitlesEl = this.pipWindow.document.createElement('div');
+            this.subtitlesEl.className = 'itg-pip-subtitles-display';
+            this.subtitlesEl.style.display = 'none';
+            this.holder.appendChild(this.subtitlesEl);
         }
-        this.captionsOrigin = {
-            node: container,
-            parent: container.parentElement,
-            nextSibling: container.nextSibling,
-            style: container.getAttribute('style'),
-        };
-        container.classList.add('itg-pip-captions');
-        this.holder.appendChild(container);
-    }
 
-    /** Picks the caption layer up the moment the page finally creates it. */
-    watchForCaptions() {
-        if (this.captionsWatcher) return;
-        const player = document.querySelector('#movie_player, #shorts-player');
-        if (!player) return;
-        this.captionsWatcher = new MutationObserver(() => {
-            if (this.captionsOrigin) return;
-            if (document.querySelector('.ytp-caption-window-container')) {
-                this.adoptCaptions();
-                this.renderCaptions();
+        const updateCaptions = () => {
+            if (!this.subtitlesEl) return;
+            const container = document.querySelector('.ytp-caption-window-container');
+            if (!container) {
+                this.subtitlesEl.textContent = '';
+                this.subtitlesEl.style.display = 'none';
+                return;
             }
-        });
-        this.captionsWatcher.observe(player, { childList: true, subtree: true });
-        this.disposers.push(() => {
-            this.captionsWatcher?.disconnect();
-            this.captionsWatcher = null;
-        });
+            const activeWindows = container.querySelectorAll('.caption-window');
+            const lines = [];
+            activeWindows.forEach((win) => {
+                if (
+                    win.getAttribute('aria-hidden') === 'true' ||
+                    win.style.display === 'none' ||
+                    win.style.visibility === 'hidden'
+                ) {
+                    return;
+                }
+                const segments = win.querySelectorAll('.ytp-caption-segment');
+                const text = Array.from(segments)
+                    .map((s) => s.textContent.trim())
+                    .filter(Boolean)
+                    .join(' ');
+                if (text) lines.push(text);
+            });
+            const fullText = lines.join('\n').trim();
+            if (fullText) {
+                this.subtitlesEl.textContent = fullText;
+                this.subtitlesEl.style.display = 'inline-block';
+            } else {
+                this.subtitlesEl.textContent = '';
+                this.subtitlesEl.style.display = 'none';
+            }
+        };
+
+        updateCaptions();
+
+        if (!this.captionsWatcher) {
+            const target = document.querySelector('#movie_player, #shorts-player') || document.body;
+            this.captionsWatcher = new MutationObserver(() => {
+                updateCaptions();
+            });
+            this.captionsWatcher.observe(target, { childList: true, subtree: true, characterData: true });
+            this.disposers.push(() => {
+                this.captionsWatcher?.disconnect();
+                this.captionsWatcher = null;
+            });
+        }
     }
 
     releaseCaptions() {
-        const origin = this.captionsOrigin;
-        if (!origin) return;
-        this.captionsOrigin = null;
-        try {
-            origin.node.classList.remove('itg-pip-captions');
-            if (origin.style === null) origin.node.removeAttribute('style');
-            else origin.node.setAttribute('style', origin.style);
-            if (origin.parent?.isConnected) {
-                if (origin.nextSibling && origin.nextSibling.parentNode === origin.parent) {
-                    origin.parent.insertBefore(origin.node, origin.nextSibling);
-                } else {
-                    origin.parent.appendChild(origin.node);
-                }
-            }
-        } catch {}
+        this.captionsWatcher?.disconnect();
+        this.captionsWatcher = null;
+        if (this.subtitlesEl) {
+            try {
+                this.subtitlesEl.remove();
+            } catch {}
+            this.subtitlesEl = null;
+        }
     }
 
     /**

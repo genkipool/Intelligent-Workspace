@@ -259,95 +259,35 @@ textarea::selection,
     background-repeat: no-repeat; background-position: right center;
 }
 
-/* YouTube's own caption container, moved in beside the video. */
-.itg-pip-captions {
+/* Clean, robust, perfectly-centered PiP subtitles */
+.itg-pip-subtitles-display {
     position: absolute !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 48px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    bottom: 50px !important;
     top: auto !important;
-    width: 100% !important;
-    height: auto !important;
-    max-height: 84px !important;
-    overflow: hidden !important;
-    z-index: 8 !important;
-    pointer-events: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    text-align: center !important;
-    padding: 0 16px !important;
-    box-sizing: border-box !important;
-}
-.itg-pip-root[data-active='true'] .itg-pip-captions {
-    bottom: 66px !important;
-}
-.itg-pip-captions .caption-window,
-.itg-pip-captions .ytp-caption-window-bottom,
-.itg-pip-captions .ytp-caption-window-rollup,
-.itg-pip-captions div[class*='caption-window'] {
-    position: static !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    bottom: auto !important;
-    transform: none !important;
-    margin: 0 auto !important;
-    text-align: center !important;
-    max-width: min(90%, 600px) !important;
+    max-width: min(88%, 620px) !important;
     width: auto !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: 84px !important;
-    overflow: hidden !important;
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
+    z-index: 10 !important;
     pointer-events: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    box-sizing: border-box !important;
-}
-.itg-pip-captions .caption-window:empty,
-.itg-pip-captions .caption-window[aria-hidden='true'],
-.itg-pip-captions .caption-window[style*='display: none'],
-.itg-pip-captions .caption-window[style*='visibility: hidden'],
-.itg-pip-captions .captions-text:empty {
-    display: none !important;
-}
-.itg-pip-captions .captions-text {
-    display: inline-block !important;
     text-align: center !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 auto !important;
-    white-space: normal !important;
-    word-break: normal !important;
-    overflow-wrap: break-word !important;
-    line-height: 1.45 !important;
-}
-.itg-pip-captions .ytp-caption-segment {
-    font-size: 18px !important;
+    font-size: 19px !important;
     font-weight: 500 !important;
     line-height: 1.45 !important;
     color: #ffffff !important;
-    background-color: rgba(10, 10, 10, 0.85) !important;
-    padding: 3px 8px !important;
-    border-radius: 4px !important;
-    box-decoration-break: clone !important;
-    -webkit-box-decoration-break: clone !important;
+    background: rgba(10, 10, 10, 0.86) !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6) !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.95) !important;
-    white-space: normal !important;
-    display: inline !important;
+    white-space: pre-wrap !important;
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
     box-sizing: border-box !important;
+    transition: bottom 0.2s ease;
 }
-.itg-pip-captions br {
-    display: block !important;
-    content: '' !important;
-    margin-top: 4px !important;
+.itg-pip-root[data-active='true'] .itg-pip-subtitles-display {
+    bottom: 68px !important;
 }
 
 /* Compact, stylish YouTube bezel overlay (gear/subtitles/volume animations) */
