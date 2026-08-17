@@ -379,11 +379,11 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     openPipWindow: (message, sender, sendResponse) => {
-        handleOpenPipWindow(message, sendResponse);
+        handleOpenPipWindow(message, sender, sendResponse);
         return true;
     },
     openVideoPipWindow: (message, sender, sendResponse) => {
-        handleOpenVideoPipWindow(message, sendResponse);
+        handleOpenVideoPipWindow(message, sender, sendResponse);
         return true;
     },
     validateApiKey: (message, sender, sendResponse) => {
