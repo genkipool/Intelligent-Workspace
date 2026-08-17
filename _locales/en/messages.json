@@ -4195,6 +4195,9 @@
   "pipFrameHint": {
     "message": "Move and resize the rectangle, then save. Its size is the size the floating window opens at."
   },
+  "pipFrameHintSizeOnly": {
+    "message": "Resize the rectangle to set the size of the floating window. Where it appears is decided by the system, not by the page — drag the window itself once and it will reopen there."
+  },
   "pipFrameSave": {
     "message": "Save"
   },

@@ -4198,6 +4198,9 @@
     "pipFrameHint": {
         "message": "Mueve y redimensiona el rectángulo y guarda. Su tamaño es el que tendrá la ventana flotante."
     },
+    "pipFrameHintSizeOnly": {
+        "message": "Redimensiona el rectángulo para fijar el tamaño de la ventana flotante. Dónde aparece lo decide el sistema, no la página: arrastra la ventana una vez y volverá a abrirse ahí."
+    },
     "pipFrameSave": {
         "message": "Guardar"
     },

@@ -620,11 +620,24 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (!itgPipFrame || !this.pipWindow) return;
         const { screenLeft, screenTop } = itgPipFrame;
         if (typeof screenLeft !== 'number' || typeof screenTop !== 'number') return;
+
+        const win = this.pipWindow;
+        const target = { x: Math.max(0, Math.round(screenLeft)), y: Math.max(0, Math.round(screenTop)) };
         try {
-            this.pipWindow.moveTo(Math.max(0, Math.round(screenLeft)), Math.max(0, Math.round(screenTop)));
+            win.moveTo(target.x, target.y);
         } catch {
             /* not allowed for this kind of window */
         }
+
+        // Find out whether the request meant anything, and remember the answer so the
+        // rectangle can stop promising a position it will not get.
+        setTimeout(() => {
+            if (!win || win.closed) return;
+            const moved = Math.abs(win.screenX - target.x) < 24 && Math.abs(win.screenY - target.y) < 24;
+            try {
+                chrome.storage.local.set({ itgPipCanPlace: moved });
+            } catch {}
+        }, 500);
     }
 
     /** Aspect ratio of the media, scaled to the last size the user chose. */
@@ -2463,8 +2476,13 @@ function itgOpenFramePicker() {
     document.getElementById('itg-pip-frame-backdrop')?.remove();
 
     const maxKey = `itgPipMax_${window.screen.availWidth}x${window.screen.availHeight}`;
-    chrome.storage.local.get([maxKey], (stored) => {
+    chrome.storage.local.get([maxKey, 'itgPipCanPlace'], (stored) => {
         const max = stored?.[maxKey] ?? null;
+        // Set the first time a window is opened with a chosen position, by checking
+        // whether it actually went there. On Wayland it never will — the protocol
+        // gives a program no way to place its own windows — and Chrome ignores the
+        // request for picture-in-picture windows regardless of platform.
+        const canPlace = stored?.itgPipCanPlace !== false;
         const start = itgPipFrame ?? {
             width: Math.min(800, Math.round(window.innerWidth * 0.5)),
             height: Math.min(450, Math.round(window.innerHeight * 0.5)),
@@ -2488,10 +2506,15 @@ function itgOpenFramePicker() {
 
         const frame = backdrop.querySelector('.itg-pip-frame');
         const readout = backdrop.querySelector('.itg-pip-frame-size');
-        backdrop.querySelector('.itg-pip-frame-hint').textContent = itgPipMsg(
-            'pipFrameHint',
-            'Move and resize the rectangle, then save. Its size is the size the floating window opens at.',
-        );
+        backdrop.querySelector('.itg-pip-frame-hint').textContent = canPlace
+            ? itgPipMsg(
+                  'pipFrameHint',
+                  'Move and resize the rectangle, then save. Its size is the size the floating window opens at.',
+              )
+            : itgPipMsg(
+                  'pipFrameHintSizeOnly',
+                  'Resize the rectangle to set the size of the floating window. Where it appears is decided by the system, not by the page — drag the window itself once and it will reopen there.',
+              );
         backdrop.querySelector('[data-act="save"]').textContent = itgPipMsg('pipFrameSave', 'Save');
         backdrop.querySelector('[data-act="cancel"]').textContent = itgPipMsg('pipFrameCancel', 'Cancel');
 
