@@ -1842,23 +1842,26 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const moreSize = doc?.querySelector('.itg-pip-more-item[data-act="sizemax"]');
         const moreSizeLabel = moreSize?.querySelector('.itg-pip-more-label');
 
+        const targetW = config.mode === 'max' ? max?.w || win.screen.availWidth || 1920 : +config.w || 800;
+        const targetH = config.mode === 'max' ? max?.h || win.screen.availHeight || 1080 : +config.h || 600;
+
         if (max) {
             this.sizeWidth.max = String(max.w);
             this.sizeHeight.max = String(max.h);
             this.sizeMaxButton.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
             this.sizeNote.textContent = `${itgPipMsg('pipMaxSizeNote', 'Largest a floating window can be')}: ${max.w}×${max.h}`;
-            if (moreSizeLabel) moreSizeLabel.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
         } else {
             this.sizeMaxButton.textContent = itgPipMsg('pipMaxSize', 'Maximum');
             this.sizeNote.textContent = itgPipMsg(
                 'pipMaxSizeUnknown',
                 'Press Maximum to find the largest size allowed',
             );
-            if (moreSizeLabel) moreSizeLabel.textContent = itgPipMsg('pipMaxSize', 'Maximum');
         }
 
-        const targetW = config.mode === 'max' ? max?.w || win.screen.availWidth : +config.w || 640;
-        const targetH = config.mode === 'max' ? max?.h || win.screen.availHeight : +config.h || 360;
+        if (moreSizeLabel) {
+            moreSizeLabel.textContent = `${itgPipMsg('pipMaxSize', 'Maximize')} (${targetW}×${targetH})`;
+        }
+
         const isAtTarget =
             config.mode === 'max'
                 ? win.innerWidth >= targetW - 20 && win.innerHeight >= targetH - 20
