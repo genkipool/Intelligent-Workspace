@@ -134,11 +134,17 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
     }
 
     const localVideo = document.querySelector('video');
-    if (!url && localVideo && typeof window.ItgVideoPip?.open === 'function') {
+    const isCurrentPage =
+        !url ||
+        url === window.location.href ||
+        url === window.location.href.split('#')[0] ||
+        url === window.location.href.split('?')[0];
+
+    if (isCurrentPage && localVideo && typeof window.ItgVideoPip?.open === 'function') {
         return ItgVideoPip.open(localVideo);
     }
 
-    if (url && 'documentPictureInPicture' in window) {
+    if (url && !isCurrentPage && 'documentPictureInPicture' in window) {
         try {
             if (window.documentPictureInPicture.window) {
                 window.documentPictureInPicture.window.close();

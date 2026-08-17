@@ -940,12 +940,14 @@ var Main = class Main {
         // in the Shorts button, the TikTok button and the generic overlay.
         const videoSvgIcon = ITG_PIP_ICON;
         const handlePipClick = (e) => {
-            e.preventDefault();
             e.stopPropagation();
-            if (typeof window.__itgOpenVideoPip === 'function') {
-                window.__itgOpenVideoPip(window.location.href);
+            e.preventDefault();
+            if (typeof window.ItgVideoPip?.open === 'function') {
+                window.ItgVideoPip.open();
+            } else if (typeof window.__itgOpenVideoPip === 'function') {
+                window.__itgOpenVideoPip();
             } else {
-                console.warn('window.__itgOpenVideoPip is not available.');
+                console.warn('ItgVideoPip is not available.');
             }
         };
 
