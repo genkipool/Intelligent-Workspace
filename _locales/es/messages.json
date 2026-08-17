@@ -6003,6 +6003,12 @@
     "pipMaxSizeUnknown": {
         "message": "Pulsa Máximo para averiguar el tamaño máximo permitido"
     },
+    "pipLike": {
+        "message": "Me gusta"
+    },
+    "pipDislike": {
+        "message": "No me gusta"
+    },
     "pipComments": {
         "message": "Comentarios"
     },

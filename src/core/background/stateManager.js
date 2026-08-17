@@ -88,6 +88,24 @@ async function loadSessionState() {
             activeSidePanelPath = data.activeSidePanelPath;
             logMessage(`[loadSessionState] Restored activeSidePanelPath: ${activeSidePanelPath}`);
         }
+
+        // Validate activeSidePanelPath against the real browser state.
+        // After a service worker restart, session storage may hold a stale
+        // non-null path even though the user already closed the side panel
+        // (the port disconnect that would have cleared it ran in the old
+        // worker context and never fired in this one).
+        if (activeSidePanelPath && typeof chrome.runtime.getContexts === 'function') {
+            try {
+                const contexts = await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] });
+                if (!contexts || contexts.length === 0) {
+                    logMessage('[loadSessionState] Side panel context NOT found. Clearing stale activeSidePanelPath.');
+                    activeSidePanelPath = null;
+                    await chrome.storage.session.set({ activeSidePanelPath: null });
+                }
+            } catch (e) {
+                logMessage('[loadSessionState] getContexts check failed:', e.message);
+            }
+        }
         logMessage(`[loadSessionState] Data received from session:`, data);
         if (data.tabsEverActive && Array.isArray(data.tabsEverActive) && data.tabsEverActive.length > 0) {
             logMessage(

@@ -200,21 +200,29 @@ chrome.runtime.onConnect.addListener((port) => {
         });
     }
     if (port.name === 'sidepanel-connection') {
-        logMessage('Side panel connected.');
+        activeSidePanelPorts.add(port);
+        logMessage('Side panel connected. Active ports count:', activeSidePanelPorts.size);
 
         // When the panel sends its path on connection.
         port.onMessage.addListener((message) => {
             if (message.path) {
                 activeSidePanelPath = message.path;
+                chrome.storage.session.set({
+                    activeSidePanelPath: message.path,
+                });
                 logMessage(`Active side panel path updated to: ${activeSidePanelPath}`);
             }
         });
         port.onDisconnect.addListener(() => {
-            activeSidePanelPath = null;
-            chrome.storage.session.set({
-                activeSidePanelPath: null,
-            });
-            logMessage('Side panel disconnected. Path cleared.');
+            activeSidePanelPorts.delete(port);
+            logMessage('Side panel port disconnected. Remaining active ports:', activeSidePanelPorts.size);
+            if (activeSidePanelPorts.size === 0) {
+                activeSidePanelPath = null;
+                chrome.storage.session.set({
+                    activeSidePanelPath: null,
+                });
+                logMessage('All side panel ports disconnected. Path cleared to null.');
+            }
         });
     }
 });

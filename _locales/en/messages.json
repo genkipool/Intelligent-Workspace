@@ -5920,6 +5920,12 @@
   "pipMaxSizeUnknown": {
     "message": "Press Maximum to find the largest size allowed"
   },
+  "pipLike": {
+    "message": "Like"
+  },
+  "pipDislike": {
+    "message": "Dislike"
+  },
   "pipComments": {
     "message": "Comments"
   },

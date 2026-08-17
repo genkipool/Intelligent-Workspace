@@ -31,9 +31,35 @@ function fontReady() {
  * the data the page goes on to load, which stays free to stream in behind the
  * rendered shell.
  */
+function setupSidePanelTracking() {
+    if (!chrome?.tabs?.getCurrent || !chrome?.runtime?.connect) return;
+    chrome.tabs.getCurrent((currentTab) => {
+        if (!currentTab) {
+            const pathname = window.location.pathname;
+            if (
+                pathname.includes('popup.html') ||
+                pathname.includes('offscreen.html') ||
+                pathname.includes('preview.html')
+            ) {
+                return;
+            }
+            try {
+                const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname;
+                const pathWithSearch = cleanPath + (window.location.search || '');
+                const port = chrome.runtime.connect({ name: 'sidepanel-connection' });
+                port.postMessage({ path: pathWithSearch });
+                chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: cleanPath });
+            } catch {
+                // Ignore context errors
+            }
+        }
+    });
+}
+
 export async function mountPage(Component, options = {}) {
     // Synchronous, so the very first paint already carries the user's palette.
     applyMirroredTheme();
+    setupSidePanelTracking();
     await Promise.all([i18nStore.init(), fontReady()]);
     return mount(Component, { target: document.body, ...options });
 }

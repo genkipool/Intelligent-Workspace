@@ -39,3 +39,6 @@ yarn.lock
 
 # Machine-local agent settings
 .claude/settings.local.json
+
+# Zips
+*.zip

@@ -46,58 +46,96 @@ function handleSidePanelPathUpdated(message) {
 }
 
 function handleFullscreenChanged(message, sender, sendResponse) {
-    const windowId = sender.tab.windowId;
+    const windowId = sender?.tab?.windowId;
     if (!windowId) {
-        sendResponse({
-            status: 'error',
-            message: 'No windowId found',
-        });
+        if (sendResponse) {
+            sendResponse({ status: 'error', message: 'No windowId found' });
+        }
         return;
     }
-    if (message.isFullscreen) {
-        logMessage('Fullscreen detected. Current active path is:', activeSidePanelPath);
 
-        // If there is an active path, it means the side panel is (or was about to be closed) open.
-        if (activeSidePanelPath) {
-            // We save the path to restore it later.
-            lastSidePanelPathBeforeFullscreen = activeSidePanelPath;
-            logMessage(`Panel is considered OPEN. Saved path: ${lastSidePanelPathBeforeFullscreen}`);
-            // We explicitly disable the panel. This ensures the browser treats it as closed.
-            chrome.sidePanel.setOptions({
-                enabled: false,
-            });
-        } else if (!lastSidePanelPathBeforeFullscreen) {
-            // ONLY if no panel was open and we didn't already have a saved path (preventing duplicate messages from clearing the saved path)
-            lastSidePanelPathBeforeFullscreen = null;
-            logMessage('Panel is considered CLOSED. Doing nothing.');
+    if (message.isFullscreen) {
+        // Use getContexts to check if the side panel is ACTUALLY open right now.
+        // This is the only reliable way because activeSidePanelPath can be stale
+        // after a service worker restart (the port disconnect that would have
+        // cleared it ran in the old worker and never fired in this one).
+        const detectAndClose = (isSidePanelReallyOpen, detectedPath) => {
+            logMessage(
+                `[Fullscreen] Entered fullscreen in window ${windowId}. Panel actually open: ${isSidePanelReallyOpen}, path: ${detectedPath}`,
+            );
+
+            if (isSidePanelReallyOpen) {
+                lastSidePanelPathBeforeFullscreen = detectedPath || 'src/ui/pages/rules/rules.html';
+                chrome.sidePanel.setOptions({ enabled: false });
+                activeSidePanelPath = null;
+                chrome.storage.session.set({ activeSidePanelPath: null });
+                logMessage(
+                    `[Fullscreen] Panel CLOSED for fullscreen. Saved path: ${lastSidePanelPathBeforeFullscreen}`,
+                );
+            } else {
+                lastSidePanelPathBeforeFullscreen = null;
+                activeSidePanelPath = null;
+                chrome.storage.session.set({ activeSidePanelPath: null });
+                logMessage('[Fullscreen] Panel was NOT open. Nothing to do.');
+            }
+
+            if (sendResponse) {
+                sendResponse({ status: 'ok' });
+            }
+        };
+
+        if (typeof chrome.runtime.getContexts === 'function') {
+            chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] }).then(
+                (contexts) => {
+                    const isSidePanelReallyOpen = !!(contexts && contexts.length > 0);
+                    let detectedPath = activeSidePanelPath;
+
+                    // Extract path from the live context if available
+                    if (isSidePanelReallyOpen && contexts[0].documentUrl) {
+                        try {
+                            const u = new URL(contexts[0].documentUrl);
+                            const p = u.pathname.startsWith('/') ? u.pathname.slice(1) : u.pathname;
+                            if (p) detectedPath = p;
+                        } catch {
+                            /* keep activeSidePanelPath as fallback */
+                        }
+                    }
+
+                    detectAndClose(isSidePanelReallyOpen, detectedPath);
+                },
+                () => {
+                    // getContexts failed — fall back to activeSidePanelPath
+                    detectAndClose(!!activeSidePanelPath, activeSidePanelPath);
+                },
+            );
         } else {
-            logMessage('Already in fullscreen, keeping the saved path.');
+            // getContexts not available — fall back to activeSidePanelPath
+            detectAndClose(!!activeSidePanelPath, activeSidePanelPath);
         }
     } else {
-        logMessage('Fullscreen exit detected. Restoring side panel if needed.');
+        // Exiting fullscreen
+        logMessage(
+            `[Fullscreen] Exit fullscreen in window ${windowId}. Restore path: ${lastSidePanelPathBeforeFullscreen}`,
+        );
 
-        // If we saved a path, it means we should restore the panel.
         if (lastSidePanelPathBeforeFullscreen) {
-            logMessage(`Restoring panel to last active path: ${lastSidePanelPathBeforeFullscreen}`);
-
-            // We re-enable the panel with the saved path and open it.
-            chrome.sidePanel.setOptions({
-                path: lastSidePanelPathBeforeFullscreen,
-                enabled: true,
-            });
-            chrome.sidePanel.open({
-                windowId: windowId,
-            });
-
-            // We clear the variable so it is not accidentally reused.
+            const pathToRestore = lastSidePanelPathBeforeFullscreen;
             lastSidePanelPathBeforeFullscreen = null;
+
+            chrome.sidePanel.setOptions({ path: pathToRestore, enabled: true });
+            chrome.sidePanel.open({ windowId: windowId });
+
+            activeSidePanelPath = pathToRestore.split('?')[0];
+            chrome.storage.session.set({ activeSidePanelPath: activeSidePanelPath });
+            logMessage(`[Fullscreen] Panel restored to: ${pathToRestore}`);
         } else {
-            logMessage('No panel to restore.');
+            logMessage('[Fullscreen] No panel to restore.');
+        }
+
+        if (sendResponse) {
+            sendResponse({ status: 'ok' });
         }
     }
-    sendResponse({
-        status: 'ok',
-    });
 }
 
 function handleToggleSplitScreen(message, sendResponse) {

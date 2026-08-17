@@ -69,6 +69,18 @@ var ITG_PIP_ICONS = {
         <circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4.5 4.5"></path>
     </svg>`,
     chevronLeft: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 6-5 6 5 6"></path></svg>`,
+    like: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+    </svg>`,
+    likeFilled: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+    </svg>`,
+    dislike: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+    </svg>`,
+    dislikeFilled: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+    </svg>`,
     more: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
         <circle cx="12" cy="5" r="2"></circle>
         <circle cx="12" cy="12" r="2"></circle>
@@ -436,10 +448,30 @@ div[class*='ytp-bezel'] {
 .itg-pip-comment-head { display: flex; gap: 6px; align-items: baseline; font-size: 11px; color: rgba(255, 255, 255, 0.6); }
 .itg-pip-comment-author { font-weight: 600; color: #fff; }
 .itg-pip-comment-text { font-size: 12px; line-height: 1.4; margin: 2px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.itg-pip-comment-meta { display: flex; gap: 10px; align-items: center; font-size: 11px; color: rgba(255, 255, 255, 0.55); }
+.itg-pip-comment-meta { display: flex; gap: 6px; align-items: center; font-size: 11px; color: rgba(255, 255, 255, 0.55); margin-top: 4px; }
+.itg-pip-comment-vote {
+    display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border: 0;
+    border-radius: 12px; background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.75);
+    font-size: 11px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+.itg-pip-comment-vote:hover {
+    background: rgba(255, 255, 255, 0.16); color: #fff; transform: scale(1.05);
+}
+.itg-pip-comment-vote.is-voted {
+    color: var(--interactive-color, #ff4444); background: rgba(255, 255, 255, 0.12); font-weight: 600;
+}
+.itg-pip-comment-vote .itg-pip-vote-icon {
+    display: inline-flex; width: 13px; height: 13px; align-items: center; justify-content: center;
+}
+.itg-pip-comment-vote .itg-pip-vote-icon svg {
+    width: 100%; height: 100%; display: block;
+}
+.itg-pip-comment-likes {
+    font-variant-numeric: tabular-nums; font-size: 11px;
+}
 .itg-pip-comment-reply {
     border: 0; background: transparent; color: rgba(255, 255, 255, 0.75);
-    font-size: 11px; padding: 2px 0; cursor: pointer; text-decoration: underline;
+    font-size: 11px; padding: 2px 4px; cursor: pointer; text-decoration: underline; margin-left: 2px;
 }
 .itg-pip-comment-reply:hover { color: #fff; }
 .itg-pip-reply-box { display: none; gap: 4px; margin-top: 6px; }
@@ -526,6 +558,12 @@ div[class*='ytp-bezel'] {
 .itg-pip-more-label { flex: 1 1 auto; white-space: nowrap; }
 
 /* Responsive adjustments when player is narrow */
+@media (max-width: 600px) {
+    .itg-pip-btn[data-act='like'],
+    .itg-pip-btn[data-act='dislike'] {
+        display: none !important;
+    }
+}
 @media (max-width: 520px) {
     .itg-pip-more-wrap { display: inline-flex; }
     .itg-pip-rate-wrap,

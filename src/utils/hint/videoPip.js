@@ -481,13 +481,31 @@ function itgReadYouTubeComments(limit = 40) {
         .map((el) => {
             const text = itgText(el, ['#content-text', 'yt-attributed-string#content-text']);
             if (!text) return null;
+            const likeBtn = el.querySelector(
+                '#like-button button, like-button-shape button, ytd-toggle-button-renderer#like-button button',
+            );
+            const dislikeBtn = el.querySelector(
+                '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button',
+            );
+            const isLiked =
+                likeBtn?.getAttribute('aria-pressed') === 'true' ||
+                likeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
+            const isDisliked =
+                dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
+                dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
             return {
                 el,
                 author: itgText(el, ['#author-text', 'a#author-text span', '#header-author a']),
                 text,
                 avatar: el.querySelector('#author-thumbnail img')?.src || '',
-                likes: itgText(el, ['#vote-count-middle', '#vote-count-left']),
+                likes: itgText(el, [
+                    '#vote-count-middle',
+                    '#vote-count-left',
+                    '.yt-spec-button-shape-next__button-text-content',
+                ]),
                 when: itgText(el, ['.published-time-text a', '#published-time-text a']),
+                isLiked: !!isLiked,
+                isDisliked: !!isDisliked,
             };
         })
         .filter(Boolean);
@@ -504,16 +522,93 @@ function itgReadYouTubeReplies(thread) {
         .map((el) => {
             const text = itgText(el, ['#content-text']);
             if (!text) return null;
+            const likeBtn = el.querySelector(
+                '#like-button button, like-button-shape button, ytd-toggle-button-renderer#like-button button',
+            );
+            const dislikeBtn = el.querySelector(
+                '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button',
+            );
+            const isLiked =
+                likeBtn?.getAttribute('aria-pressed') === 'true' ||
+                likeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
+            const isDisliked =
+                dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
+                dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
             return {
                 el,
                 author: itgText(el, ['#author-text', 'a#author-text span']),
                 text,
                 avatar: el.querySelector('#author-thumbnail img')?.src || '',
-                likes: itgText(el, ['#vote-count-middle', '#vote-count-left']),
+                likes: itgText(el, [
+                    '#vote-count-middle',
+                    '#vote-count-left',
+                    '.yt-spec-button-shape-next__button-text-content',
+                ]),
                 when: itgText(el, ['.published-time-text a', '#published-time-text a']),
+                isLiked: !!isLiked,
+                isDisliked: !!isDisliked,
             };
         })
         .filter(Boolean);
+}
+
+function itgGetYouTubeVideoLikeButton() {
+    return (
+        document.querySelector('like-button-view-model button') ||
+        document.querySelector(
+            'ytd-watch-metadata #top-level-buttons-computed segmented-like-dislike-button-view-model button:first-of-type',
+        ) ||
+        document.querySelector('#segmented-like-button button') ||
+        document.querySelector('ytd-toggle-button-renderer#like-button button') ||
+        document.querySelector('#like-button button') ||
+        document.querySelector('ytd-like-button-renderer button')
+    );
+}
+
+function itgGetYouTubeVideoDislikeButton() {
+    return (
+        document.querySelector('dislike-button-view-model button') ||
+        document.querySelector(
+            'ytd-watch-metadata #top-level-buttons-computed segmented-like-dislike-button-view-model button:last-of-type',
+        ) ||
+        document.querySelector('#segmented-dislike-button button') ||
+        document.querySelector('ytd-toggle-button-renderer#dislike-button button') ||
+        document.querySelector('#dislike-button button') ||
+        document.querySelector('ytd-dislike-button-renderer button')
+    );
+}
+
+function itgGetYouTubeVideoVoteStatus() {
+    const likeBtn = itgGetYouTubeVideoLikeButton();
+    const dislikeBtn = itgGetYouTubeVideoDislikeButton();
+    const isLiked =
+        likeBtn?.getAttribute('aria-pressed') === 'true' ||
+        likeBtn?.classList.contains('yt-spec-button-shape-next--tonal') ||
+        likeBtn?.parentElement?.classList?.contains('style-default-active');
+    const isDisliked =
+        dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
+        dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal') ||
+        dislikeBtn?.parentElement?.classList?.contains('style-default-active');
+    return {
+        isLiked: !!isLiked,
+        isDisliked: !!isDisliked,
+        hasLike: !!likeBtn,
+        hasDislike: !!dislikeBtn,
+    };
+}
+
+function itgVoteYouTubeComment(commentEl, voteType) {
+    if (!commentEl) return false;
+    const selector =
+        voteType === 'like'
+            ? '#like-button button, like-button-shape button, ytd-toggle-button-renderer#like-button button'
+            : '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button';
+    const btn = commentEl.querySelector(selector);
+    if (btn) {
+        btn.click();
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -1123,6 +1218,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         </div>
                         <span class="itg-pip-time">0:00 / 0:00</span>
                         <span class="itg-pip-spacer"></span>
+                        <button class="itg-pip-btn" data-act="like" type="button" hidden></button>
+                        <button class="itg-pip-btn" data-act="dislike" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="comments" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="captions" type="button" hidden></button>
                         <span class="itg-pip-rate-wrap">
@@ -1151,6 +1248,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                                 <button class="itg-pip-more-item" data-act="sizemax" type="button">
                                     <span class="itg-pip-more-icon">${ITG_PIP_ICONS.fullscreen}</span>
                                     <span class="itg-pip-more-label" data-i18n-text="pipMaxSize">Maximize</span>
+                                </button>
+                                <button class="itg-pip-more-item" data-act="like" type="button" hidden>
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.like}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipLike">Like</span>
+                                </button>
+                                <button class="itg-pip-more-item" data-act="dislike" type="button" hidden>
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.dislike}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipDislike">Dislike</span>
                                 </button>
                                 <button class="itg-pip-more-item" data-act="captions" type="button" hidden>
                                     <span class="itg-pip-more-icon">${ITG_PIP_ICONS.captions}</span>
@@ -1199,6 +1304,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.buttons.forward.innerHTML = ITG_PIP_ICONS.forward;
         this.buttons.prev.innerHTML = ITG_PIP_ICONS.previous;
         this.buttons.next.innerHTML = ITG_PIP_ICONS.next;
+        if (this.buttons.like) this.buttons.like.innerHTML = ITG_PIP_ICONS.like;
+        if (this.buttons.dislike) this.buttons.dislike.innerHTML = ITG_PIP_ICONS.dislike;
         this.buttons.comments.innerHTML = ITG_PIP_ICONS.comments;
         this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
         if (this.buttons.more) this.buttons.more.innerHTML = ITG_PIP_ICONS.more;
@@ -1219,6 +1326,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.buttons.next) this.buttons.next.title = itgPipMsg('pipNext', 'Next video');
         if (this.buttons.rewind) this.buttons.rewind.title = itgPipMsg('pipRewind', 'Back 10 seconds');
         if (this.buttons.forward) this.buttons.forward.title = itgPipMsg('pipForward', 'Forward 10 seconds');
+        if (this.buttons.like) this.buttons.like.title = itgPipMsg('pipLike', 'Like');
+        if (this.buttons.dislike) this.buttons.dislike.title = itgPipMsg('pipDislike', 'Dislike');
         if (this.buttons.rate) this.buttons.rate.title = itgPipMsg('pipSpeed', 'Playback speed');
         if (this.buttons.comments) this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
         if (this.buttons.captions) this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
@@ -1239,6 +1348,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             if (key) el.textContent = itgPipMsg(key, el.textContent);
         }
         this.renderSize();
+        this.updateVideoVotes();
         const searchInput = doc.querySelector('.itg-pip-search-input');
         if (searchInput) searchInput.placeholder = itgPipMsg('pipSearch', 'Search videos');
         const liveBadge = doc.querySelector('.itg-pip-live-badge');
@@ -1555,6 +1665,12 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             case 'rate':
                 this.cycleRate();
                 break;
+            case 'like':
+                this.toggleVideoLike();
+                break;
+            case 'dislike':
+                this.toggleVideoDislike();
+                break;
             case 'captions':
                 this.toggleCaptions();
                 break;
@@ -1571,6 +1687,54 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             case 'sizemax':
                 this.toggleFullscreenSize();
                 break;
+        }
+    }
+
+    toggleVideoLike() {
+        const btn = itgGetYouTubeVideoLikeButton();
+        if (btn) {
+            btn.click();
+            setTimeout(() => this.updateVideoVotes(), 180);
+        }
+    }
+
+    toggleVideoDislike() {
+        const btn = itgGetYouTubeVideoDislikeButton();
+        if (btn) {
+            btn.click();
+            setTimeout(() => this.updateVideoVotes(), 180);
+        }
+    }
+
+    updateVideoVotes() {
+        if (!this.buttons?.like || !this.buttons?.dislike) return;
+        const canVote = this.isYouTube;
+        this.buttons.like.hidden = !canVote;
+        this.buttons.dislike.hidden = !canVote;
+
+        const doc = this.pipWindow?.document;
+        const moreLike = doc?.querySelector('.itg-pip-more-item[data-act="like"]');
+        const moreDislike = doc?.querySelector('.itg-pip-more-item[data-act="dislike"]');
+        if (moreLike) moreLike.hidden = !canVote;
+        if (moreDislike) moreDislike.hidden = !canVote;
+
+        if (!canVote) return;
+
+        const status = itgGetYouTubeVideoVoteStatus();
+        this.buttons.like.classList.toggle('is-on', status.isLiked);
+        this.buttons.dislike.classList.toggle('is-on', status.isDisliked);
+        this.buttons.like.innerHTML = status.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
+        this.buttons.dislike.innerHTML = status.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
+
+        if (moreLike) {
+            moreLike.classList.toggle('is-on', status.isLiked);
+            const icon = moreLike.querySelector('.itg-pip-more-icon');
+            if (icon) icon.innerHTML = status.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
+        }
+        if (moreDislike) {
+            moreDislike.classList.toggle('is-on', status.isDisliked);
+            const icon = moreDislike.querySelector('.itg-pip-more-icon');
+            if (icon) icon.innerHTML = status.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
         }
     }
 
@@ -2292,7 +2456,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                     </div>
                     <div class="itg-pip-comment-text"></div>
                     <div class="itg-pip-comment-meta">
-                        <span class="itg-pip-comment-likes"></span>
+                        <button class="itg-pip-comment-vote itg-pip-comment-like" type="button" title="${itgPipMsg('pipLike', 'Like')}">
+                            <span class="itg-pip-vote-icon">${comment.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like}</span>
+                            <span class="itg-pip-comment-likes">${comment.likes || ''}</span>
+                        </button>
+                        <button class="itg-pip-comment-vote itg-pip-comment-dislike" type="button" title="${itgPipMsg('pipDislike', 'Dislike')}">
+                            <span class="itg-pip-vote-icon">${comment.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike}</span>
+                        </button>
                         <button class="itg-pip-comment-reply" type="button"></button>
                     </div>
                     <div class="itg-pip-reply-box">
@@ -2314,8 +2484,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             entry.querySelector('.itg-pip-comment-author').textContent = comment.author;
             entry.querySelector('.itg-pip-comment-when').textContent = comment.when;
             entry.querySelector('.itg-pip-comment-text').textContent = comment.text;
-            entry.querySelector('.itg-pip-comment-likes').textContent = comment.likes;
 
+            this.wireCommentVotes(entry, () => itgResolveThread(comment), comment);
             this.wireReplyBox(entry, () => itgResolveThread(comment));
 
             this.wireReplies(entry, comment);
@@ -2324,6 +2494,80 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
 
         this.fillCommentAvatars();
+    }
+
+    /**
+     * Wires up the interactive like and dislike buttons for a comment or reply.
+     */
+    wireCommentVotes(entry, getTarget, comment) {
+        const likeBtn = entry.querySelector('.itg-pip-comment-like');
+        const dislikeBtn = entry.querySelector('.itg-pip-comment-dislike');
+        const likesSpan = entry.querySelector('.itg-pip-comment-likes');
+        if (!likeBtn || !dislikeBtn) return;
+
+        likeBtn.classList.toggle('is-voted', !!comment?.isLiked);
+        dislikeBtn.classList.toggle('is-voted', !!comment?.isDisliked);
+
+        likeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const target = getTarget();
+            if (target) {
+                itgVoteYouTubeComment(target, 'like');
+                setTimeout(() => {
+                    const resolved = getTarget() || target;
+                    const likeShape = resolved.querySelector(
+                        '#like-button button, like-button-shape button, ytd-toggle-button-renderer#like-button button',
+                    );
+                    const isNowLiked =
+                        likeShape?.getAttribute('aria-pressed') === 'true' ||
+                        likeShape?.classList.contains('yt-spec-button-shape-next--tonal');
+                    const newLikes = itgText(resolved, [
+                        '#vote-count-middle',
+                        '#vote-count-left',
+                        '.yt-spec-button-shape-next__button-text-content',
+                    ]);
+
+                    likeBtn.classList.toggle('is-voted', !!isNowLiked);
+                    dislikeBtn.classList.remove('is-voted');
+                    const likeIcon = likeBtn.querySelector('.itg-pip-vote-icon');
+                    if (likeIcon) likeIcon.innerHTML = isNowLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
+                    const dislikeIcon = dislikeBtn.querySelector('.itg-pip-vote-icon');
+                    if (dislikeIcon) dislikeIcon.innerHTML = ITG_PIP_ICONS.dislike;
+                    if (likesSpan) likesSpan.textContent = newLikes || '';
+                }, 180);
+            }
+        });
+
+        dislikeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const target = getTarget();
+            if (target) {
+                itgVoteYouTubeComment(target, 'dislike');
+                setTimeout(() => {
+                    const resolved = getTarget() || target;
+                    const dislikeShape = resolved.querySelector(
+                        '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button',
+                    );
+                    const isNowDisliked =
+                        dislikeShape?.getAttribute('aria-pressed') === 'true' ||
+                        dislikeShape?.classList.contains('yt-spec-button-shape-next--tonal');
+                    const newLikes = itgText(resolved, [
+                        '#vote-count-middle',
+                        '#vote-count-left',
+                        '.yt-spec-button-shape-next__button-text-content',
+                    ]);
+
+                    dislikeBtn.classList.toggle('is-voted', !!isNowDisliked);
+                    likeBtn.classList.remove('is-voted');
+                    const dislikeIcon = dislikeBtn.querySelector('.itg-pip-vote-icon');
+                    if (dislikeIcon)
+                        dislikeIcon.innerHTML = isNowDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
+                    const likeIcon = likeBtn.querySelector('.itg-pip-vote-icon');
+                    if (likeIcon) likeIcon.innerHTML = ITG_PIP_ICONS.like;
+                    if (likesSpan) likesSpan.textContent = newLikes || '';
+                }, 180);
+            }
+        });
     }
 
     /**
@@ -2407,7 +2651,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         </div>
                         <div class="itg-pip-comment-text"></div>
                         <div class="itg-pip-comment-meta">
-                            <span class="itg-pip-comment-likes"></span>
+                            <button class="itg-pip-comment-vote itg-pip-comment-like" type="button" title="${itgPipMsg('pipLike', 'Like')}">
+                                <span class="itg-pip-vote-icon">${reply.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like}</span>
+                                <span class="itg-pip-comment-likes">${reply.likes || ''}</span>
+                            </button>
+                            <button class="itg-pip-comment-vote itg-pip-comment-dislike" type="button" title="${itgPipMsg('pipDislike', 'Dislike')}">
+                                <span class="itg-pip-vote-icon">${reply.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike}</span>
+                            </button>
                             <button class="itg-pip-comment-reply" type="button"></button>
                         </div>
                         <div class="itg-pip-reply-box">
@@ -2418,6 +2668,11 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 // Each reply has its own reply button in the page, so answering one
                 // answers that reply rather than the thread it sits under. If YouTube
                 // has recycled the node by then, the thread is the fallback.
+                this.wireCommentVotes(
+                    node,
+                    () => (reply.el?.isConnected ? reply.el : itgResolveThread(comment)),
+                    reply,
+                );
                 this.wireReplyBox(node, () => (reply.el?.isConnected ? reply.el : itgResolveThread(comment)));
                 if (reply.avatar) {
                     const img = doc.createElement('img');
@@ -2428,7 +2683,6 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                 node.querySelector('.itg-pip-comment-author').textContent = reply.author;
                 node.querySelector('.itg-pip-comment-when').textContent = reply.when;
                 node.querySelector('.itg-pip-comment-text').textContent = reply.text;
-                node.querySelector('.itg-pip-comment-likes').textContent = reply.likes;
                 list.appendChild(node);
             }
         });
