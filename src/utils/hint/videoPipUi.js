@@ -290,16 +290,20 @@ textarea::selection,
     top: auto !important;
     bottom: auto !important;
     transform: none !important;
-    margin: 0 auto 4px auto !important;
+    margin: 0 auto !important;
     text-align: center !important;
-    max-width: min(85%, 600px) !important;
+    max-width: min(85%, 520px) !important;
     width: auto !important;
-    height: auto !important;
-    background: rgba(0, 0, 0, 0.78) !important;
-    border-radius: 6px !important;
-    padding: 4px 10px !important;
+    max-height: 3.2em !important;
+    overflow: hidden !important;
+    background: rgba(0, 0, 0, 0.82) !important;
+    border-radius: 8px !important;
+    padding: 4px 12px !important;
     pointer-events: none !important;
-    display: inline-block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
     box-sizing: border-box !important;
     white-space: normal !important;
     overflow-wrap: break-word !important;
@@ -311,10 +315,11 @@ textarea::selection,
     display: none !important;
 }
 .itg-pip-captions .captions-text {
-    display: inline !important;
+    display: block !important;
     text-align: center !important;
     background: transparent !important;
     white-space: normal !important;
+    line-height: 1.35 !important;
 }
 .itg-pip-captions .ytp-caption-segment {
     font-size: 19px !important;
