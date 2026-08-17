@@ -2634,8 +2634,8 @@ function itgFormatTime(seconds) {
  * and playing, with nothing left holding the session that knows how to put the video
  * back. Anchoring it to the window makes the second injection reuse the first.
  */
-var ItgVideoPip = window.__itgVideoPip ?? {
-    current: null,
+var ItgVideoPip = {
+    current: window.__itgVideoPip?.current ?? null,
 
     supported() {
         return 'documentPictureInPicture' in window;
