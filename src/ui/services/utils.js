@@ -36,7 +36,11 @@ export function correctFaviconUrl(faviconUrl) {
         return faviconUrl;
     }
 
-    if (faviconUrl.toLowerCase().includes('https://web.whatsapp.com/favicon')) {
+    if (
+        faviconUrl.toLowerCase().includes('web.whatsapp.com/favicon') ||
+        faviconUrl.toLowerCase().includes('web.whatsapp.com/img/favicon') ||
+        faviconUrl.toLowerCase().includes('https://web.whatsapp.com')
+    ) {
         return 'https://web.whatsapp.com/favicon.ico';
     }
 

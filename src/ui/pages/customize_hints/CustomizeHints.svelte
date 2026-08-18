@@ -9,6 +9,7 @@
     import { onMount } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initCustomizeHints } from './customize_hints.js';
+    import { getCurrentLang, loadMessages, resolveMessage } from '../../../utils/i18n.js';
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
     import SnippetsSection from './components/SnippetsSection.svelte';
     import BlacklistSection from './components/BlacklistSection.svelte';
@@ -21,16 +22,26 @@
     let linkPreviewEnabled = $state(true);
     let previewToggleTitle = $state('');
 
-    function updateToggleTitle() {
+    async function updateToggleTitle() {
         const key = linkPreviewEnabled ? 'linkPreviewToggleDisable' : 'linkPreviewToggleEnable';
-        const message = chrome.i18n.getMessage(key);
-        previewToggleTitle = message || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+        try {
+            const lang = await getCurrentLang();
+            const messages = await loadMessages(lang);
+            const message = resolveMessage(messages[key], [], 'message');
+            previewToggleTitle =
+                message ||
+                chrome.i18n.getMessage(key) ||
+                (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+        } catch {
+            previewToggleTitle =
+                chrome.i18n.getMessage(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+        }
     }
 
     async function toggleLinkPreview(event) {
         const enabled = event.currentTarget.checked;
         linkPreviewEnabled = enabled;
-        updateToggleTitle();
+        await updateToggleTitle();
         try {
             await chrome.runtime.sendMessage({ action: 'toggleLinkPreview', enabled });
         } catch {
@@ -47,10 +58,13 @@
             updateToggleTitle();
         });
         // Kept in step with the shortcut, the context menu and any other window.
-        const onStorageChanged = (changes) => {
-            if (!changes.linkPreviewEnabled) return;
-            linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
-            updateToggleTitle();
+        const onStorageChanged = (changes, area) => {
+            if (area === 'local' && (changes.linkPreviewEnabled || changes['preferred-language'])) {
+                if (changes.linkPreviewEnabled) {
+                    linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
+                }
+                updateToggleTitle();
+            }
         };
         chrome.storage.onChanged.addListener(onStorageChanged);
         return () => chrome.storage.onChanged.removeListener(onStorageChanged);

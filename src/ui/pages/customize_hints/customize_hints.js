@@ -1,5 +1,12 @@
 import { initializeActiveTheme } from '../../../utils/theme.js';
-import { initializeTranslations, applyTranslations, showNotification } from '../../../utils/i18n.js';
+import {
+    initializeTranslations,
+    applyTranslations,
+    showNotification,
+    getCurrentLang,
+    loadMessages,
+    resolveMessage,
+} from '../../../utils/i18n.js';
 import { exportHintsConfig, importHintsConfig } from '../../../utils/importExport.js';
 
 // Resolved when the page initialises: `hint_common.js` publishes window.HintCommon
@@ -51,6 +58,24 @@ export async function initCustomizeHints() {
     let linkPreviewBlacklist = [];
     let linkPreviewTriggerKey = '';
     let isRendering = false;
+    let currentMessages = {};
+
+    const refreshI18nMessages = async () => {
+        const lang = await getCurrentLang();
+        currentMessages = await loadMessages(lang);
+    };
+
+    const getI18nText = (key, fallback = '') => {
+        if (!key) return fallback;
+        const entry = currentMessages[key];
+        if (entry) {
+            const text = resolveMessage(entry, [], 'message');
+            if (text) return text;
+        }
+        return chrome.i18n.getMessage(key) || fallback || key;
+    };
+
+    await refreshI18nMessages();
 
     // Placeholder helper
     const setupContentEditablePlaceholder = (el) => {
@@ -135,7 +160,7 @@ export async function initCustomizeHints() {
         await chrome.storage.sync.set({ [STORAGE_KEYS.CUSTOM_SHORTCUTS]: newOverrides });
         customShortcutsOverrides = newOverrides;
         chrome.runtime.sendMessage({ action: 'hintCommandsUpdated' });
-        if (!options.skipRender) renderBuiltInCommands();
+        if (!options.skipRender) await renderBuiltInCommands();
     };
 
     // --- VALIDATION & CONFLICT INFO ---
@@ -148,7 +173,7 @@ export async function initCustomizeHints() {
             for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS.categoryOmnibarPrefixes)) {
                 const currentKey = (customShortcutsOverrides[descKey] || defKey).toLowerCase();
                 if (currentKey === k && currentKey !== ex) {
-                    return chrome.i18n.getMessage(descKey) || defKey;
+                    return getI18nText(descKey, defKey);
                 }
             }
             return null;
@@ -160,7 +185,7 @@ export async function initCustomizeHints() {
             for (const [defKey, descKey] of Object.entries(COMMON_COMMANDS[catKey])) {
                 const currentKey = (customShortcutsOverrides[descKey] || defKey).toLowerCase();
                 if (currentKey === k && currentKey !== ex) {
-                    return chrome.i18n.getMessage(descKey) || defKey;
+                    return getI18nText(descKey, defKey);
                 }
             }
         }
@@ -172,7 +197,7 @@ export async function initCustomizeHints() {
             linkPreviewTriggerKey.toLowerCase() === k &&
             linkPreviewTriggerKey.toLowerCase() !== ex
         ) {
-            return chrome.i18n.getMessage('previewTriggerKeyLabel') || 'Link preview';
+            return getI18nText('previewTriggerKeyLabel', 'Link preview');
         }
 
         // 3. Check custom site commands
@@ -259,7 +284,8 @@ export async function initCustomizeHints() {
                     contenteditable: 'true',
                     'data-type': 'description',
                     'data-html': cmd.description || '',
-                    title: chrome.i18n.getMessage('placeholderDesc') || 'Description',
+                    'data-i18n-title': 'placeholderDesc',
+                    title: getI18nText('placeholderDesc', 'Description'),
                 },
                 HintCommon.stripHtml(cmd.description || ''),
             );
@@ -290,6 +316,8 @@ export async function initCustomizeHints() {
                 'span',
                 {
                     className: 'command-description',
+                    'data-i18n': extraData.originalDesc,
+                    'data-i18n-title': extraData.originalDesc,
                     title: cmd.description,
                 },
                 cmd.description,
@@ -1002,7 +1030,8 @@ export async function initCustomizeHints() {
         });
     };
 
-    const renderBuiltInCommands = () => {
+    const renderBuiltInCommands = async () => {
+        await refreshI18nMessages();
         const omniList = document.getElementById('omnibar-prefixes-list');
 
         const updateOrAppendItem = (container, cmd, extraData) => {
@@ -1017,6 +1046,13 @@ export async function initCustomizeHints() {
                     keySpan.innerText = currentKey;
                     keySpan.classList.remove('error');
                 }
+                const descSpan = existingItem.querySelector('.command-description');
+                if (descSpan && cmd.description) {
+                    descSpan.textContent = cmd.description;
+                    descSpan.title = cmd.description;
+                    descSpan.setAttribute('data-i18n', extraData.originalDesc);
+                    descSpan.setAttribute('data-i18n-title', extraData.originalDesc);
+                }
             } else {
                 const newItem = createCommandItem(cmd, false, false, extraData);
                 newItem.dataset.updated = 'true';
@@ -1028,7 +1064,7 @@ export async function initCustomizeHints() {
             if (categoryKey === 'categoryOmnibarPrefixes' && omniList) {
                 Array.from(omniList.children).forEach((el) => (el.dataset.updated = 'false'));
                 Object.entries(COMMON_COMMANDS[categoryKey]).forEach(([keys, descKey]) => {
-                    const description = chrome.i18n.getMessage(descKey) || descKey;
+                    const description = getI18nText(descKey, descKey);
                     updateOrAppendItem(
                         omniList,
                         { keys, description },
@@ -1054,7 +1090,7 @@ export async function initCustomizeHints() {
                 const categoryTitle = document.createElement('h3');
                 categoryTitle.className = 'category-title';
                 categoryTitle.setAttribute('data-i18n', categoryKey);
-                categoryTitle.textContent = chrome.i18n.getMessage(categoryKey);
+                categoryTitle.textContent = getI18nText(categoryKey);
                 categoryContainer.appendChild(categoryTitle);
                 categoryList = document.createElement('ul');
                 categoryList.className = 'commands-list';
@@ -1063,12 +1099,15 @@ export async function initCustomizeHints() {
             } else {
                 categoryList = categoryContainer.querySelector('.commands-list');
                 const title = categoryContainer.querySelector('.category-title');
-                if (title) title.textContent = chrome.i18n.getMessage(categoryKey) || title.textContent;
+                if (title) {
+                    title.setAttribute('data-i18n', categoryKey);
+                    title.textContent = getI18nText(categoryKey) || title.textContent;
+                }
             }
 
             Array.from(categoryList.children).forEach((el) => (el.dataset.updated = 'false'));
             Object.entries(COMMON_COMMANDS[categoryKey]).forEach(([keys, descKey]) => {
-                const description = chrome.i18n.getMessage(descKey);
+                const description = getI18nText(descKey, descKey);
                 let category = categoryKey.replace('category', '').toLowerCase();
                 if (category === 'omnibarprefixes') category = 'omnibar';
                 updateOrAppendItem(
@@ -1135,7 +1174,8 @@ export async function initCustomizeHints() {
 
                         const descContainer = document.createElement('div');
                         descContainer.className = 'command-description';
-                        descContainer.title = chrome.i18n.getMessage('previewTriggerKeyTooltip');
+                        descContainer.setAttribute('data-i18n-title', 'previewTriggerKeyTooltip');
+                        descContainer.title = getI18nText('previewTriggerKeyTooltip');
                         descContainer.style.display = 'flex';
                         descContainer.style.alignItems = 'center';
                         descContainer.style.gap = '8px';
@@ -1143,12 +1183,14 @@ export async function initCustomizeHints() {
 
                         const labelSpan = document.createElement('span');
                         labelSpan.style.fontWeight = '500';
-                        labelSpan.textContent = chrome.i18n.getMessage('previewTriggerKeyLabel');
+                        labelSpan.setAttribute('data-i18n', 'previewTriggerKeyLabel');
+                        labelSpan.textContent = getI18nText('previewTriggerKeyLabel');
 
                         const tooltipSpan = document.createElement('span');
                         tooltipSpan.style.fontSize = '0.85rem';
                         tooltipSpan.style.opacity = '0.7';
-                        tooltipSpan.textContent = chrome.i18n.getMessage('previewTriggerKeyTooltip');
+                        tooltipSpan.setAttribute('data-i18n', 'previewTriggerKeyTooltip');
+                        tooltipSpan.textContent = getI18nText('previewTriggerKeyTooltip');
 
                         descContainer.appendChild(labelSpan);
                         descContainer.appendChild(tooltipSpan);
@@ -1185,7 +1227,7 @@ export async function initCustomizeHints() {
             renderSnippets();
             renderBlacklist();
 
-            renderBuiltInCommands();
+            await renderBuiltInCommands();
         } catch (err) {
             console.error('Error in renderAll:', err);
         } finally {
@@ -1768,6 +1810,14 @@ export async function initCustomizeHints() {
     });
 
     renderAll();
+
+    chrome.storage.onChanged.addListener(async (changes, area) => {
+        if (area === 'local' && changes['preferred-language']) {
+            await refreshI18nMessages();
+            await renderBuiltInCommands();
+            await applyTranslations();
+        }
+    });
 
     // Focus search input on load
     if (searchInput) searchInput.focus();

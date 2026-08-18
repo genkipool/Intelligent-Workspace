@@ -1,3 +1,14 @@
+var getOmniMsg = (key, params, fallback) => {
+    if (typeof HintCommon !== 'undefined' && HintCommon.i18n?.getMessage) {
+        return HintCommon.i18n.getMessage(key, params, fallback);
+    }
+    if (typeof chrome !== 'undefined' && chrome.i18n?.getMessage) {
+        const m = chrome.i18n.getMessage(key, params);
+        if (m) return m;
+    }
+    return typeof params === 'string' ? params : fallback || key;
+};
+
 var OmniBar = class OmniBar {
     constructor() {
         this.active = false;
@@ -44,6 +55,9 @@ var OmniBar = class OmniBar {
         if (!chrome.runtime || !chrome.runtime.id) {
             console.warn('[Hint] Cannot open OmniBar: Extension context invalidated.');
             return;
+        }
+        if (typeof HintCommon !== 'undefined' && HintCommon.i18n?.loadMessages) {
+            await HintCommon.i18n.loadMessages();
         }
         this.active = true;
         this.matches = [];
@@ -97,7 +111,7 @@ var OmniBar = class OmniBar {
         input.className = 'hint-omni-input';
         input.type = 'text';
         input.placeholder =
-            chrome.i18n.getMessage('omnibarPlaceholder') ||
+            getOmniMsg('omnibarPlaceholder') ||
             'Search tabs or use prefixes (@, we:, wp:, wv:, b:, h:, c:, dg:, dt:, f:, qai:, qaia:, lai:, laiq:, limg:, lnt:, bg:, ccr:)...';
         input.autocomplete = 'off';
         const counter = document.createElement('span');
@@ -110,7 +124,7 @@ var OmniBar = class OmniBar {
         const regexBtn = document.createElement('button');
         regexBtn.id = 'hint-omni-regex-btn';
         regexBtn.className = 'hint-omni-regex-btn';
-        regexBtn.title = chrome.i18n.getMessage('omnibarRegexSearchTooltip') || 'Toggle Regex Search';
+        regexBtn.title = getOmniMsg('omnibarRegexSearchTooltip') || 'Toggle Regex Search';
         regexBtn.textContent = '.*';
         if (this.useRegex) {
             regexBtn.classList.add('active');
@@ -251,159 +265,143 @@ var OmniBar = class OmniBar {
             const prefixList = [
                 {
                     prefix: this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
-                    title: chrome.i18n.getMessage('omnibarPrefixPopupTitle') || 'Open Popup',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixPopupDesc') ||
-                        'Select a tab to open as a standalone popup window',
+                    title: getOmniMsg('omnibarPrefixPopupTitle') || 'Open Popup',
+                    desc: getOmniMsg('omnibarPrefixPopupDesc') || 'Select a tab to open as a standalone popup window',
                 },
                 {
                     prefix: this._getPrefixVal('wp:', 'omnibarPrefixPipDesc'),
-                    title: chrome.i18n.getMessage('omnibarPrefixPipTitle') || 'Open PiP',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixPipDesc') ||
-                        'Select a tab to open as Document Picture-in-Picture',
+                    title: getOmniMsg('omnibarPrefixPipTitle') || 'Open PiP',
+                    desc: getOmniMsg('omnibarPrefixPipDesc') || 'Select a tab to open as Document Picture-in-Picture',
                 },
                 {
                     prefix: this._getPrefixVal('wv:', 'omnibarPrefixVideoPipDesc'),
-                    title: chrome.i18n.getMessage('omnibarPrefixVideoPipTitle') || 'Open Video PiP',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixVideoPipDesc') ||
-                        'Select a tab to open as Video Picture-in-Picture',
+                    title: getOmniMsg('omnibarPrefixVideoPipTitle') || 'Open Video PiP',
+                    desc: getOmniMsg('omnibarPrefixVideoPipDesc') || 'Select a tab to open as Video Picture-in-Picture',
                 },
                 {
                     prefix: this._getPrefixVal('b:', 'prefixSearchBookmarks'),
-                    title: chrome.i18n.getMessage('omnibarPrefixBookmarksTitle') || 'Bookmarks',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixBookmarksDesc') || 'Search through your browser bookmarks',
+                    title: getOmniMsg('omnibarPrefixBookmarksTitle') || 'Bookmarks',
+                    desc: getOmniMsg('omnibarPrefixBookmarksDesc') || 'Search through your browser bookmarks',
                 },
                 {
                     prefix: this._getPrefixVal('h:', 'prefixSearchHistory'),
-                    title: chrome.i18n.getMessage('omnibarPrefixHistoryTitle') || 'History',
-                    desc: chrome.i18n.getMessage('omnibarPrefixHistoryDesc') || 'Search through your browsing history',
+                    title: getOmniMsg('omnibarPrefixHistoryTitle') || 'History',
+                    desc: getOmniMsg('omnibarPrefixHistoryDesc') || 'Search through your browsing history',
                 },
                 {
                     prefix: this._getPrefixVal('c:', 'prefixSearchRecentlyClosed'),
-                    title: chrome.i18n.getMessage('omnibarPrefixClosedTitle') || 'Recently Closed',
-                    desc: chrome.i18n.getMessage('omnibarPrefixClosedDesc') || 'Browse and reopen recently closed tabs',
+                    title: getOmniMsg('omnibarPrefixClosedTitle') || 'Recently Closed',
+                    desc: getOmniMsg('omnibarPrefixClosedDesc') || 'Browse and reopen recently closed tabs',
                 },
                 {
                     prefix: this._getPrefixVal('dg:', 'prefixDeleteGroup'),
-                    title: chrome.i18n.getMessage('omnibarPrefixGroupsTitle') || 'Tab Groups',
-                    desc: chrome.i18n.getMessage('omnibarPrefixGroupsDesc') || 'Search and switch between tab groups',
+                    title: getOmniMsg('omnibarPrefixGroupsTitle') || 'Tab Groups',
+                    desc: getOmniMsg('omnibarPrefixGroupsDesc') || 'Search and switch between tab groups',
                 },
                 {
                     prefix: this._getPrefixVal('dt:', 'prefixDeleteTab'),
-                    title: chrome.i18n.getMessage('omnibarPrefixTabsDeleteTitle') || 'Tabs (Delete)',
-                    desc: chrome.i18n.getMessage('omnibarPrefixTabsDeleteDesc') || 'Search and delete multiple tabs',
+                    title: getOmniMsg('omnibarPrefixTabsDeleteTitle') || 'Tabs (Delete)',
+                    desc: getOmniMsg('omnibarPrefixTabsDeleteDesc') || 'Search and delete multiple tabs',
+                },
+                {
+                    prefix: this._getPrefixVal('ts:', 'prefixSplitTabs'),
+                    title: getOmniMsg('omnibarPrefixTabsSplitTitle') || 'Tabs (Split Screen)',
+                    desc: getOmniMsg('omnibarPrefixTabsSplitDesc') || 'Search tabs and open in split screen',
                 },
                 {
                     prefix: this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
-                    title: chrome.i18n.getMessage('omnibarPrefixBackupTitle') || 'Backups',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixBackupDesc') ||
-                        'Search and restore backed up groups and tabs',
+                    title: getOmniMsg('omnibarPrefixBackupTitle') || 'Backups',
+                    desc: getOmniMsg('omnibarPrefixBackupDesc') || 'Search and restore backed up groups and tabs',
                 },
                 {
                     prefix: this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc'),
-                    title: chrome.i18n.getMessage('omnibarPrefixBackupNowTitle') || 'Backup Groups',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixBackupNowDesc') ||
-                        'Backup tab groups that do not have a backup yet',
+                    title: getOmniMsg('omnibarPrefixBackupNowTitle') || 'Backup Groups',
+                    desc: getOmniMsg('omnibarPrefixBackupNowDesc') || 'Backup tab groups that do not have a backup yet',
                 },
                 {
                     prefix: this._getPrefixVal('f:', 'prefixSearchText'),
-                    title: chrome.i18n.getMessage('omnibarPrefixDeepSearchTitle') || 'Deep Search',
-                    desc: chrome.i18n.getMessage('omnibarPrefixDeepSearchDesc') || 'Full-text search in all open tabs',
+                    title: getOmniMsg('omnibarPrefixDeepSearchTitle') || 'Deep Search',
+                    desc: getOmniMsg('omnibarPrefixDeepSearchDesc') || 'Full-text search in all open tabs',
                 },
                 {
                     prefix: this._getPrefixVal('qai:', 'prefixQueryAI'),
-                    title: chrome.i18n.getMessage('omnibarPrefixAiQueryTitle') || 'AI Query',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixAiQueryDesc') ||
-                        'Ask a question to the configured AI model',
+                    title: getOmniMsg('omnibarPrefixAiQueryTitle') || 'AI Query',
+                    desc: getOmniMsg('omnibarPrefixAiQueryDesc') || 'Ask a question to the configured AI model',
                 },
                 {
                     prefix: this._getPrefixVal('qaia:', 'prefixQueryAIAgent'),
-                    title: chrome.i18n.getMessage('omnibarPrefixAiAgentTitle') || 'AI Agent',
-                    desc: chrome.i18n.getMessage('omnibarPrefixAiAgentDesc') || 'Ask the AI agent to perform actions',
+                    title: getOmniMsg('omnibarPrefixAiAgentTitle') || 'AI Agent',
+                    desc: getOmniMsg('omnibarPrefixAiAgentDesc') || 'Ask the AI agent to perform actions',
                 },
                 {
                     prefix: this._getPrefixVal('lai:', 'prefixListConversations'),
-                    title: chrome.i18n.getMessage('omnibarPrefixConversationsTitle') || 'Conversations',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixConversationsDesc') ||
-                        'Browse your AI conversation history',
+                    title: getOmniMsg('omnibarPrefixConversationsTitle') || 'Conversations',
+                    desc: getOmniMsg('omnibarPrefixConversationsDesc') || 'Browse your AI conversation history',
                 },
                 {
                     prefix: this._getPrefixVal('laiq:', 'prefixListQueries'),
-                    title: chrome.i18n.getMessage('omnibarPrefixMessagesTitle') || 'AI Messages',
-                    desc: chrome.i18n.getMessage('omnibarPrefixMessagesDesc') || 'Search through all AI messages',
+                    title: getOmniMsg('omnibarPrefixMessagesTitle') || 'AI Messages',
+                    desc: getOmniMsg('omnibarPrefixMessagesDesc') || 'Search through all AI messages',
                 },
                 {
                     prefix: this._getPrefixVal('limg:', 'prefixListImages'),
-                    title: chrome.i18n.getMessage('omnibarPrefixImagesTitle') || 'Images',
-                    desc: chrome.i18n.getMessage('omnibarPrefixImagesDesc') || 'Browse captured screenshots and images',
+                    title: getOmniMsg('omnibarPrefixImagesTitle') || 'Images',
+                    desc: getOmniMsg('omnibarPrefixImagesDesc') || 'Browse captured screenshots and images',
                 },
                 {
                     prefix: this._getPrefixVal('lnt:', 'prefixListNotes'),
-                    title: chrome.i18n.getMessage('omnibarPrefixNotesTitle') || 'Notes',
-                    desc: chrome.i18n.getMessage('omnibarPrefixNotesDesc') || 'Browse and search your saved notes',
+                    title: getOmniMsg('omnibarPrefixNotesTitle') || 'Notes',
+                    desc: getOmniMsg('omnibarPrefixNotesDesc') || 'Browse and search your saved notes',
                 },
                 {
                     prefix: this._getPrefixVal('atcr:', 'omnibarPrefixAddToExistingRule'),
-                    title: chrome.i18n.getMessage('omnibarPrefixAddToExistingRuleTitle') || 'Add Active Tab to Rule',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixAddToExistingRuleDesc') ||
-                        'Add the active tab to an existing rule',
+                    title: getOmniMsg('omnibarPrefixAddToExistingRuleTitle') || 'Add Active Tab to Rule',
+                    desc: getOmniMsg('omnibarPrefixAddToExistingRuleDesc') || 'Add the active tab to an existing rule',
                 },
                 {
                     prefix: this._getPrefixVal('atr:', 'omnibarPrefixAddToRule'),
-                    title: chrome.i18n.getMessage('omnibarPrefixAddToRuleTitle') || 'Add Tabs to Rule',
+                    title: getOmniMsg('omnibarPrefixAddToRuleTitle') || 'Add Tabs to Rule',
                     desc:
-                        chrome.i18n.getMessage('omnibarPrefixAddToRuleDesc') ||
+                        getOmniMsg('omnibarPrefixAddToRuleDesc') ||
                         'Add open tabs or manual URLs/domains to an existing rule',
                 },
                 {
                     prefix: this._getPrefixVal('rl:', 'omnibarPrefixRulesSearch'),
-                    title: chrome.i18n.getMessage('omnibarPrefixRulesTitle') || 'Rules',
-                    desc: chrome.i18n.getMessage('omnibarPrefixRulesDesc') || 'Search rules and open URLs',
+                    title: getOmniMsg('omnibarPrefixRulesTitle') || 'Rules',
+                    desc: getOmniMsg('omnibarPrefixRulesDesc') || 'Search rules and open URLs',
                 },
                 {
                     prefix: this._getPrefixVal('cr:', 'omnibarPrefixRulesCreate'),
-                    title: chrome.i18n.getMessage('omnibarPrefixRulesCreateTitle') || 'Create Rule',
+                    title: getOmniMsg('omnibarPrefixRulesCreateTitle') || 'Create Rule',
                     desc:
-                        chrome.i18n.getMessage('omnibarPrefixRulesCreateDesc') ||
+                        getOmniMsg('omnibarPrefixRulesCreateDesc') ||
                         "Create a new rule. Type 'cr: rule_name' to create and select tabs, or 'cr: rule_name, url1, url2' to add URLs directly.",
                 },
                 {
                     prefix: this._getPrefixVal('ccr:', 'omnibarPrefixChangeRuleColor'),
-                    title: chrome.i18n.getMessage('omnibarPrefixChangeRuleColorTitle') || 'Change Rule Color',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixChangeRuleColorDesc') ||
-                        'Select rules and change their color',
+                    title: getOmniMsg('omnibarPrefixChangeRuleColorTitle') || 'Change Rule Color',
+                    desc: getOmniMsg('omnibarPrefixChangeRuleColorDesc') || 'Select rules and change their color',
                 },
                 {
                     prefix: this._getPrefixVal('ccg:', 'omnibarPrefixChangeGroupColor'),
-                    title: chrome.i18n.getMessage('omnibarPrefixChangeGroupColorTitle') || 'Change Group Color',
-                    desc: chrome.i18n.getMessage('omnibarPrefixChangeGroupColorDesc') || 'Change groups color',
+                    title: getOmniMsg('omnibarPrefixChangeGroupColorTitle') || 'Change Group Color',
+                    desc: getOmniMsg('omnibarPrefixChangeGroupColorDesc') || 'Change groups color',
                 },
                 {
                     prefix: this._getPrefixVal('dr:', 'omnibarPrefixRulesDelete'),
-                    title: chrome.i18n.getMessage('omnibarPrefixRulesDeleteTitle') || 'Rules (Delete)',
-                    desc: chrome.i18n.getMessage('omnibarPrefixRulesDeleteDesc') || 'Delete rules or rule domains',
+                    title: getOmniMsg('omnibarPrefixRulesDeleteTitle') || 'Rules (Delete)',
+                    desc: getOmniMsg('omnibarPrefixRulesDeleteDesc') || 'Delete rules or rule domains',
                 },
                 {
                     prefix: this._getPrefixVal('er:', 'omnibarPrefixRulesEdit'),
-                    title: chrome.i18n.getMessage('omnibarPrefixRulesEditTitle') || 'Rules (Edit)',
-                    desc:
-                        chrome.i18n.getMessage('omnibarPrefixRulesEditDesc') ||
-                        'Select a rule or URL to rename/edit it',
+                    title: getOmniMsg('omnibarPrefixRulesEditTitle') || 'Rules (Edit)',
+                    desc: getOmniMsg('omnibarPrefixRulesEditDesc') || 'Select a rule or URL to rename/edit it',
                 },
                 {
                     prefix: this._getPrefixVal('st:', 'omnibarPrefixTutorial'),
-                    title: chrome.i18n.getMessage('omnibarPrefixTutorialTitle') || 'Omnibar Tutorial',
+                    title: getOmniMsg('omnibarPrefixTutorialTitle') || 'Omnibar Tutorial',
                     desc:
-                        chrome.i18n.getMessage('omnibarPrefixTutorialDesc') ||
+                        getOmniMsg('omnibarPrefixTutorialDesc') ||
                         'Learn how to use the Omnibar features and shortcuts',
                 },
                 // The site searches are prefixes like any other and belong on this list.
@@ -430,7 +428,7 @@ var OmniBar = class OmniBar {
                     [
                         {
                             prefix: '',
-                            title: chrome.i18n.getMessage('omnibarNoMatchingPrefixes') || 'No matching commands',
+                            title: getOmniMsg('omnibarNoMatchingPrefixes') || 'No matching commands',
                             desc: '',
                         },
                     ],
@@ -447,30 +445,30 @@ var OmniBar = class OmniBar {
         if (lower.startsWith(pTutorial)) {
             const tutorialList = [
                 {
-                    title: chrome.i18n.getMessage('omnibarTutorialTriggerTitle') || 'Prefix Selector (@)',
+                    title: getOmniMsg('omnibarTutorialTriggerTitle') || 'Prefix Selector (@)',
                     url:
-                        chrome.i18n.getMessage('omnibarTutorialTriggerDesc') ||
+                        getOmniMsg('omnibarTutorialTriggerDesc') ||
                         "Type '@' to view all available commands and search categories.",
                     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c1.82 0 3.53-.5 5-1.35l-1.42-1.42C14.51 19.72 13.3 20 12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8c0 .88-.36 1.68-.96 2.27-.4.39-.95.73-1.54.73-.83 0-1.5-.67-1.5-1.5V11c0-2.21-1.79-4-4-4s-4 1.79-4 4 1.79 4 4 4c1.19 0 2.26-.52 3.01-1.35.34.82 1.13 1.35 2.09 1.35.9 0 1.75-.43 2.37-1.07C19.43 14.93 20 13.53 20 12c0-5.52-4.48-10-10-10zm-2 11c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" fill="var(--text-color)"/></svg>',
                 },
                 {
-                    title: chrome.i18n.getMessage('omnibarTutorialSelectionTitle') || 'Multiple Selection',
+                    title: getOmniMsg('omnibarTutorialSelectionTitle') || 'Multiple Selection',
                     url:
-                        chrome.i18n.getMessage('omnibarTutorialSelectionDesc') ||
+                        getOmniMsg('omnibarTutorialSelectionDesc') ||
                         'Click items or use Space to select multiple tabs/rules/groups for bulk actions.',
                     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z" fill="var(--text-color)"/></svg>',
                 },
                 {
-                    title: chrome.i18n.getMessage('omnibarTutorialEnterTitle') || 'Press Enter',
+                    title: getOmniMsg('omnibarTutorialEnterTitle') || 'Press Enter',
                     url:
-                        chrome.i18n.getMessage('omnibarTutorialEnterDesc') ||
+                        getOmniMsg('omnibarTutorialEnterDesc') ||
                         'Press Enter to execute the action for selected items or focused option.',
                     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-6V3H5v18h14V9zM12 5v4h2v2h-4v2h4v2l3-3-3-3v2h-2V5h-2z" fill="var(--text-color)"/></svg>',
                 },
                 {
-                    title: chrome.i18n.getMessage('omnibarTutorialCtrlEnterTitle') || 'Press Ctrl + Enter',
+                    title: getOmniMsg('omnibarTutorialCtrlEnterTitle') || 'Press Ctrl + Enter',
                     url:
-                        chrome.i18n.getMessage('omnibarTutorialCtrlEnterDesc') ||
+                        getOmniMsg('omnibarTutorialCtrlEnterDesc') ||
                         'Press Ctrl+Enter to execute the action without closing the Omnibar.',
                     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16v12H4V6zm2 2v8h12V8H6z" fill="var(--text-color)"/></svg>',
                 },
@@ -484,6 +482,7 @@ var OmniBar = class OmniBar {
         prefixes[this._getPrefixVal('c:', 'prefixSearchRecentlyClosed')] = 'getRecentlyClosed';
         prefixes[this._getPrefixVal('dg:', 'prefixDeleteGroup')] = 'getTabGroups';
         prefixes[this._getPrefixVal('dt:', 'prefixDeleteTab')] = 'getOpenTabs';
+        prefixes[this._getPrefixVal('ts:', 'prefixSplitTabs')] = 'getOpenTabs';
 
         // -- we: Open Popup / wp: Open PiP / wv: Open Video PiP -----
         const pPopup = this._getPrefixVal('we:', 'omnibarPrefixPopupDesc');
@@ -504,7 +503,7 @@ var OmniBar = class OmniBar {
         const site = this._getSiteSearchPrefixes().find((entry) => lower.startsWith(entry.prefix));
         if (site) {
             const q = query.substring(site.prefix.length).trim();
-            const hint = chrome.i18n.getMessage('omnibarPressEnterToSearch') || 'Press Enter to search';
+            const hint = getOmniMsg('omnibarPressEnterToSearch') || 'Press Enter to search';
             this._renderResults(
                 [
                     {
@@ -526,10 +525,8 @@ var OmniBar = class OmniBar {
                 this._renderResults(
                     [
                         {
-                            title:
-                                chrome.i18n.getMessage('omnibarAiWriteQuestion') ||
-                                'Type your question and press Enter...',
-                            url: chrome.i18n.getMessage('omnibarAiConfiguredModel') || 'Query the configured AI model',
+                            title: getOmniMsg('omnibarAiWriteQuestion') || 'Type your question and press Enter...',
+                            url: getOmniMsg('omnibarAiConfiguredModel') || 'Query the configured AI model',
                             icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
                         },
                     ],
@@ -540,9 +537,9 @@ var OmniBar = class OmniBar {
                     [
                         {
                             title:
-                                chrome.i18n.getMessage('omnibarAiAsk', [q]) ||
+                                getOmniMsg('omnibarAiAsk', [q]) ||
                                 `<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg> Ask: ${q}`,
-                            url: chrome.i18n.getMessage('omnibarAiSendHint') || 'Press Enter to send the query to AI',
+                            url: getOmniMsg('omnibarAiSendHint') || 'Press Enter to send the query to AI',
                             icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
                         },
                     ],
@@ -561,11 +558,8 @@ var OmniBar = class OmniBar {
                     [
                         {
                             title:
-                                chrome.i18n.getMessage('omnibarAgentWriteQuestion') ||
-                                'Write your agent query and press Enter...',
-                            url:
-                                chrome.i18n.getMessage('omnibarAgentHint') ||
-                                'The agent will perform actions in your browser',
+                                getOmniMsg('omnibarAgentWriteQuestion') || 'Write your agent query and press Enter...',
+                            url: getOmniMsg('omnibarAgentHint') || 'The agent will perform actions in your browser',
                             icon: '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>',
                         },
                     ],
@@ -576,9 +570,9 @@ var OmniBar = class OmniBar {
                     [
                         {
                             title:
-                                chrome.i18n.getMessage('omnibarAgentAsk', [q]) ||
+                                getOmniMsg('omnibarAgentAsk', [q]) ||
                                 `<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg> Agent: ${q}`,
-                            url: chrome.i18n.getMessage('omnibarAgentSendHint') || 'Press Enter to launch the agent',
+                            url: getOmniMsg('omnibarAgentSendHint') || 'Press Enter to launch the agent',
                             icon: '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>',
                         },
                     ],
@@ -595,7 +589,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('omnibarLoadingConversations') || 'Loading conversations...',
+                        title: getOmniMsg('omnibarLoadingConversations') || 'Loading conversations...',
                         url: '',
                         icon: '[CONV]',
                     },
@@ -614,7 +608,7 @@ var OmniBar = class OmniBar {
                     if (convs.length === 0)
                         convs = [
                             {
-                                title: chrome.i18n.getMessage('omnibarNoConversations') || 'No conversations found',
+                                title: getOmniMsg('omnibarNoConversations') || 'No conversations found',
                                 url: '',
                                 icon: '[CONV]',
                             },
@@ -632,7 +626,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('loadingMessages') || 'Loading messages...',
+                        title: getOmniMsg('loadingMessages') || 'Loading messages...',
                         url: '',
                         icon: '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>',
                     },
@@ -654,7 +648,7 @@ var OmniBar = class OmniBar {
                     if (msgs.length === 0)
                         msgs = [
                             {
-                                title: chrome.i18n.getMessage('omnibarNoMessages') || 'No messages found',
+                                title: getOmniMsg('omnibarNoMessages') || 'No messages found',
                                 url: '',
                                 icon: '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>',
                             },
@@ -672,7 +666,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('loadingNotes') || 'Loading notes...',
+                        title: getOmniMsg('loadingNotes') || 'Loading notes...',
                         url: '',
                         icon: '[TEXT]',
                     },
@@ -694,7 +688,7 @@ var OmniBar = class OmniBar {
                     if (notes.length === 0)
                         notes = [
                             {
-                                title: chrome.i18n.getMessage('omnibarNoNotes') || 'No notes found',
+                                title: getOmniMsg('omnibarNoNotes') || 'No notes found',
                                 url: '',
                                 icon: '[TEXT]',
                             },
@@ -712,7 +706,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('loadingImages') || 'Loading images...',
+                        title: getOmniMsg('loadingImages') || 'Loading images...',
                         url: '',
                         icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill="var(--text-color)"><path d="M18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.943 1.25h.114c2.309 0 4.118 0 5.53.19 1.444.194 2.584.6 3.479 1.494.895.895 1.3 2.035 1.494 3.48.19 1.411.19 3.22.19 5.529v.088c0 1.909 0 3.471-.104 4.743-.104 1.28-.317 2.347-.795 3.235q-.314.586-.785 1.057c-.895.895-2.035 1.3-3.48 1.494-1.411.19-3.22.19-5.529.19h-.114c-2.309 0-4.118 0-5.53-.19-1.444-.194-2.584-.6-3.479-1.494-.793-.793-1.203-1.78-1.42-3.006-.215-1.203-.254-2.7-.262-4.558Q1.25 12.792 1.25 12v-.058c0-2.309 0-4.118.19-5.53.194-1.444.6-2.584 1.494-3.479.895-.895 2.035-1.3 3.48-1.494 1.411-.19 3.22-.19 5.529-.19m-5.33 1.676c-1.278.172-2.049.5-2.618 1.069-.57.57-.897 1.34-1.069 2.619-.174 1.3-.176 3.008-.176 5.386v.844l1.001-.876a2.3 2.3 0 0 1 3.141.104l4.29 4.29a2 2 0 0 0 2.564.222l.298-.21a3 3 0 0 1 3.732.225l2.83 2.547c.286-.598.455-1.384.545-2.493.098-1.205.099-2.707.099-4.653 0-2.378-.002-4.086-.176-5.386-.172-1.279-.5-2.05-1.069-2.62-.57-.569-1.34-.896-2.619-1.068-1.3-.174-3.008-.176-5.386-.176s-4.086.002-5.386.176"></path></g></svg>',
                     },
@@ -731,7 +725,7 @@ var OmniBar = class OmniBar {
                     if (imgs.length === 0)
                         imgs = [
                             {
-                                title: chrome.i18n.getMessage('omnibarNoImages') || 'No images found',
+                                title: getOmniMsg('omnibarNoImages') || 'No images found',
                                 url: '',
                                 icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill="var(--text-color)"><path d="M18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.943 1.25h.114c2.309 0 4.118 0 5.53.19 1.444.194 2.584.6 3.479 1.494.895.895 1.3 2.035 1.494 3.48.19 1.411.19 3.22.19 5.529v.088c0 1.909 0 3.471-.104 4.743-.104 1.28-.317 2.347-.795 3.235q-.314.586-.785 1.057c-.895.895-2.035 1.3-3.48 1.494-1.411.19-3.22.19-5.529.19h-.114c-2.309 0-4.118 0-5.53-.19-1.444-.194-2.584-.6-3.479-1.494-.793-.793-1.203-1.78-1.42-3.006-.215-1.203-.254-2.7-.262-4.558Q1.25 12.792 1.25 12v-.058c0-2.309 0-4.118.19-5.53.194-1.444.6-2.584 1.494-3.479.895-.895 2.035-1.3 3.48-1.494 1.411-.19 3.22-.19 5.529-.19m-5.33 1.676c-1.278.172-2.049.5-2.618 1.069-.57.57-.897 1.34-1.069 2.619-.174 1.3-.176 3.008-.176 5.386v.844l1.001-.876a2.3 2.3 0 0 1 3.141.104l4.29 4.29a2 2 0 0 0 2.564.222l.298-.21a3 3 0 0 1 3.732.225l2.83 2.547c.286-.598.455-1.384.545-2.493.098-1.205.099-2.707.099-4.653 0-2.378-.002-4.086-.176-5.386-.172-1.279-.5-2.05-1.069-2.62-.57-.569-1.34-.896-2.619-1.068-1.3-.174-3.008-.176-5.386-.176s-4.086.002-5.386.176"></path></g></svg>',
                             },
@@ -766,7 +760,7 @@ var OmniBar = class OmniBar {
                                 urls: rule.urls || [],
                                 title: rule.name,
                                 url:
-                                    chrome.i18n.getMessage('omnibarUrlsCount', [(rule.urls || []).length.toString()]) ||
+                                    getOmniMsg('omnibarUrlsCount', [(rule.urls || []).length.toString()]) ||
                                     `${(rule.urls || []).length} URLs`,
                             });
                         }
@@ -775,7 +769,7 @@ var OmniBar = class OmniBar {
                         this._renderResults(
                             [
                                 {
-                                    title: chrome.i18n.getMessage('omnibarNoRulesFound') || 'No rules found',
+                                    title: getOmniMsg('omnibarNoRulesFound') || 'No rules found',
                                     url: '',
                                 },
                             ],
@@ -815,9 +809,8 @@ var OmniBar = class OmniBar {
                                     urls: rule.urls || [],
                                     title: rule.name,
                                     url:
-                                        chrome.i18n.getMessage('omnibarUrlsCount', [
-                                            (rule.urls || []).length.toString(),
-                                        ]) || `${(rule.urls || []).length} URLs`,
+                                        getOmniMsg('omnibarUrlsCount', [(rule.urls || []).length.toString()]) ||
+                                        `${(rule.urls || []).length} URLs`,
                                 });
                             }
                         });
@@ -825,7 +818,7 @@ var OmniBar = class OmniBar {
                             this._renderResults(
                                 [
                                     {
-                                        title: chrome.i18n.getMessage('omnibarNoRulesFound') || 'No rules found',
+                                        title: getOmniMsg('omnibarNoRulesFound') || 'No rules found',
                                         url: '',
                                     },
                                 ],
@@ -846,7 +839,7 @@ var OmniBar = class OmniBar {
                         isSpecialAction: true,
                         specialType: 'add-all-tabs',
                         title:
-                            chrome.i18n.getMessage('omnibarAddAllFilteredTabsPrefix', [filtered.length.toString()]) ||
+                            getOmniMsg('omnibarAddAllFilteredTabsPrefix', [filtered.length.toString()]) ||
                             `Add all filtered tabs (${filtered.length})`,
                         url: '',
                         rawItems: filtered,
@@ -861,9 +854,9 @@ var OmniBar = class OmniBar {
                 if (filtered.length === 0 && q) {
                     results.push({
                         title:
-                            chrome.i18n.getMessage('omnibarAddManualUrlDomainEnter', [q]) ||
+                            getOmniMsg('omnibarAddManualUrlDomainEnter', [q]) ||
                             `Press Enter to add manual URL/domain: "${q}"`,
-                        url: chrome.i18n.getMessage('omnibarToExistingRule') || 'to an existing rule',
+                        url: getOmniMsg('omnibarToExistingRule') || 'to an existing rule',
                         type: 'atr-manual-preview',
                     });
                 }
@@ -891,12 +884,9 @@ var OmniBar = class OmniBar {
                         const customRules = res && res.success ? res.rules : [];
                         let error = null;
                         if (!newName) {
-                            error =
-                                chrome.i18n.getMessage('omnibarEnterNewRuleName') || 'Please enter a new rule name.';
+                            error = getOmniMsg('omnibarEnterNewRuleName') || 'Please enter a new rule name.';
                         } else if (newName.length > 16) {
-                            error =
-                                chrome.i18n.getMessage('omnibarRuleNameLength') ||
-                                'Rule name must be 16 characters or less.';
+                            error = getOmniMsg('omnibarRuleNameLength') || 'Rule name must be 16 characters or less.';
                         } else {
                             const duplicateName = customRules.some(
                                 (r) =>
@@ -905,7 +895,7 @@ var OmniBar = class OmniBar {
                             );
                             if (duplicateName) {
                                 error =
-                                    chrome.i18n.getMessage('omnibarRuleNameExists', [newName]) ||
+                                    getOmniMsg('omnibarRuleNameExists', [newName]) ||
                                     `Rule name "${newName}" already exists.`;
                             }
                         }
@@ -917,8 +907,7 @@ var OmniBar = class OmniBar {
                                         isValid: false,
                                         title: error,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarPressEnterErrors') ||
-                                            'Press Enter to see error details',
+                                            getOmniMsg('omnibarPressEnterErrors') || 'Press Enter to see error details',
                                     },
                                 ],
                                 'er-preview',
@@ -932,11 +921,9 @@ var OmniBar = class OmniBar {
                                         ruleName: ruleName,
                                         newName: newName,
                                         title:
-                                            chrome.i18n.getMessage('omnibarRenameRulePreview', [ruleName, newName]) ||
+                                            getOmniMsg('omnibarRenameRulePreview', [ruleName, newName]) ||
                                             `Rename rule "${ruleName}" to "${newName}"`,
-                                        desc:
-                                            chrome.i18n.getMessage('omnibarPressEnterSave') ||
-                                            'Press Enter to save changes',
+                                        desc: getOmniMsg('omnibarPressEnterSave') || 'Press Enter to save changes',
                                     },
                                 ],
                                 'er-preview',
@@ -961,15 +948,15 @@ var OmniBar = class OmniBar {
                         const customRules = res && res.success ? res.rules : [];
                         let error = null;
                         if (!newUrl) {
-                            error = chrome.i18n.getMessage('omnibarEnterNewUrl') || 'Please enter a new URL/domain.';
+                            error = getOmniMsg('omnibarEnterNewUrl') || 'Please enter a new URL/domain.';
                         } else if (newUrl.includes(' ')) {
-                            error = chrome.i18n.getMessage('omnibarUrlNoSpaces') || 'URL cannot contain spaces.';
+                            error = getOmniMsg('omnibarUrlNoSpaces') || 'URL cannot contain spaces.';
                         } else {
                             try {
                                 const parsed = new URL(newUrl);
                                 if (parsed.hostname.length === 0) throw new Error();
                             } catch {
-                                error = chrome.i18n.getMessage('omnibarInvalidUrlFormat') || 'Invalid URL format.';
+                                error = getOmniMsg('omnibarInvalidUrlFormat') || 'Invalid URL format.';
                             }
                         }
                         if (!error) {
@@ -987,9 +974,7 @@ var OmniBar = class OmniBar {
                                         .replace(/\/$/, ''),
                                 );
                                 if (otherNorms.includes(normalizedNew)) {
-                                    error =
-                                        chrome.i18n.getMessage('omnibarUrlAlreadyInRule') ||
-                                        'URL already exists in this rule.';
+                                    error = getOmniMsg('omnibarUrlAlreadyInRule') || 'URL already exists in this rule.';
                                 } else {
                                     for (const r of customRules) {
                                         if (r.name === ruleName) continue;
@@ -1001,14 +986,14 @@ var OmniBar = class OmniBar {
                                         );
                                         if (rNorms.includes(normalizedNew)) {
                                             error =
-                                                chrome.i18n.getMessage('omnibarUrlAlreadyInOtherRule', [r.name]) ||
+                                                getOmniMsg('omnibarUrlAlreadyInOtherRule', [r.name]) ||
                                                 `URL already exists in rule "${r.name}".`;
                                             break;
                                         }
                                     }
                                 }
                             } else {
-                                error = chrome.i18n.getMessage('omnibarRuleNotFound') || 'Rule not found.';
+                                error = getOmniMsg('omnibarRuleNotFound') || 'Rule not found.';
                             }
                         }
                         if (error) {
@@ -1019,8 +1004,7 @@ var OmniBar = class OmniBar {
                                         isValid: false,
                                         title: error,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarPressEnterErrors') ||
-                                            'Press Enter to see error details',
+                                            getOmniMsg('omnibarPressEnterErrors') || 'Press Enter to see error details',
                                     },
                                 ],
                                 'er-preview',
@@ -1035,10 +1019,9 @@ var OmniBar = class OmniBar {
                                         oldUrl: oldUrl,
                                         newUrl: newUrl,
                                         title:
-                                            chrome.i18n.getMessage('omnibarChangeUrlTo', [newUrl]) ||
-                                            `Change URL to "${newUrl}"`,
+                                            getOmniMsg('omnibarChangeUrlTo', [newUrl]) || `Change URL to "${newUrl}"`,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarInRuleReplacing', [ruleName, oldUrl]) ||
+                                            getOmniMsg('omnibarInRuleReplacing', [ruleName, oldUrl]) ||
                                             `In rule "${ruleName}" (replacing "${oldUrl}")`,
                                     },
                                 ],
@@ -1067,9 +1050,7 @@ var OmniBar = class OmniBar {
                                     color: rule.color,
                                     urls: rule.urls || [],
                                     title: rule.name,
-                                    url:
-                                        chrome.i18n.getMessage('omnibarRenameRule', [rule.name]) ||
-                                        `Rename rule: ${rule.name}`,
+                                    url: getOmniMsg('omnibarRenameRule', [rule.name]) || `Rename rule: ${rule.name}`,
                                 });
                                 const urlsToShow = q
                                     ? this._itemMatchesQuery('text', rule.name, q)
@@ -1084,7 +1065,7 @@ var OmniBar = class OmniBar {
                                         url: url,
                                         title: url,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarEditUrlFromRule', [rule.name]) ||
+                                            getOmniMsg('omnibarEditUrlFromRule', [rule.name]) ||
                                             `Edit URL from rule: ${rule.name}`,
                                     });
                                 });
@@ -1094,7 +1075,7 @@ var OmniBar = class OmniBar {
                             this._renderResults(
                                 [
                                     {
-                                        title: chrome.i18n.getMessage('omnibarNoRulesFound') || 'No rules found',
+                                        title: getOmniMsg('omnibarNoRulesFound') || 'No rules found',
                                         url: '',
                                     },
                                 ],
@@ -1132,7 +1113,7 @@ var OmniBar = class OmniBar {
                                 color: rule.color,
                                 urls: rule.urls || [],
                                 title: rule.name,
-                                url: `${chrome.i18n.getMessage('omnibarOpenAllUrls') || 'Open all URLs'} (${(rule.urls || []).length})`,
+                                url: `${getOmniMsg('omnibarOpenAllUrls') || 'Open all URLs'} (${(rule.urls || []).length})`,
                             });
                             const urlsToShow = q
                                 ? this._itemMatchesQuery('text', rule.name, q)
@@ -1146,9 +1127,7 @@ var OmniBar = class OmniBar {
                                     color: rule.color,
                                     url: url,
                                     title: url,
-                                    desc:
-                                        chrome.i18n.getMessage('omnibarFromRule', [rule.name]) ||
-                                        `From rule: ${rule.name}`,
+                                    desc: getOmniMsg('omnibarFromRule', [rule.name]) || `From rule: ${rule.name}`,
                                 });
                             });
                         }
@@ -1157,7 +1136,7 @@ var OmniBar = class OmniBar {
                         this._renderResults(
                             [
                                 {
-                                    title: chrome.i18n.getMessage('omnibarNoRulesFound') || 'No rules found',
+                                    title: getOmniMsg('omnibarNoRulesFound') || 'No rules found',
                                     url: '',
                                 },
                             ],
@@ -1226,9 +1205,7 @@ var OmniBar = class OmniBar {
                                 name: rule.name,
                                 color: rule.color,
                                 title: rule.name,
-                                url:
-                                    chrome.i18n.getMessage('omnibarPrefixChangeRuleColorDesc') ||
-                                    'Click a color below to change',
+                                url: getOmniMsg('omnibarPrefixChangeRuleColorDesc') || 'Click a color below to change',
                             });
                             COLOR_OPTIONS.forEach((c) => {
                                 results.push({
@@ -1239,7 +1216,7 @@ var OmniBar = class OmniBar {
                                     ruleColor: rule.color,
                                     isCurrent: rule.color === c.name,
                                     title:
-                                        chrome.i18n.getMessage(`omnibarColorName_${c.name}`) ||
+                                        getOmniMsg(`omnibarColorName_${c.name}`) ||
                                         c.name.charAt(0).toUpperCase() + c.name.slice(1),
                                 });
                             });
@@ -1260,9 +1237,7 @@ var OmniBar = class OmniBar {
                                 groupId: group.id,
                                 color: group.color || 'grey',
                                 title: title,
-                                url:
-                                    chrome.i18n.getMessage('omnibarPrefixChangeGroupColorDesc') ||
-                                    'Click a color below to change',
+                                url: getOmniMsg('omnibarPrefixChangeGroupColorDesc') || 'Click a color below to change',
                             });
                             COLOR_OPTIONS.forEach((c) => {
                                 results.push({
@@ -1273,7 +1248,7 @@ var OmniBar = class OmniBar {
                                     groupColor: group.color || 'grey',
                                     isCurrent: (group.color || 'grey') === c.name,
                                     title:
-                                        chrome.i18n.getMessage(`omnibarColorName_${c.name}`) ||
+                                        getOmniMsg(`omnibarColorName_${c.name}`) ||
                                         c.name.charAt(0).toUpperCase() + c.name.slice(1),
                                 });
                             });
@@ -1295,9 +1270,7 @@ var OmniBar = class OmniBar {
                                 specialGroupKey: key,
                                 color: sg.color || 'grey',
                                 title: sgName,
-                                url:
-                                    chrome.i18n.getMessage('omnibarPrefixChangeGroupColorDesc') ||
-                                    'Click a color below to change',
+                                url: getOmniMsg('omnibarPrefixChangeGroupColorDesc') || 'Click a color below to change',
                             });
                             COLOR_OPTIONS.forEach((c) => {
                                 results.push({
@@ -1308,7 +1281,7 @@ var OmniBar = class OmniBar {
                                     groupColor: sg.color || 'grey',
                                     isCurrent: (sg.color || 'grey') === c.name,
                                     title:
-                                        chrome.i18n.getMessage(`omnibarColorName_${c.name}`) ||
+                                        getOmniMsg(`omnibarColorName_${c.name}`) ||
                                         c.name.charAt(0).toUpperCase() + c.name.slice(1),
                                 });
                             });
@@ -1320,7 +1293,7 @@ var OmniBar = class OmniBar {
                         [
                             {
                                 title:
-                                    chrome.i18n.getMessage('omnibarNoRulesFound') ||
+                                    getOmniMsg('omnibarNoRulesFound') ||
                                     (isRule ? 'No rules found' : 'No groups found'),
                                 url: '',
                             },
@@ -1351,10 +1324,10 @@ var OmniBar = class OmniBar {
                             type: 'cr-add-manual',
                             urls: manualUrls,
                             title:
-                                chrome.i18n.getMessage('omnibarAddManualUrls', [manualUrls.join(', ')]) ||
+                                getOmniMsg('omnibarAddManualUrls', [manualUrls.join(', ')]) ||
                                 `Add manual URLs/domains: ${manualUrls.join(', ')}`,
                             desc:
-                                chrome.i18n.getMessage('omnibarToRule', [this.crSelectingTabsFor]) ||
+                                getOmniMsg('omnibarToRule', [this.crSelectingTabsFor]) ||
                                 `To rule: ${this.crSelectingTabsFor}`,
                         });
                     }
@@ -1364,10 +1337,10 @@ var OmniBar = class OmniBar {
                         isSpecialAction: true,
                         specialType: 'add-all-tabs',
                         title:
-                            chrome.i18n.getMessage('omnibarAddAllFilteredTabsPrefix', [filtered.length.toString()]) ||
+                            getOmniMsg('omnibarAddAllFilteredTabsPrefix', [filtered.length.toString()]) ||
                             `Add all filtered tabs (${filtered.length})`,
                         url:
-                            chrome.i18n.getMessage('omnibarToRule', [this.crSelectingTabsFor]) ||
+                            getOmniMsg('omnibarToRule', [this.crSelectingTabsFor]) ||
                             `To rule: ${this.crSelectingTabsFor}`,
                         rawItems: filtered,
                     });
@@ -1384,15 +1357,15 @@ var OmniBar = class OmniBar {
                             type: 'cr-add-manual',
                             urls: [rawInput],
                             title:
-                                chrome.i18n.getMessage('omnibarAddManualUrlDomain', [rawInput]) ||
+                                getOmniMsg('omnibarAddManualUrlDomain', [rawInput]) ||
                                 `Add manual URL/domain: ${rawInput}`,
                             desc:
-                                chrome.i18n.getMessage('omnibarToRule', [this.crSelectingTabsFor]) ||
+                                getOmniMsg('omnibarToRule', [this.crSelectingTabsFor]) ||
                                 `To rule: ${this.crSelectingTabsFor}`,
                         });
                     } else {
                         results.push({
-                            title: chrome.i18n.getMessage('omnibarNoTabsFound') || 'No tabs found',
+                            title: getOmniMsg('omnibarNoTabsFound') || 'No tabs found',
                             url: '',
                         });
                     }
@@ -1432,17 +1405,14 @@ var OmniBar = class OmniBar {
                     const customRules = res && res.success ? res.rules : [];
                     let error = null;
                     if (!name) {
-                        error = chrome.i18n.getMessage('omnibarEnterRuleName') || 'Please enter a rule name.';
+                        error = getOmniMsg('omnibarEnterRuleName') || 'Please enter a rule name.';
                     } else if (name.length > 16) {
-                        error =
-                            chrome.i18n.getMessage('omnibarRuleNameLength') ||
-                            'Rule name must be 16 characters or less.';
+                        error = getOmniMsg('omnibarRuleNameLength') || 'Rule name must be 16 characters or less.';
                     } else {
                         const duplicateName = customRules.some((r) => r.name.toLowerCase() === name.toLowerCase());
                         if (duplicateName) {
                             error =
-                                chrome.i18n.getMessage('omnibarRuleNameExists', [name]) ||
-                                `Rule name "${name}" already exists.`;
+                                getOmniMsg('omnibarRuleNameExists', [name]) || `Rule name "${name}" already exists.`;
                         } else if (!isNameOnly) {
                             const invalidUrl = urls.find((url) => {
                                 if (url.includes(' ')) return true;
@@ -1456,8 +1426,7 @@ var OmniBar = class OmniBar {
                             });
                             if (invalidUrl) {
                                 error =
-                                    chrome.i18n.getMessage('omnibarInvalidUrlCrl', [invalidUrl]) ||
-                                    `Invalid URL: "${invalidUrl}"`;
+                                    getOmniMsg('omnibarInvalidUrlCrl', [invalidUrl]) || `Invalid URL: "${invalidUrl}"`;
                             } else {
                                 const normalized = urls.map((u) =>
                                     u
@@ -1467,9 +1436,7 @@ var OmniBar = class OmniBar {
                                 );
                                 const hasSelfDup = new Set(normalized).size !== normalized.length;
                                 if (hasSelfDup) {
-                                    error =
-                                        chrome.i18n.getMessage('omnibarDuplicateUrls') ||
-                                        'Rule contains duplicate URLs.';
+                                    error = getOmniMsg('omnibarDuplicateUrls') || 'Rule contains duplicate URLs.';
                                 } else {
                                     let dupRule = null;
                                     let dupUrl = '';
@@ -1488,10 +1455,8 @@ var OmniBar = class OmniBar {
                                     }
                                     if (dupRule) {
                                         error =
-                                            chrome.i18n.getMessage('omnibarUrlAlreadyInOtherRuleCrl', [
-                                                dupUrl,
-                                                dupRule,
-                                            ]) || `URL "${dupUrl}" is already in rule "${dupRule}".`;
+                                            getOmniMsg('omnibarUrlAlreadyInOtherRuleCrl', [dupUrl, dupRule]) ||
+                                            `URL "${dupUrl}" is already in rule "${dupRule}".`;
                                     }
                                 }
                             }
@@ -1504,9 +1469,7 @@ var OmniBar = class OmniBar {
                                     isCrlPreview: true,
                                     isValid: false,
                                     title: error,
-                                    desc:
-                                        chrome.i18n.getMessage('omnibarPressEnterErrors') ||
-                                        'Press Enter to see error details',
+                                    desc: getOmniMsg('omnibarPressEnterErrors') || 'Press Enter to see error details',
                                 },
                             ],
                             'cr-preview',
@@ -1522,10 +1485,9 @@ var OmniBar = class OmniBar {
                                         name: name,
                                         urls: [],
                                         title:
-                                            chrome.i18n.getMessage('omnibarCreateRulePreview', [name]) ||
-                                            `Create rule: "${name}"`,
+                                            getOmniMsg('omnibarCreateRulePreview', [name]) || `Create rule: "${name}"`,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarPressEnterCreate') ||
+                                            getOmniMsg('omnibarPressEnterCreate') ||
                                             'Press Enter to create rule and select tabs',
                                     },
                                 ],
@@ -1541,10 +1503,9 @@ var OmniBar = class OmniBar {
                                         name: name,
                                         urls: urls,
                                         title:
-                                            chrome.i18n.getMessage('omnibarCreateRulePreview', [name]) ||
-                                            `Create rule: "${name}"`,
+                                            getOmniMsg('omnibarCreateRulePreview', [name]) || `Create rule: "${name}"`,
                                         desc:
-                                            chrome.i18n.getMessage('omnibarUrlsList', [urls.join(', ')]) ||
+                                            getOmniMsg('omnibarUrlsList', [urls.join(', ')]) ||
                                             `URLs: ${urls.join(', ')}`,
                                     },
                                 ],
@@ -1580,9 +1541,7 @@ var OmniBar = class OmniBar {
                                 color: rule.color,
                                 urls: rule.urls || [],
                                 title: rule.name,
-                                url:
-                                    chrome.i18n.getMessage('omnibarDeleteRule', [rule.name]) ||
-                                    `Delete rule: ${rule.name}`,
+                                url: getOmniMsg('omnibarDeleteRule', [rule.name]) || `Delete rule: ${rule.name}`,
                             });
                             const urlsToShow = q
                                 ? this._itemMatchesQuery('text', rule.name, q)
@@ -1597,7 +1556,7 @@ var OmniBar = class OmniBar {
                                     url: url,
                                     title: url,
                                     desc:
-                                        chrome.i18n.getMessage('omnibarDeleteDomainFromRule', [rule.name]) ||
+                                        getOmniMsg('omnibarDeleteDomainFromRule', [rule.name]) ||
                                         `Delete domain from rule: ${rule.name}`,
                                 });
                             });
@@ -1607,7 +1566,7 @@ var OmniBar = class OmniBar {
                         this._renderResults(
                             [
                                 {
-                                    title: chrome.i18n.getMessage('omnibarNoRulesFound') || 'No rules found',
+                                    title: getOmniMsg('omnibarNoRulesFound') || 'No rules found',
                                     url: '',
                                 },
                             ],
@@ -1630,7 +1589,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('omnibarLoadingBackups') || 'Loading backups...',
+                        title: getOmniMsg('omnibarLoadingBackups') || 'Loading backups...',
                         url: '',
                         icon: backupIcon,
                     },
@@ -1657,7 +1616,7 @@ var OmniBar = class OmniBar {
                                 color: backup.group.color,
                                 count: backup.tabs.length,
                                 url:
-                                    chrome.i18n.getMessage('omnibarGroupBackup', [backup.tabs.length.toString()]) ||
+                                    getOmniMsg('omnibarGroupBackup', [backup.tabs.length.toString()]) ||
                                     `Group Backup (${backup.tabs.length} tabs)`,
                             });
                         }
@@ -1679,7 +1638,7 @@ var OmniBar = class OmniBar {
                         this._renderResults(
                             [
                                 {
-                                    title: chrome.i18n.getMessage('omnibarNoBackups') || 'No backups found',
+                                    title: getOmniMsg('omnibarNoBackups') || 'No backups found',
                                     url: '',
                                     icon: backupIcon,
                                 },
@@ -1704,7 +1663,7 @@ var OmniBar = class OmniBar {
             this._renderResults(
                 [
                     {
-                        title: chrome.i18n.getMessage('omnibarLoadingBackups') || 'Loading groups...',
+                        title: getOmniMsg('omnibarLoadingBackups') || 'Loading groups...',
                         url: '',
                         icon: backupIcon,
                     },
@@ -1738,7 +1697,7 @@ var OmniBar = class OmniBar {
                                             color: g.color,
                                             count: g.tabCount || 0,
                                             url:
-                                                chrome.i18n.getMessage('omnibarClickBackupGroup') ||
+                                                getOmniMsg('omnibarClickBackupGroup') ||
                                                 'Click to backup. Space / Ctrl+Click to select, Shift+Click to select range.',
                                         });
                                     }
@@ -1749,7 +1708,7 @@ var OmniBar = class OmniBar {
                                     [
                                         {
                                             title:
-                                                chrome.i18n.getMessage('omnibarNoGroupsToBackup') ||
+                                                getOmniMsg('omnibarNoGroupsToBackup') ||
                                                 'All groups already have a backup',
                                             url: '',
                                             icon: backupIcon,
@@ -1823,6 +1782,7 @@ var OmniBar = class OmniBar {
         const currentLower = currentValue.toLowerCase();
         const isDg = currentLower.startsWith(this._getPrefixVal('dg:', 'prefixDeleteGroup'));
         const isCt = currentLower.startsWith(this._getPrefixVal('dt:', 'prefixDeleteTab'));
+        const isTs = currentLower.startsWith(this._getPrefixVal('ts:', 'prefixSplitTabs'));
         const isRl = currentLower.startsWith(this._getPrefixVal('rl:', 'omnibarPrefixRulesSearch'));
         const isDrl = currentLower.startsWith(this._getPrefixVal('dr:', 'omnibarPrefixRulesDelete'));
         const isCcr = currentLower.startsWith(this._getPrefixVal('ccr:', 'omnibarPrefixChangeRuleColor'));
@@ -1834,12 +1794,12 @@ var OmniBar = class OmniBar {
         const pBgSpace = this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc');
         const isBg = currentLower.startsWith(pBgSpace);
         const isBgr = currentLower.startsWith(this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'));
-        const spaceNeedsNav = isDg || isCt || isRl || isDrl || isAtr || isBg || isBgr || isCcr || isCcg;
+        const spaceNeedsNav = isDg || isCt || isTs || isRl || isDrl || isAtr || isBg || isBgr || isCcr || isCcg;
         const spaceAllowed = (spaceNeedsNav && this.hasNavigated) || isCrlSelect;
         if (
             event.key === ' ' &&
             spaceAllowed &&
-            (isDg || isCt || isRl || isDrl || isAtr || isCrlSelect || isBg || isBgr || isCcr || isCcg)
+            (isDg || isCt || isTs || isRl || isDrl || isAtr || isCrlSelect || isBg || isBgr || isCcr || isCcg)
         ) {
             if (count > 0) {
                 const selectedItem = items[this.selectedIndex];
@@ -1964,7 +1924,7 @@ var OmniBar = class OmniBar {
                             target: input,
                         });
                     } else {
-                        this._showToast(chrome.i18n.getMessage('omnibarNoUrlsToAdd') || 'No URLs to add.');
+                        this._showToast(getOmniMsg('omnibarNoUrlsToAdd') || 'No URLs to add.');
                     }
                 }
                 return;
@@ -1988,13 +1948,13 @@ var OmniBar = class OmniBar {
                                     (res) => {
                                         if (res && res.success) {
                                             this._showToast(
-                                                chrome.i18n.getMessage('omnibarAddedActiveTab', [ruleName]) ||
+                                                getOmniMsg('omnibarAddedActiveTab', [ruleName]) ||
                                                     `Added active tab to rule "${ruleName}"`,
                                             );
                                         } else {
                                             this._showToast(
                                                 res?.error ||
-                                                    chrome.i18n.getMessage('omnibarFailedAddActiveTab') ||
+                                                    getOmniMsg('omnibarFailedAddActiveTab') ||
                                                     'Failed to add active tab to rule',
                                             );
                                         }
@@ -2002,8 +1962,7 @@ var OmniBar = class OmniBar {
                                 );
                             } else {
                                 this._showToast(
-                                    chrome.i18n.getMessage('omnibarFailedRetrieveActiveTab') ||
-                                        'Failed to retrieve active tab URL',
+                                    getOmniMsg('omnibarFailedRetrieveActiveTab') || 'Failed to retrieve active tab URL',
                                 );
                             }
                         },
@@ -2044,7 +2003,7 @@ var OmniBar = class OmniBar {
                     if (urlsToAdd.length > 0) {
                         this._addValidatedUrlsToRule(this.crSelectingTabsFor, urlsToAdd);
                     } else {
-                        this._showToast(chrome.i18n.getMessage('omnibarNoUrlsToAdd') || 'No URLs to add.');
+                        this._showToast(getOmniMsg('omnibarNoUrlsToAdd') || 'No URLs to add.');
                     }
                     this.close();
                 } else {
@@ -2070,7 +2029,7 @@ var OmniBar = class OmniBar {
                                             });
                                         } else {
                                             this._showToast(
-                                                chrome.i18n.getMessage('omnibarRuleCreated', [name]) ||
+                                                getOmniMsg('omnibarRuleCreated', [name]) ||
                                                     `Rule "${name}" created successfully`,
                                             );
                                             this.close();
@@ -2078,7 +2037,7 @@ var OmniBar = class OmniBar {
                                     } else {
                                         this._showToast(
                                             response?.error ||
-                                                chrome.i18n.getMessage('omnibarFailedCreateRule') ||
+                                                getOmniMsg('omnibarFailedCreateRule') ||
                                                 'Failed to create rule',
                                         );
                                         this.close();
@@ -2120,13 +2079,13 @@ var OmniBar = class OmniBar {
                                 (res) => {
                                     if (res && res.success) {
                                         this._showToast(
-                                            chrome.i18n.getMessage('omnibarRuleRenamed', [newName]) ||
+                                            getOmniMsg('omnibarRuleRenamed', [newName]) ||
                                                 `Rule renamed to "${newName}"`,
                                         );
                                     } else {
                                         this._showToast(
                                             res?.error ||
-                                                chrome.i18n.getMessage('omnibarFailedRenameRule') ||
+                                                getOmniMsg('omnibarFailedRenameRule') ||
                                                 'Failed to rename rule',
                                         );
                                     }
@@ -2147,13 +2106,12 @@ var OmniBar = class OmniBar {
                                 (res) => {
                                     if (res && res.success) {
                                         this._showToast(
-                                            chrome.i18n.getMessage('omnibarRuleUrlUpdated') ||
-                                                'Rule URL updated successfully',
+                                            getOmniMsg('omnibarRuleUrlUpdated') || 'Rule URL updated successfully',
                                         );
                                     } else {
                                         this._showToast(
                                             res?.error ||
-                                                chrome.i18n.getMessage('omnibarFailedUpdateRuleUrl') ||
+                                                getOmniMsg('omnibarFailedUpdateRuleUrl') ||
                                                 'Failed to update rule URL',
                                         );
                                     }
@@ -2248,19 +2206,19 @@ var OmniBar = class OmniBar {
                 }
                 const count = updates.length;
                 const colorI18n = updates[0]?.color
-                    ? chrome.i18n.getMessage(`omnibarColorName_${updates[0].color}`) || updates[0].color
+                    ? getOmniMsg(`omnibarColorName_${updates[0].color}`) || updates[0].color
                     : '';
                 if (isRule) {
                     this._showToast(
                         count > 1
-                            ? `${chrome.i18n.getMessage('omnibarRuleColorUpdated') || 'Rule colors updated'} (${count} rules)`
-                            : chrome.i18n.getMessage('omnibarRuleColorUpdated', [colorI18n]) || `Rule color updated`,
+                            ? `${getOmniMsg('omnibarRuleColorUpdated') || 'Rule colors updated'} (${count} rules)`
+                            : getOmniMsg('omnibarRuleColorUpdated', [colorI18n]) || `Rule color updated`,
                     );
                 } else {
                     this._showToast(
                         count > 1
-                            ? `${chrome.i18n.getMessage('omnibarGroupColorUpdated') || 'Group colors updated'} (${count} groups)`
-                            : chrome.i18n.getMessage('omnibarGroupColorUpdated', [colorI18n]) || `Group color updated`,
+                            ? `${getOmniMsg('omnibarGroupColorUpdated') || 'Group colors updated'} (${count} groups)`
+                            : getOmniMsg('omnibarGroupColorUpdated', [colorI18n]) || `Group color updated`,
                     );
                 }
                 this.selectedActionItems.clear();
@@ -2275,7 +2233,7 @@ var OmniBar = class OmniBar {
                     this._renderResults(
                         [
                             {
-                                title: chrome.i18n.getMessage('omnibarAiLoading') || '[LOADING] Consulting AI...',
+                                title: getOmniMsg('omnibarAiLoading') || '[LOADING] Consulting AI...',
                                 url: q,
                                 icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
                             },
@@ -2295,8 +2253,7 @@ var OmniBar = class OmniBar {
                                 this._renderResults(
                                     [
                                         {
-                                            title:
-                                                chrome.i18n.getMessage('omnibarAiError') || '[ERR] Error consulting AI',
+                                            title: getOmniMsg('omnibarAiError') || '[ERR] Error consulting AI',
                                             url: errMsg,
                                             icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
                                         },
@@ -2489,8 +2446,8 @@ var OmniBar = class OmniBar {
         if (!entryIds.length) {
             this.close();
             this._sendNotification(
-                chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                chrome.i18n.getMessage('errorCopyingNoEntries') || 'No entries found in this conversation',
+                getOmniMsg('errorCopyingTitle') || 'Error copying',
+                getOmniMsg('errorCopyingNoEntries') || 'No entries found in this conversation',
             );
             return;
         }
@@ -2517,25 +2474,24 @@ var OmniBar = class OmniBar {
                         .then(() => {
                             this.close();
                             this._sendNotification(
-                                chrome.i18n.getMessage('copiedToClipboard') || 'Copied to clipboard',
-                                chrome.i18n.getMessage('conversationCopied', [
-                                    title || chrome.i18n.getMessage('untitled') || 'Untitled',
-                                ]) || `Conversation "${title || 'Untitled'}" copied successfully`,
+                                getOmniMsg('copiedToClipboard') || 'Copied to clipboard',
+                                getOmniMsg('conversationCopied', [title || getOmniMsg('untitled') || 'Untitled']) ||
+                                    `Conversation "${title || 'Untitled'}" copied successfully`,
                             );
                         })
                         .catch((err) => {
                             this.close();
                             this._sendNotification(
-                                chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                                chrome.i18n.getMessage('errorCopyingNoClipboard', [err.message]) ||
+                                getOmniMsg('errorCopyingTitle') || 'Error copying',
+                                getOmniMsg('errorCopyingNoClipboard', [err.message]) ||
                                     `Could not access clipboard: ${err.message}`,
                             );
                         });
                 } else {
                     this.close();
                     this._sendNotification(
-                        chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                        res?.error || chrome.i18n.getMessage('errorCopying') || 'Could not copy to clipboard',
+                        getOmniMsg('errorCopyingTitle') || 'Error copying',
+                        res?.error || getOmniMsg('errorCopying') || 'Could not copy to clipboard',
                     );
                 }
             },
@@ -2555,9 +2511,9 @@ var OmniBar = class OmniBar {
                         plainText = content.map((item) => `${item.checked ? '[x]' : '[ ]'} ${item.text}`).join('\n');
                     } else if (type === 'kanban') {
                         const stateLabels = {
-                            todo: chrome.i18n.getMessage('omnibarTodoLabel') || 'To Do',
-                            inprogress: chrome.i18n.getMessage('omnibarInProgressLabel') || 'In Progress',
-                            done: chrome.i18n.getMessage('omnibarDoneLabel') || 'Done',
+                            todo: getOmniMsg('omnibarTodoLabel') || 'To Do',
+                            inprogress: getOmniMsg('omnibarInProgressLabel') || 'In Progress',
+                            done: getOmniMsg('omnibarDoneLabel') || 'Done',
                         };
                         plainText = content
                             .map((item) => `[${stateLabels[item.state] || item.state}] ${item.text}`)
@@ -2572,8 +2528,8 @@ var OmniBar = class OmniBar {
         if (!textToCopy.trim()) {
             this.close();
             this._sendNotification(
-                chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                chrome.i18n.getMessage('errorCopyingNoteEmpty') || 'The note is empty',
+                getOmniMsg('errorCopyingTitle') || 'Error copying',
+                getOmniMsg('errorCopyingNoteEmpty') || 'The note is empty',
             );
             return;
         }
@@ -2582,15 +2538,15 @@ var OmniBar = class OmniBar {
             .then(() => {
                 this.close();
                 this._sendNotification(
-                    chrome.i18n.getMessage('copiedToClipboard') || 'Copied to clipboard',
-                    chrome.i18n.getMessage('noteCopiedOmni', [title]) || `Note "${title}" copied successfully`,
+                    getOmniMsg('copiedToClipboard') || 'Copied to clipboard',
+                    getOmniMsg('noteCopiedOmni', [title]) || `Note "${title}" copied successfully`,
                 );
             })
             .catch((err) => {
                 this.close();
                 this._sendNotification(
-                    chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                    chrome.i18n.getMessage('errorCopyingNoClipboard', [err.message]) ||
+                    getOmniMsg('errorCopyingTitle') || 'Error copying',
+                    getOmniMsg('errorCopyingNoClipboard', [err.message]) ||
                         `Could not access clipboard: ${err.message}`,
                 );
             });
@@ -2612,8 +2568,8 @@ var OmniBar = class OmniBar {
                 .then(() => {
                     this.close();
                     this._sendNotification(
-                        chrome.i18n.getMessage('copiedToClipboard') || 'Copied to clipboard',
-                        chrome.i18n.getMessage('imageCopied', [imgTitle]) || `Image "${imgTitle}" copied successfully`,
+                        getOmniMsg('copiedToClipboard') || 'Copied to clipboard',
+                        getOmniMsg('imageCopied', [imgTitle]) || `Image "${imgTitle}" copied successfully`,
                     );
                 })
                 .catch(() => {
@@ -2622,16 +2578,12 @@ var OmniBar = class OmniBar {
                         .then(() => {
                             this.close();
                             this._sendNotification(
-                                chrome.i18n.getMessage('copiedToClipboard') || 'Copied to clipboard',
-                                chrome.i18n.getMessage('imageUrlCopied', [imgTitle]) ||
-                                    `Image URL "${imgTitle}" copied`,
+                                getOmniMsg('copiedToClipboard') || 'Copied to clipboard',
+                                getOmniMsg('imageUrlCopied', [imgTitle]) || `Image URL "${imgTitle}" copied`,
                             );
                         })
                         .catch((err) =>
-                            this._sendNotification(
-                                chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                                err.message,
-                            ),
+                            this._sendNotification(getOmniMsg('errorCopyingTitle') || 'Error copying', err.message),
                         );
                 });
         };
@@ -2650,8 +2602,8 @@ var OmniBar = class OmniBar {
                     doCopy(res.dataUrl);
                 } else
                     this._sendNotification(
-                        chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying',
-                        chrome.i18n.getMessage('errorCopyingImageFail') || 'Could not load image',
+                        getOmniMsg('errorCopyingTitle') || 'Error copying',
+                        getOmniMsg('errorCopyingImageFail') || 'Could not load image',
                     );
             },
         );
@@ -2682,7 +2634,7 @@ var OmniBar = class OmniBar {
         }
         const loadEl = document.createElement('div');
         loadEl.className = 'hint-omni-img-expand hint-omni-conv-expand';
-        loadEl.textContent = chrome.i18n.getMessage('loadingImages') || '[LOADING] Loading image...';
+        loadEl.textContent = getOmniMsg('loadingImages') || '[LOADING] Loading image...';
         li.style.flexWrap = 'wrap';
         li.appendChild(loadEl);
         chrome.runtime.sendMessage(
@@ -2696,8 +2648,7 @@ var OmniBar = class OmniBar {
                     loadEl.remove();
                     showExpand(res.dataUrl);
                 } else {
-                    loadEl.textContent =
-                        chrome.i18n.getMessage('errorCopyingImageFail') || '[ERR] Could not load image';
+                    loadEl.textContent = getOmniMsg('errorCopyingImageFail') || '[ERR] Could not load image';
                 }
             },
         );
@@ -2712,14 +2663,11 @@ var OmniBar = class OmniBar {
             .then(() => {
                 this.close();
                 this._sendNotification(
-                    chrome.i18n.getMessage('copiedToClipboard') || 'Copied to clipboard',
-                    chrome.i18n.getMessage('textCopied', [title.substring(0, 40)]) ||
-                        `"${title.substring(0, 40)}" copied`,
+                    getOmniMsg('copiedToClipboard') || 'Copied to clipboard',
+                    getOmniMsg('textCopied', [title.substring(0, 40)]) || `"${title.substring(0, 40)}" copied`,
                 );
             })
-            .catch((err) =>
-                this._sendNotification(chrome.i18n.getMessage('errorCopyingTitle') || 'Error copying', err.message),
-            );
+            .catch((err) => this._sendNotification(getOmniMsg('errorCopyingTitle') || 'Error copying', err.message));
     }
     _expandMessage(li) {
         if (!this.shadow) return;
@@ -2803,10 +2751,10 @@ var OmniBar = class OmniBar {
             ['am:', 'prefixSearchAmazon', 'omnibarPrefixAmazonTitle', 'Amazon'],
             ['ams:', 'prefixSearchAmazonES', 'omnibarPrefixAmazonESTitle', 'Amazon ES'],
         ];
-        const template = chrome.i18n.getMessage('omnibarPrefixSiteSearchDesc') || 'Search on $SITE$';
+        const template = getOmniMsg('omnibarPrefixSiteSearchDesc') || 'Search on $SITE$';
         return sites.map(([prefix, descKey, titleKey, site]) => ({
             prefix: this._getPrefixVal(prefix, descKey),
-            title: chrome.i18n.getMessage(titleKey) || site,
+            title: getOmniMsg(titleKey) || site,
             desc: template.replace('$SITE$', site).replace('$1', site),
         }));
     }
@@ -2885,7 +2833,7 @@ var OmniBar = class OmniBar {
         }
         if (invalidUrls.length > 0) {
             this._showToast(
-                chrome.i18n.getMessage('omnibarInvalidUrlFormat', [invalidUrls.join(', ')]) ||
+                getOmniMsg('omnibarInvalidUrlFormat', [invalidUrls.join(', ')]) ||
                     `Invalid URL format: ${invalidUrls.join(', ')}`,
             );
         }
@@ -2899,15 +2847,11 @@ var OmniBar = class OmniBar {
                 (res) => {
                     if (res && res.success) {
                         this._showToast(
-                            chrome.i18n.getMessage('omnibarAddedUrlsToRule', [
-                                validatedUrls.length.toString(),
-                                ruleName,
-                            ]) || `Added ${validatedUrls.length} URLs to rule "${ruleName}"`,
+                            getOmniMsg('omnibarAddedUrlsToRule', [validatedUrls.length.toString(), ruleName]) ||
+                                `Added ${validatedUrls.length} URLs to rule "${ruleName}"`,
                         );
                     } else {
-                        this._showToast(
-                            res?.error || chrome.i18n.getMessage('omnibarFailedAddUrls') || 'Failed to add URLs',
-                        );
+                        this._showToast(res?.error || getOmniMsg('omnibarFailedAddUrls') || 'Failed to add URLs');
                     }
                 },
             );
@@ -2976,8 +2920,7 @@ var OmniBar = class OmniBar {
                         if (res && res.success) {
                             dot.style.backgroundColor = c.value;
                             this._showToast(
-                                chrome.i18n.getMessage('omnibarRuleColorUpdated', [c.name]) ||
-                                    `Rule color updated to ${c.name}`,
+                                getOmniMsg('omnibarRuleColorUpdated', [c.name]) || `Rule color updated to ${c.name}`,
                             );
                         }
                     },
@@ -3030,7 +2973,7 @@ var OmniBar = class OmniBar {
                 items = JSON.parse(li.dataset.noteContentJson || '[]');
             } catch {}
             if (!items.length) {
-                expandEl.textContent = chrome.i18n.getMessage('omnibarChecklistEmpty') || '(empty list)';
+                expandEl.textContent = getOmniMsg('omnibarChecklistEmpty') || '(empty list)';
             } else {
                 const list = document.createElement('div');
                 list.className = 'hint-omni-interactive-list';
@@ -3046,7 +2989,7 @@ var OmniBar = class OmniBar {
             <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>`
                         : '';
-                    checkBtn.title = item.checked ? chrome.i18n.getMessage('omnibarAgentOk') || '[OK]' : '[ ]';
+                    checkBtn.title = item.checked ? getOmniMsg('omnibarAgentOk') || '[OK]' : '[ ]';
                     const textSpan = document.createElement('span');
                     textSpan.textContent = item.text || '';
                     textSpan.className = 'hint-omni-item-text';
@@ -3084,9 +3027,9 @@ var OmniBar = class OmniBar {
                 items = JSON.parse(li.dataset.noteContentJson || '[]');
             } catch {}
             const stateLabels = {
-                todo: chrome.i18n.getMessage('omnibarKanbanTodo') || 'To Do',
-                inprogress: chrome.i18n.getMessage('omnibarKanbanInProgress') || 'In Progress',
-                done: chrome.i18n.getMessage('omnibarKanbanDone') || 'Done',
+                todo: getOmniMsg('omnibarKanbanTodo') || 'To Do',
+                inprogress: getOmniMsg('omnibarKanbanInProgress') || 'In Progress',
+                done: getOmniMsg('omnibarKanbanDone') || 'Done',
             };
             // Kanban state styles -- identical to listGroup .kanban-state-view
             const stateColors = {
@@ -3096,7 +3039,7 @@ var OmniBar = class OmniBar {
             };
             const stateOrder = ['todo', 'inprogress', 'done'];
             if (!items.length) {
-                expandEl.textContent = chrome.i18n.getMessage('omnibarKanbanEmpty') || '(empty board)';
+                expandEl.textContent = getOmniMsg('omnibarKanbanEmpty') || '(empty board)';
             } else {
                 const list = document.createElement('div');
                 list.className = 'hint-omni-interactive-list';
@@ -3171,8 +3114,7 @@ var OmniBar = class OmniBar {
         // Show loading indicator
         const expandEl = document.createElement('div');
         expandEl.className = 'hint-omni-conv-expand';
-        expandEl.textContent =
-            chrome.i18n.getMessage('omnibarLoadingConversation') || '[LOADING] Loading conversation...';
+        expandEl.textContent = getOmniMsg('omnibarLoadingConversation') || '[LOADING] Loading conversation...';
         expandEl.style.userSelect = 'text';
         expandEl.style.cursor = 'text';
         li.style.flexWrap = 'wrap';
@@ -3188,11 +3130,11 @@ var OmniBar = class OmniBar {
                     expandEl.textContent = res.text;
                 } else {
                     expandEl.textContent =
-                        chrome.i18n.getMessage('omnibarAgentErr') ||
+                        getOmniMsg('omnibarAgentErr') ||
                         '[ERR]' +
                             ' ' +
                             (res?.error ||
-                                chrome.i18n.getMessage('omnibarErrLoadingConversation') ||
+                                getOmniMsg('omnibarErrLoadingConversation') ||
                                 'Could not load conversation');
                 }
             },
@@ -3249,7 +3191,7 @@ var OmniBar = class OmniBar {
         return null;
     }
     _getOmniToolLabel(tool, params) {
-        const i18n = (k) => chrome.i18n.getMessage(k) || k;
+        const i18n = (k) => getOmniMsg(k) || k;
         try {
             switch (tool) {
                 case 'getOpenTabs':
@@ -3259,12 +3201,12 @@ var OmniBar = class OmniBar {
                 case 'getActiveTabContent':
                     return i18n('toolGetActiveTabContent');
                 case 'findAndSwitchToTab':
-                    return chrome.i18n.getMessage('toolFindAndSwitchToTab', [String(params.query || '')]);
+                    return getOmniMsg('toolFindAndSwitchToTab', [String(params.query || '')]);
                 case 'switchToTab':
-                    return chrome.i18n.getMessage('toolSwitchToTab', [String(params.tabId || '')]);
+                    return getOmniMsg('toolSwitchToTab', [String(params.tabId || '')]);
                 case 'createNewTab':
                     return params.url
-                        ? chrome.i18n.getMessage('toolCreateNewTabUrl', [
+                        ? getOmniMsg('toolCreateNewTabUrl', [
                               (() => {
                                   try {
                                       return new URL(params.url).hostname;
@@ -3275,43 +3217,37 @@ var OmniBar = class OmniBar {
                           ])
                         : i18n('toolCreateNewTab');
                 case 'closeTab':
-                    return chrome.i18n.getMessage('toolCloseTab', [String(params.tabId || '')]);
+                    return getOmniMsg('toolCloseTab', [String(params.tabId || '')]);
                 case 'closeTabs':
-                    return chrome.i18n.getMessage('toolCloseTabs', [String((params.tabIds || []).length)]);
+                    return getOmniMsg('toolCloseTabs', [String((params.tabIds || []).length)]);
                 case 'getTabGroups':
                     return i18n('toolGetTabGroups');
                 case 'groupTabs':
-                    return chrome.i18n.getMessage('toolGroupTabs', [String(params.groupName || '')]);
+                    return getOmniMsg('toolGroupTabs', [String(params.groupName || '')]);
                 case 'deleteTabGroup':
-                    return chrome.i18n.getMessage('toolDeleteTabGroup', [String(params.groupId || '')]);
+                    return getOmniMsg('toolDeleteTabGroup', [String(params.groupId || '')]);
                 case 'closeTabsInGroup':
-                    return chrome.i18n.getMessage('toolCloseTabsInGroup', [
-                        String(params.groupName || params.groupId || ''),
-                    ]);
+                    return getOmniMsg('toolCloseTabsInGroup', [String(params.groupName || params.groupId || '')]);
                 case 'collapseTabGroup':
-                    return chrome.i18n.getMessage('toolCollapseTabGroup', [
-                        String(params.groupName || params.groupId || ''),
-                    ]);
+                    return getOmniMsg('toolCollapseTabGroup', [String(params.groupName || params.groupId || '')]);
                 case 'expandTabGroup':
-                    return chrome.i18n.getMessage('toolExpandTabGroup', [
-                        String(params.groupName || params.groupId || ''),
-                    ]);
+                    return getOmniMsg('toolExpandTabGroup', [String(params.groupName || params.groupId || '')]);
                 case 'collapseAllGroups':
                     return i18n('toolCollapseAllGroups');
                 case 'expandAllGroups':
                     return i18n('toolExpandAllGroups');
                 case 'setGroupColor':
-                    return chrome.i18n.getMessage('toolSetGroupColor', [
+                    return getOmniMsg('toolSetGroupColor', [
                         String(params.groupName || params.groupId || ''),
                         String(params.color || ''),
                     ]);
                 case 'renameTabGroup':
-                    return chrome.i18n.getMessage('toolRenameTabGroup', [
+                    return getOmniMsg('toolRenameTabGroup', [
                         String(params.groupName || params.groupId || ''),
                         String(params.newName || ''),
                     ]);
                 case 'moveTabToGroup':
-                    return chrome.i18n.getMessage('toolMoveTabToGroup', [
+                    return getOmniMsg('toolMoveTabToGroup', [
                         String(params.tabId || ''),
                         String(params.groupName || params.groupId || ''),
                     ]);
@@ -3322,46 +3258,46 @@ var OmniBar = class OmniBar {
                 case 'getRules':
                     return i18n('toolGetRules');
                 case 'createRule':
-                    return chrome.i18n.getMessage('toolCreateRule', [String(params.name || '')]);
+                    return getOmniMsg('toolCreateRule', [String(params.name || '')]);
                 case 'updateRule':
-                    return chrome.i18n.getMessage('toolUpdateRule', [String(params.name || '')]);
+                    return getOmniMsg('toolUpdateRule', [String(params.name || '')]);
                 case 'deleteRule':
-                    return chrome.i18n.getMessage('toolDeleteRule', [String(params.name || '')]);
+                    return getOmniMsg('toolDeleteRule', [String(params.name || '')]);
                 case 'getActiveTheme':
                     return i18n('toolGetActiveTheme');
                 case 'getSavedThemes':
                     return i18n('toolGetSavedThemes');
                 case 'applyTheme':
-                    return chrome.i18n.getMessage('toolApplyTheme', [String(params.themeName || '')]);
+                    return getOmniMsg('toolApplyTheme', [String(params.themeName || '')]);
                 case 'applyRandomTheme':
                     return i18n('toolApplyRandomTheme');
                 case 'createAndApplyTheme':
-                    return chrome.i18n.getMessage('toolCreateAndApplyTheme', [String(params.name || '')]);
+                    return getOmniMsg('toolCreateAndApplyTheme', [String(params.name || '')]);
                 case 'updateTheme':
-                    return chrome.i18n.getMessage('toolUpdateTheme', [String(params.name || '')]);
+                    return getOmniMsg('toolUpdateTheme', [String(params.name || '')]);
                 case 'saveTheme':
-                    return chrome.i18n.getMessage('toolSaveTheme', [String(params.name || '')]);
+                    return getOmniMsg('toolSaveTheme', [String(params.name || '')]);
                 case 'getBookmarks':
                     return i18n('toolGetBookmarks');
                 case 'searchBookmarks':
-                    return chrome.i18n.getMessage('toolSearchBookmarks', [String(params.query || '')]);
+                    return getOmniMsg('toolSearchBookmarks', [String(params.query || '')]);
                 case 'createBookmark':
-                    return chrome.i18n.getMessage('toolCreateBookmark', [String(params.title || params.url || '')]);
+                    return getOmniMsg('toolCreateBookmark', [String(params.title || params.url || '')]);
                 case 'getHistory':
                     return params.query
-                        ? chrome.i18n.getMessage('toolGetHistoryQuery', [String(params.query)])
+                        ? getOmniMsg('toolGetHistoryQuery', [String(params.query)])
                         : i18n('toolGetHistory');
                 case 'getRecentlyClosed':
                     return i18n('toolGetRecentlyClosed');
                 case 'openUrl':
-                    return chrome.i18n.getMessage('toolOpenUrl', [String(params.url || '')]);
+                    return getOmniMsg('toolOpenUrl', [String(params.url || '')]);
                 case 'searchGoogle':
-                    return chrome.i18n.getMessage('toolSearchGoogle', [String(params.query || '')]);
+                    return getOmniMsg('toolSearchGoogle', [String(params.query || '')]);
                 default:
-                    return chrome.i18n.getMessage('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
+                    return getOmniMsg('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
             }
         } catch {
-            return chrome.i18n.getMessage('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
+            return getOmniMsg('omnibarAgentToolLabel', [tool]) || `[TOOL] ${tool}`;
         }
     }
     _renderAgentProgress(query, steps) {
@@ -3393,10 +3329,10 @@ var OmniBar = class OmniBar {
             ico.className = 'hint-omni-agent-step-icon';
             ico.textContent =
                 step.status === 'done'
-                    ? chrome.i18n.getMessage('omnibarAgentOk') || '[OK]'
+                    ? getOmniMsg('omnibarAgentOk') || '[OK]'
                     : step.status === 'error'
-                      ? chrome.i18n.getMessage('omnibarAgentErr') || '[ERR]'
-                      : chrome.i18n.getMessage('omnibarAgentTool') || '[TOOL]';
+                      ? getOmniMsg('omnibarAgentErr') || '[ERR]'
+                      : getOmniMsg('omnibarAgentTool') || '[TOOL]';
             const lbl = document.createElement('span');
             lbl.textContent = step.label;
             row.appendChild(ico);
@@ -3407,7 +3343,7 @@ var OmniBar = class OmniBar {
         // Thinking indicator
         const thinking = document.createElement('div');
         thinking.className = 'hint-omni-agent-step hint-omni-agent-thinking';
-        thinking.innerHTML = `<span class="hint-omni-agent-dots"><span>.</span><span>.</span><span>.</span></span><span>${chrome.i18n.getMessage('agentThinking') || 'Thinking...'}</span>`;
+        thinking.innerHTML = `<span class="hint-omni-agent-dots"><span>.</span><span>.</span><span>.</span></span><span>${getOmniMsg('agentThinking') || 'Thinking...'}</span>`;
         stepsEl.appendChild(thinking);
         li.appendChild(stepsEl);
         container.appendChild(li);
@@ -3430,7 +3366,7 @@ var OmniBar = class OmniBar {
         qTitle.textContent = query;
         const copyBtn = document.createElement('button');
         copyBtn.className = 'hint-omni-copy-btn';
-        copyBtn.title = chrome.i18n.getMessage('copyQuestionAnswer') || 'Copy question and answer';
+        copyBtn.title = getOmniMsg('copyQuestionAnswer') || 'Copy question and answer';
         copyBtn.innerHTML = OMNI_COPY_SVG;
         copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3462,10 +3398,10 @@ var OmniBar = class OmniBar {
                 ico.className = 'hint-omni-agent-step-icon';
                 ico.textContent =
                     step.status === 'done'
-                        ? chrome.i18n.getMessage('omnibarAgentOk') || '[OK]'
+                        ? getOmniMsg('omnibarAgentOk') || '[OK]'
                         : step.status === 'error'
-                          ? chrome.i18n.getMessage('omnibarAgentErr') || '[ERR]'
-                          : chrome.i18n.getMessage('omnibarAgentTool') || '[TOOL]';
+                          ? getOmniMsg('omnibarAgentErr') || '[ERR]'
+                          : getOmniMsg('omnibarAgentTool') || '[TOOL]';
                 const lbl = document.createElement('span');
                 lbl.textContent = step.label;
                 row.appendChild(ico);
@@ -3587,7 +3523,7 @@ IMPORTANT RULES:
             });
             if (!geminiResult?.success) {
                 finalResponse =
-                    chrome.i18n.getMessage('omnibarAgentErrorPrefix', [geminiResult?.error || 'Error']) ||
+                    getOmniMsg('omnibarAgentErrorPrefix', [geminiResult?.error || 'Error']) ||
                     `[ERR] ${geminiResult?.error || 'Error'}`;
                 break;
             }
@@ -3638,13 +3574,12 @@ IMPORTANT RULES:
                     ? typeof toolResult.result === 'string'
                         ? toolResult.result
                         : JSON.stringify(toolResult.result)
-                    : chrome.i18n.getMessage('omnibarAgentToolError', [
-                          toolResult?.error || chrome.i18n.getMessage('omnibarToolFailed') || 'Tool failed',
+                    : getOmniMsg('omnibarAgentToolError', [
+                          toolResult?.error || getOmniMsg('omnibarToolFailed') || 'Tool failed',
                       ]) || `Error: ${toolResult?.error || 'Tool failed'}`;
                 const truncated =
                     resultStr.length > 4000
-                        ? resultStr.substring(0, 4000) +
-                          (chrome.i18n.getMessage('omnibarTruncatedSuffix') || '...[truncated]')
+                        ? resultStr.substring(0, 4000) + (getOmniMsg('omnibarTruncatedSuffix') || '...[truncated]')
                         : resultStr;
                 contents.push({
                     role: 'user',
@@ -3659,7 +3594,7 @@ IMPORTANT RULES:
             finalResponse = geminiResult.answer;
             break;
         }
-        if (!finalResponse) finalResponse = chrome.i18n.getMessage('agentMaxStepsReached') || 'Max steps reached.';
+        if (!finalResponse) finalResponse = getOmniMsg('agentMaxStepsReached') || 'Max steps reached.';
         this._renderAgentResponse(userQuery, steps, finalResponse);
     }
     _renderAIResponse(query, answer) {
@@ -3677,13 +3612,13 @@ IMPORTANT RULES:
         const icon = document.createElement('span');
         icon.className = 'hint-omni-ai-icon';
         icon.innerHTML = `<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>`;
-        icon.title = chrome.i18n.getMessage('omnibarIconGemini') || 'Gemini AI';
+        icon.title = getOmniMsg('omnibarIconGemini') || 'Gemini AI';
         const qTitle = document.createElement('span');
         qTitle.className = 'hint-omni-title hint-omni-ai-query-title';
         qTitle.textContent = query;
         const copyBtn = document.createElement('button');
         copyBtn.className = 'hint-omni-copy-btn';
-        copyBtn.title = chrome.i18n.getMessage('copyQuestionAnswer') || 'Copy question and answer';
+        copyBtn.title = getOmniMsg('copyQuestionAnswer') || 'Copy question and answer';
         copyBtn.innerHTML = OMNI_COPY_SVG;
         copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3718,7 +3653,7 @@ IMPORTANT RULES:
         if (type === 'inpage') {
             counter.style.display = 'block';
             counter.textContent =
-                chrome.i18n.getMessage('omnibarSearchCounter', [
+                getOmniMsg('omnibarSearchCounter', [
                     (this.matches.length > 0 ? 1 : 0).toString(),
                     this.matches.length.toString(),
                 ]) || `${this.matches.length > 0 ? 1 : 0}/${this.matches.length}`;
@@ -3758,77 +3693,69 @@ IMPORTANT RULES:
                 const totalTabs = items.reduce((sum, g) => sum + (g.tabCount || 0), 0);
                 if (totalTabs > 0) {
                     title =
-                        chrome.i18n.getMessage('omnibarDeleteAllGroupsDetail', [
-                            count.toString(),
-                            totalTabs.toString(),
-                        ]) || `Delete ${count} groups and ${totalTabs} tabs`;
+                        getOmniMsg('omnibarDeleteAllGroupsDetail', [count.toString(), totalTabs.toString()]) ||
+                        `Delete ${count} groups and ${totalTabs} tabs`;
                 } else {
                     title = hasFilter
-                        ? chrome.i18n.getMessage('omnibarDeleteAllFilteredGroups', [count.toString()]) ||
+                        ? getOmniMsg('omnibarDeleteAllFilteredGroups', [count.toString()]) ||
                           `Delete all filtered groups (${count})`
-                        : chrome.i18n.getMessage('omnibarDeleteAllGroups', [count.toString()]) ||
-                          `Delete all groups (${count})`;
+                        : getOmniMsg('omnibarDeleteAllGroups', [count.toString()]) || `Delete all groups (${count})`;
                 }
-                desc = chrome.i18n.getMessage('omnibarDeleteAllGroupsDesc') || 'Closes all tabs inside these groups';
+                desc = getOmniMsg('omnibarDeleteAllGroupsDesc') || 'Closes all tabs inside these groups';
             } else if (isDrl) {
                 specialType = 'delete-all-rules';
                 const rulesCount = items.filter((i) => i.type === 'dr-rule').length;
                 const domainsCount = items.filter((i) => i.type !== 'dr-rule').length;
                 if (rulesCount > 0 && domainsCount > 0) {
                     title =
-                        chrome.i18n.getMessage('omnibarDeleteAllRulesDetail', [
-                            rulesCount.toString(),
-                            domainsCount.toString(),
-                        ]) || `Delete ${rulesCount} rules and ${domainsCount} domains`;
+                        getOmniMsg('omnibarDeleteAllRulesDetail', [rulesCount.toString(), domainsCount.toString()]) ||
+                        `Delete ${rulesCount} rules and ${domainsCount} domains`;
                 } else if (rulesCount > 0) {
                     title = hasFilter
-                        ? chrome.i18n.getMessage('omnibarDeleteAllFilteredRules', [rulesCount.toString()]) ||
+                        ? getOmniMsg('omnibarDeleteAllFilteredRules', [rulesCount.toString()]) ||
                           `Delete all filtered rules (${rulesCount})`
-                        : chrome.i18n.getMessage('omnibarDeleteAllRules', [rulesCount.toString()]) ||
+                        : getOmniMsg('omnibarDeleteAllRules', [rulesCount.toString()]) ||
                           `Delete all rules (${rulesCount})`;
                 } else {
                     title = `Delete ${domainsCount} domains`;
                 }
                 desc = hasFilter
-                    ? chrome.i18n.getMessage('omnibarDeleteAllFilteredRulesDesc') || 'Deletes all filtered rules'
-                    : chrome.i18n.getMessage('omnibarDeleteAllRulesDesc') || 'Deletes all these rules';
+                    ? getOmniMsg('omnibarDeleteAllFilteredRulesDesc') || 'Deletes all filtered rules'
+                    : getOmniMsg('omnibarDeleteAllRulesDesc') || 'Deletes all these rules';
             } else if (isBg) {
                 specialType = 'backup-all-groups';
                 const totalTabs = items.reduce((sum, g) => sum + (g.count || 0), 0);
                 title =
-                    chrome.i18n.getMessage('omnibarBackupAllGroups', [count.toString(), totalTabs.toString()]) ||
+                    getOmniMsg('omnibarBackupAllGroups', [count.toString(), totalTabs.toString()]) ||
                     `Backup all groups (${count} groups, ${totalTabs} tabs)`;
-                desc = chrome.i18n.getMessage('omnibarBackupAllGroupsDesc') || 'Backs up all these groups';
+                desc = getOmniMsg('omnibarBackupAllGroupsDesc') || 'Backs up all these groups';
             } else if (isBgr) {
                 specialType = 'restore-all-groups';
                 const groupsCount = items.filter((i) => i.type === 'bg-group').length;
                 const tabsCount = items.filter((i) => i.type === 'bg-tab').length;
                 if (groupsCount > 0 && tabsCount > 0) {
                     title =
-                        chrome.i18n.getMessage('omnibarRestoreAllGroupsDetail', [
-                            groupsCount.toString(),
-                            tabsCount.toString(),
-                        ]) || `Restore all backups (${groupsCount} groups, ${tabsCount} tabs)`;
+                        getOmniMsg('omnibarRestoreAllGroupsDetail', [groupsCount.toString(), tabsCount.toString()]) ||
+                        `Restore all backups (${groupsCount} groups, ${tabsCount} tabs)`;
                 } else if (groupsCount > 0) {
                     title = hasFilter
-                        ? chrome.i18n.getMessage('omnibarRestoreAllFilteredGroups', [groupsCount.toString()]) ||
+                        ? getOmniMsg('omnibarRestoreAllFilteredGroups', [groupsCount.toString()]) ||
                           `Restore all filtered groups (${groupsCount})`
-                        : chrome.i18n.getMessage('omnibarRestoreAllGroups', [groupsCount.toString()]) ||
+                        : getOmniMsg('omnibarRestoreAllGroups', [groupsCount.toString()]) ||
                           `Restore all groups (${groupsCount})`;
                 } else {
                     title =
-                        chrome.i18n.getMessage('omnibarRestoreAllTabs', [tabsCount.toString()]) ||
+                        getOmniMsg('omnibarRestoreAllTabs', [tabsCount.toString()]) ||
                         `Restore all tabs (${tabsCount})`;
                 }
-                desc = chrome.i18n.getMessage('omnibarRestoreAllGroupsDesc') || 'Restores all these backups';
+                desc = getOmniMsg('omnibarRestoreAllGroupsDesc') || 'Restores all these backups';
             } else {
                 specialType = 'delete-all-tabs';
                 title = hasFilter
-                    ? chrome.i18n.getMessage('omnibarDeleteAllFilteredTabs', [count.toString()]) ||
+                    ? getOmniMsg('omnibarDeleteAllFilteredTabs', [count.toString()]) ||
                       `Delete all filtered tabs (${count})`
-                    : chrome.i18n.getMessage('omnibarDeleteAllTabs', [count.toString()]) ||
-                      `Delete all tabs (${count})`;
-                desc = chrome.i18n.getMessage('omnibarDeleteAllTabsDesc') || 'Closes all these tabs';
+                    : getOmniMsg('omnibarDeleteAllTabs', [count.toString()]) || `Delete all tabs (${count})`;
+                desc = getOmniMsg('omnibarDeleteAllTabsDesc') || 'Closes all these tabs';
             }
             finalItems = [
                 {
@@ -3852,7 +3779,7 @@ IMPORTANT RULES:
                 let isSelected = false;
                 if (type === 'dg') {
                     isSelected = data.id && this.selectedActionItems.has(data.id);
-                } else if (type === 'dt') {
+                } else if (type === 'dt' || type === 'ts') {
                     isSelected = data.id && this.selectedActionItems.has(data.id);
                 } else if (type === 'bg-item') {
                     if (data.type === 'bg-group') {
@@ -3887,8 +3814,8 @@ IMPORTANT RULES:
                     li.classList.add(isDelete ? 'action-selected' : 'action-selected-theme');
                 }
             }
-            let title = chrome.i18n.getMessage('omnibarNoTitle') || 'No Title',
-                url = data.url || chrome.i18n.getMessage('omnibarNoUrl') || 'No URL',
+            let title = getOmniMsg('omnibarNoTitle') || 'No Title',
+                url = data.url || getOmniMsg('omnibarNoUrl') || 'No URL',
                 // No default icon: the path this used to hold points at a file the
                 // extension does not ship, and being relative it resolved against the
                 // visited site, so every row without a favicon fetched
@@ -3943,8 +3870,8 @@ IMPORTANT RULES:
                         );
                     }
                 }
-            } else if (['tab', 'popup-tab', 'pip-tab', 'video-pip-tab', 'ae-tab', 'dt'].includes(type)) {
-                title = data.title || chrome.i18n.getMessage('omnibarUntitledTab') || 'Untitled';
+            } else if (['tab', 'popup-tab', 'pip-tab', 'video-pip-tab', 'ae-tab', 'dt', 'ts'].includes(type)) {
+                title = data.title || getOmniMsg('omnibarUntitledTab') || 'Untitled';
                 li.dataset.tabId = data.id;
                 li.dataset.windowId = data.windowId;
                 li.dataset.url = data.url;
@@ -3957,15 +3884,14 @@ IMPORTANT RULES:
                 li.dataset.url = data.url;
                 favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
             } else if (type === 'dg') {
-                title =
-                    data.title || chrome.i18n.getMessage('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
-                url = chrome.i18n.getMessage('omnibarClickDeleteGroup') || 'Click to delete group';
+                title = data.title || getOmniMsg('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
+                url = getOmniMsg('omnibarClickDeleteGroup') || 'Click to delete group';
                 favIcon = '';
                 li.dataset.groupId = data.id;
                 this._injectColorDot(li, data.color);
             } else if (type === 'inpage') {
                 title = data.snippet;
-                url = chrome.i18n.getMessage('omnibarMatchInPage') || 'Match in page';
+                url = getOmniMsg('omnibarMatchInPage') || 'Match in page';
                 favIcon = '';
                 li.dataset.matchIndex = idx;
             } else if (type === 'ai-hint') {
@@ -3977,7 +3903,7 @@ IMPORTANT RULES:
                 iconEl.innerHTML =
                     data.icon ||
                     '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>';
-                iconEl.title = chrome.i18n.getMessage('omnibarIconAI') || 'AI';
+                iconEl.title = getOmniMsg('omnibarIconAI') || 'AI';
                 iconEl.className = 'hint-omni-ai-prefix-icon';
                 li.appendChild(iconEl);
             } else if (type === 'tutorial-hint') {
@@ -3992,9 +3918,9 @@ IMPORTANT RULES:
                     li.appendChild(iconEl);
                 }
             } else if (type === 'conversation') {
-                title = data.title || chrome.i18n.getMessage('omnibarUntitledConversation') || 'Untitled conversation';
+                title = data.title || getOmniMsg('omnibarUntitledConversation') || 'Untitled conversation';
                 const dateStr = data.date ? new Date(data.date).toLocaleString() : '';
-                const hint = chrome.i18n.getMessage('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
+                const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 // The number of entries, which was being read from a name that was never
                 // declared: the exception left the whole conversation list empty.
                 const entryCount = data.entryCount ?? (data.entryIds || []).length;
@@ -4009,15 +3935,15 @@ IMPORTANT RULES:
                     'hint-omni-conv-icon',
                 );
                 iconEl.title = data.isPersistent
-                    ? chrome.i18n.getMessage('omnibarIconDatabase') || 'Saved'
-                    : chrome.i18n.getMessage('omnibarIconConversation') || 'Conversation';
+                    ? getOmniMsg('omnibarIconDatabase') || 'Saved'
+                    : getOmniMsg('omnibarIconConversation') || 'Conversation';
                 li.dataset.convTitle = data.title || '';
                 li.dataset.convEntryIds = JSON.stringify(data.entryIds || []);
                 li.style.cursor = 'default';
             } else if (type === 'image') {
-                title = data.title || chrome.i18n.getMessage('omnibarUntitledImage') || 'Untitled image';
+                title = data.title || getOmniMsg('omnibarUntitledImage') || 'Untitled image';
                 url = data.date
-                    ? chrome.i18n.getMessage('omnibarCapturedDate', [new Date(data.date).toLocaleString()]) ||
+                    ? getOmniMsg('omnibarCapturedDate', [new Date(data.date).toLocaleString()]) ||
                       `Captured: ${new Date(data.date).toLocaleString()}`
                     : '';
                 favIcon = '';
@@ -4025,7 +3951,7 @@ IMPORTANT RULES:
                     const thumb = document.createElement('img');
                     thumb.src = data.dataUrl;
                     thumb.className = 'hint-omni-img-thumb';
-                    thumb.title = chrome.i18n.getMessage('omnibarIconImage') || 'Image';
+                    thumb.title = getOmniMsg('omnibarIconImage') || 'Image';
                     li.appendChild(thumb);
                 } else {
                     const iconEl = this._injectSvgIcon(
@@ -4033,16 +3959,16 @@ IMPORTANT RULES:
                         '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill="var(--text-color)"><path d="M18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.943 1.25h.114c2.309 0 4.118 0 5.53.19 1.444.194 2.584.6 3.479 1.494.895.895 1.3 2.035 1.494 3.48.19 1.411.19 3.22.19 5.529v.088c0 1.909 0 3.471-.104 4.743-.104 1.28-.317 2.347-.795 3.235q-.314.586-.785 1.057c-.895.895-2.035 1.3-3.48 1.494-1.411.19-3.22.19-5.529.19h-.114c-2.309 0-4.118 0-5.53-.19-1.444-.194-2.584-.6-3.479-1.494-.793-.793-1.203-1.78-1.42-3.006-.215-1.203-.254-2.7-.262-4.558Q1.25 12.792 1.25 12v-.058c0-2.309 0-4.118.19-5.53.194-1.444.6-2.584 1.494-3.479.895-.895 2.035-1.3 3.48-1.494 1.411-.19 3.22-.19 5.529-.19m-5.33 1.676c-1.278.172-2.049.5-2.618 1.069-.57.57-.897 1.34-1.069 2.619-.174 1.3-.176 3.008-.176 5.386v.844l1.001-.876a2.3 2.3 0 0 1 3.141.104l4.29 4.29a2 2 0 0 0 2.564.222l.298-.21a3 3 0 0 1 3.732.225l2.83 2.547c.286-.598.455-1.384.545-2.493.098-1.205.099-2.707.099-4.653 0-2.378-.002-4.086-.176-5.386-.172-1.279-.5-2.05-1.069-2.62-.57-.569-1.34-.896-2.619-1.068-1.3-.174-3.008-.176-5.386-.176s-4.086.002-5.386.176"></path></g></svg>',
                         'hint-omni-img-placeholder',
                     );
-                    iconEl.title = chrome.i18n.getMessage('omnibarIconImage') || 'Image';
+                    iconEl.title = getOmniMsg('omnibarIconImage') || 'Image';
                 }
                 if (data.id) li.dataset.imgId = data.id;
-                li.dataset.imgTitle = data.title || chrome.i18n.getMessage('omnibarUntitledImage') || 'Imagen';
+                li.dataset.imgTitle = data.title || getOmniMsg('omnibarUntitledImage') || 'Imagen';
                 if (data.dataUrl) li.dataset.imgDataUrl = data.dataUrl;
-                const hint = chrome.i18n.getMessage('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
+                const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 url = (url ? url + ' . ' : '') + hint;
             } else if (type === 'note') {
-                title = data.title || chrome.i18n.getMessage('omnibarUntitledNote') || 'Untitled note';
-                const hint = chrome.i18n.getMessage('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
+                title = data.title || getOmniMsg('omnibarUntitledNote') || 'Untitled note';
+                const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 url = (data.date ? `${new Date(data.date).toLocaleString()} . ` : '') + hint;
                 favIcon = '';
                 const iconEl = this._injectSvgIcon(
@@ -4052,7 +3978,7 @@ IMPORTANT RULES:
                     </svg>`,
                     'hint-omni-note-icon',
                 );
-                iconEl.title = chrome.i18n.getMessage('omnibarIconNote') || 'Note';
+                iconEl.title = getOmniMsg('omnibarIconNote') || 'Note';
                 if (data.id) li.dataset.noteId = data.id;
                 if (data.content) li.dataset.noteContent = data.content;
                 if (data.plainText) li.dataset.notePlainText = data.plainText;
@@ -4064,10 +3990,10 @@ IMPORTANT RULES:
             } else if (type === 'message') {
                 title = data.query
                     ? data.query.substring(0, 60) + (data.query.length > 60 ? '...' : '')
-                    : chrome.i18n.getMessage('omnibarMessageWithoutText') || 'Message without text';
+                    : getOmniMsg('omnibarMessageWithoutText') || 'Message without text';
                 const dateStr = data.date ? new Date(data.date).toLocaleString() : '';
                 const convName = data.convTitle ? ` . ${data.convTitle.substring(0, 30)}` : '';
-                const hint = chrome.i18n.getMessage('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
+                const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 url = `${dateStr}${convName} . ${hint}`;
                 favIcon = '';
                 const iconEl = this._injectSvgIcon(
@@ -4078,8 +4004,8 @@ IMPORTANT RULES:
                     'hint-omni-msg-icon',
                 );
                 iconEl.title = data.isPersistent
-                    ? chrome.i18n.getMessage('omnibarIconDatabase') || 'Saved'
-                    : chrome.i18n.getMessage('omnibarIconMessage') || 'Message';
+                    ? getOmniMsg('omnibarIconDatabase') || 'Saved'
+                    : getOmniMsg('omnibarIconMessage') || 'Message';
                 li.dataset.msgQuery = data.query || '';
                 li.dataset.msgAnswer = data.answer || '';
                 li.style.cursor = 'default';
@@ -4283,7 +4209,7 @@ IMPORTANT RULES:
                     iconEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="var(--action-color, #3498db)"/></svg>`;
                     li.appendChild(iconEl);
                 } else {
-                    title = data.title || chrome.i18n.getMessage('omnibarUntitledTab') || 'Untitled';
+                    title = data.title || getOmniMsg('omnibarUntitledTab') || 'Untitled';
                     li.dataset.tabId = data.id;
                     li.dataset.windowId = data.windowId;
                     li.dataset.url = data.url;
@@ -4370,7 +4296,7 @@ IMPORTANT RULES:
             if (['conversation', 'note', 'image', 'message'].includes(type)) {
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'hint-omni-copy-btn';
-                copyBtn.title = chrome.i18n.getMessage('omnibarCopyBtn') || 'Copy';
+                copyBtn.title = getOmniMsg('omnibarCopyBtn') || 'Copy';
                 copyBtn.innerHTML = OMNI_COPY_SVG;
                 copyBtn.addEventListener('mousedown', (e) => e.stopPropagation());
                 copyBtn.addEventListener('click', (e) => {
@@ -4581,7 +4507,7 @@ IMPORTANT RULES:
                             (response) => {
                                 if (response && response.success) {
                                     this._showToast(
-                                        chrome.i18n.getMessage('omnibarRuleCreated', [name]) ||
+                                        getOmniMsg('omnibarRuleCreated', [name]) ||
                                             `Rule "${name}" created successfully`,
                                     );
                                 }
@@ -4617,13 +4543,9 @@ IMPORTANT RULES:
                             },
                             (res) => {
                                 if (res && res.success) {
-                                    this._showToast(
-                                        chrome.i18n.getMessage('omnibarRulesDeleted') || 'Rules deleted successfully',
-                                    );
+                                    this._showToast(getOmniMsg('omnibarRulesDeleted') || 'Rules deleted successfully');
                                 } else {
-                                    this._showToast(
-                                        chrome.i18n.getMessage('omnibarDeletedSuccessfully') || 'Deleted successfully',
-                                    );
+                                    this._showToast(getOmniMsg('omnibarDeletedSuccessfully') || 'Deleted successfully');
                                 }
                             },
                         );
@@ -4677,13 +4599,13 @@ IMPORTANT RULES:
                                     (res) => {
                                         if (res && res.success) {
                                             this._showToast(
-                                                chrome.i18n.getMessage('omnibarAddedActiveTab', [ruleName]) ||
+                                                getOmniMsg('omnibarAddedActiveTab', [ruleName]) ||
                                                     `Added active tab to rule "${ruleName}"`,
                                             );
                                         } else {
                                             this._showToast(
                                                 res?.error ||
-                                                    chrome.i18n.getMessage('omnibarFailedAddActiveTab') ||
+                                                    getOmniMsg('omnibarFailedAddActiveTab') ||
                                                     'Failed to add active tab to rule',
                                             );
                                         }
@@ -4691,8 +4613,7 @@ IMPORTANT RULES:
                                 );
                             } else {
                                 this._showToast(
-                                    chrome.i18n.getMessage('omnibarFailedRetrieveActiveTab') ||
-                                        'Failed to retrieve active tab URL',
+                                    getOmniMsg('omnibarFailedRetrieveActiveTab') || 'Failed to retrieve active tab URL',
                                 );
                             }
                         },
@@ -4720,7 +4641,7 @@ IMPORTANT RULES:
                     }
                     if (invalidUrls.length > 0) {
                         this._showToast(
-                            chrome.i18n.getMessage('omnibarInvalidUrlFormat', [invalidUrls.join(', ')]) ||
+                            getOmniMsg('omnibarInvalidUrlFormat', [invalidUrls.join(', ')]) ||
                                 `Invalid: ${invalidUrls.join(', ')}`,
                         );
                     }
@@ -4734,15 +4655,13 @@ IMPORTANT RULES:
                             (res) => {
                                 if (res && res.success) {
                                     this._showToast(
-                                        chrome.i18n.getMessage('omnibarAddedUrlsToRule', [
+                                        getOmniMsg('omnibarAddedUrlsToRule', [
                                             validatedUrls.length.toString(),
                                             ruleName,
                                         ]) || `Added ${validatedUrls.length} URLs to "${ruleName}"`,
                                     );
                                 } else {
-                                    this._showToast(
-                                        res?.error || chrome.i18n.getMessage('omnibarFailedAddUrls') || 'Failed',
-                                    );
+                                    this._showToast(res?.error || getOmniMsg('omnibarFailedAddUrls') || 'Failed');
                                 }
                             },
                         );
@@ -4775,13 +4694,13 @@ IMPORTANT RULES:
                                 (res) => {
                                     if (res && res.success) {
                                         this._showToast(
-                                            chrome.i18n.getMessage('omnibarRuleRenamed', [li.dataset.newName]) ||
+                                            getOmniMsg('omnibarRuleRenamed', [li.dataset.newName]) ||
                                                 `Rule renamed to "${li.dataset.newName}"`,
                                         );
                                     } else {
                                         this._showToast(
                                             res?.error ||
-                                                chrome.i18n.getMessage('omnibarFailedRenameRule') ||
+                                                getOmniMsg('omnibarFailedRenameRule') ||
                                                 'Failed to rename rule',
                                         );
                                     }
@@ -4798,13 +4717,12 @@ IMPORTANT RULES:
                                 (res) => {
                                     if (res && res.success) {
                                         this._showToast(
-                                            chrome.i18n.getMessage('omnibarRuleUrlUpdated') ||
-                                                'Rule URL updated successfully',
+                                            getOmniMsg('omnibarRuleUrlUpdated') || 'Rule URL updated successfully',
                                         );
                                     } else {
                                         this._showToast(
                                             res?.error ||
-                                                chrome.i18n.getMessage('omnibarFailedUpdateRuleUrl') ||
+                                                getOmniMsg('omnibarFailedUpdateRuleUrl') ||
                                                 'Failed to update rule URL',
                                         );
                                     }
@@ -4836,9 +4754,7 @@ IMPORTANT RULES:
                             },
                             (res) => {
                                 if (res && res.success) {
-                                    this._showToast(
-                                        chrome.i18n.getMessage('omnibarRulesDeleted') || 'Rules deleted successfully',
-                                    );
+                                    this._showToast(getOmniMsg('omnibarRulesDeleted') || 'Rules deleted successfully');
                                 }
                             },
                         );
@@ -4851,8 +4767,7 @@ IMPORTANT RULES:
                             (response) => {
                                 if (response && response.success) {
                                     this._showToast(
-                                        chrome.i18n.getMessage('omnibarGroupsBackedUp') ||
-                                            'Groups backed up successfully',
+                                        getOmniMsg('omnibarGroupsBackedUp') || 'Groups backed up successfully',
                                     );
                                 } else {
                                     this._showToast(response?.error || 'Failed to backup groups');
@@ -4868,7 +4783,7 @@ IMPORTANT RULES:
                             (response) => {
                                 if (response && response.success) {
                                     this._showToast(
-                                        chrome.i18n.getMessage('omnibarGroupsRestored', [ids.length.toString()]) ||
+                                        getOmniMsg('omnibarGroupsRestored', [ids.length.toString()]) ||
                                             `Restoring ${ids.length} backup(s)`,
                                     );
                                 } else {
@@ -4906,6 +4821,14 @@ IMPORTANT RULES:
                         });
                         this.close();
                     });
+                } else if (type === 'ts') {
+                    this._handleMultiSelectionClick(e, li, (ids) => {
+                        chrome.runtime.sendMessage({
+                            action: 'toggleSplitScreen',
+                            tabIds: ids,
+                        });
+                        this.close();
+                    });
                 } else if (type === 'bg-item') {
                     const currentInput = this.shadow.getElementById('hint-omni-input').value;
                     const pBgClick = this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc');
@@ -4919,8 +4842,7 @@ IMPORTANT RULES:
                                 (response) => {
                                     if (response && response.success) {
                                         this._showToast(
-                                            chrome.i18n.getMessage('omnibarGroupsBackedUp') ||
-                                                'Groups backed up successfully',
+                                            getOmniMsg('omnibarGroupsBackedUp') || 'Groups backed up successfully',
                                         );
                                     } else {
                                         this._showToast(response?.error || 'Failed to backup group');
@@ -4960,7 +4882,7 @@ IMPORTANT RULES:
                                     (response) => {
                                         if (response && response.success) {
                                             this._showToast(
-                                                chrome.i18n.getMessage('omnibarGroupsRestored', [
+                                                getOmniMsg('omnibarGroupsRestored', [
                                                     groupIdsToRestore.length.toString(),
                                                 ]) || `Restoring ${groupIdsToRestore.length} backup(s)`,
                                             );
@@ -5075,7 +4997,7 @@ IMPORTANT RULES:
                     return item.dataset.bgType === 'bg-group'
                         ? parseInt(item.dataset.groupId)
                         : `${item.dataset.groupId}::${item.dataset.tabUrl}`;
-                if (itemType === 'dt') return parseInt(item.dataset.tabId);
+                if (itemType === 'dt' || itemType === 'ts') return parseInt(item.dataset.tabId);
                 return item.dataset.actionId;
             };
             if (this.selectedActionItems.size > 0) {
@@ -5103,7 +5025,7 @@ IMPORTANT RULES:
                 } else {
                     return `${item.dataset.groupId}::${item.dataset.tabUrl}`;
                 }
-            } else if (itemType === 'dt') {
+            } else if (itemType === 'dt' || itemType === 'ts') {
                 return parseInt(item.dataset.tabId);
             } else {
                 return item.dataset.actionId;
@@ -5175,7 +5097,7 @@ IMPORTANT RULES:
             const counter = this.shadow.getElementById('hint-omni-counter');
             if (counter)
                 counter.textContent =
-                    chrome.i18n.getMessage('omnibarSearchCounter', [
+                    getOmniMsg('omnibarSearchCounter', [
                         (this.selectedIndex + 1).toString(),
                         this.matches.length.toString(),
                     ]) || `${this.selectedIndex + 1}/${this.matches.length}`;

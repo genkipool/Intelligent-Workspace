@@ -377,6 +377,14 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._send('swapToPreviousTab'),
                 description: 'hintDesc_s',
             },
+            ts: {
+                action: () =>
+                    chrome.runtime.sendMessage({
+                        action: 'toggleSplitScreen',
+                        url: window.location.href,
+                    }),
+                description: 'hintDesc_ts',
+            },
             i: {
                 action: () => this._focusFirstInput(),
                 description: 'hintDesc_i',

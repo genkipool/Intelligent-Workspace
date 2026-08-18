@@ -112,10 +112,16 @@ var ScrollManager = class ScrollManager {
  * @description Core logic for generating and activating hints.
  */
 
-/**
- * @class HelpModal
- * @description Now uses HintCommon for data management, sharing validation and saving with customize_hints.
- */
+function getHintI18nMsg(key, fallback = '') {
+    if (typeof HintCommon !== 'undefined' && HintCommon?.i18n?.getMessage) {
+        return HintCommon.i18n.getMessage(key, fallback);
+    }
+    if (typeof chrome !== 'undefined' && chrome.i18n?.getMessage) {
+        return chrome.i18n.getMessage(key) || fallback || key;
+    }
+    return fallback || key;
+}
+
 /**
  * @class HelpModal
  */
@@ -126,6 +132,20 @@ var HelpModal = class HelpModal {
         this.snippetManager = snippetManager;
         this.linkPreviewManager = linkPreviewManager;
         this.visible = false;
+
+        if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area === 'local' && changes['preferred-language'] && this.visible) {
+                    HintCommon?.i18n?.loadMessages(true).then(() => {
+                        const container = this.shadowUI.getContainer();
+                        if (container) {
+                            this._applyI18n(container);
+                            this._refreshUI();
+                        }
+                    });
+                }
+            });
+        }
     }
     updateLinkPreviewToggle(enabled) {
         // Deprecated: UI toggle removed.
@@ -149,6 +169,13 @@ var HelpModal = class HelpModal {
         }
     }
     async toggle() {
+        if (HintCommon?.i18n) {
+            await HintCommon.i18n.loadMessages();
+        }
+        const getMsg = (key, fallback) =>
+            HintCommon?.i18n?.getMessage
+                ? HintCommon.i18n.getMessage(key, fallback)
+                : chrome.i18n.getMessage(key) || fallback || key;
         const h = HintCommon.DOM.create;
         const modalId = 'hint-help-modal';
         const shadowRoot = this.shadowUI.getContainer();
@@ -249,7 +276,7 @@ var HelpModal = class HelpModal {
                 'data-i18n': 'helpModalTitle',
                 style: 'margin: 0;',
             },
-            chrome.i18n.getMessage('helpModalTitle') || 'Navigation Shortcuts',
+            getMsg('helpModalTitle', 'Navigation Shortcuts'),
         );
         headerContainer.appendChild(titleEl);
         body.appendChild(headerContainer);
@@ -263,7 +290,8 @@ var HelpModal = class HelpModal {
             type: 'search',
             id: 'help-modal-search-input',
             className: 'help-modal-search-input',
-            placeholder: chrome.i18n.getMessage('searchCommandsPlaceholder') || 'Search commands...',
+            'data-i18n-placeholder': 'searchCommandsPlaceholder',
+            placeholder: getMsg('searchCommandsPlaceholder', 'Search commands...'),
             autocomplete: 'off',
             spellcheck: 'false',
         });
@@ -275,9 +303,9 @@ var HelpModal = class HelpModal {
         const builtInCategories = HintCommon.BUILT_IN_COMMANDS;
         for (const catKey in builtInCategories) {
             if (catKey === 'categoryOmnibarPrefixes') continue;
-            const catName = chrome.i18n.getMessage(catKey) || catKey.replace(/([A-Z])/g, ' $1').trim();
+            const catName = getMsg(catKey, catKey.replace(/([A-Z])/g, ' $1').trim());
             const cleanCat = catKey.replace('category', '').toLowerCase();
-            body.appendChild(h('h3', {}, catName));
+            body.appendChild(h('h3', { 'data-i18n': catKey }, catName));
             const table = h('table');
             body.appendChild(table);
             const commands = builtInCategories[catKey];
@@ -288,17 +316,17 @@ var HelpModal = class HelpModal {
                 if (activeKey) {
                     currentKey = activeKey;
                 }
-                const description = chrome.i18n.getMessage(descKey) || descKey;
+                const description = getMsg(descKey, descKey);
                 let cellContentNode;
                 if (currentKey === 'f') {
-                    const hintLabel = chrome.i18n.getMessage('hintKeyDefault') || 'Hint';
+                    const hintLabel = getMsg('hintKeyDefault', 'Hint');
                     cellContentNode = h(
                         'div',
                         {
                             className: 'itg-internal-desc-container',
                         },
                         [
-                            h('strong', {}, description),
+                            h('strong', { 'data-i18n': descKey }, description),
                             h(
                                 'table',
                                 {
@@ -310,13 +338,16 @@ var HelpModal = class HelpModal {
                                             'td',
                                             {
                                                 className: 'itg-internal-desc-key',
+                                                'data-i18n': 'hintKeyDefault',
                                             },
                                             hintLabel,
                                         ),
                                         h(
                                             'td',
-                                            {},
-                                            chrome.i18n.getMessage('hintClickDesc') || 'Open link in current tab',
+                                            {
+                                                'data-i18n': 'hintClickDesc',
+                                            },
+                                            getMsg('hintClickDesc', 'Open link in current tab'),
                                         ),
                                     ]),
                                     h('tr', {}, [
@@ -329,9 +360,10 @@ var HelpModal = class HelpModal {
                                         ),
                                         h(
                                             'td',
-                                            {},
-                                            chrome.i18n.getMessage('hintNewTabDesc') ||
-                                                'Open link in new tab (Background)',
+                                            {
+                                                'data-i18n': 'hintNewTabDesc',
+                                            },
+                                            getMsg('hintNewTabDesc', 'Open link in new tab (Background)'),
                                         ),
                                     ]),
                                     h('tr', {}, [
@@ -344,8 +376,10 @@ var HelpModal = class HelpModal {
                                         ),
                                         h(
                                             'td',
-                                            {},
-                                            chrome.i18n.getMessage('hintNewWindowDesc') || 'Open link in new window',
+                                            {
+                                                'data-i18n': 'hintNewWindowDesc',
+                                            },
+                                            getMsg('hintNewWindowDesc', 'Open link in new window'),
                                         ),
                                     ]),
                                 ],
@@ -353,14 +387,14 @@ var HelpModal = class HelpModal {
                         ],
                     );
                 } else if (currentKey === 'cf') {
-                    const hintLabel = chrome.i18n.getMessage('hintKeyDefault') || 'Hint';
+                    const hintLabel = getMsg('hintKeyDefault', 'Hint');
                     cellContentNode = h(
                         'div',
                         {
                             className: 'itg-internal-desc-container',
                         },
                         [
-                            h('strong', {}, description),
+                            h('strong', { 'data-i18n': descKey }, description),
                             h(
                                 'table',
                                 {
@@ -372,10 +406,15 @@ var HelpModal = class HelpModal {
                                             'td',
                                             {
                                                 className: 'itg-internal-desc-key',
+                                                'data-i18n': 'hintKeyDefault',
                                             },
                                             hintLabel,
                                         ),
-                                        h('td', {}, chrome.i18n.getMessage('hintCopyUrlDesc') || 'Copy link URL'),
+                                        h(
+                                            'td',
+                                            { 'data-i18n': 'hintCopyUrlDesc' },
+                                            getMsg('hintCopyUrlDesc', 'Copy link URL'),
+                                        ),
                                     ]),
                                     h('tr', {}, [
                                         h(
@@ -385,7 +424,11 @@ var HelpModal = class HelpModal {
                                             },
                                             `Shift + ${hintLabel}`,
                                         ),
-                                        h('td', {}, chrome.i18n.getMessage('hintCopyTextDesc') || 'Copy item text'),
+                                        h(
+                                            'td',
+                                            { 'data-i18n': 'hintCopyTextDesc' },
+                                            getMsg('hintCopyTextDesc', 'Copy item text'),
+                                        ),
                                     ]),
                                 ],
                             ),
@@ -410,6 +453,7 @@ var HelpModal = class HelpModal {
                     'td',
                     {
                         className: 'itg-description-cell',
+                        'data-i18n': descKey,
                     },
                     cellContentNode,
                 );
@@ -485,9 +529,10 @@ var HelpModal = class HelpModal {
                         {
                             className: 'itg-description-cell',
                             style: 'padding: 8px; vertical-align: middle;',
-                            title: chrome.i18n.getMessage('previewTriggerKeyTooltip') || '',
+                            'data-i18n-title': 'previewTriggerKeyTooltip',
+                            title: getMsg('previewTriggerKeyTooltip', ''),
                         },
-                        chrome.i18n.getMessage('previewTriggerKeyLabel') || 'Hold key to preview link:',
+                        getMsg('previewTriggerKeyLabel', 'Hold key to preview link:'),
                     );
                     trTrigger.appendChild(tdInput);
                     trTrigger.appendChild(tdDesc);
@@ -497,8 +542,8 @@ var HelpModal = class HelpModal {
         }
 
         // --- OMNIBAR SECTION CORRECTION ---
-        const omnibarCat = chrome.i18n.getMessage('categoryOmnibarPrefixes') || 'Omnibar Prefixes';
-        body.appendChild(h('h3', {}, omnibarCat));
+        const omnibarCat = getMsg('categoryOmnibarPrefixes', 'Omnibar Prefixes');
+        body.appendChild(h('h3', { 'data-i18n': 'categoryOmnibarPrefixes' }, omnibarCat));
         const omnibarTable = h('table');
         body.appendChild(omnibarTable);
         const omnibarCommands = builtInCategories.categoryOmnibarPrefixes || {};
@@ -519,7 +564,7 @@ var HelpModal = class HelpModal {
                 },
                 currentPref,
             );
-            const tdDesc = h('td', {}, chrome.i18n.getMessage(msgKey) || msgKey);
+            const tdDesc = h('td', { 'data-i18n': msgKey }, getMsg(msgKey, msgKey));
             omnibarTable.appendChild(h('tr', {}, [tdKey, tdDesc]));
         }
 
@@ -542,7 +587,11 @@ var HelpModal = class HelpModal {
                         className: 'itg-manage-header',
                     },
                     [
-                        h('h3', {}, chrome.i18n.getMessage('manageSiteShortcuts') || 'Manage Site Shortcuts'),
+                        h(
+                            'h3',
+                            { 'data-i18n': 'manageSiteShortcuts' },
+                            getMsg('manageSiteShortcuts', 'Manage Site Shortcuts'),
+                        ),
                         pinBtnSites,
                     ],
                 ),
@@ -557,21 +606,24 @@ var HelpModal = class HelpModal {
                             id: 'itg-new-site-key',
                             className: 'itg-manage-input',
                             maxlength: '4',
-                            placeholder: chrome.i18n.getMessage('placeholderKey') || 'Key',
+                            'data-i18n-placeholder': 'placeholderKey',
+                            placeholder: getMsg('placeholderKey', 'Key'),
                             autocomplete: 'off',
                         }),
                         h('input', {
                             type: 'text',
                             id: 'itg-new-site-url',
                             className: 'itg-manage-input',
-                            placeholder: chrome.i18n.getMessage('placeholderUrl') || 'URL',
+                            'data-i18n-placeholder': 'placeholderUrl',
+                            placeholder: getMsg('placeholderUrl', 'URL'),
                             autocomplete: 'off',
                         }),
                         h('input', {
                             type: 'text',
                             id: 'itg-new-site-desc',
                             className: 'itg-manage-input',
-                            placeholder: chrome.i18n.getMessage('placeholderDesc') || 'Description',
+                            'data-i18n-placeholder': 'placeholderDesc',
+                            placeholder: getMsg('placeholderDesc', 'Description'),
                             autocomplete: 'off',
                         }),
                         h(
@@ -579,8 +631,9 @@ var HelpModal = class HelpModal {
                             {
                                 id: 'itg-add-site-btn',
                                 className: 'itg-manage-btn-add',
+                                'data-i18n': 'addBtn',
                             },
-                            chrome.i18n.getMessage('addBtn') || '+',
+                            getMsg('addBtn', '+'),
                         ),
                     ],
                 ),
@@ -609,7 +662,11 @@ var HelpModal = class HelpModal {
                         className: 'itg-manage-header',
                     },
                     [
-                        h('h3', {}, chrome.i18n.getMessage('manageSnippets') || 'Manage Snippets (Autocomplete)'),
+                        h(
+                            'h3',
+                            { 'data-i18n': 'manageSnippets' },
+                            getMsg('manageSnippets', 'Manage Snippets (Autocomplete)'),
+                        ),
                         pinBtnSnippets,
                     ],
                 ),
@@ -629,7 +686,8 @@ var HelpModal = class HelpModal {
                             id: 'itg-new-snippet-trigger',
                             className: 'itg-manage-input',
                             maxlength: '5',
-                            placeholder: chrome.i18n.getMessage('placeholderKey') || 'Trigger',
+                            'data-i18n-placeholder': 'placeholderKey',
+                            placeholder: getMsg('placeholderKey', 'Trigger'),
                             autocomplete: 'off',
                             style: 'width: 80px;',
                         }),
@@ -645,13 +703,15 @@ var HelpModal = class HelpModal {
                                     className: 'itg-manage-input',
                                     contenteditable: 'true',
                                     style: 'flex: 1; min-height:32px; height:auto; max-height:96px; padding:6px 8px; display:block; overflow-y:auto; overflow-x:hidden; white-space:pre-wrap; word-break:break-word; overflow-wrap:break-word; line-height:1.4;',
-                                    'data-placeholder': chrome.i18n.getMessage('placeholderExpansion') || 'Expansion',
+                                    'data-placeholder': getMsg('placeholderExpansion', 'Expansion'),
+                                    'data-i18n-placeholder': 'placeholderExpansion',
                                 }),
                                 h('button', {
                                     id: 'itg-snippet-format-btn',
                                     className: 'itg-hint-format-btn',
                                     type: 'button',
-                                    title: chrome.i18n.getMessage('formatText') || 'Format text',
+                                    'data-i18n-title': 'formatText',
+                                    title: getMsg('formatText', 'Format text'),
                                 }),
                             ],
                         ),
@@ -717,8 +777,9 @@ var HelpModal = class HelpModal {
                             'h3',
                             {
                                 className: 'itg-section-title',
+                                'data-i18n': 'managePreviewBlacklistTitle',
                             },
-                            chrome.i18n.getMessage('managePreviewBlacklistTitle') || 'Link Preview Blacklist',
+                            getMsg('managePreviewBlacklistTitle', 'Link Preview Blacklist'),
                         ),
                     ],
                 ),
@@ -734,7 +795,8 @@ var HelpModal = class HelpModal {
                             id: 'itg-new-blacklist-domain',
                             className: 'itg-manage-input',
                             style: 'flex: 1;',
-                            placeholder: chrome.i18n.getMessage('placeholderDomain') || 'e.g. youtube.com',
+                            'data-i18n-placeholder': 'placeholderDomain',
+                            placeholder: getMsg('placeholderDomain', 'e.g. youtube.com'),
                         }),
                         h(
                             'button',
@@ -760,7 +822,7 @@ var HelpModal = class HelpModal {
                 id: 'itg-reset-shortcuts',
                 'data-i18n': 'resetDefaults',
             },
-            chrome.i18n.getMessage('resetDefaults') || 'Reset to Defaults',
+            getMsg('resetDefaults', 'Reset to Defaults'),
         );
         const footerHint = h(
             'p',
@@ -768,7 +830,7 @@ var HelpModal = class HelpModal {
                 className: 'itg-help-footer-hint',
                 'data-i18n': 'helpModalCloseHint',
             },
-            chrome.i18n.getMessage('helpModalCloseHint') || 'Press Shift+? or Esc to close',
+            getMsg('helpModalCloseHint', 'Press Shift+? or Esc to close'),
         );
         footer.appendChild(resetBtn);
         footer.appendChild(footerHint);
@@ -1064,27 +1126,30 @@ var HelpModal = class HelpModal {
                 this._refreshUI();
             });
         }
-        if (chrome.i18n && chrome.i18n.getMessage) {
-            modal
-                .querySelectorAll('[data-i18n], [data-i18n-title], [data-i18n-placeholder], [data-i18n-aria-label]')
-                .forEach((el) => {
-                    if (el.dataset.i18n) {
-                        el.textContent = chrome.i18n.getMessage(el.dataset.i18n) || el.textContent;
-                    }
-                    if (el.dataset.i18nTitle) {
-                        el.title = chrome.i18n.getMessage(el.dataset.i18nTitle) || el.title;
-                    }
-                    if (el.dataset.i18nPlaceholder) {
-                        el.placeholder = chrome.i18n.getMessage(el.dataset.i18nPlaceholder) || el.placeholder;
-                    }
-                    if (el.dataset.i18nAriaLabel) {
-                        el.setAttribute(
-                            'aria-label',
-                            chrome.i18n.getMessage(el.dataset.i18nAriaLabel) || el.getAttribute('aria-label'),
-                        );
-                    }
-                });
-        }
+        this._applyI18n(modal);
+    }
+
+    _applyI18n(container) {
+        if (!container) return;
+        container
+            .querySelectorAll('[data-i18n], [data-i18n-title], [data-i18n-placeholder], [data-i18n-aria-label]')
+            .forEach((el) => {
+                if (el.dataset.i18n) {
+                    el.textContent = getHintI18nMsg(el.dataset.i18n, el.textContent);
+                }
+                if (el.dataset.i18nTitle) {
+                    el.title = getHintI18nMsg(el.dataset.i18nTitle, el.title);
+                }
+                if (el.dataset.i18nPlaceholder) {
+                    el.placeholder = getHintI18nMsg(el.dataset.i18nPlaceholder, el.placeholder);
+                }
+                if (el.dataset.i18nAriaLabel) {
+                    el.setAttribute(
+                        'aria-label',
+                        getHintI18nMsg(el.dataset.i18nAriaLabel, el.getAttribute('aria-label') || ''),
+                    );
+                }
+            });
     }
 
     // SAVE LISTENER CORRECTION
@@ -1245,7 +1310,7 @@ var HelpModal = class HelpModal {
                                 'button',
                                 {
                                     className: 'itg-manage-btn-delete',
-                                    title: chrome.i18n.getMessage('removeBtnTitle') || 'Remove',
+                                    title: getHintI18nMsg('removeBtnTitle', 'Remove'),
                                 },
                                 'x',
                             ),
@@ -1326,7 +1391,7 @@ var HelpModal = class HelpModal {
                             contenteditable: 'true',
                             'data-prop': 'keys',
                             'data-category': 'custom-site',
-                            title: chrome.i18n.getMessage('placeholderKey') || 'Key',
+                            title: getHintI18nMsg('placeholderKey', 'Key'),
                         }),
                         h('span', {
                             className: 'itg-manage-item-desc',
@@ -1338,7 +1403,7 @@ var HelpModal = class HelpModal {
                             contenteditable: 'true',
                             'data-prop': 'description',
                             spellcheck: 'true',
-                            title: chrome.i18n.getMessage('placeholderDesc') || 'Description',
+                            title: getHintI18nMsg('placeholderDesc', 'Description'),
                         }),
                         h(
                             'button',
@@ -1465,7 +1530,7 @@ var HelpModal = class HelpModal {
                 const expFormatBtn = h('button', {
                     className: 'itg-hint-format-btn itg-snippet-item-format-btn',
                     type: 'button',
-                    title: chrome.i18n.getMessage('formatText') || 'Format text',
+                    title: getHintI18nMsg('formatText', 'Format text'),
                 });
                 expFormatBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M840 192h-56v-72c0-13.3-10.7-24-24-24H168c-13.3 0-24 10.7-24 24v272c0 13.3 10.7 24 24 24h592c13.3 0 24-10.7 24-24V256h32v200H465c-22.1 0-40 17.9-40 40v136h-44c-4.4 0-8 3.6-8 8v228c0 .6.1 1.3.2 1.9-.1 2-.2 4.1-.2 6.1 0 46.4 37.6 84 84 84s84-37.6 84-84c0-2.1-.1-4.1-.2-6.1.1-.6.2-1.2.2-1.9V640c0-4.4-3.6-8-8-8h-44V520h351c22.1 0 40-17.9 40-40V232c0-22.1-17.9-40-40-40M720 352H208V160h512zM477 876c0 11-9 20-20 20s-20-9-20-20V696h40z" fill="currentColor"/></svg>`;
                 const expWrapper = h('div', {
@@ -1491,7 +1556,7 @@ var HelpModal = class HelpModal {
                             'button',
                             {
                                 className: 'itg-manage-btn-delete',
-                                title: chrome.i18n.getMessage('deleteSnippetTooltip') || 'Delete snippet',
+                                title: getHintI18nMsg('deleteSnippetTooltip', 'Delete snippet'),
                             },
                             'x',
                         ),
@@ -1514,7 +1579,7 @@ var HelpModal = class HelpModal {
                     if (isExpanded) {
                         itemInlineEditor.classList.remove('itg-inline-editor-expanded');
                         expFormatBtn.classList.remove('itg-format-btn-active');
-                        if (delBtn) delBtn.title = chrome.i18n.getMessage('deleteSnippetTooltip') || 'Delete snippet';
+                        if (delBtn) delBtn.title = getHintI18nMsg('deleteSnippetTooltip', 'Delete snippet');
                     } else {
                         HintCommon.RichTextFormatter.showInline(itemInlineEditor, expSpanEl, async (formattedHtml) => {
                             expSpanEl.dataset.html = formattedHtml;
@@ -1523,15 +1588,15 @@ var HelpModal = class HelpModal {
                             expSpanEl.dispatchEvent(new Event('blur'));
                             itemInlineEditor.classList.remove('itg-inline-editor-expanded');
                             expFormatBtn.classList.remove('itg-format-btn-active');
-                            if (delBtn)
-                                delBtn.title = chrome.i18n.getMessage('deleteSnippetTooltip') || 'Delete snippet';
+                            if (delBtn) delBtn.title = getHintI18nMsg('deleteSnippetTooltip', 'Delete snippet');
                         });
                         itemInlineEditor.classList.add('itg-inline-editor-expanded');
                         expFormatBtn.classList.add('itg-format-btn-active');
                         if (delBtn)
-                            delBtn.title =
-                                chrome.i18n.getMessage('closeFormatNoApplyTooltip') ||
-                                'Close text formatting without applying changes';
+                            delBtn.title = getHintI18nMsg(
+                                'closeFormatNoApplyTooltip',
+                                'Close text formatting without applying changes',
+                            );
                     }
                 });
                 const varsContainer = h('div', {
@@ -1547,20 +1612,20 @@ var HelpModal = class HelpModal {
                             h('input', {
                                 className: 'var-id',
                                 maxlength: '3',
-                                title: chrome.i18n.getMessage('varIdLabel') || 'ID',
-                                placeholder: chrome.i18n.getMessage('varIdLabel') || 'ID',
+                                title: getHintI18nMsg('varIdLabel', 'ID'),
+                                placeholder: getHintI18nMsg('varIdLabel', 'ID'),
                             }),
                             h('input', {
                                 className: 'var-name',
                                 maxlength: '50',
-                                title: chrome.i18n.getMessage('varWordLabel') || 'Word',
-                                placeholder: chrome.i18n.getMessage('varWordLabel') || 'Word',
+                                title: getHintI18nMsg('varWordLabel', 'Word'),
+                                placeholder: getHintI18nMsg('varWordLabel', 'Word'),
                             }),
                             h('input', {
                                 className: 'var-value',
                                 maxlength: '1000',
-                                title: chrome.i18n.getMessage('varDefaultLabel') || 'Default',
-                                placeholder: chrome.i18n.getMessage('placeholderDefaultValue') || 'Default',
+                                title: getHintI18nMsg('varDefaultLabel', 'Default'),
+                                placeholder: getHintI18nMsg('placeholderDefaultValue', 'Default'),
                             }),
                         ],
                     );
@@ -1587,7 +1652,7 @@ var HelpModal = class HelpModal {
                     min: '0',
                     max: '50',
                     value: variables.length.toString(),
-                    title: chrome.i18n.getMessage('variableCountTitle') || 'Number of variables',
+                    title: getHintI18nMsg('variableCountTitle', 'Number of variables'),
                     style: 'width: 50px; text-align: center; margin-left: 8px;',
                 });
                 countInput.addEventListener('change', () => {
@@ -1628,22 +1693,22 @@ var HelpModal = class HelpModal {
                                 h('input', {
                                     className: 'var-id',
                                     maxlength: '3',
-                                    title: chrome.i18n.getMessage('varIdLabel') || 'ID',
-                                    placeholder: chrome.i18n.getMessage('varIdLabel') || 'ID',
+                                    title: getHintI18nMsg('varIdLabel', 'ID'),
+                                    placeholder: getHintI18nMsg('varIdLabel', 'ID'),
                                     value: v.id,
                                 }),
                                 h('input', {
                                     className: 'var-name',
                                     maxlength: '50',
-                                    title: chrome.i18n.getMessage('varWordLabel') || 'Word',
-                                    placeholder: chrome.i18n.getMessage('varWordLabel') || 'Word',
+                                    title: getHintI18nMsg('varWordLabel', 'Word'),
+                                    placeholder: getHintI18nMsg('varWordLabel', 'Word'),
                                     value: v.word,
                                 }),
                                 h('input', {
                                     className: 'var-value',
                                     maxlength: '1000',
-                                    title: chrome.i18n.getMessage('varDefaultLabel') || 'Default',
-                                    placeholder: chrome.i18n.getMessage('varDefaultLabel') || 'Default',
+                                    title: getHintI18nMsg('varDefaultLabel', 'Default'),
+                                    placeholder: getHintI18nMsg('varDefaultLabel', 'Default'),
                                     value: v.defaultValue || '',
                                 }),
                             ],
@@ -1757,7 +1822,7 @@ var HelpModal = class HelpModal {
                     // Close the format section without applying
                     itemInlineEditor.classList.remove('itg-inline-editor-expanded');
                     if (expFormatBtn) expFormatBtn.classList.remove('itg-format-btn-active');
-                    delBtn.title = chrome.i18n.getMessage('deleteSnippetTooltip') || 'Delete snippet';
+                    delBtn.title = getHintI18nMsg('deleteSnippetTooltip', 'Delete snippet');
                     return;
                 }
                 // Otherwise, delete the snippet
@@ -2049,7 +2114,7 @@ var HelpModal = class HelpModal {
                                 type: 'text',
                                 className: 'itg-manage-input itg-var-word',
                                 value: data.word,
-                                placeholder: chrome.i18n.getMessage('placeholderVarWord') || 'Word in text',
+                                placeholder: getHintI18nMsg('placeholderVarWord', 'Word in text'),
                                 maxlength: '50',
                                 style: 'flex: 1;',
                             }),
@@ -2057,7 +2122,7 @@ var HelpModal = class HelpModal {
                                 type: 'text',
                                 className: 'itg-manage-input itg-var-default',
                                 value: data.def,
-                                placeholder: chrome.i18n.getMessage('placeholderVarDefault') || 'Default value',
+                                placeholder: getHintI18nMsg('placeholderVarDefault', 'Default value'),
                                 maxlength: '1000',
                                 style: 'flex: 1;',
                             }),
@@ -2104,8 +2169,7 @@ var HelpModal = class HelpModal {
                 let finalErrorMessage = null;
                 let hasError = false;
                 if (!trigger || !expansion) {
-                    finalErrorMessage =
-                        chrome.i18n.getMessage('errorEmptyFields') || 'Please fill trigger and expansion';
+                    finalErrorMessage = getHintI18nMsg('errorEmptyFields', 'Please fill trigger and expansion');
                     hasError = true;
                     if (!trigger) triggerInput.classList.add('itg-input-error');
                 }
@@ -2117,7 +2181,7 @@ var HelpModal = class HelpModal {
                     if (HintCommon.isKeyInUse(trigger, 'snippet', null, context)) {
                         hasError = true;
                         triggerInput.classList.add('itg-input-error');
-                        finalErrorMessage = chrome.i18n.getMessage('errorTriggerTaken') || 'Trigger already in use';
+                        finalErrorMessage = getHintI18nMsg('errorTriggerTaken', 'Trigger already in use');
                     } else {
                         const variables = [];
                         const rows = varsContainer.querySelectorAll('div');
@@ -2134,9 +2198,9 @@ var HelpModal = class HelpModal {
                                 if (errorKey) {
                                     input.style.borderColor = 'var(--error-color, red)';
                                     input.classList.add('itg-input-error');
-                                    input.title = chrome.i18n.getMessage(errorKey);
+                                    input.title = getHintI18nMsg(errorKey);
                                     if (!finalErrorMessage) {
-                                        finalErrorMessage = chrome.i18n.getMessage(errorKey);
+                                        finalErrorMessage = getHintI18nMsg(errorKey);
                                     }
                                 } else {
                                     input.style.borderColor = '';
@@ -2164,9 +2228,10 @@ var HelpModal = class HelpModal {
                         if (varsError) {
                             hasError = true;
                             if (!finalErrorMessage) {
-                                finalErrorMessage =
-                                    chrome.i18n.getMessage('errorSnippetIncomplete') ||
-                                    'Please check the highlighted fields';
+                                finalErrorMessage = getHintI18nMsg(
+                                    'errorSnippetIncomplete',
+                                    'Please check the highlighted fields',
+                                );
                             }
                         }
                         if (!hasError) {
@@ -2291,6 +2356,7 @@ var HelpModal = class HelpModal {
         const body = container.getElementById('itg-help-body');
         this._renderCustomSites(body);
         this._renderSnippets(body);
+        this._applyI18n(container);
     }
     cleanup() {
         if (this._modalKeyHandler) {

@@ -19,7 +19,7 @@
     import { handleScreenshotRequest, withTabActivation } from '../../services/screenshotsService.js';
     import { loadSplitScreenState } from '../../services/settingsService.js';
     import { prefetchUrl } from '../../services/prefetchService.js';
-    import { dataUrlToBlob, animateAndRemove } from '../../services/utils.js';
+    import { dataUrlToBlob, animateAndRemove, correctFaviconUrl } from '../../services/utils.js';
     import TabActions from './TabActions.svelte';
 
     let { tab, isBackup = false, groupContext = {}, renderContext = {}, subgroupContext = null } = $props();
@@ -40,7 +40,7 @@
     let faviconUrl = $derived(
         !tab.favIconUrl || tab.favIconUrl.startsWith('chrome://') || tab.favIconUrl.startsWith('about:')
             ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=16`
-            : tab.favIconUrl,
+            : correctFaviconUrl(tab.favIconUrl),
     );
 
     let displayTitle = $derived.by(() => {
@@ -366,7 +366,17 @@
     data-window-id={tab.windowId}
     data-url={tab.url}
 >
-    <img src={faviconUrl} alt="" class="favicon" />
+    <img
+        src={faviconUrl}
+        alt=""
+        class="favicon"
+        onerror={(e) => {
+            const fallback = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(tab.url || '')}&size=16`;
+            if (e.currentTarget.src !== fallback) {
+                e.currentTarget.src = fallback;
+            }
+        }}
+    />
     <!--
         Same as tab-item-template in original: the indicator always exists in the
         DOM and is only hidden with the `hidden` class; the speaker/muted icon is

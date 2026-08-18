@@ -1,4 +1,79 @@
 var HintCommon = {
+    i18n: {
+        _messages: null,
+        _lang: null,
+        _loadPromise: null,
+        async loadMessages(force = false) {
+            if (!force && this._messages) return this._messages;
+            if (!force && this._loadPromise) return this._loadPromise;
+            this._loadPromise = (async () => {
+                try {
+                    let lang = 'en';
+                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                        const stored = await chrome.storage.local.get('preferred-language');
+                        lang =
+                            stored?.['preferred-language'] ||
+                            (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
+                    }
+                    this._lang = lang;
+                    const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        this._messages = await res.json();
+                    } else if (lang !== 'en') {
+                        const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
+                        if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                    }
+                } catch (e) {
+                    console.warn('[HintCommon.i18n] Error loading messages:', e);
+                } finally {
+                    this._loadPromise = null;
+                }
+                return this._messages || {};
+            })();
+            return this._loadPromise;
+        },
+        getMessage(key, params = [], fallback = '') {
+            if (typeof params === 'string' && fallback === '') {
+                fallback = params;
+                params = [];
+            } else if (!Array.isArray(params)) {
+                params = params !== undefined && params !== null ? [params] : [];
+            }
+
+            let entry = this._messages?.[key];
+            if (!entry && typeof window !== 'undefined' && window.__itgPipMessages) {
+                entry = window.__itgPipMessages[key];
+            }
+
+            if (entry && entry.message !== undefined) {
+                let text = entry.message;
+                if (entry.placeholders) {
+                    text = text.replace(/\$([A-Za-z_][A-Za-z0-9_]*)\$/g, (match, name) => {
+                        const placeholder = entry.placeholders[name] || entry.placeholders[name.toLowerCase()];
+                        return placeholder?.content ?? match;
+                    });
+                }
+                if (params && params.length > 0) {
+                    text = text.replace(/\$(\d+)/g, (match, indexStr) => {
+                        const index = parseInt(indexStr, 10) - 1;
+                        return params[index] !== undefined ? params[index] : match;
+                    });
+                }
+                if (text.includes('$$')) {
+                    text = text.replace(/\$\$/g, '$');
+                }
+                return text;
+            }
+
+            if (typeof chrome !== 'undefined' && chrome.i18n?.getMessage) {
+                const m = chrome.i18n.getMessage(key, params);
+                if (m) return m;
+            }
+            return fallback || key;
+        },
+    },
+
     // Storage Keys constants to ensure consistency
     STORAGE_KEYS: {
         COMMANDS: 'userHintCommands',
@@ -45,6 +120,7 @@ var HintCommon = {
             x: 'hintDesc_x',
             yt: 'hintDesc_yt',
             s: 'hintDesc_s',
+            ts: 'hintDesc_ts',
             i: 'hintDesc_i',
             pp: 'hintDesc_pp',
             o: 'hintDesc_o',
@@ -99,6 +175,7 @@ var HintCommon = {
             'bg:': 'omnibarPrefixBackupNowDesc',
             'dg:': 'prefixDeleteGroup',
             'dt:': 'prefixDeleteTab',
+            'ts:': 'prefixSplitTabs',
             'gm:': 'prefixSearchGoogleMaps',
             'x:': 'prefixSearchX',
             'am:': 'prefixSearchAmazon',
@@ -1825,6 +1902,17 @@ var HintCommon = {
         return visibleCount;
     },
 };
+
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes['preferred-language']) {
+            HintCommon.i18n.loadMessages(true);
+        }
+    });
+}
+try {
+    HintCommon.i18n.loadMessages();
+} catch {}
 
 // Export logic
 if (typeof window !== 'undefined') {

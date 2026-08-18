@@ -1,3 +1,13 @@
+var getPreviewMsg = (key, fallback = '') => {
+    if (typeof HintCommon !== 'undefined' && HintCommon.i18n?.getMessage) {
+        return HintCommon.i18n.getMessage(key, fallback);
+    }
+    if (typeof chrome !== 'undefined' && chrome.i18n?.getMessage) {
+        return chrome.i18n.getMessage(key) || fallback || key;
+    }
+    return fallback || key;
+};
+
 /**
  * @class LinkPreviewManager
  * @description Manages floating, debounced, glassmorphic link previews with iframes.
@@ -248,39 +258,39 @@ var LinkPreviewManager = class LinkPreviewManager {
             } catch {}
             container.innerHTML = `
                     <div class="hint-preview-header">
-                        <span class="hint-preview-title">${chrome.i18n.getMessage('previewTitlePrefix') || 'Preview:'} ${domain}</span>
+                        <span class="hint-preview-title">${getPreviewMsg('previewTitlePrefix') || 'Preview:'} ${domain}</span>
                         <div class="hint-preview-actions" style="display: flex; align-items: center; gap: 8px;">
-                            <button class="hint-preview-action-btn hint-preview-pip-btn" title="${chrome.i18n.getMessage('openAsPipTitle') || 'Open as Picture-in-Picture'}">
+                            <button class="hint-preview-action-btn hint-preview-pip-btn" title="${getPreviewMsg('openAsPipTitle') || 'Open as Picture-in-Picture'}">
                                 <span style="display:block;width:14px;height:14px;">${ITG_PIP_ICON}</span>
                             </button>
-                            <button class="hint-preview-action-btn hint-preview-popup-btn" title="${chrome.i18n.getMessage('openAsPopupTitle') || 'Open as popup window'}">
+                            <button class="hint-preview-action-btn hint-preview-popup-btn" title="${getPreviewMsg('openAsPopupTitle') || 'Open as popup window'}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
                                 </svg>
                             </button>
-                            <button class="hint-preview-action-btn hint-preview-pin-btn" title="${chrome.i18n.getMessage('pinPreviewWindow') || 'Pin preview window'}">
+                            <button class="hint-preview-action-btn hint-preview-pin-btn" title="${getPreviewMsg('pinPreviewWindow') || 'Pin preview window'}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="5" r="4"></circle>
                                     <path d="M12 8v18"></path>
                                 </svg>
                             </button>
-                            <button class="hint-preview-action-btn hint-preview-blacklist-btn" title="${chrome.i18n.getMessage('blacklistDomainTitle') || 'Disable link preview on this site'}">
+                            <button class="hint-preview-action-btn hint-preview-blacklist-btn" title="${getPreviewMsg('blacklistDomainTitle') || 'Disable link preview on this site'}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
                             </button>
-                            <label class="switch hint-preview-header-switch" title="${chrome.i18n.getMessage(this.enabled ? 'disableLinkPreview' : 'enableLinkPreview') || 'Toggle link preview'}" style="margin: 0;">
+                            <label class="switch hint-preview-header-switch" title="${getPreviewMsg(this.enabled ? 'disableLinkPreview' : 'enableLinkPreview') || 'Toggle link preview'}" style="margin: 0;">
                                 <input type="checkbox" id="hint-preview-quick-toggle" ${this.enabled ? 'checked' : ''}>
                                 <span class="slider"><span class="slider-dot"></span></span>
                             </label>
-                            <button class="hint-preview-action-btn hint-preview-open-btn" title="${chrome.i18n.getMessage('openLinkNewTab') || 'Open in new tab'}">
+                            <button class="hint-preview-action-btn hint-preview-open-btn" title="${getPreviewMsg('openLinkNewTab') || 'Open in new tab'}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
                             </button>
-                            <button class="hint-preview-action-btn hint-preview-close-btn" title="${chrome.i18n.getMessage('close') || 'Close'}">×</button>
+                            <button class="hint-preview-action-btn hint-preview-close-btn" title="${getPreviewMsg('close') || 'Close'}">×</button>
                         </div>
                     </div>
                     <div class="hint-preview-body">
                         <div class="hint-preview-loader">
                             <div class="hint-preview-spinner"></div>
-                            <span>${chrome.i18n.getMessage('loadingPreview') || 'Loading preview...'}</span>
+                            <span>${getPreviewMsg('loadingPreview') || 'Loading preview...'}</span>
                         </div>
                         <iframe class="hint-preview-iframe"></iframe>
                     </div>
@@ -320,8 +330,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                     e.stopPropagation();
                     const isEnabled = e.target.checked;
                     switchLabel.title =
-                        chrome.i18n.getMessage(isEnabled ? 'disableLinkPreview' : 'enableLinkPreview') ||
-                        'Toggle link preview';
+                        getPreviewMsg(isEnabled ? 'disableLinkPreview' : 'enableLinkPreview') || 'Toggle link preview';
                     chrome.runtime.sendMessage({
                         action: 'toggleLinkPreview',
                         enabled: isEnabled,
@@ -352,12 +361,12 @@ var LinkPreviewManager = class LinkPreviewManager {
                     if (isPinned) {
                         container.dataset.pinned = 'false';
                         pinBtn.style.color = '';
-                        pinBtn.title = chrome.i18n.getMessage('pinPreviewWindow') || 'Pin preview window';
+                        pinBtn.title = getPreviewMsg('pinPreviewWindow') || 'Pin preview window';
                         this.removePreview(false, container);
                     } else {
                         container.dataset.pinned = 'true';
                         pinBtn.style.color = 'var(--text-on-color)';
-                        pinBtn.title = chrome.i18n.getMessage('unpinPreviewWindow') || 'Unpin preview window';
+                        pinBtn.title = getPreviewMsg('unpinPreviewWindow') || 'Unpin preview window';
                     }
                 });
             }

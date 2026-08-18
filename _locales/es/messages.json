@@ -4374,6 +4374,9 @@
     "hintDesc_s": {
         "message": "Cambiar a la pestaña anterior"
     },
+    "hintDesc_ts": {
+        "message": "Abrir la pestaña actual en modo pantalla dividida"
+    },
     "hintDesc_p": {
         "message": "Enfocar panel lateral"
     },
@@ -8200,14 +8203,26 @@
     "prefixDeleteTab": {
         "message": "Eliminar varias pestañas abiertas"
     },
+    "prefixSplitTabs": {
+        "message": "Pantalla dividida con las pestañas abiertas seleccionadas en el grupo Split"
+    },
     "omnibarPrefixTabsDeleteTitle": {
         "message": "Pestañas (Eliminar)"
     },
     "omnibarPrefixTabsDeleteDesc": {
         "message": "Buscar y eliminar varias pestañas"
     },
+    "omnibarPrefixTabsSplitTitle": {
+        "message": "Pestañas (Pantalla dividida)"
+    },
+    "omnibarPrefixTabsSplitDesc": {
+        "message": "Buscar pestañas y abrir en pantalla dividida"
+    },
     "omnibarClickDeleteTab": {
         "message": "Haz clic para eliminar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para rango."
+    },
+    "omnibarClickSplitTab": {
+        "message": "Clic o Enter para abrir en pantalla dividida. Espacio / Ctrl+Clic para seleccionar varias."
     },
     "omnibarDeleteAllFilteredGroups": {
         "message": "Borrar todos los grupos filtrados ($1)",

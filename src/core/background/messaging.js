@@ -615,7 +615,7 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     toggleSplitScreen: (message, sender, sendResponse) => {
-        handleToggleSplitScreen(message, sendResponse);
+        handleToggleSplitScreen(message, sender, sendResponse);
         return true;
     },
     closeSplitScreen: (message, sender, sendResponse) => {

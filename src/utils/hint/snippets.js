@@ -1504,7 +1504,10 @@ ${finalHtml}
         searchContainer.className = 'hint-snippet-search-container';
         const searchInput = document.createElement('input');
         searchInput.type = 'text';
-        searchInput.placeholder = chrome.i18n.getMessage('searchSnippets') || 'Search snippets...';
+        searchInput.placeholder =
+            HintCommon?.i18n?.getMessage('searchSnippets') ||
+            chrome.i18n?.getMessage('searchSnippets') ||
+            'Search snippets...';
         searchInput.className = 'hint-snippet-search-input';
         searchContainer.appendChild(searchInput);
         popup.appendChild(searchContainer);
@@ -1581,7 +1584,10 @@ ${finalHtml}
         if (this.filteredSnippets.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'hint-snippet-empty';
-            empty.textContent = chrome.i18n.getMessage('omnibarNoMatchingSnippets') || 'No matching snippets';
+            empty.textContent =
+                HintCommon?.i18n?.getMessage('omnibarNoMatchingSnippets') ||
+                chrome.i18n?.getMessage('omnibarNoMatchingSnippets') ||
+                'No matching snippets';
             this.popupList.appendChild(empty);
             return;
         }

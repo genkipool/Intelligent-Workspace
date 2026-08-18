@@ -4373,6 +4373,9 @@
   "hintDesc_s": {
     "message": "Switch to previous tab"
   },
+  "hintDesc_ts": {
+    "message": "Open current tab in split screen mode"
+  },
   "hintDesc_p": {
     "message": "Focus side panel"
   },
@@ -7878,12 +7881,12 @@
     "description": "Conversation copied to clipboard."
   },
   "exportConfig": {
-    "message": "Export Configuration",
-    "description": "Export Configuration"
+    "message": "Export",
+    "description": "Export"
   },
   "importConfig": {
-    "message": "Import Configuration",
-    "description": "Import Configuration"
+    "message": "Import",
+    "description": "Import"
   },
   "toolCreateTheme": {
     "message": "Create Custom Theme",
@@ -8178,14 +8181,26 @@
   "prefixDeleteTab": {
     "message": "Delete multiple open tabs"
   },
+  "prefixSplitTabs": {
+    "message": "Split screen with selected open tabs in Split group"
+  },
   "omnibarPrefixTabsDeleteTitle": {
     "message": "Tabs (Delete)"
   },
   "omnibarPrefixTabsDeleteDesc": {
     "message": "Search and delete multiple tabs"
   },
+  "omnibarPrefixTabsSplitTitle": {
+    "message": "Tabs (Split Screen)"
+  },
+  "omnibarPrefixTabsSplitDesc": {
+    "message": "Search tabs and open in split screen"
+  },
   "omnibarClickDeleteTab": {
     "message": "Click to delete. Space / Ctrl+Click to select, Shift+Click to select range."
+  },
+  "omnibarClickSplitTab": {
+    "message": "Click or Enter to open in split screen. Space / Ctrl+Click to select multiple."
   },
   "omnibarDeleteAllFilteredGroups": {
     "message": "Delete all filtered groups ($1)",
