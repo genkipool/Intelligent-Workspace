@@ -344,9 +344,28 @@ div[class*='ytp-bezel'] {
 .itg-pip-volume::after {
     content: ''; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 14px;
 }
+.itg-pip-volume-pop { display: flex; align-items: center; }
 .itg-pip-volume-slider {
-    width: 0; opacity: 0; margin: 0; accent-color: var(--interactive-color, #ff4444); cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    width: 0; height: 16px; opacity: 0; margin: 0; padding: 0;
+    background: transparent; cursor: pointer;
     transition: width 0.2s ease, opacity 0.2s ease;
+}
+.itg-pip-volume-slider::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: rgba(255, 255, 255, 0.35);
+}
+.itg-pip-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--interactive-color, #ff4444);
+    margin-top: -4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    transition: transform 0.1s ease;
+}
+.itg-pip-volume-slider:hover::-webkit-slider-thumb,
+.itg-pip-volume-slider:active::-webkit-slider-thumb {
+    transform: scale(1.25);
 }
 .itg-pip-volume:hover .itg-pip-volume-slider,
 .itg-pip-volume:focus-within .itg-pip-volume-slider {
@@ -593,15 +612,18 @@ div[class*='ytp-bezel'] {
         bottom: 100%;
         height: 16px;
     }
-    .itg-pip-volume-slider {
+    .itg-pip-volume-pop {
         position: absolute;
         bottom: calc(100% + 8px);
         left: 50%;
         transform: translateX(-50%) translateY(4px);
-        width: 24px !important;
-        height: 86px;
-        padding: 8px 4px;
-        margin: 0 !important;
+        width: 28px;
+        height: 96px;
+        padding: 0;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border-radius: 8px;
         background: rgba(20, 20, 20, 0.95);
         border: 1px solid rgba(255, 255, 255, 0.15);
@@ -609,25 +631,24 @@ div[class*='ytp-bezel'] {
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        appearance: slider-vertical;
-        -webkit-appearance: slider-vertical;
-        writing-mode: vertical-lr;
-        direction: rtl;
-        accent-color: var(--interactive-color, #ff4444);
-        cursor: pointer;
         z-index: 25;
         transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
     }
-    .itg-pip-volume:hover .itg-pip-volume-slider,
-    .itg-pip-volume:focus-within .itg-pip-volume-slider,
-    .itg-pip-volume-slider:hover,
-    .itg-pip-volume-slider:focus {
-        width: 24px !important;
+    .itg-pip-volume:hover .itg-pip-volume-pop,
+    .itg-pip-volume:focus-within .itg-pip-volume-pop,
+    .itg-pip-volume-pop:hover {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+    }
+    .itg-pip-volume-slider {
+        width: 78px !important;
+        height: 16px !important;
         opacity: 1 !important;
-        visibility: visible !important;
-        pointer-events: auto !important;
-        transform: translateX(-50%) translateY(0) !important;
         margin: 0 !important;
+        transform: rotate(-90deg);
+        transform-origin: center center;
     }
 }
 @media (max-width: 400px) {

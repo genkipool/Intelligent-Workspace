@@ -1278,7 +1278,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         <button class="itg-pip-btn" data-act="forward" type="button"></button>
                         <div class="itg-pip-volume">
                             <button class="itg-pip-btn" data-act="mute" type="button"></button>
-                            <input class="itg-pip-volume-slider" type="range" min="0" max="100" step="1" />
+                            <div class="itg-pip-volume-pop">
+                                <input class="itg-pip-volume-slider" type="range" min="0" max="100" step="1" />
+                            </div>
                         </div>
                         <span class="itg-pip-time">0:00 / 0:00</span>
                         <span class="itg-pip-spacer"></span>
