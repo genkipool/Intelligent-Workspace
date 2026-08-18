@@ -3234,6 +3234,8 @@ html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="
 `;
 
 var itgAutoPipKeepAliveTimer = null;
+var itgAutoPipHideTimer = null;
+var itgAutoPipActiveButton = null;
 
 function itgStartAutoPipKeepAlive() {
     document.documentElement.setAttribute('data-itg-autopip-open', 'true');
@@ -3242,7 +3244,6 @@ function itgStartAutoPipKeepAlive() {
             const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
             if (player) {
                 player.wakeUpControls?.();
-                player.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true }));
             }
         };
         wake();
@@ -3258,6 +3259,29 @@ function itgStopAutoPipKeepAlive() {
     }
 }
 
+function itgScheduleAutoPipHide(delay = 500) {
+    clearTimeout(itgAutoPipHideTimer);
+    itgAutoPipHideTimer = setTimeout(() => {
+        const menu = document.getElementById('itg-autopip-menu');
+        if (!menu) return;
+        // Verify if pointer is currently hovering menu or button before closing
+        const isHoveringMenu = menu.matches(':hover');
+        const isHoveringButton = itgAutoPipActiveButton && itgAutoPipActiveButton.matches(':hover');
+        if (isHoveringMenu || isHoveringButton) {
+            return;
+        }
+        menu.classList.remove('is-open');
+        itgStopAutoPipKeepAlive();
+        itgAutoPipActiveButton = null;
+    }, delay);
+}
+
+function itgCancelAutoPipHide() {
+    clearTimeout(itgAutoPipHideTimer);
+    itgAutoPipHideTimer = null;
+    itgStartAutoPipKeepAlive();
+}
+
 /**
  * The two automatic triggers, offered where the button for the manual one is.
  *
@@ -3270,10 +3294,9 @@ function itgAttachAutoPipMenu(button) {
     button.dataset.itgAutoPipMenu = 'true';
 
     const menu = itgAutoPipMenu();
-    let hideTimer = null;
     const show = () => {
-        clearTimeout(hideTimer);
-        itgStartAutoPipKeepAlive();
+        itgCancelAutoPipHide();
+        itgAutoPipActiveButton = button;
         itgRefreshPipUiTranslations();
         for (const name of ['scroll', 'hidden']) {
             const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
@@ -3289,20 +3312,17 @@ function itgAttachAutoPipMenu(button) {
         const width = menu.offsetWidth || 250;
         menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
     };
-    const hide = () => {
-        hideTimer = setTimeout(() => {
-            menu.classList.remove('is-open');
-            itgStopAutoPipKeepAlive();
-        }, 1000);
-    };
 
     button.addEventListener('mouseenter', show);
-    button.addEventListener('mouseleave', hide);
-    menu.addEventListener('mouseenter', () => {
-        clearTimeout(hideTimer);
-        itgStartAutoPipKeepAlive();
+    button.addEventListener('mouseleave', (e) => {
+        if (menu.contains(e.relatedTarget)) {
+            return;
+        }
+        itgScheduleAutoPipHide(500);
     });
-    menu.addEventListener('mouseleave', hide);
+    button.addEventListener('mousemove', () => {
+        itgCancelAutoPipHide();
+    });
 }
 
 function itgAutoPipMenu() {
@@ -3389,6 +3409,20 @@ function itgAutoPipMenu() {
         itgOpenFramePicker();
     });
     menu.appendChild(frameOption);
+
+    // Mouse listeners on menu attached once
+    menu.addEventListener('mouseenter', () => {
+        itgCancelAutoPipHide();
+    });
+    menu.addEventListener('mouseleave', (e) => {
+        if (itgAutoPipActiveButton && itgAutoPipActiveButton.contains(e.relatedTarget)) {
+            return;
+        }
+        itgScheduleAutoPipHide(500);
+    });
+    menu.addEventListener('mousemove', () => {
+        itgCancelAutoPipHide();
+    });
 
     // The menu is a page-level element with no stylesheet of its own, so the theme
     // variables its colours are written against are put on it directly.
