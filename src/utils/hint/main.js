@@ -911,14 +911,16 @@ var Main = class Main {
                 this.cleanup();
                 return;
             }
-            if (Utils.isInputLikeElement(e.target)) this.insertMode = true;
+            const target = (e.composedPath && e.composedPath()[0]) || e.target;
+            if (Utils.isInputLikeElement(target)) this.insertMode = true;
         };
         this._boundFocusOutHandler = (e) => {
             if (!chrome.runtime || !chrome.runtime.id) {
                 this.cleanup();
                 return;
             }
-            if (Utils.isInputLikeElement(e.target)) this.insertMode = false;
+            const target = (e.composedPath && e.composedPath()[0]) || e.target;
+            if (Utils.isInputLikeElement(target)) this.insertMode = false;
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
         document.addEventListener('focusin', this._boundFocusInHandler);
@@ -1377,7 +1379,8 @@ var Main = class Main {
                 event.stopPropagation();
                 return;
             }
-            if (this.insertMode || Utils.isInputLikeElement(event.target)) {
+            const target = (event.composedPath && event.composedPath()[0]) || event.target;
+            if (this.insertMode || Utils.isInputLikeElement(target)) {
                 this.insertMode = false;
                 return; // Let the event bubble for external components (like folder renaming)
             }
@@ -1394,7 +1397,8 @@ var Main = class Main {
             );
             return;
         }
-        if (this.insertMode || Utils.isInputLikeElement(event.target)) {
+        const activeTarget = (event.composedPath && event.composedPath()[0]) || event.target;
+        if (this.insertMode || Utils.isInputLikeElement(activeTarget)) {
             return;
         }
         if (event.shiftKey && event.key === '?') {

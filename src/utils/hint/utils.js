@@ -257,13 +257,56 @@ var Utils = class Utils {
     }
     static isInputLikeElement(element) {
         if (!element) return false;
-        const tagName = element.tagName;
-        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return true;
-        if (element.isContentEditable) return true;
-        if (element.getAttribute) {
-            const role = element.getAttribute('role');
-            if (role === 'textbox' || role === 'searchbox' || role === 'combobox') return true;
+        // Check activeElement recursively into shadow roots if available
+        let current = element;
+        while (current && current.shadowRoot && current.shadowRoot.activeElement) {
+            current = current.shadowRoot.activeElement;
         }
+
+        const checkSingleElement = (el) => {
+            if (!el || el.nodeType !== 1) return false;
+            const tagName = (el.tagName || '').toUpperCase();
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tagName)) return true;
+            if (el.isContentEditable) return true;
+            if (el.getAttribute) {
+                const role = el.getAttribute('role');
+                if (role === 'textbox' || role === 'searchbox' || role === 'combobox' || role === 'search') return true;
+                const type = el.getAttribute('type');
+                if (type === 'search' || type === 'text') return true;
+                const enterKeyHint = el.getAttribute('enterkeyhint');
+                if (enterKeyHint === 'search') return true;
+            }
+            // Check custom element tags or classnames commonly used for web components (like faceplate-search-input)
+            if (tagName.includes('SEARCH') || tagName.includes('INPUT') || tagName.includes('TEXTAREA')) {
+                return true;
+            }
+            // Check if element contains an active or focused input/textarea inside its shadow DOM
+            if (el.shadowRoot) {
+                const innerActive = el.shadowRoot.activeElement;
+                if (innerActive && checkSingleElement(innerActive)) return true;
+                if (
+                    el.shadowRoot.querySelector(
+                        'input, textarea, [contenteditable="true"], [role="textbox"], [role="searchbox"]',
+                    )
+                ) {
+                    // If the host element itself has focus or is targeted
+                    if (document.activeElement === el) return true;
+                }
+            }
+            return false;
+        };
+
+        if (checkSingleElement(current)) return true;
+        if (current !== element && checkSingleElement(element)) return true;
+
+        // Also check if document.activeElement is an editable element or shadow host containing one
+        let docActive = document.activeElement;
+        while (docActive && docActive.shadowRoot && docActive.shadowRoot.activeElement) {
+            if (checkSingleElement(docActive)) return true;
+            docActive = docActive.shadowRoot.activeElement;
+        }
+        if (docActive && checkSingleElement(docActive)) return true;
+
         return false;
     }
     static isVisible(el, isYouTubeControl = false) {
