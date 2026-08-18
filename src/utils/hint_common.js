@@ -16,13 +16,27 @@ var HintCommon = {
                             (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
                     }
                     this._lang = lang;
-                    const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        this._messages = await res.json();
-                    } else if (lang !== 'en') {
-                        const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
-                        if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                    try {
+                        const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
+                        const res = await fetch(url);
+                        if (res.ok) {
+                            this._messages = await res.json();
+                        } else if (lang !== 'en') {
+                            const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
+                            if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                        }
+                    } catch {
+                        // If direct fetch from content script fails (e.g. CSP or web accessible restriction), request from background
+                        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+                            const bgResponse = await chrome.runtime.sendMessage({
+                                action: 'getI18nMessages',
+                                lang,
+                            });
+                            if (bgResponse?.success && bgResponse.messages) {
+                                this._messages = bgResponse.messages;
+                                this._lang = bgResponse.lang || lang;
+                            }
+                        }
                     }
                 } catch (e) {
                     if (typeof chrome !== 'undefined' && chrome.runtime?.id) {

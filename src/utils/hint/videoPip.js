@@ -87,26 +87,48 @@ function itgLoadPipMessages(lang, force = false) {
 
     itgPipLoadPromise = (async () => {
         try {
-            const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
-            const res = await fetch(url);
-            if (res.ok) {
-                itgPipMessages = await res.json();
-                itgPipLang = normalized;
-                window.__itgPipMessages = itgPipMessages;
-                window.__itgPipLang = itgPipLang;
-            } else if (normalized !== 'en') {
-                const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
-                const fallbackRes = await fetch(fallbackUrl);
-                if (fallbackRes.ok) {
-                    itgPipMessages = await fallbackRes.json();
-                    itgPipLang = 'en';
+            const stored = await chrome.storage.local.get('preferred-language');
+            const langVal =
+                lang ||
+                stored?.['preferred-language'] ||
+                (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
+            const normalized = itgNormalizePipLang(langVal);
+            try {
+                const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
+                const res = await fetch(url);
+                if (res.ok) {
+                    itgPipMessages = await res.json();
+                    itgPipLang = normalized;
                     window.__itgPipMessages = itgPipMessages;
                     window.__itgPipLang = itgPipLang;
+                } else if (normalized !== 'en') {
+                    const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                    const fallbackRes = await fetch(fallbackUrl);
+                    if (fallbackRes.ok) {
+                        itgPipMessages = await fallbackRes.json();
+                        itgPipLang = 'en';
+                        window.__itgPipMessages = itgPipMessages;
+                        window.__itgPipLang = itgPipLang;
+                    }
+                }
+            } catch {
+                // If direct fetch fails in content script, request via background
+                if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+                    const bgResponse = await chrome.runtime.sendMessage({
+                        action: 'getI18nMessages',
+                        lang: normalized,
+                    });
+                    if (bgResponse?.success && bgResponse.messages) {
+                        itgPipMessages = bgResponse.messages;
+                        itgPipLang = bgResponse.lang || normalized;
+                        window.__itgPipMessages = itgPipMessages;
+                        window.__itgPipLang = itgPipLang;
+                    }
                 }
             }
         } catch (e) {
             if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
-                console.warn('[videoPip] Error loading messages for', normalized, e);
+                console.warn('[videoPip] Error loading messages', e);
             }
         } finally {
             itgPipLoadPromise = null;

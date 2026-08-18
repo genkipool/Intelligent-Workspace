@@ -754,6 +754,33 @@ const MESSAGE_HANDLERS = {
         handleDeactivateAllPageModes(sendResponse);
         return true;
     },
+    getI18nMessages: (message, sender, sendResponse) => {
+        (async () => {
+            try {
+                let lang = message.lang;
+                if (!lang) {
+                    const stored = await chrome.storage.local.get('preferred-language');
+                    lang =
+                        stored?.['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                }
+                const normalized = lang.startsWith('es') ? 'es' : 'en';
+                const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
+                const res = await fetch(url);
+                if (res.ok) {
+                    const messages = await res.json();
+                    sendResponse({ success: true, messages, lang: normalized });
+                } else {
+                    const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                    const fallbackRes = await fetch(fallbackUrl);
+                    const messages = fallbackRes.ok ? await fallbackRes.json() : {};
+                    sendResponse({ success: true, messages, lang: 'en' });
+                }
+            } catch (e) {
+                sendResponse({ success: false, error: e.message, messages: {} });
+            }
+        })();
+        return true;
+    },
     hintStatusChanged: (message, sender, sendResponse) => {
         handleHintStatusChanged(message);
         // Sólo un aviso: nadie espera respuesta.
