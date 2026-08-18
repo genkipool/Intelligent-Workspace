@@ -69,6 +69,7 @@ var HintEngine = class HintEngine {
             '.chatlist-chat:not([aria-disabled="true"])',
             '.row-clickable:not([aria-disabled="true"])',
             '[role="row"]:not([aria-disabled="true"])',
+            '[tabindex]:not([tabindex="-1"]):not([disabled]):not([aria-disabled="true"])',
         ];
         if (!window.location.pathname.includes('/listGroup/listGroup.html')) {
             const additional = [
@@ -157,11 +158,48 @@ var HintEngine = class HintEngine {
         if (!this.active) return;
         this.hints.forEach((h) => h.hintElement.remove());
         this.hints = [];
-        const candidates = Utils.querySelectorAllDeep(this.hintSelectors, document.body);
-        const hintable = candidates.filter((el) => {
+        // 1. Gather all candidates in DOM order
+        const rawCandidates = Utils.querySelectorAllDeep(this.hintSelectors, document.body);
+        let candidateHints = [];
+        for (const el of rawCandidates) {
             const isYtControl = window.location.hostname.includes('youtube.com') && el.closest('.ytp-chrome-bottom');
-            return Utils.isVisible(el, isYtControl);
+            if (!Utils.isVisible(el, isYtControl)) continue;
+            const rect = Utils.getVisibleClientRect(el, true);
+            if (!rect) continue;
+            const tagName = (el.tagName || '').toLowerCase();
+            const className = (el.getAttribute('class') || '').toLowerCase();
+            const possibleFalsePositive =
+                tagName === 'span' || className.includes('button') || className.includes('btn');
+            candidateHints.push({
+                element: el,
+                rect,
+                possibleFalsePositive,
+            });
+        }
+
+        // 2. Traverse from descendants to ancestors (reverse DOM order)
+        candidateHints = candidateHints.reverse();
+
+        // 3. Filter false positives (e.g. wrapper spans when descendants are clickable)
+        const descendantsToCheck = [1, 2, 3];
+        candidateHints = candidateHints.filter((hint, position) => {
+            if (!hint.possibleFalsePositive) return true;
+            const lookbackWindow = 6;
+            let index = Math.max(0, position - lookbackWindow);
+            while (index < position) {
+                let candidateDescendant = candidateHints[index].element;
+                for (let step = 0; step < descendantsToCheck.length; step++) {
+                    candidateDescendant = candidateDescendant?.parentElement;
+                    if (candidateDescendant === hint.element) {
+                        return false;
+                    }
+                }
+                index += 1;
+            }
+            return true;
         });
+
+        // 4. Hit-test (elementFromPoint) to filter out elements covered or scrolled out in carousels
         const getElementAtPoint = (x, y) => {
             let el = document.elementFromPoint(x, y);
             while (el && el.shadowRoot) {
@@ -172,64 +210,41 @@ var HintEngine = class HintEngine {
             return el;
         };
 
-        const finalTargets = hintable.filter((el) => {
-            // Check containment with other interactive candidates
-            const hasDescendant = hintable.some((other) => el !== other && el.contains(other));
-            if (hasDescendant) return false;
-
-            const rect = Utils.getVisibleClientRect(el, true);
-            if (!rect) return false;
-
-            // Check if any scrollable parent is clipping this element out of its scroll viewport
-            let p = el.parentElement;
-            while (p && p !== document.documentElement && p !== document.body) {
-                if (p.scrollWidth > p.clientWidth || p.scrollHeight > p.clientHeight) {
-                    const pStyle = window.getComputedStyle(p);
-                    const overflowClips = ['hidden', 'clip', 'scroll', 'auto'].some(
-                        (val) => pStyle.overflowX === val || pStyle.overflowY === val || pStyle.overflow === val,
-                    );
-                    if (overflowClips) {
-                        const pRect = p.getBoundingClientRect();
-                        if (
-                            rect.right <= pRect.left ||
-                            rect.left >= pRect.right ||
-                            rect.bottom <= pRect.top ||
-                            rect.top >= pRect.bottom
-                        ) {
-                            return false;
-                        }
-                    }
-                }
-                p = p.parentElement;
-            }
+        const nonOverlappingHints = candidateHints.filter((hint) => {
+            const el = hint.element;
+            const rect = hint.rect;
 
             // Check center
             const centerX = rect.left + rect.width * 0.5;
             const centerY = rect.top + rect.height * 0.5;
             const elAtCenter = getElementAtPoint(centerX, centerY);
-            if (elAtCenter && (el.contains(elAtCenter) || elAtCenter.contains(el))) {
+            if (elAtCenter && el.contains(elAtCenter)) {
                 return true;
             }
 
             // Check corners
-            const points = [
-                [rect.left + 0.1, rect.top + 0.1],
-                [rect.right - 0.1, rect.top + 0.1],
-                [rect.left + 0.1, rect.bottom - 0.1],
-                [rect.right - 0.1, rect.bottom - 0.1],
-            ];
-            for (const [px, py] of points) {
-                if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) continue;
-                const elAtPoint = getElementAtPoint(px, py);
-                if (elAtPoint && (el.contains(elAtPoint) || elAtPoint.contains(el))) {
-                    return true;
+            const verticalCoords = [rect.top + 0.1, rect.bottom - 0.1];
+            const horizontalCoords = [rect.left + 0.1, rect.right - 0.1];
+            for (const vy of verticalCoords) {
+                for (const hx of horizontalCoords) {
+                    if (hx < 0 || vy < 0 || hx >= window.innerWidth || vy >= window.innerHeight) continue;
+                    const elAtPoint = getElementAtPoint(hx, vy);
+                    if (elAtPoint && el.contains(elAtPoint)) {
+                        return true;
+                    }
                 }
             }
             return false;
         });
+
+        // 5. Reverse back to document order for hint key assignment
+        const finalTargets = nonOverlappingHints.reverse();
+
         const keysToAssign = this._generateKeys(finalTargets.length);
         const hintRoot = this.shadowUI.getContainer().getElementById('hint-root-container');
-        finalTargets.forEach((el, i) => {
+        finalTargets.forEach((target, i) => {
+            const el = target.element;
+            const rect = target.rect;
             const keyString = keysToAssign[i];
             if (!keyString) return;
             const hintEl = document.createElement('div');
@@ -240,7 +255,6 @@ var HintEngine = class HintEngine {
                 hintEl.appendChild(s);
             }
             hintRoot.appendChild(hintEl);
-            const rect = Utils.getVisibleClientRect(el, true) || el.getBoundingClientRect();
             let top = window.scrollY + rect.top;
             let left = window.scrollX + rect.left;
             const hintWidth = hintEl.offsetWidth;
