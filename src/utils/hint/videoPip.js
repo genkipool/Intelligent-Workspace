@@ -3293,7 +3293,7 @@ function itgAttachAutoPipMenu(button) {
         hideTimer = setTimeout(() => {
             menu.classList.remove('is-open');
             itgStopAutoPipKeepAlive();
-        }, 350);
+        }, 1000);
     };
 
     button.addEventListener('mouseenter', show);
