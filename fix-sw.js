@@ -66,6 +66,8 @@ try {
     }
     const war = manifest.web_accessible_resources.find(w => w.matches.includes("<all_urls>")) || { matches: ["<all_urls>"], resources: [] };
     const hintScripts = [
+        "_locales/es/messages.json",
+        "_locales/en/messages.json",
         "src/utils/hint/utils.js",
         "src/utils/hint/videoPipUi.js",
         "src/utils/hint/videoPip.js",

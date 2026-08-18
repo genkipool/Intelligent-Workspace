@@ -25,7 +25,9 @@ var HintCommon = {
                         if (fallbackRes.ok) this._messages = await fallbackRes.json();
                     }
                 } catch (e) {
-                    console.warn('[HintCommon.i18n] Error loading messages:', e);
+                    if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+                        console.warn('[HintCommon.i18n] Error loading messages:', e);
+                    }
                 } finally {
                     this._loadPromise = null;
                 }

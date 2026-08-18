@@ -105,7 +105,9 @@ function itgLoadPipMessages(lang, force = false) {
                 }
             }
         } catch (e) {
-            console.warn('[videoPip] Error loading messages for', normalized, e);
+            if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+                console.warn('[videoPip] Error loading messages for', normalized, e);
+            }
         } finally {
             itgPipLoadPromise = null;
         }
