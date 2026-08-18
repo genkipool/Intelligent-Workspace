@@ -126,10 +126,8 @@ function itgLoadPipMessages(lang, force = false) {
                     }
                 }
             }
-        } catch (e) {
-            if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
-                console.warn('[videoPip] Error loading messages', e);
-            }
+        } catch {
+            // Suppress harmless i18n fetch errors when extension context is reloaded or blocked by site CSP
         } finally {
             itgPipLoadPromise = null;
         }
