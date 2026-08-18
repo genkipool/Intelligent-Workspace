@@ -518,7 +518,7 @@ async function handlePlayYouTubeVideoInPage(message, sender, sendResponse) {
                                 watchEndpoint: { videoId: id },
                             });
                             return true;
-                        } catch (err) {}
+                        } catch {}
                     }
                     if (typeof ytdApp.fire === 'function') {
                         try {
@@ -534,7 +534,7 @@ async function handlePlayYouTubeVideoInPage(message, sender, sendResponse) {
                                 },
                             });
                             return true;
-                        } catch (err) {}
+                        } catch {}
                     }
                 }
 

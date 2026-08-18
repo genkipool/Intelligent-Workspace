@@ -111,7 +111,6 @@ let isRulesPinned = false;
 let isListGroupPinned = false;
 let isGeminiPinned = false;
 let lastSidePanelPathBeforeFullscreen = null;
-let lastSidePanelPathByWindow = new Map();
 let dbPromise = null;
 let currentActiveTabId = null;
 let previousActiveTabId = null;
