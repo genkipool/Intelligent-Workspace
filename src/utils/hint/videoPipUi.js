@@ -364,7 +364,7 @@ div[class*='ytp-bezel'] {
 .itg-pip-volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
     width: 12px; height: 12px; border-radius: 50%;
-    background: #ffffff;
+    background: var(--interactive-color, #ff4444);
     margin-top: -4px;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
     transition: transform 0.1s ease;
