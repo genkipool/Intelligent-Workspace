@@ -340,12 +340,18 @@ div[class*='ytp-bezel'] {
 }
 
 /* The slider stays out of the way until the volume button is reached. */
-.itg-pip-volume { display: flex; align-items: center; }
+.itg-pip-volume { position: relative; display: flex; align-items: center; }
+.itg-pip-volume::after {
+    content: ''; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 14px;
+}
 .itg-pip-volume-slider {
-    width: 0; opacity: 0; margin: 0; accent-color: #fff; cursor: pointer;
+    width: 0; opacity: 0; margin: 0; accent-color: var(--interactive-color, #ff4444); cursor: pointer;
     transition: width 0.2s ease, opacity 0.2s ease;
 }
-.itg-pip-volume:hover .itg-pip-volume-slider { width: 64px; opacity: 1; margin: 0 6px 0 2px; }
+.itg-pip-volume:hover .itg-pip-volume-slider,
+.itg-pip-volume:focus-within .itg-pip-volume-slider {
+    width: 64px; opacity: 1; margin: 0 6px 0 2px;
+}
 
 .itg-pip-time { font-size: 12px; padding: 0 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .itg-pip-spacer { flex: 1 1 auto; }
@@ -573,11 +579,65 @@ div[class*='ytp-bezel'] {
         display: none !important;
     }
 }
+@media (max-width: 480px) {
+    .itg-pip-volume {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+    }
+    .itg-pip-volume::after {
+        content: '';
+        position: absolute;
+        left: -8px;
+        right: -8px;
+        bottom: 100%;
+        height: 16px;
+    }
+    .itg-pip-volume-slider {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 50%;
+        transform: translateX(-50%) translateY(4px);
+        width: 24px !important;
+        height: 86px;
+        padding: 8px 4px;
+        margin: 0 !important;
+        border-radius: 8px;
+        background: rgba(20, 20, 20, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        appearance: slider-vertical;
+        -webkit-appearance: slider-vertical;
+        writing-mode: vertical-lr;
+        direction: rtl;
+        accent-color: var(--interactive-color, #ff4444);
+        cursor: pointer;
+        z-index: 25;
+        transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    }
+    .itg-pip-volume:hover .itg-pip-volume-slider,
+    .itg-pip-volume:focus-within .itg-pip-volume-slider,
+    .itg-pip-volume-slider:hover,
+    .itg-pip-volume-slider:focus {
+        width: 24px !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        transform: translateX(-50%) translateY(0) !important;
+        margin: 0 !important;
+    }
+}
 @media (max-width: 400px) {
     .itg-pip-btn[data-act='rewind'],
-    .itg-pip-btn[data-act='forward'],
-    .itg-pip-volume-slider {
+    .itg-pip-btn[data-act='forward'] {
         display: none !important;
+    }
+    .itg-pip-time {
+        font-size: 11px;
+        padding: 0 4px;
     }
 }
 @media (min-width: 401px) {

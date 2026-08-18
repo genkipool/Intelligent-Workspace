@@ -1635,6 +1635,19 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             if (this.video.volume > 0) this.video.muted = false;
         });
 
+        const volumeWrap = doc.querySelector('.itg-pip-volume');
+        if (volumeWrap) {
+            volumeWrap.addEventListener(
+                'wheel',
+                (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.nudgeVolume(e.deltaY < 0 ? 0.05 : -0.05);
+                },
+                { passive: false },
+            );
+        }
+
         this.bindSeeking();
         this.bindKeys();
         this.bindResize();
