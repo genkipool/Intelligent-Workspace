@@ -1633,8 +1633,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
 
         this.volumeSlider.addEventListener('input', () => {
-            this.video.volume = Number(this.volumeSlider.value) / 100;
+            const val = Number(this.volumeSlider.value);
+            this.video.volume = val / 100;
             if (this.video.volume > 0) this.video.muted = false;
+            this.volumeSlider.style.setProperty('--vol-pct', `${val}%`);
         });
 
         const volumeWrap = doc.querySelector('.itg-pip-volume');
@@ -3047,7 +3049,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const muted = this.video.muted || this.video.volume === 0;
         this.buttons.mute.innerHTML = muted ? ITG_PIP_ICONS.muted : ITG_PIP_ICONS.volume;
         this.buttons.mute.title = itgPipMsg(muted ? 'pipUnmute' : 'pipMute', muted ? 'Unmute' : 'Mute');
-        this.volumeSlider.value = String(Math.round((muted ? 0 : this.video.volume) * 100));
+        const val = Math.round((muted ? 0 : this.video.volume) * 100);
+        this.volumeSlider.value = String(val);
+        this.volumeSlider.style.setProperty('--vol-pct', `${val}%`);
     }
 
     renderRate() {

@@ -353,14 +353,20 @@ div[class*='ytp-bezel'] {
 }
 .itg-pip-volume-slider::-webkit-slider-runnable-track {
     height: 4px; border-radius: 2px;
-    background: rgba(255, 255, 255, 0.35);
+    background: linear-gradient(
+        to right,
+        var(--interactive-color, #ff4444) 0%,
+        var(--interactive-color, #ff4444) var(--vol-pct, 100%),
+        rgba(255, 255, 255, 0.3) var(--vol-pct, 100%),
+        rgba(255, 255, 255, 0.3) 100%
+    );
 }
 .itg-pip-volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
     width: 12px; height: 12px; border-radius: 50%;
-    background: var(--interactive-color, #ff4444);
+    background: #ffffff;
     margin-top: -4px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
     transition: transform 0.1s ease;
 }
 .itg-pip-volume-slider:hover::-webkit-slider-thumb,
