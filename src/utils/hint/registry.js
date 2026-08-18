@@ -685,18 +685,47 @@ var CommandRegistry = class CommandRegistry {
             '[enterkeyhint="search"]',
         ];
         const candidates = Utils.querySelectorAllDeep(selectors.join(', '));
-        for (const input of candidates) {
-            if (!Utils.isVisible(input)) continue;
-            input.focus();
-            if (
-                ['INPUT', 'TEXTAREA'].includes((input.tagName || '').toUpperCase()) &&
-                typeof input.select === 'function'
-            ) {
-                try {
-                    input.select();
-                } catch {}
-            }
-            break;
+        const visibleCandidates = candidates.filter((input) => Utils.isVisible(input));
+
+        if (visibleCandidates.length === 0) return;
+
+        // Sort candidates: prioritize inputs located in the current viewport or near top (e.g. search bars)
+        visibleCandidates.sort((a, b) => {
+            const rectA = a.getBoundingClientRect();
+            const rectB = b.getBoundingClientRect();
+
+            const inViewportA = rectA.top >= 0 && rectA.top <= window.innerHeight;
+            const inViewportB = rectB.top >= 0 && rectB.top <= window.innerHeight;
+
+            if (inViewportA && !inViewportB) return -1;
+            if (!inViewportA && inViewportB) return 1;
+
+            // Prioritize search inputs or textareas
+            const aIsSearch = a.type === 'search' || a.name === 'q' || a.getAttribute('enterkeyhint') === 'search';
+            const bIsSearch = b.type === 'search' || b.name === 'q' || b.getAttribute('enterkeyhint') === 'search';
+            if (aIsSearch && !bIsSearch) return -1;
+            if (!aIsSearch && bIsSearch) return 1;
+
+            return rectA.top - rectB.top;
+        });
+
+        const targetInput = visibleCandidates[0];
+        if (!targetInput) return;
+
+        targetInput.focus();
+
+        // Also simulate click to activate custom web component wrappers (like Lit/Reddit faceplate)
+        try {
+            targetInput.click();
+        } catch {}
+
+        if (
+            ['INPUT', 'TEXTAREA'].includes((targetInput.tagName || '').toUpperCase()) &&
+            typeof targetInput.select === 'function'
+        ) {
+            try {
+                targetInput.select();
+            } catch {}
         }
     }
 };

@@ -310,16 +310,16 @@ var Utils = class Utils {
         return false;
     }
     static isVisible(el, isYouTubeControl = false) {
-        if (el.closest('[aria-hidden="true"]')) return false;
-        const parentDetails = el.closest('details');
+        if (!el || typeof el.getBoundingClientRect !== 'function') return false;
+        if (el.closest && el.closest('[aria-hidden="true"]')) return false;
+        const parentDetails = el.closest && el.closest('details');
         if (parentDetails && !parentDetails.open) {
             const summaryAncestor = el.closest('summary');
             if (!summaryAncestor || summaryAncestor.parentElement !== parentDetails) return false;
         }
-        if (typeof el.getBoundingClientRect !== 'function') return false;
         const rect = el.getBoundingClientRect();
         let hasDimensions = rect.width >= 1 && rect.height >= 1;
-        if (!hasDimensions && el.children.length > 0) {
+        if (!hasDimensions && el.children && el.children.length > 0) {
             const descendants = el.querySelectorAll('*');
             for (const descendant of descendants) {
                 if (descendant.getBoundingClientRect().width >= 1) {
@@ -329,12 +329,22 @@ var Utils = class Utils {
             }
         }
         if (!hasDimensions) return false;
+
         let current = el;
         while (current) {
-            const style = window.getComputedStyle(current);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            if (!isYouTubeControl && parseFloat(style.opacity) < 0.1) return false;
-            current = current.parentElement;
+            if (current.nodeType === 1) {
+                const style = window.getComputedStyle(current);
+                if (style.display === 'none' || style.visibility === 'hidden') return false;
+                if (!isYouTubeControl && parseFloat(style.opacity) < 0.05) return false;
+            }
+            if (current.parentElement) {
+                current = current.parentElement;
+            } else if (current.parentNode && current.parentNode.host) {
+                // Traverse shadow root boundary out to host element
+                current = current.parentNode.host;
+            } else {
+                current = null;
+            }
         }
         return true;
     }
