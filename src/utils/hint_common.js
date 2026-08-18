@@ -38,8 +38,10 @@ var HintCommon = {
                             }
                         }
                     }
-                } catch {
-                    // Suppress harmless i18n fetch errors when extension context is reloaded or blocked by site CSP
+                } catch (e) {
+                    if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+                        console.log('[HintCommon.i18n] Fallback to native chrome.i18n/storage:', e?.message || e);
+                    }
                 } finally {
                     this._loadPromise = null;
                 }

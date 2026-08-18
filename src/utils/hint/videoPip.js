@@ -126,8 +126,10 @@ function itgLoadPipMessages(lang, force = false) {
                     }
                 }
             }
-        } catch {
-            // Suppress harmless i18n fetch errors when extension context is reloaded or blocked by site CSP
+        } catch (e) {
+            if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+                console.log('[videoPip] Fallback to native chrome.i18n for messages:', e?.message || e);
+            }
         } finally {
             itgPipLoadPromise = null;
         }
