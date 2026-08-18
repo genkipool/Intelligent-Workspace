@@ -442,7 +442,7 @@ export function renderNoteEntry(note, context, handlers) {
                             chrome.tabs.create({ url: blobUrl, active: true });
                         });
                 } else {
-                    handlers.onOpenFileInPanel(link.href);
+                    handlers.onOpenFileInPanel(link.href, { fromNotes: true });
                 }
             });
         });

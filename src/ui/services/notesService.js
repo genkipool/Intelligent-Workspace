@@ -499,7 +499,8 @@ export function getNoteHandlers(context) {
         },
         onFilter: handleNoteFilter,
         onTogglePersistence: toggleNotePersistence,
-        onOpenFileInPanel: openUrlInPanel,
+        onOpenFileInPanel: (url, fileContext = null) =>
+            openUrlInPanel(url, { ...(fileContext || {}), fromNotes: true, noteContext: context }),
     };
 }
 
@@ -515,6 +516,8 @@ export async function showNotesView(context, orphanNotes = null) {
 
     // NotesView mounts and unmounts #notes-view from listGroupState; it must not be
     // removed by hand.
+    const notesViewEl = document.getElementById('notes-view');
+    if (notesViewEl) notesViewEl.style.display = '';
     isNotesViewActive.set(true);
     currentNotesContext.set(context);
     const mainHeaderTitle = document.getElementById('main-header-title');

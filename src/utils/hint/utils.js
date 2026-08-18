@@ -309,44 +309,67 @@ var Utils = class Utils {
 
         return false;
     }
+    static cropRectToVisible(rect) {
+        if (!rect) return null;
+        const boundedRect = {
+            left: Math.max(rect.left, 0),
+            top: Math.max(rect.top, 0),
+            right: rect.right,
+            bottom: rect.bottom,
+            width: rect.right - Math.max(rect.left, 0),
+            height: rect.bottom - Math.max(rect.top, 0),
+        };
+        if (
+            boundedRect.top >= window.innerHeight - 4 ||
+            boundedRect.left >= window.innerWidth - 4 ||
+            boundedRect.width < 3 ||
+            boundedRect.height < 3
+        ) {
+            return null;
+        }
+        return boundedRect;
+    }
+
+    static getVisibleClientRect(el, testChildren = true) {
+        if (!el || typeof el.getClientRects !== 'function') return null;
+        const ariaDisabled = el.getAttribute && el.getAttribute('aria-disabled');
+        if (ariaDisabled && ['', 'true'].includes(ariaDisabled.toLowerCase())) {
+            return null;
+        }
+        const clientRects = Array.from(el.getClientRects());
+        for (const rawRect of clientRects) {
+            if ((rawRect.width === 0 || rawRect.height === 0) && testChildren) {
+                for (const child of Array.from(el.children || [])) {
+                    const childRect = this.getVisibleClientRect(child, true);
+                    if (childRect && childRect.width >= 3 && childRect.height >= 3) {
+                        return childRect;
+                    }
+                }
+            } else {
+                const cropped = this.cropRectToVisible(rawRect);
+                if (!cropped) continue;
+                try {
+                    const style = window.getComputedStyle(el);
+                    if (style.visibility !== 'visible' || style.display === 'none') continue;
+                } catch {}
+                return cropped;
+            }
+        }
+        return null;
+    }
+
     static isVisible(el, isYouTubeControl = false) {
         if (!el || typeof el.getBoundingClientRect !== 'function') return false;
-        if (el.closest && el.closest('[aria-hidden="true"]')) return false;
+        const ariaDisabled = el.getAttribute && el.getAttribute('aria-disabled');
+        if (ariaDisabled && ['', 'true'].includes(ariaDisabled.toLowerCase())) {
+            return false;
+        }
         const parentDetails = el.closest && el.closest('details');
         if (parentDetails && !parentDetails.open) {
             const summaryAncestor = el.closest('summary');
             if (!summaryAncestor || summaryAncestor.parentElement !== parentDetails) return false;
         }
-        const rect = el.getBoundingClientRect();
-        let hasDimensions = rect.width >= 1 && rect.height >= 1;
-        if (!hasDimensions && el.children && el.children.length > 0) {
-            const descendants = el.querySelectorAll('*');
-            for (const descendant of descendants) {
-                if (descendant.getBoundingClientRect().width >= 1) {
-                    hasDimensions = true;
-                    break;
-                }
-            }
-        }
-        if (!hasDimensions) return false;
-
-        let current = el;
-        while (current) {
-            if (current.nodeType === 1) {
-                const style = window.getComputedStyle(current);
-                if (style.display === 'none' || style.visibility === 'hidden') return false;
-                if (!isYouTubeControl && parseFloat(style.opacity) < 0.05) return false;
-            }
-            if (current.parentElement) {
-                current = current.parentElement;
-            } else if (current.parentNode && current.parentNode.host) {
-                // Traverse shadow root boundary out to host element
-                current = current.parentNode.host;
-            } else {
-                current = null;
-            }
-        }
-        return true;
+        return this.getVisibleClientRect(el, true) !== null;
     }
     static querySelectorAllDeep(selector, root = document) {
         let elements = [];

@@ -74,6 +74,7 @@ var HintEngine = class HintEngine {
             const additional = [
                 '[onmousedown]:not([aria-disabled="true"])',
                 '[onmouseup]:not([aria-disabled="true"])',
+                '[jsaction]:not([aria-disabled="true"])',
                 '[role="link"]:not([aria-disabled="true"])',
                 '[role="menuitem"]:not([aria-disabled="true"])',
                 '[role="menuitemcheckbox"]:not([aria-disabled="true"])',
@@ -161,8 +162,70 @@ var HintEngine = class HintEngine {
             const isYtControl = window.location.hostname.includes('youtube.com') && el.closest('.ytp-chrome-bottom');
             return Utils.isVisible(el, isYtControl);
         });
+        const getElementAtPoint = (x, y) => {
+            let el = document.elementFromPoint(x, y);
+            while (el && el.shadowRoot) {
+                const inner = el.shadowRoot.elementFromPoint(x, y);
+                if (!inner || inner === el) break;
+                el = inner;
+            }
+            return el;
+        };
+
         const finalTargets = hintable.filter((el) => {
-            return !hintable.some((other) => el !== other && el.contains(other));
+            // Check containment with other interactive candidates
+            const hasDescendant = hintable.some((other) => el !== other && el.contains(other));
+            if (hasDescendant) return false;
+
+            const rect = Utils.getVisibleClientRect(el, true);
+            if (!rect) return false;
+
+            // Check if any scrollable parent is clipping this element out of its scroll viewport
+            let p = el.parentElement;
+            while (p && p !== document.documentElement && p !== document.body) {
+                if (p.scrollWidth > p.clientWidth || p.scrollHeight > p.clientHeight) {
+                    const pStyle = window.getComputedStyle(p);
+                    const overflowClips = ['hidden', 'clip', 'scroll', 'auto'].some(
+                        (val) => pStyle.overflowX === val || pStyle.overflowY === val || pStyle.overflow === val,
+                    );
+                    if (overflowClips) {
+                        const pRect = p.getBoundingClientRect();
+                        if (
+                            rect.right <= pRect.left ||
+                            rect.left >= pRect.right ||
+                            rect.bottom <= pRect.top ||
+                            rect.top >= pRect.bottom
+                        ) {
+                            return false;
+                        }
+                    }
+                }
+                p = p.parentElement;
+            }
+
+            // Check center
+            const centerX = rect.left + rect.width * 0.5;
+            const centerY = rect.top + rect.height * 0.5;
+            const elAtCenter = getElementAtPoint(centerX, centerY);
+            if (elAtCenter && (el.contains(elAtCenter) || elAtCenter.contains(el))) {
+                return true;
+            }
+
+            // Check corners
+            const points = [
+                [rect.left + 0.1, rect.top + 0.1],
+                [rect.right - 0.1, rect.top + 0.1],
+                [rect.left + 0.1, rect.bottom - 0.1],
+                [rect.right - 0.1, rect.bottom - 0.1],
+            ];
+            for (const [px, py] of points) {
+                if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) continue;
+                const elAtPoint = getElementAtPoint(px, py);
+                if (elAtPoint && (el.contains(elAtPoint) || elAtPoint.contains(el))) {
+                    return true;
+                }
+            }
+            return false;
         });
         const keysToAssign = this._generateKeys(finalTargets.length);
         const hintRoot = this.shadowUI.getContainer().getElementById('hint-root-container');
@@ -177,7 +240,7 @@ var HintEngine = class HintEngine {
                 hintEl.appendChild(s);
             }
             hintRoot.appendChild(hintEl);
-            const rect = el.getBoundingClientRect();
+            const rect = Utils.getVisibleClientRect(el, true) || el.getBoundingClientRect();
             let top = window.scrollY + rect.top;
             let left = window.scrollX + rect.left;
             const hintWidth = hintEl.offsetWidth;

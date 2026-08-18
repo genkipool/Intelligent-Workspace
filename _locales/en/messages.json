@@ -1,4 +1,7 @@
 {
+  "viewFilesTitle": {
+    "message": "View files"
+  },
   "qrScanTitle": {
     "message": "Scan QR / Barcode"
   },
@@ -6236,6 +6239,9 @@
   },
   "feature_v100_notes_kanban": {
     "message": "Advanced Notes: Create and manage text notes, checklists, Kanban boards, and voice memos natively."
+  },
+  "feature_v100_view_files": {
+    "message": "File Viewer: Attach and view PDF documents, images, and media directly in the side panel."
   },
   "feature_v100_text_snippets": {
     "message": "Text Snippets: Smart text expansion for rapid and automated rich-text generation with variables."

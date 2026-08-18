@@ -1,4 +1,7 @@
 {
+    "viewFilesTitle": {
+        "message": "Ver archivos"
+    },
     "qrScanTitle": {
         "message": "Escanear Código QR / Barras"
     },
@@ -6319,6 +6322,9 @@
     },
     "feature_v100_notes_kanban": {
         "message": "Notas Avanzadas: Crea y gestiona notas de texto, listas de tareas, tableros Kanban y notas de voz."
+    },
+    "feature_v100_view_files": {
+        "message": "Visor de Archivos: Adjunta y visualiza documentos PDF, imágenes y multimedia directamente en el panel lateral."
     },
     "feature_v100_text_snippets": {
         "message": "Expansión de Texto (Snippets): Rellena texto rápida y automáticamente con variables desde el propio texto."

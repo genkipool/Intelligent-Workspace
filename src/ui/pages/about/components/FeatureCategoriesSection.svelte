@@ -46,6 +46,7 @@
         <FeatureItem isMaterial={true} iconName="screenshot" textKey="feature_v100_screenshot_tool" />
         <FeatureItem isMaterial={true} iconName="document_scanner" textKey="feature_v100_screenshot_ocr" />
         <FeatureItem isMaterial={true} iconName="edit_note" textKey="feature_v100_notes_kanban" />
+        <FeatureItem isMaterial={true} iconName="attach_file" textKey="feature_v100_view_files" />
         <FeatureItem isMaterial={true} iconName="unfold_less" textKey="feature_collapseExpandAll" />
         <FeatureItem isMaterial={true} iconName="delete_outline" textKey="feature_deleteEmptyGroups" />
         <FeatureItem isMaterial={true} iconName="history" textKey="feature_saveSession" />

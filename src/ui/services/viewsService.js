@@ -24,6 +24,7 @@ import {
     currentBookmarkSort,
     isGeminiViewActive,
     isNotesViewActive,
+    currentNotesContext,
     isGalleryViewActive,
     isUrlViewActive,
     isStandaloneGemini,
@@ -42,6 +43,7 @@ import {
 
 // ─── Svelte Stores (other) ───────────────────────────────────────
 import { geminiStore, conversationHistory } from '../stores/geminiStore.js';
+import { listGroupStore } from '../stores/listGroupStore.js';
 
 // ─── Legacy state (transitional — for properties not yet in Svelte stores) ──
 import { state as legacyState } from './constants.js';
@@ -56,7 +58,7 @@ import {
     createTabsInBatches,
 } from './groupsService.js';
 import { updateScheduledConversationBadge, switchToGeminiView } from './geminiService.js';
-import { closeNotesView } from './notesService.js';
+import { closeNotesView, showNotesView } from './notesService.js';
 import { closeScreenshotGallery } from './screenshotsService.js';
 import { closeOverflowMenu, createOverflowMenu } from './contextMenuService.js';
 import { showAddToRuleModal, openAddToBookmarkModal } from './bookmarksService.js';
@@ -1094,15 +1096,27 @@ export async function openUrlInPanel(url, context = null) {
     isUrlViewActive.set(true);
     currentPanelContext.set(context);
     geminiStore.closeView(true);
-    closeNotesView();
+    if (!context || !context.fromNotes) {
+        closeNotesView(true);
+    } else {
+        isNotesViewActive.set(false);
+        listGroupStore.updateState({
+            isNotesViewActive: false,
+        });
+    }
     closeScreenshotGallery();
 
     closeUrlInPanel(true);
     currentPanelUrl.set(url);
+    currentPanelContext.set(context);
+
+    const isFileView =
+        url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('file:') || (context && context.fromNotes);
 
     const _mainHeaderTitle = document.getElementById('main-header-title');
     if (_mainHeaderTitle) {
-        _mainHeaderTitle.setAttribute('data-i18n', 'webViewTitle');
+        const titleKey = isFileView ? 'viewFilesTitle' : 'webViewTitle';
+        _mainHeaderTitle.setAttribute('data-i18n', titleKey);
     }
 
     const container = document.querySelector('.container');
@@ -1114,7 +1128,7 @@ export async function openUrlInPanel(url, context = null) {
             if (el) el.style.display = 'none';
         });
 
-    if (url.startsWith('data:application/pdf')) {
+    if (url.startsWith('data:application/pdf') || url.startsWith('data:') || url.startsWith('blob:')) {
         const iframe = document.createElement('iframe');
         iframe.id = 'side-panel-iframe-viewer';
         iframe.className = 'active-view';
@@ -1401,6 +1415,15 @@ export async function closeUrlInPanel(isSwitchingView = false) {
         return;
     }
 
+    const context = get(currentPanelContext);
+    const targetNotesContext = (context && context.noteContext) || get(currentNotesContext);
+    if (context && context.fromNotes && targetNotesContext) {
+        currentPanelContext.set(null);
+        await showNotesView(targetNotesContext);
+        return;
+    }
+
+    currentPanelContext.set(null);
     restoreMainView();
 }
 
@@ -1610,7 +1633,8 @@ export async function updateBackButtonTooltip() {
     if (errorView) {
         tooltipKey = get(isGeminiViewActive) ? 'backToGemini' : 'backToHome';
     } else if (get(isUrlViewActive)) {
-        tooltipKey = 'closeUrlPanel';
+        const panelCtx = get(currentPanelContext);
+        tooltipKey = panelCtx && panelCtx.fromNotes ? 'backToNotes' : 'closeUrlPanel';
     } else if (get(isNotesViewActive)) {
         const viewToKeyMap = {
             groups: 'backToGroups',

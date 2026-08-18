@@ -25,6 +25,7 @@
                 'feature_v100_status_prefixes',
                 'feature_v100_autocollapse_timer',
                 'feature_v100_notes_kanban',
+                'feature_v100_view_files',
                 'feature_v100_text_snippets',
                 'feature_v100_cookie_editor',
                 'feature_v100_screenshot_tool',
