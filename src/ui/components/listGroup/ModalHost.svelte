@@ -104,6 +104,7 @@
         show={$showQrCodeModal}
         url={$modalData?.url || ''}
         title={$modalData?.title || ''}
+        initialTab={$modalData?.initialTab || ($modalData?.url ? 'generate' : 'scan')}
         onClose={() => closeModal(showQrCodeModal)}
     />
 {/if}

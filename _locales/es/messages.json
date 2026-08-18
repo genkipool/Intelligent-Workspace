@@ -1,4 +1,43 @@
 {
+    "qrScanTitle": {
+        "message": "Escanear Código QR / Barras"
+    },
+    "qrTabGenerate": {
+        "message": "Generar QR"
+    },
+    "qrTabScan": {
+        "message": "Escanear QR"
+    },
+    "qrScanScreenArea": {
+        "message": "Capturar área"
+    },
+    "qrUploadImage": {
+        "message": "Subir imagen"
+    },
+    "qrDragDropPlaceholder": {
+        "message": "Arrastra una imagen o haz clic para subir y escanear QR / Código de barras"
+    },
+    "qrScanningInProgress": {
+        "message": "Escaneando código..."
+    },
+    "qrResultsTitle": {
+        "message": "Resultados detectados:"
+    },
+    "qrScanSuccess": {
+        "message": "¡Código detectado con éxito!"
+    },
+    "noQrFound": {
+        "message": "No se detectó ningún código QR o de barras"
+    },
+    "errorScanningQr": {
+        "message": "Error al procesar la imagen para escaneo"
+    },
+    "noUrlForQr": {
+        "message": "No hay URL disponible para generar código QR"
+    },
+    "invalidImageFile": {
+        "message": "Por favor, selecciona un archivo de imagen válido"
+    },
     "confirmActionTitle": {
         "message": "Confirmar"
     },

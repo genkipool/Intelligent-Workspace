@@ -78,7 +78,7 @@ async function updateScreenshotSessionIndex(tab, screenshotId) {
  */
 async function handleCaptureAreaScreenshot(message, sender) {
     (async () => {
-        const { area, devicePixelRatio } = message.data;
+        const { area, devicePixelRatio, saveToGallery = true } = message.data;
         const tab = await resolveTabForScreenshot(sender);
 
         if (!tab) {
@@ -115,35 +115,40 @@ async function handleCaptureAreaScreenshot(message, sender) {
                 reader.readAsDataURL(croppedBlob);
             });
 
-            // Save to database and update session index
-            const screenshotId = Date.now();
-            const newScreenshot = {
-                id: screenshotId,
-                dataUrl: croppedDataUrl,
-                title: `${tab.title} (selection)`,
-                url: tab.url,
-                contextKey: getScreenshotContextKey(tab),
-                isPersistent: false,
-            };
-            await saveScreenshotToDb(newScreenshot);
-            await updateScreenshotSessionIndex(tab, screenshotId);
+            // Save to database and update session index ONLY if saveToGallery is true
+            if (saveToGallery) {
+                const screenshotId = Date.now();
+                const newScreenshot = {
+                    id: screenshotId,
+                    dataUrl: croppedDataUrl,
+                    title: `${tab.title} (selection)`,
+                    url: tab.url,
+                    contextKey: getScreenshotContextKey(tab),
+                    isPersistent: false,
+                };
+                await saveScreenshotToDb(newScreenshot);
+                await updateScreenshotSessionIndex(tab, screenshotId);
+            }
 
             // Send detailed message to the UI and active tab about the result
             const finishMsg = {
                 action: 'areaScreenshotProcessFinished',
                 success: true,
                 dataUrl: croppedDataUrl,
+                saveToGallery,
             };
             chrome.runtime.sendMessage(finishMsg);
             if (tab && tab.id) {
                 chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
             }
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
-                message: getI18nMsg('screenshotSavedAndCopied', [], 'Captura guardada y copiada'),
-            });
+            if (saveToGallery) {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: '/assets/icons/icon128.png',
+                    title: 'Intelligent Tab Group',
+                    message: getI18nMsg('screenshotSavedAndCopied', [], 'Captura guardada y copiada'),
+                });
+            }
         } catch (error) {
             console.error('Error capturing screen area:', error);
             const finishErrMsg = { action: 'areaScreenshotProcessFinished', success: false };
@@ -151,12 +156,14 @@ async function handleCaptureAreaScreenshot(message, sender) {
             if (tab && tab.id) {
                 chrome.tabs.sendMessage(tab.id, finishErrMsg).catch(() => {});
             }
-            chrome.notifications.create({
-                type: 'basic',
-                iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
-                message: getI18nMsg('errorTakingScreenshot', [], 'Error al realizar la captura'),
-            });
+            if (saveToGallery) {
+                chrome.notifications.create({
+                    type: 'basic',
+                    iconUrl: '/assets/icons/icon128.png',
+                    title: 'Intelligent Tab Group',
+                    message: getI18nMsg('errorTakingScreenshot', [], 'Error al realizar la captura'),
+                });
+            }
         }
     })();
 }
@@ -226,16 +233,31 @@ function handleCaptureFullPageFromShortcut(message, sender, sendResponse) {
 
 function handleInjectAreaSelector(message, sender, sendResponse) {
     const tabId = message.tabId;
+    const saveToGallery = message.saveToGallery !== false;
     if (tabId) {
-        chrome.scripting.executeScript({
-            target: { tabId },
-            files: ['src/utils/area-selector.js'],
-            world: 'ISOLATED',
-        });
-        chrome.scripting.insertCSS({
-            target: { tabId },
-            files: ['src/utils/area-selector.css'],
-        });
+        chrome.scripting
+            .executeScript({
+                target: { tabId },
+                func: (save) => {
+                    window._areaSelectorSaveToGallery = save;
+                },
+                args: [saveToGallery],
+                world: 'ISOLATED',
+            })
+            .then(() => {
+                chrome.scripting.executeScript({
+                    target: { tabId },
+                    files: ['src/utils/area-selector.js'],
+                    world: 'ISOLATED',
+                });
+                chrome.scripting.insertCSS({
+                    target: { tabId },
+                    files: ['src/utils/area-selector.css'],
+                });
+            })
+            .catch((err) => {
+                console.error('Error injecting area selector script:', err);
+            });
     }
     sendResponse({ success: true });
 }

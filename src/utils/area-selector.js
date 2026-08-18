@@ -97,12 +97,15 @@
         // Important: Hide the overlay layer *before* taking the screenshot
         overlay.style.display = 'none';
 
+        const saveToGallery = window._areaSelectorSaveToGallery !== false;
+
         setTimeout(() => {
             chrome.runtime.sendMessage({
                 action: 'captureAreaScreenshot',
                 data: {
                     area: selectedArea,
                     devicePixelRatio: window.devicePixelRatio,
+                    saveToGallery,
                 },
             });
             cleanup();

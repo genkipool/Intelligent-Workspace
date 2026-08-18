@@ -1,4 +1,43 @@
 {
+  "qrScanTitle": {
+    "message": "Scan QR / Barcode"
+  },
+  "qrTabGenerate": {
+    "message": "Generate QR"
+  },
+  "qrTabScan": {
+    "message": "Scan QR"
+  },
+  "qrScanScreenArea": {
+    "message": "Capture Area"
+  },
+  "qrUploadImage": {
+    "message": "Upload Image"
+  },
+  "qrDragDropPlaceholder": {
+    "message": "Drag and drop an image or click to upload and scan QR / Barcode"
+  },
+  "qrScanningInProgress": {
+    "message": "Scanning code..."
+  },
+  "qrResultsTitle": {
+    "message": "Detected results:"
+  },
+  "qrScanSuccess": {
+    "message": "Code detected successfully!"
+  },
+  "noQrFound": {
+    "message": "No QR code or barcode detected"
+  },
+  "errorScanningQr": {
+    "message": "Error processing image for scanning"
+  },
+  "noUrlForQr": {
+    "message": "No URL available to generate QR code"
+  },
+  "invalidImageFile": {
+    "message": "Please select a valid image file"
+  },
   "confirmActionTitle": {
     "message": "Confirm"
   },
