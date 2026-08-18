@@ -18,6 +18,61 @@ export function canPickDirectory() {
     return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
 }
 
+/** Can this browser open a file picker via File System Access API? */
+export function canPickFiles() {
+    return typeof window !== 'undefined' && typeof window.showOpenFilePicker === 'function';
+}
+
+/**
+ * Asks for multiple audio files and returns them.
+ *
+ * @returns {Promise<{items: Array<{file: File, path: string}>, folder: string}|null>}
+ */
+export async function pickFiles() {
+    let handles;
+    try {
+        handles = await window.showOpenFilePicker({
+            id: 'itg-music-files',
+            multiple: true,
+            startIn: 'music',
+            types: [
+                {
+                    description: 'Audio Files',
+                    accept: {
+                        'audio/*': [
+                            '.mp3',
+                            '.m4a',
+                            '.aac',
+                            '.ogg',
+                            '.oga',
+                            '.opus',
+                            '.wav',
+                            '.flac',
+                            '.weba',
+                            '.webm',
+                            '.mp4',
+                        ],
+                    },
+                },
+            ],
+        });
+    } catch (error) {
+        if (error?.name === 'AbortError') return null;
+        throw error;
+    }
+
+    if (!handles || handles.length === 0) return null;
+
+    const items = [];
+    for (const handle of handles) {
+        const file = await handle.getFile();
+        if (isAudioFile(file)) {
+            items.push({ file, path: file.name });
+        }
+    }
+    return { items, folder: '' };
+}
+
 /**
  * Asks for a folder and returns the music inside it, subfolders included.
  *

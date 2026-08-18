@@ -8967,5 +8967,110 @@
                 "content": "$1"
             }
         }
+    },
+    "musicPlayer": {
+        "message": "Reproductor de música"
+    },
+    "musicPlayerEmpty": {
+        "message": "Sin pista seleccionada"
+    },
+    "musicPlayerTrackPosition": {
+        "message": "$1 / $2"
+    },
+    "musicPlayerPlay": {
+        "message": "Reproducir"
+    },
+    "musicPlayerPause": {
+        "message": "Pausar"
+    },
+    "musicPlayerPlayTrack": {
+        "message": "Reproducir «$1»"
+    },
+    "musicPlayerStop": {
+        "message": "Detener"
+    },
+    "musicPlayerPrevious": {
+        "message": "Anterior"
+    },
+    "musicPlayerNext": {
+        "message": "Siguiente"
+    },
+    "musicPlayerRewind": {
+        "message": "Retroceder $1s"
+    },
+    "musicPlayerForward": {
+        "message": "Avanzar $1s"
+    },
+    "musicPlayerSeek": {
+        "message": "Posición de reproducción"
+    },
+    "musicPlayerSearch": {
+        "message": "Buscar pista"
+    },
+    "musicPlayerSearchPlaceholder": {
+        "message": "Buscar pista…"
+    },
+    "musicPlayerCloseSearch": {
+        "message": "Cerrar búsqueda"
+    },
+    "musicPlayerSelectFolder": {
+        "message": "Añadir carpeta de música"
+    },
+    "musicPlayerAddFolder": {
+        "message": "Añadir carpeta de música"
+    },
+    "musicPlayerSelectFiles": {
+        "message": "Añadir archivos de música"
+    },
+    "musicPlayerRemoveFolder": {
+        "message": "Eliminar carpeta de la lista"
+    },
+    "musicPlayerRemoveTrack": {
+        "message": "Eliminar de la lista"
+    },
+    "musicPlayerNoResults": {
+        "message": "No se encontraron pistas"
+    },
+    "musicPlayerTrackCount": {
+        "message": "$1 pistas"
+    },
+    "musicPlayerEmptyHint": {
+        "message": "Elige una carpeta para comenzar a reproducir"
+    },
+    "musicPlayerNowPlaying": {
+        "message": "Reproduciendo: $1"
+    },
+    "musicPlayerShow": {
+        "message": "Mostrar reproductor"
+    },
+    "musicPlayerHide": {
+        "message": "Ocultar reproductor"
+    },
+    "musicPlayerNoAudioInFolder": {
+        "message": "No se encontraron archivos de audio en la carpeta seleccionada"
+    },
+    "musicPlayerFolderTooBig": {
+        "message": "La carpeta es demasiado grande; se cargaron las primeras $1 pistas"
+    },
+    "musicPlayerFolderLoaded": {
+        "message": "Se cargaron $1 pistas de la carpeta «$2»"
+    },
+    "musicPlayerTracksLoaded": {
+        "message": "Se cargaron $1 pistas"
+    },
+    "musicPlayerVolume": {
+        "message": "Volumen"
+    },
+    "musicPlayerMute": {
+        "message": "Silenciar"
+    },
+    "musicPlayerUnmute": {
+        "message": "Activar sonido"
+    },
+    "musicPlayerDuplicatesIgnored": {
+        "message": "Se omitieron $1 archivos o pistas ya existentes en la lista"
+    },
+    "musicPlayerAllDuplicates": {
+        "message": "Todos los archivos seleccionados ya están en la lista de reproducción"
     }
 }

@@ -9185,6 +9185,133 @@ body:not(.groups-view-active) .music-panel,
     font-size: var(--medium-text, 13px);
 }
 
+/* ─── Music Folder & Results (Matching Bookmark Tree Design) ────────── */
+.music-folder {
+    margin-bottom: 2px;
+}
+
+.music-folder-title {
+    display: flex;
+    gap: 8px;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 4px;
+    list-style: none;
+    align-items: center;
+    user-select: none;
+    font-size: var(--medium-text, 13px);
+}
+
+.music-folder-title:hover,
+.music-folder-title:focus-visible {
+    background-color: var(--bg-panel-color);
+    outline: none;
+}
+
+.music-folder-title:focus-visible {
+    box-shadow: 0 0 0 2px var(--interactive-color);
+}
+
+.music-folder-title::-webkit-details-marker {
+    display: none;
+}
+
+.music-folder-title .folder-name {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+}
+
+.music-folder-title .folder-icon-open {
+    display: none;
+}
+
+.music-folder-title .folder-icon-closed {
+    display: block;
+}
+
+.music-folder[open] > .music-folder-title .folder-icon-open {
+    display: block;
+}
+
+.music-folder[open] > .music-folder-title .folder-icon-closed {
+    display: none;
+}
+
+.music-folder-count {
+    font-size: var(--small-text, 11px);
+    opacity: 0.6;
+    margin-right: 4px;
+}
+
+.music-folder-delete-btn {
+    opacity: 0.6;
+    padding: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition:
+        opacity 0.2s,
+        color 0.2s,
+        transform 0.15s;
+}
+
+.music-folder-delete-btn:hover {
+    opacity: 1;
+    color: var(--error-color);
+    transform: scale(1.15);
+}
+
+.music-folder-content {
+    padding-left: 8px;
+    border-left: 1px solid var(--border-color);
+    margin-left: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.music-track-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.music-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-align: left;
+    width: 100%;
+    color: var(--text-color);
+    background: transparent;
+    border: none;
+}
+
+.music-result:hover,
+.music-result:focus-visible {
+    background-color: var(--bg-panel-color);
+    outline: none;
+}
+
+.music-result:focus-visible {
+    box-shadow: 0 0 0 2px var(--interactive-color);
+}
+
+.music-result.active {
+    background-color: var(--action-color);
+    font-weight: 600;
+}
+
 .music-results-empty {
     margin: 0;
     padding: 6px;
@@ -9259,23 +9386,101 @@ body:not(.groups-view-active) .music-panel,
     transform: translateY(-50%) scale(1.15);
 }
 
-/* ─── Row 4 · transport ────────────────────────────────────────────── */
-/* Three columns so the transport sits in the true middle of the row whatever
-   the track counter beside it happens to say. */
+/* ─── Row 4 · transport & controls ─────────────────────────────────── */
 .music-row-controls {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
     min-height: 34px;
+    padding: 4px 8px;
+    position: relative;
+}
+
+.music-controls-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+    margin: 0 auto;
 }
 
 .music-transport {
-    grid-column: 2;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 4px;
+    align-items: center;
+    gap: 2px;
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+}
+
+.music-controls-divider {
+    width: 1px;
+    height: 18px;
+    background-color: var(--border-color);
+    opacity: 0.8;
+    flex-shrink: 0;
+}
+
+.music-volume-control {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.music-volume-control .music-mute-btn {
+    padding: 3px;
+    flex-shrink: 0;
+}
+
+.music-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 60px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.music-volume-slider:hover,
+.music-volume-slider:focus-visible {
+    opacity: 1;
+}
+
+.music-volume-slider::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(
+        to right,
+        var(--interactive-color, #ff4444) 0%,
+        var(--interactive-color, #ff4444) var(--vol-pct, 100%),
+        var(--border-color, rgba(255, 255, 255, 0.25)) var(--vol-pct, 100%),
+        var(--border-color, rgba(255, 255, 255, 0.25)) 100%
+    );
+}
+
+.music-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--interactive-color, #ff4444);
+    margin-top: -4px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    transition: transform 0.1s ease;
+}
+
+.music-volume-slider:hover::-webkit-slider-thumb,
+.music-volume-slider:active::-webkit-slider-thumb,
+.music-volume-slider:focus-visible::-webkit-slider-thumb {
+    transform: scale(1.25);
 }
 
 .music-action-btn {
@@ -9287,7 +9492,8 @@ body:not(.groups-view-active) .music-panel,
     border-radius: var(--small-border-radius, 5px);
     color: var(--text-color);
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 4px 5px;
+    flex-shrink: 0;
     transition:
         background-color 0.15s,
         border-color 0.15s,
@@ -9308,27 +9514,6 @@ body:not(.groups-view-active) .music-panel,
     background-color: var(--action-color);
     border-color: var(--border-color);
     padding: 4px 12px;
-}
-
-.music-count {
-    grid-column: 3;
-    justify-self: end;
-    font-size: var(--small-text, 11px);
-    opacity: 0.7;
-    white-space: nowrap;
-}
-
-.music-empty-hint {
-    grid-column: 3;
-    justify-self: end;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    font-size: var(--small-text, 11px);
-    opacity: 0.75;
-    text-align: right;
-    text-decoration: underline dotted;
 }
 
 /* Narrow popups drop the running commentary and keep the buttons centred. */
@@ -9378,4 +9563,22 @@ body:not(.groups-view-active) .music-panel,
     background-color: var(--action-color);
     border-color: var(--border-color);
     outline: none;
+}
+
+.music-quick-divider {
+    width: 1px;
+    height: 16px;
+    background-color: var(--border-color);
+    margin: 0 2px;
+}
+
+.music-quick-volume {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding-right: 2px;
+}
+
+.music-quick-volume-slider {
+    width: 54px;
 }

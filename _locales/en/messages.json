@@ -8962,5 +8962,110 @@
         "content": "$1"
       }
     }
+  },
+  "musicPlayer": {
+    "message": "Music Player"
+  },
+  "musicPlayerEmpty": {
+    "message": "No track selected"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "Play"
+  },
+  "musicPlayerPause": {
+    "message": "Pause"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "Play “$1”"
+  },
+  "musicPlayerStop": {
+    "message": "Stop"
+  },
+  "musicPlayerPrevious": {
+    "message": "Previous"
+  },
+  "musicPlayerNext": {
+    "message": "Next"
+  },
+  "musicPlayerRewind": {
+    "message": "Rewind $1s"
+  },
+  "musicPlayerForward": {
+    "message": "Forward $1s"
+  },
+  "musicPlayerSeek": {
+    "message": "Seek progress"
+  },
+  "musicPlayerSearch": {
+    "message": "Search tracks"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "Search tracks…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "Close search"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "Add music folder"
+  },
+  "musicPlayerAddFolder": {
+    "message": "Add music folder"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "Add music files"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "Remove folder from playlist"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "Remove from playlist"
+  },
+  "musicPlayerNoResults": {
+    "message": "No tracks found"
+  },
+  "musicPlayerTrackCount": {
+    "message": "$1 tracks"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "Choose a folder to start playing"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "Now playing: $1"
+  },
+  "musicPlayerShow": {
+    "message": "Show music player"
+  },
+  "musicPlayerHide": {
+    "message": "Hide music player"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "No audio files found in selected folder"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "Folder is too large; loaded first $1 tracks"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "Loaded $1 tracks from “$2”"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "Loaded $1 tracks"
+  },
+  "musicPlayerVolume": {
+    "message": "Volume"
+  },
+  "musicPlayerMute": {
+    "message": "Mute"
+  },
+  "musicPlayerUnmute": {
+    "message": "Unmute"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "Skipped $1 duplicate tracks already in the playlist"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "All selected files are already in the playlist"
   }
 }

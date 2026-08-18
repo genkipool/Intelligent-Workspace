@@ -13,6 +13,10 @@
         isPlaying,
         hasTracks,
         currentTrack,
+        volume,
+        isMuted,
+        setVolume,
+        toggleMute,
         togglePanel,
         togglePlay,
         stop,
@@ -202,5 +206,33 @@
         >
             <svg width="16" height="16" aria-hidden="true" focusable="false"><use href="#icon-track-next"></use></svg>
         </button>
+
+        <div class="music-quick-divider"></div>
+
+        <div class="music-quick-volume">
+            <button
+                type="button"
+                class="music-quick-btn music-mute-btn"
+                title={$isMuted ? $tt('musicPlayerUnmute') : $tt('musicPlayerMute')}
+                aria-label={$isMuted ? $t('musicPlayerUnmute') : $t('musicPlayerMute')}
+                onclick={toggleMute}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href={$isMuted || $volume === 0 ? '#icon-speaker-muted' : '#icon-speaker'}></use>
+                </svg>
+            </button>
+            <input
+                type="range"
+                class="music-volume-slider music-quick-volume-slider"
+                min="0"
+                max="1"
+                step="0.01"
+                value={$isMuted ? 0 : $volume}
+                style:--vol-pct={`${($isMuted ? 0 : $volume) * 100}%`}
+                title={$tt('musicPlayerVolume')}
+                aria-label={$t('musicPlayerVolume')}
+                oninput={(e) => setVolume(parseFloat(e.currentTarget.value))}
+            />
+        </div>
     </div>
 {/if}

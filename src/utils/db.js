@@ -570,6 +570,78 @@ export async function getMusicTrackFromDb(index) {
     });
 }
 
+/**
+ * Removes a track at a specific index and shifts remaining indexes down.
+ *
+ * @param {number} removeIndex
+ * @returns {Promise<void>}
+ */
+export async function removeMusicTrackFromDb(removeIndex) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            store.clear();
+            const reindexed = records
+                .filter((r) => r.index !== removeIndex)
+                .sort((a, b) => a.index - b.index)
+                .map((r, i) => ({ ...r, index: i }));
+            for (const r of reindexed) store.put(r);
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Appends new track blobs to IndexedDB starting from a given offset index.
+ *
+ * @param {Array<{index: number, blob: Blob}>} records
+ * @returns {Promise<number>}
+ */
+export async function appendMusicTracksToDb(records) {
+    if (!records || records.length === 0) return 0;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        for (const record of records) store.put(record);
+        transaction.oncomplete = () => resolve(records.length);
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Removes multiple tracks by their indices and shifts remaining indices.
+ *
+ * @param {Set<number>|number[]} indicesToRemove
+ * @returns {Promise<void>}
+ */
+export async function removeMusicTracksByIndicesFromDb(indicesToRemove) {
+    const removeSet = indicesToRemove instanceof Set ? indicesToRemove : new Set(indicesToRemove);
+    if (removeSet.size === 0) return;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            store.clear();
+            const reindexed = records
+                .filter((r) => !removeSet.has(r.index))
+                .sort((a, b) => a.index - b.index)
+                .map((r, i) => ({ ...r, index: i }));
+            for (const r of reindexed) store.put(r);
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
 export async function clearMusicTracksInDb() {
     const db = await openDb();
     return new Promise((resolve, reject) => {

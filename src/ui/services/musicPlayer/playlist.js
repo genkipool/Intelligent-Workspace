@@ -37,21 +37,74 @@ export function trackTitleFromFileName(fileName) {
 }
 
 /**
- * The folder a picked file came from, taken from the relative path the directory
- * input fills in. Falls back to an empty string for a plain multi-file pick.
+ * Cleans and normalizes folder path (removes leading/trailing slashes).
  *
- * @param {File} file
+ * @param {string} p
  * @returns {string}
  */
-export function folderNameOf(file) {
-    const parts = String(file?.webkitRelativePath || '').split('/');
-    return parts.length > 1 ? parts[0] : '';
+export function normalizeFolderPath(p) {
+    return String(p || '')
+        .trim()
+        .replace(/^\/+|\/+$/g, '')
+        .replace(/\/+/g, '/');
+}
+
+/**
+ * Checks if two folder paths refer to the same folder (e.g. 'musica/musica2' ends with 'musica2' or viceversa).
+ *
+ * @param {string} folderA
+ * @param {string} folderB
+ * @returns {boolean}
+ */
+export function isSameOrSubfolderMatch(folderA, folderB) {
+    const a = normalizeFolderPath(folderA).toLowerCase();
+    const b = normalizeFolderPath(folderB).toLowerCase();
+    if (!a || !b) return a === b;
+    if (a === b) return true;
+    return a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
+}
+
+/**
+ * Finds the canonical existing folder name for a newly picked file/folder.
+ * If 'musica/musica2' already exists and we upload 'musica2', it matches 'musica/musica2'.
+ *
+ * @param {string} newFolder
+ * @param {Iterable<string>} existingFolders
+ * @returns {string}
+ */
+export function resolveCanonicalFolder(newFolder, existingFolders) {
+    const normalizedNew = normalizeFolderPath(newFolder);
+    if (!normalizedNew) return '';
+    for (const existing of existingFolders) {
+        const normalizedExisting = normalizeFolderPath(existing);
+        if (isSameOrSubfolderMatch(normalizedExisting, normalizedNew)) {
+            // Prefer the longer/more specific existing path (e.g. 'musica/musica2' over 'musica2')
+            return normalizedExisting.length >= normalizedNew.length ? normalizedExisting : normalizedNew;
+        }
+    }
+    return normalizedNew;
+}
+
+/**
+ * The folder a picked file came from, taken from the relative path or fallback folder name.
+ *
+ * @param {string|File} pathOrFile
+ * @param {string} [defaultFolder='']
+ * @returns {string}
+ */
+export function folderNameOf(pathOrFile, defaultFolder = '') {
+    const rawPath = typeof pathOrFile === 'string' ? pathOrFile : pathOrFile?.webkitRelativePath || '';
+    const parts = String(rawPath).split('/').filter(Boolean);
+    if (parts.length > 1) {
+        return normalizeFolderPath(parts.slice(0, -1).join('/'));
+    }
+    return normalizeFolderPath(defaultFolder);
 }
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 /**
- * Builds the playlist for a picked folder.
+ * Builds the playlist for a picked folder or files.
  *
  * Non-audio files are dropped, and what is left is sorted the way a file manager
  * would show it, so `track2` comes before `track10`.
@@ -61,23 +114,51 @@ const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'bas
  * them, since files it produces carry no relative path of their own.
  *
  * @param {Iterable<File|{file: File, path: string}>} entries
+ * @param {string} [defaultFolder='']
  * @returns {Array<{id: string, title: string, fileName: string, folder: string, path: string, size: number, file: File}>}
  */
-export function buildPlaylist(entries) {
+export function buildPlaylist(entries, defaultFolder = '') {
     return Array.from(entries ?? [])
         .map((entry) => (entry instanceof File ? { file: entry, path: entry.webkitRelativePath } : entry))
         .filter((entry) => entry?.file && isAudioFile(entry.file))
-        .map(({ file, path }, index) => ({
-            id: `${index}:${path || file.name}`,
-            title: trackTitleFromFileName(file.name),
-            fileName: file.name,
-            folder: folderNameOf(path),
-            path: path || file.name,
-            size: file.size ?? 0,
-            file,
-        }))
+        .map(({ file, path }, index) => {
+            const folder = folderNameOf(path, defaultFolder);
+            const fullPath = path || (folder ? `${folder}/${file.name}` : file.name);
+            return {
+                id: `${index}:${fullPath}`,
+                title: trackTitleFromFileName(file.name),
+                fileName: file.name,
+                folder,
+                path: fullPath,
+                size: file.size ?? 0,
+                file,
+            };
+        })
         .sort((a, b) => collator.compare(a.path, b.path))
         .map((track, index) => ({ ...track, index }));
+}
+
+/**
+ * Groups tracks into folders for nested playlist display.
+ * Tracks without a folder are grouped under an empty string `""` or `other`.
+ *
+ * @param {Array<object>} tracks
+ * @returns {Array<{folder: string, tracks: Array<object>}>}
+ */
+export function groupTracksByFolder(tracks) {
+    if (!tracks || tracks.length === 0) return [];
+    const groupsMap = new Map();
+    for (const track of tracks) {
+        const folder = track.folder || '';
+        if (!groupsMap.has(folder)) {
+            groupsMap.set(folder, []);
+        }
+        groupsMap.get(folder).push(track);
+    }
+    return Array.from(groupsMap.entries()).map(([folder, folderTracks]) => ({
+        folder,
+        tracks: folderTracks,
+    }));
 }
 
 /**

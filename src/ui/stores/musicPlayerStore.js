@@ -8,8 +8,20 @@
  * toolbar button and its hover popup all show the same thing.
  */
 import { writable, derived, get } from 'svelte/store';
-import { buildPlaylist, filterTracks } from '../services/musicPlayer/playlist.js';
-import { saveMusicTracksToDb, clearMusicTracksInDb } from '../../utils/db.js';
+import {
+    buildPlaylist,
+    filterTracks,
+    resolveCanonicalFolder,
+    isSameOrSubfolderMatch,
+    normalizeFolderPath,
+} from '../services/musicPlayer/playlist.js';
+import {
+    saveMusicTracksToDb,
+    appendMusicTracksToDb,
+    clearMusicTracksInDb,
+    removeMusicTrackFromDb,
+    removeMusicTracksByIndicesFromDb,
+} from '../../utils/db.js';
 
 /** How far the rewind and fast-forward buttons jump, in seconds. */
 export const SEEK_STEP_SECONDS = 10;
@@ -31,6 +43,8 @@ export const currentIndex = writable(-1);
 export const isPlaying = writable(false);
 export const currentTime = writable(0);
 export const duration = writable(0);
+export const volume = writable(1);
+export const isMuted = writable(false);
 /** Is the track name at the top acting as a search box? */
 export const isSearchOpen = writable(false);
 export const searchQuery = writable('');
@@ -140,6 +154,7 @@ function startInterpolating() {
     interpolationFrame = requestAnimationFrame(tick);
 }
 
+const VOLUME_KEY = 'musicPlayerVolume';
 let interpolationBase = 0;
 
 /** Takes in a state report from the offscreen player. */
@@ -149,6 +164,8 @@ function applyState(state) {
     isPlaying.set(Boolean(state.isPlaying));
     duration.set(state.duration || 0);
     currentTime.set(state.currentTime || 0);
+    if (typeof state.volume === 'number') volume.set(state.volume);
+    if (typeof state.isMuted === 'boolean') isMuted.set(state.isMuted);
     interpolationBase = state.currentTime || 0;
     lastReportAt = performance.now();
     if (state.isPlaying) startInterpolating();
@@ -170,10 +187,17 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
  */
 export async function initMusicPlayer() {
     try {
-        const { [PLAYLIST_KEY]: playlist } = await chrome.storage.local.get(PLAYLIST_KEY);
+        const { [PLAYLIST_KEY]: playlist, [VOLUME_KEY]: storedVolume } = await chrome.storage.local.get([
+            PLAYLIST_KEY,
+            VOLUME_KEY,
+        ]);
         if (playlist?.tracks?.length) {
             tracks.set(playlist.tracks);
             playlistFolder.set(playlist.folder || '');
+        }
+        if (storedVolume !== undefined) {
+            volume.set(storedVolume.volume ?? 1);
+            isMuted.set(Boolean(storedVolume.isMuted));
         }
         const { [STATE_KEY]: state } = await chrome.storage.session.get(STATE_KEY);
         if (state) applyState(state);
@@ -185,45 +209,137 @@ export async function initMusicPlayer() {
 // ─── Commands ─────────────────────────────────────────────────────────
 
 /**
- * Replaces the playlist with the audio files of a picked folder.
- *
- * The audio is copied into IndexedDB because that is the only way it can reach the
- * offscreen document that plays it — and it is what makes the folder survive the page
- * being closed. Nothing starts on its own: the first track is cued up and waits.
+ * Adds audio files of a picked folder or files to the playlist (or initializes it).
+ * Deduplicates files so existing paths or songs are never added twice.
  *
  * @param {FileList|File[]|Array<{file: File, path: string}>} entries
  * @param {{folder?: string, autoplay?: boolean}} options
- * @returns {Promise<{loaded: number, folder: string, trimmed: boolean}>}
+ * @returns {Promise<{loaded: number, folder: string, trimmed: boolean, duplicates: number, totalPicked: number}>}
  */
 export async function loadFolder(entries, { folder: folderName = '', autoplay = false } = {}) {
-    const playlist = buildPlaylist(entries);
-    const folder = folderName || playlist[0]?.folder || '';
-    if (playlist.length === 0) return { loaded: 0, folder, trimmed: false };
-
-    // Whatever will not fit is left out rather than filling the disk quietly.
-    const kept = [];
-    let bytes = 0;
-    for (const track of playlist) {
-        if (kept.length >= MAX_TRACKS || bytes + track.size > MAX_TOTAL_BYTES) break;
-        bytes += track.size;
-        kept.push({ ...track, index: kept.length });
+    const existingTracks = get(tracks);
+    const defaultFolder = folderName || (entries?.[0]?.folder ?? '');
+    const newPlaylist = buildPlaylist(entries, defaultFolder);
+    const folder = folderName || newPlaylist[0]?.folder || get(playlistFolder) || '';
+    if (newPlaylist.length === 0) {
+        return { loaded: 0, folder, trimmed: false, duplicates: 0, totalPicked: 0 };
     }
 
-    await saveMusicTracksToDb(kept.map((track) => ({ index: track.index, blob: track.file })));
-    // The metadata is kept apart from the audio: listing the folder should not mean
-    // reading every track back out.
-    const meta = kept.map(({ index, title, fileName, path, size }) => ({ index, title, fileName, path, size }));
-    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: meta } });
+    const totalPicked = newPlaylist.length;
 
-    tracks.set(meta);
-    playlistFolder.set(folder);
-    currentIndex.set(-1);
-    currentTime.set(0);
-    duration.set(0);
-    searchQuery.set('');
+    // Collect all existing distinct folder paths
+    const existingFolders = new Set(existingTracks.map((t) => t.folder).filter(Boolean));
 
-    await sendCommand('loadPlaylist', { tracks: meta, index: 0, autoplay });
-    return { loaded: kept.length, folder, trimmed: kept.length < playlist.length };
+    // Align new tracks with existing folder hierarchy if subfolder already exists (e.g. musica2 -> musica/musica2)
+    const normalizedNewPlaylist = newPlaylist.map((track) => {
+        const canonicalFolder = resolveCanonicalFolder(track.folder, existingFolders);
+        const resolvedPath = canonicalFolder ? `${canonicalFolder}/${track.fileName}` : track.fileName;
+        return {
+            ...track,
+            folder: canonicalFolder,
+            path: resolvedPath,
+        };
+    });
+
+    // Helper to test if a new track matches an existing track
+    function isTrackDuplicate(newTr) {
+        const newFileName = String(newTr.fileName || '').toLowerCase();
+        const newSize = newTr.size || 0;
+        const newFolder = String(newTr.folder || '').toLowerCase();
+        const newPath = String(newTr.path || '').toLowerCase();
+
+        return existingTracks.some((exTr) => {
+            const exFileName = String(exTr.fileName || '').toLowerCase();
+            const exFolder = String(exTr.folder || '').toLowerCase();
+            const exPath = String(exTr.path || '').toLowerCase();
+            const exSize = exTr.size || 0;
+
+            // Exact path match
+            if (exPath === newPath) return true;
+
+            // Same filename in same folder or matched subfolder
+            if (exFileName === newFileName) {
+                if (!newFolder && !exFolder) return true;
+                if (isSameOrSubfolderMatch(exFolder, newFolder)) return true;
+                // If both size and title match identically
+                if (newSize > 0 && exSize > 0 && newSize === exSize) return true;
+            }
+            return false;
+        });
+    }
+
+    const uniqueNewTracks = [];
+    let duplicateCount = 0;
+    const addedKeysThisBatch = new Set();
+
+    for (const track of normalizedNewPlaylist) {
+        const trackKey = `${track.folder || ''}::${track.fileName}`.toLowerCase();
+        if (addedKeysThisBatch.has(trackKey) || isTrackDuplicate(track)) {
+            duplicateCount++;
+        } else {
+            addedKeysThisBatch.add(trackKey);
+            uniqueNewTracks.push(track);
+        }
+    }
+
+    if (uniqueNewTracks.length === 0) {
+        return { loaded: 0, folder, trimmed: false, duplicates: duplicateCount, totalPicked };
+    }
+
+    const startIndex = existingTracks.length;
+    const kept = [];
+    let currentBytes = existingTracks.reduce((sum, t) => sum + (t.size || 0), 0);
+
+    for (const track of uniqueNewTracks) {
+        if (existingTracks.length + kept.length >= MAX_TRACKS || currentBytes + track.size > MAX_TOTAL_BYTES) break;
+        currentBytes += track.size;
+        kept.push({ ...track, index: startIndex + kept.length });
+    }
+
+    if (kept.length === 0) {
+        return { loaded: 0, folder, trimmed: true, duplicates: duplicateCount, totalPicked };
+    }
+
+    if (existingTracks.length === 0) {
+        await saveMusicTracksToDb(kept.map((track) => ({ index: track.index, blob: track.file })));
+    } else {
+        await appendMusicTracksToDb(kept.map((track) => ({ index: track.index, blob: track.file })));
+    }
+
+    const meta = kept.map(({ index, title, fileName, folder: trFolder, path, size }) => ({
+        index,
+        title,
+        fileName,
+        folder: trFolder,
+        path,
+        size,
+    }));
+    const combinedTracks = [...existingTracks, ...meta];
+
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: combinedTracks } });
+
+    tracks.set(combinedTracks);
+    if (!get(playlistFolder)) {
+        playlistFolder.set(folder);
+    }
+
+    if (existingTracks.length === 0) {
+        currentIndex.set(-1);
+        currentTime.set(0);
+        duration.set(0);
+        searchQuery.set('');
+        await sendCommand('loadPlaylist', { tracks: combinedTracks, index: 0, autoplay });
+    } else {
+        await sendCommand('setPlaylist', { tracks: combinedTracks });
+    }
+
+    return {
+        loaded: kept.length,
+        folder,
+        trimmed: kept.length < uniqueNewTracks.length,
+        duplicates: duplicateCount,
+        totalPicked,
+    };
 }
 
 /** Forgets the folder, in the page and in the browser's storage. */
@@ -234,6 +350,99 @@ export async function clearPlaylist() {
     tracks.set([]);
     playlistFolder.set('');
     currentIndex.set(-1);
+}
+
+/**
+ * Removes all tracks belonging to a folder (or matching subfolders).
+ * @param {string} folderNameToRemove
+ */
+export async function removeFolder(folderNameToRemove) {
+    const allTracks = get(tracks);
+    const indicesToRemove = new Set();
+    const targetFolder = normalizeFolderPath(folderNameToRemove);
+
+    allTracks.forEach((t) => {
+        const trFolder = normalizeFolderPath(t.folder);
+        if (!targetFolder && !trFolder) {
+            indicesToRemove.add(t.index);
+        } else if (trFolder === targetFolder || isSameOrSubfolderMatch(trFolder, targetFolder)) {
+            indicesToRemove.add(t.index);
+        }
+    });
+
+    if (indicesToRemove.size === 0) return;
+    if (indicesToRemove.size === allTracks.length) {
+        await clearPlaylist();
+        return;
+    }
+
+    const current = get(currentIndex);
+    const playing = get(isPlaying);
+    const isCurrentTrackRemoved = indicesToRemove.has(current);
+
+    await removeMusicTracksByIndicesFromDb(indicesToRemove);
+
+    const updatedTracks = allTracks
+        .filter((t) => !indicesToRemove.has(t.index))
+        .map((t, idx) => ({ ...t, index: idx }));
+
+    const rootFolder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder: rootFolder, tracks: updatedTracks } });
+    tracks.set(updatedTracks);
+
+    if (isCurrentTrackRemoved) {
+        const nextIdx = Math.min(current, updatedTracks.length - 1);
+        if (playing) {
+            await sendCommand('loadPlaylist', { tracks: updatedTracks, index: nextIdx, autoplay: true });
+        } else {
+            await sendCommand('loadPlaylist', { tracks: updatedTracks, index: nextIdx, autoplay: false });
+        }
+    } else {
+        const remainingBeforeCurrent = allTracks.filter(
+            (t) => t.index < current && !indicesToRemove.has(t.index),
+        ).length;
+        currentIndex.set(remainingBeforeCurrent);
+        await sendCommand('setPlaylist', { tracks: updatedTracks, index: remainingBeforeCurrent });
+    }
+}
+
+/**
+ * Removes a track from the playlist and database.
+ * @param {number} trackIndex
+ */
+export async function removeTrack(trackIndex) {
+    const allTracks = get(tracks);
+    if (trackIndex < 0 || trackIndex >= allTracks.length) return;
+
+    if (allTracks.length <= 1) {
+        await clearPlaylist();
+        return;
+    }
+
+    const current = get(currentIndex);
+    const playing = get(isPlaying);
+
+    await removeMusicTrackFromDb(trackIndex);
+
+    const updatedTracks = allTracks.filter((_, idx) => idx !== trackIndex).map((t, idx) => ({ ...t, index: idx }));
+
+    const folder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: updatedTracks } });
+    tracks.set(updatedTracks);
+
+    if (current === trackIndex) {
+        // If the removed track is the one playing/selected, play or cue the next one (or previous if last)
+        const nextIdx = Math.min(trackIndex, updatedTracks.length - 1);
+        if (playing) {
+            await sendCommand('loadPlaylist', { tracks: updatedTracks, index: nextIdx, autoplay: true });
+        } else {
+            await sendCommand('loadPlaylist', { tracks: updatedTracks, index: nextIdx, autoplay: false });
+        }
+    } else {
+        const nextIdx = current > trackIndex ? current - 1 : current;
+        currentIndex.set(nextIdx);
+        await sendCommand('setPlaylist', { tracks: updatedTracks, index: nextIdx });
+    }
 }
 
 /** @param {number} index */
@@ -318,4 +527,28 @@ export function openSearch() {
 export function closeSearch() {
     isSearchOpen.set(false);
     searchQuery.set('');
+}
+
+/**
+ * Changes the volume (0 to 1).
+ * @param {number} newVolume
+ */
+export async function setVolume(newVolume) {
+    const clamped = Math.max(0, Math.min(1, newVolume));
+    volume.set(clamped);
+    if (clamped > 0 && get(isMuted)) {
+        isMuted.set(false);
+    }
+    await chrome.storage.local.set({ [VOLUME_KEY]: { volume: clamped, isMuted: get(isMuted) } });
+    await sendCommand('setVolume', { volume: clamped });
+}
+
+/**
+ * Toggles mute on/off.
+ */
+export async function toggleMute() {
+    const muted = !get(isMuted);
+    isMuted.set(muted);
+    await chrome.storage.local.set({ [VOLUME_KEY]: { volume: get(volume), isMuted: muted } });
+    await sendCommand('setMuted', { isMuted: muted });
 }

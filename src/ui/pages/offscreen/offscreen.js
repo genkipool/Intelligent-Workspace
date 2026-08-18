@@ -107,6 +107,8 @@ function musicSnapshot() {
         isPlaying: Boolean(audio && !audio.paused && !audio.ended),
         currentTime: audio?.currentTime || 0,
         duration: Number.isFinite(audio?.duration) ? audio.duration : 0,
+        volume: audio ? audio.volume : 1,
+        isMuted: Boolean(audio?.muted),
     };
 }
 
@@ -189,6 +191,9 @@ async function handleMusicCommand(msg) {
         case 'loadPlaylist':
             await playMusicIndex(msg.index ?? 0, { autoplay: Boolean(msg.autoplay), startAt: msg.startAt || 0 });
             break;
+        case 'setPlaylist':
+            if (typeof msg.index === 'number') music.index = msg.index;
+            break;
         case 'playIndex':
             await playMusicIndex(msg.index, { autoplay: true });
             break;
@@ -217,6 +222,17 @@ async function handleMusicCommand(msg) {
         case 'nudge':
             if (Number.isFinite(audio.duration)) {
                 audio.currentTime = Math.min(Math.max(0, (audio.currentTime || 0) + msg.seconds), audio.duration);
+            }
+            break;
+        case 'setVolume':
+            if (typeof msg.volume === 'number') {
+                audio.volume = Math.max(0, Math.min(1, msg.volume));
+                if (audio.volume > 0) audio.muted = false;
+            }
+            break;
+        case 'setMuted':
+            if (typeof msg.isMuted === 'boolean') {
+                audio.muted = msg.isMuted;
             }
             break;
         default:
