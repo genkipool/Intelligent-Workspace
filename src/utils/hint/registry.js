@@ -676,18 +676,26 @@ var CommandRegistry = class CommandRegistry {
     }
     _focusFirstInput() {
         const selectors = [
-            'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not([type="image"])',
-            'textarea',
-            'select',
+            'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]):not([type="image"]):not([disabled])',
+            'textarea:not([disabled])',
+            'select:not([disabled])',
             '[contenteditable="true"]',
             '[role="textbox"]',
             '[role="searchbox"]',
+            '[enterkeyhint="search"]',
         ];
-        const candidates = document.querySelectorAll(selectors.join(', '));
+        const candidates = Utils.querySelectorAllDeep(selectors.join(', '));
         for (const input of candidates) {
             if (!Utils.isVisible(input)) continue;
             input.focus();
-            if (['INPUT', 'TEXTAREA'].includes(input.tagName)) input.select();
+            if (
+                ['INPUT', 'TEXTAREA'].includes((input.tagName || '').toUpperCase()) &&
+                typeof input.select === 'function'
+            ) {
+                try {
+                    input.select();
+                } catch {}
+            }
             break;
         }
     }

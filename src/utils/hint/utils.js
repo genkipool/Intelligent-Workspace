@@ -339,14 +339,27 @@ var Utils = class Utils {
         return true;
     }
     static querySelectorAllDeep(selector, root = document) {
-        let elements = Array.from(root.querySelectorAll(selector));
+        let elements = [];
+        try {
+            elements = Array.from(root.querySelectorAll(selector));
+        } catch {}
+
         const traverse = (node) => {
+            if (!node) return;
             if (node.shadowRoot) {
-                elements = elements.concat(Array.from(node.shadowRoot.querySelectorAll(selector)));
+                try {
+                    elements = elements.concat(Array.from(node.shadowRoot.querySelectorAll(selector)));
+                } catch {}
+                Array.from(node.shadowRoot.children || []).forEach(traverse);
             }
-            Array.from(node.children).forEach(traverse);
+            Array.from(node.children || []).forEach(traverse);
         };
-        traverse(root);
+
+        if (root.documentElement) {
+            traverse(root.documentElement);
+        } else {
+            traverse(root);
+        }
         return elements;
     }
 
