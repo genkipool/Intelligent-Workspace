@@ -1295,8 +1295,8 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                                 <div class="itg-pip-size-header" data-i18n-text="pipFullscreenSizeHeader">Configure fullscreen size</div>
                                 <button class="itg-pip-size-max" data-act="sizemax" type="button"></button>
                                 <div class="itg-pip-size-fields">
-                                    <label><span class="itg-pip-size-label-w"></span><input class="itg-pip-size-w" type="number" min="200" step="10" /></label>
-                                    <label><span class="itg-pip-size-label-h"></span><input class="itg-pip-size-h" type="number" min="150" step="10" /></label>
+                                    <label><span class="itg-pip-size-label-w"></span><input class="itg-pip-size-w" type="number" min="200" step="1" inputmode="numeric" pattern="[0-9]*" /></label>
+                                    <label><span class="itg-pip-size-label-h"></span><input class="itg-pip-size-h" type="number" min="150" step="1" inputmode="numeric" pattern="[0-9]*" /></label>
                                 </div>
                                 <small class="itg-pip-size-note"></small>
                             </div>
@@ -1889,6 +1889,31 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.sizeHeight.value = String(config.h || curH);
         }
 
+        const getMaxForField = (field) => {
+            const isWidth = field === this.sizeWidth;
+            if (this.maxSize) {
+                return isWidth ? this.maxSize.w : this.maxSize.h;
+            }
+            const screen = win?.screen;
+            return isWidth ? screen?.availWidth || 3840 : screen?.availHeight || 2160;
+        };
+
+        const sanitizeFieldValue = (field) => {
+            const raw = field.value;
+            // Strip any decimals, commas, negative signs, letters, exponents, etc.
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) {
+                field.value = '';
+                return;
+            }
+            const maxVal = getMaxForField(field);
+            let num = parseInt(digits, 10);
+            if (num > maxVal) {
+                num = maxVal;
+            }
+            field.value = String(num);
+        };
+
         // Toggle Maximum mode button
         this.sizeMaxButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1916,14 +1941,26 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         // Save dimensions when user finishes editing and leaves popup or presses Enter
         const commitConfiguredSize = () => {
             if (!this.configuredSize) this.configuredSize = {};
+            const maxW = getMaxForField(this.sizeWidth);
+            const maxH = getMaxForField(this.sizeHeight);
             if (this.sizeMaxButton.classList.contains('is-on')) {
                 this.configuredSize.mode = 'max';
+                if (this.maxSize) {
+                    this.configuredSize.w = this.maxSize.w;
+                    this.configuredSize.h = this.maxSize.h;
+                    this.sizeWidth.value = String(this.maxSize.w);
+                    this.sizeHeight.value = String(this.maxSize.h);
+                }
             } else {
                 this.configuredSize.mode = 'custom';
-                const w = Math.round(+this.sizeWidth.value);
-                const h = Math.round(+this.sizeHeight.value);
-                if (w > 0) this.configuredSize.w = w;
-                if (h > 0) this.configuredSize.h = h;
+                let w = parseInt(this.sizeWidth.value.replace(/\D/g, ''), 10) || win?.innerWidth || 800;
+                let h = parseInt(this.sizeHeight.value.replace(/\D/g, ''), 10) || win?.innerHeight || 450;
+                w = Math.max(200, Math.min(maxW, w));
+                h = Math.max(150, Math.min(maxH, h));
+                this.sizeWidth.value = String(w);
+                this.sizeHeight.value = String(h);
+                this.configuredSize.w = w;
+                this.configuredSize.h = h;
             }
             this.saveConfiguredSize();
             this.renderSize();
@@ -1931,20 +1968,48 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         for (const field of [this.sizeWidth, this.sizeHeight]) {
             field.addEventListener('focus', () => this.wake());
-            field.addEventListener('input', () => {
-                this.wake();
-                // When typing custom dimensions, deactivate max mode button
-                this.sizeMaxButton.classList.remove('is-on');
-                if (!this.configuredSize) this.configuredSize = {};
-                this.configuredSize.mode = 'custom';
-            });
+
+            // Block decimal separators (.,), signs (+-), exponents (eE)
             field.addEventListener('keydown', (e) => {
                 this.wake();
+                if (['.', ',', 'e', 'E', '+', '-'].includes(e.key)) {
+                    e.preventDefault();
+                    return;
+                }
                 if (e.key === 'Enter') {
                     field.blur();
                     commitConfiguredSize();
                 }
                 e.stopPropagation();
+            });
+
+            // Prevent typing decimals or symbols via composition/mobile inputs
+            field.addEventListener('beforeinput', (e) => {
+                if (e.data && /[\.,eE\+\-]/.test(e.data)) {
+                    e.preventDefault();
+                }
+            });
+
+            // Intercept paste: remove non-digits, cap to max
+            field.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+                const digits = text.replace(/\D/g, '');
+                if (!digits) return;
+                const maxVal = getMaxForField(field);
+                let num = parseInt(digits, 10);
+                if (num > maxVal) num = maxVal;
+                field.value = String(num);
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            field.addEventListener('input', () => {
+                this.wake();
+                sanitizeFieldValue(field);
+                // When typing custom dimensions, deactivate max mode button
+                this.sizeMaxButton.classList.remove('is-on');
+                if (!this.configuredSize) this.configuredSize = {};
+                this.configuredSize.mode = 'custom';
             });
         }
 
@@ -2124,9 +2189,12 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         const targetW = config.mode === 'max' && max ? max.w : +config.w || curW;
         const targetH = config.mode === 'max' && max ? max.h : +config.h || curH;
 
+        const maxW = max?.w || win?.screen?.availWidth || 3840;
+        const maxH = max?.h || win?.screen?.availHeight || 2160;
+        this.sizeWidth.max = String(maxW);
+        this.sizeHeight.max = String(maxH);
+
         if (max) {
-            this.sizeWidth.max = String(max.w);
-            this.sizeHeight.max = String(max.h);
             this.sizeMaxButton.textContent = `${itgPipMsg('pipMaxSize', 'Maximum')} (${max.w}×${max.h})`;
             this.sizeNote.textContent = `${itgPipMsg('pipMaxSizeNote', 'Largest a floating window can be')}: ${max.w}×${max.h}`;
         } else {
