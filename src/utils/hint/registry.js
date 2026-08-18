@@ -709,12 +709,25 @@ var CommandRegistry = class CommandRegistry {
             return rectA.top - rectB.top;
         });
 
-        const targetInput = visibleCandidates[0];
+        let targetInput = visibleCandidates[0];
         if (!targetInput) return;
 
-        targetInput.focus();
+        // If target is a custom element or shadow host, unwrap to the deepest input inside it
+        while (
+            targetInput &&
+            targetInput.shadowRoot &&
+            targetInput.shadowRoot.querySelector('input, textarea, [contenteditable="true"]')
+        ) {
+            const inner = targetInput.shadowRoot.querySelector('input, textarea, [contenteditable="true"]');
+            if (inner) targetInput = inner;
+            else break;
+        }
 
-        // Also simulate click to activate custom web component wrappers (like Lit/Reddit faceplate)
+        if (typeof targetInput.focus === 'function') {
+            targetInput.focus();
+        }
+
+        // Also simulate click and pointer events to activate custom web component wrappers (like Lit/Reddit faceplate)
         try {
             targetInput.click();
         } catch {}

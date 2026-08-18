@@ -350,8 +350,9 @@ var Utils = class Utils {
     }
     static querySelectorAllDeep(selector, root = document) {
         let elements = [];
+        const searchRoot = root || document;
         try {
-            elements = Array.from(root.querySelectorAll(selector));
+            elements = Array.from(searchRoot.querySelectorAll(selector));
         } catch {}
 
         const traverse = (node) => {
@@ -365,12 +366,10 @@ var Utils = class Utils {
             Array.from(node.children || []).forEach(traverse);
         };
 
-        if (root.documentElement) {
-            traverse(root.documentElement);
-        } else {
-            traverse(root);
-        }
-        return elements;
+        const startNode = searchRoot.documentElement || searchRoot.body || searchRoot;
+        traverse(startNode);
+        // Deduplicate elements
+        return Array.from(new Set(elements));
     }
 
     /**

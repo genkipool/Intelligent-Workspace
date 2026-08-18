@@ -304,26 +304,55 @@ var HintEngine = class HintEngine {
                 this.clear(false);
             }
         } else {
-            const clickable = el.closest('a[href], button, [role="button"]') || el;
-            const isComplexAppElement =
-                clickable.hasAttribute('aria-selected') ||
-                clickable.getAttribute('role') === 'row' ||
-                clickable.getAttribute('role') === 'gridcell' ||
-                clickable.getAttribute('role') === 'listitem' ||
-                clickable.classList.contains('chatlist-chat') ||
-                clickable.classList.contains('row-clickable');
-            if (isComplexAppElement) {
-                this._simulateComplexClick(clickable, keyModifiers);
-            } else if (clickable.tagName === 'A' && clickable.href && (ctrlKey || event.shiftKey)) {
-                const clickEvt = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                    ...keyModifiers,
-                });
-                clickable.dispatchEvent(clickEvt);
+            const isInputLike = Utils.isInputLikeElement(el);
+            if (isInputLike) {
+                // Focus element, or inner active element inside shadowRoot
+                let targetInput = el;
+                while (
+                    targetInput &&
+                    targetInput.shadowRoot &&
+                    targetInput.shadowRoot.querySelector('input, textarea, [contenteditable="true"]')
+                ) {
+                    const inner = targetInput.shadowRoot.querySelector('input, textarea, [contenteditable="true"]');
+                    if (inner) targetInput = inner;
+                    else break;
+                }
+                if (typeof targetInput.focus === 'function') {
+                    targetInput.focus();
+                }
+                try {
+                    targetInput.click();
+                } catch {}
+                if (
+                    ['INPUT', 'TEXTAREA'].includes((targetInput.tagName || '').toUpperCase()) &&
+                    typeof targetInput.select === 'function'
+                ) {
+                    try {
+                        targetInput.select();
+                    } catch {}
+                }
             } else {
-                clickable.click();
+                const clickable = (el.closest && el.closest('a[href], button, [role="button"]')) || el;
+                const isComplexAppElement =
+                    clickable.hasAttribute('aria-selected') ||
+                    clickable.getAttribute('role') === 'row' ||
+                    clickable.getAttribute('role') === 'gridcell' ||
+                    clickable.getAttribute('role') === 'listitem' ||
+                    clickable.classList.contains('chatlist-chat') ||
+                    clickable.classList.contains('row-clickable');
+                if (isComplexAppElement) {
+                    this._simulateComplexClick(clickable, keyModifiers);
+                } else if (clickable.tagName === 'A' && clickable.href && (ctrlKey || event.shiftKey)) {
+                    const clickEvt = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window,
+                        ...keyModifiers,
+                    });
+                    clickable.dispatchEvent(clickEvt);
+                } else {
+                    clickable.click();
+                }
             }
             this.clear(false);
         }
