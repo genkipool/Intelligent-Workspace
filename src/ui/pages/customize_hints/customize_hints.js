@@ -299,8 +299,17 @@ export async function initCustomizeHints() {
             const isNonEditable =
                 extraData.originalDesc === 'hintDesc_group_tab_nav' || (cmd.keys && cmd.keys.includes('+'));
 
+            let keyContent = currentKey;
             if (extraData.originalDesc === 'hintDesc_group_tab_nav') {
                 li.classList.add('command-item-group-nav');
+                const groupLabel = chrome.i18n.getUILanguage().startsWith('es') ? '<grupo><n>' : '<group><n>';
+                keyContent = [
+                    HintCommon.DOM.create('span', { className: 'group-nav-part' }, 'Alt'),
+                    HintCommon.DOM.create('span', { className: 'group-nav-plus' }, '+'),
+                    HintCommon.DOM.create('span', { className: 'group-nav-part' }, groupLabel),
+                    HintCommon.DOM.create('span', { className: 'group-nav-plus' }, '+'),
+                    HintCommon.DOM.create('span', { className: 'group-nav-part' }, 'Enter'),
+                ];
             }
 
             const keySpan = HintCommon.DOM.create(
@@ -315,7 +324,7 @@ export async function initCustomizeHints() {
                     'data-type': 'builtin',
                     'data-category': category,
                 },
-                currentKey,
+                keyContent,
             );
 
             const descSpan = HintCommon.DOM.create(

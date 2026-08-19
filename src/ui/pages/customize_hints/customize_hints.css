@@ -140,14 +140,33 @@
 }
 
 .command-item.command-item-group-nav {
-    grid-template-columns: auto 1fr auto;
-    gap: 12px;
+    grid-template-columns: 70px 1fr auto;
+    align-items: center;
 }
 
 .command-item.command-item-group-nav .command-keys {
-    width: auto;
-    white-space: nowrap;
-    padding: 3px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: auto;
+    padding: 6px 2px;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.command-item.command-item-group-nav .group-nav-part {
+    display: block;
+    font-weight: 700;
+}
+
+.command-item.command-item-group-nav .group-nav-plus {
+    font-size: 9px;
+    opacity: 0.65;
+    margin: 1px 0;
 }
 
 .command-item.command-item-group-nav .command-description {
