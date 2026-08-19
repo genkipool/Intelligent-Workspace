@@ -6085,6 +6085,9 @@
   "pipCaptions": {
     "message": "Subtitles"
   },
+  "pipLoop": {
+    "message": "Loop video"
+  },
   "pipFullscreen": {
     "message": "Full screen"
   },

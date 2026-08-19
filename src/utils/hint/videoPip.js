@@ -1312,6 +1312,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         <button class="itg-pip-btn" data-act="dislike" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="comments" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="captions" type="button" hidden></button>
+                        <button class="itg-pip-btn" data-act="loop" type="button"></button>
                         <span class="itg-pip-rate-wrap">
                             <span class="itg-pip-rate-menu"></span>
                             <button class="itg-pip-btn itg-pip-rate" data-act="rate" type="button">1x</button>
@@ -1363,6 +1364,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                                     <span class="itg-pip-more-icon">${ITG_PIP_ICONS.forward}</span>
                                     <span class="itg-pip-more-label" data-i18n-text="pipForward">Forward 10s</span>
                                 </button>
+                                <button class="itg-pip-more-item itg-pip-more-loop" data-act="loop" type="button">
+                                    <span class="itg-pip-more-icon">${ITG_PIP_ICONS.loop}</span>
+                                    <span class="itg-pip-more-label" data-i18n-text="pipLoop">Loop</span>
+                                </button>
                             </div>
                             <button class="itg-pip-btn itg-pip-more" data-act="more" type="button"></button>
                         </span>
@@ -1398,7 +1403,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.buttons.dislike) this.buttons.dislike.innerHTML = ITG_PIP_ICONS.dislike;
         this.buttons.comments.innerHTML = ITG_PIP_ICONS.comments;
         this.buttons.captions.innerHTML = ITG_PIP_ICONS.captions;
+        if (this.buttons.loop) this.buttons.loop.innerHTML = ITG_PIP_ICONS.loop;
         if (this.buttons.more) this.buttons.more.innerHTML = ITG_PIP_ICONS.more;
+
+        this.isLooping = false;
 
         if (typeof this.buildRateMenu === 'function') this.buildRateMenu();
         if (typeof this.buildSizeMenu === 'function') this.buildSizeMenu();
@@ -1421,6 +1429,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.buttons.rate) this.buttons.rate.title = itgPipMsg('pipSpeed', 'Playback speed');
         if (this.buttons.comments) this.buttons.comments.title = itgPipMsg('pipComments', 'Comments');
         if (this.buttons.captions) this.buttons.captions.title = itgPipMsg('pipCaptions', 'Subtitles');
+        if (this.buttons.loop) this.buttons.loop.title = itgPipMsg('pipLoop', 'Loop video');
         if (this.buttons.size) this.buttons.size.title = itgPipMsg('pipSize', 'Window size');
         if (this.buttons.more) this.buttons.more.title = itgPipMsg('pipMoreOptions', 'More options');
         if (this.buttons.mute) {
@@ -1791,6 +1800,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             case 'size':
             case 'sizemax':
                 this.toggleFullscreenSize();
+                break;
+            case 'loop':
+                this.toggleLoop();
                 break;
         }
     }
@@ -2262,13 +2274,19 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     /**
-     * Plays the next video when this one runs out.
+     * Plays the next video when this one runs out, or restarts it when loop
+     * mode is active.
      *
      * YouTube may do it on its own when autoplay is on, so this waits a moment and
      * only steps in if nothing happened — otherwise both would fire and a video
      * would be skipped.
      */
     handleEnded() {
+        if (this.isLooping) {
+            this.video.currentTime = 0;
+            this.video.play().catch(() => {});
+            return;
+        }
         if (!this.isYouTube) return;
         if (!this.isShorts && !this.siblingItem(1)) return;
         const endedAt = this.video.currentTime;
@@ -2278,6 +2296,29 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             const movedOn = video.currentTime < endedAt - 1 || !video.paused;
             if (!movedOn) this.goToSibling(1);
         }, 1200);
+    }
+
+    /**
+     * Toggles the loop/repeat mode. When active, the video restarts from the
+     * beginning once it reaches the end instead of advancing to the next one.
+     */
+    toggleLoop() {
+        this.isLooping = !this.isLooping;
+
+        // Update bar button
+        if (this.buttons.loop) {
+            this.buttons.loop.classList.toggle('is-on', this.isLooping);
+        }
+
+        // Update more-menu item
+        const doc = this.pipWindow?.document;
+        const moreLoop = doc?.querySelector('.itg-pip-more-loop');
+        if (moreLoop) {
+            moreLoop.classList.toggle('is-on', this.isLooping);
+        }
+
+        // Show a flash icon to confirm the action
+        this.showFlash(ITG_PIP_ICONS.loop);
     }
 
     /**

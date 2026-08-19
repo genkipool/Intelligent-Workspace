@@ -86,6 +86,10 @@ var ITG_PIP_ICONS = {
         <circle cx="12" cy="12" r="2"></circle>
         <circle cx="12" cy="19" r="2"></circle>
     </svg>`,
+    loop: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M17 2l3 3-3 3"></path><path d="M3 11V9a4 4 0 0 1 4-4h13"></path>
+        <path d="M7 22l-3-3 3-3"></path><path d="M21 13v2a4 4 0 0 1-4 4H4"></path>
+    </svg>`,
 };
 
 var ITG_PIP_STYLES = `

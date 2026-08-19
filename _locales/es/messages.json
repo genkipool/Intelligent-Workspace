@@ -6168,6 +6168,9 @@
     "pipCaptions": {
         "message": "Subtítulos"
     },
+    "pipLoop": {
+        "message": "Repetir en bucle"
+    },
     "pipFullscreen": {
         "message": "Pantalla completa"
     },
