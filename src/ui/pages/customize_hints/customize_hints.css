@@ -130,13 +130,33 @@
 
 .command-item {
     display: grid;
-    grid-template-columns: minmax(70px, max-content) minmax(0, 1fr) auto;
+    grid-template-columns: 70px 1fr auto;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 6px 10px;
     border-radius: 4px;
     background-color: var(--bg-panel-color);
     transition: background-color 0.2s;
+}
+
+.command-item.command-item-group-nav {
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+}
+
+.command-item.command-item-group-nav .command-keys {
+    width: auto;
+    white-space: nowrap;
+    padding: 3px 8px;
+}
+
+.command-item.command-item-group-nav .command-description {
+    white-space: normal !important;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+    max-height: none;
+    height: auto;
     min-width: 0;
 }
 
@@ -211,10 +231,6 @@ li.shortcuts-grid .command-description-wrapper .command-description {
     background-color: var(--bg-color);
     text-align: center;
     border: 1px solid transparent;
-    white-space: nowrap;
-    width: fit-content;
-    max-width: 100%;
-    box-sizing: border-box;
 }
 
 .command-keys:focus,
@@ -270,13 +286,12 @@ input.command-keys:focus {
 
 .command-description {
     font-size: 13px;
-    white-space: normal;
-    word-break: break-word;
-    overflow-wrap: anywhere;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis;
     display: block;
-    min-width: 0;
-    line-height: 1.35;
-    color: var(--text-color);
+    height: 100%;
+    align-content: center;
 }
 
 .snippet-expansion:focus,

@@ -299,6 +299,10 @@ export async function initCustomizeHints() {
             const isNonEditable =
                 extraData.originalDesc === 'hintDesc_group_tab_nav' || (cmd.keys && cmd.keys.includes('+'));
 
+            if (extraData.originalDesc === 'hintDesc_group_tab_nav') {
+                li.classList.add('command-item-group-nav');
+            }
+
             const keySpan = HintCommon.DOM.create(
                 'span',
                 {

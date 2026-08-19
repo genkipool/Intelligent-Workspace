@@ -126,9 +126,7 @@ export async function restoreMainView() {
         };
         const i18nKey = titles[get(currentMainView)] || 'listTabGroups';
         _mainHeaderTitle.setAttribute('data-i18n', i18nKey);
-
-        const text = chrome.i18n.getMessage(i18nKey);
-        if (text) _mainHeaderTitle.textContent = text;
+        applyTranslations(_mainHeaderTitle);
     }
 
     const views = {
@@ -562,26 +560,9 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
             gemini: 'geminiViewTitle',
         };
 
-        const i18nKey = titles[viewName];
-        if (i18nKey) {
-            _mainHeaderTitle.setAttribute('data-i18n', i18nKey);
-            const immediateText = chrome.i18n.getMessage(i18nKey);
-            if (immediateText) {
-                _mainHeaderTitle.textContent = immediateText;
-            }
-        } else {
-            if (viewName === 'history')
-                _mainHeaderTitle.textContent = chrome.i18n.getMessage('navHistory') || 'History';
-            else if (viewName === 'recent')
-                _mainHeaderTitle.textContent = chrome.i18n.getMessage('navRecent') || 'Recent';
-            else if (viewName === 'reading')
-                _mainHeaderTitle.textContent = chrome.i18n.getMessage('navReading') || 'Reading List';
-            else if (viewName === 'downloads')
-                _mainHeaderTitle.textContent = chrome.i18n.getMessage('downloadsViewTitle') || 'Downloads';
-            else if (viewName === 'bookmarks')
-                _mainHeaderTitle.textContent = chrome.i18n.getMessage('navBookmarks') || 'Bookmarks';
-            else _mainHeaderTitle.textContent = chrome.i18n.getMessage('navGroups') || 'Tab Groups';
-        }
+        const i18nKey = titles[viewName] || 'listTabGroups';
+        _mainHeaderTitle.setAttribute('data-i18n', i18nKey);
+        applyTranslations(_mainHeaderTitle);
     }
 
     if (addToHistory) {
@@ -704,8 +685,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
                 };
                 const key = titleKeys[viewName] || 'listTabGroups';
                 _mainHeaderTitle.setAttribute('data-i18n', key);
-                const text = chrome.i18n.getMessage(key);
-                if (text) _mainHeaderTitle.textContent = text;
+                applyTranslations(_mainHeaderTitle);
             }
 
             if (views[viewName]) {
