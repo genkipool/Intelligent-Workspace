@@ -224,7 +224,9 @@ export async function showNotification(messageKey, isError = false, params = [],
     const messages = await loadMessages(lang);
 
     const messageObj = messages[messageKey];
-    const messageTemplate = messageObj ? resolveMessage(messageObj, params, 'message') : 'Message not found';
+    const messageTemplate = messageObj
+        ? resolveMessage(messageObj, params, 'message')
+        : messageKey || 'Message not found';
 
     const notification = document.createElement('div');
     notification.className = `notification ${isError ? 'notification-error' : 'notification-success'}`;

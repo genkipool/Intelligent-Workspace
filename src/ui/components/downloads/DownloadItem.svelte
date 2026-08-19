@@ -189,7 +189,7 @@
         closeMenu();
         if (item.url) {
             navigator.clipboard.writeText(item.url);
-            showNotification(chrome.i18n.getMessage('linkCopied') || 'Link copied to clipboard', false);
+            showNotification('linkCopied');
         }
     }
 
