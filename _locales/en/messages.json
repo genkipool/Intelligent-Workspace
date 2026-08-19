@@ -5149,13 +5149,13 @@
     "message": "$1 items"
   },
   "itemsFound": {
-    "message": "($1 found)"
+    "message": "$1 found"
   },
   "itemsFoundOne": {
-    "message": "(1 found)"
+    "message": "1 found"
   },
   "itemsFoundCount": {
-    "message": "($1 found)"
+    "message": "$1 found"
   },
   "lastVisit": {
     "message": "Last visit"

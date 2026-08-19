@@ -5153,13 +5153,13 @@
         "message": "$1 elementos"
     },
     "itemsFound": {
-        "message": "($1 encontrados)"
+        "message": "$1 encontrados"
     },
     "itemsFoundOne": {
-        "message": "(1 encontrado)"
+        "message": "1 encontrado"
     },
     "itemsFoundCount": {
-        "message": "($1 encontrados)"
+        "message": "$1 encontrados"
     },
     "lastVisit": {
         "message": "Última visita"
