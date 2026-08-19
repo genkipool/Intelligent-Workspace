@@ -488,7 +488,22 @@ export function renderNoteEntry(note, context, handlers) {
     if (domainEl) {
         const { contextKey } = note;
         let contextText = '';
-        if (contextKey && contextKey.startsWith('s_')) {
+        if (context.isOrphan) {
+            contextText = chrome.i18n.getMessage('orphanNoteContext') || 'Context Lost';
+            if (contextKey) {
+                if (contextKey === 'g_general') {
+                    contextText = chrome.i18n.getMessage('generalNotesContext') || 'General';
+                } else {
+                    const parts = contextKey.split('_');
+                    if (contextKey.startsWith('g_') && parts.length > 1) {
+                        contextText = parts.slice(1).join('_');
+                    } else if (contextKey.startsWith('s_') && parts.length > 2) {
+                        contextText = parts.slice(2).join('_');
+                    }
+                }
+            }
+            domainEl.classList.add('is-orphan');
+        } else if (contextKey && contextKey.startsWith('s_')) {
             const parts = contextKey.split('_');
             if (parts.length >= 3) contextText = parts.slice(2).join('_');
         } else {
@@ -500,8 +515,7 @@ export function renderNoteEntry(note, context, handlers) {
         const filterByContextTooltip = chrome.i18n.getMessage('filterByContextTooltip', [contextText]);
         domainEl.title = filterByContextTooltip;
         if (handlers.onFilter) {
-            domainEl.addEventListener('click', (e) => {
-                e.stopPropagation();
+            domainEl.addEventListener('click', () => {
                 handlers.onFilter('context', domainEl.dataset.context);
             });
         }

@@ -1,4 +1,16 @@
 {
+    "orphanSectionMenuTitle": {
+        "message": "Opciones de visualización de notas y capturas"
+    },
+    "orphanDisplayAlways": {
+        "message": "Mostrar siempre"
+    },
+    "orphanDisplayOnDelete": {
+        "message": "Mostrar al borrar el grupo"
+    },
+    "generalNotesContext": {
+        "message": "General"
+    },
     "viewFilesTitle": {
         "message": "Ver archivos"
     },
@@ -4553,6 +4565,18 @@
     "ungroupedTabsTitle": {
         "message": "Pestañas sin Grupo",
         "description": "Title for the virtual group that contains all ungrouped tabs."
+    },
+    "allOrphanNotesDeleted": {
+        "message": "Se han eliminado $1 notas.",
+        "description": "Mensaje tras eliminar notas de la sección huérfana / general."
+    },
+    "noOrphanNotesToDelete": {
+        "message": "No hay notas para eliminar.",
+        "description": "Mensaje cuando no hay notas para eliminar."
+    },
+    "noOrphanScreenshotsToDelete": {
+        "message": "No hay capturas para eliminar.",
+        "description": "Mensaje cuando no hay capturas para eliminar."
     },
     "allOrphanScreenshotsDeleted": {
         "message": "Se han eliminado las $1 capturas huérfanas.",

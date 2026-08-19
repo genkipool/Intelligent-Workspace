@@ -41,6 +41,7 @@ export async function pickFiles() {
                     accept: {
                         'audio/*': [
                             '.mp3',
+                            '.mpeg',
                             '.m4a',
                             '.aac',
                             '.ogg',

@@ -1,4 +1,16 @@
 {
+  "orphanSectionMenuTitle": {
+    "message": "Notes and screenshots display options"
+  },
+  "orphanDisplayAlways": {
+    "message": "Always show"
+  },
+  "orphanDisplayOnDelete": {
+    "message": "Show when group is deleted"
+  },
+  "generalNotesContext": {
+    "message": "General"
+  },
   "viewFilesTitle": {
     "message": "View files"
   },
@@ -4549,6 +4561,18 @@
   "ungroupedTabsTitle": {
     "message": "Tabs without Group",
     "description": "Title for the virtual group that contains all ungrouped tabs."
+  },
+  "allOrphanNotesDeleted": {
+    "message": "$1 notes deleted.",
+    "description": "Message after deleting orphan / general notes."
+  },
+  "noOrphanNotesToDelete": {
+    "message": "No notes to delete.",
+    "description": "Message when there are no notes to delete."
+  },
+  "noOrphanScreenshotsToDelete": {
+    "message": "No screenshots to delete.",
+    "description": "Message when there are no screenshots to delete."
   },
   "allOrphanScreenshotsDeleted": {
     "message": "All $1 orphan screenshots have been deleted.",

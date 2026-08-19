@@ -194,6 +194,25 @@
     </button>
 </template>
 
+<template id="orphan-menu-container-template">
+    <div id="orphan-section-menu-container" class="orphan-menu-wrapper">
+        <div class="orphan-menu-btn action-btn" role="button" tabindex="0" data-i18n-title="orphanSectionMenuTitle">
+            <svg width="20" height="20">
+                <use href="#icon-more-vertical"></use>
+            </svg>
+        </div>
+        <div class="orphan-display-popup">
+            <div class="orphan-popup-bridge"></div>
+            <div class="orphan-mode-option" role="button" tabindex="0" data-mode="always">
+                <span class="orphan-item-text" data-i18n="orphanDisplayAlways"></span>
+            </div>
+            <div class="orphan-mode-option" role="button" tabindex="0" data-mode="on_delete">
+                <span class="orphan-item-text" data-i18n="orphanDisplayOnDelete"></span>
+            </div>
+        </div>
+    </div>
+</template>
+
 <template id="gemini-schedule-item-template">
     <li class="schedule-item">
         <div class="schedule-item-header">

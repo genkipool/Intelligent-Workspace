@@ -54,6 +54,7 @@ export const STORAGE_KEYS = {
     BROKEN_BOOKMARKS_SESSION: 'brokenBookmarksCache',
     IS_LIST_GROUP_PINNED: 'isListGroupPinned',
     IS_GEMINI_PINNED: 'isGeminiPinned',
+    ORPHAN_SECTION_DISPLAY: 'orphanSectionDisplayMode',
 };
 
 export const MAX_GEMINI_SCHEDULES = 7;

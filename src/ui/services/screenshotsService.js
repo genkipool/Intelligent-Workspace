@@ -23,8 +23,14 @@ async function waitForElement(selector, attempts = 30) {
 }
 
 import { applyTranslations, showNotification, showPersistentProgressNotification } from '../../utils/i18n.js';
-
-import { saveScreenshotToDb, getScreenshotFromDb, deleteScreenshotFromDb } from '../../utils/db.js';
+import {
+    saveScreenshotToDb,
+    getScreenshotFromDb,
+    deleteScreenshotFromDb,
+    getAllScreenshotIdsFromDb,
+    getAllNoteIdsFromDb,
+    getNoteFromDb,
+} from '../../utils/db.js';
 
 import { STORAGE_KEYS, screenshotConfig } from './constants.js';
 import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob } from './utils.js';
@@ -176,12 +182,15 @@ export async function handleDownloadAllScreenshots() {
     const ctx = get(currentGalleryContext);
     if (!ctx) return;
     const { type, id, secondaryId } = ctx;
-    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
-        STORAGE_KEYS.SCREENSHOTS,
-    );
 
-    let key = type === 'group' ? `g_${id}` : `s_${secondaryId}_${id}`;
-    const screenshots = screenshotData[key] || [];
+    const screenshotIds = await resolveScreenshotIdsForContext(type, id, secondaryId);
+    if (!screenshotIds || screenshotIds.length === 0) {
+        showNotification('noScreenshotsToDownload', true);
+        return;
+    }
+
+    const screenshotPromises = screenshotIds.map((sid) => getScreenshotFromDb(sid));
+    const screenshots = (await Promise.all(screenshotPromises)).filter(Boolean);
 
     if (screenshots.length === 0) {
         showNotification('noScreenshotsToDownload', true);
@@ -438,7 +447,16 @@ export async function handleScreenshotRequest(tab, context) {
  */
 export async function resolveScreenshotIdsForContext(type, id, secondaryId, orphanScreenshots = null) {
     if (type === 'orphan') {
-        const orphans = orphanScreenshots ?? (await getOrphanScreenshots());
+        if (orphanScreenshots) {
+            return orphanScreenshots.map((s) => s.id);
+        }
+        const { [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' } = await chrome.storage.sync.get(
+            STORAGE_KEYS.ORPHAN_SECTION_DISPLAY,
+        );
+        if (displayMode === 'always') {
+            return await getAllScreenshotIdsFromDb();
+        }
+        const orphans = await getOrphanScreenshots();
         return orphans.map((s) => s.id);
     }
 
@@ -621,14 +639,47 @@ export async function clearAllContextDataUI(contextToDelete, config) {
 
     if (contextToDelete.type === 'orphan') {
         try {
-            const allGroupDataRaw = await fetchData();
-            const groupInfoMap = await getGroupInfoMap();
+            const { [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' } = await chrome.storage.sync.get(
+                STORAGE_KEYS.ORPHAN_SECTION_DISPLAY,
+            );
 
-            const existingContextKeys = new Set();
-            for (const item of allGroupDataRaw) {
-                if (item.group.id === -100) {
-                    existingContextKeys.add('g_ungrouped');
-                    const domainsInUngrouped = new Set(
+            let itemsToDelete = [];
+            if (displayMode === 'always') {
+                if (config.name === 'Notes') {
+                    const allNoteIds = await getAllNoteIdsFromDb();
+                    const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
+                    itemsToDelete = (await Promise.all(notePromises)).filter(Boolean);
+                } else {
+                    const allScreenshotIds = await getAllScreenshotIdsFromDb();
+                    const screenshotPromises = allScreenshotIds.map((id) => getScreenshotFromDb(id));
+                    itemsToDelete = (await Promise.all(screenshotPromises)).filter(Boolean);
+                }
+            } else {
+                const allGroupDataRaw = await fetchData();
+                const groupInfoMap = await getGroupInfoMap();
+
+                const existingContextKeys = new Set();
+                for (const item of allGroupDataRaw) {
+                    if (item.group.id === -100) {
+                        existingContextKeys.add('g_ungrouped');
+                        const domainsInUngrouped = new Set(
+                            item.tabs
+                                .map((tab) => {
+                                    try {
+                                        return new URL(tab.url).hostname.replace(/^www\./, '');
+                                    } catch {
+                                        return null;
+                                    }
+                                })
+                                .filter(Boolean),
+                        );
+                        domainsInUngrouped.forEach((domain) => existingContextKeys.add(`s_ungrouped_${domain}`));
+                        continue;
+                    }
+                    const groupInfo = groupInfoMap.get(item.group.id);
+                    if (!groupInfo || !groupInfo.key) continue;
+                    existingContextKeys.add(`g_${groupInfo.key}`);
+                    const domainsInGroup = new Set(
                         item.tabs
                             .map((tab) => {
                                 try {
@@ -639,48 +690,62 @@ export async function clearAllContextDataUI(contextToDelete, config) {
                             })
                             .filter(Boolean),
                     );
-                    domainsInUngrouped.forEach((domain) => existingContextKeys.add(`s_ungrouped_${domain}`));
-                    continue;
+                    domainsInGroup.forEach((domain) => existingContextKeys.add(`s_${groupInfo.key}_${domain}`));
                 }
-                const groupInfo = groupInfoMap.get(item.group.id);
-                if (!groupInfo || !groupInfo.key) continue;
-                existingContextKeys.add(`g_${groupInfo.key}`);
-                const domainsInGroup = new Set(
-                    item.tabs
-                        .map((tab) => {
-                            try {
-                                return new URL(tab.url).hostname.replace(/^www\./, '');
-                            } catch {
-                                return null;
-                            }
-                        })
-                        .filter(Boolean),
+
+                existingContextKeys.add('g_pomodoro');
+
+                let allStoredItems = [];
+                if (config.name === 'Notes') {
+                    const allNoteIds = await getAllNoteIdsFromDb();
+                    const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
+                    allStoredItems = (await Promise.all(notePromises)).filter(Boolean);
+                } else {
+                    const allScreenshotIds = await getAllScreenshotIdsFromDb();
+                    const screenshotPromises = allScreenshotIds.map((id) => getScreenshotFromDb(id));
+                    allStoredItems = (await Promise.all(screenshotPromises)).filter(Boolean);
+                }
+
+                itemsToDelete = allStoredItems.filter(
+                    (item) => item.contextKey && !existingContextKeys.has(item.contextKey),
                 );
-                domainsInGroup.forEach((domain) => existingContextKeys.add(`s_${groupInfo.key}_${domain}`));
             }
 
-            const allPersistentItems = await config.getPersistentItemsFunction();
-            const orphanItems = allPersistentItems.filter(
-                (item) => item.contextKey && !existingContextKeys.has(item.contextKey),
-            );
-
-            if (orphanItems.length === 0) {
+            if (itemsToDelete.length === 0) {
                 showNotification(config.notificationNoOrphans, true);
                 return;
             }
 
-            const orphanItemIds = orphanItems.map((item) => item.id);
-            await Promise.all(orphanItemIds.map((id) => config.deleteItemFromDbFunction(id)));
+            const itemIdsToDelete = itemsToDelete.map((item) => item.id);
+            await Promise.all(itemIdsToDelete.map((id) => config.deleteItemFromDbFunction(id)));
 
             const { [config.persistentKey]: currentIds = [] } = await chrome.storage.local.get(config.persistentKey);
             const updatedPersistentSet = new Set(currentIds);
-            orphanItemIds.forEach((id) => updatedPersistentSet.delete(id));
+            itemIdsToDelete.forEach((id) => updatedPersistentSet.delete(id));
             await chrome.storage.local.set({ [config.persistentKey]: Array.from(updatedPersistentSet) });
 
-            showNotification(config.notificationOrphanSuccess, false, [orphanItemIds.length]);
+            const sessionResult = await chrome.storage.session.get(config.sessionKey);
+            const allIndexes = sessionResult[config.sessionKey] || {};
+            const deletedIdSet = new Set(itemIdsToDelete);
+            let hasSessionChanges = false;
+            for (const key in allIndexes) {
+                if (Array.isArray(allIndexes[key])) {
+                    const filtered = allIndexes[key].filter((id) => !deletedIdSet.has(id));
+                    if (filtered.length !== allIndexes[key].length) {
+                        allIndexes[key] = filtered;
+                        hasSessionChanges = true;
+                    }
+                }
+            }
+            if (hasSessionChanges) {
+                await chrome.storage.session.set({ [config.sessionKey]: allIndexes });
+            }
+
+            showNotification(config.notificationOrphanSuccess, false, [itemIdsToDelete.length]);
 
             if (config.name === 'Notes') closeNotesView();
             if (config.name === 'Screenshots') closeScreenshotGallery();
+            await updateOrphanIndicators();
             await renderGroups();
 
             return;

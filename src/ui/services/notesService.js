@@ -236,21 +236,40 @@ export async function updateOrphanIndicators() {
     const hiddenContextContainer = document.getElementById('hidden-context-container');
     if (!hiddenContextContainer) return;
 
-    const { orphanNotes, orphanScreenshots } = await getOrphanContent();
+    const { [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' } = await chrome.storage.sync.get(
+        STORAGE_KEYS.ORPHAN_SECTION_DISPLAY,
+    );
+
+    let notesToShow = [];
+    let screenshotsToShow = [];
+
+    if (displayMode === 'always') {
+        const allNoteIds = await getAllNoteIdsFromDb();
+        const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
+        notesToShow = (await Promise.all(notePromises)).filter(Boolean);
+
+        const allScreenshotIds = await getAllScreenshotIdsFromDb();
+        const screenshotPromises = allScreenshotIds.map((id) => getScreenshotFromDb(id));
+        screenshotsToShow = (await Promise.all(screenshotPromises)).filter(Boolean);
+    } else {
+        const { orphanNotes, orphanScreenshots } = await getOrphanContent();
+        notesToShow = orphanNotes;
+        screenshotsToShow = orphanScreenshots;
+    }
 
     const currentNotesIndicator = hiddenContextContainer.querySelector('#orphan-notes-btn');
-    if (orphanNotes.length > 0) {
+    if (notesToShow.length > 0) {
         if (currentNotesIndicator) {
-            currentNotesIndicator.querySelector('.note-count-badge').textContent = orphanNotes.length;
+            currentNotesIndicator.querySelector('.note-count-badge').textContent = notesToShow.length;
             const newIndicator = currentNotesIndicator.cloneNode(true);
-            newIndicator.addEventListener('click', () => handleOrphanNotesClick(orphanNotes));
+            newIndicator.addEventListener('click', () => handleOrphanNotesClick(notesToShow));
             currentNotesIndicator.parentNode.replaceChild(newIndicator, currentNotesIndicator);
         } else {
             const notesIndicatorTemplate = document.getElementById('orphan-notes-btn-template');
             if (notesIndicatorTemplate) {
                 const notesIndicator = notesIndicatorTemplate.content.cloneNode(true).firstElementChild;
-                notesIndicator.querySelector('.note-count-badge').textContent = orphanNotes.length;
-                notesIndicator.addEventListener('click', () => handleOrphanNotesClick(orphanNotes));
+                notesIndicator.querySelector('.note-count-badge').textContent = notesToShow.length;
+                notesIndicator.addEventListener('click', () => handleOrphanNotesClick(notesToShow));
                 hiddenContextContainer.appendChild(notesIndicator);
             }
         }
@@ -259,18 +278,18 @@ export async function updateOrphanIndicators() {
     }
 
     const currentScreenshotsIndicator = hiddenContextContainer.querySelector('#orphan-screenshots-btn');
-    if (orphanScreenshots.length > 0) {
+    if (screenshotsToShow.length > 0) {
         if (currentScreenshotsIndicator) {
-            currentScreenshotsIndicator.querySelector('.screenshot-count-badge').textContent = orphanScreenshots.length;
+            currentScreenshotsIndicator.querySelector('.screenshot-count-badge').textContent = screenshotsToShow.length;
             const newIndicator = currentScreenshotsIndicator.cloneNode(true);
-            newIndicator.addEventListener('click', () => handleOrphanScreenshotsClick(orphanScreenshots));
+            newIndicator.addEventListener('click', () => handleOrphanScreenshotsClick(screenshotsToShow));
             currentScreenshotsIndicator.parentNode.replaceChild(newIndicator, currentScreenshotsIndicator);
         } else {
             const screenshotsIndicatorTemplate = document.getElementById('orphan-screenshots-btn-template');
             if (screenshotsIndicatorTemplate) {
                 const screenshotsIndicator = screenshotsIndicatorTemplate.content.cloneNode(true).firstElementChild;
-                screenshotsIndicator.querySelector('.screenshot-count-badge').textContent = orphanScreenshots.length;
-                screenshotsIndicator.addEventListener('click', () => handleOrphanScreenshotsClick(orphanScreenshots));
+                screenshotsIndicator.querySelector('.screenshot-count-badge').textContent = screenshotsToShow.length;
+                screenshotsIndicator.addEventListener('click', () => handleOrphanScreenshotsClick(screenshotsToShow));
                 hiddenContextContainer.appendChild(screenshotsIndicator);
             }
         }
@@ -278,7 +297,39 @@ export async function updateOrphanIndicators() {
         currentScreenshotsIndicator.remove();
     }
 
-    hiddenContextContainer.classList.toggle('hidden', hiddenContextContainer.childElementCount === 0);
+    const hasIndicators = notesToShow.length > 0 || screenshotsToShow.length > 0;
+    let currentMenuContainer = hiddenContextContainer.querySelector('#orphan-section-menu-container');
+
+    if (hasIndicators) {
+        if (!currentMenuContainer) {
+            const menuTemplate = document.getElementById('orphan-menu-container-template');
+            if (menuTemplate) {
+                currentMenuContainer = menuTemplate.content.cloneNode(true).firstElementChild;
+                hiddenContextContainer.appendChild(currentMenuContainer);
+            }
+        }
+        if (currentMenuContainer) {
+            hiddenContextContainer.appendChild(currentMenuContainer);
+            currentMenuContainer.querySelectorAll('.orphan-mode-option').forEach((opt) => {
+                const mode = opt.getAttribute('data-mode');
+                const isSelected = mode === displayMode;
+                opt.classList.toggle('active', isSelected);
+                if (!opt.dataset.listenerBound) {
+                    opt.dataset.listenerBound = 'true';
+                    opt.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const selectedMode = opt.getAttribute('data-mode');
+                        await chrome.storage.sync.set({ [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: selectedMode });
+                        await updateOrphanIndicators();
+                    });
+                }
+            });
+        }
+    } else if (currentMenuContainer) {
+        currentMenuContainer.remove();
+    }
+
+    hiddenContextContainer.classList.toggle('hidden', !hasIndicators);
     applyTranslations(hiddenContextContainer);
 }
 
@@ -527,8 +578,21 @@ export async function showNotesView(context, orphanNotes = null) {
         applyTranslations(mainHeaderTitle);
     }
     let notes;
-    if (context.type === 'orphan' && orphanNotes) {
-        notes = orphanNotes;
+    if (context.type === 'orphan') {
+        if (orphanNotes) {
+            notes = orphanNotes;
+        } else {
+            const { [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' } = await chrome.storage.sync.get(
+                STORAGE_KEYS.ORPHAN_SECTION_DISPLAY,
+            );
+            if (displayMode === 'always') {
+                const allNoteIds = await getAllNoteIdsFromDb();
+                const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
+                notes = (await Promise.all(notePromises)).filter(Boolean);
+            } else {
+                notes = await getOrphanNotes();
+            }
+        }
     } else if (context.type === 'pomodoro') {
         const sessionResult = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
         const allNotesIndex = sessionResult[STORAGE_KEYS.NOTES] || {};
@@ -679,21 +743,36 @@ async function renderNotesList(notes, context) {
             } else if (isOrphan) {
                 let orphanContextText = chrome.i18n.getMessage('orphanNoteContext') || 'Context Lost';
                 if (contextKey) {
-                    const parts = contextKey.split('_');
-                    if (contextKey.startsWith('g_') && parts.length > 1) {
-                        orphanContextText = parts.slice(1).join('_');
-                    } else if (contextKey.startsWith('s_') && parts.length > 2) {
-                        orphanContextText = parts.slice(2).join('_');
+                    if (contextKey === 'g_general') {
+                        orphanContextText = chrome.i18n.getMessage('generalNotesContext') || 'General';
+                    } else {
+                        const parts = contextKey.split('_');
+                        if (contextKey.startsWith('g_') && parts.length > 1) {
+                            orphanContextText = parts.slice(1).join('_');
+                        } else if (contextKey.startsWith('s_') && parts.length > 2) {
+                            orphanContextText = parts.slice(2).join('_');
+                        }
                     }
                 }
                 domainSpan.textContent = orphanContextText;
+                domainSpan.dataset.context = orphanContextText;
+                const filterByContextTooltip = chrome.i18n.getMessage('filterByContextTooltip', [orphanContextText]);
+                domainSpan.title = filterByContextTooltip;
                 domainSpan.classList.add('is-orphan');
             } else if (contextKey && contextKey.startsWith('s_')) {
                 const parts = contextKey.split('_');
-                if (parts.length >= 3) domainSpan.textContent = parts.slice(2).join('_');
-                else domainSpan.style.display = 'none';
+                if (parts.length >= 3) {
+                    const ctxText = parts.slice(2).join('_');
+                    domainSpan.textContent = ctxText;
+                    domainSpan.dataset.context = ctxText;
+                    domainSpan.title = chrome.i18n.getMessage('filterByContextTooltip', [ctxText]);
+                } else {
+                    domainSpan.style.display = 'none';
+                }
             } else {
                 domainSpan.textContent = context.title;
+                domainSpan.dataset.context = context.title;
+                domainSpan.title = chrome.i18n.getMessage('filterByContextTooltip', [context.title]);
                 domainSpan.classList.add('is-group-title');
             }
         }
@@ -920,8 +999,8 @@ export async function handleSaveNote(context, noteId = null, options = {}) {
     let sessionKey;
 
     if (type === 'orphan') {
-        contextKey = 'g_pomodoro';
-        sessionKey = 'g_pomodoro';
+        contextKey = 'g_general';
+        sessionKey = 'g_general';
     } else if ((type === 'group' && id === -100) || (type === 'subgroup' && secondaryId === -100)) {
         if (type === 'group') {
             contextKey = 'g_ungrouped';
@@ -1004,10 +1083,7 @@ export function initNotesEvents() {
         addNoteViewBtn.addEventListener('click', () => {
             const ctx = get(currentNotesContext);
             if (!ctx) return;
-            // An orphan note belongs to a group that is gone, so there is nothing to
-            // file a new one under; the ungrouped context is the one that is always
-            // there, and it is where the note lands.
-            openNoteModal(ctx.type === 'orphan' ? { type: 'group', id: -100 } : ctx);
+            openNoteModal(ctx);
         });
     }
 

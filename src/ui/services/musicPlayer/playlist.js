@@ -7,7 +7,20 @@
  */
 
 /** Extensions the player accepts. Chrome can decode all of these. */
-export const AUDIO_EXTENSIONS = ['mp3', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'wav', 'flac', 'weba', 'webm', 'mp4'];
+export const AUDIO_EXTENSIONS = [
+    'mp3',
+    'mpeg',
+    'm4a',
+    'aac',
+    'ogg',
+    'oga',
+    'opus',
+    'wav',
+    'flac',
+    'weba',
+    'webm',
+    'mp4',
+];
 
 const EXTENSION_RE = new RegExp(`\\.(${AUDIO_EXTENSIONS.join('|')})$`, 'i');
 
