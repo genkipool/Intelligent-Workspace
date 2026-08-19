@@ -1012,9 +1012,10 @@
 #hint-help-modal-content .itg-editable-key,
 #hint-help-modal-content .itg-static-key {
     display: table-cell;
-    padding: 8px;
+    padding: 8px 10px;
     font-weight: bold;
-    width: 120px;
+    min-width: 90px;
+    white-space: nowrap;
     text-align: center;
     background-color: var(--bg-color);
     border-radius: 4px;
@@ -1023,8 +1024,18 @@
     box-sizing: border-box;
 }
 
+#hint-help-modal-content .itg-description-cell {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
 #hint-help-modal-content .itg-editable-key {
     cursor: text;
+}
+
+#hint-help-modal-content .itg-editable-key.itg-non-editable-key {
+    cursor: default;
+    user-select: none;
 }
 
 #hint-help-modal-content .itg-static-key {

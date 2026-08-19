@@ -44,6 +44,7 @@ import {
 // ─── Svelte Stores (other) ───────────────────────────────────────
 import { geminiStore, conversationHistory } from '../stores/geminiStore.js';
 import { listGroupStore } from '../stores/listGroupStore.js';
+import { downloadsDateFilter } from '../stores/downloadsStore.js';
 
 // ─── Legacy state (transitional — for properties not yet in Svelte stores) ──
 import { state as legacyState } from './constants.js';
@@ -121,6 +122,7 @@ export async function restoreMainView() {
             history: 'historyViewTitle',
             recent: 'recentlyClosedViewTitle',
             reading: 'readingListViewTitle',
+            downloads: 'downloadsViewTitle',
         };
         const i18nKey = titles[get(currentMainView)] || 'listTabGroups';
         _mainHeaderTitle.setAttribute('data-i18n', i18nKey);
@@ -135,6 +137,7 @@ export async function restoreMainView() {
         history: document.getElementById('history-view-container'),
         recent: document.getElementById('recent-view-container'),
         reading: document.getElementById('reading-list-view-container'),
+        downloads: document.getElementById('downloads-view-container'),
     };
 
     Object.values(views).forEach((el) => {
@@ -348,6 +351,7 @@ export function manageViewVisibility(activeViewSelector = '#groups-list') {
         '#history-view-container': document.getElementById('history-view-container'),
         '#recent-view-container': document.getElementById('recent-view-container'),
         '#reading-list-view-container': document.getElementById('reading-list-view-container'),
+        '#downloads-view-container': document.getElementById('downloads-view-container'),
         '#notes-view': document.getElementById('notes-view'),
         '#screenshot-gallery-view': document.getElementById('screenshot-gallery-view'),
         '#side-panel-iframe-viewer': document.getElementById('side-panel-iframe-viewer'),
@@ -415,6 +419,7 @@ const viewConfig = {
         'view-history-btn',
         'view-recent-btn',
         'view-reading-list-btn',
+        'view-downloads-btn',
         'backup-all-btn',
         'restore-all-btn',
         'toggle-visibility-controls-btn',
@@ -435,6 +440,7 @@ const viewConfig = {
         'view-history-btn',
         'view-recent-btn',
         'view-reading-list-btn',
+        'view-downloads-btn',
         'export-bookmarks-btn',
         'import-bookmarks-btn',
         'toggle-visibility-controls-btn',
@@ -449,6 +455,7 @@ const viewConfig = {
         'toggle-bookmarks-view-btn',
         'view-recent-btn',
         'view-reading-list-btn',
+        'view-downloads-btn',
         'history-date-filter-btn',
         'delete-all-context-btn',
         'toggle-view-panel-btn',
@@ -459,6 +466,7 @@ const viewConfig = {
         'toggle-bookmarks-view-btn',
         'view-history-btn',
         'view-reading-list-btn',
+        'view-downloads-btn',
         'delete-all-context-btn',
         'toggle-view-panel-btn',
     ],
@@ -467,8 +475,22 @@ const viewConfig = {
         'toggle-bookmarks-view-btn',
         'view-history-btn',
         'view-recent-btn',
+        'view-downloads-btn',
         'delete-all-context-btn',
         'toggle-view-panel-btn',
+    ],
+    downloads: [
+        'view-groups-btn',
+        'toggle-bookmarks-view-btn',
+        'view-history-btn',
+        'view-recent-btn',
+        'view-reading-list-btn',
+        'history-date-filter-btn',
+        'downloads-filter-btn',
+        'open-downloads-folder-btn',
+        'delete-all-context-btn',
+        'toggle-view-panel-btn',
+        'expand-all-btn',
     ],
 };
 
@@ -478,6 +500,9 @@ const allButtonIds = [
     'view-history-btn',
     'view-recent-btn',
     'view-reading-list-btn',
+    'view-downloads-btn',
+    'downloads-filter-btn',
+    'open-downloads-folder-btn',
     'backup-all-btn',
     'restore-all-btn',
     'pin-toggle',
@@ -533,6 +558,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
             history: 'historyViewTitle',
             recent: 'recentlyClosedViewTitle',
             reading: 'readingListViewTitle',
+            downloads: 'downloadsViewTitle',
             gemini: 'geminiViewTitle',
         };
 
@@ -550,6 +576,8 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
                 _mainHeaderTitle.textContent = chrome.i18n.getMessage('navRecent') || 'Recent';
             else if (viewName === 'reading')
                 _mainHeaderTitle.textContent = chrome.i18n.getMessage('navReading') || 'Reading List';
+            else if (viewName === 'downloads')
+                _mainHeaderTitle.textContent = chrome.i18n.getMessage('downloadsViewTitle') || 'Downloads';
             else if (viewName === 'bookmarks')
                 _mainHeaderTitle.textContent = chrome.i18n.getMessage('navBookmarks') || 'Bookmarks';
             else _mainHeaderTitle.textContent = chrome.i18n.getMessage('navGroups') || 'Tab Groups';
@@ -568,6 +596,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
         history: document.getElementById('history-view-container'),
         recent: document.getElementById('recent-view-container'),
         reading: document.getElementById('reading-list-view-container'),
+        downloads: document.getElementById('downloads-view-container'),
     };
 
     geminiStore.closeView(true);
@@ -585,6 +614,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
         history: document.getElementById('view-history-btn'),
         recent: document.getElementById('view-recent-btn'),
         reading: document.getElementById('view-reading-list-btn'),
+        downloads: document.getElementById('view-downloads-btn'),
     };
 
     Object.values(buttons).forEach((btn) => {
@@ -659,6 +689,8 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
                 await renderRecentlyClosedView();
             } else if (viewName === 'reading') {
                 await renderReadingListView();
+            } else if (viewName === 'downloads') {
+                await renderDownloadsView();
             }
 
             if (_mainHeaderTitle) {
@@ -668,6 +700,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
                     history: 'historyViewTitle',
                     recent: 'recentlyClosedViewTitle',
                     reading: 'readingListViewTitle',
+                    downloads: 'downloadsViewTitle',
                 };
                 const key = titleKeys[viewName] || 'listTabGroups';
                 _mainHeaderTitle.setAttribute('data-i18n', key);
@@ -735,6 +768,7 @@ export function updateMainPanelButtons(currentView) {
         history: 'view-history-btn',
         recent: 'view-recent-btn',
         reading: 'view-reading-list-btn',
+        downloads: 'view-downloads-btn',
     };
     Object.entries(viewBtnMap).forEach(([view, btnId]) => {
         const btn = document.getElementById(btnId);
@@ -750,6 +784,15 @@ export async function renderHistoryView(startTime = null, endTime = null) {
 
     import('../stores/historyStore.js').then(({ historyStore }) => {
         historyStore.loadHistory(startTime, endTime, searchTerm);
+    });
+}
+
+export async function renderDownloadsView() {
+    const _searchInput = document.getElementById('search-input');
+    const searchTerm = _searchInput ? _searchInput.value : '';
+
+    import('../stores/downloadsStore.js').then(({ downloadsStore }) => {
+        downloadsStore.loadDownloads(searchTerm);
     });
 }
 
@@ -791,6 +834,8 @@ export function initCustomCalendar() {
     const toggleBtn = document.getElementById('history-date-filter-btn');
 
     if (!calendarPopup || !toggleBtn) return;
+    if (toggleBtn.dataset.calendarBound === 'true') return;
+    toggleBtn.dataset.calendarBound = 'true';
 
     toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -835,10 +880,13 @@ export function initCustomCalendar() {
     clearBtn.addEventListener('click', () => {
         calSelectedDate.set(null);
         currentHistoryDateFilter.set(null);
+        downloadsDateFilter.set(null);
         toggleBtn.classList.remove('active');
         toggleBtn.removeAttribute('aria-pressed');
         calendarPopup.classList.add('hidden');
-        renderHistoryView();
+        if (get(currentMainView) === 'history') {
+            renderHistoryView();
+        }
     });
 
     function renderCalendar() {
@@ -876,6 +924,14 @@ export function initCustomCalendar() {
             gridEl.appendChild(emptyCell);
         }
 
+        const mainView = get(currentMainView);
+        let activeDateFilter = null;
+        if (mainView === 'history') {
+            activeDateFilter = get(currentHistoryDateFilter);
+        } else if (mainView === 'downloads') {
+            activeDateFilter = get(downloadsDateFilter);
+        }
+
         for (let day = 1; day <= daysInMonth; day++) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
@@ -885,9 +941,16 @@ export function initCustomCalendar() {
                 dayEl.classList.add('today');
             }
 
-            const sel = get(calSelectedDate);
-            if (sel && day === sel.getDate() && month === sel.getMonth() && year === sel.getFullYear()) {
-                dayEl.classList.add('selected');
+            if (activeDateFilter && activeDateFilter.start) {
+                const selD = new Date(activeDateFilter.start);
+                if (day === selD.getDate() && month === selD.getMonth() && year === selD.getFullYear()) {
+                    dayEl.classList.add('selected');
+                }
+            } else {
+                const sel = get(calSelectedDate);
+                if (sel && day === sel.getDate() && month === sel.getMonth() && year === sel.getFullYear()) {
+                    dayEl.classList.add('selected');
+                }
             }
 
             dayEl.addEventListener('click', () => {
@@ -896,16 +959,22 @@ export function initCustomCalendar() {
                 const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
                 const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
 
-                currentHistoryDateFilter.set({
-                    start: startOfDay.getTime(),
-                    end: endOfDay.getTime(),
-                });
-
                 toggleBtn.classList.add('active');
                 toggleBtn.setAttribute('aria-pressed', 'true');
                 calendarPopup.classList.add('hidden');
 
-                renderHistoryView(startOfDay.getTime(), endOfDay.getTime());
+                if (get(currentMainView) === 'history') {
+                    currentHistoryDateFilter.set({
+                        start: startOfDay.getTime(),
+                        end: endOfDay.getTime(),
+                    });
+                    renderHistoryView(startOfDay.getTime(), endOfDay.getTime());
+                } else if (get(currentMainView) === 'downloads') {
+                    downloadsDateFilter.set({
+                        start: startOfDay.getTime(),
+                        end: endOfDay.getTime(),
+                    });
+                }
             });
 
             gridEl.appendChild(dayEl);
@@ -1122,7 +1191,7 @@ export async function openUrlInPanel(url, context = null) {
     const container = document.querySelector('.container');
     container
         .querySelectorAll(
-            '#hidden-groups-container, #hidden-context-container, #groups-list, #drag-announcer, #gemini-conversation-view, #notes-view, #screenshot-gallery-view, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container',
+            '#hidden-groups-container, #hidden-context-container, #groups-list, #drag-announcer, #gemini-conversation-view, #notes-view, #screenshot-gallery-view, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container, #downloads-view-container',
         )
         .forEach((el) => {
             if (el) el.style.display = 'none';
@@ -1582,6 +1651,7 @@ export function getActiveScrollableElement() {
         if (get(currentMainView) === 'history') return document.getElementById('history-view-container');
         if (get(currentMainView) === 'recent') return document.getElementById('recent-view-container');
         if (get(currentMainView) === 'reading') return document.getElementById('reading-list-view-container');
+        if (get(currentMainView) === 'downloads') return document.getElementById('downloads-view-container');
         return _groupListContainer;
     }
 }
@@ -1642,6 +1712,7 @@ export async function updateBackButtonTooltip() {
             history: 'backToHistory',
             recent: 'backToRecent',
             reading: 'backToReading',
+            downloads: 'backToDownloads',
         };
         tooltipKey = viewToKeyMap[get(currentMainView)] || 'backToGroups';
     } else if (get(isGalleryViewActive)) {
@@ -1660,6 +1731,7 @@ export async function updateBackButtonTooltip() {
                 history: 'backToHistory',
                 recent: 'backToRecent',
                 reading: 'backToReading',
+                downloads: 'backToDownloads',
             };
             tooltipKey = viewToKeyMap[previousView] || 'backToHome';
         } else {
@@ -1702,6 +1774,7 @@ export function updateExpandAllButtonState() {
             history: '#history-view-container',
             recent: '#recent-view-container',
             reading: '#reading-list-view-container',
+            downloads: '#downloads-view-container',
         };
         activeContainer = document.querySelector(containerMap[get(currentMainView)]);
         viewKey = get(currentMainView);
@@ -1712,6 +1785,7 @@ export function updateExpandAllButtonState() {
             history: 'AllHistory',
             recent: 'AllRecent',
             reading: 'AllReading',
+            downloads: 'AllDownloads',
         };
         tooltipPrefix = prefixMap[get(currentMainView)] || 'AllGroups';
     }
@@ -1763,6 +1837,7 @@ export function toggleExpandAll() {
             history: '#history-view-container',
             recent: '#recent-view-container',
             reading: '#reading-list-view-container',
+            downloads: '#downloads-view-container',
         };
         activeContainer = document.querySelector(containerMap[get(currentMainView)]);
         viewKey = get(currentMainView);
@@ -1952,7 +2027,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
 
         if (_deleteAllContextBtn) {
             const mainView = get(currentMainView);
-            const viewsWithTrash = ['groups', 'history', 'recent', 'reading'];
+            const viewsWithTrash = ['groups', 'history', 'recent', 'reading', 'downloads'];
 
             if (viewsWithTrash.includes(mainView)) {
                 _deleteAllContextBtn.classList.remove('hidden');
@@ -1961,6 +2036,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
                 else if (mainView === 'history') i18nKey = 'clearAllHistory';
                 else if (mainView === 'recent') i18nKey = 'clearRecentList';
                 else if (mainView === 'reading') i18nKey = 'clearReadingList';
+                else if (mainView === 'downloads') i18nKey = 'clearAllDownloads';
 
                 _deleteAllContextBtn.setAttribute('data-i18n-title', i18nKey);
             }
@@ -1977,6 +2053,19 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
             _deleteAllContextBtn.classList.remove('hidden');
             _deleteAllContextBtn.setAttribute('data-i18n-title', 'closeAllButActiveGroup');
         }
+
+        const dateFilterBtn = document.getElementById('history-date-filter-btn');
+        if (dateFilterBtn) {
+            const isHistoryFiltered = get(currentMainView) === 'history' && get(currentHistoryDateFilter) !== null;
+            const isDownloadsFiltered = get(currentMainView) === 'downloads' && get(downloadsDateFilter) !== null;
+            if (isHistoryFiltered || isDownloadsFiltered) {
+                dateFilterBtn.classList.add('active');
+                dateFilterBtn.setAttribute('aria-pressed', 'true');
+            } else {
+                dateFilterBtn.classList.remove('active');
+                dateFilterBtn.removeAttribute('aria-pressed');
+            }
+        }
     }
     applyTranslations(document.querySelector('.controls-container') || document.body);
 }
@@ -1987,6 +2076,8 @@ export function initViewEvents() {
     const _viewHistoryBtn = document.getElementById('view-history-btn');
     const _viewRecentBtn = document.getElementById('view-recent-btn');
     const _viewReadingListBtn = document.getElementById('view-reading-list-btn');
+    const _viewDownloadsBtn = document.getElementById('view-downloads-btn');
+    const _openDownloadsFolderBtn = document.getElementById('open-downloads-folder-btn');
     const _toggleBookmarksViewBtn = document.getElementById('toggle-bookmarks-view-btn');
     const _rulesToggle = document.getElementById('rules-toggle');
     const _homeBtn = document.getElementById('home-btn');
@@ -2007,10 +2098,23 @@ export function initViewEvents() {
         _viewReadingListBtn.addEventListener('click', () => switchMainView('reading'));
         _viewReadingListBtn.addEventListener('mouseenter', () => prefetchData('reading', true));
     }
+    if (_viewDownloadsBtn) {
+        _viewDownloadsBtn.addEventListener('click', () => switchMainView('downloads'));
+        _viewDownloadsBtn.addEventListener('mouseenter', () => prefetchData('downloads', true));
+    }
+    if (_openDownloadsFolderBtn) {
+        _openDownloadsFolderBtn.addEventListener('click', () => {
+            import('../stores/downloadsStore.js').then(({ downloadsStore }) => {
+                downloadsStore.openDownloadsFolder();
+            });
+        });
+    }
     if (_toggleBookmarksViewBtn) {
         _toggleBookmarksViewBtn.addEventListener('click', () => switchMainView('bookmarks'));
         _toggleBookmarksViewBtn.addEventListener('mouseenter', () => prefetchData('bookmarks', true));
     }
+
+    initCustomCalendar();
 
     if (_rulesToggle) {
         _rulesToggle.addEventListener('mouseenter', () =>

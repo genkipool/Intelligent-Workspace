@@ -312,3 +312,129 @@ async function handleDeleteOtherGroups(message, sendResponse) {
         });
     }
 }
+
+/**
+ * Checks if needle is a subsequence of haystack (in order).
+ */
+function isSubsequence(needle, haystack) {
+    if (!needle || !haystack) return false;
+    let nIdx = 0;
+    let hIdx = 0;
+    while (nIdx < needle.length && hIdx < haystack.length) {
+        if (needle[nIdx] === haystack[hIdx]) {
+            nIdx++;
+        }
+        hIdx++;
+    }
+    return nIdx === needle.length;
+}
+
+/**
+ * Navigates to a specific tab within a tab group matching a prefix/name query.
+ * Sequence: Alt + [groupPrefix] + [tabIndex] + Enter (e.g. Alt+gog4+Enter)
+ * Works both in standard mode and compact mode.
+ */
+async function handleNavigateToGroupTab(message, sender, sendResponse) {
+    try {
+        const { groupPrefix, tabIndex } = message;
+        if (!groupPrefix || typeof tabIndex !== 'number' || tabIndex < 1) {
+            if (sendResponse) sendResponse({ success: false, error: 'Invalid parameters' });
+            return;
+        }
+
+        let windowId = sender?.tab?.windowId;
+        if (!windowId) {
+            const currentWin = await chrome.windows.getLastFocused({ populate: false }).catch(() => null);
+            windowId = currentWin?.id;
+        }
+
+        let groups = windowId ? await chrome.tabGroups.query({ windowId }) : [];
+        if (!groups || groups.length === 0) {
+            groups = await chrome.tabGroups.query({});
+        }
+
+        if (!groups || groups.length === 0) {
+            if (sendResponse) sendResponse({ success: false, error: 'No groups found' });
+            return;
+        }
+
+        const cleanStr = (s) =>
+            (s || '')
+                .toString()
+                .toLowerCase()
+                .trim()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+
+        const targetQuery = cleanStr(groupPrefix);
+
+        const candidates = groups.map((g) => {
+            const dispTitle = typeof displayGroupTitle === 'function' ? displayGroupTitle(g) : g.title || '';
+            const rawTitle = g.title || '';
+            return {
+                group: g,
+                cleanDisp: cleanStr(dispTitle),
+                cleanRaw: cleanStr(rawTitle),
+            };
+        });
+
+        // 1. Exact match
+        let matched = candidates.find((c) => c.cleanDisp === targetQuery || c.cleanRaw === targetQuery);
+
+        // 2. Starts with query
+        if (!matched) {
+            matched = candidates.find(
+                (c) =>
+                    (c.cleanDisp && c.cleanDisp.startsWith(targetQuery)) ||
+                    (c.cleanRaw && c.cleanRaw.startsWith(targetQuery)),
+            );
+        }
+
+        // 3. Contains query as substring
+        if (!matched) {
+            matched = candidates.find(
+                (c) =>
+                    (c.cleanDisp && c.cleanDisp.includes(targetQuery)) ||
+                    (c.cleanRaw && c.cleanRaw.includes(targetQuery)),
+            );
+        }
+
+        // 4. Subsequence / fuzzy match (e.g. "gog" in "google")
+        if (!matched) {
+            matched = candidates.find(
+                (c) => isSubsequence(targetQuery, c.cleanDisp) || isSubsequence(targetQuery, c.cleanRaw),
+            );
+        }
+
+        if (!matched) {
+            if (sendResponse) sendResponse({ success: false, error: `Group matching "${groupPrefix}" not found` });
+            return;
+        }
+
+        const targetGroup = matched.group;
+        const tabs = await chrome.tabs.query({ groupId: targetGroup.id });
+        if (!tabs || tabs.length === 0) {
+            if (sendResponse) sendResponse({ success: false, error: 'No tabs in matching group' });
+            return;
+        }
+
+        // 1-based index clamped to available tab count
+        const clampedIndex = Math.min(Math.max(tabIndex, 1), tabs.length) - 1;
+        const targetTab = tabs[clampedIndex];
+
+        if (targetGroup.collapsed) {
+            await chrome.tabGroups.update(targetGroup.id, { collapsed: false }).catch(() => {});
+        }
+        await chrome.tabs.update(targetTab.id, { active: true });
+        if (targetTab.windowId) {
+            await chrome.windows.update(targetTab.windowId, { focused: true }).catch(() => {});
+        }
+
+        if (sendResponse) {
+            sendResponse({ success: true, tabId: targetTab.id, groupId: targetGroup.id, tabIndex });
+        }
+    } catch (error) {
+        console.error('Error navigating to group tab:', error);
+        if (sendResponse) sendResponse({ success: false, error: error.message });
+    }
+}

@@ -248,6 +248,12 @@ function initDeleteAllContextButton() {
                 renderReadingListView();
                 showNotification('readingListCleared');
             }
+        } else if (view === 'downloads') {
+            if (await confirmAction({ messageKey: 'confirmDeleteAllDownloads' })) {
+                const { downloadsStore } = await import('../../stores/downloadsStore.js');
+                await downloadsStore.eraseAll();
+                showNotification('downloadsCleared');
+            }
         }
     });
 }
@@ -501,6 +507,100 @@ export async function initializeAllEvents() {
         }
     });
 
+    // Escape key blurs any active input element
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const active = document.activeElement;
+            if (active && (['INPUT', 'TEXTAREA', 'SELECT'].includes(active.tagName) || active.isContentEditable)) {
+                active.blur();
+                try {
+                    if (document.body && typeof document.body.click === 'function') {
+                        document.body.click();
+                    } else if (document.documentElement && typeof document.documentElement.click === 'function') {
+                        document.documentElement.click();
+                    }
+                } catch {}
+            }
+        }
+    });
+
+    // Alt sequence: Alt + [groupPrefix] + [tabNum] + Enter
+    let altSequenceBuffer = '';
+    let altSequenceTimer = null;
+    let isAltHeld = false;
+
+    document.addEventListener(
+        'keydown',
+        (e) => {
+            if (e.key === 'Alt') {
+                isAltHeld = true;
+            }
+            if (e.altKey || isAltHeld || (altSequenceBuffer && (e.key === 'Enter' || e.code === 'Enter'))) {
+                if (e.key === 'Enter' || e.code === 'Enter') {
+                    if (altSequenceBuffer) {
+                        const match = altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d+)$/);
+                        if (match) {
+                            const groupPrefix = match[1].trim();
+                            const tabIndex = parseInt(match[2], 10);
+                            chrome.runtime.sendMessage({
+                                action: 'navigateToGroupTab',
+                                groupPrefix,
+                                tabIndex,
+                            });
+                            altSequenceBuffer = '';
+                            if (altSequenceTimer) clearTimeout(altSequenceTimer);
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return;
+                        }
+                    }
+                } else if (e.key === 'Backspace') {
+                    if (altSequenceBuffer) {
+                        altSequenceBuffer = altSequenceBuffer.slice(0, -1);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                    }
+                } else if (e.key !== 'Alt' && !e.ctrlKey && !e.metaKey) {
+                    let char = '';
+                    if (e.code && e.code.startsWith('Key')) {
+                        char = e.code.slice(3).toLowerCase();
+                    } else if (e.code && e.code.startsWith('Digit')) {
+                        char = e.code.slice(5);
+                    } else if (e.code && e.code.startsWith('Numpad') && !isNaN(e.code.slice(6))) {
+                        char = e.code.slice(6);
+                    } else if (e.key && e.key.length === 1 && /[a-zA-Z0-9_\-\s]/.test(e.key)) {
+                        char = e.key.toLowerCase();
+                    }
+                    if (char) {
+                        altSequenceBuffer += char;
+                        if (altSequenceTimer) clearTimeout(altSequenceTimer);
+                        altSequenceTimer = setTimeout(() => {
+                            altSequenceBuffer = '';
+                        }, 3000);
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+                }
+            }
+        },
+        true,
+    );
+
+    document.addEventListener(
+        'keyup',
+        (e) => {
+            if (e.key === 'Alt') {
+                isAltHeld = false;
+                if (altSequenceTimer) clearTimeout(altSequenceTimer);
+                altSequenceTimer = setTimeout(() => {
+                    altSequenceBuffer = '';
+                }, 1500);
+            }
+        },
+        true,
+    );
+
     window.addEventListener('resize', updateScrollButtons);
 
     const groupsList = document.getElementById('groups-list');
@@ -513,6 +613,7 @@ export async function initializeAllEvents() {
         'history-view-container',
         'recent-view-container',
         'reading-list-view-container',
+        'downloads-view-container',
     ].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('scroll', updateScrollButtons);

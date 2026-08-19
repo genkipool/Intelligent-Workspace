@@ -86,6 +86,7 @@ function getVisibleScrollContainer() {
         '#history-view-container',
         '#recent-view-container',
         '#reading-list-view-container',
+        '#downloads-view-container',
         '#notes-view',
     ];
     for (const selector of selectors) {

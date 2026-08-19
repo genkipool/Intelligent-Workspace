@@ -21,6 +21,11 @@
             </label>
         </div>
     </div>
+    <ul
+        id="blacklist-trigger-container"
+        class="commands-list"
+        style="padding: 0; margin-top: 8px; margin-bottom: 12px;"
+    ></ul>
     <div class="manage-form-container">
         <div class="form-group-inline" style="display: flex; gap: 8px;">
             <input

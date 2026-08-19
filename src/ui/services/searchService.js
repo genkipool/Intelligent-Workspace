@@ -27,6 +27,7 @@ import {
     openUrlInPanel,
     fetchContentForReaderView,
     renderHistoryView,
+    renderDownloadsView,
     updateExpandAllButtonState,
     updateScrollButtons,
 } from './viewsService.js';
@@ -125,6 +126,20 @@ function clearSearchInput(input) {
 }
 
 export async function handleSearchEnter(event) {
+    if (event.key === 'Escape') {
+        const _searchInput = document.getElementById('search-input');
+        if (_searchInput) {
+            _searchInput.blur();
+            try {
+                if (document.body && typeof document.body.click === 'function') {
+                    document.body.click();
+                } else if (document.documentElement && typeof document.documentElement.click === 'function') {
+                    document.documentElement.click();
+                }
+            } catch {}
+        }
+        return;
+    }
     if (event.key !== 'Enter') return;
 
     const _searchInput = document.getElementById('search-input');
@@ -320,6 +335,12 @@ export function applySearchAndFilter() {
     if (historyContainer && historyContainer.style.display !== 'none') {
         const _currentHistoryDateFilter = get(currentHistoryDateFilter);
         renderHistoryView(_currentHistoryDateFilter?.start, _currentHistoryDateFilter?.end);
+        return;
+    }
+
+    const downloadsContainer = document.getElementById('downloads-view-container');
+    if (downloadsContainer && downloadsContainer.style.display !== 'none') {
+        renderDownloadsView();
         return;
     }
 

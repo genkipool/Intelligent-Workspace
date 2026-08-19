@@ -68,11 +68,127 @@ async function handleGetRecentlyClosed(message, sendResponse) {
 }
 
 /**
- * Opens a URL in a new tab.
+ * Normalizes URL for intelligent matching.
  */
-function handleOpenUrl(message) {
-    if (message.url) {
-        chrome.tabs.create({ url: message.url, active: true });
+function normalizeUrlForMatch(urlString) {
+    if (!urlString || typeof urlString !== 'string') return null;
+    let raw = urlString.trim();
+    if (!raw) return null;
+    if (!/^[a-zA-Z]+:\/\//.test(raw)) {
+        raw = 'https://' + raw;
+    }
+    try {
+        const parsed = new URL(raw);
+        const host = parsed.hostname.toLowerCase().replace(/^www\./, '');
+        const pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+        return {
+            raw,
+            protocol: parsed.protocol,
+            host,
+            pathname,
+            search: parsed.search,
+            hash: parsed.hash,
+            isDomainOnly: pathname === '/' && !parsed.search && !parsed.hash,
+        };
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Checks if a tab URL matches the target URL.
+ */
+function isTabMatchingUrl(tabUrl, targetNorm) {
+    if (!tabUrl || !targetNorm) return false;
+    const tabNorm = normalizeUrlForMatch(tabUrl);
+    if (!tabNorm) return false;
+
+    // Both hostnames must match (e.g. youtube.com === youtube.com)
+    if (tabNorm.host !== targetNorm.host) return false;
+
+    // If target URL is domain-only (e.g. "youtube.com" or "https://youtube.com/"), match any tab on that domain
+    if (targetNorm.isDomainOnly) {
+        return true;
+    }
+
+    // If target URL has a specific path (e.g. "/r/javascript"), tab path must match or start with it
+    if (tabNorm.pathname === targetNorm.pathname) {
+        if (targetNorm.search) {
+            return tabNorm.search === targetNorm.search;
+        }
+        return true;
+    }
+
+    if (
+        tabNorm.pathname.startsWith(targetNorm.pathname.endsWith('/') ? targetNorm.pathname : targetNorm.pathname + '/')
+    ) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Opens a URL intelligently:
+ * If the web is already open in a tab, switches to the first matching tab.
+ * Otherwise, opens the URL in a new tab.
+ */
+async function handleOpenUrl(message, sender = null) {
+    const rawUrl = message?.url;
+    if (!rawUrl || typeof rawUrl !== 'string') return;
+
+    const trimmedUrl = rawUrl.trim();
+    if (!trimmedUrl) return;
+
+    const fullUrl = /^[a-zA-Z]+:\/\//.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`;
+
+    try {
+        const tabs = await chrome.tabs.query({});
+        const targetNorm = normalizeUrlForMatch(trimmedUrl);
+
+        if (targetNorm && tabs && tabs.length > 0) {
+            const currentWindowId = sender?.tab?.windowId;
+
+            // Separate matching tabs into current window vs other windows
+            const currentWindowMatches = [];
+            const otherWindowMatches = [];
+
+            for (const tab of tabs) {
+                if (isTabMatchingUrl(tab.url, targetNorm) || isTabMatchingUrl(tab.pendingUrl, targetNorm)) {
+                    if (currentWindowId !== undefined && tab.windowId === currentWindowId) {
+                        currentWindowMatches.push(tab);
+                    } else {
+                        otherWindowMatches.push(tab);
+                    }
+                }
+            }
+
+            // Sort each list by tab.index ascending to get the first one
+            currentWindowMatches.sort((a, b) => a.index - b.index);
+            otherWindowMatches.sort((a, b) =>
+                a.windowId !== b.windowId ? a.windowId - b.windowId : a.index - b.index,
+            );
+
+            const bestTab = currentWindowMatches[0] || otherWindowMatches[0];
+
+            if (bestTab) {
+                await chrome.tabs.update(bestTab.id, { active: true });
+                if (bestTab.windowId) {
+                    try {
+                        await chrome.windows.update(bestTab.windowId, { focused: true });
+                    } catch {}
+                }
+                return;
+            }
+        }
+
+        // If no matching tab was found, open in a new tab
+        await chrome.tabs.create({ url: fullUrl, active: true });
+    } catch (e) {
+        console.error('[handleOpenUrl] Error opening URL:', e);
+        try {
+            chrome.tabs.create({ url: fullUrl, active: true });
+        } catch {}
     }
 }
 

@@ -307,6 +307,10 @@ const MESSAGE_HANDLERS = {
         handleGroupTabs(message, sendResponse);
         return true;
     },
+    navigateToGroupTab: (message, sender, sendResponse) => {
+        handleNavigateToGroupTab(message, sender, sendResponse);
+        return true;
+    },
     clearFaviconCache: (message, sender, sendResponse) => {
         if (typeof clearFaviconColorCache === 'function') {
             clearFaviconColorCache();
@@ -610,6 +614,46 @@ const MESSAGE_HANDLERS = {
         handleDownloadFilesBatch(message, sendResponse);
         return true;
     },
+    getDownloads: (message, sender, sendResponse) => {
+        handleGetDownloads(message, sendResponse);
+        return true;
+    },
+    pauseDownload: (message, sender, sendResponse) => {
+        handlePauseDownload(message, sendResponse);
+        return true;
+    },
+    resumeDownload: (message, sender, sendResponse) => {
+        handleResumeDownload(message, sendResponse);
+        return true;
+    },
+    cancelDownload: (message, sender, sendResponse) => {
+        handleCancelDownload(message, sendResponse);
+        return true;
+    },
+    eraseDownload: (message, sender, sendResponse) => {
+        handleEraseDownload(message, sendResponse);
+        return true;
+    },
+    eraseAllDownloads: (message, sender, sendResponse) => {
+        handleEraseAllDownloads(message, sendResponse);
+        return true;
+    },
+    openDownload: (message, sender, sendResponse) => {
+        handleOpenDownload(message, sendResponse);
+        return true;
+    },
+    showDownloadFile: (message, sender, sendResponse) => {
+        handleShowDownloadFile(message, sendResponse);
+        return true;
+    },
+    openDownloadsFolder: (message, sender, sendResponse) => {
+        handleOpenDownloadsFolder(message, sendResponse);
+        return true;
+    },
+    retryDownload: (message, sender, sendResponse) => {
+        handleRetryDownload(message, sendResponse);
+        return true;
+    },
     fullscreenChanged: (message, sender, sendResponse) => {
         handleFullscreenChanged(message, sender, sendResponse);
         return true;
@@ -739,7 +783,7 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     openUrl: (message, sender, sendResponse) => {
-        handleOpenUrl(message);
+        handleOpenUrl(message, sender);
         return false;
     },
     duplicateTab: (message, sender, sendResponse) => {

@@ -130,16 +130,14 @@
 
 .command-item {
     display: grid;
-    /* Reverting to closer to original grid, but keeping URL column if present */
-    /* 70px key | 1fr desc | auto delete */
-    /* Dynamic grid template handles custom vs built-in via JS logic or CSS classes better, but let's stick to a safe default */
-    grid-template-columns: 70px 1fr auto;
+    grid-template-columns: minmax(70px, max-content) minmax(0, 1fr) auto;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     padding: 6px 10px;
     border-radius: 4px;
     background-color: var(--bg-panel-color);
     transition: background-color 0.2s;
+    min-width: 0;
 }
 
 /* Specialized grids for Shortcuts and Snippets */
@@ -213,6 +211,10 @@ li.shortcuts-grid .command-description-wrapper .command-description {
     background-color: var(--bg-color);
     text-align: center;
     border: 1px solid transparent;
+    white-space: nowrap;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .command-keys:focus,
@@ -268,12 +270,13 @@ input.command-keys:focus {
 
 .command-description {
     font-size: 13px;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
     display: block;
-    height: 100%;
-    align-content: center;
+    min-width: 0;
+    line-height: 1.35;
+    color: var(--text-color);
 }
 
 .snippet-expansion:focus,

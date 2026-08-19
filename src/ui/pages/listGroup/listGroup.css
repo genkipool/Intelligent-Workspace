@@ -3454,6 +3454,17 @@ body.popup-window {
         border 0.3s ease;
 }
 
+#hidden-context-container {
+    position: relative;
+    z-index: 105;
+}
+
+#hidden-context-container .badge-count,
+#hidden-context-container .orphan-view-notes-btn,
+#hidden-context-container .orphan-view-screenshots-btn {
+    z-index: 110;
+}
+
 .hidden-context-container.hidden {
     min-height: 0;
     padding-top: 0;
@@ -4769,24 +4780,53 @@ body.show-domain-headers .domain-header {
 
 #view-toggle-panel {
     display: flex;
-    gap: var(--spacing-md);
-    padding: var(--spacing-sm) var(--spacing-md);
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 3px;
+    padding: 4px 6px;
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-color);
-    justify-content: space-around;
-    /* Aligns the button to the left */
+    align-items: center;
+    position: relative;
+    z-index: 100;
+    overflow: visible;
+}
+
+#view-toggle-panel::-webkit-scrollbar {
+    display: none;
 }
 
 body.bookmarks-view-active #view-toggle-panel {
     gap: 3px;
 }
 
+#view-toggle-panel > .control-btn,
+#view-toggle-panel > .history-filter-wrapper,
+#view-toggle-panel > .downloads-filter-wrapper {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 36px;
+    box-sizing: border-box;
+}
+
 #view-toggle-panel .control-btn {
-    flex-grow: 1;
-    /* Makes the buttons grow to occupy the available space */
+    width: 100%;
+    height: 100%;
+    padding: 2px 2px;
     text-align: center;
-    /* Ensures the button content (icon) stays centered */
-    opacity: 0.8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.85;
+    box-sizing: border-box;
+}
+
+#view-toggle-panel .control-btn svg {
+    width: 21px;
+    height: 21px;
+    max-width: 100%;
+    max-height: 100%;
+    flex-shrink: 0;
 }
 
 #view-toggle-panel .control-btn:hover {
@@ -4804,6 +4844,17 @@ body.bookmarks-view-active #view-toggle-panel {
     stroke: var(--text-on-color);
     fill: var(--text-on-color);
     /* For the icon to fill when active */
+}
+
+/* Styles for Downloads View Container */
+#downloads-view-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0;
 }
 
 /* Styles for the bookmarks list */
@@ -6633,7 +6684,6 @@ a.delete-item-title:hover {
     width: 100%;
     /* Ensures it occupies the full width */
     box-sizing: border-box;
-    transform: translateZ(0);
 }
 
 .item-footer {
@@ -6860,12 +6910,42 @@ a.delete-item-title:hover {
     transition: fill 0.2s ease;
 }
 
-.history-list-container.tab-list-container {
+.history-list-container.tab-list-container,
+.downloads-list-container.tab-list-container {
     display: flex;
     flex-direction: column;
     gap: 4px;
     padding: 8px 4px;
     overflow-y: visible;
+}
+
+.downloads-group {
+    position: relative;
+    overflow: visible !important;
+}
+
+.downloads-group:hover,
+.downloads-group:focus-within,
+.downloads-group:has(.download-item:hover),
+.downloads-group:has(.download-menu-container:hover) {
+    z-index: 500;
+}
+
+.download-item {
+    transform: none !important;
+}
+
+.download-item:hover,
+.download-item:focus-within,
+.download-item:has(.download-menu-container:hover) {
+    z-index: 10000 !important;
+    position: relative;
+}
+
+.download-item:hover .download-actions,
+.download-item:has(.download-menu-container:hover) .download-actions,
+.download-actions:has(.download-menu-container:hover) {
+    display: flex !important;
 }
 
 .history-date-popup {
@@ -6905,34 +6985,181 @@ a.delete-item-title:hover {
 
 .history-filter-wrapper {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
     position: relative;
-    flex-grow: 1;
+    flex: 1 1 0;
     min-width: 0;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 .history-filter-wrapper #history-date-filter-btn {
     width: 100%;
+    height: 100%;
     margin: 0;
+    padding: 2px 1px;
 }
 
 .history-filter-wrapper:has(.control-btn.hidden) {
     display: none !important;
 }
 
+.downloads-filter-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 32px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.downloads-filter-wrapper #downloads-filter-btn {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 2px 1px;
+}
+
+.downloads-filter-wrapper:has(.control-btn.hidden) {
+    display: none !important;
+}
+
+.custom-downloads-filter-popup {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 190px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    user-select: none;
+}
+
+/* Invisible bridge connecting button and popup */
+.custom-downloads-filter-popup::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 0;
+    right: 0;
+    height: 14px;
+    background: transparent;
+}
+
+.downloads-filter-wrapper:hover .custom-downloads-filter-popup,
+.custom-downloads-filter-popup:hover {
+    display: flex;
+}
+
+.filter-popup-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.filter-popup-option:hover {
+    background: var(--bg-hover-color, rgba(255, 255, 255, 0.1));
+}
+
+.filter-popup-option.active {
+    background: var(--interactive-color, #3b82f6);
+    color: #fff;
+}
+
+.filter-popup-option .chip-count {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: 0.85;
+    padding: 1px 6px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+
+.filter-popup-option.active .chip-count {
+    background: rgba(0, 0, 0, 0.2);
+    color: #fff;
+}
+
+.filter-popup-option .pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+    margin-right: 6px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.delete-downloads-group-btn {
+    margin-left: auto;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.2s ease,
+        background-color 0.2s ease;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.downloads-group-header:hover .delete-downloads-group-btn,
+.delete-downloads-group-btn:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.delete-downloads-group-btn svg path {
+    transition: stroke 0.2s ease;
+    stroke: var(--text-color);
+}
+
+.delete-downloads-group-btn:hover svg path,
+.delete-downloads-group-btn:hover svg g path,
+.delete-downloads-group-btn:hover svg path.delete-icon {
+    stroke: var(--error-color) !important;
+    fill: var(--error-color) !important;
+}
+
 .custom-calendar {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 4px);
     right: 0;
     /* Aligned to the right to avoid going out */
-    margin-top: 8px;
     width: 260px;
     background-color: var(--bg-panel-color);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: 99999;
     padding: 10px;
     user-select: none;
 }

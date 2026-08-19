@@ -457,9 +457,10 @@ export async function updateDuplicateCountBadge() {
     const run = ++duplicateBadgeRun;
     const isStale = () => run !== duplicateBadgeRun;
 
-    const $isBookmarksViewActive = get(isBookmarksViewActive);
+    const $isBookmarksViewActive = get(isBookmarksViewActive) || get(currentMainView) === 'bookmarks';
     const isGroupsViewActive =
-        !$isBookmarksViewActive &&
+        get(currentMainView) === 'groups' &&
+        !get(isBookmarksViewActive) &&
         !get(isGeminiViewActive) &&
         !get(isNotesViewActive) &&
         !get(isGalleryViewActive) &&

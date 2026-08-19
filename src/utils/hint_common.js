@@ -138,6 +138,8 @@ var HintCommon = {
             s: 'hintDesc_s',
             ts: 'hintDesc_ts',
             i: 'hintDesc_i',
+            esc: 'hintDesc_esc',
+            'Alt+<grupo><n>+Enter': 'hintDesc_group_tab_nav',
             pp: 'hintDesc_pp',
             o: 'hintDesc_o',
             dg: 'hintDesc_dg',

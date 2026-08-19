@@ -28,6 +28,9 @@ export async function prefetchData(type, force = false) {
             case 'reading':
                 action = 'getReadingList';
                 break;
+            case 'downloads':
+                action = 'getDownloads';
+                break;
             default:
                 return null;
         }
@@ -41,7 +44,7 @@ export async function prefetchData(type, force = false) {
                             tree: response.bookmarks,
                             duplicateUrlSet: response.duplicateUrlSet,
                         };
-                    } else if (type === 'history' || type === 'recent') {
+                    } else if (type === 'history' || type === 'recent' || type === 'downloads') {
                         current[type] = response.results;
                     } else if (type === 'reading') {
                         current.reading = response.items;

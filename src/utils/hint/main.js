@@ -47,6 +47,9 @@ var Main = class Main {
         this.helpModal = new HelpModal(this.shadowUI, this.commands, this.snippetManager, this.linkPreviewManager);
         this.commands.setHelpModal(this.helpModal);
         this._ytPipObserver = null;
+        this._altSequenceBuffer = '';
+        this._altSequenceTimer = null;
+        this._isAltHeld = false;
     }
     async init() {
         // The floating player's window loads these scripts too; it needs none of them.
@@ -923,9 +926,20 @@ var Main = class Main {
             if (Utils.isInputLikeElement(target)) this.insertMode = false;
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
+        this._boundMainKeyUpHandler = (e) => this._handleKeyUp(e);
         document.addEventListener('focusin', this._boundFocusInHandler);
         document.addEventListener('focusout', this._boundFocusOutHandler);
         document.addEventListener('keydown', this._boundMainKeyDownHandler, true);
+        document.addEventListener('keyup', this._boundMainKeyUpHandler, true);
+    }
+    _handleKeyUp(event) {
+        if (event.key === 'Alt') {
+            this._isAltHeld = false;
+            if (this._altSequenceTimer) clearTimeout(this._altSequenceTimer);
+            this._altSequenceTimer = setTimeout(() => {
+                this._altSequenceBuffer = '';
+            }, 1500);
+        }
     }
     _injectYoutubePipButton() {
         if (itgIsInsidePipWindow()) return;
@@ -1312,6 +1326,16 @@ var Main = class Main {
             document.body.classList.remove('itg-pip-shorts');
             document.body.classList.remove('itg-hide-masthead');
         } catch {}
+        if (this._boundMainKeyUpHandler) {
+            document.removeEventListener('keyup', this._boundMainKeyUpHandler, true);
+            this._boundMainKeyUpHandler = null;
+        }
+        if (this._altSequenceTimer) {
+            clearTimeout(this._altSequenceTimer);
+            this._altSequenceTimer = null;
+        }
+        this._altSequenceBuffer = '';
+        this._isAltHeld = false;
         if (this.shadowUI) this.shadowUI.cleanup();
         if (this.hintEngine) this.hintEngine.cleanup();
         if (this.snippetManager) this.snippetManager.cleanup();
@@ -1326,6 +1350,64 @@ var Main = class Main {
             return;
         }
         if (!this.hintsGloballyEnabled) return;
+
+        // 0. Alt sequence for navigating to group tabs: Alt + [group prefix] + [tab index] + Enter
+        if (event.key === 'Alt') {
+            this._isAltHeld = true;
+        }
+        if (
+            event.altKey ||
+            this._isAltHeld ||
+            (this._altSequenceBuffer && (event.key === 'Enter' || event.code === 'Enter'))
+        ) {
+            if (event.key === 'Enter' || event.code === 'Enter') {
+                if (this._altSequenceBuffer) {
+                    const match = this._altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d+)$/);
+                    if (match) {
+                        const groupPrefix = match[1].trim();
+                        const tabIndex = parseInt(match[2], 10);
+                        chrome.runtime.sendMessage({
+                            action: 'navigateToGroupTab',
+                            groupPrefix,
+                            tabIndex,
+                        });
+                        this._altSequenceBuffer = '';
+                        if (this._altSequenceTimer) clearTimeout(this._altSequenceTimer);
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return;
+                    }
+                }
+            } else if (event.key === 'Backspace') {
+                if (this._altSequenceBuffer) {
+                    this._altSequenceBuffer = this._altSequenceBuffer.slice(0, -1);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+            } else if (event.key !== 'Alt' && !event.ctrlKey && !event.metaKey) {
+                let char = '';
+                if (event.code && event.code.startsWith('Key')) {
+                    char = event.code.slice(3).toLowerCase();
+                } else if (event.code && event.code.startsWith('Digit')) {
+                    char = event.code.slice(5);
+                } else if (event.code && event.code.startsWith('Numpad') && !isNaN(event.code.slice(6))) {
+                    char = event.code.slice(6);
+                } else if (event.key && event.key.length === 1 && /[a-zA-Z0-9_\-\s]/.test(event.key)) {
+                    char = event.key.toLowerCase();
+                }
+                if (char) {
+                    this._altSequenceBuffer += char;
+                    if (this._altSequenceTimer) clearTimeout(this._altSequenceTimer);
+                    this._altSequenceTimer = setTimeout(() => {
+                        this._altSequenceBuffer = '';
+                    }, 3000);
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
+            }
+        }
 
         // 1. Priority: Own Help Modal
         if (this.helpModal.visible) {
@@ -1380,9 +1462,28 @@ var Main = class Main {
                 return;
             }
             const target = (event.composedPath && event.composedPath()[0]) || event.target;
-            if (this.insertMode || Utils.isInputLikeElement(target)) {
+            if (
+                this.insertMode ||
+                Utils.isInputLikeElement(target) ||
+                Utils.isInputLikeElement(document.activeElement)
+            ) {
                 this.insertMode = false;
-                return; // Let the event bubble for external components (like folder renaming)
+                if (target && typeof target.blur === 'function') {
+                    target.blur();
+                }
+                if (document.activeElement && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                try {
+                    if (document.body && typeof document.body.click === 'function') {
+                        document.body.click();
+                    } else if (document.documentElement && typeof document.documentElement.click === 'function') {
+                        document.documentElement.click();
+                    }
+                } catch {}
+                event.preventDefault();
+                event.stopPropagation();
+                return;
             }
 
             // Cancel active page mode (dark, sepia, paper, light, extension)

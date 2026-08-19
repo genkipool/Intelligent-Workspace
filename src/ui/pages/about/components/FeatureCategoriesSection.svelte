@@ -151,6 +151,18 @@
 </section>
 
 <section class="features-section card">
+    <h3>{$t('sectionListDownloads')}</h3>
+    <div class="features-grid">
+        <FeatureItem isMaterial={true} iconName="download" textKey="feature_downloads_manager" />
+        <FeatureItem isMaterial={true} iconName="manage_search" textKey="feature_downloads_search" />
+        <FeatureItem isMaterial={true} iconName="filter_list" textKey="feature_downloads_status_filter" />
+        <FeatureItem isMaterial={true} iconName="calendar_month" textKey="feature_downloads_date_filter" />
+        <FeatureItem isMaterial={true} iconName="folder_open" textKey="feature_downloads_open_folder" />
+        <FeatureItem isMaterial={true} iconName="delete_sweep" textKey="feature_downloads_delete" />
+    </div>
+</section>
+
+<section class="features-section card">
     <h3>{$t('sectionManageNavigationShortcuts')}</h3>
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="keyboard" textKey="featureKeyboardNavigation" />

@@ -1,11 +1,11 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import { isCtrlHeld } from '../../../stores/modifierKeysStore.js';
-    import { searchToggles } from '../../../stores/appStore.svelte.js';
+    import { searchToggles, currentMainView } from '../../../stores/appStore.svelte.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
 
     let {
-        initialTitleKey = 'titleTabGroups',
+        initialTitleKey = 'listTabGroups',
         startsHidden = () => false,
         handleNewGeminiConversation = () => {},
         handleSaveGeminiConversation = () => {},
@@ -16,10 +16,22 @@
         handleDownloadConversation = () => {},
         handleCopyConversation = () => {},
     } = $props();
+
+    const VIEW_TITLE_MAP = {
+        groups: 'listTabGroups',
+        bookmarks: 'bookmarksViewTitle',
+        history: 'historyViewTitle',
+        recent: 'recentlyClosedViewTitle',
+        reading: 'readingListViewTitle',
+        downloads: 'downloadsViewTitle',
+        gemini: 'geminiViewTitle',
+    };
+
+    let titleKey = $derived(VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
 </script>
 
 <header class="header">
-    <h1 id="main-header-title">{$t(initialTitleKey)}</h1>
+    <h1 id="main-header-title" data-i18n={titleKey}>{$t(titleKey)}</h1>
     <div class="header-actions">
         <button
             id="pin-toggle"

@@ -147,6 +147,12 @@
   "readingListCleared": {
     "message": "Reading list cleared"
   },
+  "confirmDeleteAllDownloads": {
+    "message": "Are you sure you want to clear all download history?"
+  },
+  "downloadsCleared": {
+    "message": "Download history cleared"
+  },
   "noHistoryForDate": {
     "message": "No history for $1"
   },
@@ -4415,6 +4421,12 @@
   "hintDesc_i": {
     "message": "Focus first text input"
   },
+  "hintDesc_esc": {
+    "message": "Exit focused text input"
+  },
+  "hintDesc_group_tab_nav": {
+    "message": "Navigate to tab N of group (e.g. Alt+gog4+Enter)"
+  },
   "hintDesc_t": {
     "message": "Open a new tab"
   },
@@ -5184,6 +5196,9 @@
   "readingListViewTitle": {
     "message": "Reading List"
   },
+  "downloadsViewTitle": {
+    "message": "Downloads"
+  },
   "viewHistory": {
     "message": "View History"
   },
@@ -5193,6 +5208,9 @@
   "viewReadingList": {
     "message": "View Reading List"
   },
+  "viewDownloads": {
+    "message": "View Downloads"
+  },
   "noHistoryFound": {
     "message": "No recent history found."
   },
@@ -5201,6 +5219,93 @@
   },
   "noReadingListFound": {
     "message": "Reading list is empty or unavailable."
+  },
+  "noDownloadsFound": {
+    "message": "No downloads found."
+  },
+  "deleteDownloadsForDate": {
+    "message": "Delete downloads for this date"
+  },
+  "deleteDownloadsGroupConfirm": {
+    "message": "Are you sure you want to delete downloads for this date?"
+  },
+  "openDownloadsFolder": {
+    "message": "Open downloads folder"
+  },
+  "clearAllDownloads": {
+    "message": "Clear download history"
+  },
+  "clearAllDownloadsConfirm": {
+    "message": "Are you sure you want to clear all download history?"
+  },
+  "pauseDownload": {
+    "message": "Pause download"
+  },
+  "resumeDownload": {
+    "message": "Resume download"
+  },
+  "cancelDownload": {
+    "message": "Cancel download"
+  },
+  "retryDownload": {
+    "message": "Retry download"
+  },
+  "openFile": {
+    "message": "Open file"
+  },
+  "showInFolder": {
+    "message": "Show in folder"
+  },
+  "copyDownloadLink": {
+    "message": "Copy download link"
+  },
+  "linkCopied": {
+    "message": "Link copied to clipboard"
+  },
+  "deleteDownloadTooltip": {
+    "message": "Remove from download history"
+  },
+  "downloadStatusInProgress": {
+    "message": "Downloading"
+  },
+  "downloadStatusPaused": {
+    "message": "Paused"
+  },
+  "downloadStatusComplete": {
+    "message": "Completed"
+  },
+  "downloadStatusInterrupted": {
+    "message": "Interrupted"
+  },
+  "downloadStatusCancelled": {
+    "message": "Cancelled"
+  },
+  "downloadStatusFailed": {
+    "message": "Failed"
+  },
+  "downloadFilterAll": {
+    "message": "All"
+  },
+  "downloadFilterInProgress": {
+    "message": "In Progress"
+  },
+  "downloadFilterComplete": {
+    "message": "Completed"
+  },
+  "downloadFilterFailed": {
+    "message": "Paused / Errors"
+  },
+  "filterDownloads": {
+    "message": "Filter downloads"
+  },
+  "backToDownloads": {
+    "message": "Back to Downloads"
+  },
+  "expandAllDownloads": {
+    "message": "Expand all downloads"
+  },
+  "collapseAllDownloads": {
+    "message": "Collapse all downloads"
   },
   "deleteHistoryForDate": {
     "message": "Delete history for this date",
@@ -6389,6 +6494,27 @@
   },
   "sectionListReading": {
     "message": "Reading list"
+  },
+  "sectionListDownloads": {
+    "message": "Downloads Manager"
+  },
+  "feature_downloads_manager": {
+    "message": "Organized downloads management and visualization by date and category."
+  },
+  "feature_downloads_search": {
+    "message": "Real-time search of downloaded files by filename or URL."
+  },
+  "feature_downloads_status_filter": {
+    "message": "Filter by status: complete, in progress, and interrupted."
+  },
+  "feature_downloads_date_filter": {
+    "message": "Interactive filtering by date and calendar range."
+  },
+  "feature_downloads_open_folder": {
+    "message": "Direct access to the system downloads folder."
+  },
+  "feature_downloads_delete": {
+    "message": "Delete individually, by date groups, or clear entire history."
   },
   "sectionManageNavigationShortcuts": {
     "message": "Manage navigation shortcuts"
@@ -9136,5 +9262,26 @@
   },
   "musicPlayerAllDuplicates": {
     "message": "All selected files are already in the playlist"
+  },
+  "sectionMusicPlayer": {
+    "message": "Music Player"
+  },
+  "feature_music_local_folder": {
+    "message": "Play music from local folders directly in the browser."
+  },
+  "feature_music_playback": {
+    "message": "Full playback controls: play, pause, skip, and repeat."
+  },
+  "feature_music_seek": {
+    "message": "Seek and fast-forward within tracks with precision."
+  },
+  "feature_music_search": {
+    "message": "Search and filter tracks in your playlist instantly."
+  },
+  "feature_music_playlist": {
+    "message": "Create and manage custom playlists with drag-and-drop."
+  },
+  "feature_music_keeps_playing": {
+    "message": "Music keeps playing even when navigating between tabs."
   }
 }

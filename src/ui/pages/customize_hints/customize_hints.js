@@ -296,14 +296,16 @@ export async function initCustomizeHints() {
         } else {
             const currentKey = customShortcutsOverrides[extraData.originalDesc] || cmd.keys;
             const category = extraData.category || 'unknown';
+            const isNonEditable =
+                extraData.originalDesc === 'hintDesc_group_tab_nav' || (cmd.keys && cmd.keys.includes('+'));
 
             const keySpan = HintCommon.DOM.create(
                 'span',
                 {
-                    className: 'command-keys',
+                    className: `command-keys ${isNonEditable ? 'non-editable' : ''}`,
                     autocomplete: 'off',
                     spellcheck: 'false',
-                    contenteditable: 'true',
+                    contenteditable: isNonEditable ? 'false' : 'true',
                     'data-original-desc': extraData.originalDesc,
                     'data-original-key': cmd.keys,
                     'data-type': 'builtin',
@@ -1028,6 +1030,123 @@ export async function initCustomizeHints() {
             if (item.dataset.updated === 'false') item.remove();
             else delete item.dataset.updated;
         });
+
+        const blacklistTriggerContainer = document.getElementById('blacklist-trigger-container');
+        if (blacklistTriggerContainer) {
+            let triggerItem = blacklistTriggerContainer.querySelector('#blacklist-preview-trigger-item');
+            if (!triggerItem) {
+                triggerItem = createTriggerKeyItem('blacklist-preview-trigger-item', 'blacklist-preview-trigger-key');
+                blacklistTriggerContainer.appendChild(triggerItem);
+            }
+            const inputEl = triggerItem.querySelector('.preview-trigger-key-input');
+            if (inputEl && document.activeElement !== inputEl) {
+                inputEl.value = linkPreviewTriggerKey;
+            }
+            applyTranslations(blacklistTriggerContainer);
+        }
+    };
+
+    const syncTriggerKeyInputs = (value, error = false, activeInput = null) => {
+        document.querySelectorAll('.preview-trigger-key-input').forEach((input) => {
+            if (!error) input.classList.remove('error');
+            if (input !== activeInput) {
+                input.value = value;
+            }
+        });
+    };
+
+    const setupTriggerKeyInputEvents = (input) => {
+        input.addEventListener('keydown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.key === 'Escape' || e.key === 'Enter') {
+                input.blur();
+                return;
+            }
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                input.value = '';
+                input.classList.remove('error');
+                linkPreviewTriggerKey = '';
+                syncTriggerKeyInputs('', false, input);
+                chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
+                return;
+            }
+
+            let keyVal = e.key.toLowerCase();
+            if (keyVal === ' ') keyVal = 'space';
+
+            const conflict = getKeyConflictInfo(keyVal, 'mapping', linkPreviewTriggerKey, 'triggerKey');
+            if (conflict) {
+                input.classList.add('error');
+                showNotification('errorTriggerTakenBy', true, [conflict]);
+                return;
+            }
+
+            input.classList.remove('error');
+            input.value = keyVal;
+            linkPreviewTriggerKey = keyVal;
+            syncTriggerKeyInputs(keyVal, false, input);
+            chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: keyVal });
+        });
+
+        input.addEventListener('blur', () => {
+            input.classList.remove('error');
+            input.value = linkPreviewTriggerKey;
+            syncTriggerKeyInputs(linkPreviewTriggerKey, false, input);
+        });
+    };
+
+    const createTriggerKeyItem = (itemId, inputId) => {
+        const triggerItem = document.createElement('li');
+        triggerItem.id = itemId;
+        triggerItem.className = 'command-item preview-trigger-key-item';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = inputId;
+        input.className = 'command-keys preview-trigger-key-input';
+        input.maxLength = 15;
+        input.placeholder = '-';
+        input.style.width = '100%';
+        input.style.boxSizing = 'border-box';
+        input.style.cursor = 'pointer';
+        input.style.margin = '0';
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+
+        setupTriggerKeyInputEvents(input);
+
+        const descContainer = document.createElement('div');
+        descContainer.className = 'command-description';
+        descContainer.setAttribute('data-i18n-title', 'previewTriggerKeyTooltip');
+        descContainer.title = getI18nText('previewTriggerKeyTooltip');
+        descContainer.style.display = 'flex';
+        descContainer.style.alignItems = 'center';
+        descContainer.style.gap = '8px';
+        descContainer.style.whiteSpace = 'normal';
+
+        const labelSpan = document.createElement('span');
+        labelSpan.style.fontWeight = '500';
+        labelSpan.setAttribute('data-i18n', 'previewTriggerKeyLabel');
+        labelSpan.textContent = getI18nText('previewTriggerKeyLabel');
+
+        const tooltipSpan = document.createElement('span');
+        tooltipSpan.style.fontSize = '0.85rem';
+        tooltipSpan.style.opacity = '0.7';
+        tooltipSpan.setAttribute('data-i18n', 'previewTriggerKeyTooltip');
+        tooltipSpan.textContent = getI18nText('previewTriggerKeyTooltip');
+
+        descContainer.appendChild(labelSpan);
+        descContainer.appendChild(tooltipSpan);
+
+        const spacer = document.createElement('div');
+
+        triggerItem.appendChild(input);
+        triggerItem.appendChild(descContainer);
+        triggerItem.appendChild(spacer);
+
+        return triggerItem;
     };
 
     const renderBuiltInCommands = async () => {
@@ -1119,91 +1238,11 @@ export async function initCustomizeHints() {
                 if (descKey === 'hintDesc_vp') {
                     let triggerItem = categoryList.querySelector('#preview-trigger-item');
                     if (!triggerItem) {
-                        triggerItem = document.createElement('li');
-                        triggerItem.id = 'preview-trigger-item';
-                        triggerItem.className = 'command-item preview-trigger-key-item';
-
-                        const input = document.createElement('input');
-                        input.type = 'text';
-                        input.id = 'preview-trigger-key';
-                        input.className = 'command-keys';
-                        input.maxLength = 15;
-                        input.placeholder = '-';
-                        input.style.width = '100%';
-                        input.style.boxSizing = 'border-box';
-                        input.style.cursor = 'pointer';
-                        input.style.margin = '0';
-                        input.autocomplete = 'off';
-                        input.spellcheck = false;
-
-                        input.addEventListener('keydown', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-
-                            if (e.key === 'Escape' || e.key === 'Enter') {
-                                input.blur();
-                                return;
-                            }
-                            if (e.key === 'Backspace' || e.key === 'Delete') {
-                                input.value = '';
-                                input.classList.remove('error');
-                                linkPreviewTriggerKey = '';
-                                chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
-                                return;
-                            }
-
-                            let keyVal = e.key.toLowerCase();
-                            if (keyVal === ' ') keyVal = 'space';
-
-                            const conflict = getKeyConflictInfo(keyVal, 'mapping', linkPreviewTriggerKey, 'triggerKey');
-                            if (conflict) {
-                                input.classList.add('error');
-                                showNotification('errorTriggerTakenBy', true, [conflict]);
-                                return;
-                            }
-
-                            input.classList.remove('error');
-                            input.value = keyVal;
-                            linkPreviewTriggerKey = keyVal;
-                            chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: keyVal });
-                        });
-                        input.addEventListener('blur', () => {
-                            input.classList.remove('error');
-                            input.value = linkPreviewTriggerKey;
-                        });
-
-                        const descContainer = document.createElement('div');
-                        descContainer.className = 'command-description';
-                        descContainer.setAttribute('data-i18n-title', 'previewTriggerKeyTooltip');
-                        descContainer.title = getI18nText('previewTriggerKeyTooltip');
-                        descContainer.style.display = 'flex';
-                        descContainer.style.alignItems = 'center';
-                        descContainer.style.gap = '8px';
-                        descContainer.style.whiteSpace = 'normal';
-
-                        const labelSpan = document.createElement('span');
-                        labelSpan.style.fontWeight = '500';
-                        labelSpan.setAttribute('data-i18n', 'previewTriggerKeyLabel');
-                        labelSpan.textContent = getI18nText('previewTriggerKeyLabel');
-
-                        const tooltipSpan = document.createElement('span');
-                        tooltipSpan.style.fontSize = '0.85rem';
-                        tooltipSpan.style.opacity = '0.7';
-                        tooltipSpan.setAttribute('data-i18n', 'previewTriggerKeyTooltip');
-                        tooltipSpan.textContent = getI18nText('previewTriggerKeyTooltip');
-
-                        descContainer.appendChild(labelSpan);
-                        descContainer.appendChild(tooltipSpan);
-
-                        const spacer = document.createElement('div');
-
-                        triggerItem.appendChild(input);
-                        triggerItem.appendChild(descContainer);
-                        triggerItem.appendChild(spacer);
+                        triggerItem = createTriggerKeyItem('preview-trigger-item', 'preview-trigger-key');
                         categoryList.appendChild(triggerItem);
                     }
                     triggerItem.dataset.updated = 'true';
-                    const inputEl = triggerItem.querySelector('#preview-trigger-key');
+                    const inputEl = triggerItem.querySelector('.preview-trigger-key-input');
                     if (inputEl && document.activeElement !== inputEl) {
                         inputEl.value = linkPreviewTriggerKey;
                     }
@@ -1577,11 +1616,7 @@ export async function initCustomizeHints() {
         await saveCustomShortcuts({});
         linkPreviewTriggerKey = '';
         await chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
-        const triggerInput = document.getElementById('preview-trigger-key');
-        if (triggerInput) {
-            triggerInput.value = '';
-            triggerInput.classList.remove('error');
-        }
+        syncTriggerKeyInputs('', false, null);
         showNotification('restoredDefaults');
     });
 

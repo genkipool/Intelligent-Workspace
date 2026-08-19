@@ -159,6 +159,12 @@
     "readingListCleared": {
         "message": "Lista de lectura vaciada"
     },
+    "confirmDeleteAllDownloads": {
+        "message": "¿Eliminar todo el historial de descargas?"
+    },
+    "downloadsCleared": {
+        "message": "Historial de descargas eliminado"
+    },
     "noHistoryForDate": {
         "message": "No hay historial del $1"
     },
@@ -4416,6 +4422,12 @@
     "hintDesc_i": {
         "message": "Enfocar primer campo de texto"
     },
+    "hintDesc_esc": {
+        "message": "Salir del campo de texto enfocado"
+    },
+    "hintDesc_group_tab_nav": {
+        "message": "Navegar a la pestaña N del grupo (ej: Alt+gog4+Enter)"
+    },
     "hintDesc_t": {
         "message": "Abrir nueva pestaña"
     },
@@ -5188,6 +5200,9 @@
     "readingListViewTitle": {
         "message": "Lista de Lectura"
     },
+    "downloadsViewTitle": {
+        "message": "Descargas"
+    },
     "viewHistory": {
         "message": "Ver Historial"
     },
@@ -5197,6 +5212,9 @@
     "viewReadingList": {
         "message": "Ver Lista de Lectura"
     },
+    "viewDownloads": {
+        "message": "Ver Descargas"
+    },
     "noHistoryFound": {
         "message": "No hay historial reciente."
     },
@@ -5205,6 +5223,93 @@
     },
     "noReadingListFound": {
         "message": "Lista de lectura vacía o no disponible."
+    },
+    "noDownloadsFound": {
+        "message": "No se encontraron descargas."
+    },
+    "deleteDownloadsForDate": {
+        "message": "Borrar descargas de esta fecha"
+    },
+    "deleteDownloadsGroupConfirm": {
+        "message": "¿Estás seguro de que deseas borrar las descargas de esta fecha?"
+    },
+    "openDownloadsFolder": {
+        "message": "Abrir carpeta de descargas"
+    },
+    "clearAllDownloads": {
+        "message": "Borrar historial de descargas"
+    },
+    "clearAllDownloadsConfirm": {
+        "message": "¿Estás seguro de que deseas borrar todo el historial de descargas?"
+    },
+    "pauseDownload": {
+        "message": "Pausar descarga"
+    },
+    "resumeDownload": {
+        "message": "Reanudar descarga"
+    },
+    "cancelDownload": {
+        "message": "Cancelar descarga"
+    },
+    "retryDownload": {
+        "message": "Reintentar descarga"
+    },
+    "openFile": {
+        "message": "Abrir archivo"
+    },
+    "showInFolder": {
+        "message": "Mostrar en carpeta"
+    },
+    "copyDownloadLink": {
+        "message": "Copiar enlace de descarga"
+    },
+    "linkCopied": {
+        "message": "Enlace copiado al portapapeles"
+    },
+    "deleteDownloadTooltip": {
+        "message": "Eliminar del historial de descargas"
+    },
+    "downloadStatusInProgress": {
+        "message": "Descargando"
+    },
+    "downloadStatusPaused": {
+        "message": "Pausada"
+    },
+    "downloadStatusComplete": {
+        "message": "Completada"
+    },
+    "downloadStatusInterrupted": {
+        "message": "Interrumpida"
+    },
+    "downloadStatusCancelled": {
+        "message": "Cancelada"
+    },
+    "downloadStatusFailed": {
+        "message": "Fallida"
+    },
+    "downloadFilterAll": {
+        "message": "Todas"
+    },
+    "downloadFilterInProgress": {
+        "message": "En progreso"
+    },
+    "downloadFilterComplete": {
+        "message": "Completadas"
+    },
+    "downloadFilterFailed": {
+        "message": "Pausadas / Errores"
+    },
+    "filterDownloads": {
+        "message": "Filtrar descargas"
+    },
+    "backToDownloads": {
+        "message": "Volver a Descargas"
+    },
+    "expandAllDownloads": {
+        "message": "Expandir todas las descargas"
+    },
+    "collapseAllDownloads": {
+        "message": "Contraer todas las descargas"
     },
     "deleteHistoryForDate": {
         "message": "Borrar historial de esta fecha",
@@ -6472,6 +6577,27 @@
     },
     "sectionListReading": {
         "message": "Listar lectura"
+    },
+    "sectionListDownloads": {
+        "message": "Gestor de descargas"
+    },
+    "feature_downloads_manager": {
+        "message": "Gestión y visualización organizada de descargas por fechas y categorías."
+    },
+    "feature_downloads_search": {
+        "message": "Búsqueda en tiempo real de archivos descargados por nombre o URL."
+    },
+    "feature_downloads_status_filter": {
+        "message": "Filtrado por estado: completadas, en progreso e interrumpidas."
+    },
+    "feature_downloads_date_filter": {
+        "message": "Filtrado interactivo por fecha y rango en calendario."
+    },
+    "feature_downloads_open_folder": {
+        "message": "Acceso directo a la carpeta de descargas del sistema."
+    },
+    "feature_downloads_delete": {
+        "message": "Borrado individual, por grupos de fechas o vaciado completo del historial."
     },
     "sectionManageNavigationShortcuts": {
         "message": "Gestionar atajos de navegación"
@@ -9141,5 +9267,26 @@
     },
     "musicPlayerAllDuplicates": {
         "message": "Todos los archivos seleccionados ya están en la lista de reproducción"
+    },
+    "sectionMusicPlayer": {
+        "message": "Reproductor de Música"
+    },
+    "feature_music_local_folder": {
+        "message": "Reproduce música desde carpetas locales directamente en el navegador."
+    },
+    "feature_music_playback": {
+        "message": "Controles completos de reproducción: reproducir, pausar, saltar y repetir."
+    },
+    "feature_music_seek": {
+        "message": "Avanza y retrocede dentro de las pistas con precisión."
+    },
+    "feature_music_search": {
+        "message": "Busca y filtra pistas en tu lista de reproducción al instante."
+    },
+    "feature_music_playlist": {
+        "message": "Crea y gestiona listas de reproducción personalizadas con arrastrar y soltar."
+    },
+    "feature_music_keeps_playing": {
+        "message": "La música sigue sonando incluso al navegar entre pestañas."
     }
 }

@@ -437,15 +437,16 @@ var HelpModal = class HelpModal {
                 } else {
                     cellContentNode = document.createTextNode(description);
                 }
+                const isNonEditable = descKey === 'hintDesc_group_tab_nav' || currentKey.includes('+');
                 const tdKey = h(
                     'td',
                     {
-                        className: 'itg-editable-key',
+                        className: `itg-editable-key ${isNonEditable ? 'itg-non-editable-key' : ''}`,
                         'data-key': currentKey,
                         'data-desc': descKey,
                         // We'll use this for saving
                         'data-category': cleanCat,
-                        contenteditable: 'true',
+                        contenteditable: isNonEditable ? 'false' : 'true',
                     },
                     currentKey,
                 );

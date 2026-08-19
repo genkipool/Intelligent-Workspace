@@ -19,6 +19,8 @@
     import HistoryView from '../../components/history/HistoryView.svelte';
     import RecentView from '../../components/recent/RecentView.svelte';
     import ReadingListView from '../../components/reading/ReadingListView.svelte';
+    import DownloadsView from '../../components/downloads/DownloadsView.svelte';
+    import { downloadsStatusFilter, downloadStats, downloadsStore } from '../../stores/downloadsStore.js';
 
     import BookmarksView from '../../components/bookmarks/BookmarksView.svelte';
     import NotesView from '../../components/notes/NotesView.svelte';
@@ -54,6 +56,7 @@
         history: 'historyViewTitle',
         recent: 'recentlyClosedViewTitle',
         reading: 'readingListViewTitle',
+        downloads: 'downloadsViewTitle',
         gemini: 'geminiViewTitle',
     };
     const initialTitleKey = VIEW_TITLE_KEYS[new URLSearchParams(window.location.search).get('view')] || 'listTabGroups';
@@ -389,6 +392,20 @@
                     <use href="#icon-reading-list"></use>
                 </svg>
             </button>
+
+            <!-- Downloads Button -->
+            <button
+                type="button"
+                id="view-downloads-btn"
+                class="control-btn"
+                title={$tt('viewDownloads')}
+                aria-pressed="false"
+                class:hidden={startsHidden('view-downloads-btn')}
+            >
+                <svg width="24" height="24" aria-hidden="true" focusable="false">
+                    <use href="#icon-download"></use>
+                </svg>
+            </button>
             <button
                 type="button"
                 id="backup-all-btn"
@@ -478,6 +495,79 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Downloads Filter Wrapper with hover popup -->
+            <div class="downloads-filter-wrapper" style="position: relative;">
+                <button
+                    type="button"
+                    id="downloads-filter-btn"
+                    class="control-btn"
+                    title={$tt('filterDownloads') || 'Filtrar descargas'}
+                    class:hidden={startsHidden('downloads-filter-btn')}
+                >
+                    <svg width="24" height="24" aria-hidden="true" focusable="false">
+                        <use href="#icon-filter"></use>
+                    </svg>
+                </button>
+                <!-- Downloads Filter Hover Popup -->
+                <div id="custom-downloads-filter-popup" class="custom-downloads-filter-popup">
+                    <button
+                        type="button"
+                        class="filter-popup-option"
+                        class:active={$downloadsStatusFilter === 'all'}
+                        onclick={() => downloadsStatusFilter.set('all')}
+                    >
+                        <span class="filter-option-label">{$t('downloadFilterAll') || 'Todas'}</span>
+                        <span class="chip-count">{$downloadStats.total}</span>
+                    </button>
+                    {#if $downloadStats.inProgress > 0}
+                        <button
+                            type="button"
+                            class="filter-popup-option chip-in-progress"
+                            class:active={$downloadsStatusFilter === 'in_progress'}
+                            onclick={() => downloadsStatusFilter.set('in_progress')}
+                        >
+                            <span class="pulse-dot"></span>
+                            <span class="filter-option-label">{$t('downloadStatusInProgress') || 'En progreso'}</span>
+                            <span class="chip-count">{$downloadStats.inProgress}</span>
+                        </button>
+                    {/if}
+                    <button
+                        type="button"
+                        class="filter-popup-option"
+                        class:active={$downloadsStatusFilter === 'complete'}
+                        onclick={() => downloadsStatusFilter.set('complete')}
+                    >
+                        <span class="filter-option-label">{$t('downloadFilterComplete') || 'Completadas'}</span>
+                        <span class="chip-count">{$downloadStats.complete}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="filter-popup-option chip-failed"
+                        class:active={$downloadsStatusFilter === 'interrupted'}
+                        onclick={() => downloadsStatusFilter.set('interrupted')}
+                    >
+                        <span class="filter-option-label"
+                            >{$t('downloadFilterPausedFailed') || 'Pausadas / Errores'}</span
+                        >
+                        <span class="chip-count">{$downloadStats.interrupted + $downloadStats.paused}</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Open Downloads Folder Button -->
+            <button
+                type="button"
+                id="open-downloads-folder-btn"
+                class="control-btn"
+                title={$tt('openDownloadsFolder')}
+                class:hidden={startsHidden('open-downloads-folder-btn')}
+                onclick={() => downloadsStore.openDownloadsFolder()}
+            >
+                <svg width="24" height="24" aria-hidden="true" focusable="false">
+                    <use href="#icon-folder-open"></use>
+                </svg>
+            </button>
 
             <button
                 type="button"
@@ -728,6 +818,7 @@
     <HistoryView />
     <RecentView />
     <ReadingListView />
+    <DownloadsView />
     <NotesView />
     <ScreenshotGalleryView />
 

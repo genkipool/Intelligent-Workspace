@@ -389,6 +389,22 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._focusFirstInput(),
                 description: 'hintDesc_i',
             },
+            esc: {
+                action: () => {
+                    const active = document.activeElement;
+                    if (active && typeof active.blur === 'function') {
+                        active.blur();
+                    }
+                    try {
+                        if (document.body && typeof document.body.click === 'function') {
+                            document.body.click();
+                        } else if (document.documentElement && typeof document.documentElement.click === 'function') {
+                            document.documentElement.click();
+                        }
+                    } catch {}
+                },
+                description: 'hintDesc_esc',
+            },
             pp: {
                 action: () => this._send('focusSidePanel'),
                 description: 'hintDesc_pp',

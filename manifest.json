@@ -21,6 +21,7 @@
     "sidePanel",
     "scripting",
     "downloads",
+    "downloads.open",
     "system.display",
     "windows",
     "declarativeNetRequest",

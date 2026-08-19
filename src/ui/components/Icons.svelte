@@ -213,6 +213,16 @@
                 fill="none"
             />
         </symbol>
+        <symbol id="icon-filter" viewBox="0 0 24 24">
+            <path
+                d="M3 4h18l-7 8.5v6.5l-4-2v-4.5z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+        </symbol>
         <symbol id="icon-check" viewBox="0 0 24 24">
             <polyline
                 points="20 6 9 17 4 12"
