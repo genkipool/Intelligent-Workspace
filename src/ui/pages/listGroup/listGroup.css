@@ -3633,6 +3633,12 @@ body.popup-window {
     /* Always visible if active */
 }
 
+.gallery-item .gallery-pin-btn.active svg {
+    color: var(--text-on-color);
+    fill: none;
+    stroke: var(--text-on-color);
+}
+
 .entry-domain.is-orphan {
     font-style: italic;
     opacity: 0.7;
