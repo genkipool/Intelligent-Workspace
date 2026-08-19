@@ -30,6 +30,18 @@ var ITG_PIP_ICON_YTP = `<svg height="24" width="24" viewBox="0 0 24 24" fill="no
     <rect x="12" y="12" width="8" height="6" rx="1" fill="#fff"></rect>
 </svg>`;
 
+/**
+ * Loop/repeat glyph sized for YouTube's control bar — same 24×24 fixed
+ * dimensions and white stroke as ITG_PIP_ICON_YTP to sit flush with its
+ * neighbours.
+ */
+var ITG_LOOP_ICON_YTP = `<svg height="24" width="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <path d="M17 2l3 3-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M3 11V9a4 4 0 0 1 4-4h13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M7 22l-3-3 3-3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M21 13v2a4 4 0 0 1-4 4H4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>`;
+
 var ITG_PIP_ICONS = {
     play: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"></path></svg>`,
     pause: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3.5v14H7zm6.5 0H17v14h-3.5z"></path></svg>`,

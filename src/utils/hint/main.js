@@ -97,6 +97,7 @@ var Main = class Main {
             this._videoCheckInterval = setInterval(checkForVideo, 1000);
             checkForVideo();
             this._injectYoutubePipButton();
+            this._injectYoutubeLoopButton();
             this._injectTiktokPipButton();
             this._injectGenericVideoPipButton();
         }
@@ -1032,6 +1033,58 @@ var Main = class Main {
             addAllButtons();
         });
         this._ytPipObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+    _injectYoutubeLoopButton() {
+        if (itgIsInsidePipWindow()) return;
+        if (!window.location.hostname.includes('youtube.com')) return;
+
+        const loopTitle =
+            (typeof itgPipMsg === 'function' ? itgPipMsg('pipLoop', 'Loop video') : null) ||
+            chrome.i18n.getMessage('pipLoop') ||
+            'Loop video';
+
+        // --- Regular YouTube player loop button ---
+        const addLoopButton = () => {
+            if (document.getElementById('itg-yt-loop-button')) return;
+            const rightControls = document.querySelector('.ytp-right-controls');
+            if (!rightControls) return;
+
+            const btn = document.createElement('button');
+            btn.id = 'itg-yt-loop-button';
+            btn.className = 'ytp-button';
+            btn.setAttribute('title', loopTitle);
+            btn.setAttribute('aria-label', loopTitle);
+            btn.innerHTML = ITG_LOOP_ICON_YTP;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const video = document.querySelector('video');
+                if (!video) return;
+                video.loop = !video.loop;
+                btn.style.opacity = video.loop ? '1' : '';
+                btn.querySelector('svg').style.filter = video.loop ? 'drop-shadow(0 0 3px #0f0)' : '';
+            });
+
+            // Place to the left of the cast-to-TV button; fall back to before PiP
+            const castButton = rightControls.querySelector('.ytp-remote-button, .ytp-miniplayer-button');
+            const pipButton = document.getElementById('itg-yt-pip-button');
+            const refButton = castButton || pipButton;
+            if (refButton && refButton.parentNode) {
+                refButton.parentNode.insertBefore(btn, refButton);
+            } else {
+                rightControls.appendChild(btn);
+            }
+        };
+
+        addLoopButton();
+        this._ytLoopObserver = new MutationObserver(() => {
+            addLoopButton();
+        });
+        this._ytLoopObserver.observe(document.body, {
             childList: true,
             subtree: true,
         });
