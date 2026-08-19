@@ -6592,20 +6592,15 @@ a.delete-item-title:hover {
     font-variant-numeric: tabular-nums;
     font-weight: 600;
     opacity: 0.55;
-    padding: 1px 8px;
-    border-radius: 10px;
-    border: 1px solid transparent;
     transition:
         opacity 0.2s,
-        color 0.2s,
-        border-color 0.2s;
+        color 0.2s;
 }
 
 /* Once something has turned up, the count stops being a footnote. */
 .scanning-status-found.has-results {
     opacity: 1;
     color: var(--error-color);
-    border-color: var(--error-color);
 }
 
 /* --- Footer --- */
