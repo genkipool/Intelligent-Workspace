@@ -577,7 +577,7 @@
                 class:hidden={startsHidden('toggle-bookmarks-sort-panel-btn')}
             >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
-                    <use href="#icon-sort"></use>
+                    <use href="#icon-filter"></use>
                 </svg>
             </button>
             <button
