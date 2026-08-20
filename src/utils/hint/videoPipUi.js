@@ -36,10 +36,10 @@ var ITG_PIP_ICON_YTP = `<svg height="24" width="24" viewBox="0 0 24 24" fill="no
  * neighbours.
  */
 var ITG_LOOP_ICON_YTP = `<svg height="24" width="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-    <path d="M17 2l3 3-3 3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M3 11V9a4 4 0 0 1 4-4h13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M7 22l-3-3 3-3" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-    <path d="M21 13v2a4 4 0 0 1-4 4H4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M17 2l3 3-3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M3 11V9a4 4 0 0 1 4-4h13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M7 22l-3-3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+    <path d="M21 13v2a4 4 0 0 1-4 4H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>`;
 
 var ITG_PIP_ICONS = {

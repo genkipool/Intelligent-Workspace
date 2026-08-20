@@ -1058,6 +1058,15 @@ var Main = class Main {
             btn.setAttribute('title', loopTitle);
             btn.setAttribute('aria-label', loopTitle);
             btn.innerHTML = ITG_LOOP_ICON_YTP;
+            btn.style.color = '#fff';
+
+            const updateLoopVisual = () => {
+                const video = document.querySelector('video');
+                const isLooping = !!video?.loop;
+                btn.style.color = isLooping ? 'var(--interactive-color, #ff4444)' : '#fff';
+                btn.classList.toggle('ytp-loop-active', isLooping);
+                btn.setAttribute('aria-pressed', String(isLooping));
+            };
 
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1065,9 +1074,10 @@ var Main = class Main {
                 const video = document.querySelector('video');
                 if (!video) return;
                 video.loop = !video.loop;
-                btn.style.opacity = video.loop ? '1' : '';
-                btn.querySelector('svg').style.filter = video.loop ? 'drop-shadow(0 0 3px #0f0)' : '';
+                updateLoopVisual();
             });
+
+            updateLoopVisual();
 
             // Place to the left of the cast-to-TV button; fall back to before PiP
             const castButton = rightControls.querySelector('.ytp-remote-button, .ytp-miniplayer-button');
