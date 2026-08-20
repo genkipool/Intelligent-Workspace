@@ -1201,6 +1201,7 @@ var Main = class Main {
 
         const isShortsPlayer = (player) => {
             if (!player || !(player instanceof HTMLElement)) return false;
+            if (isWatchOrShortsPage()) return false;
 
             // Explicitly exclude main watch player and full theater container
             if (
@@ -1215,7 +1216,7 @@ var Main = class Main {
             // Inclusions for Shorts view models and containers
             if (
                 player.closest(
-                    'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, [class*="shortsLockupViewModel"], ytd-rich-grid-slim-media, ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-rich-item-renderer[is-slim-media], ytd-shorts, [is-shorts], [is-slim-media]',
+                    'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, [class*="shortsLockupViewModel"], ytd-rich-grid-slim-media, ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-rich-shelf-renderer[is-shorts], ytd-rich-item-renderer[is-slim-media], ytd-shorts, [is-shorts], [is-slim-media]',
                 )
             ) {
                 return true;
@@ -1223,10 +1224,11 @@ var Main = class Main {
 
             // Check parent card for Shorts indicators or endpoints
             const parentCard = player.closest(
-                'ytd-rich-item-renderer, ytd-rich-grid-row, ytd-grid-video-renderer, ytd-video-renderer, ytd-video-preview, #video-preview-container',
+                'ytd-rich-item-renderer, ytd-rich-grid-row, ytd-grid-video-renderer, ytd-video-renderer, ytd-video-preview, #video-preview-container, ytd-rich-shelf-renderer',
             );
             if (parentCard) {
                 if (
+                    parentCard.closest('ytd-rich-shelf-renderer[is-shorts], [is-shorts]') ||
                     parentCard.querySelector(
                         'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, a[href*="/shorts/"], a.reel-item-endpoint',
                     )
@@ -1252,7 +1254,7 @@ var Main = class Main {
                 }
             }
 
-            // Exclude regular 16:9 previews
+            // Exclude regular horizontal 16:9 previews if none of the above matched
             if (player.closest('#video-preview-container, ytd-video-preview')) {
                 return false;
             }
@@ -1263,7 +1265,7 @@ var Main = class Main {
         const removeAllNonShortsVolumeButtons = () => {
             // Remove any legacy buttons attached to static cards so they don't block YouTube hover preview
             const staticButtons = document.querySelectorAll(
-                'ytm-shorts-lockup-view-model-v2 .ytdVolumeControlsMuteIconButton, ytm-shorts-lockup-view-model-v2 .itg-yt-short-volume-btn, .shortsLockupViewModelHostThumbnailParentContainer > .ytdVolumeControlsMuteIconButton, .shortsLockupViewModelHostThumbnailParentContainer > .itg-yt-short-volume-btn, a > .ytdVolumeControlsMuteIconButton, a > .itg-yt-short-volume-btn',
+                'ytm-shorts-lockup-view-model-v2 .itg-yt-short-volume-btn, .shortsLockupViewModelHostThumbnailParentContainer > .itg-yt-short-volume-btn, a > .itg-yt-short-volume-btn',
             );
             for (const el of staticButtons) {
                 if (!el.closest('#inline-preview-player, .html5-video-player')) {
@@ -1271,9 +1273,7 @@ var Main = class Main {
                 }
             }
 
-            const existing = document.querySelectorAll(
-                '.itg-yt-short-volume-btn, .itg-yt-inline-volume-control, [data-itg-short-volume="true"]',
-            );
+            const existing = document.querySelectorAll('.itg-yt-short-volume-btn, [data-itg-short-volume="true"]');
             for (const el of existing) {
                 const p = el.closest('.html5-video-player, #inline-preview-player');
                 if (!p || !isShortsPlayer(p) || isWatchOrShortsPage()) {
@@ -1289,15 +1289,50 @@ var Main = class Main {
                 fallback
             );
         };
-        const SVG_MUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Activar sonido"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.214 7.577a1 1 0 011.414 0l1.379 1.379 1.379-1.379a1 1 0 111.414 1.414l-1.379 1.379 1.379 1.379a1 1 0 01-1.414 1.414l-1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379 1.379a1 1 0 010-1.414Z"></path></svg></div></span></span>`;
+        const SVG_MUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Activar sonido"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.214 7.577a1 1 0 011.414 0l1.379 1.379 1.379-1.379a1 1 0 111.414 1.414l-1.379 1.379 1.379 1.379a1 1 0 01-1.414 1.414l-1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379-1.379a1 1 0 010-1.414Z"></path></svg></div></span></span>`;
         const SVG_UNMUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Silenciar"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.043 4.92a1 1 0 000 1.414 5.001 5.001 0 010 7.072 1 1 0 101.414 1.414 6.999 6.999 0 000-9.9 1 1 0 00-1.414 0Z"></path></svg></div></span></span>`;
+
+        let isPreviewUnmuted = false;
+
+        const applyShortAudioState = (targetPlayer, muted) => {
+            if (isWatchOrShortsPage()) return;
+            const isUnmuted = !muted;
+            const p = targetPlayer || document.querySelector('#inline-preview-player');
+            if (!p || p.id === 'movie_player') return;
+
+            const vid = p.querySelector('video');
+            if (vid) {
+                try {
+                    if (vid.muted !== !isUnmuted) {
+                        vid.muted = !isUnmuted;
+                        vid.defaultMuted = !isUnmuted;
+                    }
+                    if (isUnmuted && vid.volume < 1.0) {
+                        vid.volume = 1.0;
+                    }
+                    if (vid.playbackRate !== 1.0) {
+                        vid.playbackRate = 1.0;
+                        vid.defaultPlaybackRate = 1.0;
+                    }
+                } catch {}
+            }
+
+            try {
+                if (isUnmuted) {
+                    if (typeof p.unMute === 'function') p.unMute();
+                    if (typeof p.setVolume === 'function') p.setVolume(100);
+                } else {
+                    if (typeof p.mute === 'function') p.mute();
+                }
+            } catch {}
+        };
 
         const attachShortsVolumeButton = (player) => {
             if (!player || !(player instanceof HTMLElement)) return;
             if (isWatchOrShortsPage()) return;
             if (!isShortsPlayer(player)) return;
 
-            if (player.querySelector(':scope > .ytdVolumeControlsMuteIconButton, :scope > .itg-yt-short-volume-btn')) {
+            if (player.querySelector(':scope > .itg-yt-short-volume-btn')) {
                 return;
             }
 
@@ -1307,21 +1342,17 @@ var Main = class Main {
             btn.setAttribute('data-itg-short-volume', 'true');
 
             const isCurrentlyMuted = () => {
+                if (!isPreviewUnmuted) return true;
                 if (typeof player.isMuted === 'function') {
                     try {
                         return player.isMuted();
                     } catch {}
                 }
-                const vid =
-                    player.querySelector('video') ||
-                    document.querySelector('#inline-preview-player video, .html5-video-player video');
+                const vid = player.querySelector('video') || document.querySelector('#inline-preview-player video');
                 if (vid) {
                     return vid.muted || vid.volume === 0;
                 }
-                try {
-                    return localStorage.getItem('itg-yt-short-muted') !== 'false';
-                } catch {}
-                return true;
+                return false;
             };
 
             const updateUI = () => {
@@ -1342,51 +1373,16 @@ var Main = class Main {
             let lastToggleTime = 0;
             const toggleMute = () => {
                 const now = Date.now();
-                if (now - lastToggleTime < 120) return;
+                if (now - lastToggleTime < 150) return;
                 lastToggleTime = now;
 
                 const muted = isCurrentlyMuted();
                 const newMuted = !muted;
+                isPreviewUnmuted = !newMuted;
 
-                try {
-                    localStorage.setItem('itg-yt-short-muted', newMuted ? 'true' : 'false');
-                } catch {}
+                applyShortAudioState(player, newMuted);
 
-                const allVideos = document.querySelectorAll('video');
-                for (const vid of allVideos) {
-                    try {
-                        vid.muted = newMuted;
-                        vid.defaultMuted = newMuted;
-                        if (!newMuted) {
-                            vid.volume = 1.0;
-                            if (vid.paused) {
-                                vid.play().catch(() => {});
-                            }
-                        }
-                    } catch {}
-                }
-
-                const players = [
-                    player,
-                    document.querySelector('#inline-preview-player'),
-                    ...document.querySelectorAll('.html5-video-player:not(#movie_player)'),
-                ].filter(Boolean);
-
-                for (const p of players) {
-                    try {
-                        if (newMuted) {
-                            if (typeof p.mute === 'function') p.mute();
-                        } else {
-                            if (typeof p.unMute === 'function') p.unMute();
-                            if (typeof p.setVolume === 'function') p.setVolume(100);
-                        }
-                    } catch {}
-                }
-
-                // Update UI on all visible short buttons
-                const allButtons = document.querySelectorAll(
-                    '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton',
-                );
+                const allButtons = document.querySelectorAll('.itg-yt-short-volume-btn');
                 for (const b of allButtons) {
                     if (typeof b._itgUpdateUI === 'function') {
                         b._itgUpdateUI();
@@ -1445,7 +1441,11 @@ var Main = class Main {
                 { passive: true },
             );
 
-            player.addEventListener('volumechange', updateUI, true);
+            const onVolumeChange = () => {
+                updateUI();
+            };
+
+            player.addEventListener('volumechange', onVolumeChange, true);
 
             updateUI();
             player.appendChild(btn);
@@ -1467,17 +1467,16 @@ var Main = class Main {
             }
         };
 
-        // Global capture-phase trap on window and document: guarantees YouTube cards NEVER receive click/pointer events from the volume button
+        // Global capture-phase trap on window and document: ONLY traps our extension's button, NEVER native YouTube controls
         if (!this._ytInlineVolumeTrapBound) {
             this._ytInlineVolumeTrapBound = true;
             const isShortVolumeTarget = (target) => {
                 if (!target || !(target instanceof Element)) return null;
-                return target.closest(
-                    '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton, [data-itg-short-volume="true"]',
-                );
+                return target.closest('.itg-yt-short-volume-btn, [data-itg-short-volume="true"]');
             };
 
             const trapHandler = (e) => {
+                if (isWatchOrShortsPage()) return;
                 const volBtn = isShortVolumeTarget(e.target);
                 if (!volBtn) return;
 
@@ -1520,25 +1519,13 @@ var Main = class Main {
                     if (video && video instanceof HTMLVideoElement) {
                         const player = video.closest('.html5-video-player, #inline-preview-player');
                         if (player && isShortsPlayer(player)) {
-                            const shouldUnmute = localStorage.getItem('itg-yt-short-muted') === 'false';
-                            if (shouldUnmute) {
-                                try {
-                                    video.muted = false;
-                                    video.defaultMuted = false;
-                                    video.volume = 1.0;
-                                    if (typeof player.unMute === 'function') player.unMute();
-                                    if (typeof player.setVolume === 'function') player.setVolume(100);
-                                } catch {}
+                            // By default, new video previews start in MUTE
+                            if (!isPreviewUnmuted) {
+                                applyShortAudioState(player, true);
                             } else {
-                                try {
-                                    video.muted = true;
-                                    video.defaultMuted = true;
-                                    if (typeof player.mute === 'function') player.mute();
-                                } catch {}
+                                applyShortAudioState(player, false);
                             }
-                            const allButtons = document.querySelectorAll(
-                                '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton',
-                            );
+                            const allButtons = document.querySelectorAll('.itg-yt-short-volume-btn');
                             for (const b of allButtons) {
                                 if (typeof b._itgUpdateUI === 'function') {
                                     b._itgUpdateUI();
