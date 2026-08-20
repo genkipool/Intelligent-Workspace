@@ -85,35 +85,51 @@
                                     <div class="schedule-reminder-text" title={sch.reminder}>{sch.reminder}</div>
                                 {/if}
                             </div>
-                            <button
-                                class="edit-schedule-btn"
-                                type="button"
-                                data-i18n-title="editSchedule"
-                                aria-label="Edit schedule"
-                                onclick={() => onEditSchedule(sch)}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                            <div class="schedule-actions">
+                                <button
+                                    class="edit-schedule-btn"
+                                    type="button"
+                                    data-i18n-title="editSchedule"
+                                    aria-label="Edit schedule"
+                                    onclick={() => onEditSchedule(sch)}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path
+                                            d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        ></path>
+                                        <path
+                                            d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 9.5-9.5z"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    class="delete-schedule-btn"
+                                    type="button"
+                                    data-i18n-title="deleteSchedule"
+                                    aria-label="Delete schedule"
+                                    onclick={() => onDeleteSchedule(sch.themeName, sch.originalIndex)}
+                                >
+                                    <svg
+                                        width="14"
+                                        height="14"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
                                         stroke-width="2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
-                                    ></path>
-                                    <path
-                                        d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 9.5-9.5z"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    ></path>
-                                </svg>
-                            </button>
-                            <button
-                                class="delete-schedule-btn"
-                                type="button"
-                                data-i18n-title="deleteSchedule"
-                                aria-label="Delete schedule"
-                                onclick={() => onDeleteSchedule(sch.themeName, sch.originalIndex)}>x</button
-                            >
+                                    >
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                     {/each}
                 </ul>
@@ -217,9 +233,9 @@
                             class="button"
                             class:error-state={scheduleError}
                             data-i18n={scheduleEditorState.mode === 'edit' ? 'updateSchedule' : 'addSchedule'}
-                            onclick={async (e) => {
+                            onclick={async () => {
                                 const ok = await onSaveSchedule();
-                                if (ok && (e.ctrlKey || e.metaKey)) {
+                                if (ok) {
                                     onResetForm();
                                     onFetchSchedules(currentThemeForScheduling?.name);
                                 }

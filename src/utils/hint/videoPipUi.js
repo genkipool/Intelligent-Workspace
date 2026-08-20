@@ -58,6 +58,9 @@ var ITG_PIP_ICONS = {
     volume: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 9v6h3.5L12 19V5L7.5 9z" fill="currentColor"></path><path d="M16 9.5a3.5 3.5 0 0 1 0 5"></path><path d="M18.5 7a7 7 0 0 1 0 10"></path>
     </svg>`,
+    volumeLow: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 9v6h3.5L12 19V5L7.5 9z" fill="currentColor"></path><path d="M16 9.5a3.5 3.5 0 0 1 0 5"></path>
+    </svg>`,
     muted: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 9v6h3.5L12 19V5L7.5 9z" fill="currentColor"></path><path d="m16 9.5 5 5m0-5-5 5"></path>
     </svg>`,
@@ -102,6 +105,7 @@ var ITG_PIP_ICONS = {
         <path d="M17 2l3 3-3 3"></path><path d="M3 11V9a4 4 0 0 1 4-4h13"></path>
         <path d="M7 22l-3-3 3-3"></path><path d="M21 13v2a4 4 0 0 1-4 4H4"></path>
     </svg>`,
+    current: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
 };
 
 var ITG_PIP_STYLES = `
@@ -160,7 +164,7 @@ textarea::selection,
     pointer-events: auto;
 }
 
-.itg-pip-progress { padding: 6px 4px; cursor: pointer; touch-action: none; }
+.itg-pip-progress { position: relative; z-index: 50; padding: 8px 4px; margin-bottom: 2px; cursor: pointer; touch-action: none; }
 .itg-pip-progress-track { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.28); }
 .itg-pip-buffered, .itg-pip-played {
     position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; width: 0;
@@ -174,7 +178,23 @@ textarea::selection,
 .itg-pip-progress:hover .itg-pip-knob { opacity: 1; }
 .itg-pip-progress:hover .itg-pip-progress-track { height: 6px; }
 
-.itg-pip-buttons { display: flex; align-items: center; gap: 2px; padding: 0 2px 2px; }
+/* Suppress popups whenever user hovers or interacts with the progress bar */
+.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-loop-menu,
+.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-size-menu,
+.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-rate-menu,
+.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-loop-menu,
+.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-size-menu,
+.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-rate-menu,
+.itg-pip-bar.is-scrubbing .itg-pip-loop-menu,
+.itg-pip-bar.is-scrubbing .itg-pip-size-menu,
+.itg-pip-bar.is-scrubbing .itg-pip-rate-menu {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(4px) !important;
+    visibility: hidden !important;
+}
+
+.itg-pip-buttons { display: flex; align-items: center; gap: 2px; padding: 0 2px 2px; position: relative; z-index: 10; }
 .itg-pip-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; padding: 6px; flex: 0 0 auto;
@@ -195,24 +215,20 @@ textarea::selection,
 
 /* Speed menu: a horizontal strip above the button, on hover, no click needed. */
 .itg-pip-rate-wrap { position: relative; display: inline-flex; align-items: center; }
-/* Invisible bridge over the gap: without it the pointer leaves the wrapper on the
-   way up to the menu and the menu closes before it can be reached. */
-.itg-pip-rate-wrap::after { content: ''; position: absolute; left: -8px; right: -8px; bottom: 100%; height: 12px; }
 .itg-pip-rate-menu {
     position: absolute; bottom: calc(100% + 8px);
     /* Anchored to the right edge, so it grows inwards. Centred on the button it ran
        off the side of the window — which on a small floating player is most of it. */
     right: 0; left: auto;
-    /* max-content, or it would not be one strip at all: an absolutely positioned box
-       is offered the width of its containing block, and that is the 34px button, so
-       every speed wrapped onto its own line. It folds only if the window is narrower
-       than the eight of them. */
     display: flex; flex-wrap: wrap; justify-content: flex-end;
     width: max-content; max-width: calc(100vw - 16px); gap: 2px; padding: 4px;
     border-radius: 8px; background: rgba(20, 20, 20, 0.95);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     opacity: 0; pointer-events: none; transform: translateY(4px);
     transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.itg-pip-rate-menu::after {
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
 }
 .itg-pip-rate-wrap:hover .itg-pip-rate-menu,
 .itg-pip-rate-menu:hover { opacity: 1; pointer-events: auto; transform: translateY(0); }
@@ -225,7 +241,6 @@ textarea::selection,
 
 /* Size menu, opened by hovering the size button. */
 .itg-pip-size-wrap { position: relative; display: inline-flex; align-items: center; }
-.itg-pip-size-wrap::after { content: ''; position: absolute; left: -10px; right: -10px; bottom: 100%; height: 16px; }
 .itg-pip-size-menu {
     position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
     width: max-content; min-width: 216px; max-width: calc(100vw - 16px); padding: 8px;
@@ -235,6 +250,9 @@ textarea::selection,
     opacity: 0; pointer-events: none; transform: translateY(4px);
     transition: opacity 0.15s ease, transform 0.15s ease;
     z-index: 20;
+}
+.itg-pip-size-menu::after {
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
 }
 .itg-pip-size-wrap:hover .itg-pip-size-menu,
 .itg-pip-size-wrap:focus-within .itg-pip-size-menu,
@@ -286,6 +304,154 @@ textarea::selection,
     background-color: transparent; background-size: contain;
     background-repeat: no-repeat; background-position: right center;
 }
+
+/* Loop menu, opened by hovering or focusing the loop button */
+.itg-pip-loop-wrap { position: relative; display: inline-flex; align-items: center; }
+.itg-pip-loop-menu {
+    position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
+    width: 268px; max-width: calc(100vw - 16px); padding: 10px 10px 8px;
+    border-radius: 10px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+    color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    z-index: 20;
+    font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+}
+.itg-pip-loop-menu::after {
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
+}
+.itg-pip-loop-wrap:hover .itg-pip-loop-menu,
+.itg-pip-loop-wrap:focus-within .itg-pip-loop-menu,
+.itg-pip-loop-menu:hover,
+.itg-pip-loop-menu:focus-within { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+/* Common loop popup component styling */
+.itg-loop-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+.itg-loop-title {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-color, #ffffff);
+    transition: color 0.2s ease;
+}
+.itg-loop-header.is-active .itg-loop-title,
+.itg-loop-title.is-active {
+    color: var(--text-on-color, #ffffff) !important;
+}
+.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
+.itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+.itg-loop-section { margin-bottom: 8px; }
+.itg-loop-row { margin-bottom: 6px; }
+.itg-loop-row:last-child { margin-bottom: 0; }
+.itg-loop-label {
+    display: block; font-size: 10px; font-weight: 500;
+    color: var(--text-color, rgba(255, 255, 255, 0.65)); opacity: 0.8; margin-bottom: 3px;
+}
+.itg-loop-input-group {
+    display: flex; align-items: center; gap: 4px;
+}
+.itg-loop-time-input {
+    flex: 1 1 auto; min-width: 0; padding: 5px 6px;
+    border-radius: 6px; color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.22));
+    background: rgba(255, 255, 255, 0.08); outline: none;
+    caret-color: var(--text-on-color, #ffffff);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-time-input:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+}
+.itg-loop-quick-actions {
+    display: flex; gap: 3px; flex: 0 0 auto;
+}
+.itg-loop-quick-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 4px 6px; height: 26px; border-radius: 5px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
+    white-space: nowrap; transition: background 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-quick-btn svg { width: 14px; height: 14px; display: block; }
+.itg-loop-quick-btn:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 25%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-repeat-controls {
+    display: flex; gap: 5px;
+}
+.itg-loop-repeat-mode-btn {
+    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 5px 6px; min-height: 28px; border-radius: 6px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12.5px; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-repeat-mode-btn:hover { border-color: var(--interactive-color, #ff4444); }
+.itg-loop-repeat-mode-btn.is-active {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 22%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+    font-weight: 600;
+}
+.itg-loop-repeat-mode-btn span {
+    font-size: 16px; font-weight: bold; line-height: 1; display: inline-flex; align-items: center;
+}
+.itg-loop-repeat-mode-btn small {
+    font-size: 12.5px; font-weight: 500; line-height: 1;
+}
+.itg-loop-count-input {
+    width: 40px; height: 20px; padding: 1px 3px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
+    background: rgba(255, 255, 255, 0.12); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums;
+    text-align: center; outline: none;
+    caret-color: var(--text-on-color, #ffffff);
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+    box-sizing: border-box;
+}
+.itg-loop-count-input::-webkit-outer-spin-button,
+.itg-loop-count-input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+.itg-loop-count-input:focus {
+    border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding-top: 6px;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+.itg-loop-status {
+    font-size: 10.5px; font-weight: 500;
+    color: var(--interactive-color, #ff4444);
+    font-variant-numeric: tabular-nums;
+    min-height: 14px;
+}
+.itg-loop-reset-btn {
+    border: 0; background: transparent;
+    color: var(--text-color, rgba(255, 255, 255, 0.6)); opacity: 0.75;
+    font: inherit; font-size: 10.5px;
+    cursor: pointer; text-decoration: underline; padding: 2px 4px;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+.itg-loop-reset-btn:hover { opacity: 1; color: var(--text-color, #ffffff); }
 
 /* Clean, robust, perfectly-centered PiP subtitles */
 .itg-pip-subtitles-display {
@@ -615,6 +781,7 @@ div[class*='ytp-bezel'] {
     .itg-pip-more-wrap { display: inline-flex; }
     .itg-pip-rate-wrap,
     .itg-pip-size-wrap,
+    .itg-pip-loop-wrap,
     .itg-pip-btn[data-act='comments'],
     .itg-pip-btn[data-act='captions'] {
         display: none !important;
@@ -688,5 +855,245 @@ div[class*='ytp-bezel'] {
     .itg-pip-more-forward {
         display: none !important;
     }
+}
+`;
+
+var ITG_LOOP_POPUP_STYLES = `
+.itg-yt-loop-menu {
+    position: fixed; z-index: 2147483647; width: 272px; padding: 10px 10px 8px;
+    border-radius: 10px;
+    background: var(--bg-panel-color, #1c1c1c);
+    color: var(--text-color, #fff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    font: 500 12px/1.35 'Roboto', system-ui, -apple-system, sans-serif;
+    opacity: 0; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+.itg-yt-loop-menu * { box-sizing: border-box; }
+.itg-yt-loop-menu.is-open {
+    opacity: 1; visibility: visible; transform: translateY(0);
+    pointer-events: auto;
+}
+.itg-yt-loop-menu::after {
+    content: ''; position: absolute; left: -12px; right: -12px; top: 100%; height: 20px;
+}
+.itg-yt-loop-menu[data-place='below']::after {
+    top: auto; bottom: 100%;
+}
+
+.itg-loop-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+.itg-loop-title {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--text-color, #ffffff);
+    transition: color 0.2s ease;
+}
+.itg-loop-header.is-active .itg-loop-title,
+.itg-loop-title.is-active {
+    color: var(--text-on-color, #ffffff) !important;
+}
+.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
+.itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+.itg-loop-section { margin-bottom: 8px; }
+.itg-loop-row { margin-bottom: 6px; }
+.itg-loop-row:last-child { margin-bottom: 0; }
+.itg-loop-label {
+    display: block; font-size: 10px; font-weight: 500;
+    color: var(--text-color, rgba(255, 255, 255, 0.65)); opacity: 0.8; margin-bottom: 3px;
+}
+.itg-loop-input-group {
+    display: flex; align-items: center; gap: 4px;
+}
+.itg-loop-time-input {
+    flex: 1 1 auto; min-width: 0; padding: 5px 6px;
+    border-radius: 6px; color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.22));
+    background: rgba(255, 255, 255, 0.08); outline: none;
+    caret-color: var(--text-on-color, #ffffff);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-time-input:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+}
+.itg-loop-quick-actions {
+    display: flex; gap: 3px; flex: 0 0 auto;
+}
+.itg-loop-quick-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 4px 6px; height: 26px; border-radius: 5px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
+    white-space: nowrap; transition: background 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-quick-btn svg { width: 14px; height: 14px; display: block; }
+.itg-loop-quick-btn:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 25%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-repeat-controls {
+    display: flex; gap: 5px;
+}
+.itg-loop-repeat-mode-btn {
+    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 5px 6px; min-height: 28px; border-radius: 6px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12.5px; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+}
+.itg-loop-repeat-mode-btn:hover { border-color: var(--interactive-color, #ff4444); }
+.itg-loop-repeat-mode-btn.is-active {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 22%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+    font-weight: 600;
+}
+.itg-loop-repeat-mode-btn span {
+    font-size: 16px; font-weight: bold; line-height: 1; display: inline-flex; align-items: center;
+}
+.itg-loop-repeat-mode-btn small {
+    font-size: 12.5px; font-weight: 500; line-height: 1;
+}
+.itg-loop-count-input {
+    width: 40px; height: 20px; padding: 1px 3px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
+    background: rgba(255, 255, 255, 0.12); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums;
+    text-align: center; outline: none;
+    caret-color: var(--text-on-color, #ffffff);
+    -moz-appearance: textfield !important;
+    appearance: textfield !important;
+    box-sizing: border-box;
+}
+.itg-loop-count-input::-webkit-outer-spin-button,
+.itg-loop-count-input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+.itg-loop-count-input:focus {
+    border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 8px; padding-top: 6px;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+}
+.itg-loop-status {
+    font-size: 10.5px; font-weight: 500;
+    color: var(--interactive-color, #ff4444);
+    font-variant-numeric: tabular-nums;
+    min-height: 14px;
+}
+.itg-loop-reset-btn {
+    border: 0; background: transparent;
+    color: var(--text-color, rgba(255, 255, 255, 0.6)); opacity: 0.75;
+    font: inherit; font-size: 10.5px;
+    cursor: pointer; text-decoration: underline; padding: 2px 4px;
+    transition: opacity 0.15s ease, color 0.15s ease;
+}
+.itg-loop-reset-btn:hover { opacity: 1; color: var(--text-color, #ffffff); }
+`;
+
+var ITG_INLINE_VOLUME_STYLES = `
+.shortsLockupViewModelHostThumbnailParentContainer,
+.shortsLockupViewModelHost,
+ytm-shorts-lockup-view-model-v2,
+ytm-shorts-lockup-view-model,
+.ytThumbnailViewModelHost,
+ytd-rich-item-renderer,
+ytd-rich-grid-slim-media,
+ytd-reel-item-renderer {
+    position: relative !important;
+}
+.itg-yt-short-volume-btn {
+    position: absolute !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    left: auto !important;
+    top: auto !important;
+    z-index: 2147483647 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    outline: none !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
+    color: #ffffff !important;
+    cursor: pointer !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease, background-color 0.2s ease, transform 0.15s ease !important;
+}
+ytm-shorts-lockup-view-model-v2:hover .itg-yt-short-volume-btn,
+ytm-shorts-lockup-view-model:hover .itg-yt-short-volume-btn,
+.shortsLockupViewModelHost:hover .itg-yt-short-volume-btn,
+.shortsLockupViewModelHostThumbnailParentContainer:hover .itg-yt-short-volume-btn,
+ytd-rich-item-renderer:hover .itg-yt-short-volume-btn,
+ytd-rich-grid-slim-media:hover .itg-yt-short-volume-btn,
+ytd-reel-item-renderer:hover .itg-yt-short-volume-btn,
+.html5-video-player:hover .itg-yt-short-volume-btn,
+#inline-preview-player:hover .itg-yt-short-volume-btn,
+ytd-video-preview:hover .itg-yt-short-volume-btn,
+#video-preview-container:hover .itg-yt-short-volume-btn,
+#player-container:hover .itg-yt-short-volume-btn,
+ytd-player:hover .itg-yt-short-volume-btn,
+.itg-yt-short-volume-btn:hover,
+.itg-yt-short-volume-btn:focus-within {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+.itg-yt-short-volume-btn:hover {
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    transform: scale(1.08) !important;
+}
+.itg-yt-short-volume-btn:active {
+    transform: scale(0.95) !important;
+}
+.itg-yt-short-volume-btn .itg-yt-short-volume-icon,
+.itg-yt-short-volume-btn .ytdVolumeControlsMuteIcon,
+.itg-yt-short-volume-btn .ytIconWrapperHost,
+.itg-yt-short-volume-btn .ytSpecIconShapeHost,
+.itg-yt-short-volume-btn .itg-yt-spec-icon-wrapper {
+    width: 22px !important;
+    height: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+}
+.itg-yt-short-volume-btn svg {
+    width: 22px !important;
+    height: 22px !important;
+    display: block !important;
+    pointer-events: none !important;
+    fill: #ffffff !important;
 }
 `;

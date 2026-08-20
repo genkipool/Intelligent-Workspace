@@ -53,15 +53,36 @@ function itgNormalizePipLang(lang) {
     return lang.trim().toLowerCase().startsWith('es') ? 'es' : 'en';
 }
 
-function itgPipMsg(key, fallback) {
+function itgPipMsg(key, fallback, substitutions) {
+    let msg = null;
     if (itgPipMessages && itgPipMessages[key]?.message) {
-        return itgPipMessages[key].message;
+        msg = itgPipMessages[key].message;
+    } else {
+        try {
+            msg = chrome.i18n.getMessage(key, substitutions);
+            if (msg) return msg;
+        } catch {}
     }
-    try {
-        const msg = chrome.i18n.getMessage(key);
-        if (msg) return msg;
-    } catch {}
-    return fallback;
+    if (!msg) msg = fallback;
+    if (!msg) return '';
+
+    if (substitutions !== undefined && substitutions !== null) {
+        const subs = Array.isArray(substitutions) ? substitutions : [substitutions];
+        subs.forEach((sub, i) => {
+            msg = msg.replaceAll(`$${i + 1}`, String(sub));
+        });
+        const entry = itgPipMessages?.[key];
+        if (entry?.placeholders) {
+            Object.keys(entry.placeholders).forEach((pKey, i) => {
+                const subVal = subs[i] !== undefined ? subs[i] : entry.placeholders[pKey]?.content;
+                if (subVal !== undefined) {
+                    msg = msg.replaceAll(`$${pKey.toUpperCase()}$`, String(subVal));
+                    msg = msg.replaceAll(`$${pKey}$`, String(subVal));
+                }
+            });
+        }
+    }
+    return msg;
 }
 window.itgPipMsg = itgPipMsg;
 
@@ -208,7 +229,715 @@ function itgRefreshPipUiTranslations() {
         tBtn.setAttribute('aria-label', pipTitle);
     }
 
+    const loopTitle = itgPipMsg('pipLoop', 'Loop video');
+    const ytLoopBtn = document.getElementById('itg-yt-loop-button');
+    if (ytLoopBtn) {
+        ytLoopBtn.setAttribute('title', loopTitle);
+        ytLoopBtn.setAttribute('aria-label', loopTitle);
+    }
+    const shortsLoopBtn = document.getElementById('itg-yt-shorts-loop-button');
+    if (shortsLoopBtn) {
+        shortsLoopBtn.setAttribute('title', loopTitle);
+        shortsLoopBtn.setAttribute('aria-label', loopTitle);
+    }
+
+    const ytLoopMenu = document.getElementById('itg-yt-loop-menu');
+    if (ytLoopMenu) {
+        itgRefreshContainerTranslations(ytLoopMenu);
+    }
+
     ItgVideoPip.current?.updateTitlesAndLabels();
+}
+
+// --- Video Loop Control & Sync -----------------------------------------------
+
+function itgParseTime(timeStr) {
+    if (typeof timeStr !== 'string') {
+        if (typeof timeStr === 'number' && !isNaN(timeStr)) return Math.max(0, timeStr);
+        return 0;
+    }
+    const trimmed = timeStr.trim();
+    if (!trimmed) return 0;
+
+    // Standard colon-separated time: m:ss, mm:ss, or h:mm:ss
+    if (trimmed.includes(':')) {
+        const parts = trimmed.split(':').map((p) => parseInt(p, 10) || 0);
+        if (parts.length === 3) {
+            return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        }
+        if (parts.length === 2) {
+            return parts[0] * 60 + parts[1];
+        }
+        if (parts.length === 1) {
+            return parts[0] * 60;
+        }
+        return 0;
+    }
+
+    // Pure numeric string without colons (smart conversion)
+    const digits = trimmed.replace(/\D/g, '');
+    if (!digits) return 0;
+
+    if (digits.length === 1) {
+        // e.g. "1" -> 01:00 (1 minute = 60s)
+        const m = parseInt(digits, 10);
+        return m * 60;
+    }
+
+    if (digits.length === 2) {
+        // e.g. "12" -> 12:00 (12 minutes = 720s)
+        const m = parseInt(digits, 10);
+        return m * 60;
+    }
+
+    if (digits.length === 3) {
+        // e.g. "100" -> 01:00 (1 min 00 sec = 60s)
+        // e.g. "123" -> 12:30 (12 min 30 sec = 750s)
+        if (digits.endsWith('00')) {
+            const m = parseInt(digits[0], 10);
+            return m * 60;
+        }
+        const m = parseInt(digits.slice(0, 2), 10);
+        const s = parseInt(digits[2], 10) * 10;
+        return m * 60 + s;
+    }
+
+    if (digits.length === 4) {
+        // e.g. "1200" -> 12:00 (12 min 00 sec = 720s)
+        // e.g. "1215" -> 12:15 (12 min 15 sec = 735s)
+        const m = parseInt(digits.slice(0, 2), 10);
+        const s = parseInt(digits.slice(2, 4), 10);
+        return m * 60 + s;
+    }
+
+    if (digits.length === 5) {
+        // e.g. "10230" -> 1:02:30 (1 hour 02 min 30 sec)
+        const h = parseInt(digits[0], 10);
+        const m = parseInt(digits.slice(1, 3), 10);
+        const s = parseInt(digits.slice(3, 5), 10);
+        return h * 3600 + m * 60 + s;
+    }
+
+    if (digits.length >= 6) {
+        // e.g. "010230" -> 1:02:30
+        const h = parseInt(digits.slice(0, 2), 10);
+        const m = parseInt(digits.slice(2, 4), 10);
+        const s = parseInt(digits.slice(4, 6), 10);
+        return h * 3600 + m * 60 + s;
+    }
+
+    return 0;
+}
+
+function itgRefreshContainerTranslations(container) {
+    if (!container) return;
+    for (const el of container.querySelectorAll('[data-i18n-text]')) {
+        const key = el.getAttribute('data-i18n-text');
+        if (key) {
+            el.textContent = itgPipMsg(key, el.textContent);
+        }
+    }
+    for (const el of container.querySelectorAll('[data-i18n-title]')) {
+        const key = el.getAttribute('data-i18n-title');
+        if (key) {
+            el.setAttribute('title', itgPipMsg(key, el.getAttribute('title') || ''));
+        }
+    }
+}
+
+var ItgVideoLoopController =
+    window.ItgVideoLoopController ||
+    class {
+        constructor() {
+            this.isLooping = false;
+            this.startTime = 0;
+            this.endTime = 0;
+            this.repeatCount = 0; // 0 = infinite
+            this.currentRepetition = 0;
+            this.video = null;
+            this.listeners = new Set();
+            this._boundTimeUpdate = () => this.handleTimeUpdate();
+            this._boundEnded = () => this.handleEnded();
+            this._boundDurationChange = () => this.handleDurationChange();
+            this._isSeeking = false;
+        }
+
+        attachVideo(video) {
+            if (this.video === video && video) return;
+            if (this.video) {
+                this.detachVideo();
+            }
+            this.video = video;
+            if (!video) return;
+
+            video.loop = false;
+            if (video.hasAttribute('loop')) {
+                video.removeAttribute('loop');
+            }
+
+            video.addEventListener('timeupdate', this._boundTimeUpdate);
+            video.addEventListener('ended', this._boundEnded);
+            video.addEventListener('loadedmetadata', this._boundDurationChange);
+            video.addEventListener('durationchange', this._boundDurationChange);
+
+            if (this.endTime === 0 && video.duration && isFinite(video.duration)) {
+                this.endTime = video.duration;
+            }
+
+            this.notify();
+        }
+
+        detachVideo() {
+            if (!this.video) return;
+            this.video.removeEventListener('timeupdate', this._boundTimeUpdate);
+            this.video.removeEventListener('ended', this._boundEnded);
+            this.video.removeEventListener('loadedmetadata', this._boundDurationChange);
+            this.video.removeEventListener('durationchange', this._boundDurationChange);
+            this.video = null;
+        }
+
+        getVideo() {
+            if (this.video && this.video.isConnected) return this.video;
+            const v =
+                (typeof ItgVideoPip !== 'undefined' && ItgVideoPip.current?.video) || document.querySelector('video');
+            if (v && v !== this.video) {
+                this.attachVideo(v);
+            }
+            return this.video || v;
+        }
+
+        getDuration() {
+            const v = this.getVideo();
+            return v && v.duration && isFinite(v.duration) ? v.duration : 0;
+        }
+
+        getCurrentTime() {
+            const v = this.getVideo();
+            return v ? v.currentTime || 0 : 0;
+        }
+
+        getEffectiveEndTime() {
+            const dur = this.getDuration();
+            if (this.endTime > 0 && isFinite(this.endTime)) {
+                return dur > 0 ? Math.min(this.endTime, dur) : this.endTime;
+            }
+            return dur;
+        }
+
+        setLooping(active) {
+            this.isLooping = !!active;
+            if (this.isLooping) {
+                this.currentRepetition = 0;
+                const v = this.getVideo();
+                if (v) {
+                    v.loop = false;
+                    if (v.hasAttribute('loop')) v.removeAttribute('loop');
+
+                    const end = this.getEffectiveEndTime();
+                    if (v.currentTime < this.startTime || (end > 0 && v.currentTime >= end)) {
+                        v.currentTime = this.startTime;
+                    }
+                }
+            }
+            this.notify();
+        }
+
+        toggleLoop() {
+            this.setLooping(!this.isLooping);
+        }
+
+        setSettings({ startTime, endTime, repeatCount }) {
+            if (typeof startTime === 'number' && !isNaN(startTime)) {
+                this.startTime = Math.max(0, startTime);
+            }
+            if (typeof endTime === 'number' && !isNaN(endTime)) {
+                this.endTime = Math.max(0, endTime);
+            }
+            if (typeof repeatCount === 'number' && !isNaN(repeatCount)) {
+                this.repeatCount = Math.max(0, Math.floor(repeatCount));
+            }
+            this.currentRepetition = 0;
+            this.notify();
+        }
+
+        resetSettings() {
+            this.startTime = 0;
+            this.endTime = this.getDuration();
+            this.repeatCount = 0;
+            this.currentRepetition = 0;
+            this.notify();
+        }
+
+        handleDurationChange() {
+            const dur = this.getDuration();
+            if (dur > 0 && (this.endTime === 0 || this.endTime > dur)) {
+                this.endTime = dur;
+            }
+            this.notify();
+        }
+
+        handleTimeUpdate() {
+            if (!this.isLooping || this._isSeeking) return;
+            const v = this.getVideo();
+            if (!v) return;
+
+            const effectiveEnd = this.getEffectiveEndTime();
+            if (effectiveEnd > 0 && v.currentTime >= effectiveEnd) {
+                this.executeLoop();
+            }
+        }
+
+        handleEnded() {
+            if (!this.isLooping) return false;
+            this.executeLoop();
+            return true;
+        }
+
+        executeLoop() {
+            if (this._isSeeking) return;
+            const v = this.getVideo();
+            if (!v) return;
+
+            this.currentRepetition++;
+
+            if (this.repeatCount > 0 && this.currentRepetition >= this.repeatCount) {
+                this.isLooping = false;
+                this.notify();
+                v.pause();
+                return;
+            }
+
+            this._isSeeking = true;
+            v.currentTime = this.startTime;
+            const playPromise = v.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {});
+            }
+            this.notify();
+            setTimeout(() => {
+                this._isSeeking = false;
+            }, 150);
+        }
+
+        subscribe(listener) {
+            this.listeners.add(listener);
+            listener(this.getState());
+            return () => this.listeners.delete(listener);
+        }
+
+        notify() {
+            const state = this.getState();
+            for (const listener of this.listeners) {
+                try {
+                    listener(state);
+                } catch (err) {
+                    console.error('[ItgVideoLoop] Listener error:', err);
+                }
+            }
+        }
+
+        getState() {
+            const duration = this.getDuration();
+            return {
+                isLooping: this.isLooping,
+                startTime: this.startTime,
+                endTime: this.endTime > 0 ? this.endTime : duration,
+                duration: duration,
+                repeatCount: this.repeatCount,
+                currentRepetition: this.currentRepetition,
+            };
+        }
+    };
+window.ItgVideoLoopController = ItgVideoLoopController;
+
+var itgVideoLoop = window.__itgVideoLoop || new ItgVideoLoopController();
+window.__itgVideoLoop = itgVideoLoop;
+window.itgVideoLoop = itgVideoLoop;
+
+function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMode = false) {
+    if (!container) return () => {};
+    container.innerHTML = `
+        <div class="itg-loop-header">
+            <span class="itg-loop-title">
+                <span class="itg-loop-title-icon">${ITG_PIP_ICONS.loop}</span>
+                <span class="itg-loop-title-text" data-i18n-text="pipLoopSettings">Configurar bucle</span>
+            </span>
+        </div>
+        <div class="itg-loop-section">
+            <div class="itg-loop-row">
+                <label class="itg-loop-label" data-i18n-text="pipLoopStartTime">Tiempo de inicio</label>
+                <div class="itg-loop-input-group">
+                    <input class="itg-loop-time-input itg-loop-start-input" type="text" placeholder="0:00" spellcheck="false" inputmode="numeric" />
+                    <div class="itg-loop-quick-actions">
+                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-start-zero" title="0:00" data-i18n-title="pipLoopSetStart">0:00</button>
+                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-start-curr" title="Posición actual del vídeo" data-i18n-title="pipLoopSetCurrent">
+                            ${ITG_PIP_ICONS.current}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="itg-loop-row">
+                <label class="itg-loop-label" data-i18n-text="pipLoopEndTime">Tiempo final</label>
+                <div class="itg-loop-input-group">
+                    <input class="itg-loop-time-input itg-loop-end-input" type="text" placeholder="0:00" spellcheck="false" inputmode="numeric" />
+                    <div class="itg-loop-quick-actions">
+                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-end-total" title="Total" data-i18n-title="pipLoopSetEnd">
+                            <span data-i18n-text="pipLoopSetEnd">Total</span>
+                        </button>
+                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-end-curr" title="Posición actual del vídeo" data-i18n-title="pipLoopSetCurrent">
+                            ${ITG_PIP_ICONS.current}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="itg-loop-section">
+            <div class="itg-loop-row">
+                <label class="itg-loop-label" data-i18n-text="pipLoopRepeatCount">Repeticiones</label>
+                <div class="itg-loop-repeat-controls">
+                    <button type="button" class="itg-loop-repeat-mode-btn itg-loop-repeat-inf is-active">
+                        <span>∞</span>
+                        <small data-i18n-text="pipLoopInfinite">Infinito</small>
+                    </button>
+                    <button type="button" class="itg-loop-repeat-mode-btn itg-loop-repeat-custom">
+                        <input class="itg-loop-count-input" type="number" min="1" max="9999" step="1" value="3" inputmode="numeric" />
+                        <small data-i18n-text="pipLoopTimes">veces</small>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="itg-loop-footer">
+            <span class="itg-loop-status"></span>
+            <button type="button" class="itg-loop-reset-btn" data-i18n-text="pipLoopReset">Restablecer</button>
+        </div>
+    `;
+
+    const header = container.querySelector('.itg-loop-header');
+    const titleEl = container.querySelector('.itg-loop-title');
+    const startInput = container.querySelector('.itg-loop-start-input');
+    const endInput = container.querySelector('.itg-loop-end-input');
+    const btnStartZero = container.querySelector('.itg-loop-btn-start-zero');
+    const btnStartCurr = container.querySelector('.itg-loop-btn-start-curr');
+    const btnEndTotal = container.querySelector('.itg-loop-btn-end-total');
+    const btnEndCurr = container.querySelector('.itg-loop-btn-end-curr');
+    const btnRepeatInf = container.querySelector('.itg-loop-repeat-inf');
+    const btnRepeatCustom = container.querySelector('.itg-loop-repeat-custom');
+    const countInput = container.querySelector('.itg-loop-count-input');
+    const statusEl = container.querySelector('.itg-loop-status');
+    const resetBtn = container.querySelector('.itg-loop-reset-btn');
+
+    // Filter time input characters (only allow 0-9 and :)
+    const sanitizeTimeKey = (e) => {
+        if (
+            ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(e.key) ||
+            e.ctrlKey ||
+            e.metaKey
+        ) {
+            return;
+        }
+        if (!/^[0-9:]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    };
+
+    const filterTimeInput = (input) => {
+        let clean = input.value.replace(/[^0-9:]/g, '');
+        const parts = clean.split(':');
+        if (parts.length > 3) {
+            clean = parts.slice(0, 3).join(':');
+        }
+        if (input.value !== clean) {
+            input.value = clean;
+        }
+    };
+
+    const commitStartTime = () => {
+        let val = itgParseTime(startInput.value);
+        const dur = controller.getDuration();
+        if (val < 0 || isNaN(val)) val = 0;
+        if (dur > 0 && val > dur) val = dur;
+        const end = controller.getEffectiveEndTime();
+        if (end > 0 && val > end) {
+            val = end;
+        }
+        controller.setSettings({ startTime: val });
+        startInput.value = itgFormatTime(val, true);
+    };
+
+    const commitEndTime = () => {
+        let val = itgParseTime(endInput.value);
+        const dur = controller.getDuration();
+        if (val < 0 || isNaN(val)) val = dur;
+        if (dur > 0 && val > dur) val = dur;
+        if (val < controller.startTime) {
+            val = controller.startTime;
+        }
+        if (val === 0 && dur > 0) val = dur;
+        controller.setSettings({ endTime: val });
+        endInput.value = itgFormatTime(val, true);
+    };
+
+    btnStartZero.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controller.setSettings({ startTime: 0 });
+        startInput.value = '00:00';
+    });
+
+    btnStartCurr.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = controller.getCurrentTime();
+        controller.setSettings({ startTime: cur });
+        startInput.value = itgFormatTime(cur, true);
+    });
+
+    btnEndTotal.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dur = controller.getDuration();
+        controller.setSettings({ endTime: dur });
+        endInput.value = itgFormatTime(dur, true);
+    });
+
+    btnEndCurr.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = controller.getCurrentTime();
+        controller.setSettings({ endTime: cur });
+        endInput.value = itgFormatTime(cur, true);
+    });
+
+    startInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            commitStartTime();
+            startInput.blur();
+            return;
+        }
+        sanitizeTimeKey(e);
+    });
+    startInput.addEventListener('input', () => filterTimeInput(startInput));
+    startInput.addEventListener('change', commitStartTime);
+    startInput.addEventListener('blur', commitStartTime);
+
+    endInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            commitEndTime();
+            endInput.blur();
+            return;
+        }
+        sanitizeTimeKey(e);
+    });
+    endInput.addEventListener('input', () => filterTimeInput(endInput));
+    endInput.addEventListener('change', commitEndTime);
+    endInput.addEventListener('blur', commitEndTime);
+
+    // Number stepper and repetitions
+    const filterCountKey = (e) => {
+        if (
+            ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(e.key) ||
+            e.ctrlKey ||
+            e.metaKey
+        ) {
+            return;
+        }
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    };
+
+    const commitCount = () => {
+        let count = Math.max(1, Math.min(9999, parseInt(countInput.value, 10) || 1));
+        countInput.value = String(count);
+        controller.setSettings({ repeatCount: count });
+    };
+
+    btnRepeatInf.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controller.setSettings({ repeatCount: 0 });
+    });
+
+    btnRepeatCustom.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const count = Math.max(1, Math.min(9999, parseInt(countInput.value, 10) || 1));
+        controller.setSettings({ repeatCount: count });
+        countInput.focus();
+    });
+
+    countInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+
+    countInput.addEventListener('keydown', filterCountKey);
+    countInput.addEventListener('input', () => {
+        countInput.value = countInput.value.replace(/[^0-9]/g, '');
+        const count = parseInt(countInput.value, 10);
+        if (!isNaN(count) && count >= 1) {
+            controller.setSettings({ repeatCount: Math.min(9999, count) });
+        }
+    });
+    countInput.addEventListener('change', commitCount);
+    countInput.addEventListener('blur', commitCount);
+
+    resetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controller.resetSettings();
+    });
+
+    const updateUI = (state) => {
+        header?.classList.toggle('is-active', state.isLooping);
+        titleEl?.classList.toggle('is-active', state.isLooping);
+
+        const doc = container.ownerDocument || document;
+        if (doc.activeElement !== startInput) {
+            startInput.value = itgFormatTime(state.startTime, true);
+        }
+
+        if (doc.activeElement !== endInput) {
+            const displayEnd = state.endTime > 0 ? state.endTime : state.duration;
+            endInput.value = itgFormatTime(displayEnd, true);
+        }
+
+        const isInf = state.repeatCount === 0;
+        btnRepeatInf.classList.toggle('is-active', isInf);
+        btnRepeatCustom.classList.toggle('is-active', !isInf);
+        if (!isInf && doc.activeElement !== countInput) {
+            countInput.value = String(state.repeatCount);
+        }
+
+        if (statusEl) {
+            if (state.isLooping) {
+                if (state.repeatCount > 0) {
+                    statusEl.textContent = itgPipMsg(
+                        'pipLoopProgress',
+                        `Bucle ${state.currentRepetition + 1} de ${state.repeatCount}`,
+                        [state.currentRepetition + 1, state.repeatCount],
+                    );
+                } else if (state.currentRepetition > 0) {
+                    statusEl.textContent = itgPipMsg(
+                        'pipLoopCompleted',
+                        `${state.currentRepetition} bucles completados`,
+                        [state.currentRepetition],
+                    );
+                } else {
+                    statusEl.textContent = itgPipMsg('pipLoopActive', 'Bucle activo');
+                }
+            } else {
+                statusEl.textContent = '';
+            }
+        }
+    };
+
+    itgRefreshContainerTranslations(container);
+    const unsubscribe = controller.subscribe(updateUI);
+    container._itgUnsubscribe = unsubscribe;
+    return unsubscribe;
+}
+
+var itgLoopActiveButton = null;
+var itgLoopHideTimeout = null;
+
+function itgCancelLoopHide() {
+    if (itgLoopHideTimeout) {
+        clearTimeout(itgLoopHideTimeout);
+        itgLoopHideTimeout = null;
+    }
+}
+
+function itgScheduleLoopHide(delay = 500) {
+    itgCancelLoopHide();
+    itgLoopHideTimeout = setTimeout(() => {
+        const menu = document.getElementById('itg-yt-loop-menu');
+        if (menu) {
+            menu.classList.remove('is-open');
+            document.documentElement.removeAttribute('data-itg-loopmenu-open');
+        }
+    }, delay);
+}
+
+function itgAttachLoopMenu(button) {
+    if (!button || button.dataset.itgLoopMenuAttached) return;
+    button.dataset.itgLoopMenuAttached = 'true';
+
+    const menu = itgGetOrCreateYtLoopMenu();
+    const show = () => {
+        itgCancelLoopHide();
+        itgLoopActiveButton = button;
+        try {
+            Utils.applyThemeToHost(menu, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
+        } catch {}
+        itgRefreshContainerTranslations(menu);
+
+        const v = document.querySelector('video');
+        if (v) itgVideoLoop.attachVideo(v);
+
+        const rect = button.getBoundingClientRect();
+        menu.classList.add('is-open');
+        document.documentElement.setAttribute('data-itg-loopmenu-open', 'true');
+
+        const height = menu.offsetHeight || 220;
+        const above = rect.top > height + 16;
+        menu.dataset.place = above ? 'above' : 'below';
+        menu.style.top = above ? `${rect.top - height - 10}px` : `${rect.bottom + 10}px`;
+        const width = menu.offsetWidth || 272;
+        menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
+    };
+
+    button.addEventListener('mouseenter', show);
+    button.addEventListener('mouseleave', (e) => {
+        if (menu.contains(e.relatedTarget)) return;
+        itgScheduleLoopHide(500);
+    });
+    button.addEventListener('mousemove', () => {
+        itgCancelLoopHide();
+    });
+    button.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        show();
+    });
+}
+
+function itgGetOrCreateYtLoopMenu() {
+    let menu = document.getElementById('itg-yt-loop-menu');
+    if (menu) return menu;
+
+    if (!document.getElementById('itg-yt-loop-menu-styles')) {
+        const style = document.createElement('style');
+        style.id = 'itg-yt-loop-menu-styles';
+        style.textContent = typeof ITG_LOOP_POPUP_STYLES !== 'undefined' ? ITG_LOOP_POPUP_STYLES : '';
+        document.head?.appendChild(style);
+    }
+
+    menu = document.createElement('div');
+    menu.id = 'itg-yt-loop-menu';
+    menu.className = 'itg-yt-loop-menu';
+
+    itgCreateLoopPopupContent(menu, itgVideoLoop, false);
+
+    menu.addEventListener('mouseenter', () => itgCancelLoopHide());
+    menu.addEventListener('mouseleave', (e) => {
+        if (itgLoopActiveButton && itgLoopActiveButton.contains(e.relatedTarget)) return;
+        itgScheduleLoopHide(500);
+    });
+    menu.addEventListener('mousemove', () => itgCancelLoopHide());
+
+    try {
+        Utils.applyThemeToHost(menu, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
+    } catch {}
+
+    document.documentElement.appendChild(menu);
+
+    try {
+        chrome.storage.onChanged.addListener((changes, area) => {
+            if (area !== 'local' || !changes.activeTheme) return;
+            try {
+                Utils.applyThemeToHost(
+                    menu,
+                    changes.activeTheme.newValue,
+                    document.documentElement.getAttribute('data-itg-page-mode'),
+                );
+            } catch {}
+        });
+    } catch {}
+
+    return menu;
 }
 
 /**
@@ -1055,6 +1784,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
         setTimeout(() => window.dispatchEvent(new Event('resize')), 300);
 
+        if (typeof itgVideoLoop !== 'undefined' && video) {
+            itgVideoLoop.attachVideo(video);
+        }
+
         if (ItgVideoPip.current === this) ItgVideoPip.current = null;
     }
 
@@ -1312,7 +2045,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
                         <button class="itg-pip-btn" data-act="dislike" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="comments" type="button" hidden></button>
                         <button class="itg-pip-btn" data-act="captions" type="button" hidden></button>
-                        <button class="itg-pip-btn" data-act="loop" type="button"></button>
+                        <span class="itg-pip-loop-wrap">
+                            <div class="itg-pip-loop-menu"></div>
+                            <button class="itg-pip-btn" data-act="loop" type="button"></button>
+                        </span>
                         <span class="itg-pip-rate-wrap">
                             <span class="itg-pip-rate-menu"></span>
                             <button class="itg-pip-btn itg-pip-rate" data-act="rate" type="button">1x</button>
@@ -1406,14 +2142,38 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.buttons.loop) this.buttons.loop.innerHTML = ITG_PIP_ICONS.loop;
         if (this.buttons.more) this.buttons.more.innerHTML = ITG_PIP_ICONS.more;
 
-        this.isLooping = false;
+        this.isLooping = typeof itgVideoLoop !== 'undefined' ? itgVideoLoop.isLooping : false;
 
+        if (typeof this.buildLoopMenu === 'function') this.buildLoopMenu();
         if (typeof this.buildRateMenu === 'function') this.buildRateMenu();
         if (typeof this.buildSizeMenu === 'function') this.buildSizeMenu();
         if (typeof this.buildMoreMenu === 'function') this.buildMoreMenu();
         if (typeof this.buildSearch === 'function') this.buildSearch();
         if (typeof this.updateTitlesAndLabels === 'function') this.updateTitlesAndLabels();
         if (typeof this.applyTheme === 'function') this.applyTheme();
+
+        if (typeof itgVideoLoop !== 'undefined') {
+            const unsub = itgVideoLoop.subscribe((state) => {
+                this.isLooping = state.isLooping;
+                if (this.buttons?.loop) {
+                    this.buttons.loop.classList.toggle('is-on', state.isLooping);
+                    this.buttons.loop.setAttribute('aria-pressed', String(state.isLooping));
+                }
+                const moreLoop = doc?.querySelector('.itg-pip-more-loop');
+                if (moreLoop) {
+                    moreLoop.classList.toggle('is-on', state.isLooping);
+                }
+            });
+            this.disposers.push(unsub);
+        }
+    }
+
+    buildLoopMenu() {
+        const doc = this.pipWindow?.document;
+        const menu = doc?.querySelector('.itg-pip-loop-menu');
+        if (menu && typeof itgCreateLoopPopupContent === 'function') {
+            itgCreateLoopPopupContent(menu, itgVideoLoop, true);
+        }
     }
 
     updateTitlesAndLabels() {
@@ -1442,9 +2202,15 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (labelH) labelH.textContent = itgPipMsg('pipHeight', 'Height');
         const moreSectionTitle = doc.querySelector('.itg-pip-more-section-title');
         if (moreSectionTitle) moreSectionTitle.textContent = itgPipMsg('pipSpeed', 'Playback speed');
+        const loopMenu = doc.querySelector('.itg-pip-loop-menu');
+        if (loopMenu) itgRefreshContainerTranslations(loopMenu);
         for (const el of doc.querySelectorAll('[data-i18n-text]')) {
             const key = el.getAttribute('data-i18n-text');
             if (key) el.textContent = itgPipMsg(key, el.textContent);
+        }
+        for (const el of doc.querySelectorAll('[data-i18n-title]')) {
+            const key = el.getAttribute('data-i18n-title');
+            if (key) el.setAttribute('title', itgPipMsg(key, el.getAttribute('title') || ''));
         }
         this.renderSize();
         this.updateVideoVotes();
@@ -1615,6 +2381,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
     bindVideo() {
         const video = this.video;
+        if (typeof itgVideoLoop !== 'undefined' && video) {
+            itgVideoLoop.attachVideo(video);
+        }
         const onUpdate = () => this.renderProgress();
         const onState = () => this.renderPlayState();
         const onVolume = () => this.renderVolume();
@@ -1699,13 +2468,17 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         };
         this.progress.addEventListener('pointerdown', (e) => {
             this.dragging = true;
+            this.bar?.classList.add('is-scrubbing');
             this.progress.setPointerCapture(e.pointerId);
             seekTo(e.clientX);
         });
         this.progress.addEventListener('pointermove', (e) => {
             if (this.dragging) seekTo(e.clientX);
         });
-        const stop = () => (this.dragging = false);
+        const stop = () => {
+            this.dragging = false;
+            this.bar?.classList.remove('is-scrubbing');
+        };
         this.progress.addEventListener('pointerup', stop);
         this.progress.addEventListener('pointercancel', stop);
     }
@@ -2282,6 +3055,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * would be skipped.
      */
     handleEnded() {
+        if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
+            itgVideoLoop.handleEnded();
+            return;
+        }
         if (this.isLooping) {
             this.video.currentTime = 0;
             this.video.play().catch(() => {});
@@ -2303,18 +3080,18 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * beginning once it reaches the end instead of advancing to the next one.
      */
     toggleLoop() {
-        this.isLooping = !this.isLooping;
-
-        // Update bar button
-        if (this.buttons.loop) {
-            this.buttons.loop.classList.toggle('is-on', this.isLooping);
-        }
-
-        // Update more-menu item
-        const doc = this.pipWindow?.document;
-        const moreLoop = doc?.querySelector('.itg-pip-more-loop');
-        if (moreLoop) {
-            moreLoop.classList.toggle('is-on', this.isLooping);
+        if (typeof itgVideoLoop !== 'undefined') {
+            itgVideoLoop.toggleLoop();
+        } else {
+            this.isLooping = !this.isLooping;
+            if (this.buttons?.loop) {
+                this.buttons.loop.classList.toggle('is-on', this.isLooping);
+            }
+            const doc = this.pipWindow?.document;
+            const moreLoop = doc?.querySelector('.itg-pip-more-loop');
+            if (moreLoop) {
+                moreLoop.classList.toggle('is-on', this.isLooping);
+            }
         }
 
         // Show a flash icon to confirm the action
@@ -3182,14 +3959,15 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 };
 
-function itgFormatTime(seconds) {
-    if (!Number.isFinite(seconds)) return '0:00';
+function itgFormatTime(seconds, padMinutes = false) {
+    if (!Number.isFinite(seconds) || seconds < 0) return padMinutes ? '00:00' : '0:00';
     const total = Math.floor(seconds);
     const h = Math.floor(total / 3600);
     const m = Math.floor((total % 3600) / 60);
     const s = total % 60;
     const pad = (n) => String(n).padStart(2, '0');
-    return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+    const mFormatted = padMinutes ? pad(m) : String(m);
+    return h ? `${h}:${pad(m)}:${pad(s)}` : `${mFormatted}:${pad(s)}`;
 }
 
 // --- Entry point -------------------------------------------------------------

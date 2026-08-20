@@ -6088,6 +6088,73 @@
   "pipLoop": {
     "message": "Loop video"
   },
+  "pipLoopSettings": {
+    "message": "Loop settings"
+  },
+  "pipLoopEnable": {
+    "message": "Enable loop"
+  },
+  "pipLoopActive": {
+    "message": "Active"
+  },
+  "pipLoopInactive": {
+    "message": "Inactive"
+  },
+  "pipLoopStartTime": {
+    "message": "Start time"
+  },
+  "pipLoopEndTime": {
+    "message": "End time"
+  },
+  "pipLoopRepeatCount": {
+    "message": "Repetitions"
+  },
+  "pipLoopInfinite": {
+    "message": "Infinite"
+  },
+  "pipLoopTimes": {
+    "message": "times"
+  },
+  "pipLoopSetCurrent": {
+    "message": "Current video position"
+  },
+  "pipLoopSetStart": {
+    "message": "0:00"
+  },
+  "pipLoopSetEnd": {
+    "message": "Total"
+  },
+  "pipLoopReset": {
+    "message": "Reset"
+  },
+  "pipLoopProgress": {
+    "message": "Loop $CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "pipLoopCompleted": {
+    "message": "$COUNT$ loops completed",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "pipVolume": {
+    "message": "Volume"
+  },
+  "pipMute": {
+    "message": "Mute"
+  },
+  "pipUnmute": {
+    "message": "Unmute"
+  },
   "pipFullscreen": {
     "message": "Full screen"
   },

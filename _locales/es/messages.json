@@ -6171,6 +6171,73 @@
     "pipLoop": {
         "message": "Repetir en bucle"
     },
+    "pipLoopSettings": {
+        "message": "Configurar bucle"
+    },
+    "pipLoopEnable": {
+        "message": "Activar bucle"
+    },
+    "pipLoopActive": {
+        "message": "Activo"
+    },
+    "pipLoopInactive": {
+        "message": "Inactivo"
+    },
+    "pipLoopStartTime": {
+        "message": "Tiempo de inicio"
+    },
+    "pipLoopEndTime": {
+        "message": "Tiempo final"
+    },
+    "pipLoopRepeatCount": {
+        "message": "Repeticiones"
+    },
+    "pipLoopInfinite": {
+        "message": "Infinito"
+    },
+    "pipLoopTimes": {
+        "message": "veces"
+    },
+    "pipLoopSetCurrent": {
+        "message": "Posición actual del vídeo"
+    },
+    "pipLoopSetStart": {
+        "message": "0:00"
+    },
+    "pipLoopSetEnd": {
+        "message": "Total"
+    },
+    "pipLoopReset": {
+        "message": "Restablecer"
+    },
+    "pipLoopProgress": {
+        "message": "Bucle $CURRENT$ de $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "pipLoopCompleted": {
+        "message": "$COUNT$ bucles completados",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "pipVolume": {
+        "message": "Volumen"
+    },
+    "pipMute": {
+        "message": "Silenciar"
+    },
+    "pipUnmute": {
+        "message": "Activar sonido"
+    },
     "pipFullscreen": {
         "message": "Pantalla completa"
     },

@@ -98,6 +98,7 @@ var Main = class Main {
             checkForVideo();
             this._injectYoutubePipButton();
             this._injectYoutubeLoopButton();
+            this._injectYoutubeInlineVolumeControl();
             this._injectTiktokPipButton();
             this._injectGenericVideoPipButton();
         }
@@ -1046,8 +1047,39 @@ var Main = class Main {
             chrome.i18n.getMessage('pipLoop') ||
             'Loop video';
 
+        const updateLoopVisual = (state) => {
+            const isLooping = state
+                ? !!state.isLooping
+                : typeof itgVideoLoop !== 'undefined'
+                  ? itgVideoLoop.isLooping
+                  : false;
+            const btn = document.getElementById('itg-yt-loop-button');
+            if (btn) {
+                btn.style.color = isLooping ? 'var(--interactive-color, #ff4444)' : '#fff';
+                btn.classList.toggle('ytp-loop-active', isLooping);
+                btn.setAttribute('aria-pressed', String(isLooping));
+            }
+            const shortsBtn = document.getElementById('itg-yt-shorts-loop-button');
+            if (shortsBtn) {
+                shortsBtn.style.color = isLooping ? 'var(--interactive-color, #ff4444)' : '#fff';
+                shortsBtn.classList.toggle('ytp-loop-active', isLooping);
+                shortsBtn.setAttribute('aria-pressed', String(isLooping));
+            }
+        };
+
+        if (typeof itgVideoLoop !== 'undefined') {
+            itgVideoLoop.subscribe((state) => {
+                updateLoopVisual(state);
+            });
+        }
+
         // --- Regular YouTube player loop button ---
         const addLoopButton = () => {
+            const video = document.querySelector('video');
+            if (video && typeof itgVideoLoop !== 'undefined') {
+                itgVideoLoop.attachVideo(video);
+            }
+
             if (document.getElementById('itg-yt-loop-button')) return;
             const rightControls = document.querySelector('.ytp-right-controls');
             if (!rightControls) return;
@@ -1060,22 +1092,17 @@ var Main = class Main {
             btn.innerHTML = ITG_LOOP_ICON_YTP;
             btn.style.color = '#fff';
 
-            const updateLoopVisual = () => {
-                const video = document.querySelector('video');
-                const isLooping = !!video?.loop;
-                btn.style.color = isLooping ? 'var(--interactive-color, #ff4444)' : '#fff';
-                btn.classList.toggle('ytp-loop-active', isLooping);
-                btn.setAttribute('aria-pressed', String(isLooping));
-            };
-
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                const video = document.querySelector('video');
-                if (!video) return;
-                video.loop = !video.loop;
-                updateLoopVisual();
+                if (typeof itgVideoLoop !== 'undefined') {
+                    itgVideoLoop.toggleLoop();
+                }
             });
+
+            if (typeof itgAttachLoopMenu === 'function') {
+                itgAttachLoopMenu(btn);
+            }
 
             updateLoopVisual();
 
@@ -1090,15 +1117,453 @@ var Main = class Main {
             }
         };
 
-        addLoopButton();
-        this._ytLoopObserver = new MutationObserver(() => {
+        // --- YouTube Shorts loop button ---
+        const addShortsLoopButton = () => {
+            if (document.getElementById('itg-yt-shorts-loop-button')) return;
+            const shortsRightControls = document.querySelector('ytd-shorts-player-controls #right-controls');
+            if (!shortsRightControls) return;
+            const fullscreenShape = shortsRightControls.querySelector('#fullscreen-button-shape');
+            if (!fullscreenShape) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'itg-yt-shorts-loop-wrapper';
+            wrapper.style.cssText =
+                'display: flex; align-items: center; justify-content: center; position: relative; z-index: 2147483647; pointer-events: auto;';
+            const btn = document.createElement('button');
+            btn.id = 'itg-yt-shorts-loop-button';
+            btn.className =
+                'ytSpecButtonShapeNextHost ytSpecButtonShapeNextTonal ytSpecButtonShapeNextOverlayDark ytSpecButtonShapeNextSizeL ytSpecButtonShapeNextIconButton';
+            btn.setAttribute('title', loopTitle);
+            btn.setAttribute('aria-label', loopTitle);
+            btn.style.cssText =
+                'color: rgb(255, 255, 255); background-color: transparent; position: relative; z-index: 2147483647; pointer-events: auto; cursor: pointer;';
+            btn.innerHTML = `
+                    <div aria-hidden="true" class="ytSpecButtonShapeNextIcon">
+                        <span class="ytIconWrapperHost" style="width: 24px; height: 24px;">
+                            <span class="yt-icon-shape ytSpecIconShapeHost">
+                                <div style="width: 100%; height: 100%; display: block; filter: drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3)); fill: currentcolor;">
+                                    ${ITG_LOOP_ICON_YTP}
+                                </div>
+                            </span>
+                        </span>
+                    </div>
+                `;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (typeof itgVideoLoop !== 'undefined') {
+                    itgVideoLoop.toggleLoop();
+                }
+            });
+
+            if (typeof itgAttachLoopMenu === 'function') {
+                itgAttachLoopMenu(btn);
+            }
+
+            wrapper.appendChild(btn);
+            const pipWrapper = document.getElementById('itg-yt-shorts-pip-button');
+            const targetBefore = pipWrapper || fullscreenShape;
+            shortsRightControls.insertBefore(wrapper, targetBefore);
+            updateLoopVisual();
+        };
+
+        const addAllLoopButtons = () => {
             addLoopButton();
+            addShortsLoopButton();
+        };
+
+        addAllLoopButtons();
+        this._ytLoopObserver = new MutationObserver(() => {
+            addAllLoopButtons();
         });
         this._ytLoopObserver.observe(document.body, {
             childList: true,
             subtree: true,
         });
     }
+
+    _injectYoutubeInlineVolumeControl() {
+        if (itgIsInsidePipWindow()) return;
+        if (!window.location.hostname.includes('youtube.com')) return;
+
+        if (!document.getElementById('itg-yt-inline-volume-styles')) {
+            const styleEl = document.createElement('style');
+            styleEl.id = 'itg-yt-inline-volume-styles';
+            styleEl.textContent = typeof ITG_INLINE_VOLUME_STYLES !== 'undefined' ? ITG_INLINE_VOLUME_STYLES : '';
+            (document.head || document.documentElement).appendChild(styleEl);
+        }
+
+        const isWatchOrShortsPage = () => {
+            const p = window.location.pathname || '';
+            return p.startsWith('/watch') || p.startsWith('/shorts');
+        };
+
+        const isShortsPlayer = (player) => {
+            if (!player || !(player instanceof HTMLElement)) return false;
+
+            // Explicitly exclude main watch player and full theater container
+            if (
+                player.id === 'movie_player' ||
+                player.closest(
+                    '#movie_player, ytd-watch-flexy, #player-theater-container, #player-full-bleed-container',
+                )
+            ) {
+                return false;
+            }
+
+            // Inclusions for Shorts view models and containers
+            if (
+                player.closest(
+                    'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, [class*="shortsLockupViewModel"], ytd-rich-grid-slim-media, ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-rich-item-renderer[is-slim-media], ytd-shorts, [is-shorts], [is-slim-media]',
+                )
+            ) {
+                return true;
+            }
+
+            // Check parent card for Shorts indicators or endpoints
+            const parentCard = player.closest(
+                'ytd-rich-item-renderer, ytd-rich-grid-row, ytd-grid-video-renderer, ytd-video-renderer, ytd-video-preview, #video-preview-container',
+            );
+            if (parentCard) {
+                if (
+                    parentCard.querySelector(
+                        'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, a[href*="/shorts/"], a.reel-item-endpoint',
+                    )
+                ) {
+                    return true;
+                }
+            }
+
+            if (
+                player.classList.contains('ytp-fit-cover-video') ||
+                player.classList.contains('ytp-xsmall-width-mode') ||
+                player.classList.contains('ytp-tiny-mode')
+            ) {
+                return true;
+            }
+
+            const video = player.querySelector('video');
+            if (video) {
+                const h = video.videoHeight || video.offsetHeight || 0;
+                const w = video.videoWidth || video.offsetWidth || 0;
+                if (h > 0 && w > 0 && h > w) {
+                    return true;
+                }
+            }
+
+            // Exclude regular 16:9 previews
+            if (player.closest('#video-preview-container, ytd-video-preview')) {
+                return false;
+            }
+
+            return false;
+        };
+
+        const removeAllNonShortsVolumeButtons = () => {
+            // Remove any legacy buttons attached to static cards so they don't block YouTube hover preview
+            const staticButtons = document.querySelectorAll(
+                'ytm-shorts-lockup-view-model-v2 .ytdVolumeControlsMuteIconButton, ytm-shorts-lockup-view-model-v2 .itg-yt-short-volume-btn, .shortsLockupViewModelHostThumbnailParentContainer > .ytdVolumeControlsMuteIconButton, .shortsLockupViewModelHostThumbnailParentContainer > .itg-yt-short-volume-btn, a > .ytdVolumeControlsMuteIconButton, a > .itg-yt-short-volume-btn',
+            );
+            for (const el of staticButtons) {
+                if (!el.closest('#inline-preview-player, .html5-video-player')) {
+                    el.remove();
+                }
+            }
+
+            const existing = document.querySelectorAll(
+                '.itg-yt-short-volume-btn, .itg-yt-inline-volume-control, [data-itg-short-volume="true"]',
+            );
+            for (const el of existing) {
+                const p = el.closest('.html5-video-player, #inline-preview-player');
+                if (!p || !isShortsPlayer(p) || isWatchOrShortsPage()) {
+                    el.remove();
+                }
+            }
+        };
+
+        const getMsg = (key, fallback) => {
+            return (
+                (typeof itgPipMsg === 'function' ? itgPipMsg(key, fallback) : null) ||
+                chrome.i18n.getMessage(key) ||
+                fallback
+            );
+        };
+        const SVG_MUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Activar sonido"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.214 7.577a1 1 0 011.414 0l1.379 1.379 1.379-1.379a1 1 0 111.414 1.414l-1.379 1.379 1.379 1.379a1 1 0 01-1.414 1.414l-1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379 1.379a1 1 0 010-1.414Z"></path></svg></div></span></span>`;
+        const SVG_UNMUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Silenciar"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.043 4.92a1 1 0 000 1.414 5.001 5.001 0 010 7.072 1 1 0 101.414 1.414 6.999 6.999 0 000-9.9 1 1 0 00-1.414 0Z"></path></svg></div></span></span>`;
+
+        const attachShortsVolumeButton = (player) => {
+            if (!player || !(player instanceof HTMLElement)) return;
+            if (isWatchOrShortsPage()) return;
+            if (!isShortsPlayer(player)) return;
+
+            if (player.querySelector(':scope > .ytdVolumeControlsMuteIconButton, :scope > .itg-yt-short-volume-btn')) {
+                return;
+            }
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'ytdVolumeControlsMuteIconButton itg-yt-short-volume-btn';
+            btn.setAttribute('data-itg-short-volume', 'true');
+
+            const isCurrentlyMuted = () => {
+                if (typeof player.isMuted === 'function') {
+                    try {
+                        return player.isMuted();
+                    } catch {}
+                }
+                const vid =
+                    player.querySelector('video') ||
+                    document.querySelector('#inline-preview-player video, .html5-video-player video');
+                if (vid) {
+                    return vid.muted || vid.volume === 0;
+                }
+                try {
+                    return localStorage.getItem('itg-yt-short-muted') !== 'false';
+                } catch {}
+                return true;
+            };
+
+            const updateUI = () => {
+                const muted = isCurrentlyMuted();
+                if (muted) {
+                    const title = getMsg('pipUnmute', 'Activar sonido');
+                    btn.setAttribute('title', title);
+                    btn.setAttribute('aria-label', title);
+                    btn.innerHTML = SVG_MUTED;
+                } else {
+                    const title = getMsg('pipMute', 'Silenciar');
+                    btn.setAttribute('title', title);
+                    btn.setAttribute('aria-label', title);
+                    btn.innerHTML = SVG_UNMUTED;
+                }
+            };
+
+            let lastToggleTime = 0;
+            const toggleMute = () => {
+                const now = Date.now();
+                if (now - lastToggleTime < 120) return;
+                lastToggleTime = now;
+
+                const muted = isCurrentlyMuted();
+                const newMuted = !muted;
+
+                try {
+                    localStorage.setItem('itg-yt-short-muted', newMuted ? 'true' : 'false');
+                } catch {}
+
+                const allVideos = document.querySelectorAll('video');
+                for (const vid of allVideos) {
+                    try {
+                        vid.muted = newMuted;
+                        vid.defaultMuted = newMuted;
+                        if (!newMuted) {
+                            vid.volume = 1.0;
+                            if (vid.paused) {
+                                vid.play().catch(() => {});
+                            }
+                        }
+                    } catch {}
+                }
+
+                const players = [
+                    player,
+                    document.querySelector('#inline-preview-player'),
+                    ...document.querySelectorAll('.html5-video-player:not(#movie_player)'),
+                ].filter(Boolean);
+
+                for (const p of players) {
+                    try {
+                        if (newMuted) {
+                            if (typeof p.mute === 'function') p.mute();
+                        } else {
+                            if (typeof p.unMute === 'function') p.unMute();
+                            if (typeof p.setVolume === 'function') p.setVolume(100);
+                        }
+                    } catch {}
+                }
+
+                // Update UI on all visible short buttons
+                const allButtons = document.querySelectorAll(
+                    '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton',
+                );
+                for (const b of allButtons) {
+                    if (typeof b._itgUpdateUI === 'function') {
+                        b._itgUpdateUI();
+                    }
+                }
+            };
+
+            btn._itgToggleMute = toggleMute;
+            btn._itgUpdateUI = updateUI;
+
+            const stopAndPrevent = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+            };
+
+            const trapEvents = [
+                'pointerdown',
+                'mousedown',
+                'mouseup',
+                'pointerup',
+                'click',
+                'dblclick',
+                'auxclick',
+                'contextmenu',
+                'dragstart',
+            ];
+            for (const evt of trapEvents) {
+                btn.addEventListener(evt, stopAndPrevent, true);
+                btn.addEventListener(evt, stopAndPrevent, false);
+            }
+
+            btn.addEventListener(
+                'click',
+                (e) => {
+                    stopAndPrevent(e);
+                    toggleMute();
+                },
+                true,
+            );
+
+            btn.addEventListener(
+                'touchstart',
+                (e) => {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                },
+                { passive: true },
+            );
+            btn.addEventListener(
+                'touchend',
+                (e) => {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                },
+                { passive: true },
+            );
+
+            player.addEventListener('volumechange', updateUI, true);
+
+            updateUI();
+            player.appendChild(btn);
+        };
+
+        const scanAndAttach = () => {
+            if (isWatchOrShortsPage()) {
+                removeAllNonShortsVolumeButtons();
+                return;
+            }
+            removeAllNonShortsVolumeButtons();
+
+            // Attach volume button directly to active preview players (without polluting static card DOM)
+            const players = document.querySelectorAll('#inline-preview-player, .html5-video-player:not(#movie_player)');
+            for (const p of players) {
+                if (isShortsPlayer(p)) {
+                    attachShortsVolumeButton(p);
+                }
+            }
+        };
+
+        // Global capture-phase trap on window and document: guarantees YouTube cards NEVER receive click/pointer events from the volume button
+        if (!this._ytInlineVolumeTrapBound) {
+            this._ytInlineVolumeTrapBound = true;
+            const isShortVolumeTarget = (target) => {
+                if (!target || !(target instanceof Element)) return null;
+                return target.closest(
+                    '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton, [data-itg-short-volume="true"]',
+                );
+            };
+
+            const trapHandler = (e) => {
+                const volBtn = isShortVolumeTarget(e.target);
+                if (!volBtn) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+
+                if (e.type === 'click') {
+                    if (typeof volBtn._itgToggleMute === 'function') {
+                        volBtn._itgToggleMute();
+                    }
+                }
+            };
+
+            const eventsToTrap = [
+                'pointerdown',
+                'mousedown',
+                'mouseup',
+                'pointerup',
+                'click',
+                'dblclick',
+                'auxclick',
+                'contextmenu',
+                'dragstart',
+            ];
+
+            for (const evt of eventsToTrap) {
+                window.addEventListener(evt, trapHandler, true);
+                document.addEventListener(evt, trapHandler, true);
+            }
+        }
+
+        if (!this._ytShortPlayListenerBound) {
+            this._ytShortPlayListenerBound = true;
+            document.addEventListener(
+                'play',
+                (e) => {
+                    if (isWatchOrShortsPage()) return;
+                    const video = e.target;
+                    if (video && video instanceof HTMLVideoElement) {
+                        const player = video.closest('.html5-video-player, #inline-preview-player');
+                        if (player && isShortsPlayer(player)) {
+                            const shouldUnmute = localStorage.getItem('itg-yt-short-muted') === 'false';
+                            if (shouldUnmute) {
+                                try {
+                                    video.muted = false;
+                                    video.defaultMuted = false;
+                                    video.volume = 1.0;
+                                    if (typeof player.unMute === 'function') player.unMute();
+                                    if (typeof player.setVolume === 'function') player.setVolume(100);
+                                } catch {}
+                            } else {
+                                try {
+                                    video.muted = true;
+                                    video.defaultMuted = true;
+                                    if (typeof player.mute === 'function') player.mute();
+                                } catch {}
+                            }
+                            const allButtons = document.querySelectorAll(
+                                '.itg-yt-short-volume-btn, .ytdVolumeControlsMuteIconButton',
+                            );
+                            for (const b of allButtons) {
+                                if (typeof b._itgUpdateUI === 'function') {
+                                    b._itgUpdateUI();
+                                }
+                            }
+                        }
+                    }
+                },
+                true,
+            );
+        }
+
+        window.addEventListener('yt-navigate-finish', scanAndAttach);
+        window.addEventListener('popstate', scanAndAttach);
+
+        scanAndAttach();
+        this._ytInlineVolObserver = new MutationObserver(() => {
+            scanAndAttach();
+        });
+        this._ytInlineVolObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
     _injectTiktokPipButton() {
         if (itgIsInsidePipWindow()) return;
         if (!window.location.hostname.includes('tiktok.com')) return;

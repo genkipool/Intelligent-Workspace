@@ -767,10 +767,18 @@ button:focus-visible {
     margin-right: 4px;
 }
 
+.schedule-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
 .edit-schedule-btn,
 .delete-schedule-btn {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background-color: transparent;
     flex-shrink: 0;
@@ -783,16 +791,10 @@ button:focus-visible {
         background-color 0.2s,
         border-color 0.2s,
         color 0.2s;
-    padding: 2px;
-    border: none;
-}
-
-.delete-schedule-btn {
-    font-weight: bold;
-    font-size: 1.2rem;
-    line-height: 1;
     padding: 0;
-    border: 1px solid transparent;
+    margin: 0;
+    border: none;
+    line-height: 1;
 }
 
 .edit-schedule-btn:hover,
@@ -809,9 +811,12 @@ button:focus-visible {
     outline: none;
 }
 
-.edit-schedule-btn svg {
-    width: 100%;
-    height: 100%;
+.edit-schedule-btn svg,
+.delete-schedule-btn svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+    pointer-events: none;
 }
 
 .form-group {

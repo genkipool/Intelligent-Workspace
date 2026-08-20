@@ -78,11 +78,8 @@
     let endTimeTrigger = $state('00:00');
     let startTimeOneTimeTrigger = $state('00:00');
     let endTimeOneTimeTrigger = $state('00:00');
-    // Writable $derived: they mirror the date fields, and the schedule loading and
-    // reset paths below still assign them directly, which a $derived allows since
-    // Svelte 5.25. Previously this was $state kept in sync by two $effect blocks.
-    let startDateTrigger = $derived(startDateValue || 'YYYY-MM-DD');
-    let endDateTrigger = $derived(endDateValue || 'YYYY-MM-DD');
+    let startDateValue = $state('');
+    let endDateValue = $state('');
 
     let scheduleError = $state('');
 
@@ -96,6 +93,7 @@
     $effect(() => {
         scheduleType;
         allDay;
+        scheduleEditorState.mode;
         if (!showScheduleModal) return;
         tick().then(() => applyTranslations(document.getElementById('schedule-modal')));
     });
@@ -433,8 +431,8 @@
         endTimeTrigger = '00:00';
         startTimeOneTimeTrigger = '00:00';
         endTimeOneTimeTrigger = '00:00';
-        startDateTrigger = 'YYYY-MM-DD';
-        endDateTrigger = 'YYYY-MM-DD';
+        startDateValue = '';
+        endDateValue = '';
         scheduleError = '';
         scheduleEditorState = { mode: 'add', themeName: null, scheduleIndex: -1 };
     }
@@ -452,7 +450,7 @@
     async function saveSchedule() {
         scheduleError = '';
         const { mode, themeName: editThemeName, scheduleIndex } = scheduleEditorState;
-        const themeName = mode === 'edit' ? editThemeName : currentThemeForScheduling.name;
+        const themeName = mode === 'edit' ? editThemeName : currentThemeForScheduling?.name;
         const reminder = scheduleReminder.trim();
         let newSchedule;
 
@@ -479,12 +477,12 @@
                 storageArea: currentStorageArea,
             };
         } else {
-            if (startDateTrigger === 'YYYY-MM-DD' || endDateTrigger === 'YYYY-MM-DD') {
+            if (!startDateValue || !endDateValue) {
                 scheduleError = chrome.i18n.getMessage('scheduleDateTimeMissing') || 'scheduleDateTimeMissing';
                 return false;
             }
-            const startDateTime = `${startDateTrigger}T${startTimeOneTimeTrigger}`;
-            const endDateTime = `${endDateTrigger}T${endTimeOneTimeTrigger}`;
+            const startDateTime = `${startDateValue}T${startTimeOneTimeTrigger}`;
+            const endDateTime = `${endDateValue}T${endTimeOneTimeTrigger}`;
             if (new Date(startDateTime) >= new Date(endDateTime)) {
                 scheduleError =
                     chrome.i18n.getMessage('scheduleEndBeforeStartDateTime') || 'scheduleEndBeforeStartDateTime';
@@ -507,6 +505,8 @@
         // Both messages name the theme through $1; without the parameter the notice
         // read "Schedule added for theme $1".
         showNotification(mode === 'add' ? 'scheduleAdded' : 'scheduleUpdated', false, [themeName]);
+        resetScheduleForm();
+        fetchSchedules(currentThemeForScheduling?.name);
         return true;
     }
 
@@ -523,33 +523,25 @@
 
     async function handleEditSchedule(sch) {
         resetScheduleForm();
+        currentThemeForScheduling = { name: sch.themeName };
         scheduleEditorState = { mode: 'edit', themeName: sch.themeName, scheduleIndex: sch.originalIndex };
         if (sch.type === 'repeating') {
-            selectedDays = [...sch.days];
+            selectedDays = [...(sch.days || [])];
             scheduleType = 'repeating';
-            startTimeTrigger = sch.startTime;
-            endTimeTrigger = sch.endTime;
+            startTimeTrigger = sch.startTime || '00:00';
+            endTimeTrigger = sch.endTime || '00:00';
             allDay = sch.allDay === true || (sch.startTime === '00:00' && sch.endTime === '23:59');
         } else {
             scheduleType = 'onetime';
-            const [sD, sT] = sch.startDateTime.split('T');
-            const [eD, eT] = sch.endDateTime.split('T');
-            startDateTrigger = sD;
-            startTimeOneTimeTrigger = sT;
-            endDateTrigger = eD;
-            endTimeOneTimeTrigger = eT;
+            const [sD, sT] = (sch.startDateTime || '').split('T');
+            const [eD, eT] = (sch.endDateTime || '').split('T');
+            startDateValue = sD || '';
+            startTimeOneTimeTrigger = sT || '00:00';
+            endDateValue = eD || '';
+            endTimeOneTimeTrigger = eT || '00:00';
         }
         scheduleReminder = sch.reminder || '';
     }
-
-    // The shared date field stores an empty string for "no date"; the page's own
-    // schedule code still speaks the placeholder form.
-    let startDateValue = $state('');
-    let endDateValue = $state('');
-    // These effects also assigned to calSelectedStartDate / calSelectedEndDate, which
-    // are declared nowhere and read nowhere: leftovers from the vanilla calendar that
-    // the port never wired up. Assigning to an undeclared name inside a module throws,
-    // so every date change raised "calSelectedStartDate is not defined".
 
     function formatDateTime(isoString) {
         const date = new Date(isoString);
