@@ -7934,11 +7934,11 @@
         "description": "Error en método temporizador"
     },
     "pomodoroTaskCompleted": {
-        "message": "Tarea $1completada ✓",
+        "message": "Tarea $1 completada ✓",
         "description": "Task completed notification"
     },
     "pomodoroSessionComplete": {
-        "message": "¡Sesión completa! Tarea $1finalizada ✓",
+        "message": "¡Sesión completa! Tarea $1 finalizada ✓",
         "description": "Session complete notification"
     },
     "pomodoroStatsSaved": {

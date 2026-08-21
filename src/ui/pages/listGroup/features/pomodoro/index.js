@@ -931,7 +931,8 @@ export function initPomodoro() {
         // Remove running classes from openBtn
         openBtn.classList.remove('pomo-task-running', 'pomodoro-running');
         if (!localState) return;
-        const projectN = localState.settings?.projectName || 'Unnamed';
+        const projectN =
+            localState.settings?.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'sin título';
         showNotification('pomodoroTaskCompleted', false, [projectN]);
     }
 
@@ -2546,7 +2547,8 @@ export function initPomodoro() {
 
             // Auto-finish: when all cycles done and autofinish enabled
             if (event === 'allDone' && state.settings.autofinish) {
-                const projectN = state.settings.projectName || 'Unnamed';
+                const projectN =
+                    state.settings.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'sin título';
                 taskCompletionLog.push({
                     name: projectN,
                     startTime: state.stats?.sessionStarted || Date.now(),

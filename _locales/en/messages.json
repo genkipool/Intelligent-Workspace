@@ -7848,11 +7848,11 @@
     "description": "Error in temporizador method"
   },
   "pomodoroTaskCompleted": {
-    "message": "Task $1completed ✓",
+    "message": "Task $1 completed ✓",
     "description": "Task completed notification"
   },
   "pomodoroSessionComplete": {
-    "message": "Session complete! Task $1finished ✓",
+    "message": "Session complete! Task $1 finished ✓",
     "description": "Session complete notification"
   },
   "pomodoroStatsSaved": {
