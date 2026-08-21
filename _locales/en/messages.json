@@ -6182,6 +6182,9 @@
   "pipLoopSequence": {
     "message": "Sequence"
   },
+  "pipLoopSequenceDesc": {
+    "message": "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)."
+  },
   "pipLoopModeSingle": {
     "message": "Single loop mode"
   },
@@ -6235,6 +6238,69 @@
       }
     }
   },
+  "pipLoopSequenceRepeatCount": {
+    "message": "Sequence repetitions"
+  },
+  "pipLoopSequenceDisabledHelp": {
+    "message": "Disabled: sequence loop requires more than 1 loop"
+  },
+  "pipLoopSequenceCycleRep": {
+    "message": "Seq ($CYCLE$/$MAXCYCLE$): Loop $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+    "placeholders": {
+      "cycle": {
+        "content": "$1"
+      },
+      "maxcycle": {
+        "content": "$2"
+      },
+      "current": {
+        "content": "$3"
+      },
+      "total": {
+        "content": "$4"
+      },
+      "rep": {
+        "content": "$5"
+      },
+      "max": {
+        "content": "$6"
+      }
+    }
+  },
+  "pipLoopSequenceCycleInf": {
+    "message": "Seq ($CYCLE$/$MAXCYCLE$): Loop $CURRENT$/$TOTAL$ (∞)",
+    "placeholders": {
+      "cycle": {
+        "content": "$1"
+      },
+      "maxcycle": {
+        "content": "$2"
+      },
+      "current": {
+        "content": "$3"
+      },
+      "total": {
+        "content": "$4"
+      }
+    }
+  },
+  "pipLoopSequenceInfRep": {
+    "message": "Seq (∞): Loop $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "rep": {
+        "content": "$3"
+      },
+      "max": {
+        "content": "$4"
+      }
+    }
+  },
   "pipLoopVideoTime": {
     "message": "Video time"
   },
@@ -6246,6 +6312,12 @@
   },
   "pipLoopUnreachable": {
     "message": "Disabled: a preceding loop has infinite repetition"
+  },
+  "pipLoopPointA": {
+    "message": "Point A (Start)"
+  },
+  "pipLoopPointB": {
+    "message": "Point B (End)"
   },
   "pipVolume": {
     "message": "Volume"

@@ -6265,6 +6265,9 @@
     "pipLoopSequence": {
         "message": "Secuencia"
     },
+    "pipLoopSequenceDesc": {
+        "message": "Reproduce todos los bucles de forma consecutiva según las repeticiones de cada bucle el número de ciclos configurado (o de forma infinita)."
+    },
     "pipLoopModeSingle": {
         "message": "Modo de bucle individual"
     },
@@ -6318,6 +6321,69 @@
             }
         }
     },
+    "pipLoopSequenceRepeatCount": {
+        "message": "Repeticiones de la secuencia"
+    },
+    "pipLoopSequenceDisabledHelp": {
+        "message": "Deshabilitado: el bucle de secuencia requiere más de 1 bucle"
+    },
+    "pipLoopSequenceCycleRep": {
+        "message": "Sec ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+        "placeholders": {
+            "cycle": {
+                "content": "$1"
+            },
+            "maxcycle": {
+                "content": "$2"
+            },
+            "current": {
+                "content": "$3"
+            },
+            "total": {
+                "content": "$4"
+            },
+            "rep": {
+                "content": "$5"
+            },
+            "max": {
+                "content": "$6"
+            }
+        }
+    },
+    "pipLoopSequenceCycleInf": {
+        "message": "Sec ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ (∞)",
+        "placeholders": {
+            "cycle": {
+                "content": "$1"
+            },
+            "maxcycle": {
+                "content": "$2"
+            },
+            "current": {
+                "content": "$3"
+            },
+            "total": {
+                "content": "$4"
+            }
+        }
+    },
+    "pipLoopSequenceInfRep": {
+        "message": "Sec (∞): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            },
+            "rep": {
+                "content": "$3"
+            },
+            "max": {
+                "content": "$4"
+            }
+        }
+    },
     "pipLoopVideoTime": {
         "message": "Tiempo del vídeo"
     },
@@ -6329,6 +6395,12 @@
     },
     "pipLoopUnreachable": {
         "message": "Deshabilitado: un bucle anterior está configurado en repetición infinita"
+    },
+    "pipLoopPointA": {
+        "message": "Punto A (Inicio)"
+    },
+    "pipLoopPointB": {
+        "message": "Punto B (Fin)"
     },
     "pipVolume": {
         "message": "Volumen"

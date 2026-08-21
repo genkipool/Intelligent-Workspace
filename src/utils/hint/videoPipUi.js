@@ -105,6 +105,9 @@ var ITG_PIP_ICONS = {
         <path d="M17 2l3 3-3 3"></path><path d="M3 11V9a4 4 0 0 1 4-4h13"></path>
         <path d="M7 22l-3-3 3-3"></path><path d="M21 13v2a4 4 0 0 1-4 4H4"></path>
     </svg>`,
+    infinity: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 12c-2-2.67-4-4-6-4a4 4 0 1 0 0 8c2 0 4-1.33 6-4Zm0 0c2 2.67 4 4 6 4a4 4 0 0 0 0-8c-2 0-4 1.33-6 4Z"></path>
+    </svg>`,
     current: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`,
 };
 
@@ -403,17 +406,18 @@ textarea::selection,
 }
 .itg-pip-loop-menu {
     position: absolute; bottom: calc(100% + 4px); right: 0; left: auto;
-    width: 360px; max-width: calc(100vw - 16px); padding: 8px 8px 6px;
-    border-radius: 10px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+    width: 375px; max-width: calc(100vw - 16px); padding: 10px 10px 8px;
+    border-radius: 12px; background: var(--bg-panel-color, rgba(20, 20, 24, 0.96));
     color: var(--text-color, #ffffff);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px) saturate(180%);
     opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(4px);
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
     z-index: 100;
-    font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+.itg-pip-loop-menu * { box-sizing: border-box; }
 .itg-pip-loop-menu::after {
     content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 16px;
     pointer-events: auto; z-index: 100;
@@ -428,39 +432,134 @@ textarea::selection,
 /* Common loop popup component styling - Single row multi-loop layout */
 .itg-loop-header {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-bottom: 6px; padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    margin-bottom: 7px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 .itg-loop-title {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.05em; color: var(--text-color, #ffffff);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-color, rgba(255, 255, 255, 0.9));
     transition: color 0.2s ease; white-space: nowrap;
 }
 .itg-loop-header.is-active .itg-loop-title,
 .itg-loop-title.is-active {
     color: var(--text-on-color, #ffffff) !important;
 }
-.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
+.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; color: var(--interactive-color, #ff4444); }
 .itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+/* Sequence loop control bar (placed above the first loop) */
+.itg-loop-sequence-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 6px 8px; margin-bottom: 6px; border-radius: 7px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    transition: all 0.2s ease;
+    box-sizing: border-box; width: 100%; min-height: 33px;
+}
+.itg-loop-sequence-bar:not(.is-disabled):hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+.itg-loop-sequence-bar.is-disabled {
+    opacity: 0.4;
+    filter: grayscale(0.6);
+    cursor: not-allowed !important;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.itg-loop-sequence-bar.is-disabled * {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+.itg-loop-seq-info {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-color, #ffffff); user-select: none;
+}
+.itg-loop-seq-icon {
+    width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+    color: var(--interactive-color, #ff4444); flex-shrink: 0;
+}
+.itg-loop-seq-icon svg {
+    width: 13px; height: 13px; display: block;
+}
+.itg-loop-seq-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-color, rgba(255, 255, 255, 0.95));
+    white-space: nowrap;
+}
+.itg-loop-seq-controls {
+    display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+}
+.itg-loop-seq-count {
+    width: 47px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(0, 0, 0, 0.25); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 11px; font-weight: 600; text-align: center;
+    outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.itg-loop-seq-count::-webkit-outer-spin-button,
+.itg-loop-seq-count::-webkit-inner-spin-button {
+    -webkit-appearance: none !important; margin: 0 !important;
+}
+.itg-loop-seq-count:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(0, 0, 0, 0.45);
+}
+.itg-pip-loop-menu *::selection,
+.itg-yt-loop-menu *::selection,
+.itg-loop-seq-count::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-pip-loop-menu *::-moz-selection,
+.itg-yt-loop-menu *::-moz-selection,
+.itg-loop-seq-count::-moz-selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-loop-seq-inf {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, rgba(255, 255, 255, 0.85));
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-seq-inf svg,
+.itg-loop-row-inf svg {
+    width: 14px; height: 14px; display: block;
+}
+.itg-loop-seq-inf:hover {
+    border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 20%, transparent);
+    color: #ffffff;
+}
+.itg-loop-seq-inf.is-active {
+    background: var(--interactive-color, #ff4444) !important;
+    border-color: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
 
 .itg-loop-list {
     display: flex; flex-direction: column; gap: 6px;
-    max-height: 280px; overflow-y: auto; padding-right: 4px;
+    max-height: 280px; overflow-y: auto; overflow-x: hidden;
+    padding-right: 0; width: 100%; box-sizing: border-box;
     scrollbar-width: thin;
-    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) var(--bg-color, rgba(0, 0, 0, 0.2));
+    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) transparent;
 }
 .itg-loop-list::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 .itg-loop-list::-webkit-scrollbar-track {
-    background: var(--bg-color, rgba(0, 0, 0, 0.2));
+    background: rgba(0, 0, 0, 0.15);
     border-radius: 10px;
 }
 .itg-loop-list::-webkit-scrollbar-thumb {
-    background-color: var(--border-color, rgba(255, 255, 255, 0.25));
+    background-color: rgba(255, 255, 255, 0.25);
     border-radius: 10px;
-    border: 2px solid var(--bg-color, rgba(0, 0, 0, 0.2));
 }
 .itg-loop-list::-webkit-scrollbar-thumb:hover {
     background-color: var(--action-color, var(--interactive-color, #ff4444));
@@ -471,7 +570,7 @@ textarea::selection,
     display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 7px;
     background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
-    box-sizing: border-box; min-height: 56px;
+    box-sizing: border-box; width: 100%; min-height: 56px;
 }
 .itg-loop-row-item:hover {
     background: rgba(255, 255, 255, 0.07);
@@ -521,18 +620,16 @@ textarea::selection,
     font: inherit; font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
     text-align: center;
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.08); outline: none;
+    background: rgba(0, 0, 0, 0.25); outline: none;
     caret-color: var(--interactive-color, #ff4444);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     box-sizing: border-box;
 }
-.itg-pip-loop-menu *::selection,
 .itg-loop-time-input::selection,
 .itg-loop-row-count::selection {
     background: var(--interactive-color, #ff4444) !important;
     color: #ffffff !important;
 }
-.itg-pip-loop-menu *::-moz-selection,
 .itg-loop-time-input::-moz-selection,
 .itg-loop-row-count::-moz-selection {
     background: var(--interactive-color, #ff4444) !important;
@@ -541,7 +638,7 @@ textarea::selection,
 .itg-loop-time-input:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
 }
 .itg-loop-time-sep {
     font-size: 10px; font-weight: bold; color: var(--text-color, rgba(255, 255, 255, 0.4));
@@ -555,12 +652,12 @@ textarea::selection,
 }
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
-    background: rgba(255, 255, 255, 0.15); border-radius: 3px;
+    background: rgba(255, 255, 255, 0.14); border-radius: 3px;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
     background: var(--interactive-color, #ff4444); border-radius: 3px;
-    opacity: 0.9; pointer-events: none;
+    opacity: 0.95; pointer-events: none;
 }
 .itg-loop-bar-playhead {
     position: absolute; top: -4px; width: 2.5px; height: 13px;
@@ -605,7 +702,7 @@ textarea::selection,
 .itg-loop-btn-a,
 .itg-loop-btn-b {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
     font: 700 10.5px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
@@ -619,8 +716,8 @@ textarea::selection,
 
 .itg-loop-row-count {
     width: 47px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(0, 0, 0, 0.25); color: var(--text-color, #ffffff);
     font: inherit; font-size: 11px; font-weight: 600; text-align: center;
     outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
     -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
@@ -634,14 +731,14 @@ textarea::selection,
 .itg-loop-row-count:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .itg-loop-row-inf {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
-    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-inf:hover {
@@ -656,9 +753,9 @@ textarea::selection,
 
 .itg-loop-row-reset {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, rgba(255, 255, 255, 0.7));
-    font: 12px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: 12px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-reset:hover {
@@ -669,11 +766,11 @@ textarea::selection,
 .itg-loop-row-del {
     width: 22px; height: 21px; border-radius: 4px; border: none;
     background: transparent; color: var(--text-color, rgba(255, 255, 255, 0.5));
-    font: bold 11px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: bold 12px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-del:hover {
-    color: #ff5555; background: rgba(255, 85, 85, 0.15);
+    color: #ff5555; background: rgba(255, 85, 85, 0.18);
 }
 .itg-loop-row-del:disabled,
 .itg-loop-row-del.is-disabled {
@@ -684,9 +781,9 @@ textarea::selection,
 
 .itg-loop-row-add {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.3));
+    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.28));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
-    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: bold 13px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-add:hover {
@@ -1208,14 +1305,14 @@ div[class*='ytp-bezel'] {
 
 var ITG_LOOP_POPUP_STYLES = `
 .itg-yt-loop-menu {
-    position: fixed; z-index: 2147483647; width: 360px; max-width: calc(100vw - 16px); padding: 8px 8px 6px;
-    border-radius: 10px;
-    background: var(--bg-panel-color, #1c1c1c);
+    position: fixed; z-index: 2147483647; width: 375px; max-width: calc(100vw - 16px); padding: 10px 10px 8px;
+    border-radius: 12px;
+    background: var(--bg-panel-color, rgba(20, 20, 24, 0.96));
     color: var(--text-color, #fff);
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    font: 500 12px/1.35 'Roboto', system-ui, -apple-system, sans-serif;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px) saturate(180%);
+    font: 500 12px/1.35 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     opacity: 0; visibility: hidden; transform: translateY(4px);
     transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
     pointer-events: none;
@@ -1235,39 +1332,132 @@ var ITG_LOOP_POPUP_STYLES = `
 
 .itg-loop-header {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    margin-bottom: 6px; padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    margin-bottom: 7px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 .itg-loop-title {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.05em; color: var(--text-color, #ffffff);
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--text-color, rgba(255, 255, 255, 0.9));
     transition: color 0.2s ease; white-space: nowrap;
 }
 .itg-loop-header.is-active .itg-loop-title,
 .itg-loop-title.is-active {
     color: var(--text-on-color, #ffffff) !important;
 }
-.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
+.itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; color: var(--interactive-color, #ff4444); }
 .itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
+
+/* Sequence loop control bar (placed above the first loop) */
+.itg-loop-sequence-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 6px 8px; margin-bottom: 6px; border-radius: 7px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    transition: all 0.2s ease;
+    box-sizing: border-box; width: 100%; min-height: 33px;
+}
+.itg-loop-sequence-bar:not(.is-disabled):hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.16);
+}
+.itg-loop-sequence-bar.is-disabled {
+    opacity: 0.4;
+    filter: grayscale(0.6);
+    cursor: not-allowed !important;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.itg-loop-sequence-bar.is-disabled * {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+.itg-loop-seq-info {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--text-color, #ffffff); user-select: none;
+}
+.itg-loop-seq-icon {
+    width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+    color: var(--interactive-color, #ff4444); flex-shrink: 0;
+}
+.itg-loop-seq-icon svg {
+    width: 13px; height: 13px; display: block;
+}
+.itg-loop-seq-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-color, rgba(255, 255, 255, 0.95));
+    white-space: nowrap;
+}
+.itg-loop-seq-controls {
+    display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0;
+}
+.itg-loop-seq-count {
+    width: 47px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(0, 0, 0, 0.25); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 11px; font-weight: 600; text-align: center;
+    outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.itg-loop-seq-count::-webkit-outer-spin-button,
+.itg-loop-seq-count::-webkit-inner-spin-button {
+    -webkit-appearance: none !important; margin: 0 !important;
+}
+.itg-loop-seq-count:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(0, 0, 0, 0.45);
+}
+.itg-yt-loop-menu *::selection,
+.itg-loop-seq-count::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-yt-loop-menu *::-moz-selection,
+.itg-loop-seq-count::-moz-selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-loop-seq-inf {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, rgba(255, 255, 255, 0.85));
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-seq-inf svg,
+.itg-loop-row-inf svg {
+    width: 14px; height: 14px; display: block;
+}
+.itg-loop-seq-inf:hover {
+    border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 20%, transparent);
+    color: #ffffff;
+}
+.itg-loop-seq-inf.is-active {
+    background: var(--interactive-color, #ff4444) !important;
+    border-color: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
 
 .itg-loop-list {
     display: flex; flex-direction: column; gap: 6px;
-    max-height: 280px; overflow-y: auto; padding-right: 4px;
+    max-height: 280px; overflow-y: auto; overflow-x: hidden;
+    padding-right: 0; width: 100%; box-sizing: border-box;
     scrollbar-width: thin;
-    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) var(--bg-color, rgba(0, 0, 0, 0.2));
+    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) transparent;
 }
 .itg-loop-list::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 .itg-loop-list::-webkit-scrollbar-track {
-    background: var(--bg-color, rgba(0, 0, 0, 0.2));
+    background: rgba(0, 0, 0, 0.15);
     border-radius: 10px;
 }
 .itg-loop-list::-webkit-scrollbar-thumb {
-    background-color: var(--border-color, rgba(255, 255, 255, 0.25));
+    background-color: rgba(255, 255, 255, 0.25);
     border-radius: 10px;
-    border: 2px solid var(--bg-color, rgba(0, 0, 0, 0.2));
 }
 .itg-loop-list::-webkit-scrollbar-thumb:hover {
     background-color: var(--action-color, var(--interactive-color, #ff4444));
@@ -1278,7 +1468,7 @@ var ITG_LOOP_POPUP_STYLES = `
     display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 7px;
     background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
-    box-sizing: border-box; min-height: 56px;
+    box-sizing: border-box; width: 100%; min-height: 56px;
 }
 .itg-loop-row-item:hover {
     background: rgba(255, 255, 255, 0.07);
@@ -1328,18 +1518,16 @@ var ITG_LOOP_POPUP_STYLES = `
     font: inherit; font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
     text-align: center;
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.08); outline: none;
+    background: rgba(0, 0, 0, 0.25); outline: none;
     caret-color: var(--interactive-color, #ff4444);
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     box-sizing: border-box;
 }
-.itg-yt-loop-menu *::selection,
 .itg-loop-time-input::selection,
 .itg-loop-row-count::selection {
     background: var(--interactive-color, #ff4444) !important;
     color: #ffffff !important;
 }
-.itg-yt-loop-menu *::-moz-selection,
 .itg-loop-time-input::-moz-selection,
 .itg-loop-row-count::-moz-selection {
     background: var(--interactive-color, #ff4444) !important;
@@ -1348,7 +1536,7 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-time-input:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
 }
 .itg-loop-time-sep {
     font-size: 10px; font-weight: bold; color: var(--text-color, rgba(255, 255, 255, 0.4));
@@ -1362,12 +1550,12 @@ var ITG_LOOP_POPUP_STYLES = `
 }
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
-    background: rgba(255, 255, 255, 0.15); border-radius: 3px;
+    background: rgba(255, 255, 255, 0.14); border-radius: 3px;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
     background: var(--interactive-color, #ff4444); border-radius: 3px;
-    opacity: 0.9; pointer-events: none;
+    opacity: 0.95; pointer-events: none;
 }
 .itg-loop-bar-playhead {
     position: absolute; top: -4px; width: 2.5px; height: 13px;
@@ -1412,7 +1600,7 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-btn-a,
 .itg-loop-btn-b {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
     font: 700 10.5px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
@@ -1426,8 +1614,8 @@ var ITG_LOOP_POPUP_STYLES = `
 
 .itg-loop-row-count {
     width: 47px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
-    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    background: rgba(0, 0, 0, 0.25); color: var(--text-color, #ffffff);
     font: inherit; font-size: 11px; font-weight: 600; text-align: center;
     outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
     -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
@@ -1441,14 +1629,14 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-row-count:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .itg-loop-row-inf {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
-    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-inf:hover {
@@ -1463,9 +1651,9 @@ var ITG_LOOP_POPUP_STYLES = `
 
 .itg-loop-row-reset {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, rgba(255, 255, 255, 0.7));
-    font: 12px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: 12px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-reset:hover {
@@ -1476,11 +1664,11 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-row-del {
     width: 22px; height: 21px; border-radius: 4px; border: none;
     background: transparent; color: var(--text-color, rgba(255, 255, 255, 0.5));
-    font: bold 11px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: bold 12px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-del:hover {
-    color: #ff5555; background: rgba(255, 85, 85, 0.15);
+    color: #ff5555; background: rgba(255, 85, 85, 0.18);
 }
 .itg-loop-row-del:disabled,
 .itg-loop-row-del.is-disabled {
@@ -1491,9 +1679,9 @@ var ITG_LOOP_POPUP_STYLES = `
 
 .itg-loop-row-add {
     width: 22px; height: 21px; border-radius: 4px;
-    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.3));
+    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.28));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
-    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    font: bold 13px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
     cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
 .itg-loop-row-add:hover {

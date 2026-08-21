@@ -245,6 +245,9 @@ function itgRefreshPipUiTranslations() {
     if (ytLoopMenu) {
         itgRefreshContainerTranslations(ytLoopMenu);
     }
+    if (typeof itgVideoLoop !== 'undefined') {
+        itgVideoLoop.notify();
+    }
 
     ItgVideoPip.current?.updateTitlesAndLabels();
 }
@@ -343,6 +346,12 @@ function itgRefreshContainerTranslations(container) {
             el.setAttribute('title', itgPipMsg(key, el.getAttribute('title') || ''));
         }
     }
+    for (const el of container.querySelectorAll('[data-i18n-aria-label]')) {
+        const key = el.getAttribute('data-i18n-aria-label');
+        if (key) {
+            el.setAttribute('aria-label', itgPipMsg(key, el.getAttribute('aria-label') || ''));
+        }
+    }
 }
 
 var ItgVideoLoopController =
@@ -353,6 +362,7 @@ var ItgVideoLoopController =
             this.loops = [this._createDefaultLoop(1, 0, 0, 0)];
             this.activeLoopIndex = 0;
             this.playbackMode = 'single'; // 'single' | 'sequence'
+            this.sequenceRepeatCount = 1;
             this.currentLoopRepetition = 0;
             this.currentSequenceCycle = 0;
             this.video = null;
@@ -445,6 +455,8 @@ var ItgVideoLoopController =
                         })),
                         activeLoopIndex: this.activeLoopIndex,
                         playbackMode: this.playbackMode,
+                        sequenceRepeatCount:
+                            typeof this.sequenceRepeatCount === 'number' ? this.sequenceRepeatCount : 1,
                     };
                     chrome.storage.local.set({ [key]: data });
                 }
@@ -475,6 +487,11 @@ var ItgVideoLoopController =
                             }
                             if (res[key].playbackMode === 'sequence' || res[key].playbackMode === 'single') {
                                 this.playbackMode = res[key].playbackMode;
+                            }
+                            if (typeof res[key].sequenceRepeatCount === 'number') {
+                                this.sequenceRepeatCount = Math.max(0, Math.floor(res[key].sequenceRepeatCount));
+                            } else {
+                                this.sequenceRepeatCount = 1;
                             }
                             this.notify();
                         }
@@ -617,6 +634,15 @@ var ItgVideoLoopController =
             this.notify();
         }
 
+        setSequenceRepeatCount(count) {
+            if (typeof count === 'number' && !isNaN(count)) {
+                this.sequenceRepeatCount = Math.max(0, Math.floor(count));
+            }
+            this.currentSequenceCycle = 0;
+            this.saveToStorage();
+            this.notify();
+        }
+
         setLoopSettings(index, { startTime, endTime, repeatCount, name }) {
             const targetIndex = typeof index === 'number' ? index : this.activeLoopIndex;
             const loop = this.loops[targetIndex];
@@ -647,6 +673,7 @@ var ItgVideoLoopController =
             this.loops = [this._createDefaultLoop(1, 0, this.getDuration(), 0)];
             this.activeLoopIndex = 0;
             this.playbackMode = 'single';
+            this.sequenceRepeatCount = 1;
             this.currentLoopRepetition = 0;
             this.currentSequenceCycle = 0;
             this.saveToStorage();
@@ -764,10 +791,22 @@ var ItgVideoLoopController =
                     }, 150);
                 } else {
                     this.currentLoopRepetition = 0;
-                    const nextIndex = (this.activeLoopIndex + 1) % this.loops.length;
-                    if (nextIndex === 0) {
+                    const isLastLoop = this.activeLoopIndex >= this.loops.length - 1;
+
+                    if (isLastLoop) {
                         this.currentSequenceCycle++;
+                        if (this.sequenceRepeatCount > 0 && this.currentSequenceCycle >= this.sequenceRepeatCount) {
+                            this.isLooping = false;
+                            this.currentSequenceCycle = 0;
+                            this.currentLoopRepetition = 0;
+                            this.activeLoopIndex = 0;
+                            this.notify();
+                            v.pause();
+                            return;
+                        }
                     }
+
+                    const nextIndex = (this.activeLoopIndex + 1) % this.loops.length;
                     this.activeLoopIndex = nextIndex;
                     const nextLoop = this.getCurrentLoop();
 
@@ -810,6 +849,7 @@ var ItgVideoLoopController =
                 loops: this.loops.map((l) => ({ ...l })),
                 activeLoopIndex: this.activeLoopIndex,
                 playbackMode: this.loops.length > 1 ? 'sequence' : 'single',
+                sequenceRepeatCount: typeof this.sequenceRepeatCount === 'number' ? this.sequenceRepeatCount : 1,
                 currentLoop: { ...currentLoop },
                 startTime: currentLoop.startTime,
                 endTime: currentLoop.endTime > 0 ? currentLoop.endTime : duration,
@@ -837,8 +877,25 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
         <div class="itg-loop-header">
             <span class="itg-loop-title">
                 <span class="itg-loop-title-icon">${ITG_PIP_ICONS.loop}</span>
-                <span class="itg-loop-title-text" data-i18n-text="pipLoopSettings">Configurar bucle</span>
+                <span class="itg-loop-title-text" data-i18n-text="pipLoopSettings">${itgPipMsg('pipLoopSettings', 'Loop settings')}</span>
             </span>
+        </div>
+        <div class="itg-loop-sequence-bar is-disabled" title="${itgPipMsg('pipLoopSequenceDisabledHelp', 'Disabled: sequence loop requires more than 1 loop')}" data-i18n-title="pipLoopSequenceDisabledHelp">
+            <div class="itg-loop-seq-info" title="${itgPipMsg('pipLoopSequenceDesc', "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)")}" data-i18n-title="pipLoopSequenceDesc">
+                <span class="itg-loop-seq-icon">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="17 1 21 5 17 9"></polyline>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <polyline points="7 23 3 19 7 15"></polyline>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                </span>
+                <span class="itg-loop-seq-label" data-i18n-text="pipLoopSequence" title="${itgPipMsg('pipLoopSequenceDesc', "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)")}" data-i18n-title="pipLoopSequenceDesc">${itgPipMsg('pipLoopSequence', 'Sequence')}</span>
+            </div>
+            <div class="itg-loop-seq-controls">
+                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="itg-loop-seq-count" value="1" title="${itgPipMsg('pipLoopSequenceRepeatCount', 'Sequence repetitions')}" data-i18n-title="pipLoopSequenceRepeatCount" disabled />
+                <button type="button" class="itg-loop-seq-inf" title="${itgPipMsg('pipLoopActivateInf', 'Activate infinite loop')}" data-i18n-title="pipLoopActivateInf" disabled>${ITG_PIP_ICONS.infinity}</button>
+            </div>
         </div>
         <div class="itg-loop-list"></div>
         <div class="itg-loop-footer">
@@ -846,19 +903,22 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 <span class="itg-loop-status"></span>
             </div>
             <div class="itg-loop-footer-center">
-                <span class="itg-loop-video-time" title="${itgPipMsg('pipLoopVideoTimeDesc', 'Posición actual y duración total del vídeo')}" data-i18n-title="pipLoopVideoTimeDesc">00:00 / 00:00</span>
+                <span class="itg-loop-video-time" title="${itgPipMsg('pipLoopVideoTimeDesc', 'Current playback position and total video duration')}" data-i18n-title="pipLoopVideoTimeDesc">00:00 / 00:00</span>
             </div>
             <div class="itg-loop-footer-actions">
-                <button type="button" class="itg-loop-toggle-btn">
-                    <span class="itg-loop-toggle-text" data-i18n-text="pipLoopActivate">Activar bucle</span>
+                <button type="button" class="itg-loop-toggle-btn" title="${itgPipMsg('pipLoopActivate', 'Activate loop')}" data-i18n-title="pipLoopActivate">
+                    <span class="itg-loop-toggle-text" data-i18n-text="pipLoopActivate">${itgPipMsg('pipLoopActivate', 'Activate loop')}</span>
                 </button>
-                <button type="button" class="itg-loop-reset-all-btn" data-i18n-text="pipLoopReset">Restablecer</button>
+                <button type="button" class="itg-loop-reset-all-btn" data-i18n-text="pipLoopReset" title="${itgPipMsg('pipLoopReset', 'Reset')}" data-i18n-title="pipLoopReset">${itgPipMsg('pipLoopReset', 'Reset')}</button>
             </div>
         </div>
     `;
 
     const header = container.querySelector('.itg-loop-header');
     const titleEl = container.querySelector('.itg-loop-title');
+    const seqBar = container.querySelector('.itg-loop-sequence-bar');
+    const seqCountInput = container.querySelector('.itg-loop-seq-count');
+    const seqInfBtn = container.querySelector('.itg-loop-seq-inf');
     const loopListEl = container.querySelector('.itg-loop-list');
     const toggleBtn = container.querySelector('.itg-loop-toggle-btn');
     const toggleTextEl = container.querySelector('.itg-loop-toggle-text');
@@ -901,61 +961,231 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
         }
     };
 
+    // Helper to sanitize repetition count keyboard events (allows overwrite when text is selected)
+    const sanitizeCountKey = (input, e) => {
+        if (
+            ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End', 'Escape'].includes(
+                e.key,
+            ) ||
+            e.ctrlKey ||
+            e.metaKey
+        ) {
+            return;
+        }
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+            return;
+        }
+        try {
+            const start = input.selectionStart ?? 0;
+            const end = input.selectionEnd ?? 0;
+            const selLen = end - start;
+            if (input.value.length >= 3 && selLen === 0) {
+                e.preventDefault();
+            }
+        } catch {}
+    };
+
+    const handleCountPaste = (input, e, onCommit) => {
+        e.preventDefault();
+        const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+        let clean = pasted.replace(/[^0-9]/g, '').slice(0, 3);
+        let val = parseInt(clean, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > 100) val = 100;
+        input.value = String(val);
+        onCommit(val);
+    };
+
+    const handleCountInput = (input, onCommit) => {
+        let clean = input.value.replace(/[^0-9]/g, '');
+        if (clean.length > 3) clean = clean.slice(0, 3);
+        let val = parseInt(clean, 10);
+        if (!isNaN(val) && val > 100) {
+            val = 100;
+            clean = '100';
+        }
+        if (input.value !== clean) {
+            input.value = clean;
+        }
+        if (!isNaN(val) && val >= 1) {
+            onCommit(val);
+        }
+    };
+
+    const handleCountBlur = (input, onCommit) => {
+        let val = parseInt(input.value, 10);
+        if (isNaN(val) || val < 1) val = 1;
+        if (val > 100) val = 100;
+        input.value = String(val);
+        onCommit(val);
+    };
+
+    seqCountInput.addEventListener('click', (e) => e.stopPropagation());
+    seqCountInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleCountBlur(seqCountInput, (val) => controller.setSequenceRepeatCount(val));
+            seqCountInput.blur();
+            return;
+        }
+        sanitizeCountKey(seqCountInput, e);
+    });
+    seqCountInput.addEventListener('paste', (e) => {
+        if (seqBar.classList.contains('is-disabled')) return;
+        handleCountPaste(seqCountInput, e, (val) => controller.setSequenceRepeatCount(val));
+    });
+    seqCountInput.addEventListener('input', () => {
+        if (seqBar.classList.contains('is-disabled')) return;
+        handleCountInput(seqCountInput, (val) => controller.setSequenceRepeatCount(val));
+    });
+    seqCountInput.addEventListener('change', () => {
+        if (seqBar.classList.contains('is-disabled')) return;
+        handleCountBlur(seqCountInput, (val) => controller.setSequenceRepeatCount(val));
+    });
+    seqCountInput.addEventListener('blur', () => {
+        if (seqBar.classList.contains('is-disabled')) return;
+        handleCountBlur(seqCountInput, (val) => controller.setSequenceRepeatCount(val));
+    });
+
+    seqInfBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (seqBar.classList.contains('is-disabled')) return;
+        if (controller.sequenceRepeatCount === 0) {
+            const count = Math.max(1, Math.min(100, parseInt(seqCountInput.value, 10) || 1));
+            controller.setSequenceRepeatCount(count);
+        } else {
+            controller.setSequenceRepeatCount(0);
+        }
+    });
+
     const itgLoopHandlePos = (p) => `calc(8px + (100% - 16px) * ${p / 100})`;
     const itgLoopFillWidth = (s, e) => `calc((100% - 16px) * ${Math.max(0, e - s) / 100})`;
 
     const updateUI = (state) => {
+        const doc = container.ownerDocument || document;
+        const activeEl = doc.activeElement;
+
         header?.classList.toggle('is-active', state.isLooping);
         titleEl?.classList.toggle('is-active', state.isLooping);
 
         toggleBtn?.classList.toggle('is-active', state.isLooping);
+        const toggleKey = state.isLooping ? 'pipLoopDeactivate' : 'pipLoopActivate';
+        const toggleFallback = state.isLooping ? 'Deactivate loop' : 'Activate loop';
+        const toggleMsg = itgPipMsg(toggleKey, toggleFallback);
+        if (toggleBtn) {
+            toggleBtn.title = toggleMsg;
+            toggleBtn.setAttribute('data-i18n-title', toggleKey);
+        }
         if (toggleTextEl) {
-            toggleTextEl.textContent = state.isLooping
-                ? itgPipMsg('pipLoopDeactivate', 'Desactivar bucle')
-                : itgPipMsg('pipLoopActivate', 'Activar bucle');
+            toggleTextEl.textContent = toggleMsg;
+            toggleTextEl.setAttribute('data-i18n-text', toggleKey);
+        }
+
+        const hasMultipleLoops = state.loops.length > 1;
+        const isSeqInf = state.sequenceRepeatCount === 0;
+
+        if (seqBar) {
+            seqBar.classList.toggle('is-disabled', !hasMultipleLoops);
+            if (!hasMultipleLoops) {
+                seqBar.title = itgPipMsg(
+                    'pipLoopSequenceDisabledHelp',
+                    'Disabled: sequence loop requires more than 1 loop',
+                );
+                seqBar.setAttribute('data-i18n-title', 'pipLoopSequenceDisabledHelp');
+            } else {
+                seqBar.removeAttribute('title');
+                seqBar.removeAttribute('data-i18n-title');
+            }
+        }
+
+        if (seqCountInput) {
+            seqCountInput.disabled = !hasMultipleLoops;
+            seqCountInput.title = itgPipMsg('pipLoopSequenceRepeatCount', 'Sequence repetitions');
+            seqCountInput.setAttribute('data-i18n-title', 'pipLoopSequenceRepeatCount');
+            if (activeEl !== seqCountInput) {
+                seqCountInput.value = isSeqInf
+                    ? seqCountInput.value &&
+                      parseInt(seqCountInput.value, 10) > 0 &&
+                      parseInt(seqCountInput.value, 10) <= 100
+                        ? seqCountInput.value
+                        : '1'
+                    : String(Math.max(1, state.sequenceRepeatCount || 1));
+            }
+        }
+
+        if (seqInfBtn) {
+            seqInfBtn.disabled = !hasMultipleLoops;
+            seqInfBtn.classList.toggle('is-active', isSeqInf);
+            const seqInfKey = isSeqInf ? 'pipLoopDeactivateInf' : 'pipLoopActivateInf';
+            const seqInfFallback = isSeqInf ? 'Deactivate infinite loop' : 'Activate infinite loop';
+            seqInfBtn.title = itgPipMsg(seqInfKey, seqInfFallback);
+            seqInfBtn.setAttribute('data-i18n-title', seqInfKey);
         }
 
         if (statusEl) {
             if (state.isLooping) {
                 if (state.loops.length > 1) {
-                    if (state.repeatCount === 0) {
-                        statusEl.textContent = itgPipMsg(
-                            'pipLoopSequenceInf',
-                            `Sec: Bucle ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
-                            [state.activeLoopIndex + 1, state.loops.length],
-                        );
-                    } else if (state.repeatCount > 0) {
-                        statusEl.textContent = itgPipMsg(
-                            'pipLoopSequenceRep',
-                            `Sec: Bucle ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${state.repeatCount})`,
-                            [
-                                state.activeLoopIndex + 1,
-                                state.loops.length,
-                                state.currentRepetition + 1,
-                                state.repeatCount,
-                            ],
-                        );
+                    const curLoop = state.loops[state.activeLoopIndex] || state.currentLoop;
+                    const isLoopInf = curLoop.repeatCount === 0;
+
+                    if (isSeqInf) {
+                        if (isLoopInf) {
+                            statusEl.textContent = itgPipMsg(
+                                'pipLoopSequenceInf',
+                                `Seq: Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
+                                [state.activeLoopIndex + 1, state.loops.length],
+                            );
+                        } else {
+                            statusEl.textContent = itgPipMsg(
+                                'pipLoopSequenceInfRep',
+                                `Seq (∞): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
+                                [
+                                    state.activeLoopIndex + 1,
+                                    state.loops.length,
+                                    state.currentRepetition + 1,
+                                    curLoop.repeatCount,
+                                ],
+                            );
+                        }
                     } else {
-                        statusEl.textContent = itgPipMsg(
-                            'pipLoopSequenceStatus',
-                            `Sec: Bucle ${state.activeLoopIndex + 1} de ${state.loops.length}`,
-                            [state.activeLoopIndex + 1, state.loops.length],
-                        );
+                        if (isLoopInf) {
+                            statusEl.textContent = itgPipMsg(
+                                'pipLoopSequenceCycleInf',
+                                `Seq (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
+                                [
+                                    state.currentSequenceCycle + 1,
+                                    state.sequenceRepeatCount,
+                                    state.activeLoopIndex + 1,
+                                    state.loops.length,
+                                ],
+                            );
+                        } else {
+                            statusEl.textContent = itgPipMsg(
+                                'pipLoopSequenceCycleRep',
+                                `Seq (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
+                                [
+                                    state.currentSequenceCycle + 1,
+                                    state.sequenceRepeatCount,
+                                    state.activeLoopIndex + 1,
+                                    state.loops.length,
+                                    state.currentRepetition + 1,
+                                    curLoop.repeatCount,
+                                ],
+                            );
+                        }
                     }
                 } else if (state.repeatCount > 0) {
                     statusEl.textContent = itgPipMsg(
                         'pipLoopProgress',
-                        `Bucle ${state.currentRepetition + 1} de ${state.repeatCount}`,
+                        `Loop ${state.currentRepetition + 1} of ${state.repeatCount}`,
                         [state.currentRepetition + 1, state.repeatCount],
                     );
                 } else if (state.currentRepetition > 0) {
-                    statusEl.textContent = itgPipMsg(
-                        'pipLoopCompleted',
-                        `${state.currentRepetition} bucles completados`,
-                        [state.currentRepetition],
-                    );
+                    statusEl.textContent = itgPipMsg('pipLoopCompleted', `${state.currentRepetition} loops completed`, [
+                        state.currentRepetition,
+                    ]);
                 } else {
-                    statusEl.textContent = itgPipMsg('pipLoopActive', 'Bucle activo');
+                    statusEl.textContent = itgPipMsg('pipLoopActive', 'Loop active');
                 }
             } else {
                 statusEl.textContent = '';
@@ -969,13 +1199,11 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
             const curStr = itgFormatTime(curTime, true);
             const durStr = itgFormatTime(dur, true);
             videoTimeEl.textContent = `${curStr} / ${durStr}`;
-            videoTimeEl.title = itgPipMsg('pipLoopVideoTimeDesc', 'Posición actual y duración total del vídeo');
+            videoTimeEl.title = itgPipMsg('pipLoopVideoTimeDesc', 'Current playback position and total video duration');
+            videoTimeEl.setAttribute('data-i18n-title', 'pipLoopVideoTimeDesc');
         }
 
         if (!loopListEl) return;
-
-        const doc = container.ownerDocument || document;
-        const activeEl = doc.activeElement;
 
         // Clean up excess rows if loops were removed
         while (loopListEl.children.length > state.loops.length) {
@@ -1006,49 +1234,47 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
             const timeAStr = itgFormatTime(loop.startTime, true);
             const timeBStr = itgFormatTime(effectiveEnd, true);
 
-            const infTitle = isInf
-                ? itgPipMsg('pipLoopDeactivateInf', 'Desactivar repetición infinita')
-                : itgPipMsg('pipLoopActivateInf', 'Activar repetición infinita');
+            const infKey = isInf ? 'pipLoopDeactivateInf' : 'pipLoopActivateInf';
+            const infFallback = isInf ? 'Deactivate infinite loop' : 'Activate infinite loop';
+            const infTitle = itgPipMsg(infKey, infFallback);
 
             if (!row) {
                 row = document.createElement('div');
                 row.className = `itg-loop-row-item${isActiveRow ? ' is-active' : ''}${isPlayingRow ? ' is-playing' : ''}${isUnreachable ? ' is-disabled' : ''}`;
                 row.dataset.index = String(idx);
                 if (isUnreachable) {
-                    row.title = itgPipMsg(
-                        'pipLoopUnreachable',
-                        'Deshabilitado: un bucle anterior está configurado en repetición infinita',
-                    );
+                    row.title = itgPipMsg('pipLoopUnreachable', 'Disabled: a preceding loop has infinite repetition');
+                    row.setAttribute('data-i18n-title', 'pipLoopUnreachable');
                 }
 
                 row.innerHTML = `
-                    <button type="button" class="itg-loop-row-num" title="${itgPipMsg('pipLoopNumber', `Bucle ${idx + 1}`, [idx + 1])}">#${idx + 1}</button>
+                    <button type="button" class="itg-loop-row-num" title="${itgPipMsg('pipLoopNumber', `Loop ${idx + 1}`, [idx + 1])}">#${idx + 1}</button>
                     <div class="itg-loop-bar-column">
                         <div class="itg-loop-inputs-row">
-                            <input type="text" class="itg-loop-time-input itg-loop-start-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopStartTime', 'Tiempo de inicio')}" value="${timeAStr}" ${isUnreachable ? 'disabled' : ''} />
+                            <input type="text" class="itg-loop-time-input itg-loop-start-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopStartTime', 'Start time')}" data-i18n-title="pipLoopStartTime" value="${timeAStr}" ${isUnreachable ? 'disabled' : ''} />
                             <span class="itg-loop-time-sep">-</span>
-                            <input type="text" class="itg-loop-time-input itg-loop-end-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopEndTime', 'Tiempo final')}" value="${timeBStr}" ${isUnreachable ? 'disabled' : ''} />
+                            <input type="text" class="itg-loop-time-input itg-loop-end-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopEndTime', 'End time')}" data-i18n-title="pipLoopEndTime" value="${timeBStr}" ${isUnreachable ? 'disabled' : ''} />
                         </div>
                         <div class="itg-loop-bar-wrap" title="${timeAStr} - ${timeBStr}">
                             <div class="itg-loop-bar-track">
                                 <div class="itg-loop-bar-fill" style="left: ${itgLoopHandlePos(startPct)}; width: ${itgLoopFillWidth(startPct, endPct)};"></div>
                                 ${isActiveRow ? `<div class="itg-loop-bar-playhead" style="left: ${itgLoopHandlePos(playheadPct)};"></div>` : ''}
-                                <div class="itg-loop-handle itg-loop-handle-a" tabindex="0" role="slider" aria-label="Punto A" style="left: ${itgLoopHandlePos(startPct)};" title="A: ${timeAStr}">A</div>
-                                <div class="itg-loop-handle itg-loop-handle-b" tabindex="0" role="slider" aria-label="Punto B" style="left: ${itgLoopHandlePos(endPct)};" title="B: ${timeBStr}">B</div>
+                                <div class="itg-loop-handle itg-loop-handle-a" tabindex="0" role="slider" aria-label="${itgPipMsg('pipLoopPointA', 'Point A (Start)')}" data-i18n-aria-label="pipLoopPointA" style="left: ${itgLoopHandlePos(startPct)};" title="A: ${timeAStr}">A</div>
+                                <div class="itg-loop-handle itg-loop-handle-b" tabindex="0" role="slider" aria-label="${itgPipMsg('pipLoopPointB', 'Point B (End)')}" data-i18n-aria-label="pipLoopPointB" style="left: ${itgLoopHandlePos(endPct)};" title="B: ${timeBStr}">B</div>
                             </div>
                         </div>
                     </div>
                     <div class="itg-loop-btns-column">
                         <div class="itg-loop-btns-row itg-loop-btns-row-1">
-                            <button type="button" class="itg-loop-btn-a" title="${itgPipMsg('pipLoopSetA', 'Fijar inicio (A) en posición actual')}" data-i18n-title="pipLoopSetA" ${isUnreachable ? 'disabled' : ''}>A</button>
-                            <input type="number" min="1" max="100" maxlength="3" class="itg-loop-row-count" value="${isInf ? 3 : Math.min(100, loop.repeatCount)}" title="${itgPipMsg('pipLoopRepeatCount', 'Repeticiones')}" ${isUnreachable ? 'disabled' : ''} />
-                            <button type="button" class="itg-loop-row-inf${isInf ? ' is-active' : ''}" title="${infTitle}" ${isUnreachable ? 'disabled' : ''}>∞</button>
+                            <button type="button" class="itg-loop-btn-a" title="${itgPipMsg('pipLoopSetA', 'Set start (A) to current video position')}" data-i18n-title="pipLoopSetA" ${isUnreachable ? 'disabled' : ''}>A</button>
+                            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="itg-loop-row-count" value="${isInf ? 3 : Math.min(100, loop.repeatCount)}" title="${itgPipMsg('pipLoopRepeatCount', 'Repetitions')}" data-i18n-title="pipLoopRepeatCount" ${isUnreachable ? 'disabled' : ''} />
+                            <button type="button" class="itg-loop-row-inf${isInf ? ' is-active' : ''}" title="${infTitle}" data-i18n-title="${infKey}" ${isUnreachable ? 'disabled' : ''}>${ITG_PIP_ICONS.infinity}</button>
                         </div>
                         <div class="itg-loop-btns-row itg-loop-btns-row-2">
-                            <button type="button" class="itg-loop-btn-b" title="${itgPipMsg('pipLoopSetB', 'Fijar fin (B) en posición actual')}" data-i18n-title="pipLoopSetB" ${isUnreachable ? 'disabled' : ''}>B</button>
-                            <button type="button" class="itg-loop-row-reset" title="${itgPipMsg('pipLoopResetRow', 'Restablecer bucle')}" data-i18n-title="pipLoopResetRow" ${isUnreachable ? 'disabled' : ''}>↺</button>
-                            <button type="button" class="itg-loop-row-del${idx === 0 ? ' is-disabled' : ''}" ${idx === 0 || isUnreachable ? 'disabled' : ''} title="${idx === 0 ? itgPipMsg('pipLoopDeleteDisabled', 'El primer bucle no se puede eliminar') : itgPipMsg('pipLoopDelete', 'Eliminar bucle')}" data-i18n-title="${idx === 0 ? 'pipLoopDeleteDisabled' : 'pipLoopDelete'}">✕</button>
-                            <button type="button" class="itg-loop-row-add" title="${itgPipMsg('pipLoopAdd', 'Añadir bucle')}" data-i18n-title="pipLoopAdd" ${isUnreachable ? 'disabled' : ''}>+</button>
+                            <button type="button" class="itg-loop-btn-b" title="${itgPipMsg('pipLoopSetB', 'Set end (B) to current video position')}" data-i18n-title="pipLoopSetB" ${isUnreachable ? 'disabled' : ''}>B</button>
+                            <button type="button" class="itg-loop-row-reset" title="${itgPipMsg('pipLoopResetRow', 'Reset loop')}" data-i18n-title="pipLoopResetRow" ${isUnreachable ? 'disabled' : ''}>↺</button>
+                            <button type="button" class="itg-loop-row-del${idx === 0 ? ' is-disabled' : ''}" ${idx === 0 || isUnreachable ? 'disabled' : ''} title="${idx === 0 ? itgPipMsg('pipLoopDeleteDisabled', 'The first loop cannot be deleted') : itgPipMsg('pipLoopDelete', 'Delete loop')}" data-i18n-title="${idx === 0 ? 'pipLoopDeleteDisabled' : 'pipLoopDelete'}">✕</button>
+                            <button type="button" class="itg-loop-row-add" title="${itgPipMsg('pipLoopAdd', 'Add loop')}" data-i18n-title="pipLoopAdd" ${isUnreachable ? 'disabled' : ''}>+</button>
                         </div>
                     </div>
                 `;
@@ -1377,69 +1603,32 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     controller.setLoopSettings(curIdx, { endTime: targetEnd });
                 });
 
-                // Repetition number input (max 100, max 3 chars, paste protected)
+                // Repetition number input (max 100, max 3 chars, paste protected, overwrite enabled)
                 countInput.addEventListener('click', (e) => e.stopPropagation());
                 countInput.addEventListener('keydown', (e) => {
-                    if (
-                        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(
-                            e.key,
-                        ) ||
-                        e.ctrlKey ||
-                        e.metaKey
-                    ) {
+                    if (e.key === 'Enter') {
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        handleCountBlur(countInput, (val) => controller.setLoopSettings(curIdx, { repeatCount: val }));
+                        countInput.blur();
                         return;
                     }
-                    if (!/^[0-9]$/.test(e.key)) {
-                        e.preventDefault();
-                        return;
-                    }
-                    const selLen = (countInput.selectionEnd || 0) - (countInput.selectionStart || 0);
-                    if (countInput.value.length >= 3 && selLen === 0) {
-                        e.preventDefault();
-                    }
+                    sanitizeCountKey(countInput, e);
                 });
                 countInput.addEventListener('paste', (e) => {
-                    e.preventDefault();
-                    const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-                    let clean = pasted.replace(/[^0-9]/g, '').slice(0, 3);
-                    let val = parseInt(clean, 10);
-                    if (isNaN(val) || val < 1) val = 1;
-                    if (val > 100) val = 100;
-                    countInput.value = String(val);
                     const curIdx = parseInt(row.dataset.index, 10);
-                    controller.setLoopSettings(curIdx, { repeatCount: val });
+                    handleCountPaste(countInput, e, (val) => controller.setLoopSettings(curIdx, { repeatCount: val }));
                 });
                 countInput.addEventListener('input', () => {
-                    let clean = countInput.value.replace(/[^0-9]/g, '');
-                    if (clean.length > 3) clean = clean.slice(0, 3);
-                    let val = parseInt(clean, 10);
-                    if (!isNaN(val) && val > 100) {
-                        val = 100;
-                        clean = '100';
-                    }
-                    if (countInput.value !== clean) {
-                        countInput.value = clean;
-                    }
                     const curIdx = parseInt(row.dataset.index, 10);
-                    if (!isNaN(val) && val >= 1) {
-                        controller.setLoopSettings(curIdx, { repeatCount: val });
-                    }
+                    handleCountInput(countInput, (val) => controller.setLoopSettings(curIdx, { repeatCount: val }));
                 });
                 countInput.addEventListener('change', () => {
                     const curIdx = parseInt(row.dataset.index, 10);
-                    const val = Math.max(1, Math.min(100, parseInt(countInput.value, 10) || 1));
-                    countInput.value = String(val);
-                    controller.setLoopSettings(curIdx, { repeatCount: val });
+                    handleCountBlur(countInput, (val) => controller.setLoopSettings(curIdx, { repeatCount: val }));
                 });
                 countInput.addEventListener('blur', () => {
                     const curIdx = parseInt(row.dataset.index, 10);
-                    if (!countInput.value || parseInt(countInput.value, 10) < 1) {
-                        countInput.value = '1';
-                        controller.setLoopSettings(curIdx, { repeatCount: 1 });
-                    } else if (parseInt(countInput.value, 10) > 100) {
-                        countInput.value = '100';
-                        controller.setLoopSettings(curIdx, { repeatCount: 100 });
-                    }
+                    handleCountBlur(countInput, (val) => controller.setLoopSettings(curIdx, { repeatCount: val }));
                 });
 
                 // Infinite toggle button
@@ -1484,12 +1673,11 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 row.className = `itg-loop-row-item${isActiveRow ? ' is-active' : ''}${isPlayingRow ? ' is-playing' : ''}${isUnreachable ? ' is-disabled' : ''}`;
                 row.dataset.index = String(idx);
                 if (isUnreachable) {
-                    row.title = itgPipMsg(
-                        'pipLoopUnreachable',
-                        'Deshabilitado: un bucle anterior está configurado en repetición infinita',
-                    );
+                    row.title = itgPipMsg('pipLoopUnreachable', 'Disabled: a preceding loop has infinite repetition');
+                    row.setAttribute('data-i18n-title', 'pipLoopUnreachable');
                 } else {
                     row.removeAttribute('title');
+                    row.removeAttribute('data-i18n-title');
                 }
 
                 const numBtn = row.querySelector('.itg-loop-row-num');
@@ -1510,17 +1698,21 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
 
                 if (numBtn) {
                     numBtn.textContent = `#${idx + 1}`;
-                    numBtn.title = itgPipMsg('pipLoopNumber', `Bucle ${idx + 1}`, [idx + 1]);
+                    numBtn.title = itgPipMsg('pipLoopNumber', `Loop ${idx + 1}`, [idx + 1]);
                 }
 
                 if (startInput) {
                     startInput.disabled = isUnreachable;
+                    startInput.title = itgPipMsg('pipLoopStartTime', 'Start time');
+                    startInput.setAttribute('data-i18n-title', 'pipLoopStartTime');
                     if (activeEl !== startInput) {
                         startInput.value = timeAStr;
                     }
                 }
                 if (endInput) {
                     endInput.disabled = isUnreachable;
+                    endInput.title = itgPipMsg('pipLoopEndTime', 'End time');
+                    endInput.setAttribute('data-i18n-title', 'pipLoopEndTime');
                     if (activeEl !== endInput) {
                         endInput.value = timeBStr;
                     }
@@ -1529,13 +1721,21 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     barWrap.title = `${timeAStr} - ${timeBStr}`;
                 }
 
-                if (handleA && !handleA.classList.contains('is-dragging')) {
-                    handleA.style.left = itgLoopHandlePos(startPct);
-                    handleA.title = `A: ${timeAStr}`;
+                if (handleA) {
+                    handleA.setAttribute('aria-label', itgPipMsg('pipLoopPointA', 'Point A (Start)'));
+                    handleA.setAttribute('data-i18n-aria-label', 'pipLoopPointA');
+                    if (!handleA.classList.contains('is-dragging')) {
+                        handleA.style.left = itgLoopHandlePos(startPct);
+                        handleA.title = `A: ${timeAStr}`;
+                    }
                 }
-                if (handleB && !handleB.classList.contains('is-dragging')) {
-                    handleB.style.left = itgLoopHandlePos(endPct);
-                    handleB.title = `B: ${timeBStr}`;
+                if (handleB) {
+                    handleB.setAttribute('aria-label', itgPipMsg('pipLoopPointB', 'Point B (End)'));
+                    handleB.setAttribute('data-i18n-aria-label', 'pipLoopPointB');
+                    if (!handleB.classList.contains('is-dragging')) {
+                        handleB.style.left = itgLoopHandlePos(endPct);
+                        handleB.title = `B: ${timeBStr}`;
+                    }
                 }
                 if (
                     fill &&
@@ -1561,15 +1761,33 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     }
                 }
 
-                // Buttons state
-                if (btnA) btnA.disabled = isUnreachable;
-                if (btnB) btnB.disabled = isUnreachable;
-                if (resetRowBtn) resetRowBtn.disabled = isUnreachable;
-                if (addBtn) addBtn.disabled = isUnreachable;
+                // Buttons state & tooltips
+                if (btnA) {
+                    btnA.disabled = isUnreachable;
+                    btnA.title = itgPipMsg('pipLoopSetA', 'Set start (A) to current video position');
+                    btnA.setAttribute('data-i18n-title', 'pipLoopSetA');
+                }
+                if (btnB) {
+                    btnB.disabled = isUnreachable;
+                    btnB.title = itgPipMsg('pipLoopSetB', 'Set end (B) to current video position');
+                    btnB.setAttribute('data-i18n-title', 'pipLoopSetB');
+                }
+                if (resetRowBtn) {
+                    resetRowBtn.disabled = isUnreachable;
+                    resetRowBtn.title = itgPipMsg('pipLoopResetRow', 'Reset loop');
+                    resetRowBtn.setAttribute('data-i18n-title', 'pipLoopResetRow');
+                }
+                if (addBtn) {
+                    addBtn.disabled = isUnreachable;
+                    addBtn.title = itgPipMsg('pipLoopAdd', 'Add loop');
+                    addBtn.setAttribute('data-i18n-title', 'pipLoopAdd');
+                }
 
                 // Repetition input
                 if (countInput) {
                     countInput.disabled = isUnreachable;
+                    countInput.title = itgPipMsg('pipLoopRepeatCount', 'Repetitions');
+                    countInput.setAttribute('data-i18n-title', 'pipLoopRepeatCount');
                     if (activeEl !== countInput) {
                         countInput.value = isInf
                             ? countInput.value &&
@@ -1586,6 +1804,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     infBtn.disabled = isUnreachable;
                     infBtn.classList.toggle('is-active', isInf);
                     infBtn.title = infTitle;
+                    infBtn.setAttribute('data-i18n-title', infKey);
                 }
 
                 // Delete button
@@ -1593,12 +1812,12 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     if (idx === 0) {
                         delBtn.disabled = true;
                         delBtn.classList.add('is-disabled');
-                        delBtn.title = itgPipMsg('pipLoopDeleteDisabled', 'El primer bucle no se puede eliminar');
+                        delBtn.title = itgPipMsg('pipLoopDeleteDisabled', 'The first loop cannot be deleted');
                         delBtn.setAttribute('data-i18n-title', 'pipLoopDeleteDisabled');
                     } else {
                         delBtn.disabled = isUnreachable;
                         delBtn.classList.remove('is-disabled');
-                        delBtn.title = itgPipMsg('pipLoopDelete', 'Eliminar bucle');
+                        delBtn.title = itgPipMsg('pipLoopDelete', 'Delete loop');
                         delBtn.setAttribute('data-i18n-title', 'pipLoopDelete');
                     }
                 }
@@ -1680,6 +1899,9 @@ function itgAttachLoopMenu(button) {
             Utils.applyThemeToHost(menu, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
         } catch {}
         itgRefreshContainerTranslations(menu);
+        if (typeof itgVideoLoop !== 'undefined') {
+            itgVideoLoop.notify();
+        }
 
         const v = document.querySelector('video');
         if (v) itgVideoLoop.attachVideo(v);
@@ -3021,6 +3243,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (moreSectionTitle) moreSectionTitle.textContent = itgPipMsg('pipSpeed', 'Playback speed');
         const loopMenu = doc.querySelector('.itg-pip-loop-menu');
         if (loopMenu) itgRefreshContainerTranslations(loopMenu);
+        if (typeof itgVideoLoop !== 'undefined') itgVideoLoop.notify();
         for (const el of doc.querySelectorAll('[data-i18n-text]')) {
             const key = el.getAttribute('data-i18n-text');
             if (key) el.textContent = itgPipMsg(key, el.textContent);
