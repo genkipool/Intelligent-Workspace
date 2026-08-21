@@ -901,6 +901,9 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
         }
     };
 
+    const itgLoopHandlePos = (p) => `calc(8px + (100% - 16px) * ${p / 100})`;
+    const itgLoopFillWidth = (s, e) => `calc((100% - 16px) * ${Math.max(0, e - s) / 100})`;
+
     const updateUI = (state) => {
         header?.classList.toggle('is-active', state.isLooping);
         titleEl?.classList.toggle('is-active', state.isLooping);
@@ -1028,10 +1031,10 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         </div>
                         <div class="itg-loop-bar-wrap" title="${timeAStr} - ${timeBStr}">
                             <div class="itg-loop-bar-track">
-                                <div class="itg-loop-bar-fill" style="left: ${startPct}%; width: ${Math.max(0, endPct - startPct)}%;"></div>
-                                ${isActiveRow ? `<div class="itg-loop-bar-playhead" style="left: ${playheadPct}%;"></div>` : ''}
-                                <div class="itg-loop-handle itg-loop-handle-a" tabindex="0" role="slider" aria-label="Punto A" style="left: ${startPct}%;" title="A: ${timeAStr}">A</div>
-                                <div class="itg-loop-handle itg-loop-handle-b" tabindex="0" role="slider" aria-label="Punto B" style="left: ${endPct}%;" title="B: ${timeBStr}">B</div>
+                                <div class="itg-loop-bar-fill" style="left: ${itgLoopHandlePos(startPct)}; width: ${itgLoopFillWidth(startPct, endPct)};"></div>
+                                ${isActiveRow ? `<div class="itg-loop-bar-playhead" style="left: ${itgLoopHandlePos(playheadPct)};"></div>` : ''}
+                                <div class="itg-loop-handle itg-loop-handle-a" tabindex="0" role="slider" aria-label="Punto A" style="left: ${itgLoopHandlePos(startPct)};" title="A: ${timeAStr}">A</div>
+                                <div class="itg-loop-handle itg-loop-handle-b" tabindex="0" role="slider" aria-label="Punto B" style="left: ${itgLoopHandlePos(endPct)};" title="B: ${timeBStr}">B</div>
                             </div>
                         </div>
                     </div>
@@ -1172,7 +1175,11 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         const currentDur = controller.getDuration() || dur || 1;
                         const rect = track.getBoundingClientRect();
                         if (!rect.width) return;
-                        const pct = Math.max(0, Math.min(1, (moveEv.clientX - rect.left) / rect.width));
+                        const usableWidth = rect.width - 16;
+                        const pct =
+                            usableWidth > 0
+                                ? Math.max(0, Math.min(1, (moveEv.clientX - rect.left - 8) / usableWidth))
+                                : 0;
                         const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
                         const maxAllowed = Math.max(0, effectiveCurEnd - 0.2);
                         const newStart = Math.min(maxAllowed, pct * currentDur);
@@ -1180,12 +1187,12 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
 
                         const curPct = (curLoop.startTime / currentDur) * 100;
                         const curEndPct = (effectiveCurEnd / currentDur) * 100;
-                        handleA.style.left = `${curPct}%`;
+                        handleA.style.left = itgLoopHandlePos(curPct);
                         const formatted = itgFormatTime(curLoop.startTime, true);
                         handleA.title = `A: ${formatted}`;
                         startInput.value = formatted;
-                        fill.style.left = `${curPct}%`;
-                        fill.style.width = `${Math.max(0, curEndPct - curPct)}%`;
+                        fill.style.left = itgLoopHandlePos(curPct);
+                        fill.style.width = itgLoopFillWidth(curPct, curEndPct);
                     };
 
                     const onPointerUp = (upEv) => {
@@ -1250,18 +1257,22 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         const currentDur = controller.getDuration() || dur || 1;
                         const rect = track.getBoundingClientRect();
                         if (!rect.width) return;
-                        const pct = Math.max(0, Math.min(1, (moveEv.clientX - rect.left) / rect.width));
+                        const usableWidth = rect.width - 16;
+                        const pct =
+                            usableWidth > 0
+                                ? Math.max(0, Math.min(1, (moveEv.clientX - rect.left - 8) / usableWidth))
+                                : 0;
                         const minAllowed = curLoop.startTime + 0.2;
                         const newEnd = Math.max(minAllowed, Math.min(currentDur, pct * currentDur));
                         curLoop.endTime = newEnd;
 
                         const curStartPct = (curLoop.startTime / currentDur) * 100;
                         const curEndPct = (curLoop.endTime / currentDur) * 100;
-                        handleB.style.left = `${curEndPct}%`;
+                        handleB.style.left = itgLoopHandlePos(curEndPct);
                         const formatted = itgFormatTime(curLoop.endTime, true);
                         handleB.title = `B: ${formatted}`;
                         endInput.value = formatted;
-                        fill.style.width = `${Math.max(0, curEndPct - curStartPct)}%`;
+                        fill.style.width = itgLoopFillWidth(curStartPct, curEndPct);
                     };
 
                     const onPointerUp = (upEv) => {
@@ -1321,7 +1332,9 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     const currentDur = controller.getDuration() || dur || 1;
                     const rect = track.getBoundingClientRect();
                     if (!rect.width) return;
-                    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                    const usableWidth = rect.width - 16;
+                    const pct =
+                        usableWidth > 0 ? Math.max(0, Math.min(1, (e.clientX - rect.left - 8) / usableWidth)) : 0;
                     const clickTime = pct * currentDur;
                     const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
                     const distA = Math.abs(clickTime - curLoop.startTime);
@@ -1517,11 +1530,11 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 }
 
                 if (handleA && !handleA.classList.contains('is-dragging')) {
-                    handleA.style.left = `${startPct}%`;
+                    handleA.style.left = itgLoopHandlePos(startPct);
                     handleA.title = `A: ${timeAStr}`;
                 }
                 if (handleB && !handleB.classList.contains('is-dragging')) {
-                    handleB.style.left = `${endPct}%`;
+                    handleB.style.left = itgLoopHandlePos(endPct);
                     handleB.title = `B: ${timeBStr}`;
                 }
                 if (
@@ -1529,8 +1542,8 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                     (!handleA || !handleA.classList.contains('is-dragging')) &&
                     (!handleB || !handleB.classList.contains('is-dragging'))
                 ) {
-                    fill.style.left = `${startPct}%`;
-                    fill.style.width = `${Math.max(0, endPct - startPct)}%`;
+                    fill.style.left = itgLoopHandlePos(startPct);
+                    fill.style.width = itgLoopFillWidth(startPct, endPct);
                 }
 
                 // Playhead
@@ -1542,7 +1555,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                             playheadEl.className = 'itg-loop-bar-playhead';
                             track.appendChild(playheadEl);
                         }
-                        playheadEl.style.left = `${playheadPct}%`;
+                        playheadEl.style.left = itgLoopHandlePos(playheadPct);
                     } else if (playheadEl) {
                         playheadEl.remove();
                     }
@@ -1610,7 +1623,8 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
             if (activeRow) {
                 const playhead = activeRow.querySelector('.itg-loop-bar-playhead');
                 if (playhead && dur > 0) {
-                    playhead.style.left = `${Math.max(0, Math.min(100, (curTime / dur) * 100))}%`;
+                    const playPct = Math.max(0, Math.min(100, (curTime / dur) * 100));
+                    playhead.style.left = itgLoopHandlePos(playPct);
                 }
             }
         }

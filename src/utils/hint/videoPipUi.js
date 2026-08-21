@@ -550,7 +550,7 @@ textarea::selection,
 
 .itg-loop-bar-wrap {
     width: 100%; display: flex; flex-direction: column; justify-content: center;
-    position: relative; cursor: pointer; padding: 5px 10px; user-select: none;
+    position: relative; cursor: pointer; padding: 5px 0; user-select: none;
     box-sizing: border-box;
 }
 .itg-loop-bar-track {
@@ -1357,7 +1357,7 @@ var ITG_LOOP_POPUP_STYLES = `
 
 .itg-loop-bar-wrap {
     width: 100%; display: flex; flex-direction: column; justify-content: center;
-    position: relative; cursor: pointer; padding: 5px 10px; user-select: none;
+    position: relative; cursor: pointer; padding: 5px 0; user-select: none;
     box-sizing: border-box;
 }
 .itg-loop-bar-track {
