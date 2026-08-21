@@ -342,21 +342,33 @@ var Utils = class Utils {
                 return null;
             }
         } catch {}
+
         const clientRects = Array.from(el.getClientRects());
         for (const rawRect of clientRects) {
-            if ((rawRect.width === 0 || rawRect.height === 0) && testChildren) {
-                for (const child of Array.from(el.children || [])) {
-                    const childRect = this.getVisibleClientRect(child, true);
-                    if (childRect && childRect.width >= 3 && childRect.height >= 3) {
-                        return childRect;
-                    }
-                }
-            } else {
+            if (rawRect.width >= 3 && rawRect.height >= 3) {
                 const cropped = this.cropRectToVisible(rawRect);
-                if (!cropped) continue;
-                return cropped;
+                if (cropped) return cropped;
             }
         }
+
+        // If clientRects was empty or had 0 dimensions (e.g. <summary>, custom elements, display: contents)
+        if (typeof el.getBoundingClientRect === 'function') {
+            const bound = el.getBoundingClientRect();
+            if (bound && bound.width >= 3 && bound.height >= 3) {
+                const cropped = this.cropRectToVisible(bound);
+                if (cropped) return cropped;
+            }
+        }
+
+        if (testChildren) {
+            for (const child of Array.from(el.children || [])) {
+                const childRect = this.getVisibleClientRect(child, true);
+                if (childRect && childRect.width >= 3 && childRect.height >= 3) {
+                    return childRect;
+                }
+            }
+        }
+
         return null;
     }
 
@@ -375,7 +387,7 @@ var Utils = class Utils {
         const parentDetails = el.closest && el.closest('details');
         if (parentDetails && !parentDetails.open) {
             const summaryAncestor = el.closest('summary');
-            if (!summaryAncestor || summaryAncestor.parentElement !== parentDetails) return false;
+            if (!summaryAncestor || !parentDetails.contains(summaryAncestor)) return false;
         }
         return this.getVisibleClientRect(el, true) !== null;
     }

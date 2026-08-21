@@ -63,6 +63,7 @@ var HintEngine = class HintEngine {
             '.tab-title:not([aria-disabled="true"])',
             '[role="listitem"]:not([aria-disabled="true"])',
             'a[href] > [role="button"][tabindex="0"][aria-label]',
+            'summary:not([aria-disabled="true"])',
             'details:not([aria-disabled="true"])',
             '[role="gridcell"]:not([aria-disabled="true"])',
             'div[aria-selected]:not([aria-disabled="true"])',
@@ -162,7 +163,7 @@ var HintEngine = class HintEngine {
         const isAtomicInteractive = (el) => {
             if (!el) return false;
             const tag = (el.tagName || '').toUpperCase();
-            if (['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return true;
+            if (['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'SUMMARY'].includes(tag)) return true;
             if (tag === 'A' && el.hasAttribute('href')) return true;
             const role = (el.getAttribute('role') || '').toLowerCase();
             if (
@@ -505,6 +506,13 @@ var HintEngine = class HintEngine {
             this.clear();
             return true;
         }
+        const char = event.key.toLowerCase();
+        if (char === 'f' && this.currentHintKeys.length === 0) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.clear();
+            return true;
+        }
         if (event.key === 'Backspace') {
             event.preventDefault();
             event.stopPropagation();
@@ -514,7 +522,6 @@ var HintEngine = class HintEngine {
             }
             return true;
         }
-        const char = event.key.toLowerCase();
         if (this.hintChars.includes(char)) {
             event.preventDefault();
             event.stopPropagation();
@@ -634,7 +641,7 @@ var HintEngine = class HintEngine {
                     } catch {}
                 }
             } else {
-                const clickable = (el.closest && el.closest('a[href], button, [role="button"]')) || el;
+                const clickable = (el.closest && el.closest('a[href], button, [role="button"], summary')) || el;
                 const isComplexAppElement =
                     clickable.hasAttribute('aria-selected') ||
                     clickable.getAttribute('role') === 'row' ||
@@ -688,18 +695,30 @@ var HintEngine = class HintEngine {
     }
     _generateKeys(count) {
         if (count === 0) return [];
+        const firstChars = this.hintChars.split('').filter((c) => c !== 'f');
+        const otherChars = this.hintChars.split('');
+        if (firstChars.length === 0) return [];
+
         let len = 1;
-        while (Math.pow(this.hintChars.length, len) < count) len++;
+        let maxForLen = firstChars.length;
+        while (maxForLen < count) {
+            len++;
+            maxForLen = firstChars.length * Math.pow(otherChars.length, len - 1);
+        }
+
         const generate = (l) => {
             if (l <= 0) return [];
-            if (l === 1) return this.hintChars.split('');
+            if (l === 1) return firstChars;
             const prev = generate(l - 1);
             const res = [];
             for (const p of prev) {
-                for (const c of this.hintChars) res.push(p + c);
+                for (const c of otherChars) {
+                    res.push(p + c);
+                }
             }
             return res;
         };
+
         return generate(len).slice(0, count);
     }
 };
