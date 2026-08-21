@@ -484,10 +484,15 @@ var ItgVideoLoopController =
             this.activeLoopIndex = 0;
             this.playbackMode = 'single';
             this.sequenceRepeatCount = 1;
-            const dur = this.getDuration();
-            this.loops = [this._createDefaultLoop(1, 0, dur, 0)];
+            this.loops = [this._createDefaultLoop(1, 0, 0, 0)];
             this.loadFromStorage();
             this.notify();
+            setTimeout(() => {
+                this.notify();
+            }, 250);
+            setTimeout(() => {
+                this.notify();
+            }, 600);
         }
 
         saveToStorage() {
@@ -599,8 +604,17 @@ var ItgVideoLoopController =
         }
 
         getDuration() {
+            try {
+                const player = document.querySelector('#movie_player, #shorts-player');
+                if (player && typeof player.getDuration === 'function') {
+                    const ytDur = player.getDuration();
+                    if (typeof ytDur === 'number' && isFinite(ytDur) && ytDur > 0) {
+                        return ytDur;
+                    }
+                }
+            } catch {}
             const v = this.getVideo();
-            return v && v.duration && isFinite(v.duration) ? v.duration : 0;
+            return v && typeof v.duration === 'number' && isFinite(v.duration) ? v.duration : 0;
         }
 
         getCurrentTime() {
@@ -703,7 +717,12 @@ var ItgVideoLoopController =
                 loop.startTime = Math.max(0, startTime);
             }
             if (typeof endTime === 'number' && !isNaN(endTime)) {
-                loop.endTime = Math.max(0, endTime);
+                const dur = this.getDuration();
+                if (endTime === 0 || (dur > 0 && Math.abs(endTime - dur) < 0.01)) {
+                    loop.endTime = 0;
+                } else {
+                    loop.endTime = Math.max(0, endTime);
+                }
             }
             if (typeof repeatCount === 'number' && !isNaN(repeatCount)) {
                 loop.repeatCount = Math.max(0, Math.floor(repeatCount));
@@ -721,7 +740,7 @@ var ItgVideoLoopController =
         }
 
         resetSettings() {
-            this.loops = [this._createDefaultLoop(1, 0, this.getDuration(), 0)];
+            this.loops = [this._createDefaultLoop(1, 0, 0, 0)];
             this.activeLoopIndex = 0;
             this.playbackMode = 'single';
             this.sequenceRepeatCount = 1;
@@ -760,8 +779,8 @@ var ItgVideoLoopController =
             const dur = this.getDuration();
             if (dur > 0) {
                 for (const loop of this.loops) {
-                    if (loop.endTime === 0 || loop.endTime > dur) {
-                        loop.endTime = dur;
+                    if (loop.endTime > dur) {
+                        loop.endTime = 0;
                     }
                 }
             }
@@ -899,11 +918,17 @@ var ItgVideoLoopController =
             const currentLoop = this.getCurrentLoop();
             return {
                 isLooping: this.isLooping,
-                loops: this.loops.map((l) => ({ ...l })),
+                loops: this.loops.map((l) => ({
+                    ...l,
+                    endTime: l.endTime > 0 ? l.endTime : duration,
+                })),
                 activeLoopIndex: this.activeLoopIndex,
                 playbackMode: this.loops.length > 1 ? 'sequence' : 'single',
                 sequenceRepeatCount: typeof this.sequenceRepeatCount === 'number' ? this.sequenceRepeatCount : 1,
-                currentLoop: { ...currentLoop },
+                currentLoop: {
+                    ...currentLoop,
+                    endTime: currentLoop.endTime > 0 ? currentLoop.endTime : duration,
+                },
                 startTime: currentLoop.startTime,
                 endTime: currentLoop.endTime > 0 ? currentLoop.endTime : duration,
                 duration: duration,
@@ -1701,8 +1726,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 resetRowBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     const curIdx = parseInt(row.dataset.index, 10);
-                    const currentDur = controller.getDuration() || dur;
-                    controller.setLoopSettings(curIdx, { startTime: 0, endTime: currentDur, repeatCount: 0 });
+                    controller.setLoopSettings(curIdx, { startTime: 0, endTime: 0, repeatCount: 0 });
                 });
 
                 // Delete loop
@@ -1952,13 +1976,13 @@ function itgAttachLoopMenu(button) {
             Utils.applyThemeToHost(menu, itgPipTheme, document.documentElement.getAttribute('data-itg-page-mode'));
         } catch {}
         itgRefreshContainerTranslations(menu);
+        const v = document.querySelector('video');
+        if (v && typeof itgVideoLoop !== 'undefined') itgVideoLoop.attachVideo(v);
+
         if (typeof itgVideoLoop !== 'undefined') {
             itgVideoLoop.checkVideoChange();
             itgVideoLoop.notify();
         }
-
-        const v = document.querySelector('video');
-        if (v) itgVideoLoop.attachVideo(v);
 
         const rect = button.getBoundingClientRect();
         menu.classList.add('is-open');
