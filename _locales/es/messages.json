@@ -9344,6 +9344,147 @@
     "musicPlayerAllDuplicates": {
         "message": "Todos los archivos seleccionados ya están en la lista de reproducción"
     },
+    "musicPlayerRadioStations": {
+        "message": "Emisoras de radio"
+    },
+    "musicPlayerAddRadio": {
+        "message": "Añadir emisora de radio"
+    },
+    "musicPlayerRadioLive": {
+        "message": "EN VIVO"
+    },
+    "musicPlayerRadioPlaying": {
+        "message": "Radio: $1"
+    },
+    "musicPlayerAddMusicMenu": {
+        "message": "Añadir música (carpetas o archivos)"
+    },
+    "musicPlayerAddFolderOption": {
+        "message": "Añadir carpeta"
+    },
+    "musicPlayerAddFilesOption": {
+        "message": "Añadir archivos"
+    },
+    "musicPlayerLiveStream": {
+        "message": "Emisión de radio en directo"
+    },
+    "musicTabMusic": {
+        "message": "Música"
+    },
+    "musicTabRadio": {
+        "message": "Radio"
+    },
+    "musicTabAll": {
+        "message": "Todo"
+    },
+    "radioStationsModalTitle": {
+        "message": "Emisoras de Radio"
+    },
+    "radioStationNameLabel": {
+        "message": "Nombre de la emisora"
+    },
+    "radioStationNamePlaceholder": {
+        "message": "Ej. Cadena SER, Los 40, SomaFM…"
+    },
+    "radioStationUrlLabel": {
+        "message": "URL del stream de radio"
+    },
+    "radioStationUrlPlaceholder": {
+        "message": "https://ejemplo.com/stream.mp3"
+    },
+    "radioStationAddBtn": {
+        "message": "Añadir"
+    },
+    "radioStationSavedList": {
+        "message": "Emisoras guardadas"
+    },
+    "radioStationEmptyList": {
+        "message": "No hay emisoras de radio guardadas"
+    },
+    "radioStationEmptyHint": {
+        "message": "Añade una URL de streaming para escuchar la radio en directo"
+    },
+    "radioStationDelete": {
+        "message": "Eliminar emisora"
+    },
+    "radioStationPlay": {
+        "message": "Reproducir emisora"
+    },
+    "radioStationInvalidUrl": {
+        "message": "Por favor, introduce una URL válida (http:// o https://)"
+    },
+    "radioStationNameRequired": {
+        "message": "El nombre de la emisora es obligatorio"
+    },
+    "radioStationAddedSuccess": {
+        "message": "Emisora «$1» añadida correctamente"
+    },
+    "radioStationDeletedSuccess": {
+        "message": "Emisora eliminada"
+    },
+    "radioPresetsTitle": {
+        "message": "Emisoras sugeridas"
+    },
+    "radioSearchOnlineTab": {
+        "message": "Buscar Online"
+    },
+    "radioSavedTab": {
+        "message": "Mis Emisoras"
+    },
+    "radioSelectAll": {
+        "message": "Seleccionar todas"
+    },
+    "radioDeselectAll": {
+        "message": "Deseleccionar todas"
+    },
+    "radioSelectToAdd": {
+        "message": "Seleccionar emisora"
+    },
+    "radioDeselect": {
+        "message": "Deseleccionar emisora"
+    },
+    "radioAddSelected": {
+        "message": "Añadir seleccionadas ($1)"
+    },
+    "radioAddedBadge": {
+        "message": "Añadida"
+    },
+    "radioSearching": {
+        "message": "Buscando emisoras…"
+    },
+    "radioNoOnlineResults": {
+        "message": "No se encontraron emisoras con «$1»"
+    },
+    "radioPreviewPlay": {
+        "message": "Escuchar previa"
+    },
+    "radioPreviewStop": {
+        "message": "Detener previa"
+    },
+    "radioBitrate": {
+        "message": "$1 kbps"
+    },
+    "searchRadioStations": {
+        "message": "Buscar emisoras online"
+    },
+    "searchRadioPlaceholder": {
+        "message": "Buscar por nombre, país o género (ej. Los 40, Rock, BBC, Jazz…)"
+    },
+    "noRadioStationsFound": {
+        "message": "No se encontraron emisoras que coincidan con la búsqueda"
+    },
+    "musicPlayerNextTrack": {
+        "message": "Siguiente: $1"
+    },
+    "musicPlayerPreviousTrack": {
+        "message": "Anterior: $1"
+    },
+    "musicPlayerNextStation": {
+        "message": "Siguiente emisora: $1"
+    },
+    "musicPlayerPreviousStation": {
+        "message": "Anterior emisora: $1"
+    },
     "sectionMusicPlayer": {
         "message": "Reproductor de Música"
     },
@@ -9364,5 +9505,71 @@
     },
     "feature_music_keeps_playing": {
         "message": "La música sigue sonando incluso al navegar entre pestañas."
+    },
+    "feature_radio_online_search": {
+        "message": "Busca miles de emisoras de radio online en directo por nombre, país o género."
+    },
+    "feature_radio_saved_stations": {
+        "message": "Guarda tus emisoras favoritas en IndexedDB para un acceso rápido y persistente."
+    },
+    "feature_radio_batch_add": {
+        "message": "Selecciona y añade múltiples emisoras online a tu biblioteca con un solo clic."
+    },
+    "feature_radio_import_export": {
+        "message": "Exporta e importa tu lista de emisoras guardadas en formato JSON sin duplicados."
+    },
+    "feature_radio_sync": {
+        "message": "Sincroniza tus emisoras favoritas entre navegadores y dispositivos mediante la nube."
+    },
+    "feature_radio_unified_tabs": {
+        "message": "Alterna entre tu música local, emisoras de radio o una lista combinada de reproducción."
+    },
+    "radioExportBtn": {
+        "message": "Exportar"
+    },
+    "radioExportTooltip": {
+        "message": "Exportar todas las emisoras guardadas a un archivo JSON"
+    },
+    "radioImportBtn": {
+        "message": "Importar"
+    },
+    "radioImportTooltip": {
+        "message": "Importar emisoras desde un archivo JSON sin duplicados"
+    },
+    "radioSyncBtn": {
+        "message": "Sincronizar"
+    },
+    "radioSyncTooltip": {
+        "message": "Sincronizar emisoras entre navegadores con tu cuenta de Google"
+    },
+    "radioSyncEnabledTooltip": {
+        "message": "Sincronización de emisoras activada (clic para desactivar)"
+    },
+    "radioSyncDisabledTooltip": {
+        "message": "Sincronización de emisoras desactivada (clic para activar)"
+    },
+    "radioSyncActiveNotification": {
+        "message": "Sincronización de emisoras activada"
+    },
+    "radioSyncDisabledNotification": {
+        "message": "Sincronización de emisoras desactivada"
+    },
+    "radioImportSuccess": {
+        "message": "Se han importado $1 emisoras correctamente"
+    },
+    "radioImportNoNew": {
+        "message": "No se añadieron nuevas emisoras (todas ya existían o eran inválidas)"
+    },
+    "radioImportInvalidFile": {
+        "message": "El archivo no contiene un formato de emisoras válido"
+    },
+    "radioExportSuccess": {
+        "message": "Emisoras exportadas correctamente"
+    },
+    "radioExportEmpty": {
+        "message": "No hay emisoras guardadas para exportar"
+    },
+    "radioStationAddTooltip": {
+        "message": "Añadir o buscar nuevas emisoras de radio online"
     }
 }

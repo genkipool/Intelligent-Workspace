@@ -102,6 +102,12 @@
         <FeatureItem isMaterial={true} iconName="search" textKey="feature_music_search" />
         <FeatureItem isMaterial={true} iconName="queue_music" textKey="feature_music_playlist" />
         <FeatureItem isMaterial={true} iconName="headphones" textKey="feature_music_keeps_playing" />
+        <FeatureItem isMaterial={true} iconName="radio" textKey="feature_radio_online_search" />
+        <FeatureItem isMaterial={true} iconName="bookmark" textKey="feature_radio_saved_stations" />
+        <FeatureItem isMaterial={true} iconName="playlist_add_check" textKey="feature_radio_batch_add" />
+        <FeatureItem isMaterial={true} iconName="import_export" textKey="feature_radio_import_export" />
+        <FeatureItem isMaterial={true} iconName="sync" textKey="feature_radio_sync" />
+        <FeatureItem isMaterial={true} iconName="featured_play_list" textKey="feature_radio_unified_tabs" />
     </div>
 </section>
 

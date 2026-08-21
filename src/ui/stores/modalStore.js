@@ -12,6 +12,7 @@ export const showSpecialDeleteModal = writable(false);
 export const showDeleteAllBookmarksConfirmModal = writable(false);
 export const showAddToBookmarkModal = writable(false);
 export const showDeleteHistoryConfirmModal = writable(false);
+export const showRadioStationsModal = writable(false);
 
 export const modalData = writable(null);
 

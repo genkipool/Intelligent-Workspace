@@ -220,6 +220,7 @@ let importNotificationQueue = [];
 let isNotificationVisible = false;
 
 export async function showNotification(messageKey, isError = false, params = [], notificationQueue = false) {
+    const isErr = isError === true || isError === 'error';
     const lang = await getCurrentLang();
     const messages = await loadMessages(lang);
 
@@ -229,7 +230,7 @@ export async function showNotification(messageKey, isError = false, params = [],
         : messageKey || 'Message not found';
 
     const notification = document.createElement('div');
-    notification.className = `notification ${isError ? 'notification-error' : 'notification-success'}`;
+    notification.className = `notification ${isErr ? 'notification-error' : 'notification-success'}`;
     notification.textContent = messageTemplate;
 
     const openDialog = document.querySelector('dialog[open]');

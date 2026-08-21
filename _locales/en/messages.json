@@ -9339,6 +9339,147 @@
   "musicPlayerAllDuplicates": {
     "message": "All selected files are already in the playlist"
   },
+  "musicPlayerRadioStations": {
+    "message": "Radio stations"
+  },
+  "musicPlayerAddRadio": {
+    "message": "Add radio station"
+  },
+  "musicPlayerRadioLive": {
+    "message": "LIVE"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "Radio: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "Add music (folder or files)"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "Add folder"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "Add files"
+  },
+  "musicPlayerLiveStream": {
+    "message": "Live radio broadcast"
+  },
+  "musicTabMusic": {
+    "message": "Music"
+  },
+  "musicTabRadio": {
+    "message": "Radio"
+  },
+  "musicTabAll": {
+    "message": "All"
+  },
+  "radioStationsModalTitle": {
+    "message": "Radio Stations"
+  },
+  "radioStationNameLabel": {
+    "message": "Station name"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "E.g. BBC Radio 1, SomaFM, Jazz FM…"
+  },
+  "radioStationUrlLabel": {
+    "message": "Radio stream URL"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "Add"
+  },
+  "radioStationSavedList": {
+    "message": "Saved stations"
+  },
+  "radioStationEmptyList": {
+    "message": "No saved radio stations"
+  },
+  "radioStationEmptyHint": {
+    "message": "Add a streaming URL to listen to live radio"
+  },
+  "radioStationDelete": {
+    "message": "Delete station"
+  },
+  "radioStationPlay": {
+    "message": "Play station"
+  },
+  "radioStationInvalidUrl": {
+    "message": "Please enter a valid URL (http:// or https://)"
+  },
+  "radioStationNameRequired": {
+    "message": "Station name is required"
+  },
+  "radioStationAddedSuccess": {
+    "message": "Station '$1' added successfully"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "Station removed"
+  },
+  "radioPresetsTitle": {
+    "message": "Suggested stations"
+  },
+  "radioSearchOnlineTab": {
+    "message": "Search Online"
+  },
+  "radioSavedTab": {
+    "message": "My Stations"
+  },
+  "radioSelectAll": {
+    "message": "Select all"
+  },
+  "radioDeselectAll": {
+    "message": "Deselect all"
+  },
+  "radioSelectToAdd": {
+    "message": "Select station"
+  },
+  "radioDeselect": {
+    "message": "Deselect station"
+  },
+  "radioAddSelected": {
+    "message": "Add selected ($1)"
+  },
+  "radioAddedBadge": {
+    "message": "Added"
+  },
+  "radioSearching": {
+    "message": "Searching stations…"
+  },
+  "radioNoOnlineResults": {
+    "message": "No stations found matching '$1'"
+  },
+  "radioPreviewPlay": {
+    "message": "Preview"
+  },
+  "radioPreviewStop": {
+    "message": "Stop preview"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "Search online radio stations"
+  },
+  "searchRadioPlaceholder": {
+    "message": "Search by name, country or genre (e.g. Rock, BBC, Jazz, Los 40…)"
+  },
+  "noRadioStationsFound": {
+    "message": "No radio stations found matching your search"
+  },
+  "musicPlayerNextTrack": {
+    "message": "Next: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "Previous: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "Next station: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "Previous station: $1"
+  },
   "sectionMusicPlayer": {
     "message": "Music Player"
   },
@@ -9359,5 +9500,71 @@
   },
   "feature_music_keeps_playing": {
     "message": "Music keeps playing even when navigating between tabs."
+  },
+  "feature_radio_online_search": {
+    "message": "Search thousands of live online radio stations worldwide by name, country, or genre."
+  },
+  "feature_radio_saved_stations": {
+    "message": "Save your favorite radio stations in IndexedDB for quick, persistent access."
+  },
+  "feature_radio_batch_add": {
+    "message": "Select and add multiple online radio stations to your library in one click."
+  },
+  "feature_radio_import_export": {
+    "message": "Export and import your saved radio stations to/from JSON files without duplicates."
+  },
+  "feature_radio_sync": {
+    "message": "Sync your favorite radio stations across browsers and devices using cloud sync."
+  },
+  "feature_radio_unified_tabs": {
+    "message": "Switch seamlessly between local music, radio stations, or a unified playlist queue."
+  },
+  "radioExportBtn": {
+    "message": "Export"
+  },
+  "radioExportTooltip": {
+    "message": "Export all saved radio stations to a JSON file"
+  },
+  "radioImportBtn": {
+    "message": "Import"
+  },
+  "radioImportTooltip": {
+    "message": "Import radio stations from a JSON file without duplicates"
+  },
+  "radioSyncBtn": {
+    "message": "Sync"
+  },
+  "radioSyncTooltip": {
+    "message": "Sync radio stations across browsers with your Google account"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "Radio stations sync enabled (click to disable)"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "Radio stations sync disabled (click to enable)"
+  },
+  "radioSyncActiveNotification": {
+    "message": "Radio stations sync enabled"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "Radio stations sync disabled"
+  },
+  "radioImportSuccess": {
+    "message": "$1 radio stations imported successfully"
+  },
+  "radioImportNoNew": {
+    "message": "No new stations were added (all already existed or were invalid)"
+  },
+  "radioImportInvalidFile": {
+    "message": "The selected file does not contain a valid radio stations format"
+  },
+  "radioExportSuccess": {
+    "message": "Radio stations exported successfully"
+  },
+  "radioExportEmpty": {
+    "message": "No saved radio stations to export"
+  },
+  "radioStationAddTooltip": {
+    "message": "Add or search new online radio stations"
   }
 }

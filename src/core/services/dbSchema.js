@@ -19,7 +19,7 @@
  */
 const ITG_DB_SCHEMA = {
     name: 'Intelligent_Workspace',
-    version: 7,
+    version: 8,
     stores: {
         screenshots: 'screenshots',
         conversations: 'geminiConversations',
@@ -27,6 +27,7 @@ const ITG_DB_SCHEMA = {
         backups: 'backupsGroups',
         pomodoroStats: 'pomodoroStats',
         musicTracks: 'musicTracks',
+        radioStations: 'radioStations',
     },
 
     /**
@@ -75,6 +76,10 @@ const ITG_DB_SCHEMA = {
         // playback outlives whichever page picked the folder.
         if (!db.objectStoreNames.contains(s.musicTracks)) {
             db.createObjectStore(s.musicTracks, { keyPath: 'index' });
+        }
+
+        if (!db.objectStoreNames.contains(s.radioStations)) {
+            db.createObjectStore(s.radioStations, { keyPath: 'id' });
         }
     },
 };

@@ -10,6 +10,7 @@ const NOTES_STORE_NAME = ITG_STORES.notes;
 const BACKUPS_STORE_NAME = ITG_STORES.backups;
 const POMO_STATS_STORE_NAME = ITG_STORES.pomodoroStats;
 const MUSIC_TRACKS_STORE_NAME = ITG_STORES.musicTracks;
+const RADIO_STATIONS_STORE_NAME = ITG_STORES.radioStations;
 let dbPromise = null;
 
 function openDb() {
@@ -649,5 +650,71 @@ export async function clearMusicTracksInDb() {
         const request = transaction.objectStore(MUSIC_TRACKS_STORE_NAME).clear();
         request.onsuccess = () => resolve();
         request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Loads all saved radio stations from IndexedDB.
+ * @returns {Promise<Array<{id: string, name: string, url: string}>>}
+ */
+export async function getRadioStationsFromDb() {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readonly');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = (event) => resolve(event.target.result || []);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Saves or replaces the complete list of radio stations in IndexedDB.
+ * @param {Array<{id: string, name: string, url: string}>} stations
+ * @returns {Promise<void>}
+ */
+export async function saveRadioStationsToDb(stations) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.clear();
+        for (const st of stations) {
+            store.put(st);
+        }
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Adds a single radio station to IndexedDB.
+ * @param {{id: string, name: string, url: string}} station
+ * @returns {Promise<void>}
+ */
+export async function addRadioStationToDb(station) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.put(station);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Deletes a radio station by ID from IndexedDB.
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
+export async function deleteRadioStationFromDb(id) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.delete(id);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
     });
 }

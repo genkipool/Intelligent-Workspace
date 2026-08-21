@@ -11,6 +11,7 @@
     import DeleteAllBookmarksConfirmModal from './DeleteAllBookmarksConfirmModal.svelte';
     import AddToBookmarkModal from './AddToBookmarkModal.svelte';
     import DeleteHistoryConfirmModal from './DeleteHistoryConfirmModal.svelte';
+    import RadioStationsModal from './RadioStationsModal.svelte';
     import { t } from '../../stores/i18nStore.js';
 
     import {
@@ -26,6 +27,7 @@
         showDeleteAllBookmarksConfirmModal,
         showAddToBookmarkModal,
         showDeleteHistoryConfirmModal,
+        showRadioStationsModal,
         modalData,
         openModal,
         closeModal,
@@ -205,4 +207,8 @@
         onClose={() => closeModal(showDeleteHistoryConfirmModal)}
         onDeleted={$modalData?.onDeleted}
     />
+{/if}
+
+{#if $showRadioStationsModal}
+    <RadioStationsModal show={$showRadioStationsModal} onClose={() => closeModal(showRadioStationsModal)} />
 {/if}

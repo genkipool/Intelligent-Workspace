@@ -1,5 +1,6 @@
 import { showNotification } from '../../../../../utils/i18n.js';
 import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
+import { hidePanel } from '../../../../stores/musicPlayerStore.js';
 
 // ============================================================
 // POMODORO FRONTEND v3 — 3-division design, fixed sound, i18n
@@ -1524,10 +1525,11 @@ export function initPomodoro() {
         const wasHidden = panel.classList.contains('hidden');
         panel.classList.toggle('hidden', !wasHidden);
 
-        // NEW: If we are opening Pomodoro, hide view-toggle-panel to avoid conflicts
+        // If opening Pomodoro, hide view-toggle-panel and music player panel to avoid conflicts
         if (wasHidden) {
             const vtPanel = document.getElementById('view-toggle-panel');
             if (vtPanel) vtPanel.classList.add('hidden');
+            hidePanel();
         }
         // Stop blinking when panel opens; resume when panel hides
         if (!wasHidden) {

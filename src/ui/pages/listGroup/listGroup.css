@@ -9901,3 +9901,807 @@ body:not(.groups-view-active) .music-panel,
 .music-quick-volume-slider {
     width: 54px;
 }
+
+/* ─── Unified Music Add Menu Dropdown ────────────────────────────── */
+.music-add-menu-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.music-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 1000;
+    min-width: 170px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 6px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.music-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: none;
+    border: none;
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    font-size: var(--medium-text, 13px);
+    cursor: pointer;
+    text-align: left;
+    transition:
+        background-color 0.15s,
+        color 0.15s;
+}
+
+.music-dropdown-item:hover,
+.music-dropdown-item:focus-visible {
+    background-color: var(--action-color);
+    outline: none;
+}
+
+.music-dropdown-item svg {
+    flex-shrink: 0;
+    opacity: 0.8;
+}
+
+/* ─── Music Player 3-Tab Interface ───────────────────────────────── */
+.music-tabs {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-panel-color);
+    padding: 2px 6px 0;
+    gap: 4px;
+}
+
+.music-tab-btn {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: var(--small-text, 12px);
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        opacity 0.15s,
+        border-color 0.15s,
+        background-color 0.15s;
+    border-radius: 4px 4px 0 0;
+}
+
+.music-tab-btn:hover {
+    opacity: 1;
+    background-color: var(--action-color);
+}
+
+.music-tab-btn.active {
+    opacity: 1;
+    border-bottom-color: var(--interactive-color);
+    font-weight: 600;
+}
+
+.music-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background-color: var(--border-color);
+    font-size: 10px;
+    font-weight: 600;
+    opacity: 0.9;
+}
+
+.music-tab-btn.active .music-tab-badge {
+    background-color: var(--interactive-color);
+    color: #fff;
+}
+
+/* ─── Radio Items & Live Indicators ──────────────────────────────── */
+.music-radio-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+}
+
+.music-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: var(--error-color);
+    box-shadow: 0 0 6px var(--error-color);
+    animation: livePulse 1.4s infinite ease-in-out;
+    display: inline-block;
+}
+
+@keyframes livePulse {
+    0%,
+    100% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+    }
+}
+
+.music-track-position.is-live {
+    color: var(--error-color);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.music-progress-radio-container {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 10px;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--bg-panel-color),
+        var(--bg-panel-color) 6px,
+        var(--action-color) 6px,
+        var(--action-color) 12px
+    );
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.music-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.16), rgba(255, 68, 68, 0.08));
+    border: 1px solid var(--error-color);
+    border-radius: 12px;
+    padding: 2px 9px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--error-color);
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    box-shadow: 0 0 8px rgba(255, 68, 68, 0.15);
+}
+
+.music-live-badge-sm {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, rgba(255, 68, 68, 0.18), rgba(255, 68, 68, 0.09));
+    border: 1px solid var(--error-color);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--error-color);
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(255, 68, 68, 0.12);
+}
+
+.music-radio-result {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.music-radio-meta {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.music-radio-url-preview {
+    font-size: 10px;
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.radio-results-empty-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 12px;
+    gap: 8px;
+}
+
+.radio-add-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background-color: var(--action-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    font-size: var(--small-text, 12px);
+    cursor: pointer;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s;
+}
+
+.radio-add-inline-btn:hover {
+    background-color: var(--interactive-color);
+    color: #fff;
+    border-color: var(--interactive-color);
+}
+
+.radio-tab-footer-toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+    padding: 6px;
+    margin: 0;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-panel-color);
+    width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.radio-footer-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 6px);
+    color: var(--text-color);
+    font-size: var(--small-text, 11px);
+    font-weight: 500;
+    padding: 6px 2px;
+    cursor: pointer;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        color 0.15s,
+        box-shadow 0.15s;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.radio-footer-btn span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: inherit;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.radio-footer-btn:hover {
+    background-color: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: #ffffff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.radio-footer-btn:hover span {
+    color: #ffffff;
+}
+
+.radio-footer-btn.radio-sync-btn.active {
+    background-color: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.radio-footer-btn.radio-sync-btn.active span {
+    color: #ffffff;
+}
+
+.radio-footer-btn.radio-sync-btn.active:hover {
+    background-color: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.radio-footer-btn.radio-sync-btn.active:hover span {
+    color: #ffffff;
+}
+
+.music-panel.is-drag-over {
+    outline: 2px dashed var(--interactive-color);
+    outline-offset: -2px;
+    background-color: rgba(255, 68, 68, 0.05);
+}
+
+/* ─── Radio Stations Modal ────────────────────────────────────────── */
+.radio-stations-modal {
+    max-width: 520px;
+    width: 92vw;
+}
+
+.radio-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 65vh;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.radio-search-group {
+    margin-top: 2px;
+}
+
+.radio-search-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: var(--medium-text, 13px);
+    font-weight: 600;
+}
+
+.radio-search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.radio-search-icon {
+    position: absolute;
+    left: 10px;
+    color: var(--text-color);
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.radio-search-spinner {
+    position: absolute;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--interactive-color);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+.radio-search-spinner.large {
+    width: 24px;
+    height: 24px;
+    border-width: 3px;
+    margin-bottom: 8px;
+}
+
+.radio-loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 12px;
+    opacity: 0.8;
+}
+
+.radio-search-input-wrapper input {
+    width: 100%;
+    padding: 8px 30px 8px 34px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 6px);
+    color: var(--text-color);
+    font-size: var(--medium-text, 13px);
+    box-sizing: border-box;
+    transition:
+        border-color 0.15s,
+        box-shadow 0.15s;
+}
+
+.radio-search-input-wrapper input:focus {
+    border-color: var(--interactive-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 68, 68, 0.15);
+}
+
+.radio-presets-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.radio-presets-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.radio-preset-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    background-color: var(--action-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.radio-preset-chip:hover:not(:disabled) {
+    border-color: var(--interactive-color);
+    color: var(--interactive-color);
+    background-color: var(--bg-color);
+}
+
+.radio-preset-chip.is-added {
+    opacity: 0.5;
+    cursor: default;
+    background-color: transparent;
+}
+
+/* ─── Modal Sub-tabs (Online Search vs Saved) ─────────────────────── */
+.radio-modal-tabs {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.radio-modal-tab-btn {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-color);
+    opacity: 0.7;
+    font-size: var(--small-text, 12px);
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+        opacity 0.15s,
+        border-color 0.15s;
+    border-radius: 4px 4px 0 0;
+}
+
+.radio-modal-tab-btn:hover {
+    opacity: 1;
+    background-color: var(--action-color);
+}
+
+.radio-modal-tab-btn.active {
+    opacity: 1;
+    border-bottom-color: var(--interactive-color);
+    font-weight: 600;
+}
+
+.radio-modal-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background-color: var(--border-color);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.radio-modal-tab-btn.active .radio-modal-tab-badge {
+    background-color: var(--interactive-color);
+    color: #fff;
+}
+
+.music-live-text-simple {
+    color: var(--text-on-color);
+    font-size: var(--small-text, 11px);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+/* ─── Online Results & Multi-selection ────────────────────────────── */
+.radio-selection-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 2px;
+    margin-bottom: 4px;
+}
+
+.radio-select-all-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--small-border-radius, 4px);
+    color: var(--text-color);
+    font-size: 11px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.radio-select-all-btn:hover:not(:disabled) {
+    background-color: var(--action-color);
+}
+
+.radio-online-list,
+.saved-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.radio-online-item,
+.saved-radio-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    min-height: 52px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 6px);
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+    transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        box-shadow 0.15s;
+}
+
+.radio-online-item:hover:not(.is-added),
+.saved-radio-item:hover {
+    border-color: var(--interactive-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.radio-online-item.is-selected,
+.saved-radio-item.active {
+    border-color: var(--interactive-color);
+    background-color: var(--action-color);
+    box-shadow: 0 0 0 1px var(--interactive-color);
+}
+
+.radio-online-item.is-added {
+    opacity: 0.65;
+    cursor: default;
+}
+
+.radio-preview-btn,
+.saved-radio-play-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--action-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.radio-preview-btn:hover,
+.saved-radio-play-btn:hover {
+    background-color: var(--interactive-color);
+    color: #fff;
+    border-color: var(--interactive-color);
+    transform: scale(1.08);
+}
+
+.radio-preview-btn.is-previewing {
+    background-color: var(--error-color);
+    color: #fff;
+    border-color: var(--error-color);
+    animation: livePulse 1.2s infinite ease-in-out;
+}
+
+.saved-radio-play-btn.is-playing {
+    background-color: var(--interactive-color);
+    color: #fff;
+    border-color: var(--interactive-color);
+}
+
+.radio-online-info,
+.saved-radio-info {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    min-height: 34px;
+}
+
+.radio-online-name-row,
+.saved-radio-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.radio-online-name,
+.saved-radio-name {
+    font-size: var(--medium-text, 13px);
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+}
+
+.radio-online-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+    min-height: 16px;
+}
+
+.radio-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.radio-added-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-on-color);
+    flex-shrink: 0;
+}
+
+.radio-selected-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--interactive-color);
+    flex-shrink: 0;
+}
+
+/* ─── Saved Radio Stations Section ────────────────────────────────── */
+.saved-radio-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.saved-radio-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.saved-radio-counter {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.saved-radio-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.saved-radio-name {
+    font-size: var(--medium-text, 13px);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.saved-radio-live-text {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--error-color);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.saved-radio-url {
+    font-size: 11px;
+    opacity: 0.55;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.saved-radio-delete-btn {
+    opacity: 0.6;
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    border-radius: 4px;
+    transition:
+        opacity 0.15s,
+        color 0.15s,
+        transform 0.15s;
+}
+
+.saved-radio-delete-btn:hover {
+    opacity: 1;
+    color: var(--error-color);
+    transform: scale(1.15);
+}
+
+.radio-empty-state {
+    text-align: center;
+    padding: 24px 12px;
+    opacity: 0.7;
+}
+
+.radio-empty-text {
+    margin: 0;
+    font-size: var(--medium-text, 13px);
+    font-weight: 500;
+}

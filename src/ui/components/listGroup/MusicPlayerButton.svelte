@@ -12,7 +12,13 @@
         isPlayerVisible,
         isPlaying,
         hasTracks,
+        tracks,
+        radioStations,
+        currentIndex,
         currentTrack,
+        isRadioActive,
+        currentRadioStation,
+        activeTab,
         volume,
         isMuted,
         setVolume,
@@ -42,11 +48,99 @@
     let pointerOnButton = false;
     let pointerOnPopup = false;
 
-    let buttonTitle = $derived(
-        $currentTrack
-            ? `${$t('musicPlayerNowPlaying', [$currentTrack.title])} — ${$isPlayerVisible ? $t('musicPlayerHide') : $t('musicPlayerShow')}`
-            : $tt('musicPlayer'),
-    );
+    let buttonTitle = $derived.by(() => {
+        if ($isPlaying) {
+            if ($isRadioActive && $currentRadioStation) {
+                return `${$t('musicPlayerNowPlaying', [$currentRadioStation.name])} (${$t('musicPlayerRadioLive')}) — ${$isPlayerVisible ? $t('musicPlayerHide') : $t('musicPlayerShow')}`;
+            }
+            if ($currentTrack) {
+                return `${$t('musicPlayerNowPlaying', [$currentTrack.title])} — ${$isPlayerVisible ? $t('musicPlayerHide') : $t('musicPlayerShow')}`;
+            }
+        }
+        return `${$t('musicPlayer')} — ${$isPlayerVisible ? $t('musicPlayerHide') : $t('musicPlayerShow')}`;
+    });
+
+    let nextButtonTitle = $derived.by(() => {
+        if (!$hasTracks) return $tt('musicPlayerNext');
+
+        if ($activeTab === 'all') {
+            if ($isRadioActive) {
+                const rIdx = $radioStations.findIndex((s) => s.id === $currentRadioStation?.id);
+                if (rIdx >= 0 && rIdx < $radioStations.length - 1) {
+                    return $t('musicPlayerNextStation', [$radioStations[rIdx + 1].name]);
+                }
+                if ($tracks.length > 0) {
+                    return $t('musicPlayerNextTrack', [$tracks[0].title]);
+                }
+                if ($radioStations.length > 0) {
+                    return $t('musicPlayerNextStation', [$radioStations[0].name]);
+                }
+            } else {
+                if ($currentIndex >= 0 && $currentIndex < $tracks.length - 1) {
+                    return $t('musicPlayerNextTrack', [$tracks[$currentIndex + 1].title]);
+                }
+                if ($radioStations.length > 0) {
+                    return $t('musicPlayerNextStation', [$radioStations[0].name]);
+                }
+                if ($tracks.length > 0) {
+                    return $t('musicPlayerNextTrack', [$tracks[0].title]);
+                }
+            }
+        } else if ($activeTab === 'radio' || $isRadioActive) {
+            if ($radioStations.length > 0) {
+                const rIdx = $radioStations.findIndex((s) => s.id === $currentRadioStation?.id);
+                const nextIdx = (rIdx + 1) % $radioStations.length;
+                return $t('musicPlayerNextStation', [$radioStations[nextIdx].name]);
+            }
+        } else {
+            if ($tracks.length > 0) {
+                const nextIdx = ($currentIndex + 1) % $tracks.length;
+                return $t('musicPlayerNextTrack', [$tracks[nextIdx].title]);
+            }
+        }
+        return $tt('musicPlayerNext');
+    });
+
+    let prevButtonTitle = $derived.by(() => {
+        if (!$hasTracks) return $tt('musicPlayerPrevious');
+
+        if ($activeTab === 'all') {
+            if ($isRadioActive) {
+                const rIdx = $radioStations.findIndex((s) => s.id === $currentRadioStation?.id);
+                if (rIdx > 0) {
+                    return $t('musicPlayerPreviousStation', [$radioStations[rIdx - 1].name]);
+                }
+                if ($tracks.length > 0) {
+                    return $t('musicPlayerPreviousTrack', [$tracks[$tracks.length - 1].title]);
+                }
+                if ($radioStations.length > 0) {
+                    return $t('musicPlayerPreviousStation', [$radioStations[$radioStations.length - 1].name]);
+                }
+            } else {
+                if ($currentIndex > 0) {
+                    return $t('musicPlayerPreviousTrack', [$tracks[$currentIndex - 1].title]);
+                }
+                if ($radioStations.length > 0) {
+                    return $t('musicPlayerPreviousStation', [$radioStations[$radioStations.length - 1].name]);
+                }
+                if ($tracks.length > 0) {
+                    return $t('musicPlayerPreviousTrack', [$tracks[$tracks.length - 1].title]);
+                }
+            }
+        } else if ($activeTab === 'radio' || $isRadioActive) {
+            if ($radioStations.length > 0) {
+                const rIdx = $radioStations.findIndex((s) => s.id === $currentRadioStation?.id);
+                const prevIdx = (rIdx - 1 + $radioStations.length) % $radioStations.length;
+                return $t('musicPlayerPreviousStation', [$radioStations[prevIdx].name]);
+            }
+        } else {
+            if ($tracks.length > 0) {
+                const prevIdx = ($currentIndex - 1 + $tracks.length) % $tracks.length;
+                return $t('musicPlayerPreviousTrack', [$tracks[prevIdx].title]);
+            }
+        }
+        return $tt('musicPlayerPrevious');
+    });
 
     /**
      * Puts the popup under the button, flipping it above and pulling it back inside
@@ -66,11 +160,13 @@
     }
 
     function scheduleOpen() {
-        // With nothing loaded there is nothing to control, so the popup stays away.
-        if (!$hasTracks) return;
+        // With nothing playing there is nothing to control, so the popup stays away.
+        if (!$isPlaying) return;
         clearTimeout(closeTimer);
         openTimer = setTimeout(() => {
-            isPopupOpen = true;
+            if ($isPlaying) {
+                isPopupOpen = true;
+            }
         }, OPEN_DELAY_MS);
     }
 
@@ -125,8 +221,8 @@
     });
 
     $effect(() => {
-        // Nothing loaded means nothing to hover over.
-        if (!$hasTracks) isPopupOpen = false;
+        // Nothing playing means nothing to hover over.
+        if (!$isPlaying) isPopupOpen = false;
     });
 
     $effect(() => () => {
@@ -152,7 +248,7 @@
     onfocusout={handleFocusOut}
 >
     <svg width="22" height="22" aria-hidden="true" focusable="false">
-        <use href="#icon-music"></use>
+        <use href={$isRadioActive ? '#icon-radio' : '#icon-music'}></use>
     </svg>
 </button>
 
@@ -171,8 +267,8 @@
         <button
             type="button"
             class="music-quick-btn"
-            title={$tt('musicPlayerPrevious')}
-            aria-label={$t('musicPlayerPrevious')}
+            title={prevButtonTitle}
+            aria-label={prevButtonTitle}
             onclick={playPrevious}
         >
             <svg width="16" height="16" aria-hidden="true" focusable="false"><use href="#icon-track-prev"></use></svg>
@@ -200,8 +296,8 @@
         <button
             type="button"
             class="music-quick-btn"
-            title={$tt('musicPlayerNext')}
-            aria-label={$t('musicPlayerNext')}
+            title={nextButtonTitle}
+            aria-label={nextButtonTitle}
             onclick={() => playNext()}
         >
             <svg width="16" height="16" aria-hidden="true" focusable="false"><use href="#icon-track-next"></use></svg>

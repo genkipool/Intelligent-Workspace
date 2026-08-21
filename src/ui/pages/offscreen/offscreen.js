@@ -78,9 +78,12 @@ const STATE_REPORT_MS = 250;
 const music = {
     audio: null,
     tracks: [],
+    radioStations: [],
+    currentRadio: null,
     index: -1,
     objectUrl: null,
     reportTimer: null,
+    activeTab: 'all',
 };
 
 function musicAudio() {
@@ -91,7 +94,15 @@ function musicAudio() {
     for (const event of ['play', 'pause', 'durationchange', 'loadedmetadata', 'seeked']) {
         audio.addEventListener(event, reportMusicState);
     }
-    audio.addEventListener('ended', () => playMusicIndex(music.index + 1, { wrap: false }));
+    audio.addEventListener('ended', async () => {
+        if (!music.currentRadio) {
+            if (music.activeTab === 'all' && music.index >= music.tracks.length - 1 && music.radioStations.length > 0) {
+                await playRadioStation(music.radioStations[0], { autoplay: true });
+            } else {
+                playMusicIndex(music.index + 1, { wrap: false });
+            }
+        }
+    });
     audio.addEventListener('error', reportMusicState);
     audio.addEventListener('play', startMusicReporting);
     for (const event of ['pause', 'ended', 'emptied']) audio.addEventListener(event, stopMusicReporting);
@@ -100,13 +111,17 @@ function musicAudio() {
 
 function musicSnapshot() {
     const audio = music.audio;
+    const isRadio = Boolean(music.currentRadio);
+    const title = isRadio ? music.currentRadio.name || 'Radio' : music.tracks[music.index]?.title || '';
     return {
-        index: music.index,
-        count: music.tracks.length,
-        title: music.tracks[music.index]?.title || '',
+        index: isRadio ? -1 : music.index,
+        count: isRadio ? music.radioStations.length : music.tracks.length,
+        title,
+        isRadio,
+        currentRadio: music.currentRadio,
         isPlaying: Boolean(audio && !audio.paused && !audio.ended),
         currentTime: audio?.currentTime || 0,
-        duration: Number.isFinite(audio?.duration) ? audio.duration : 0,
+        duration: !isRadio && Number.isFinite(audio?.duration) ? audio.duration : 0,
         volume: audio ? audio.volume : 1,
         isMuted: Boolean(audio?.muted),
     };
@@ -147,6 +162,36 @@ function setMusicPlaylist(tracks) {
 }
 
 /**
+ * Sets available radio stations for cycling.
+ * @param {Array<{id: string, name: string, url: string}>} stations
+ */
+function setRadioStations(stations) {
+    music.radioStations = Array.isArray(stations) ? stations : [];
+}
+
+/**
+ * Plays a radio station stream URL directly.
+ * @param {{id: string, name: string, url: string}} station
+ * @param {{autoplay?: boolean}} options
+ */
+async function playRadioStation(station, { autoplay = true } = {}) {
+    if (!station || !station.url) return;
+    releaseMusicUrl();
+    music.index = -1;
+    music.currentRadio = station;
+
+    const audio = musicAudio();
+    audio.src = station.url;
+    audio.load();
+    if (autoplay) {
+        await audio.play().catch((err) => {
+            console.warn('[Offscreen] Radio play error:', err);
+        });
+    }
+    reportMusicState();
+}
+
+/**
  * @param {number} index
  * @param {{autoplay?: boolean, wrap?: boolean}} options
  */
@@ -170,6 +215,7 @@ async function playMusicIndex(index, { autoplay = true, wrap = true, startAt = 0
     if (!blob) return;
 
     releaseMusicUrl();
+    music.currentRadio = null;
     music.index = target;
     music.objectUrl = URL.createObjectURL(blob);
     const audio = musicAudio();
@@ -187,19 +233,41 @@ async function playMusicIndex(index, { autoplay = true, wrap = true, startAt = 0
 async function handleMusicCommand(msg) {
     const audio = musicAudio();
     if (Array.isArray(msg.tracks)) setMusicPlaylist(msg.tracks);
+    if (Array.isArray(msg.radioStations)) setRadioStations(msg.radioStations);
+    if (typeof msg.activeTab === 'string') music.activeTab = msg.activeTab;
+
     switch (msg.cmd) {
         case 'loadPlaylist':
+            music.currentRadio = null;
             await playMusicIndex(msg.index ?? 0, { autoplay: Boolean(msg.autoplay), startAt: msg.startAt || 0 });
             break;
         case 'setPlaylist':
             if (typeof msg.index === 'number') music.index = msg.index;
             break;
+        case 'playRadio':
+            if (msg.station) {
+                await playRadioStation(msg.station, { autoplay: msg.autoplay !== false });
+            }
+            break;
+        case 'setRadioStations':
+            if (Array.isArray(msg.radioStations)) setRadioStations(msg.radioStations);
+            break;
         case 'playIndex':
+            music.currentRadio = null;
             await playMusicIndex(msg.index, { autoplay: true });
             break;
         case 'play':
-            if (music.index === -1) await playMusicIndex(0, { autoplay: true });
-            else await audio.play().catch(() => {});
+            if (music.currentRadio) {
+                if (!audio.src || audio.src === '' || audio.src === 'about:blank') {
+                    audio.src = music.currentRadio.url;
+                    audio.load();
+                }
+                await audio.play().catch(() => {});
+            } else if (music.index === -1) {
+                await playMusicIndex(0, { autoplay: true });
+            } else {
+                await audio.play().catch(() => {});
+            }
             break;
         case 'pause':
             audio.pause();
@@ -207,20 +275,75 @@ async function handleMusicCommand(msg) {
         case 'stop':
             audio.pause();
             audio.currentTime = 0;
+            if (music.currentRadio) {
+                // Free stream connection
+                audio.removeAttribute('src');
+                audio.load();
+            }
             break;
         case 'next':
-            await playMusicIndex(music.index + 1);
+            if (music.activeTab === 'all') {
+                if (music.currentRadio && music.radioStations.length > 0) {
+                    const currentIdx = music.radioStations.findIndex((s) => s.id === music.currentRadio?.id);
+                    if (currentIdx >= 0 && currentIdx < music.radioStations.length - 1) {
+                        await playRadioStation(music.radioStations[currentIdx + 1], { autoplay: true });
+                    } else if (music.tracks.length > 0) {
+                        await playMusicIndex(0, { autoplay: true });
+                    } else {
+                        await playRadioStation(music.radioStations[0], { autoplay: true });
+                    }
+                } else if (music.tracks.length > 0) {
+                    if (music.index >= 0 && music.index < music.tracks.length - 1) {
+                        await playMusicIndex(music.index + 1, { autoplay: true });
+                    } else if (music.radioStations.length > 0) {
+                        await playRadioStation(music.radioStations[0], { autoplay: true });
+                    } else {
+                        await playMusicIndex(0, { autoplay: true });
+                    }
+                }
+            } else if (music.currentRadio && music.radioStations.length > 0) {
+                const currentIdx = music.radioStations.findIndex((s) => s.id === music.currentRadio?.id);
+                const nextIdx = (currentIdx + 1) % music.radioStations.length;
+                await playRadioStation(music.radioStations[nextIdx], { autoplay: true });
+            } else {
+                await playMusicIndex(music.index + 1);
+            }
             break;
         case 'previous':
-            await playMusicIndex(music.index - 1);
+            if (music.activeTab === 'all') {
+                if (music.currentRadio && music.radioStations.length > 0) {
+                    const currentIdx = music.radioStations.findIndex((s) => s.id === music.currentRadio?.id);
+                    if (currentIdx > 0) {
+                        await playRadioStation(music.radioStations[currentIdx - 1], { autoplay: true });
+                    } else if (music.tracks.length > 0) {
+                        await playMusicIndex(music.tracks.length - 1, { autoplay: true });
+                    } else {
+                        await playRadioStation(music.radioStations[music.radioStations.length - 1], { autoplay: true });
+                    }
+                } else if (music.tracks.length > 0) {
+                    if (music.index > 0) {
+                        await playMusicIndex(music.index - 1, { autoplay: true });
+                    } else if (music.radioStations.length > 0) {
+                        await playRadioStation(music.radioStations[music.radioStations.length - 1], { autoplay: true });
+                    } else {
+                        await playMusicIndex(music.tracks.length - 1, { autoplay: true });
+                    }
+                }
+            } else if (music.currentRadio && music.radioStations.length > 0) {
+                const currentIdx = music.radioStations.findIndex((s) => s.id === music.currentRadio?.id);
+                const prevIdx = (currentIdx - 1 + music.radioStations.length) % music.radioStations.length;
+                await playRadioStation(music.radioStations[prevIdx], { autoplay: true });
+            } else {
+                await playMusicIndex(music.index - 1);
+            }
             break;
         case 'seekRatio':
-            if (Number.isFinite(audio.duration) && audio.duration > 0) {
+            if (!music.currentRadio && Number.isFinite(audio.duration) && audio.duration > 0) {
                 audio.currentTime = Math.min(Math.max(0, audio.duration * msg.ratio), audio.duration);
             }
             break;
         case 'nudge':
-            if (Number.isFinite(audio.duration)) {
+            if (!music.currentRadio && Number.isFinite(audio.duration)) {
                 audio.currentTime = Math.min(Math.max(0, (audio.currentTime || 0) + msg.seconds), audio.duration);
             }
             break;

@@ -499,6 +499,34 @@
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none" />
             <path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none" />
         </symbol>
+        <symbol id="icon-sync" viewBox="0 0 24 24">
+            <path
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+        </symbol>
+        <symbol id="icon-playlist" viewBox="0 0 24 24">
+            <path
+                d="M3 6h11M3 12h11M3 18h7"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+            />
+            <path
+                d="M18 16V7l4-1v5"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+            <circle cx="16" cy="16" r="2.2" fill="currentColor" />
+        </symbol>
         <symbol id="icon-rules" viewBox="0 0 24 24">
             <circle cx="2.5" cy="4" r="1.5" fill="currentColor" />
             <circle cx="2.5" cy="12" r="1.5" fill="currentColor" />
@@ -1037,6 +1065,27 @@
                 stroke-linejoin="round"
                 fill="none"
             />
+        </symbol>
+        <symbol id="icon-radio" viewBox="0 0 24 24">
+            <path
+                d="M4 8h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+            <path
+                d="m5 8 10.5-4.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+            <circle cx="8" cy="14" r="2.5" stroke="currentColor" stroke-width="2" fill="none" />
+            <line x1="14" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <line x1="14" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>
     </defs>
 </svg>

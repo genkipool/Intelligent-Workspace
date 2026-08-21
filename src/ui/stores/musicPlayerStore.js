@@ -21,21 +21,50 @@ import {
     clearMusicTracksInDb,
     removeMusicTrackFromDb,
     removeMusicTracksByIndicesFromDb,
+    getRadioStationsFromDb,
+    saveRadioStationsToDb,
+    deleteRadioStationFromDb,
 } from '../../utils/db.js';
 
 /** How far the rewind and fast-forward buttons jump, in seconds. */
 export const SEEK_STEP_SECONDS = 10;
 
 const PLAYLIST_KEY = 'musicPlaylist';
+const RADIO_STATIONS_KEY = 'musicPlayerRadioStations';
+const RADIO_SYNC_KEY = 'musicPlayerRadioStationsSync';
+const RADIO_SYNC_ENABLED_KEY = 'musicPlayerRadioSyncEnabled';
 const STATE_KEY = 'musicPlayerState';
 /** What the browser will hold for one folder before the rest is left out. */
 const MAX_TRACKS = 500;
 const MAX_TOTAL_BYTES = 1024 * 1024 * 1024;
 
+export const DEFAULT_RADIO_STATIONS = [
+    {
+        id: 'radio_los40',
+        name: 'Los 40',
+        url: 'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40_SC.mp3',
+    },
+    {
+        id: 'radio_bbc',
+        name: 'BBC World Service',
+        url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service',
+    },
+];
+
 /** Is the player panel on screen? */
 export const isPlayerVisible = writable(false);
 /** The whole picked folder, in playing order. */
 export const tracks = writable([]);
+/** The saved radio stations. */
+export const radioStations = writable([]);
+/** Whether radio sync across browsers is enabled. */
+export const isRadioSyncEnabled = writable(false);
+/** Whether radio mode is currently playing/active. */
+export const isRadioActive = writable(false);
+/** Currently selected/playing radio station. */
+export const currentRadioStation = writable(null);
+/** Active tab in playlist view: 'music' | 'radio' | 'all' */
+export const activeTab = writable('music');
 /** The folder those tracks came from, for the empty state and the tooltips. */
 export const playlistFolder = writable('');
 /** Position in `tracks`, or -1 when nothing is loaded. */
@@ -49,12 +78,47 @@ export const isMuted = writable(false);
 export const isSearchOpen = writable(false);
 export const searchQuery = writable('');
 
-export const currentTrack = derived([tracks, currentIndex], ([$tracks, $index]) => $tracks[$index] ?? null);
+export const currentTrack = derived(
+    [tracks, currentIndex, isRadioActive, currentRadioStation],
+    ([$tracks, $index, $isRadio, $currentRadio]) => {
+        if ($isRadio && $currentRadio) {
+            return {
+                id: $currentRadio.id,
+                title: $currentRadio.name,
+                name: $currentRadio.name,
+                url: $currentRadio.url,
+                isRadio: true,
+            };
+        }
+        return $tracks[$index] ?? null;
+    },
+);
+
+/** Filter radio stations by search query */
+export function filterRadioStations(stations, query) {
+    const words = String(query || '')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    if (words.length === 0) return stations;
+    return stations.filter((station) => {
+        const haystack = `${station.name} ${station.url}`.toLowerCase();
+        return words.every((word) => haystack.includes(word));
+    });
+}
 
 /** The tracks the search box is showing; the whole folder when nothing is typed. */
 export const searchResults = derived([tracks, searchQuery], ([$tracks, $query]) => filterTracks($tracks, $query));
 
-export const hasTracks = derived(tracks, ($tracks) => $tracks.length > 0);
+/** The radio stations the search box is showing. */
+export const radioSearchResults = derived([radioStations, searchQuery], ([$radios, $query]) =>
+    filterRadioStations($radios, $query),
+);
+
+export const hasTracks = derived(
+    [tracks, radioStations],
+    ([$tracks, $radios]) => $tracks.length > 0 || $radios.length > 0,
+);
 
 /** 0–1, for the progress bar's width. */
 export const progressRatio = derived([currentTime, duration], ([$time, $duration]) =>
@@ -112,15 +176,25 @@ function post(cmd, extra = {}) {
  */
 async function sendCommand(cmd, extra = {}) {
     const created = await ensureOffscreen();
-    if (created && cmd !== 'loadPlaylist') {
-        await post('loadPlaylist', {
-            tracks: get(tracks),
-            index: Math.max(get(currentIndex), 0),
-            startAt: get(currentTime),
-            autoplay: false,
-        });
+    if (created && cmd !== 'loadPlaylist' && cmd !== 'playRadio') {
+        if (get(isRadioActive) && get(currentRadioStation)) {
+            await post('playRadio', {
+                station: get(currentRadioStation),
+                radioStations: get(radioStations),
+                autoplay: false,
+                activeTab: get(activeTab),
+            });
+        } else {
+            await post('loadPlaylist', {
+                tracks: get(tracks),
+                index: Math.max(get(currentIndex), 0),
+                startAt: get(currentTime),
+                autoplay: false,
+                activeTab: get(activeTab),
+            });
+        }
     }
-    await post(cmd, extra);
+    await post(cmd, { ...extra, activeTab: get(activeTab) });
 }
 
 /**
@@ -160,7 +234,15 @@ let interpolationBase = 0;
 /** Takes in a state report from the offscreen player. */
 function applyState(state) {
     if (!state) return;
-    currentIndex.set(state.index ?? -1);
+    if (state.isRadio) {
+        isRadioActive.set(true);
+        currentRadioStation.set(state.currentRadio ?? null);
+        currentIndex.set(-1);
+    } else {
+        isRadioActive.set(false);
+        currentRadioStation.set(null);
+        currentIndex.set(state.index ?? -1);
+    }
     isPlaying.set(Boolean(state.isPlaying));
     duration.set(state.duration || 0);
     currentTime.set(state.currentTime || 0);
@@ -178,6 +260,310 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
     });
 }
 
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName === 'sync') {
+            if (changes[RADIO_SYNC_ENABLED_KEY]) {
+                isRadioSyncEnabled.set(!!changes[RADIO_SYNC_ENABLED_KEY].newValue);
+            }
+            if (changes[RADIO_SYNC_KEY] && changes[RADIO_SYNC_KEY].newValue) {
+                const newSynced = changes[RADIO_SYNC_KEY].newValue;
+                if (Array.isArray(newSynced) && get(isRadioSyncEnabled)) {
+                    radioStations.set(newSynced);
+                    saveRadioStationsToDb(newSynced);
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Loads saved radio stations from IndexedDB (with sync & local storage migration).
+ */
+export async function loadRadioStations() {
+    try {
+        // 1. Check sync state
+        let isSyncOn = false;
+        try {
+            const syncData = await chrome.storage.sync.get([RADIO_SYNC_ENABLED_KEY, RADIO_SYNC_KEY]);
+            isSyncOn = !!syncData[RADIO_SYNC_ENABLED_KEY];
+            isRadioSyncEnabled.set(isSyncOn);
+
+            if (isSyncOn && Array.isArray(syncData[RADIO_SYNC_KEY]) && syncData[RADIO_SYNC_KEY].length > 0) {
+                const syncList = syncData[RADIO_SYNC_KEY];
+                radioStations.set(syncList);
+                await saveRadioStationsToDb(syncList);
+                return;
+            }
+        } catch {
+            // Ignore sync errors
+        }
+
+        // 2. Read from IndexedDB
+        const dbStations = await getRadioStationsFromDb();
+        if (Array.isArray(dbStations) && dbStations.length > 0) {
+            const hasOldDefaults = dbStations.some(
+                (s) => s.id === 'radio_1' || s.id === 'radio_2' || s.id === 'radio_4',
+            );
+            if (hasOldDefaults) {
+                const cleaned = dbStations.filter((s) => !['radio_1', 'radio_2', 'radio_4'].includes(s.id));
+                const finalStations = cleaned.length > 0 ? cleaned : DEFAULT_RADIO_STATIONS;
+                radioStations.set(finalStations);
+                await saveRadioStationsToDb(finalStations);
+                if (isSyncOn) {
+                    await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: finalStations }).catch(() => {});
+                }
+            } else {
+                radioStations.set(dbStations);
+            }
+            return;
+        }
+
+        // 3. Fallback: migrate from legacy chrome.storage.local
+        const { [RADIO_STATIONS_KEY]: stored } = await chrome.storage.local.get(RADIO_STATIONS_KEY);
+        if (Array.isArray(stored) && stored.length > 0) {
+            const cleaned = stored.filter((s) => !['radio_1', 'radio_2', 'radio_4'].includes(s.id));
+            const finalStations = cleaned.length > 0 ? cleaned : DEFAULT_RADIO_STATIONS;
+            radioStations.set(finalStations);
+            await saveRadioStationsToDb(finalStations);
+            await chrome.storage.local.remove(RADIO_STATIONS_KEY);
+            if (isSyncOn) {
+                await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: finalStations }).catch(() => {});
+            }
+        } else {
+            radioStations.set(DEFAULT_RADIO_STATIONS);
+            await saveRadioStationsToDb(DEFAULT_RADIO_STATIONS);
+            if (isSyncOn) {
+                await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: DEFAULT_RADIO_STATIONS }).catch(() => {});
+            }
+        }
+    } catch {
+        radioStations.set(DEFAULT_RADIO_STATIONS);
+    }
+}
+
+/**
+ * Toggles synchronization across browsers via chrome.storage.sync.
+ * @param {boolean} [forced]
+ * @returns {Promise<boolean>}
+ */
+export async function toggleRadioSync(forced) {
+    const current = get(isRadioSyncEnabled);
+    const next = typeof forced === 'boolean' ? forced : !current;
+    isRadioSyncEnabled.set(next);
+
+    try {
+        if (next) {
+            const currentStations = get(radioStations);
+            await chrome.storage.sync.set({
+                [RADIO_SYNC_ENABLED_KEY]: true,
+                [RADIO_SYNC_KEY]: currentStations,
+            });
+        } else {
+            await chrome.storage.sync.set({
+                [RADIO_SYNC_ENABLED_KEY]: false,
+            });
+        }
+    } catch (err) {
+        console.error('Failed to toggle radio sync:', err);
+    }
+    return next;
+}
+
+/**
+ * Adds a new radio station and persists it in IndexedDB (and sync if enabled).
+ * @param {string} name
+ * @param {string} url
+ */
+export async function addRadioStation(name, url) {
+    const trimmedName = String(name || '').trim();
+    const trimmedUrl = String(url || '').trim();
+    if (!trimmedName || !trimmedUrl) return null;
+
+    const newStation = {
+        id: `radio_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name: trimmedName,
+        url: trimmedUrl,
+        dateAdded: Date.now(),
+    };
+
+    const current = get(radioStations);
+    const updated = [...current, newStation];
+    radioStations.set(updated);
+    await saveRadioStationsToDb(updated);
+    if (get(isRadioSyncEnabled)) {
+        await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+    }
+    await sendCommand('setRadioStations', { radioStations: updated });
+    return newStation;
+}
+
+/**
+ * Removes a radio station by ID and persists changes in IndexedDB (and sync if enabled).
+ * @param {string} id
+ */
+export async function removeRadioStation(id) {
+    const current = get(radioStations);
+    const updated = current.filter((s) => s.id !== id);
+    radioStations.set(updated);
+    await deleteRadioStationFromDb(id);
+    if (get(isRadioSyncEnabled)) {
+        await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+    }
+    await sendCommand('setRadioStations', { radioStations: updated });
+
+    if (get(isRadioActive) && get(currentRadioStation)?.id === id) {
+        if (updated.length > 0) {
+            await playRadioStation(updated[0]);
+        } else {
+            await stop();
+            isRadioActive.set(false);
+            currentRadioStation.set(null);
+        }
+    }
+}
+
+/**
+ * Updates an existing radio station.
+ * @param {string} id
+ * @param {{name: string, url: string}} param1
+ */
+export async function updateRadioStation(id, { name, url }) {
+    const current = get(radioStations);
+    const updated = current.map((s) => (s.id === id ? { ...s, name: name.trim(), url: url.trim() } : s));
+    radioStations.set(updated);
+    await saveRadioStationsToDb(updated);
+    if (get(isRadioSyncEnabled)) {
+        await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+    }
+    await sendCommand('setRadioStations', { radioStations: updated });
+
+    if (get(isRadioActive) && get(currentRadioStation)?.id === id) {
+        currentRadioStation.set({ ...get(currentRadioStation), name: name.trim(), url: url.trim() });
+    }
+}
+
+/**
+ * Exports current radio stations to a downloadable JSON file.
+ * @returns {boolean}
+ */
+export function exportRadioStations() {
+    const stations = get(radioStations);
+    if (!stations || stations.length === 0) return false;
+
+    const exportData = {
+        app: 'Intelligent_Workspace',
+        version: 1,
+        type: 'radioStations',
+        exportedAt: new Date().toISOString(),
+        stations: stations.map((s) => ({
+            name: s.name,
+            url: s.url,
+        })),
+    };
+
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `radio_stations_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 250);
+    return true;
+}
+
+/**
+ * Imports radio stations from parsed JSON data, filtering out malformed and duplicate entries.
+ * @param {any} parsedData
+ * @returns {Promise<{success: boolean, addedCount: number, skippedCount: number, error?: string}>}
+ */
+export async function importRadioStations(parsedData) {
+    let list = [];
+    if (Array.isArray(parsedData)) {
+        list = parsedData;
+    } else if (parsedData && Array.isArray(parsedData.stations)) {
+        list = parsedData.stations;
+    } else if (parsedData && Array.isArray(parsedData.radioStations)) {
+        list = parsedData.radioStations;
+    } else {
+        return { success: false, addedCount: 0, skippedCount: 0, error: 'invalid_format' };
+    }
+
+    const current = get(radioStations);
+    const existingUrls = new Set(current.map((s) => (s.url || '').toLowerCase().trim()));
+    const existingNames = new Set(current.map((s) => (s.name || '').toLowerCase().trim()));
+
+    const newToAdd = [];
+    let skippedCount = 0;
+
+    for (const item of list) {
+        if (!item || typeof item !== 'object') {
+            skippedCount++;
+            continue;
+        }
+        const name = String(item.name || item.stationName || '').trim();
+        const url = String(item.url || item.streamUrl || item.url_resolved || '').trim();
+
+        if (!name || !url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+            skippedCount++;
+            continue;
+        }
+
+        const normUrl = url.toLowerCase();
+        const normName = name.toLowerCase();
+
+        if (existingUrls.has(normUrl) || existingNames.has(normName)) {
+            skippedCount++;
+            continue;
+        }
+
+        existingUrls.add(normUrl);
+        existingNames.add(normName);
+
+        newToAdd.push({
+            id: `radio_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            name,
+            url,
+            dateAdded: Date.now(),
+        });
+    }
+
+    if (newToAdd.length > 0) {
+        const updated = [...current, ...newToAdd];
+        radioStations.set(updated);
+        await saveRadioStationsToDb(updated);
+        if (get(isRadioSyncEnabled)) {
+            await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+        }
+        await sendCommand('setRadioStations', { radioStations: updated });
+    }
+
+    return {
+        success: true,
+        addedCount: newToAdd.length,
+        skippedCount,
+    };
+}
+
+/**
+ * Plays a radio station.
+ * @param {{id: string, name: string, url: string}} station
+ */
+export async function playRadioStation(station) {
+    if (!station) return;
+    isRadioActive.set(true);
+    currentRadioStation.set(station);
+    currentIndex.set(-1);
+    currentTime.set(0);
+    duration.set(0);
+    await sendCommand('playRadio', { station, radioStations: get(radioStations), autoplay: true });
+}
+
 /**
  * Picks up whatever was already going.
  *
@@ -187,6 +573,7 @@ if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
  */
 export async function initMusicPlayer() {
     try {
+        await loadRadioStations();
         const { [PLAYLIST_KEY]: playlist, [VOLUME_KEY]: storedVolume } = await chrome.storage.local.get([
             PLAYLIST_KEY,
             VOLUME_KEY,
@@ -448,17 +835,27 @@ export async function removeTrack(trackIndex) {
 /** @param {number} index */
 export async function playTrackAt(index) {
     if (index < 0 || index >= get(tracks).length) return;
+    isRadioActive.set(false);
+    currentRadioStation.set(null);
     await sendCommand('playIndex', { index, tracks: get(tracks) });
 }
 
-/** Plays a track the search results handed back. */
+/** Plays a track the search results or playlist handed back. */
 export async function playTrack(track) {
     if (!track) return;
-    await playTrackAt(track.index);
+    if (track.isRadio || track.url) {
+        await playRadioStation(track);
+    } else {
+        await playTrackAt(track.index);
+    }
 }
 
 export async function play() {
-    await sendCommand('play', { tracks: get(tracks) });
+    if (get(isRadioActive)) {
+        await sendCommand('play');
+    } else {
+        await sendCommand('play', { tracks: get(tracks) });
+    }
 }
 
 export async function pause() {
@@ -475,15 +872,94 @@ export async function stop() {
 }
 
 export async function playNext() {
-    await sendCommand('next', { tracks: get(tracks) });
+    const tab = get(activeTab);
+    const radioList = get(radioStations);
+    const musicList = get(tracks);
+    const isRadio = get(isRadioActive);
+
+    if (tab === 'all') {
+        if (isRadio) {
+            const currentStation = get(currentRadioStation);
+            const rIdx = radioList.findIndex((s) => s.id === currentStation?.id);
+            if (rIdx >= 0 && rIdx < radioList.length - 1) {
+                await playRadioStation(radioList[rIdx + 1]);
+            } else if (musicList.length > 0) {
+                await playTrackAt(0);
+            } else if (radioList.length > 0) {
+                await playRadioStation(radioList[0]);
+            }
+        } else {
+            const currentIdx = get(currentIndex);
+            if (currentIdx >= 0 && currentIdx < musicList.length - 1) {
+                await playTrackAt(currentIdx + 1);
+            } else if (radioList.length > 0) {
+                await playRadioStation(radioList[0]);
+            } else if (musicList.length > 0) {
+                await playTrackAt(0);
+            }
+        }
+    } else if (tab === 'radio' || isRadio) {
+        if (radioList.length > 0) {
+            const currentStation = get(currentRadioStation);
+            const rIdx = radioList.findIndex((s) => s.id === currentStation?.id);
+            const nextIdx = (rIdx + 1) % radioList.length;
+            await playRadioStation(radioList[nextIdx]);
+        }
+    } else {
+        if (musicList.length > 0) {
+            const currentIdx = get(currentIndex);
+            const nextIdx = (currentIdx + 1) % musicList.length;
+            await playTrackAt(nextIdx);
+        }
+    }
 }
 
 export async function playPrevious() {
-    await sendCommand('previous', { tracks: get(tracks) });
+    const tab = get(activeTab);
+    const radioList = get(radioStations);
+    const musicList = get(tracks);
+    const isRadio = get(isRadioActive);
+
+    if (tab === 'all') {
+        if (isRadio) {
+            const currentStation = get(currentRadioStation);
+            const rIdx = radioList.findIndex((s) => s.id === currentStation?.id);
+            if (rIdx > 0) {
+                await playRadioStation(radioList[rIdx - 1]);
+            } else if (musicList.length > 0) {
+                await playTrackAt(musicList.length - 1);
+            } else if (radioList.length > 0) {
+                await playRadioStation(radioList[radioList.length - 1]);
+            }
+        } else {
+            const currentIdx = get(currentIndex);
+            if (currentIdx > 0) {
+                await playTrackAt(currentIdx - 1);
+            } else if (radioList.length > 0) {
+                await playRadioStation(radioList[radioList.length - 1]);
+            } else if (musicList.length > 0) {
+                await playTrackAt(musicList.length - 1);
+            }
+        }
+    } else if (tab === 'radio' || isRadio) {
+        if (radioList.length > 0) {
+            const currentStation = get(currentRadioStation);
+            const rIdx = radioList.findIndex((s) => s.id === currentStation?.id);
+            const prevIdx = (rIdx - 1 + radioList.length) % radioList.length;
+            await playRadioStation(radioList[prevIdx]);
+        }
+    } else {
+        if (musicList.length > 0) {
+            const currentIdx = get(currentIndex);
+            const prevIdx = (currentIdx - 1 + musicList.length) % musicList.length;
+            await playTrackAt(prevIdx);
+        }
+    }
 }
 
 /** @param {number} ratio 0–1, from a click or drag on the progress bar */
 export async function seekRatio(ratio) {
+    if (get(isRadioActive)) return;
     // Moved here and now so the bar follows the pointer without waiting for the
     // report to come back.
     const total = get(duration);
@@ -497,6 +973,7 @@ export async function seekRatio(ratio) {
 
 /** @param {number} seconds negative to rewind */
 export async function nudge(seconds) {
+    if (get(isRadioActive)) return;
     await sendCommand('nudge', { seconds });
 }
 
@@ -508,12 +985,32 @@ export function fastForward() {
     return nudge(SEEK_STEP_SECONDS);
 }
 
+export function hidePomodoroPanelIfOpen() {
+    const pomoPanel = document.getElementById('pomodoro-panel');
+    if (pomoPanel && !pomoPanel.classList.contains('hidden')) {
+        const pomoCloseBtn = document.getElementById('pomodoro-close-btn');
+        if (pomoCloseBtn) {
+            pomoCloseBtn.click();
+        } else {
+            pomoPanel.classList.add('hidden');
+            chrome.storage?.local?.set({ pomodoroPanelOpen: false });
+        }
+    }
+}
+
 export function togglePanel() {
-    isPlayerVisible.update((visible) => !visible);
+    isPlayerVisible.update((visible) => {
+        const next = !visible;
+        if (next) {
+            hidePomodoroPanelIfOpen();
+        }
+        return next;
+    });
 }
 
 export function showPanel() {
     isPlayerVisible.set(true);
+    hidePomodoroPanelIfOpen();
 }
 
 export function hidePanel() {
