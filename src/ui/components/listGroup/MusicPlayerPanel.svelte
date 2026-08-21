@@ -61,6 +61,10 @@
         toggleRadioSync,
         exportRadioStations,
         importRadioStations,
+        moveTrackToFolder,
+        reorderTracksByIndices,
+        reorderFolders,
+        reorderRadioStationsByIds,
         hidePomodoroPanelIfOpen,
         SEEK_STEP_SECONDS,
     } from '../../stores/musicPlayerStore.js';
@@ -76,6 +80,13 @@
     let isScrubbing = $state(false);
     let isAddMenuOpen = $state(false);
     let isDragOver = $state(false);
+    let draggingTrackIndex = $state(-1);
+    let previewTrackOrder = $state(null);
+    let draggingFolder = $state(null);
+    let previewFolderOrder = $state(null);
+    let draggingRadioId = $state(null);
+    let previewRadioOrder = $state(null);
+    let folderHoverTimer = null;
 
     /** The folder chooser is offered once per panel opening, never on every render. */
     let offeredFolderPicker = false;
@@ -186,7 +197,31 @@
         return $tt('musicPlayerPrevious');
     });
 
-    let groupedResults = $derived(groupTracksByFolder($searchResults));
+    let orderedSearchResults = $derived.by(() => {
+        const list = $searchResults;
+        if (!previewTrackOrder) return list;
+        const byIndex = new Map(list.map((t) => [t.index, t]));
+        const preview = previewTrackOrder.map((i) => byIndex.get(i)).filter(Boolean);
+        return preview.length === list.length ? preview : list;
+    });
+
+    let baseGroupedResults = $derived(groupTracksByFolder(orderedSearchResults));
+
+    let orderedGroupedResults = $derived.by(() => {
+        let groups = baseGroupedResults;
+        if (!previewFolderOrder) return groups;
+        const byFolder = new Map(groups.map((g) => [g.folder, g]));
+        const preview = previewFolderOrder.map((f) => byFolder.get(f)).filter(Boolean);
+        return preview.length === groups.length ? preview : groups;
+    });
+
+    let orderedRadioResults = $derived.by(() => {
+        const list = $radioSearchResults;
+        if (!previewRadioOrder) return list;
+        const byId = new Map(list.map((s) => [s.id, s]));
+        const preview = previewRadioOrder.map((id) => byId.get(id)).filter(Boolean);
+        return preview.length === list.length ? preview : list;
+    });
 
     function handleLoadResult(res) {
         if (!res) return;
@@ -365,18 +400,204 @@
         openModal(showRadioStationsModal);
     }
 
-    function handleDragOver(e) {
-        e.preventDefault();
-        isDragOver = true;
+    const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+
+    function clearDrag() {
+        draggingTrackIndex = -1;
+        previewTrackOrder = null;
+        draggingFolder = null;
+        previewFolderOrder = null;
+        draggingRadioId = null;
+        previewRadioOrder = null;
+        if (folderHoverTimer) {
+            clearTimeout(folderHoverTimer);
+            folderHoverTimer = null;
+        }
     }
 
-    function handleDragLeave(e) {
+    // ─── Track Drag & Drop (Live Preview) ───────────────────────────
+    function handleTrackDragStart(e, track) {
+        if (e.target.closest('button')) {
+            e.preventDefault();
+            return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', track.index.toString());
+        const ghost = new Image();
+        ghost.src = TRANSPARENT_PIXEL;
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+
+        setTimeout(() => {
+            draggingTrackIndex = track.index;
+            previewTrackOrder = $searchResults.map((t) => t.index);
+        }, 0);
+    }
+
+    function handleTrackDragOver(e, targetTrack) {
+        if (draggingTrackIndex === -1 || !previewTrackOrder) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (targetTrack.index === draggingTrackIndex) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isOverTop = e.clientY < rect.top + rect.height / 2;
+        const next = previewTrackOrder.filter((i) => i !== draggingTrackIndex);
+        const at = next.indexOf(targetTrack.index);
+        if (at === -1) return;
+        next.splice(isOverTop ? at : at + 1, 0, draggingTrackIndex);
+        if (next.join(',') !== previewTrackOrder.join(',')) {
+            previewTrackOrder = next;
+        }
+    }
+
+    async function handleTrackDrop(e) {
+        if (draggingTrackIndex === -1 || !previewTrackOrder) return;
+        e.preventDefault();
+        const order = previewTrackOrder;
+        clearDrag();
+        await reorderTracksByIndices(order);
+    }
+
+    // ─── Folder Drag & Drop (Live Preview) ──────────────────────────
+    function handleFolderDragStart(e, group) {
+        if (e.target.closest('button')) {
+            e.preventDefault();
+            return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', group.folder);
+        const ghost = new Image();
+        ghost.src = TRANSPARENT_PIXEL;
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+
+        setTimeout(() => {
+            draggingFolder = group.folder;
+            previewFolderOrder = baseGroupedResults.map((g) => g.folder);
+        }, 0);
+    }
+
+    function handleFolderSummaryDragOver(e, group, detailsEl) {
+        if (draggingTrackIndex !== -1) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (detailsEl && !detailsEl.open) {
+                if (!folderHoverTimer) {
+                    folderHoverTimer = setTimeout(() => {
+                        if (detailsEl) detailsEl.open = true;
+                        folderHoverTimer = null;
+                    }, 400);
+                }
+            }
+            return;
+        }
+
+        if (draggingFolder === null || !previewFolderOrder) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (group.folder === draggingFolder) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isOverTop = e.clientY < rect.top + rect.height / 2;
+        const next = previewFolderOrder.filter((f) => f !== draggingFolder);
+        const at = next.indexOf(group.folder);
+        if (at === -1) return;
+        next.splice(isOverTop ? at : at + 1, 0, draggingFolder);
+        if (next.join(',') !== previewFolderOrder.join(',')) {
+            previewFolderOrder = next;
+        }
+    }
+
+    function handleFolderSummaryDragLeave() {
+        if (folderHoverTimer) {
+            clearTimeout(folderHoverTimer);
+            folderHoverTimer = null;
+        }
+    }
+
+    async function handleFolderDrop(e, targetGroup) {
+        if (draggingTrackIndex !== -1) {
+            e.preventDefault();
+            const fromIndex = draggingTrackIndex;
+            const targetFolder = targetGroup.folder;
+            clearDrag();
+            await moveTrackToFolder(fromIndex, targetFolder);
+            return;
+        }
+
+        if (draggingFolder === null || !previewFolderOrder) return;
+        e.preventDefault();
+        const order = previewFolderOrder;
+        clearDrag();
+        await reorderFolders(order);
+    }
+
+    // ─── Radio Drag & Drop (Live Preview) ───────────────────────────
+    function handleRadioDragStart(e, station) {
+        if (e.target.closest('button')) {
+            e.preventDefault();
+            return;
+        }
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', station.id);
+        const ghost = new Image();
+        ghost.src = TRANSPARENT_PIXEL;
+        e.dataTransfer.setDragImage(ghost, 0, 0);
+
+        setTimeout(() => {
+            draggingRadioId = station.id;
+            previewRadioOrder = $radioSearchResults.map((s) => s.id);
+        }, 0);
+    }
+
+    function handleRadioDragOver(e, station) {
+        if (!draggingRadioId || !previewRadioOrder) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (station.id === draggingRadioId) return;
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const isOverTop = e.clientY < rect.top + rect.height / 2;
+        const next = previewRadioOrder.filter((id) => id !== draggingRadioId);
+        const at = next.indexOf(station.id);
+        if (at === -1) return;
+        next.splice(isOverTop ? at : at + 1, 0, draggingRadioId);
+        if (next.join(',') !== previewRadioOrder.join(',')) {
+            previewRadioOrder = next;
+        }
+    }
+
+    async function handleRadioDrop(e) {
+        if (!draggingRadioId || !previewRadioOrder) return;
+        e.preventDefault();
+        const order = previewRadioOrder;
+        clearDrag();
+        await reorderRadioStationsByIds(order);
+    }
+
+    function handleDragEnd() {
+        clearDrag();
+    }
+
+    function isInternalDragging() {
+        return draggingTrackIndex !== -1 || draggingFolder !== null || draggingRadioId !== null;
+    }
+
+    function handlePanelDragOver(e) {
+        if (isInternalDragging()) return;
+        if (e.dataTransfer?.types?.includes('Files')) {
+            e.preventDefault();
+            isDragOver = true;
+        }
+    }
+
+    function handlePanelDragLeave(e) {
         if (!e.currentTarget.contains(e.relatedTarget)) {
             isDragOver = false;
         }
     }
 
-    async function handleDrop(e) {
+    async function handlePanelDrop(e) {
+        if (isInternalDragging()) return;
         e.preventDefault();
         isDragOver = false;
         if (e.dataTransfer?.files?.length) {
@@ -412,15 +633,18 @@
         openFolderPicker();
     });
 
+    let prevSearchOpen = false;
     $effect(() => {
         if ($isSearchOpen && searchInput) searchInput.focus();
     });
 
     $effect(() => {
-        if (!$isSearchOpen || !resultsEl) return;
-        void $searchResults;
-        void $radioSearchResults;
-        resultsEl.querySelector('.music-result.active, .saved-radio-item.active')?.scrollIntoView({ block: 'nearest' });
+        if ($isSearchOpen && !prevSearchOpen && resultsEl) {
+            resultsEl
+                .querySelector('.music-result.active, .saved-radio-item.active')
+                ?.scrollIntoView({ block: 'nearest' });
+        }
+        prevSearchOpen = $isSearchOpen;
     });
 </script>
 
@@ -431,9 +655,9 @@
     class:is-drag-over={isDragOver}
     aria-label={$t('musicPlayer')}
     aria-hidden={!$isPlayerVisible}
-    ondragover={handleDragOver}
-    ondragleave={handleDragLeave}
-    ondrop={handleDrop}
+    ondragover={handlePanelDragOver}
+    ondragleave={handlePanelDragLeave}
+    ondrop={handlePanelDrop}
 >
     <!-- ① Track name / search box, Radio modal button, and unified Folder/Files button -->
     <div class="music-row music-row-title">
@@ -605,16 +829,22 @@
         <div bind:this={resultsEl} class="music-results" role="listbox" aria-label={$t('musicPlayerSearch')}>
             <!-- TAB 1: MUSIC ONLY -->
             {#if $activeTab === 'music'}
-                {#if $searchResults.length === 0}
+                {#if orderedGroupedResults.length === 0}
                     <p class="music-results-empty">{$t('musicPlayerNoResults')}</p>
-                {:else if groupedResults.length === 1 && !groupedResults[0].folder}
-                    {#each groupedResults[0].tracks as track (track.index)}
+                {:else if orderedGroupedResults.length === 1 && !orderedGroupedResults[0].folder}
+                    {#each orderedGroupedResults[0].tracks as track (track.index)}
                         <div
                             class="music-result"
                             class:active={!$isRadioActive && track.index === $currentIndex}
+                            class:dragging={draggingTrackIndex === track.index}
                             role="option"
                             aria-selected={!$isRadioActive && track.index === $currentIndex}
                             tabindex="0"
+                            draggable="true"
+                            ondragstart={(e) => handleTrackDragStart(e, track)}
+                            ondragover={(e) => handleTrackDragOver(e, track)}
+                            ondrop={handleTrackDrop}
+                            ondragend={handleDragEnd}
                             onclick={() => handleResultClick(track)}
                             onkeydown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -642,56 +872,100 @@
                         </div>
                     {/each}
                 {:else}
-                    {#each groupedResults as group (group.folder)}
-                        <details class="music-folder" open>
-                            <summary class="music-folder-title">
-                                <span class="folder-icon-wrapper">
+                    {#each orderedGroupedResults as group (group.folder)}
+                        <details class="music-folder" class:dragging={draggingFolder === group.folder} open>
+                            <summary
+                                class="music-folder-title"
+                                draggable="true"
+                                ondragstart={(e) => handleFolderDragStart(e, group)}
+                                ondragover={(e) => handleFolderSummaryDragOver(e, group, e.currentTarget.parentElement)}
+                                ondragleave={handleFolderSummaryDragLeave}
+                                ondrop={(e) => handleFolderDrop(e, group)}
+                                ondragend={handleDragEnd}
+                            >
+                                {#if !group.folder}
                                     <svg
-                                        class="folder-icon folder-icon-closed"
                                         width="16"
                                         height="16"
+                                        class="music-track-icon"
                                         aria-hidden="true"
                                         focusable="false"
                                     >
-                                        <use href="#icon-folder-closed"></use>
+                                        <use href="#icon-music"></use>
                                     </svg>
-                                    <svg
-                                        class="folder-icon folder-icon-open"
-                                        width="16"
-                                        height="16"
-                                        aria-hidden="true"
-                                        focusable="false"
+                                    <span class="folder-name" title={$t('musicPlayerLooseFiles')}>
+                                        {$t('musicPlayerLooseFiles')}
+                                    </span>
+                                    <span class="music-folder-count">({group.tracks.length})</span>
+                                    <button
+                                        type="button"
+                                        class="action-btn delete-group-btn music-folder-delete-btn"
+                                        title={$tt('musicPlayerRemoveFilesGroup')}
+                                        aria-label={$t('musicPlayerRemoveFilesGroup')}
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeFolder(group.folder);
+                                        }}
                                     >
-                                        <use href="#icon-folder-open"></use>
-                                    </svg>
-                                </span>
-                                <span class="folder-name" title={group.folder || $t('otherGroupName')}>
-                                    {group.folder || $t('otherGroupName')}
-                                </span>
-                                <span class="music-folder-count">({group.tracks.length})</span>
-                                <button
-                                    type="button"
-                                    class="action-btn delete-group-btn music-folder-delete-btn"
-                                    title={$tt('musicPlayerRemoveFolder')}
-                                    aria-label={$t('musicPlayerRemoveFolder')}
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        removeFolder(group.folder);
-                                    }}
-                                >
-                                    <svg width="14" height="14" aria-hidden="true" focusable="false">
-                                        <use href="#icon-trash"></use>
-                                    </svg>
-                                </button>
+                                        <svg width="14" height="14" aria-hidden="true" focusable="false">
+                                            <use href="#icon-trash"></use>
+                                        </svg>
+                                    </button>
+                                {:else}
+                                    <span class="folder-icon-wrapper">
+                                        <svg
+                                            class="folder-icon folder-icon-closed"
+                                            width="16"
+                                            height="16"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <use href="#icon-folder-closed"></use>
+                                        </svg>
+                                        <svg
+                                            class="folder-icon folder-icon-open"
+                                            width="16"
+                                            height="16"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <use href="#icon-folder-open"></use>
+                                        </svg>
+                                    </span>
+                                    <span class="folder-name" title={group.folder}>
+                                        {group.folder}
+                                    </span>
+                                    <span class="music-folder-count">({group.tracks.length})</span>
+                                    <button
+                                        type="button"
+                                        class="action-btn delete-group-btn music-folder-delete-btn"
+                                        title={$tt('musicPlayerRemoveFolder')}
+                                        aria-label={$t('musicPlayerRemoveFolder')}
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeFolder(group.folder);
+                                        }}
+                                    >
+                                        <svg width="14" height="14" aria-hidden="true" focusable="false">
+                                            <use href="#icon-trash"></use>
+                                        </svg>
+                                    </button>
+                                {/if}
                             </summary>
                             <div class="music-folder-content">
                                 {#each group.tracks as track (track.index)}
                                     <div
                                         class="music-result"
                                         class:active={!$isRadioActive && track.index === $currentIndex}
+                                        class:dragging={draggingTrackIndex === track.index}
                                         role="option"
                                         aria-selected={!$isRadioActive && track.index === $currentIndex}
                                         tabindex="0"
+                                        draggable="true"
+                                        ondragstart={(e) => handleTrackDragStart(e, track)}
+                                        ondragover={(e) => handleTrackDragOver(e, track)}
+                                        ondrop={handleTrackDrop}
+                                        ondragend={handleDragEnd}
                                         onclick={() => handleResultClick(track)}
                                         onkeydown={(e) => {
                                             if (e.key === 'Enter' || e.key === ' ') {
@@ -732,20 +1006,26 @@
 
                 <!-- TAB 2: RADIO ONLY -->
             {:else if $activeTab === 'radio'}
-                {#if $radioSearchResults.length === 0}
+                {#if orderedRadioResults.length === 0}
                     <div class="radio-results-empty-container">
                         <p class="music-results-empty">{$t('radioStationEmptyList')}</p>
                     </div>
                 {:else}
-                    {#each $radioSearchResults as station (station.id)}
+                    {#each orderedRadioResults as station (station.id)}
                         {@const isSelected = $isRadioActive && $currentRadioStation?.id === station.id}
                         {@const isPlayingThis = isSelected && $isPlaying}
                         <div
                             class="music-result music-radio-result"
                             class:active={isSelected}
+                            class:dragging={draggingRadioId === station.id}
                             role="option"
                             aria-selected={isSelected}
                             tabindex="0"
+                            draggable="true"
+                            ondragstart={(e) => handleRadioDragStart(e, station)}
+                            ondragover={(e) => handleRadioDragOver(e, station)}
+                            ondrop={handleRadioDrop}
+                            ondragend={handleDragEnd}
                             onclick={() => handleRadioResultClick(station)}
                             onkeydown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -773,7 +1053,7 @@
 
                 <!-- TAB 3: ALL (MUSIC + RADIO) -->
             {:else}
-                {#if $radioSearchResults.length > 0}
+                {#if orderedRadioResults.length > 0}
                     <details class="music-folder music-all-section" open>
                         <summary class="music-folder-title">
                             <span class="folder-icon-wrapper">
@@ -782,17 +1062,23 @@
                                 </svg>
                             </span>
                             <span class="folder-name">{$t('radioStationSavedList')}</span>
-                            <span class="music-folder-count">({$radioSearchResults.length})</span>
+                            <span class="music-folder-count">({orderedRadioResults.length})</span>
                         </summary>
                         <div class="music-folder-content">
-                            {#each $radioSearchResults as station (station.id)}
+                            {#each orderedRadioResults as station (station.id)}
                                 {@const isSelected = $isRadioActive && $currentRadioStation?.id === station.id}
                                 <div
                                     class="music-result music-radio-result"
                                     class:active={isSelected}
+                                    class:dragging={draggingRadioId === station.id}
                                     role="option"
                                     aria-selected={isSelected}
                                     tabindex="0"
+                                    draggable="true"
+                                    ondragstart={(e) => handleRadioDragStart(e, station)}
+                                    ondragover={(e) => handleRadioDragOver(e, station)}
+                                    ondrop={handleRadioDrop}
+                                    ondragend={handleDragEnd}
                                     onclick={() => handleRadioResultClick(station)}
                                     onkeydown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
@@ -823,16 +1109,22 @@
                     </details>
                 {/if}
 
-                {#if $searchResults.length === 0 && $radioSearchResults.length === 0}
+                {#if orderedSearchResults.length === 0 && orderedRadioResults.length === 0}
                     <p class="music-results-empty">{$t('musicPlayerNoResults')}</p>
-                {:else if groupedResults.length === 1 && !groupedResults[0].folder}
-                    {#each groupedResults[0].tracks as track (track.index)}
+                {:else if orderedGroupedResults.length === 1 && !orderedGroupedResults[0].folder}
+                    {#each orderedGroupedResults[0].tracks as track (track.index)}
                         <div
                             class="music-result"
                             class:active={!$isRadioActive && track.index === $currentIndex}
+                            class:dragging={draggingTrackIndex === track.index}
                             role="option"
                             aria-selected={!$isRadioActive && track.index === $currentIndex}
                             tabindex="0"
+                            draggable="true"
+                            ondragstart={(e) => handleTrackDragStart(e, track)}
+                            ondragover={(e) => handleTrackDragOver(e, track)}
+                            ondrop={handleTrackDrop}
+                            ondragend={handleDragEnd}
                             onclick={() => handleResultClick(track)}
                             onkeydown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -860,56 +1152,100 @@
                         </div>
                     {/each}
                 {:else}
-                    {#each groupedResults as group (group.folder)}
-                        <details class="music-folder" open>
-                            <summary class="music-folder-title">
-                                <span class="folder-icon-wrapper">
+                    {#each orderedGroupedResults as group (group.folder)}
+                        <details class="music-folder" class:dragging={draggingFolder === group.folder} open>
+                            <summary
+                                class="music-folder-title"
+                                draggable="true"
+                                ondragstart={(e) => handleFolderDragStart(e, group)}
+                                ondragover={(e) => handleFolderSummaryDragOver(e, group, e.currentTarget.parentElement)}
+                                ondragleave={handleFolderSummaryDragLeave}
+                                ondrop={(e) => handleFolderDrop(e, group)}
+                                ondragend={handleDragEnd}
+                            >
+                                {#if !group.folder}
                                     <svg
-                                        class="folder-icon folder-icon-closed"
                                         width="16"
                                         height="16"
+                                        class="music-track-icon"
                                         aria-hidden="true"
                                         focusable="false"
                                     >
-                                        <use href="#icon-folder-closed"></use>
+                                        <use href="#icon-music"></use>
                                     </svg>
-                                    <svg
-                                        class="folder-icon folder-icon-open"
-                                        width="16"
-                                        height="16"
-                                        aria-hidden="true"
-                                        focusable="false"
+                                    <span class="folder-name" title={$t('musicPlayerLooseFiles')}>
+                                        {$t('musicPlayerLooseFiles')}
+                                    </span>
+                                    <span class="music-folder-count">({group.tracks.length})</span>
+                                    <button
+                                        type="button"
+                                        class="action-btn delete-group-btn music-folder-delete-btn"
+                                        title={$tt('musicPlayerRemoveFilesGroup')}
+                                        aria-label={$t('musicPlayerRemoveFilesGroup')}
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeFolder(group.folder);
+                                        }}
                                     >
-                                        <use href="#icon-folder-open"></use>
-                                    </svg>
-                                </span>
-                                <span class="folder-name" title={group.folder || $t('otherGroupName')}>
-                                    {group.folder || $t('otherGroupName')}
-                                </span>
-                                <span class="music-folder-count">({group.tracks.length})</span>
-                                <button
-                                    type="button"
-                                    class="action-btn delete-group-btn music-folder-delete-btn"
-                                    title={$tt('musicPlayerRemoveFolder')}
-                                    aria-label={$t('musicPlayerRemoveFolder')}
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        removeFolder(group.folder);
-                                    }}
-                                >
-                                    <svg width="14" height="14" aria-hidden="true" focusable="false">
-                                        <use href="#icon-trash"></use>
-                                    </svg>
-                                </button>
+                                        <svg width="14" height="14" aria-hidden="true" focusable="false">
+                                            <use href="#icon-trash"></use>
+                                        </svg>
+                                    </button>
+                                {:else}
+                                    <span class="folder-icon-wrapper">
+                                        <svg
+                                            class="folder-icon folder-icon-closed"
+                                            width="16"
+                                            height="16"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <use href="#icon-folder-closed"></use>
+                                        </svg>
+                                        <svg
+                                            class="folder-icon folder-icon-open"
+                                            width="16"
+                                            height="16"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <use href="#icon-folder-open"></use>
+                                        </svg>
+                                    </span>
+                                    <span class="folder-name" title={group.folder}>
+                                        {group.folder}
+                                    </span>
+                                    <span class="music-folder-count">({group.tracks.length})</span>
+                                    <button
+                                        type="button"
+                                        class="action-btn delete-group-btn music-folder-delete-btn"
+                                        title={$tt('musicPlayerRemoveFolder')}
+                                        aria-label={$t('musicPlayerRemoveFolder')}
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            removeFolder(group.folder);
+                                        }}
+                                    >
+                                        <svg width="14" height="14" aria-hidden="true" focusable="false">
+                                            <use href="#icon-trash"></use>
+                                        </svg>
+                                    </button>
+                                {/if}
                             </summary>
                             <div class="music-folder-content">
                                 {#each group.tracks as track (track.index)}
                                     <div
                                         class="music-result"
                                         class:active={!$isRadioActive && track.index === $currentIndex}
+                                        class:dragging={draggingTrackIndex === track.index}
                                         role="option"
                                         aria-selected={!$isRadioActive && track.index === $currentIndex}
                                         tabindex="0"
+                                        draggable="true"
+                                        ondragstart={(e) => handleTrackDragStart(e, track)}
+                                        ondragover={(e) => handleTrackDragOver(e, track)}
+                                        ondrop={handleTrackDrop}
+                                        ondragend={handleDragEnd}
                                         onclick={() => handleResultClick(track)}
                                         onkeydown={(e) => {
                                             if (e.key === 'Enter' || e.key === ' ') {

@@ -1087,5 +1087,13 @@
             <line x1="14" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
             <line x1="14" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>
+        <symbol id="icon-grip-vertical" viewBox="0 0 24 24">
+            <circle cx="9" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="15" cy="5" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="15" cy="12" r="1.5" fill="currentColor" />
+            <circle cx="9" cy="19" r="1.5" fill="currentColor" />
+            <circle cx="15" cy="19" r="1.5" fill="currentColor" />
+        </symbol>
     </defs>
 </svg>

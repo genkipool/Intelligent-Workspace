@@ -9366,6 +9366,15 @@
   "musicPlayerLiveStream": {
     "message": "Live radio broadcast"
   },
+  "musicPlayerDragToReorder": {
+    "message": "Drag to reorder"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "Files"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "Remove files from playlist"
+  },
   "musicTabMusic": {
     "message": "Music"
   },

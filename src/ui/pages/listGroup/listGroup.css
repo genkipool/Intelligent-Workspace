@@ -9455,44 +9455,109 @@ body:not(.groups-view-active) .music-panel,
     opacity: 0.35;
 }
 
-/* ─── Row 2 · search results ───────────────────────────────────────── */
-/* A set height, not one that grows with the folder: the list always takes the same
-   room and the rest of the tracks are reached by scrolling. */
+/* ─── Row 2 · search results & playlist items ──────────────────────── */
+/* A set height with smooth scrolling and premium spacing */
 .music-results {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    height: 200px;
+    gap: 3px;
+    height: 220px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 4px 8px;
+    padding: 6px 8px;
     border-bottom: 1px solid var(--border-color);
+}
+
+.music-results::-webkit-scrollbar {
+    width: 5px;
+}
+
+.music-results::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.music-results::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.music-results::-webkit-scrollbar-thumb:hover {
+    background: var(--text-color);
 }
 
 .music-result {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: none;
+    gap: 7px;
+    background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--small-border-radius, 4px);
+    border-radius: 4px;
     color: var(--text-color);
     cursor: pointer;
-    padding: 4px 6px;
+    padding: 5px 8px;
     text-align: left;
     width: 100%;
+    user-select: none;
+    box-sizing: border-box;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.music-result:active {
+    cursor: grabbing;
 }
 
 .music-result:hover,
 .music-result:focus-visible {
     background-color: var(--action-color);
     border-color: var(--border-color);
+    color: #fff;
     outline: none;
+}
+
+.music-result:hover .music-track-icon,
+.music-result:focus-visible .music-track-icon {
+    color: #fff;
+    opacity: 1;
+}
+
+.music-result:hover .music-result-name,
+.music-result:focus-visible .music-result-name {
+    color: #fff;
 }
 
 .music-result.active {
     background-color: var(--action-color);
+    border-color: var(--border-color);
+    color: #fff;
     font-weight: 600;
+}
+
+.music-result.active .music-result-name {
+    color: #fff;
+}
+
+.music-result.active .music-track-icon {
+    color: #fff;
+    opacity: 1;
+}
+
+.music-result.active .music-radio-url-preview {
+    color: #fff;
+    opacity: 0.8;
+}
+
+.music-result.active .close-item-btn {
+    color: #fff;
+    opacity: 0.85;
+}
+
+.music-result.active .close-item-btn:hover {
+    color: var(--error-color);
+    opacity: 1;
 }
 
 .music-result-name {
@@ -9504,31 +9569,70 @@ body:not(.groups-view-active) .music-panel,
     font-size: var(--medium-text, 13px);
 }
 
-/* ─── Music Folder & Results (Matching Bookmark Tree Design) ────────── */
+.music-track-icon {
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition:
+        color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+/* ─── Drag & Drop States (matching rules management) ───────────────── */
+.music-result.dragging,
+.music-folder.dragging > .music-folder-title {
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--action-color);
+    transform: scale(0.99);
+    cursor: grabbing;
+}
+
+/* ─── Music Folder & Results ───────────────────────────────────────── */
 .music-folder {
-    margin-bottom: 2px;
+    margin-bottom: 3px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
 }
 
 .music-folder-title {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
-    padding: 6px 4px;
+    padding: 5px 6px;
     border-radius: 4px;
+    border: 1px solid transparent;
     list-style: none;
     align-items: center;
     user-select: none;
     font-size: var(--medium-text, 13px);
+    box-sizing: border-box;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.music-folder-title:active {
+    cursor: grabbing;
 }
 
 .music-folder-title:hover,
 .music-folder-title:focus-visible {
-    background-color: var(--bg-panel-color);
+    background-color: var(--action-color);
     outline: none;
 }
 
 .music-folder-title:focus-visible {
     box-shadow: 0 0 0 2px var(--interactive-color);
+}
+
+.music-folder.drag-over-folder > .music-folder-title {
+    background-color: var(--action-color);
+    border-color: var(--action-color);
 }
 
 .music-folder-title::-webkit-details-marker {
@@ -9591,49 +9695,17 @@ body:not(.groups-view-active) .music-panel,
 .music-folder-content {
     padding-left: 8px;
     border-left: 1px solid var(--border-color);
-    margin-left: 8px;
+    margin-left: 14px;
+    margin-top: 2px;
+    margin-bottom: 4px;
     display: flex;
     flex-direction: column;
-    gap: 1px;
-}
-
-.music-track-icon {
-    flex-shrink: 0;
-    opacity: 0.7;
-}
-
-.music-result {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 4px;
-    cursor: pointer;
-    border-radius: 4px;
-    text-align: left;
-    width: 100%;
-    color: var(--text-color);
-    background: transparent;
-    border: none;
-}
-
-.music-result:hover,
-.music-result:focus-visible {
-    background-color: var(--bg-panel-color);
-    outline: none;
-}
-
-.music-result:focus-visible {
-    box-shadow: 0 0 0 2px var(--interactive-color);
-}
-
-.music-result.active {
-    background-color: var(--action-color);
-    font-weight: 600;
+    gap: 2px;
 }
 
 .music-results-empty {
     margin: 0;
-    padding: 6px;
+    padding: 12px 6px;
     font-size: var(--small-text, 11px);
     opacity: 0.7;
     text-align: center;

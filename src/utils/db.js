@@ -643,6 +643,35 @@ export async function removeMusicTracksByIndicesFromDb(indicesToRemove) {
     });
 }
 
+/**
+ * Reorders the stored track blobs in IndexedDB according to the new sequence of indices.
+ * @param {number[]} newOrderIndices Array of old track indices in their new sequence.
+ * @returns {Promise<void>}
+ */
+export async function reorderMusicTracksInDb(newOrderIndices) {
+    if (!Array.isArray(newOrderIndices) || newOrderIndices.length === 0) return;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            const blobMap = new Map(records.map((r) => [r.index, r.blob]));
+            store.clear();
+            for (let newIndex = 0; newIndex < newOrderIndices.length; newIndex++) {
+                const oldIndex = newOrderIndices[newIndex];
+                const blob = blobMap.get(oldIndex);
+                if (blob) {
+                    store.put({ index: newIndex, blob });
+                }
+            }
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
 export async function clearMusicTracksInDb() {
     const db = await openDb();
     return new Promise((resolve, reject) => {

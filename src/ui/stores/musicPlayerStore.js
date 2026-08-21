@@ -21,6 +21,7 @@ import {
     clearMusicTracksInDb,
     removeMusicTrackFromDb,
     removeMusicTracksByIndicesFromDb,
+    reorderMusicTracksInDb,
     getRadioStationsFromDb,
     saveRadioStationsToDb,
     deleteRadioStationFromDb,
@@ -444,6 +445,70 @@ export async function updateRadioStation(id, { name, url }) {
 }
 
 /**
+ * Moves a radio station from fromIndex to toIndex.
+ * @param {number} fromIndex
+ * @param {number} toIndex
+ */
+export async function moveRadioStation(fromIndex, toIndex) {
+    const current = get(radioStations);
+    if (fromIndex < 0 || fromIndex >= current.length) return;
+    if (toIndex < 0 || toIndex >= current.length) return;
+    if (fromIndex === toIndex) return;
+
+    const updated = [...current];
+    const [moved] = updated.splice(fromIndex, 1);
+    updated.splice(toIndex, 0, moved);
+
+    radioStations.set(updated);
+    await saveRadioStationsToDb(updated);
+    if (get(isRadioSyncEnabled)) {
+        await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+    }
+    await sendCommand('setRadioStations', { radioStations: updated });
+}
+
+/**
+ * Moves a radio station by ID before or after another target station ID.
+ * @param {string} fromId
+ * @param {string} toId
+ * @param {'before'|'after'} [position='before']
+ */
+export async function moveRadioStationById(fromId, toId, position = 'before') {
+    const current = get(radioStations);
+    const fromIndex = current.findIndex((s) => s.id === fromId);
+    const targetIndex = current.findIndex((s) => s.id === toId);
+    if (fromIndex === -1 || targetIndex === -1 || fromIndex === targetIndex) return;
+
+    let toIndex = targetIndex;
+    if (position === 'after') {
+        toIndex = fromIndex < targetIndex ? targetIndex : targetIndex + 1;
+    } else {
+        toIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    }
+    toIndex = Math.max(0, Math.min(current.length - 1, toIndex));
+    await moveRadioStation(fromIndex, toIndex);
+}
+
+/**
+ * Reorders radio stations given an array of station IDs in their desired order.
+ * @param {Array<string>} newIdsOrder
+ */
+export async function reorderRadioStationsByIds(newIdsOrder) {
+    if (!newIdsOrder || newIdsOrder.length === 0) return;
+    const current = get(radioStations);
+    const stationMap = new Map(current.map((s) => [s.id, s]));
+    const updated = newIdsOrder.map((id) => stationMap.get(id)).filter(Boolean);
+    if (updated.length !== current.length) return;
+
+    radioStations.set(updated);
+    await saveRadioStationsToDb(updated);
+    if (get(isRadioSyncEnabled)) {
+        await chrome.storage.sync.set({ [RADIO_SYNC_KEY]: updated }).catch(() => {});
+    }
+    await sendCommand('setRadioStations', { radioStations: updated });
+}
+
+/**
  * Exports current radio stations to a downloadable JSON file.
  * @returns {boolean}
  */
@@ -830,6 +895,225 @@ export async function removeTrack(trackIndex) {
         currentIndex.set(nextIdx);
         await sendCommand('setPlaylist', { tracks: updatedTracks, index: nextIdx });
     }
+}
+
+/**
+ * Moves a track from fromIndex to toIndex, optionally changing its folder.
+ * @param {number} fromIndex
+ * @param {number} toIndex
+ * @param {string} [targetFolder] Optional new folder if track was moved into another folder
+ */
+export async function moveTrack(fromIndex, toIndex, targetFolder) {
+    const allTracks = get(tracks);
+    if (fromIndex < 0 || fromIndex >= allTracks.length) return;
+    if (toIndex < 0 || toIndex >= allTracks.length) return;
+    if (fromIndex === toIndex && (targetFolder === undefined || allTracks[fromIndex].folder === targetFolder)) return;
+
+    const current = get(currentIndex);
+    const currentlyPlayingTrack = current >= 0 && current < allTracks.length ? allTracks[current] : null;
+
+    const updated = [...allTracks];
+    const [movedTrack] = updated.splice(fromIndex, 1);
+
+    if (targetFolder !== undefined) {
+        movedTrack.folder = targetFolder;
+        movedTrack.path = targetFolder ? `${targetFolder}/${movedTrack.fileName}` : movedTrack.fileName;
+    }
+
+    updated.splice(toIndex, 0, movedTrack);
+
+    const oldIndicesInNewOrder = updated.map((t) => t.index);
+    const reindexedTracks = updated.map((t, idx) => ({ ...t, index: idx }));
+
+    await reorderMusicTracksInDb(oldIndicesInNewOrder);
+
+    const folder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: reindexedTracks } });
+    tracks.set(reindexedTracks);
+
+    let nextCurrentIndex = current;
+    if (currentlyPlayingTrack) {
+        nextCurrentIndex = reindexedTracks.findIndex(
+            (t) =>
+                t === movedTrack ||
+                (t.fileName === currentlyPlayingTrack.fileName && t.path === currentlyPlayingTrack.path),
+        );
+        if (nextCurrentIndex === -1) {
+            nextCurrentIndex = currentlyPlayingTrack.index === fromIndex ? toIndex : current;
+        }
+    }
+    currentIndex.set(nextCurrentIndex);
+    await sendCommand('setPlaylist', { tracks: reindexedTracks, index: nextCurrentIndex });
+}
+
+/**
+ * Moves a track into a folder (appends to that folder's tracks).
+ * @param {number} fromIndex
+ * @param {string} targetFolderName
+ */
+export async function moveTrackToFolder(fromIndex, targetFolderName) {
+    const allTracks = get(tracks);
+    if (fromIndex < 0 || fromIndex >= allTracks.length) return;
+
+    const normTarget = normalizeFolderPath(targetFolderName);
+    let lastFolderTrackIdx = -1;
+    for (let i = allTracks.length - 1; i >= 0; i--) {
+        if (normalizeFolderPath(allTracks[i].folder) === normTarget) {
+            lastFolderTrackIdx = i;
+            break;
+        }
+    }
+
+    const toIndex =
+        lastFolderTrackIdx >= 0
+            ? fromIndex < lastFolderTrackIdx
+                ? lastFolderTrackIdx
+                : lastFolderTrackIdx + 1
+            : allTracks.length - 1;
+    await moveTrack(fromIndex, Math.max(0, Math.min(allTracks.length - 1, toIndex)), targetFolderName);
+}
+
+/**
+ * Moves all tracks of a folder to before or after another folder.
+ * @param {string} fromFolderName
+ * @param {string} toFolderName
+ * @param {'before'|'after'} [position='before']
+ */
+export async function moveFolder(fromFolderName, toFolderName, position = 'before') {
+    const allTracks = get(tracks);
+    const normalizedFrom = normalizeFolderPath(fromFolderName);
+    const normalizedTo = normalizeFolderPath(toFolderName);
+    if (normalizedFrom === normalizedTo) return;
+
+    const fromTracks = [];
+    const otherTracks = [];
+    for (const t of allTracks) {
+        if (normalizeFolderPath(t.folder) === normalizedFrom) {
+            fromTracks.push(t);
+        } else {
+            otherTracks.push(t);
+        }
+    }
+
+    if (fromTracks.length === 0) return;
+
+    let insertIndex = 0;
+    if (position === 'before') {
+        const firstIdxOfTo = otherTracks.findIndex((t) => normalizeFolderPath(t.folder) === normalizedTo);
+        insertIndex = firstIdxOfTo >= 0 ? firstIdxOfTo : 0;
+    } else {
+        const lastIdxOfTo = otherTracks
+            .map((t, i) => (normalizeFolderPath(t.folder) === normalizedTo ? i : -1))
+            .filter((i) => i >= 0)
+            .pop();
+        insertIndex = lastIdxOfTo !== undefined ? lastIdxOfTo + 1 : otherTracks.length;
+    }
+
+    const updated = [...otherTracks];
+    updated.splice(insertIndex, 0, ...fromTracks);
+
+    const oldIndicesInNewOrder = updated.map((t) => t.index);
+    const reindexedTracks = updated.map((t, idx) => ({ ...t, index: idx }));
+
+    const current = get(currentIndex);
+    const currentlyPlayingTrack = current >= 0 && current < allTracks.length ? allTracks[current] : null;
+
+    await reorderMusicTracksInDb(oldIndicesInNewOrder);
+
+    const folder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: reindexedTracks } });
+    tracks.set(reindexedTracks);
+
+    let nextCurrentIndex = current;
+    if (currentlyPlayingTrack) {
+        nextCurrentIndex = reindexedTracks.findIndex(
+            (t) => t.fileName === currentlyPlayingTrack.fileName && t.path === currentlyPlayingTrack.path,
+        );
+        if (nextCurrentIndex === -1) nextCurrentIndex = current;
+    }
+    currentIndex.set(nextCurrentIndex);
+    await sendCommand('setPlaylist', { tracks: reindexedTracks, index: nextCurrentIndex });
+}
+
+/**
+ * Reorders playlist tracks by a given array of track indices.
+ * @param {Array<number>} newIndicesOrder
+ */
+export async function reorderTracksByIndices(newIndicesOrder) {
+    if (!newIndicesOrder || newIndicesOrder.length === 0) return;
+    const allTracks = get(tracks);
+    const trackMap = new Map(allTracks.map((t) => [t.index, t]));
+    const updated = newIndicesOrder.map((idx) => trackMap.get(idx)).filter(Boolean);
+    if (updated.length !== allTracks.length) return;
+
+    const oldIndicesInNewOrder = updated.map((t) => t.index);
+    const reindexedTracks = updated.map((t, idx) => ({ ...t, index: idx }));
+
+    const current = get(currentIndex);
+    const currentlyPlayingTrack = current >= 0 && current < allTracks.length ? allTracks[current] : null;
+
+    await reorderMusicTracksInDb(oldIndicesInNewOrder);
+
+    const folder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: reindexedTracks } });
+    tracks.set(reindexedTracks);
+
+    let nextCurrentIndex = current;
+    if (currentlyPlayingTrack) {
+        nextCurrentIndex = reindexedTracks.findIndex(
+            (t) => t.fileName === currentlyPlayingTrack.fileName && t.path === currentlyPlayingTrack.path,
+        );
+        if (nextCurrentIndex === -1) nextCurrentIndex = current;
+    }
+    currentIndex.set(nextCurrentIndex);
+    await sendCommand('setPlaylist', { tracks: reindexedTracks, index: nextCurrentIndex });
+}
+
+/**
+ * Reorders folders in playlist by a given array of folder names.
+ * @param {Array<string>} newFolderOrder
+ */
+export async function reorderFolders(newFolderOrder) {
+    if (!newFolderOrder || newFolderOrder.length === 0) return;
+    const allTracks = get(tracks);
+    const groups = new Map();
+    for (const t of allTracks) {
+        const f = t.folder || '';
+        if (!groups.has(f)) groups.set(f, []);
+        groups.get(f).push(t);
+    }
+    const updated = [];
+    for (const f of newFolderOrder) {
+        if (groups.has(f)) {
+            updated.push(...groups.get(f));
+            groups.delete(f);
+        }
+    }
+    for (const remainingTracks of groups.values()) {
+        updated.push(...remainingTracks);
+    }
+
+    const oldIndicesInNewOrder = updated.map((t) => t.index);
+    const reindexedTracks = updated.map((t, idx) => ({ ...t, index: idx }));
+
+    const current = get(currentIndex);
+    const currentlyPlayingTrack = current >= 0 && current < allTracks.length ? allTracks[current] : null;
+
+    await reorderMusicTracksInDb(oldIndicesInNewOrder);
+
+    const folder = get(playlistFolder);
+    await chrome.storage.local.set({ [PLAYLIST_KEY]: { folder, tracks: reindexedTracks } });
+    tracks.set(reindexedTracks);
+
+    let nextCurrentIndex = current;
+    if (currentlyPlayingTrack) {
+        nextCurrentIndex = reindexedTracks.findIndex(
+            (t) => t.fileName === currentlyPlayingTrack.fileName && t.path === currentlyPlayingTrack.path,
+        );
+        if (nextCurrentIndex === -1) nextCurrentIndex = current;
+    }
+    currentIndex.set(nextCurrentIndex);
+    await sendCommand('setPlaylist', { tracks: reindexedTracks, index: nextCurrentIndex });
 }
 
 /** @param {number} index */

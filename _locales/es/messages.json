@@ -9371,6 +9371,15 @@
     "musicPlayerLiveStream": {
         "message": "Emisión de radio en directo"
     },
+    "musicPlayerDragToReorder": {
+        "message": "Arrastrar para reordenar"
+    },
+    "musicPlayerLooseFiles": {
+        "message": "Archivos"
+    },
+    "musicPlayerRemoveFilesGroup": {
+        "message": "Eliminar archivos de la lista"
+    },
     "musicTabMusic": {
         "message": "Música"
     },
