@@ -26,17 +26,18 @@
             </span>
             <span class="setting-text-label">{$t('toggleSortGroups') || 'Sort Groups'}</span>
         </div>
-        <label class="switch">
+        <label class="switch" translate="no">
             <input type="checkbox" class="input-settings-container" bind:checked={isSortGroupsEnabled} />
-            <span class="slider">
-                <span class="switch-text-on">on</span>
-                <span class="switch-text-off">off</span>
+            <span class="slider" translate="no">
+                <span class="switch-text-on" translate="no">on</span>
+                <span class="switch-text-off" translate="no">off</span>
                 <span class="switch-handle"><span class="switch-light"></span></span>
             </span>
         </label>
         <button
             type="button"
             class="svg-toggle-button"
+            translate="no"
             aria-pressed={isSortGroupsEnabled}
             onclick={() => (isSortGroupsEnabled = !isSortGroupsEnabled)}
         >
@@ -47,7 +48,8 @@
                     y="55%"
                     text-anchor="middle"
                     dominant-baseline="middle"
-                    fill="var(--text-on-color)">{isSortGroupsEnabled ? 'ON' : 'OFF'}</text
+                    fill="var(--text-on-color)"
+                    translate="no">{isSortGroupsEnabled ? 'ON' : 'OFF'}</text
                 ></svg
             >
         </button>
@@ -58,6 +60,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="start"
                 class:selected={miscSortOption === 'start'}
                 onclick={() => setMiscSort('start')}>{$t('miscSortStart') || 'Start'}</button
@@ -65,6 +68,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="end"
                 class:selected={miscSortOption === 'end'}
                 onclick={() => setMiscSort('end')}>{$t('miscSortEnd') || 'End'}</button
@@ -72,6 +76,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="alpha"
                 class:selected={miscSortOption === 'alpha'}
                 onclick={() => setMiscSort('alpha')}>{$t('miscSortAlpha') || 'Alphabetical'}</button

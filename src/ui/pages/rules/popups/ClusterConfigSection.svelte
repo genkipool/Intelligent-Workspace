@@ -157,7 +157,12 @@
 </script>
 
 {#snippet toggle(key, switchId)}
-    <label class="switch" title={$tt(isEnabled(key) ? 'disableThisGrouping' : 'enableThisGrouping')} for={switchId}>
+    <label
+        class="switch"
+        translate="no"
+        title={$tt(isEnabled(key) ? 'disableThisGrouping' : 'enableThisGrouping')}
+        for={switchId}
+    >
         <input
             type="checkbox"
             id={switchId}
@@ -166,15 +171,15 @@
             checked={isEnabled(key)}
             onchange={(e) => setEnabled(key, e.currentTarget.checked)}
         />
-        <span class="slider"
-            ><span class="switch-text-on">on</span><span class="switch-text-off">off</span><span class="switch-handle"
-                ><span class="switch-light"></span></span
-            ></span
+        <span class="slider" translate="no"
+            ><span class="switch-text-on" translate="no">on</span><span class="switch-text-off" translate="no">off</span
+            ><span class="switch-handle"><span class="switch-light"></span></span></span
         >
     </label>
     <button
         type="button"
         class="svg-toggle-button"
+        translate="no"
         title={$tt(isEnabled(key) ? 'disableThisGrouping' : 'enableThisGrouping')}
         aria-pressed={isEnabled(key)}
         onclick={() => setEnabled(key, !isEnabled(key))}
@@ -186,7 +191,8 @@
                 y="55%"
                 text-anchor="middle"
                 dominant-baseline="middle"
-                fill="var(--text-on-color)">{isEnabled(key) ? 'ON' : 'OFF'}</text
+                fill="var(--text-on-color)"
+                translate="no">{isEnabled(key) ? 'ON' : 'OFF'}</text
             ></svg
         >
     </button>
@@ -221,6 +227,7 @@
             data-group={entry.key}
             role="button"
             tabindex="0"
+            translate="no"
             title={$tt('changeGroupColor')}
             style="background-color: {themeColors[clusterConfig.specialGroups[entry.key].color] || themeColors.grey};"
             onclick={(e) => openColorPicker(e, entry.key)}
@@ -253,8 +260,12 @@
 {/each}
 
 <div class="popup-actions">
-    <button type="button" class="popup-reset-btn" id="{idPrefix}reset-cluster-btn" onclick={() => onreset?.()}
-        >{$t('resetClusterDefaults')}</button
+    <button
+        type="button"
+        class="popup-reset-btn"
+        id="{idPrefix}reset-cluster-btn"
+        translate="no"
+        onclick={() => onreset?.()}>{$t('resetClusterDefaults')}</button
     >
 </div>
 

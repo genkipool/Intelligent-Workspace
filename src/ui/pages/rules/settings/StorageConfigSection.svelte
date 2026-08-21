@@ -29,15 +29,21 @@
             </span>
             <span class="setting-text-label">{$t('toggleAllRules') || 'All Rules'}</span>
         </div>
-        <label class="switch">
+        <label class="switch" translate="no">
             <input type="checkbox" class="input-settings-container" checked={allRulesActive} onchange={ontoggleall} />
-            <span class="slider">
-                <span class="switch-text-on">on</span>
-                <span class="switch-text-off">off</span>
+            <span class="slider" translate="no">
+                <span class="switch-text-on" translate="no">on</span>
+                <span class="switch-text-off" translate="no">off</span>
                 <span class="switch-handle"><span class="switch-light"></span></span>
             </span>
         </label>
-        <button type="button" class="svg-toggle-button" aria-pressed={allRulesActive} onclick={ontoggleall}>
+        <button
+            type="button"
+            class="svg-toggle-button"
+            translate="no"
+            aria-pressed={allRulesActive}
+            onclick={ontoggleall}
+        >
             <svg width="20" height="20" viewBox="0 0 24 24"
                 ><text
                     class="svg-toggle-text"
@@ -45,7 +51,8 @@
                     y="55%"
                     text-anchor="middle"
                     dominant-baseline="middle"
-                    fill="var(--text-on-color)">{allRulesActive ? 'ON' : 'OFF'}</text
+                    fill="var(--text-on-color)"
+                    translate="no">{allRulesActive ? 'ON' : 'OFF'}</text
                 ></svg
             >
         </button>
@@ -56,6 +63,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="sync"
                 class:selected={ruleStorageArea === 'sync'}
                 onclick={() => onsetstorage('sync')}
@@ -64,6 +72,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="local"
                 class:selected={ruleStorageArea === 'local'}
                 onclick={() => onsetstorage('local')}

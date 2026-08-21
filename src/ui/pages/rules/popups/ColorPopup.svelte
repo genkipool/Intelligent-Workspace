@@ -89,6 +89,7 @@
                 class="color-popup-item"
                 role="button"
                 tabindex="0"
+                translate="no"
                 style="background-color: {themeColors[color]}"
                 title={$tt('selectSpecificColor', [$t(color) || color])}
                 aria-label={$tt('selectSpecificColor', [$t(color) || color])}

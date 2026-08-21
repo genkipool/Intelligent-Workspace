@@ -17,6 +17,7 @@
             class="deploy-btn rule-actions-button"
             type="button"
             tabindex="0"
+            translate="no"
             aria-expanded={isExpanded}
             title={$tt(isExpanded ? 'collapseSection' : 'deploySection')}
         >
@@ -39,6 +40,7 @@
         class="edit-button rule-actions-button"
         type="button"
         tabindex="0"
+        translate="no"
         title={$tt('editRule')}
         onclick={() => oneditRule?.({ index })}
     >
@@ -61,6 +63,7 @@
         class="delete-button rule-actions-button"
         type="button"
         tabindex="0"
+        translate="no"
         title={$tt('deleteRule')}
         onclick={() => ondeleteRule?.({ index })}
     >
@@ -78,7 +81,7 @@
             </svg>
         </span>
     </button>
-    <label class="switch-rule-actions">
+    <label class="switch-rule-actions" translate="no">
         <input
             class="switch-checkbox"
             type="checkbox"
@@ -87,9 +90,9 @@
             checked={rule.active}
             onchange={toggleActive}
         />
-        <span class="slider" title={$tt(rule.active ? 'deactivateRule' : 'activateRule')}>
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+        <span class="slider" translate="no" title={$tt(rule.active ? 'deactivateRule' : 'activateRule')}>
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>
@@ -97,6 +100,7 @@
         type="button"
         class="svg-toggle-button rule-actions-button"
         tabindex="0"
+        translate="no"
         title={$tt(rule.active ? 'deactivateRule' : 'activateRule')}
         aria-label={$t(rule.active ? 'deactivateRule' : 'activateRule')}
         aria-pressed={rule.active}
@@ -111,7 +115,8 @@
                     text-anchor="middle"
                     dominant-baseline="middle"
                     fill="var(--text-on-color)"
-                    font-weight="bold">{rule.active ? 'ON' : 'OFF'}</text
+                    font-weight="bold"
+                    translate="no">{rule.active ? 'ON' : 'OFF'}</text
                 >
             </svg>
         </span>

@@ -911,6 +911,7 @@
                 id="pin-toggle"
                 class="pin-button"
                 type="button"
+                translate="no"
                 class:pinned={isPinned}
                 aria-pressed={isPinned}
                 onclick={togglePin}
@@ -933,6 +934,7 @@
                 id="list-groups-btn"
                 class="buttom-list-group"
                 type="button"
+                translate="no"
                 onclick={listGroups}
                 aria-label={$t('listTabGroups') || 'List tab groups'}
                 title={$tt('listTabGroups') || 'List tab groups'}
@@ -952,6 +954,7 @@
                 id="home-btn"
                 class="home-button"
                 type="button"
+                translate="no"
                 onclick={goHome}
                 aria-label={$t('backToHome') || 'Back to home'}
                 title={$tt('backToHome') || 'Back to home'}
@@ -970,6 +973,7 @@
             <button
                 class="back-button"
                 type="button"
+                translate="no"
                 onclick={goBack}
                 aria-label={$t('backToMainPopup')}
                 title={$tt('backToHome')}
@@ -993,6 +997,7 @@
                     class="action-button"
                     type="button"
                     tabindex="0"
+                    translate="no"
                     onclick={openAddModal}
                     title={$tt('addRule') || 'Add Rule'}
                 >
@@ -1022,6 +1027,7 @@
                     class="action-button"
                     type="button"
                     tabindex="0"
+                    translate="no"
                     onclick={exportRules}
                     title={$tt('exportRules') || 'Export rules'}
                 >
@@ -1037,6 +1043,7 @@
                     class="action-button"
                     type="button"
                     tabindex="0"
+                    translate="no"
                     onclick={openImportPopup}
                     title={$tt('importRules') || 'Import rules'}
                 >
@@ -1052,6 +1059,7 @@
                     class="action-button"
                     type="button"
                     tabindex="0"
+                    translate="no"
                     title={$tt('settingsActions') || 'Settings'}
                     onclick={() => (isSettingsOpen = true)}
                 >
@@ -1136,7 +1144,13 @@
     {/if}
 
     <div id="scroll-buttons" class="scroll-buttons">
-        <button id="scroll-up" type="button" onclick={scrollToTop} aria-label={$t('scrollToTop') || 'Scroll to top'}>
+        <button
+            id="scroll-up"
+            type="button"
+            translate="no"
+            onclick={scrollToTop}
+            aria-label={$t('scrollToTop') || 'Scroll to top'}
+        >
             <svg
                 width="24"
                 height="24"
@@ -1151,6 +1165,7 @@
         <button
             id="scroll-down"
             type="button"
+            translate="no"
             onclick={scrollToBottom}
             aria-label={$t('scrollToBottom') || 'Scroll to bottom'}
         >

@@ -159,8 +159,12 @@
             />
         </div>
         <div class="popup-actions">
-            <button type="button" class="popup-reset-btn" id="reset-prefixes-btn" onclick={resetToDefaults}
-                >{$t('resetPrefixes')}</button
+            <button
+                type="button"
+                class="popup-reset-btn"
+                id="reset-prefixes-btn"
+                translate="no"
+                onclick={resetToDefaults}>{$t('resetPrefixes')}</button
             >
         </div>
     </div>

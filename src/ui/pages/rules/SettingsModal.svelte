@@ -239,6 +239,7 @@
                 class="close"
                 tabindex="0"
                 role="button"
+                translate="no"
                 title={$tt('closeModal')}
                 aria-label={$t('closeModal')}
                 onclick={close}
@@ -264,22 +265,23 @@
                         </span>
                         <span class="setting-text-label">{$t('toggleCluster') || 'Create Groups'}</span>
                     </div>
-                    <label class="switch">
+                    <label class="switch" translate="no">
                         <input
                             type="checkbox"
                             class="input-settings-container"
                             checked={isClusterEnabled}
                             onchange={(e) => setClusterEnabled(e.currentTarget.checked)}
                         />
-                        <span class="slider">
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
+                        <span class="slider" translate="no">
+                            <span class="switch-text-on" translate="no">on</span>
+                            <span class="switch-text-off" translate="no">off</span>
                             <span class="switch-handle"><span class="switch-light"></span></span>
                         </span>
                     </label>
                     <button
                         type="button"
                         class="svg-toggle-button"
+                        translate="no"
                         aria-pressed={isClusterEnabled}
                         onclick={() => setClusterEnabled(!isClusterEnabled)}
                     >
@@ -290,7 +292,8 @@
                                 y="55%"
                                 text-anchor="middle"
                                 dominant-baseline="middle"
-                                fill="var(--text-on-color)">{isClusterEnabled ? 'ON' : 'OFF'}</text
+                                fill="var(--text-on-color)"
+                                translate="no">{isClusterEnabled ? 'ON' : 'OFF'}</text
                             ></svg
                         >
                     </button>
@@ -336,6 +339,7 @@
                     type="button"
                     class="option-button theme-action-button"
                     id="modal-select-theme-btn"
+                    translate="no"
                     title={$tt('openThemeSelector')}
                     onclick={openThemeSelector}
                 >

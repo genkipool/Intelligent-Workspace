@@ -37,10 +37,13 @@
             listeners in bookmarksService, so there they are type="button".
         -->
         <form class="import-buttons" method="dialog">
-            <button type="submit" class="import-button" id="add-rules" value="add">{$t('add')}</button>
-            <button type="submit" class="import-button" id="overwrite-rules" value="overwrite">{$t('overwrite')}</button
+            <button type="submit" class="import-button" id="add-rules" value="add" translate="no">{$t('add')}</button>
+            <button type="submit" class="import-button" id="overwrite-rules" value="overwrite" translate="no"
+                >{$t('overwrite')}</button
             >
-            <button type="submit" class="import-button" id="cancel-import" value="cancel">{$t('cancel')}</button>
+            <button type="submit" class="import-button" id="cancel-import" value="cancel" translate="no"
+                >{$t('cancel')}</button
+            >
         </form>
     </div>
 </dialog>

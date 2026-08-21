@@ -484,17 +484,18 @@
                             </svg>
                         </span>
                     </button>
-                    <label class="switch-rule-actions">
+                    <label class="switch-rule-actions" translate="no">
                         <input class="switch-checkbox" type="checkbox" tabindex="0" />
-                        <span class="slider" data-i18n-title="activateRule">
-                            <span class="switch-text-on">on</span>
-                            <span class="switch-text-off">off</span>
+                        <span class="slider" translate="no" data-i18n-title="activateRule">
+                            <span class="switch-text-on" translate="no">on</span>
+                            <span class="switch-text-off" translate="no">off</span>
                             <span class="switch-handle"><span class="switch-light"></span></span>
                         </span>
                     </label>
                     <button
                         type="button"
                         class="svg-toggle-button rule-actions-button"
+                        translate="no"
                         data-i18n-aria-label="activateRule"
                         tabindex="0"
                         data-i18n-title="activateRule"
@@ -509,6 +510,7 @@
                                     dominant-baseline="middle"
                                     fill="var(--text-on-color)"
                                     font-weight="bold"
+                                    translate="no"
                                 >
                                     OFF
                                 </text>
@@ -883,14 +885,15 @@
                             max="50"
                             data-i18n-aria-label="compactThreshold"
                         />
-                        <label class="switch" for="cluster-compact-enabled">
+                        <label class="switch" for="cluster-compact-enabled" translate="no">
                             <input type="checkbox" id="cluster-compact-enabled" name="cluster-compact-enabled" />
-                            <span class="slider"
-                                ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
+                            <span class="slider" translate="no"
+                                ><span class="switch-text-on" translate="no">on</span
+                                ><span class="switch-text-off" translate="no">off</span
                                 ><span class="switch-handle"><span class="switch-light"></span></span
                             ></span>
                         </label>
-                        <button type="button" class="svg-toggle-button" aria-pressed="false">
+                        <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                             <svg width="20" height="20" viewBox="0 0 24 24">
                                 <text
                                     class="svg-toggle-text"
@@ -899,6 +902,7 @@
                                     text-anchor="middle"
                                     dominant-baseline="middle"
                                     fill="var(--text-on-color)"
+                                    translate="no"
                                 >
                                     OFF
                                 </text>
@@ -915,14 +919,20 @@
                             max="50"
                             data-i18n-aria-label="domainThreshold"
                         />
-                        <label class="switch" data-i18n-title="enableThisGrouping" for="cluster-domains-enabled">
+                        <label
+                            class="switch"
+                            data-i18n-title="enableThisGrouping"
+                            for="cluster-domains-enabled"
+                            translate="no"
+                        >
                             <input type="checkbox" id="cluster-domains-enabled" name="cluster-domains-enabled" />
-                            <span class="slider"
-                                ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
+                            <span class="slider" translate="no"
+                                ><span class="switch-text-on" translate="no">on</span
+                                ><span class="switch-text-off" translate="no">off</span
                                 ><span class="switch-handle"><span class="switch-light"></span></span
                             ></span>
                         </label>
-                        <button type="button" class="svg-toggle-button" aria-pressed="false">
+                        <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                             <svg width="20" height="20" viewBox="0 0 24 24">
                                 <text
                                     class="svg-toggle-text"
@@ -931,6 +941,7 @@
                                     text-anchor="middle"
                                     dominant-baseline="middle"
                                     fill="var(--text-on-color)"
+                                    translate="no"
                                 >
                                     OFF
                                 </text>
@@ -947,14 +958,20 @@
                             max="50"
                             data-i18n-aria-label="subdomainThreshold"
                         />
-                        <label class="switch" data-i18n-title="enableThisGrouping" for="cluster-subdomains-enabled">
+                        <label
+                            class="switch"
+                            data-i18n-title="enableThisGrouping"
+                            for="cluster-subdomains-enabled"
+                            translate="no"
+                        >
                             <input type="checkbox" id="cluster-subdomains-enabled" name="cluster-subdomains-enabled" />
-                            <span class="slider"
-                                ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
+                            <span class="slider" translate="no"
+                                ><span class="switch-text-on" translate="no">on</span
+                                ><span class="switch-text-off" translate="no">off</span
                                 ><span class="switch-handle"><span class="switch-light"></span></span
                             ></span>
                         </label>
-                        <button type="button" class="svg-toggle-button" aria-pressed="false">
+                        <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                             <svg width="20" height="20" viewBox="0 0 24 24">
                                 <text
                                     class="svg-toggle-text"
@@ -963,6 +980,7 @@
                                     text-anchor="middle"
                                     dominant-baseline="middle"
                                     fill="var(--text-on-color)"
+                                    translate="no"
                                 >
                                     OFF
                                 </text>
@@ -973,14 +991,20 @@
                         <span></span>
                         <label for="enabled-ipAddress" data-i18n="enableIpAddressGroups"></label>
                         <input type="number" id="ip-threshold" min="2" max="50" data-i18n-aria-label="ipThreshold" />
-                        <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-ipAddress">
+                        <label
+                            class="switch"
+                            data-i18n-title="enableThisGrouping"
+                            for="enabled-ipAddress"
+                            translate="no"
+                        >
                             <input type="checkbox" id="enabled-ipAddress" name="enabled-ipAddress" />
-                            <span class="slider"
-                                ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
+                            <span class="slider" translate="no"
+                                ><span class="switch-text-on" translate="no">on</span
+                                ><span class="switch-text-off" translate="no">off</span
                                 ><span class="switch-handle"><span class="switch-light"></span></span
                             ></span>
                         </label>
-                        <button type="button" class="svg-toggle-button" aria-pressed="false">
+                        <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                             <svg width="20" height="20" viewBox="0 0 24 24">
                                 <text
                                     class="svg-toggle-text"
@@ -989,6 +1013,7 @@
                                     text-anchor="middle"
                                     dominant-baseline="middle"
                                     fill="var(--text-on-color)"
+                                    translate="no"
                                 >
                                     OFF
                                 </text>
@@ -997,7 +1022,7 @@
                     </div>
                 </div>
                 <div class="cluster-config-entry" data-group-key="chrome">
-                    <span class="cluster-color-indicator" data-group="chrome"></span>
+                    <span class="cluster-color-indicator" data-group="chrome" translate="no"></span>
                     <label for="rename-chrome" data-i18n="renameChromeLabel"></label>
                     <input
                         type="text"
@@ -1015,14 +1040,15 @@
                         max="50"
                         data-i18n-aria-label="chromeThreshold"
                     />
-                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-chrome">
+                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-chrome" translate="no">
                         <input type="checkbox" id="enabled-chrome" name="enabled-chrome" />
-                        <span class="slider"
-                            ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
-                            ><span class="switch-handle"><span class="switch-light"></span></span
-                        ></span>
+                        <span class="slider" translate="no"
+                            ><span class="switch-text-on" translate="no">on</span
+                            ><span class="switch-text-off" translate="no">off</span
+                            ><span class="switch-handle"><span class="switch-light"></span></span>
+                        </span>
                     </label>
-                    <button type="button" class="svg-toggle-button" aria-pressed="false">
+                    <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                         <svg width="20" height="20" viewBox="0 0 24 24">
                             <text
                                 class="svg-toggle-text"
@@ -1031,6 +1057,7 @@
                                 text-anchor="middle"
                                 dominant-baseline="middle"
                                 fill="var(--text-on-color)"
+                                translate="no"
                             >
                                 OFF
                             </text>
@@ -1038,7 +1065,7 @@
                     </button>
                 </div>
                 <div class="cluster-config-entry" data-group-key="files">
-                    <span class="cluster-color-indicator" data-group="files"></span>
+                    <span class="cluster-color-indicator" data-group="files" translate="no"></span>
                     <label for="rename-files" data-i18n="renameFilesLabel"></label>
                     <input
                         type="text"
@@ -1050,14 +1077,15 @@
                         translate="no"
                     />
                     <input type="number" id="files-threshold" min="2" max="50" data-i18n-aria-label="filesThreshold" />
-                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-files">
+                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-files" translate="no">
                         <input type="checkbox" id="enabled-files" name="enabled-files" />
-                        <span class="slider"
-                            ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
-                            ><span class="switch-handle"><span class="switch-light"></span></span
-                        ></span>
+                        <span class="slider" translate="no"
+                            ><span class="switch-text-on" translate="no">on</span
+                            ><span class="switch-text-off" translate="no">off</span
+                            ><span class="switch-handle"><span class="switch-light"></span></span>
+                        </span>
                     </label>
-                    <button type="button" class="svg-toggle-button" aria-pressed="false">
+                    <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                         <svg width="20" height="20" viewBox="0 0 24 24">
                             <text
                                 class="svg-toggle-text"
@@ -1066,6 +1094,7 @@
                                 text-anchor="middle"
                                 dominant-baseline="middle"
                                 fill="var(--text-on-color)"
+                                translate="no"
                             >
                                 OFF
                             </text>
@@ -1073,7 +1102,7 @@
                     </button>
                 </div>
                 <div class="cluster-config-entry" data-group-key="extensions">
-                    <span class="cluster-color-indicator" data-group="extensions"></span>
+                    <span class="cluster-color-indicator" data-group="extensions" translate="no"></span>
                     <label for="rename-extensions" data-i18n="renameExtensionsLabel"></label>
                     <input
                         type="text"
@@ -1091,14 +1120,15 @@
                         max="50"
                         data-i18n-aria-label="extensionsThreshold"
                     />
-                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-extensions">
+                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-extensions" translate="no">
                         <input type="checkbox" id="enabled-extensions" name="enabled-extensions" />
-                        <span class="slider"
-                            ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
-                            ><span class="switch-handle"><span class="switch-light"></span></span
-                        ></span>
+                        <span class="slider" translate="no"
+                            ><span class="switch-text-on" translate="no">on</span
+                            ><span class="switch-text-off" translate="no">off</span
+                            ><span class="switch-handle"><span class="switch-light"></span></span>
+                        </span>
                     </label>
-                    <button type="button" class="svg-toggle-button" aria-pressed="false">
+                    <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                         <svg width="20" height="20" viewBox="0 0 24 24">
                             <text
                                 class="svg-toggle-text"
@@ -1107,6 +1137,7 @@
                                 text-anchor="middle"
                                 dominant-baseline="middle"
                                 fill="var(--text-on-color)"
+                                translate="no"
                             >
                                 OFF
                             </text>
@@ -1114,7 +1145,7 @@
                     </button>
                 </div>
                 <div class="cluster-config-entry" data-group-key="misc">
-                    <span class="cluster-color-indicator" data-group="misc"></span>
+                    <span class="cluster-color-indicator" data-group="misc" translate="no"></span>
                     <label for="rename-misc" data-i18n="renameMiscLabel"></label>
                     <input
                         type="text"
@@ -1126,14 +1157,15 @@
                         translate="no"
                     />
                     <input type="number" id="misc-threshold" min="2" max="50" data-i18n-aria-label="miscThreshold" />
-                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-misc">
+                    <label class="switch" data-i18n-title="enableThisGrouping" for="enabled-misc" translate="no">
                         <input type="checkbox" id="enabled-misc" name="enabled-misc" />
-                        <span class="slider"
-                            ><span class="switch-text-on">on</span><span class="switch-text-off">off</span
-                            ><span class="switch-handle"><span class="switch-light"></span></span
-                        ></span>
+                        <span class="slider" translate="no"
+                            ><span class="switch-text-on" translate="no">on</span
+                            ><span class="switch-text-off" translate="no">off</span
+                            ><span class="switch-handle"><span class="switch-light"></span></span>
+                        </span>
                     </label>
-                    <button type="button" class="svg-toggle-button" aria-pressed="false">
+                    <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                         <svg width="20" height="20" viewBox="0 0 24 24">
                             <text
                                 class="svg-toggle-text"
@@ -1142,6 +1174,7 @@
                                 text-anchor="middle"
                                 dominant-baseline="middle"
                                 fill="var(--text-on-color)"
+                                translate="no"
                             >
                                 OFF
                             </text>
@@ -1316,15 +1349,15 @@
                     </span>
                     <span class="setting-text-label"></span>
                 </div>
-                <label class="switch">
+                <label class="switch" translate="no">
                     <input type="checkbox" class="input-settings-container" />
-                    <span class="slider">
-                        <span class="switch-text-on">on</span>
-                        <span class="switch-text-off">off</span>
+                    <span class="slider" translate="no">
+                        <span class="switch-text-on" translate="no">on</span>
+                        <span class="switch-text-off" translate="no">off</span>
                         <span class="switch-handle"><span class="switch-light"></span></span>
                     </span>
                 </label>
-                <button type="button" class="svg-toggle-button" aria-pressed="false">
+                <button type="button" class="svg-toggle-button" aria-pressed="false" translate="no">
                     <svg width="20" height="20" viewBox="0 0 24 24">
                         <text
                             class="svg-toggle-text"
@@ -1333,6 +1366,7 @@
                             text-anchor="middle"
                             dominant-baseline="middle"
                             fill="var(--text-on-color)"
+                            translate="no"
                         >
                             OFF
                         </text>

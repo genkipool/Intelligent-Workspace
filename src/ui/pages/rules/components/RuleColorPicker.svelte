@@ -57,6 +57,7 @@
             class:selected={selectedColor === color}
             role="button"
             tabindex="0"
+            translate="no"
             data-color={color}
             style="background-color: {themeColors[color]}"
             title={$tt('selectSpecificColor', [$t(color) || color])}

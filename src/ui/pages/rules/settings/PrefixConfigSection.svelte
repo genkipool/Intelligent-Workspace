@@ -36,17 +36,18 @@
             </span>
             <span class="setting-text-label">{$t('togglePrefixes') || 'Prefixes'}</span>
         </div>
-        <label class="switch">
+        <label class="switch" translate="no">
             <input type="checkbox" class="input-settings-container" bind:checked={isPrefixesEnabled} />
-            <span class="slider">
-                <span class="switch-text-on">on</span>
-                <span class="switch-text-off">off</span>
+            <span class="slider" translate="no">
+                <span class="switch-text-on" translate="no">on</span>
+                <span class="switch-text-off" translate="no">off</span>
                 <span class="switch-handle"><span class="switch-light"></span></span>
             </span>
         </label>
         <button
             type="button"
             class="svg-toggle-button"
+            translate="no"
             aria-pressed={isPrefixesEnabled}
             onclick={() => (isPrefixesEnabled = !isPrefixesEnabled)}
         >
@@ -57,7 +58,8 @@
                     y="55%"
                     text-anchor="middle"
                     dominant-baseline="middle"
-                    fill="var(--text-on-color)">{isPrefixesEnabled ? 'ON' : 'OFF'}</text
+                    fill="var(--text-on-color)"
+                    translate="no">{isPrefixesEnabled ? 'ON' : 'OFF'}</text
                 ></svg
             >
         </button>
@@ -140,7 +142,7 @@
             />
         </div>
         <div class="popup-actions">
-            <button id="modal-reset-prefixes-btn" type="button" class="popup-reset-btn" onclick={onreset}
+            <button id="modal-reset-prefixes-btn" type="button" class="popup-reset-btn" translate="no" onclick={onreset}
                 >{$t('resetClusterDefaults') || 'Reset to defaults'}</button
             >
         </div>

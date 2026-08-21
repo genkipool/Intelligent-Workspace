@@ -38,6 +38,7 @@
             class="rules-title-button"
             type="button"
             tabindex="0"
+            translate="no"
             aria-expanded={showTutorial}
             aria-label={$t('rules') || 'Rules'}
             onclick={onToggleTutorial}
@@ -48,6 +49,7 @@
             id="resizeButton"
             type="button"
             class="resize-button"
+            translate="no"
             onclick={onOpenResize}
             title={$tt('openSettingsRules') || 'Open in tab'}
             aria-label={$t('openWebConfigRules') || 'Open web config'}
@@ -70,6 +72,7 @@
             class="storage-status-icon button-rules-header"
             class:syncing={isSyncing}
             data-storage-mode={storageMode}
+            translate="no"
             title={$tt(storageMode === 'sync' ? 'storageModeSyncDescClick' : 'storageModeLocalDesc')}
             oncontextmenu={(e) => {
                 e.preventDefault();
@@ -107,6 +110,7 @@
             type="button"
             class="sort-btn button-rules-header"
             class:active={isAlphaSort}
+            translate="no"
             onclick={onToggleSortAlpha}
             title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabetically')}
             aria-label={$t(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabetically')}
@@ -127,6 +131,7 @@
             id="expand-all-btn"
             class="expand-btn button-rules-header"
             type="button"
+            translate="no"
             onclick={onToggleExpandAll}
             disabled={expandableRuleNamesCount === 0}
             title={$tt(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}

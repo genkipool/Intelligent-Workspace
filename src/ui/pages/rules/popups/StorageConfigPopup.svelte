@@ -70,6 +70,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 class:selected={selectedMode === 'sync'}
                 data-value="sync"
                 title={$tt('storageSyncDesc')}
@@ -78,6 +79,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 class:selected={selectedMode === 'local'}
                 data-value="local"
                 title={$tt('storageLocalDesc')}

@@ -34,6 +34,7 @@
     <button
         type="button"
         class="svg-settings-container button-rules-header"
+        translate="no"
         title={$tt('configureClusterCtrlClick')}
         oncontextmenu={(e) => {
             e.preventDefault();
@@ -52,7 +53,7 @@
             <use href="#icon-cluster"></use>
         </svg>
     </button>
-    <label class="switch" for="toggle-cluster">
+    <label class="switch" for="toggle-cluster" translate="no">
         <input
             type="checkbox"
             id="toggle-cluster"
@@ -60,9 +61,13 @@
             checked={isClusterEnabled}
             onchange={(e) => onSetClusterEnabled(e.currentTarget.checked)}
         />
-        <span class="slider slider-header-controls" title={$tt(isClusterEnabled ? 'disableCluster' : 'enableCluster')}>
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+        <span
+            class="slider slider-header-controls"
+            translate="no"
+            title={$tt(isClusterEnabled ? 'disableCluster' : 'enableCluster')}
+        >
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>
@@ -71,6 +76,7 @@
     <button
         type="button"
         class="svg-settings-container toggle-groups button-rules-header"
+        translate="no"
         title={$tt('miscSortCtrlClick')}
         oncontextmenu={(e) => {
             e.preventDefault();
@@ -89,7 +95,7 @@
             <use href="#icon-sort-groups"></use>
         </svg>
     </button>
-    <label class="switch" for="toggle-sort-groups">
+    <label class="switch" for="toggle-sort-groups" translate="no">
         <input
             class="input-settings-container"
             type="checkbox"
@@ -101,10 +107,11 @@
         />
         <span
             class="slider slider-header-controls"
+            translate="no"
             title={$tt(isSortGroupsEnabled ? 'disableSortGroups' : 'enableSortGroups')}
         >
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>
@@ -114,6 +121,7 @@
         id="expand-all-small-btn"
         class="expand-btn-small button-rules-header"
         type="button"
+        translate="no"
         onclick={onToggleExpandAll}
         disabled={expandableRuleNamesCount === 0}
         title={$tt(areAllExpanded ? 'collapseAllRules' : 'expandAllRules')}
@@ -136,6 +144,7 @@
     <button
         type="button"
         class="svg-settings-container button-rules-header"
+        translate="no"
         title={$tt('configurePrefixesCtrlClick')}
         oncontextmenu={(e) => {
             e.preventDefault();
@@ -154,7 +163,7 @@
             <use href="#icon-prefixes"></use>
         </svg>
     </button>
-    <label class="switch" for="toggle-prefixes">
+    <label class="switch" for="toggle-prefixes" translate="no">
         <input
             type="checkbox"
             id="toggle-prefixes"
@@ -164,10 +173,11 @@
         />
         <span
             class="slider slider-header-controls"
+            translate="no"
             title={$tt(isPrefixesEnabled ? 'disablePrefixes' : 'enablePrefixes')}
         >
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>
@@ -176,6 +186,7 @@
     <button
         type="button"
         class="svg-settings-container button-rules-header"
+        translate="no"
         title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}
         oncontextmenu={(e) => {
             e.preventDefault();
@@ -194,7 +205,12 @@
             <use href="#icon-timer"></use>
         </svg>
     </button>
-    <label class="switch" for="toggle-collapse-timer" title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}>
+    <label
+        class="switch"
+        for="toggle-collapse-timer"
+        translate="no"
+        title={$tt('toggleCollapseTimerWithTimes') || 'Collapse timer'}
+    >
         <input
             class="input-settings-container"
             type="checkbox"
@@ -205,10 +221,11 @@
         />
         <span
             class="slider slider-header-controls"
+            translate="no"
             title={$tt(isCollapseTimerEnabled ? 'disableToggleCollapseTimer' : 'enableToggleCollapseTimer')}
         >
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>
@@ -217,6 +234,7 @@
     <button
         type="button"
         class="svg-settings-container all-rules-checks button-rules-header"
+        translate="no"
         title={$tt('configureStorageCtrlClick')}
         oncontextmenu={(e) => {
             e.preventDefault();
@@ -236,7 +254,7 @@
             <use href="#icon-all-rules"></use>
         </svg>
     </button>
-    <label class="switch" for="toggle-all-rules">
+    <label class="switch" for="toggle-all-rules" translate="no">
         <input
             class="input-settings-container"
             type="checkbox"
@@ -248,10 +266,11 @@
         />
         <span
             class="slider slider-header-controls"
+            translate="no"
             title={$tt(isAllRulesActive ? 'disableAllRules' : 'enableAllRules')}
         >
-            <span class="switch-text-on">on</span>
-            <span class="switch-text-off">off</span>
+            <span class="switch-text-on" translate="no">on</span>
+            <span class="switch-text-off" translate="no">off</span>
             <span class="switch-handle"><span class="switch-light"></span></span>
         </span>
     </label>

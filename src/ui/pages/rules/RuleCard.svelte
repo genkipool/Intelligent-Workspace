@@ -537,6 +537,7 @@
             id="starButton"
             class="star-button"
             type="button"
+            translate="no"
             data-index={index}
             title={$tt(isStarred ? 'unstarRule' : 'starRule')}
             aria-label={$t(isStarred ? 'unstarRule' : 'starRule')}
@@ -561,6 +562,7 @@
             draggable={isDraggable}
             tabindex="0"
             type="button"
+            translate="no"
             title={$tt('reorderRule')}
             aria-label={$t('dragRule')}
             {ondragstart}
@@ -583,6 +585,7 @@
             style="background-color: {groupColorHex}"
             tabindex="0"
             role="button"
+            translate="no"
             title={$tt('changeRuleColor')}
             aria-label={$t('changeColor')}
             onkeydown={(e) => e.key === 'Enter' && changeColor({ currentTarget: e.currentTarget })}
@@ -630,6 +633,7 @@
         <button
             class="sort-domains-btn"
             type="button"
+            translate="no"
             aria-pressed={isAlphaSort}
             style="display: {isExpanded ? 'inline-block' : 'none'};"
             title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabeticallyButton')}
@@ -644,6 +648,7 @@
             class="collapse-btn"
             type="button"
             tabindex="0"
+            translate="no"
             data-index={index}
             style="display: {isExpanded && isLargeScreen ? 'inline-block' : 'none'};"
             title={$tt('collapseSection')}
@@ -724,12 +729,18 @@
                         >
                     {/if}
                     <div class="icons-container" class:focus-visible={focusedUrlIndex === urlIndex}>
-                        <button class="edit-icon" type="button" tabindex="0" title={$tt('editDomain')}>
+                        <button class="edit-icon" type="button" tabindex="0" translate="no" title={$tt('editDomain')}>
                             <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
                                 <use href="#icon-url-edit"></use>
                             </svg>
                         </button>
-                        <button class="delete-icon" type="button" tabindex="0" title={$tt('deleteDomain')}>
+                        <button
+                            class="delete-icon"
+                            type="button"
+                            tabindex="0"
+                            translate="no"
+                            title={$tt('deleteDomain')}
+                        >
                             <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                 <use href="#icon-trash"></use>
                             </svg>
@@ -743,6 +754,7 @@
                 class="expand-btn"
                 type="button"
                 tabindex="0"
+                translate="no"
                 title={$tt('collapseUrlsButton')}
                 aria-label={$t('showLessUrls')}>^</button
             >
@@ -751,6 +763,7 @@
                 class="expand-btn"
                 type="button"
                 tabindex="0"
+                translate="no"
                 title={$tt('expandUrlsButton')}
                 aria-label={$t('showMoreUrls')}>. . .</button
             >

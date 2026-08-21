@@ -70,6 +70,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="start"
                 class:selected={selected === 'start'}
                 aria-pressed={selected === 'start'}
@@ -78,6 +79,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="end"
                 class:selected={selected === 'end'}
                 aria-pressed={selected === 'end'}
@@ -86,6 +88,7 @@
             <button
                 type="button"
                 class="option-button"
+                translate="no"
                 data-value="alpha"
                 class:selected={selected === 'alpha'}
                 aria-pressed={selected === 'alpha'}

@@ -409,6 +409,7 @@
                 class="close"
                 tabindex="0"
                 role="button"
+                translate="no"
                 aria-label={$t('closeModal') || 'Close'}
                 onclick={close}
                 onkeydown={(e) => e.key === 'Enter' && close()}>x</span
@@ -485,7 +486,9 @@
                 </div>
             </div>
 
-            <button class="submit-button" id="submitButton" type="submit" tabindex="0">{$t('save') || 'Save'}</button>
+            <button class="submit-button" id="submitButton" type="submit" tabindex="0" translate="no"
+                >{$t('save') || 'Save'}</button
+            >
             <div id="rule-form-error" class="rule-form-error" class:visible={errorMessage} role="alert">
                 {errorMessage}
             </div>
