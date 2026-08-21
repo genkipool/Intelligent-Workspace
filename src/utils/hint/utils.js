@@ -336,6 +336,12 @@ var Utils = class Utils {
         if (ariaDisabled && ['', 'true'].includes(ariaDisabled.toLowerCase())) {
             return null;
         }
+        try {
+            const style = window.getComputedStyle(el);
+            if (style.visibility !== 'visible' || style.display === 'none' || style.pointerEvents === 'none') {
+                return null;
+            }
+        } catch {}
         const clientRects = Array.from(el.getClientRects());
         for (const rawRect of clientRects) {
             if ((rawRect.width === 0 || rawRect.height === 0) && testChildren) {
@@ -348,10 +354,6 @@ var Utils = class Utils {
             } else {
                 const cropped = this.cropRectToVisible(rawRect);
                 if (!cropped) continue;
-                try {
-                    const style = window.getComputedStyle(el);
-                    if (style.visibility !== 'visible' || style.display === 'none') continue;
-                } catch {}
                 return cropped;
             }
         }
@@ -364,6 +366,12 @@ var Utils = class Utils {
         if (ariaDisabled && ['', 'true'].includes(ariaDisabled.toLowerCase())) {
             return false;
         }
+        try {
+            const style = window.getComputedStyle(el);
+            if (style.visibility !== 'visible' || style.display === 'none' || style.pointerEvents === 'none') {
+                return false;
+            }
+        } catch {}
         const parentDetails = el.closest && el.closest('details');
         if (parentDetails && !parentDetails.open) {
             const summaryAncestor = el.closest('summary');

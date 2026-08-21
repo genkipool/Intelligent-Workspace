@@ -158,6 +158,150 @@ var HintEngine = class HintEngine {
         if (!this.active) return;
         this.hints.forEach((h) => h.hintElement.remove());
         this.hints = [];
+        // Helper: Check if an element is an atomic/leaf interactive element
+        const isAtomicInteractive = (el) => {
+            if (!el) return false;
+            const tag = (el.tagName || '').toUpperCase();
+            if (['BUTTON', 'INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return true;
+            if (tag === 'A' && el.hasAttribute('href')) return true;
+            const role = (el.getAttribute('role') || '').toLowerCase();
+            if (
+                [
+                    'button',
+                    'checkbox',
+                    'radio',
+                    'menuitem',
+                    'menuitemcheckbox',
+                    'menuitemradio',
+                    'tab',
+                    'link',
+                ].includes(role)
+            ) {
+                return true;
+            }
+            if (el.getAttribute('contenteditable') === 'true') return true;
+            return false;
+        };
+
+        // Helper: Check if parent is an ancestor of child across standard and shadow DOM boundaries
+        const isAncestorOf = (parent, child) => {
+            if (!parent || !child || parent === child) return false;
+            if (parent.contains && parent.contains(child)) return true;
+            let curr = child;
+            while (curr) {
+                if (curr.assignedSlot) {
+                    curr = curr.assignedSlot;
+                } else if (curr.getRootNode && curr.getRootNode() instanceof ShadowRoot) {
+                    curr = curr.getRootNode().host;
+                } else {
+                    curr = curr.parentElement;
+                }
+                if (curr && parent.contains && parent.contains(curr)) return true;
+                if (curr === parent) return true;
+            }
+            return false;
+        };
+
+        // Helper: Check hit target match including Shadow DOM, slots, and parent/descendant relationships
+        const isHitTarget = (candidateEl, hitEl) => {
+            if (!candidateEl || !hitEl) return false;
+            if (candidateEl === hitEl || candidateEl.contains(hitEl)) return true;
+
+            const slot = candidateEl.assignedSlot || candidateEl.closest?.('[slot]')?.assignedSlot;
+            if (slot) {
+                if (hitEl === slot || hitEl.contains(slot) || slot.contains(hitEl)) return true;
+                if (hitEl.tagName === 'SLOT' && typeof hitEl.assignedElements === 'function') {
+                    const assigned = hitEl.assignedElements({ flatten: true });
+                    if (assigned.some((a) => a === candidateEl || a.contains(candidateEl) || candidateEl.contains(a))) {
+                        return true;
+                    }
+                }
+            }
+
+            if (hitEl.querySelectorAll) {
+                const slots = hitEl.querySelectorAll('slot');
+                for (const s of slots) {
+                    if (s === slot) return true;
+                    if (typeof s.assignedElements === 'function') {
+                        const assigned = s.assignedElements({ flatten: true });
+                        if (
+                            assigned.some(
+                                (a) => a === candidateEl || a.contains(candidateEl) || candidateEl.contains(a),
+                            )
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            const rootNode = candidateEl.getRootNode?.();
+            if (rootNode instanceof ShadowRoot && rootNode.host === hitEl) return true;
+            if (candidateEl.parentElement === hitEl && hitEl.shadowRoot) return true;
+
+            return false;
+        };
+
+        // Helper: Calculate preference score for link elements when duplicate URLs exist in the same article/card
+        const getLinkScore = (el) => {
+            if (!el) return 0;
+            let score = 0;
+            const slot = el.getAttribute?.('slot') || '';
+            const id = (el.id || '').toLowerCase();
+            const className = (el.getAttribute?.('class') || '').toLowerCase();
+
+            // Primary title link gets highest priority
+            if (
+                slot === 'title' ||
+                id.includes('title') ||
+                className.includes('title') ||
+                el.closest?.('h1, h2, h3, h4, h5, h6')
+            ) {
+                score += 100;
+            }
+
+            // Body preview links or secondary text slots get penalized
+            if (
+                slot === 'text-body' ||
+                el.closest?.(
+                    '[slot="text-body"], shreddit-post-text-body, .feed-card-text-preview, .post-body, .article-body, .entry-content',
+                )
+            ) {
+                score -= 50;
+            }
+
+            // Pointer events none penalty
+            if (className.includes('pointer-events-none')) {
+                score -= 100;
+            }
+
+            // Background overlay card link
+            if (slot === 'full-post-link' || className.includes('inset-0')) {
+                score -= 20;
+            }
+
+            return score;
+        };
+
+        // Helper: Get article/card container
+        const getArticleContainer = (el) => {
+            if (!el || typeof el.closest !== 'function') return null;
+            return el.closest(
+                'article, [data-post-id], shreddit-post, [role="article"], .card, .post, .feed-item, [data-testid*="post"]',
+            );
+        };
+
+        // Helper: Normalize URL
+        const normalizeUrl = (url) => {
+            if (!url) return '';
+            try {
+                const u = new URL(url, window.location.href);
+                return (u.origin + u.pathname).replace(/\/+$/, '').toLowerCase();
+            } catch {
+                return (url || '').replace(/#.*$/, '').replace(/\/+$/, '').toLowerCase();
+            }
+        };
+
         // 1. Gather all candidates in DOM order
         const rawCandidates = Utils.querySelectorAllDeep(this.hintSelectors, document.body);
         let candidateHints = [];
@@ -166,40 +310,103 @@ var HintEngine = class HintEngine {
             if (!Utils.isVisible(el, isYtControl)) continue;
             const rect = Utils.getVisibleClientRect(el, true);
             if (!rect) continue;
-            const tagName = (el.tagName || '').toLowerCase();
-            const className = (el.getAttribute('class') || '').toLowerCase();
-            const possibleFalsePositive =
-                tagName === 'span' || className.includes('button') || className.includes('btn');
             candidateHints.push({
                 element: el,
                 rect,
-                possibleFalsePositive,
+                isAtomic: isAtomicInteractive(el),
             });
         }
 
-        // 2. Traverse from descendants to ancestors (reverse DOM order)
-        candidateHints = candidateHints.reverse();
+        // 2. Filter duplicate / container false positives:
+        // - Drop non-atomic container elements that contain other interactive candidates
+        // - Drop inner elements inside atomic interactives (e.g. icon spans inside buttons)
+        // - Drop duplicate candidates with overlapping bounding boxes
+        // - Drop duplicate link URLs within the same article container (keeping primary title link)
+        candidateHints = candidateHints.filter((hintA, idxA) => {
+            const elA = hintA.element;
+            const isAtomicA = hintA.isAtomic;
 
-        // 3. Filter false positives (e.g. wrapper spans when descendants are clickable)
-        const descendantsToCheck = [1, 2, 3];
-        candidateHints = candidateHints.filter((hint, position) => {
-            if (!hint.possibleFalsePositive) return true;
-            const lookbackWindow = 6;
-            let index = Math.max(0, position - lookbackWindow);
-            while (index < position) {
-                let candidateDescendant = candidateHints[index].element;
-                for (let step = 0; step < descendantsToCheck.length; step++) {
-                    candidateDescendant = candidateDescendant?.parentElement;
-                    if (candidateDescendant === hint.element) {
-                        return false;
+            for (let idxB = 0; idxB < candidateHints.length; idxB++) {
+                if (idxA === idxB) continue;
+                const hintB = candidateHints[idxB];
+                const elB = hintB.element;
+                const isAtomicB = hintB.isAtomic;
+
+                // Case 1: elA is a non-atomic internal child inside an atomic interactive elB (e.g. span inside button)
+                if (isAtomicB && !isAtomicA && isAncestorOf(elB, elA)) {
+                    return false;
+                }
+
+                // Case 2: elA is a container/wrapper (non-atomic) containing another candidate elB
+                if (!isAtomicA && isAncestorOf(elA, elB)) {
+                    return false;
+                }
+
+                // Case 3: Duplicate link URLs within the same article/post container
+                if (elA.tagName === 'A' && elB.tagName === 'A' && elA.href && elB.href) {
+                    const urlA = normalizeUrl(elA.href);
+                    const urlB = normalizeUrl(elB.href);
+                    if (urlA && urlA === urlB) {
+                        const containerA = getArticleContainer(elA);
+                        const containerB = getArticleContainer(elB);
+                        if (
+                            (containerA && containerB && containerA === containerB) ||
+                            isAncestorOf(containerA || elA, elB) ||
+                            isAncestorOf(containerB || elB, elA) ||
+                            isAncestorOf(elA, elB) ||
+                            isAncestorOf(elB, elA)
+                        ) {
+                            const isActionA =
+                                elA.hasAttribute('data-action-bar-action') ||
+                                (elA.getAttribute('name') || '').includes('action') ||
+                                (elA.getAttribute('class') || '').includes('button') ||
+                                (elA.getAttribute('class') || '').includes('btn');
+                            const isActionB =
+                                elB.hasAttribute('data-action-bar-action') ||
+                                (elB.getAttribute('name') || '').includes('action') ||
+                                (elB.getAttribute('class') || '').includes('button') ||
+                                (elB.getAttribute('class') || '').includes('btn');
+
+                            if (!isActionA && !isActionB) {
+                                const scoreA = getLinkScore(elA);
+                                const scoreB = getLinkScore(elB);
+                                if (scoreA < scoreB) {
+                                    return false; // Drop elA in favor of higher scored elB
+                                }
+                                if (scoreA === scoreB && idxA > idxB) {
+                                    return false; // Keep the first/shallower one
+                                }
+                            }
+                        }
                     }
                 }
-                index += 1;
+
+                // Case 4: Overlapping bounding boxes (identical or nearly identical rects)
+                const isNearlySameRect =
+                    Math.abs(hintA.rect.left - hintB.rect.left) < 3 &&
+                    Math.abs(hintA.rect.top - hintB.rect.top) < 3 &&
+                    Math.abs(hintA.rect.width - hintB.rect.width) < 3 &&
+                    Math.abs(hintA.rect.height - hintB.rect.height) < 3;
+
+                if (isNearlySameRect) {
+                    if (isAncestorOf(elA, elB)) {
+                        return false; // Drop outer container elA
+                    }
+                    if (isAncestorOf(elB, elA)) {
+                        if (!isAtomicA && isAtomicB) return false;
+                    }
+                    if (!isAtomicA && isAtomicB) {
+                        return false;
+                    }
+                    if (isAtomicA === isAtomicB && idxA > idxB) {
+                        return false; // Deduplicate identical rects by keeping first
+                    }
+                }
             }
             return true;
         });
 
-        // 4. Hit-test (elementFromPoint) to filter out elements covered or scrolled out in carousels
+        // 3. Hit-test (elementFromPoint / elementsFromPoint) to filter out occluded or scrolled out elements
         const getElementAtPoint = (x, y) => {
             let el = document.elementFromPoint(x, y);
             while (el && el.shadowRoot) {
@@ -210,35 +417,53 @@ var HintEngine = class HintEngine {
             return el;
         };
 
-        const nonOverlappingHints = candidateHints.filter((hint) => {
+        const finalTargets = candidateHints.filter((hint) => {
             const el = hint.element;
             const rect = hint.rect;
 
             // Check center
             const centerX = rect.left + rect.width * 0.5;
             const centerY = rect.top + rect.height * 0.5;
-            const elAtCenter = getElementAtPoint(centerX, centerY);
-            if (elAtCenter && el.contains(elAtCenter)) {
-                return true;
+            if (centerX >= 0 && centerY >= 0 && centerX < window.innerWidth && centerY < window.innerHeight) {
+                const elAtCenter = getElementAtPoint(centerX, centerY);
+                if (isHitTarget(el, elAtCenter)) {
+                    return true;
+                }
+                if (typeof document.elementsFromPoint === 'function') {
+                    const stack = document.elementsFromPoint(centerX, centerY);
+                    if (stack && stack.length > 0) {
+                        for (let i = 0; i < Math.min(stack.length, 3); i++) {
+                            if (isHitTarget(el, stack[i])) return true;
+                        }
+                    }
+                }
             }
 
-            // Check corners
-            const verticalCoords = [rect.top + 0.1, rect.bottom - 0.1];
-            const horizontalCoords = [rect.left + 0.1, rect.right - 0.1];
-            for (const vy of verticalCoords) {
-                for (const hx of horizontalCoords) {
-                    if (hx < 0 || vy < 0 || hx >= window.innerWidth || vy >= window.innerHeight) continue;
-                    const elAtPoint = getElementAtPoint(hx, vy);
-                    if (elAtPoint && el.contains(elAtPoint)) {
-                        return true;
+            // Check sample points across the element
+            const samplePoints = [
+                [rect.left + Math.min(6, rect.width * 0.25), rect.top + rect.height * 0.5],
+                [rect.right - Math.min(6, rect.width * 0.25), rect.top + rect.height * 0.5],
+                [rect.left + Math.min(4, rect.width * 0.1), rect.top + Math.min(4, rect.height * 0.1)],
+                [rect.right - Math.min(4, rect.width * 0.1), rect.bottom - Math.min(4, rect.height * 0.1)],
+            ];
+
+            for (const [px, py] of samplePoints) {
+                if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) continue;
+                const elAtPoint = getElementAtPoint(px, py);
+                if (isHitTarget(el, elAtPoint)) {
+                    return true;
+                }
+                if (typeof document.elementsFromPoint === 'function') {
+                    const stack = document.elementsFromPoint(px, py);
+                    if (stack && stack.length > 0) {
+                        for (let i = 0; i < Math.min(stack.length, 3); i++) {
+                            if (isHitTarget(el, stack[i])) return true;
+                        }
                     }
                 }
             }
             return false;
         });
-
-        // 5. Reverse back to document order for hint key assignment
-        const finalTargets = nonOverlappingHints.reverse();
 
         const keysToAssign = this._generateKeys(finalTargets.length);
         const hintRoot = this.shadowUI.getContainer().getElementById('hint-root-container');
