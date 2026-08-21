@@ -2078,3 +2078,17 @@ async function handleSetLinkPreviewTriggerKey(triggerKey, sendResponse) {
     }
     if (sendResponse) sendResponse({ success: true });
 }
+
+async function handleSetSnippetPopupTriggerKey(triggerKey, sendResponse) {
+    const cleanKey = (triggerKey || '$$').trim();
+    await chrome.storage.sync.set({ snippetPopupTriggerKey: cleanKey });
+    await chrome.storage.local.set({ snippetPopupTriggerKey: cleanKey });
+
+    const msg = { action: 'snippetPopupTriggerKeyUpdated', triggerKey: cleanKey };
+    chrome.runtime.sendMessage(msg);
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+        chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+    }
+    if (sendResponse) sendResponse({ success: true });
+}

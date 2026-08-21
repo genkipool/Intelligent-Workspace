@@ -959,6 +959,7 @@ export async function exportHintsConfig(utils) {
             'itg-ui-custom-shortcuts', // Built-in Overrides: { descriptionKey: customKey, ... }
             'linkPreviewTriggerKey', // Link preview trigger key
             'linkPreviewBlacklist', // Link preview blacklist
+            'snippetPopupTriggerKey', // Snippet popup trigger key
         ]);
 
         const sites = storageData['userHintCommands'] || [];
@@ -966,12 +967,14 @@ export async function exportHintsConfig(utils) {
         const overrides = storageData['itg-ui-custom-shortcuts'] || {};
         const linkPreviewTriggerKey = storageData['linkPreviewTriggerKey'] || '';
         const linkPreviewBlacklist = storageData['linkPreviewBlacklist'] || [];
+        const snippetPopupTriggerKey = storageData['snippetPopupTriggerKey'] || '$$';
 
         const hasCustomConfig =
             sites.length > 0 ||
             Object.keys(snippets).length > 0 ||
             Object.keys(overrides).length > 0 ||
             Boolean(linkPreviewTriggerKey) ||
+            snippetPopupTriggerKey !== '$$' ||
             (Array.isArray(linkPreviewBlacklist) && linkPreviewBlacklist.length > 0);
 
         if (!hasCustomConfig) {
@@ -989,6 +992,7 @@ export async function exportHintsConfig(utils) {
                 overrides,
                 linkPreviewTriggerKey,
                 linkPreviewBlacklist,
+                snippetPopupTriggerKey,
             },
         };
 
@@ -1038,6 +1042,7 @@ export async function importHintsConfig(file, utils) {
                     overrides = {},
                     linkPreviewTriggerKey = '',
                     linkPreviewBlacklist = [],
+                    snippetPopupTriggerKey = '',
                 } = json.data;
                 const errors = [];
 
@@ -1101,6 +1106,11 @@ export async function importHintsConfig(file, utils) {
                     await chrome.storage.local.set({ linkPreviewTriggerKey: syncUpdates.linkPreviewTriggerKey });
                 }
 
+                if (typeof snippetPopupTriggerKey === 'string' && snippetPopupTriggerKey.trim()) {
+                    syncUpdates.snippetPopupTriggerKey = snippetPopupTriggerKey.trim();
+                    await chrome.storage.local.set({ snippetPopupTriggerKey: syncUpdates.snippetPopupTriggerKey });
+                }
+
                 if (Array.isArray(linkPreviewBlacklist)) {
                     syncUpdates.linkPreviewBlacklist = linkPreviewBlacklist;
                     await chrome.storage.local.set({ linkPreviewBlacklist });
@@ -1114,6 +1124,12 @@ export async function importHintsConfig(file, utils) {
                     chrome.runtime.sendMessage({
                         action: 'linkPreviewTriggerKeyUpdated',
                         triggerKey: syncUpdates.linkPreviewTriggerKey,
+                    });
+                }
+                if (syncUpdates.snippetPopupTriggerKey !== undefined) {
+                    chrome.runtime.sendMessage({
+                        action: 'snippetPopupTriggerKeyUpdated',
+                        triggerKey: syncUpdates.snippetPopupTriggerKey,
                     });
                 }
 

@@ -87,6 +87,7 @@
             this.targetElement = null;
             this.savedSelection = null;
             this._isCleanedUp = false;
+            this.popupTriggerKey = '$$';
 
             this._init();
         }
@@ -94,6 +95,12 @@
         async _init() {
             injectPopupStyles();
             this.snippets = await HintCommon.Snippets.getAll();
+            try {
+                const data = await chrome.storage.sync.get(['snippetPopupTriggerKey']);
+                if (data && data.snippetPopupTriggerKey !== undefined) {
+                    this.popupTriggerKey = data.snippetPopupTriggerKey || '$$';
+                }
+            } catch {}
             this._attachListeners();
 
             // Listen for snippet updates (synchronous listener — safe for MV3)
@@ -102,6 +109,9 @@
                     HintCommon.Snippets.getAll().then((s) => {
                         this.snippets = s;
                     });
+                }
+                if (msg.action === 'snippetPopupTriggerKeyUpdated') {
+                    this.popupTriggerKey = msg.triggerKey || '$$';
                 }
             });
         }
@@ -137,8 +147,13 @@
                 this.keyBuffer.push(e.key);
                 if (this.keyBuffer.length > this.bufferLimit) this.keyBuffer.shift();
 
-                // $$ trigger
-                if (this.keyBuffer.length >= 2 && this.keyBuffer.slice(-2).join('') === '$$') {
+                // Snippet popup trigger
+                const trigger = this.popupTriggerKey || '$$';
+                if (
+                    trigger &&
+                    this.keyBuffer.length >= trigger.length &&
+                    this.keyBuffer.slice(-trigger.length).join('') === trigger
+                ) {
                     e.preventDefault();
                     e.stopPropagation();
                     this.keyBuffer = [];

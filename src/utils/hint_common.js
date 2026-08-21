@@ -16,18 +16,19 @@ var HintCommon = {
                             (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
                     }
                     this._lang = lang;
+                    let loaded = false;
                     try {
                         const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
                         const res = await fetch(url);
                         if (res.ok) {
                             this._messages = await res.json();
-                        } else if (lang !== 'en') {
-                            const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
-                            if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                            loaded = true;
                         }
                     } catch {
-                        // If direct fetch from content script fails (e.g. CSP or web accessible restriction), request from background
-                        if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+                        // Direct fetch may fail due to CSP in content script
+                    }
+                    if (!loaded && typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+                        try {
                             const bgResponse = await chrome.runtime.sendMessage({
                                 action: 'getI18nMessages',
                                 lang,
@@ -35,8 +36,15 @@ var HintCommon = {
                             if (bgResponse?.success && bgResponse.messages) {
                                 this._messages = bgResponse.messages;
                                 this._lang = bgResponse.lang || lang;
+                                loaded = true;
                             }
-                        }
+                        } catch {}
+                    }
+                    if (!loaded && lang !== 'en') {
+                        try {
+                            const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
+                            if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                        } catch {}
                     }
                 } catch (e) {
                     if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
@@ -98,6 +106,7 @@ var HintCommon = {
         PINNED_SECTIONS: 'itg-pinned-sections',
         LINK_PREVIEW_BLACKLIST: 'linkPreviewBlacklist',
         LINK_PREVIEW_TRIGGER_KEY: 'linkPreviewTriggerKey',
+        SNIPPET_POPUP_TRIGGER_KEY: 'snippetPopupTriggerKey',
     },
 
     // The Single Source of Truth for Built-in Commands
@@ -500,7 +509,8 @@ var HintCommon = {
             const btn = document.createElement('button');
             btn.className = 'itg-format-btn';
             btn.type = 'button';
-            btn.title = chrome.i18n.getMessage('formatText') || 'Text Formatting';
+            btn.title = HintCommon.i18n.getMessage('formatText', 'Text Formatting');
+            btn.dataset.i18nTitle = 'formatText';
             btn.innerHTML = `
                 <svg width="20" height="20" viewBox="0 0 1024 1024" class="icon" xmlns="http://www.w3.org/2000/svg">
                     <path d="M840 192h-56v-72c0-13.3-10.7-24-24-24H168c-13.3 0-24 10.7-24 24v272c0 13.3 10.7 24 24 24h592c13.3 0 24-10.7 24-24V256h32v200H465c-22.1 0-40 17.9-40 40v136h-44c-4.4 0-8 3.6-8 8v228c0 .6.1 1.3.2 1.9-.1 2-.2 4.1-.2 6.1 0 46.4 37.6 84 84 84s84-37.6 84-84c0-2.1-.1-4.1-.2-6.1.1-.6.2-1.2.2-1.9V640c0-4.4-3.6-8-8-8h-44V520h351c22.1 0 40-17.9 40-40V232c0-22.1-17.9-40-40-40M720 352H208V160h512zM477 876c0 11-9 20-20 20s-20-9-20-20V696h40z" fill="currentColor"/>
@@ -514,70 +524,71 @@ var HintCommon = {
          * Used by both modal and inline modes.
          */
         _editorInnerHTML(showApplyBtn = true, showCloseBtn = true) {
+            const getMsg = (key, fallback) => HintCommon.i18n.getMessage(key, fallback);
             return `
                     <div class="itg-format-modal-header">
-                        <h2>Text Formatting</h2>
-                        ${showCloseBtn ? '<button class="itg-format-close-btn" type="button">&times;</button>' : ''}
+                        <h2 data-i18n="textFormattingTitle">${getMsg('textFormattingTitle', 'Text Formatting')}</h2>
+                        ${showCloseBtn ? `<button class="itg-format-close-btn" type="button" data-i18n-title="closeFormatNoApplyTooltip" title="${getMsg('closeFormatNoApplyTooltip', 'Close text formatting without applying changes')}">&times;</button>` : ''}
                     </div>
                     
                     <div class="itg-format-toolbar">
                         <!-- Row 1: Basic styles, Font Size, Text Color, BG Color, Link -->
                         <div class="itg-format-toolbar-row">
-                            <button type="button" data-command="bold" title="Bold (Ctrl+B)">
+                            <button type="button" data-command="bold" data-i18n-title="formatBold" title="${getMsg('formatBold', 'Bold (Ctrl+B)')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
                             </button>
-                            <button type="button" data-command="italic" title="Italic (Ctrl+I)">
+                            <button type="button" data-command="italic" data-i18n-title="formatItalic" title="${getMsg('formatItalic', 'Italic (Ctrl+I)')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"/></svg>
                             </button>
-                            <button type="button" data-command="underline" title="Underline (Ctrl+U)">
+                            <button type="button" data-command="underline" data-i18n-title="formatUnderline" title="${getMsg('formatUnderline', 'Underline (Ctrl+U)')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zm-7 2v2h14v-2H5z"/></svg>
                             </button>
-                            <button type="button" data-command="strikeThrough" title="Strikethrough">
+                            <button type="button" data-command="strikeThrough" data-i18n-title="formatStrikethrough" title="${getMsg('formatStrikethrough', 'Strikethrough')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M18 5V4H6v1m6-1v16m-2 0h4M4 12h16"></path>
                                 </svg>
                             </button>
-                            <button type="button" class="itg-format-trigger-fontSize" title="Font size">
+                            <button type="button" class="itg-format-trigger-fontSize" data-i18n-title="formatFontSize" title="${getMsg('formatFontSize', 'Font size')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z"/></svg>
                             </button>
-                            <button type="button" class="itg-format-trigger-foreColor" title="Text color">
+                            <button type="button" class="itg-format-trigger-foreColor" data-i18n-title="formatTextColor" title="${getMsg('formatTextColor', 'Text color')}">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 3L5.5 17h2.25l1.12-3h6.25l1.12 3h2.25L13 3h-2zm-1.38 9L12 5.67 14.38 12H9.62z"></path><rect class="itg-color-indicator" x="0" y="20" width="24" height="4" fill="#9fc5e8"></rect></svg>
                             </button>
-                            <button type="button" class="itg-format-trigger-backColor" title="Background color">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><rect class="itg-color-indicator" x="0" y="20" width="24" height="4" fill="#ffff00"/></svg>
+                            <button type="button" class="itg-format-trigger-backColor" data-i18n-title="formatBgColor" title="${getMsg('formatBgColor', 'Background color')}">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><rect class="itg-color-indicator" x="0" y="20" width="24" height="4" fill="#ffff00"></rect></svg>
                             </button>
-                            <button type="button" data-command="createLink" title="Insert link">
+                            <button type="button" data-command="createLink" data-i18n-title="formatInsertLink" title="${getMsg('formatInsertLink', 'Insert link')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
                             </button>
                         </div>
                         <!-- Row 2: Alignments, Lists, Indent, Emoji -->
                         <div class="itg-format-toolbar-row">
-                            <button type="button" data-command="justifyLeft" title="Align left">
+                            <button type="button" data-command="justifyLeft" data-i18n-title="formatAlignLeft" title="${getMsg('formatAlignLeft', 'Align left')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10h13M3 14h18M3 18h13M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
-                            <button type="button" data-command="justifyCenter" title="Center">
+                            <button type="button" data-command="justifyCenter" data-i18n-title="formatCenter" title="${getMsg('formatCenter', 'Center')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 14h18m-4-4H7m10 8H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
-                            <button type="button" data-command="justifyRight" title="Align right">
+                            <button type="button" data-command="justifyRight" data-i18n-title="formatAlignRight" title="${getMsg('formatAlignRight', 'Align right')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" transform="scale(-1 1)"><path d="M3 10h13M3 14h18M3 18h13M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
-                            <button type="button" data-command="insertOrderedList" title="Numbered list">
+                            <button type="button" data-command="insertOrderedList" data-i18n-title="formatNumberedList" title="${getMsg('formatNumberedList', 'Numbered list')}">
                                 <svg width="20" height="20" viewBox="0 0 56 56" fill="currentColor">
                                     <path d="M9.496 19.012c.914 0 1.524-.516 1.524-1.57v-7.57c0-.985-.704-1.618-1.711-1.618-.844 0-1.36.281-1.946.68l-1.64 1.148c-.493.328-.75.633-.75 1.125 0 .61.492 1.031 1.03 1.031.282 0 .446-.047.845-.328l1.078-.726h.023v6.257c0 1.055.633 1.57 1.547 1.57m8.133-2.836h32.086c1.078 0 1.898-.82 1.898-1.875 0-1.078-.82-1.899-1.898-1.899H17.629c-1.055 0-1.875.82-1.875 1.899 0 1.054.82 1.875 1.875 1.875M5.723 33.145h6.023c.656 0 1.125-.446 1.125-1.102 0-.703-.469-1.148-1.125-1.148H8.395v-.07l1.921-1.548c1.617-1.312 2.227-2.062 2.227-3.445 0-1.875-1.57-3.14-4.102-3.14-2.226 0-3.867 1.171-3.867 2.671 0 .75.492 1.149 1.29 1.149.538 0 .913-.164 1.218-.703.328-.563.773-.868 1.406-.868.703 0 1.172.446 1.172 1.102 0 .563-.281 1.055-1.476 2.016l-3.094 2.53c-.445.376-.633.798-.633 1.313 0 .727.492 1.242 1.266 1.242m11.906-2.79h32.086a1.876 1.876 0 0 0 1.898-1.898c0-1.055-.82-1.875-1.898-1.875H17.629c-1.055 0-1.875.82-1.875 1.875s.82 1.898 1.875 1.898M8.512 47.747c2.765 0 4.43-1.242 4.43-3.21 0-1.29-.915-2.18-2.532-2.321v-.07c1.195-.211 2.11-1.008 2.11-2.368 0-1.78-1.735-2.765-4.032-2.765-1.851 0-3.843.867-3.843 2.414 0 .656.468 1.125 1.195 1.125.515 0 .75-.211 1.078-.563.539-.586.984-.773 1.547-.773.726 0 1.265.351 1.265 1.054 0 .657-.539.985-1.5.985h-.28c-.657 0-1.079.328-1.079 1.008 0 .633.398 1.008 1.078 1.008h.305c1.055 0 1.617.351 1.617 1.078 0 .633-.586 1.101-1.36 1.101-.843 0-1.429-.468-1.874-.914-.282-.258-.516-.445-.938-.445-.773 0-1.312.445-1.312 1.172 0 1.617 2.203 2.484 4.125 2.484m9.117-3.234h32.086c1.078 0 1.898-.82 1.898-1.875 0-1.078-.82-1.899-1.898-1.899H17.629c-1.055 0-1.875.82-1.875 1.899 0 1.054.82 1.875 1.875 1.875"/>
                                 </svg>
                             </button>
-                            <button type="button" data-command="insertUnorderedList" title="Bullet list">
+                            <button type="button" data-command="insertUnorderedList" data-i18n-title="formatBulletList" title="${getMsg('formatBulletList', 'Bullet list')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"/><g stroke-linecap="round" stroke-linejoin="round"/><path d="m8 6 13 .001m-13 6h13m-13 6h13M3.5 6h.01m-.01 6h.01m-.01 6h.01M4 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
-                            <button type="button" data-command="indent" title="Increase indent">
+                            <button type="button" data-command="indent" data-i18n-title="formatIncreaseIndent" title="${getMsg('formatIncreaseIndent', 'Increase indent')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21h18v-2H3v2zM3 8v8l4-4-4-4zm8 9h10v-2H11v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/></svg>
                             </button>
-                            <button type="button" data-command="outdent" title="Decrease indent">
+                            <button type="button" data-command="outdent" data-i18n-title="formatDecreaseIndent" title="${getMsg('formatDecreaseIndent', 'Decrease indent')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M3 21h18v-2H3v2zM3 12l4 4V8l-4 4zm8 5h10v-2H11v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/>
                                 </svg>
                             </button>
-                            <button type="button" class="itg-emoji-trigger" title="Insert emoji">
+                            <button type="button" class="itg-emoji-trigger" data-i18n-title="formatInsertEmoji" title="${getMsg('formatInsertEmoji', 'Insert emoji')}">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
                             </button>
                         </div>
@@ -588,12 +599,12 @@ var HintCommon = {
                     </div>
                     
                     <div class="itg-format-preview-container">
-                        <label>Preview:</label>
+                        <label data-i18n="formatPreview">${getMsg('formatPreview', 'Preview:')}</label>
                         <div class="itg-format-preview" contenteditable="true" spellcheck="false"></div>
                     </div>
                     
                     <div class="itg-format-modal-footer">
-                        ${showApplyBtn ? '<button type="button" class="itg-format-apply-btn button">Apply</button>' : ''}
+                        ${showApplyBtn ? `<button type="button" class="itg-format-apply-btn button" data-i18n="formatApply">${getMsg('formatApply', 'Apply')}</button>` : ''}
                     </div>
             `;
         },
@@ -706,12 +717,42 @@ var HintCommon = {
         },
 
         /**
+         * Applies i18n translations to elements within the given container
+         */
+        _applyI18n(container) {
+            if (!container) return;
+            const getMsg = (key, fallback) => HintCommon.i18n.getMessage(key, fallback);
+            container
+                .querySelectorAll('[data-i18n], [data-i18n-title], [data-i18n-placeholder], [data-i18n-aria-label]')
+                .forEach((el) => {
+                    if (el.dataset.i18n && el.children.length === 0) {
+                        el.textContent = getMsg(el.dataset.i18n, el.textContent);
+                    }
+                    if (el.dataset.i18nTitle) {
+                        el.title = getMsg(el.dataset.i18nTitle, el.title);
+                    }
+                    if (el.dataset.i18nPlaceholder) {
+                        const msg = getMsg(el.dataset.i18nPlaceholder, el.placeholder || el.dataset.placeholder || '');
+                        if (el.hasAttribute('placeholder')) el.placeholder = msg;
+                        if (el.hasAttribute('data-placeholder')) el.dataset.placeholder = msg;
+                    }
+                    if (el.dataset.i18nAriaLabel) {
+                        el.setAttribute(
+                            'aria-label',
+                            getMsg(el.dataset.i18nAriaLabel, el.getAttribute('aria-label') || ''),
+                        );
+                    }
+                });
+        },
+
+        /**
          * Shows the formatting editor inline (collapsible section) inside a given container element.
          * @param {Element} inlineSection - The container element to embed the editor into
          * @param {Element} targetElement - The element whose content will be edited
          * @param {Function} onApply - Callback called with the formatted HTML when apply is clicked
          */
-        showInline(inlineSection, targetElement, onApply) {
+        async showInline(inlineSection, targetElement, onApply) {
+            await HintCommon.i18n.loadMessages();
             // Build editor HTML inside inlineSection
             inlineSection.innerHTML = `<div class="itg-inline-editor-content">${this._editorInnerHTML(true, false)}</div>`;
 
@@ -720,10 +761,13 @@ var HintCommon = {
             this.targetElement = targetElement;
 
             this._attachEditorListeners(editorContent, () => this.previewArea);
+            this._applyI18n(editorContent);
 
             // Load current content
-            const currentContent =
-                targetElement.dataset.html || targetElement.innerHTML || targetElement.innerText || '';
+            let currentContent = targetElement.dataset.html || targetElement.innerHTML || targetElement.innerText || '';
+            if (targetElement.dataset.placeholder && currentContent === targetElement.dataset.placeholder) {
+                currentContent = '';
+            }
             this.previewArea.innerHTML = currentContent;
 
             // Apply button
@@ -1031,8 +1075,9 @@ var HintCommon = {
         /**
          * Shows the formatting modal
          */
-        showModal(targetElement) {
+        async showModal(targetElement) {
             this.targetElement = targetElement;
+            await HintCommon.i18n.loadMessages();
 
             // Create modal if it doesn't exist
             if (!this.modal) {
@@ -1063,10 +1108,14 @@ var HintCommon = {
                 });
             }
 
+            this._applyI18n(this.modal);
+
             // Load current content from target
             // Use dataset.html as priority to keep formatting even if display is plain text
-            const currentContent =
-                targetElement.dataset.html || targetElement.innerHTML || targetElement.innerText || '';
+            let currentContent = targetElement.dataset.html || targetElement.innerHTML || targetElement.innerText || '';
+            if (targetElement.dataset.placeholder && currentContent === targetElement.dataset.placeholder) {
+                currentContent = '';
+            }
             this.previewArea.innerHTML = currentContent;
 
             // Show modal
@@ -1252,19 +1301,21 @@ var HintCommon = {
             // Remove existing popup if any (check both document and shadow roots)
             this.closeAllPopups();
 
+            const getMsg = (key, fallback) => HintCommon.i18n.getMessage(key, fallback);
+
             // Create popup
             const popup = document.createElement('div');
             popup.className = 'itg-link-popup';
             popup.innerHTML = `
                 <div class="itg-link-popup-header">
-                    <span>Insert link</span>
-                    <button type="button" class="itg-link-close-btn">
+                    <span data-i18n="formatLinkTitle">${getMsg('formatLinkTitle', 'Insert link')}</span>
+                    <button type="button" class="itg-link-close-btn" data-i18n-title="closeModal" title="${getMsg('closeModal', 'Close')}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
                 <input type="text" placeholder="https://example.com" spellcheck="false">
                 <div class="itg-link-popup-actions">
-                    <button type="button" class="itg-link-confirm">Insert</button>
+                    <button type="button" class="itg-link-confirm" data-i18n="formatLinkConfirm">${getMsg('formatLinkConfirm', 'Insert')}</button>
                 </div>
             `;
 
@@ -1598,12 +1649,13 @@ var HintCommon = {
                 popup.appendChild(opt);
             });
 
+            const getMsg = (key, fallback) => HintCommon.i18n.getMessage(key, fallback);
             // Add custom hex input and graphic picker section
             const customSection = document.createElement('div');
             customSection.className = 'itg-color-custom-section';
             customSection.innerHTML = `
-                <input type="text" placeholder="#HEX" maxlength="7" spellcheck="false" title="Hexadecimal color" value="${currentColor}">
-                <button type="button" class="itg-graphic-picker-btn" title="Customize graphically">
+                <input type="text" placeholder="#HEX" maxlength="7" spellcheck="false" data-i18n-title="formatHexColor" title="${getMsg('formatHexColor', 'Hexadecimal color')}" value="${currentColor}">
+                <button type="button" class="itg-graphic-picker-btn" data-i18n-title="formatCustomizeGraphically" title="${getMsg('formatCustomizeGraphically', 'Customize graphically')}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
                 </button>
                 <input type="color" class="itg-hidden-color-input" style="opacity:0; position:absolute; pointer-events:none;">
@@ -1798,23 +1850,13 @@ var HintCommon = {
             el.dispatchEvent(new Event('input', { bubbles: true }));
         });
 
-        // 5. Real-Time Validation (Input)
-        const validateUI = () => {
-            const val = isInput ? el.value.trim() : el.innerText.trim();
-            // If it is mandatory and empty, or if custom validation fails
-            const isValid =
-                options.required !== false && !val ? false : options.validate ? options.validate(val) : true;
+        // 5. While typing, clear any error state so errors only manifest on Enter or Blur
+        el.addEventListener('input', () => {
+            el.classList.remove('itg-input-error');
+            el.classList.remove('error');
+        });
 
-            if (!isValid) {
-                el.classList.add('itg-input-error');
-            } else {
-                el.classList.remove('itg-input-error');
-            }
-        };
-
-        el.addEventListener('input', validateUI);
-
-        // 6. Blur: Restore if error or Save if valid
+        // 6. Blur / Enter: Validate and Restore if error, or Save if valid
         el.addEventListener('blur', async () => {
             const currentPlainText = (isInput ? el.value : el.innerText).trim();
             const originalPlainText = (el.dataset.originalVal || '').trim();
@@ -1846,7 +1888,7 @@ var HintCommon = {
                 delete el.dataset.itgUpdating;
             }
 
-            // FIX: If there is a visual error (class) OR validation fails right now
+            // Validate ONLY on Blur / Enter
             const isValid =
                 options.required !== false && !currentPlainText
                     ? false
@@ -1854,23 +1896,34 @@ var HintCommon = {
                       ? options.validate(currentPlainText)
                       : true;
 
-            if (!isValid || el.classList.contains('itg-input-error')) {
-                const hadError = hasChanged || el.classList.contains('itg-input-error') || !isValid;
-                // Restore original value
-                if (isInput) el.value = el.dataset.originalVal;
-                else {
-                    el.innerText = el.dataset.originalVal;
-                    if (options.useHtml) el.dataset.html = el.dataset.originalHtml;
-                }
-
-                el.classList.remove('itg-input-error');
+            if (!isValid) {
+                const hadError = hasChanged || !isValid;
+                // Add error visual state
+                el.classList.add('itg-input-error');
+                el.classList.add('error');
 
                 if (hadError && options.onError) {
                     options.onError(currentPlainText);
-                } else if (options.onRestore) {
-                    options.onRestore();
                 }
+
+                // Restore original value ONLY after the error color disappears (2 seconds)
+                setTimeout(() => {
+                    if (el.classList.contains('itg-input-error') || el.classList.contains('error')) {
+                        el.classList.remove('itg-input-error');
+                        el.classList.remove('error');
+                        if (isInput) el.value = el.dataset.originalVal;
+                        else {
+                            el.innerText = el.dataset.originalVal;
+                            if (options.useHtml) el.dataset.html = el.dataset.originalHtml;
+                        }
+                        if (options.onRestore) {
+                            options.onRestore();
+                        }
+                    }
+                }, 2000);
             } else if (hasChanged) {
+                el.classList.remove('itg-input-error');
+                el.classList.remove('error');
                 // Save
                 if (options.onSave) await options.onSave(valueToSave);
                 if (options.onAfter) options.onAfter();

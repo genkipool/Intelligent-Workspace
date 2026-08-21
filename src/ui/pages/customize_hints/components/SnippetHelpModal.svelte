@@ -17,6 +17,17 @@
             <div class="help-divider"></div>
 
             <section class="help-section">
+                <h3 data-i18n="snippetHelpPopupTitle"></h3>
+                <p class="help-section-text">
+                    <span data-i18n="snippetHelpPopupDescPrefix"></span>
+                    <code class="snippet-popup-trigger-code" style="color: var(--text-on-color);">$$</code>
+                    <span data-i18n="snippetHelpPopupDescSuffix"></span>
+                </p>
+            </section>
+
+            <div class="help-divider"></div>
+
+            <section class="help-section">
                 <h3 data-i18n="snippetHelpBasicTitle"></h3>
                 <p data-i18n="sh_basic_desc" class="help-section-desc"></p>
                 <div class="example-box">
@@ -195,17 +206,6 @@
                         </div>
                     </div>
                 </div>
-            </section>
-
-            <section class="help-section">
-                <h3 data-i18n="snippetHelpPopupTitle">Quick Access Popup</h3>
-                <p class="help-section-text">
-                    <span data-i18n="snippetHelpPopupDescPrefix">Type</span>
-                    <code>$$</code>
-                    <span data-i18n="snippetHelpPopupDescSuffix"
-                        >in any text field to open a menu with your top 5 most used snippets.</span
-                    >
-                </p>
             </section>
 
             <section class="help-section">

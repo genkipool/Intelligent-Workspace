@@ -449,14 +449,13 @@ var HelpModal = class HelpModal {
                     },
                     currentKey,
                 );
-                const tdDesc = h(
-                    'td',
-                    {
-                        className: 'itg-description-cell',
-                        'data-i18n': descKey,
-                    },
-                    cellContentNode,
-                );
+                const descAttrs = {
+                    className: 'itg-description-cell',
+                };
+                if (currentKey !== 'f' && currentKey !== 'cf') {
+                    descAttrs['data-i18n'] = descKey;
+                }
+                const tdDesc = h('td', descAttrs, cellContentNode);
                 table.appendChild(h('tr', {}, [tdKey, tdDesc]));
                 if (descKey === 'hintDesc_vp') {
                     const trTrigger = h('tr', {
@@ -529,6 +528,7 @@ var HelpModal = class HelpModal {
                         {
                             className: 'itg-description-cell',
                             style: 'padding: 8px; vertical-align: middle;',
+                            'data-i18n': 'previewTriggerKeyLabel',
                             'data-i18n-title': 'previewTriggerKeyTooltip',
                             title: getMsg('previewTriggerKeyTooltip', ''),
                         },
@@ -1134,14 +1134,19 @@ var HelpModal = class HelpModal {
         container
             .querySelectorAll('[data-i18n], [data-i18n-title], [data-i18n-placeholder], [data-i18n-aria-label]')
             .forEach((el) => {
-                if (el.dataset.i18n) {
+                if (el.dataset.i18n && el.children.length === 0) {
                     el.textContent = getHintI18nMsg(el.dataset.i18n, el.textContent);
                 }
                 if (el.dataset.i18nTitle) {
                     el.title = getHintI18nMsg(el.dataset.i18nTitle, el.title);
                 }
                 if (el.dataset.i18nPlaceholder) {
-                    el.placeholder = getHintI18nMsg(el.dataset.i18nPlaceholder, el.placeholder);
+                    const msg = getHintI18nMsg(
+                        el.dataset.i18nPlaceholder,
+                        el.placeholder || el.dataset.placeholder || '',
+                    );
+                    if (el.hasAttribute('placeholder')) el.placeholder = msg;
+                    if (el.hasAttribute('data-placeholder')) el.dataset.placeholder = msg;
                 }
                 if (el.dataset.i18nAriaLabel) {
                     el.setAttribute(
@@ -1570,10 +1575,8 @@ var HelpModal = class HelpModal {
                 });
                 li.appendChild(itemInlineEditor);
 
-                // Format button toggle logic for saved items
-                expFormatBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                // Format toggle for saved items
+                const toggleItemFormat = () => {
                     const delBtn = mainRow.querySelector('.itg-manage-btn-delete');
                     const isExpanded = itemInlineEditor.classList.contains('itg-inline-editor-expanded');
                     if (isExpanded) {
@@ -1598,6 +1601,17 @@ var HelpModal = class HelpModal {
                                 'Close text formatting without applying changes',
                             );
                     }
+                };
+
+                expSpanEl.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleItemFormat();
+                });
+
+                expFormatBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleItemFormat();
                 });
                 const varsContainer = h('div', {
                     className: 'snippet-variables-list',
@@ -2005,35 +2019,43 @@ var HelpModal = class HelpModal {
             const inlineEditor = container.querySelector('#itg-inline-format-editor');
             const formatBtn = container.querySelector('#itg-snippet-format-btn');
 
+            const toggleNewSnippetFormat = () => {
+                const isExpanded = inlineEditor.classList.contains('itg-inline-editor-expanded');
+                if (isExpanded) {
+                    inlineEditor.classList.remove('itg-inline-editor-expanded');
+                    if (formatBtn) formatBtn.classList.remove('itg-format-btn-active');
+                } else {
+                    HintCommon.RichTextFormatter.showInline(inlineEditor, expansionInput, (formattedHtml) => {
+                        expansionInput.dataset.html = formattedHtml;
+                        expansionInput.innerText = HintCommon.stripHtml(formattedHtml);
+                        expansionInput.dataset.itgUpdating = 'true';
+                        expansionInput.dispatchEvent(
+                            new Event('input', {
+                                bubbles: true,
+                            }),
+                        );
+                        inlineEditor.classList.remove('itg-inline-editor-expanded');
+                        if (formatBtn) formatBtn.classList.remove('itg-format-btn-active');
+                    });
+                    inlineEditor.classList.add('itg-inline-editor-expanded');
+                    if (formatBtn) formatBtn.classList.add('itg-format-btn-active');
+                }
+            };
+
+            // Open Text Formatting editor on expansion click
+            expansionInput.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleNewSnippetFormat();
+            });
+
             // Set format button icon
             if (formatBtn) {
                 formatBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"><path d="M840 192h-56v-72c0-13.3-10.7-24-24-24H168c-13.3 0-24 10.7-24 24v272c0 13.3 10.7 24 24 24h592c13.3 0 24-10.7 24-24V256h32v200H465c-22.1 0-40 17.9-40 40v136h-44c-4.4 0-8 3.6-8 8v228c0 .6.1 1.3.2 1.9-.1 2-.2 4.1-.2 6.1 0 46.4 37.6 84 84 84s84-37.6 84-84c0-2.1-.1-4.1-.2-6.1.1-.6.2-1.2.2-1.9V640c0-4.4-3.6-8-8-8h-44V520h351c22.1 0 40-17.9 40-40V232c0-22.1-17.9-40-40-40M720 352H208V160h512zM477 876c0 11-9 20-20 20s-20-9-20-20V696h40z" fill="currentColor"/></svg>`;
 
-                // Toggle inline editor on click
                 formatBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    const isExpanded = inlineEditor.classList.contains('itg-inline-editor-expanded');
-                    if (isExpanded) {
-                        inlineEditor.classList.remove('itg-inline-editor-expanded');
-                        formatBtn.classList.remove('itg-format-btn-active');
-                    } else {
-                        HintCommon.RichTextFormatter.showInline(inlineEditor, expansionInput, (formattedHtml) => {
-                            // Apply content back to expansion input
-                            expansionInput.dataset.html = formattedHtml;
-                            expansionInput.innerText = HintCommon.stripHtml(formattedHtml);
-                            expansionInput.dataset.itgUpdating = 'true';
-                            expansionInput.dispatchEvent(
-                                new Event('input', {
-                                    bubbles: true,
-                                }),
-                            );
-                            inlineEditor.classList.remove('itg-inline-editor-expanded');
-                            formatBtn.classList.remove('itg-format-btn-active');
-                        });
-                        inlineEditor.classList.add('itg-inline-editor-expanded');
-                        formatBtn.classList.add('itg-format-btn-active');
-                    }
+                    toggleNewSnippetFormat();
                 });
             }
             const updatePlaceholder = () => {

@@ -5746,8 +5746,11 @@
     "message": "Hello Alvaro, are you free to go for a coffee?"
   },
   "snippetHelpPopupTitle": {
-    "message": "Quick Access Menu",
-    "description": "Title for popup section"
+    "message": "Quick Access Menu"
+  },
+  "snippetHelpPopupTooltip": {
+    "message": "Type $$ in any text field to open a menu with your top 5 most used snippets.",
+    "description": "Tooltip for snippet quick access menu"
   },
   "snippetHelpPopupDescPrefix": {
     "message": "Type",
@@ -9566,5 +9569,80 @@
   },
   "radioStationAddTooltip": {
     "message": "Add or search new online radio stations"
+  },
+  "textFormattingTitle": {
+    "message": "Text Formatting"
+  },
+  "formatBold": {
+    "message": "Bold (Ctrl+B)"
+  },
+  "formatItalic": {
+    "message": "Italic (Ctrl+I)"
+  },
+  "formatUnderline": {
+    "message": "Underline (Ctrl+U)"
+  },
+  "formatStrikethrough": {
+    "message": "Strikethrough"
+  },
+  "formatFontSize": {
+    "message": "Font size"
+  },
+  "formatTextColor": {
+    "message": "Text color"
+  },
+  "formatBgColor": {
+    "message": "Background color"
+  },
+  "formatInsertLink": {
+    "message": "Insert link"
+  },
+  "formatAlignLeft": {
+    "message": "Align left"
+  },
+  "formatCenter": {
+    "message": "Center"
+  },
+  "formatAlignRight": {
+    "message": "Align right"
+  },
+  "formatNumberedList": {
+    "message": "Numbered list"
+  },
+  "formatBulletList": {
+    "message": "Bullet list"
+  },
+  "formatIncreaseIndent": {
+    "message": "Increase indent"
+  },
+  "formatDecreaseIndent": {
+    "message": "Decrease indent"
+  },
+  "formatInsertEmoji": {
+    "message": "Insert emoji"
+  },
+  "formatPreview": {
+    "message": "Preview:"
+  },
+  "formatApply": {
+    "message": "Apply"
+  },
+  "formatLinkTitle": {
+    "message": "Insert link"
+  },
+  "formatLinkConfirm": {
+    "message": "Insert"
+  },
+  "formatHexColor": {
+    "message": "Hexadecimal color"
+  },
+  "formatCustomizeGraphically": {
+    "message": "Customize graphically"
+  },
+  "previewSectionTitle": {
+    "message": "Preview"
+  },
+  "snippetMenuSectionTitle": {
+    "message": "Activate Snippets Menu"
   }
 }

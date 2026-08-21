@@ -1,7 +1,7 @@
 <section class="section itg-manage-section snippet-section">
     <div class="section-header">
         <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="manageSnippetsTitle">Manage Snippets</h2>
+            <h2 class="section-title" data-i18n="snippetMenuSectionTitle">Activar menú de Snippets</h2>
             <button id="snippet-help-btn" type="button" class="icon-btn help-btn" data-i18n-aria-label="help">
                 <svg
                     width="18"
@@ -22,7 +22,13 @@
             </button>
         </div>
     </div>
+    <ul
+        id="snippet-trigger-container"
+        class="commands-list"
+        style="padding: 0; margin-top: 8px; margin-bottom: 12px;"
+    ></ul>
     <div class="manage-form-container">
+        <div class="section-subtitle" data-i18n="manageSnippetsTitle">Configurar Snippets (Auto-completado)</div>
         <div class="form-group-inline snippet-form-row">
             <input
                 type="text"

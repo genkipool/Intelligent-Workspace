@@ -57,6 +57,7 @@ export async function initCustomizeHints() {
     let customShortcutsOverrides = {};
     let linkPreviewBlacklist = [];
     let linkPreviewTriggerKey = '';
+    let snippetPopupTriggerKey = '$$';
     let isRendering = false;
     let currentMessages = {};
 
@@ -105,10 +106,14 @@ export async function initCustomizeHints() {
         if (snippetExpWrapper) {
             const snippetExpField = document.getElementById('snippet-expansion');
             const formatBtn = HintCommon.RichTextFormatter.createFormatButton();
-            formatBtn.addEventListener('click', (e) => {
+            const openModal = (e) => {
                 e.preventDefault();
                 HintCommon.RichTextFormatter.showModal(snippetExpField);
-            });
+            };
+            formatBtn.addEventListener('click', openModal);
+            if (snippetExpField) {
+                snippetExpField.addEventListener('click', openModal);
+            }
             snippetExpWrapper.appendChild(formatBtn);
         }
     };
@@ -129,12 +134,14 @@ export async function initCustomizeHints() {
             STORAGE_KEYS.CUSTOM_SHORTCUTS,
             STORAGE_KEYS.LINK_PREVIEW_BLACKLIST,
             STORAGE_KEYS.LINK_PREVIEW_TRIGGER_KEY,
+            STORAGE_KEYS.SNIPPET_POPUP_TRIGGER_KEY,
         ]);
         customCommands = data[STORAGE_KEYS.COMMANDS] || [];
         snippets = data[STORAGE_KEYS.SNIPPETS] || {};
         customShortcutsOverrides = data[STORAGE_KEYS.CUSTOM_SHORTCUTS] || {};
         linkPreviewBlacklist = data[STORAGE_KEYS.LINK_PREVIEW_BLACKLIST] || [];
         linkPreviewTriggerKey = data[STORAGE_KEYS.LINK_PREVIEW_TRIGGER_KEY] || '';
+        snippetPopupTriggerKey = data[STORAGE_KEYS.SNIPPET_POPUP_TRIGGER_KEY] || '$$';
     };
 
     let ignoreUpdatesUntil = 0;
@@ -198,6 +205,16 @@ export async function initCustomizeHints() {
             linkPreviewTriggerKey.toLowerCase() !== ex
         ) {
             return getI18nText('previewTriggerKeyLabel', 'Link preview');
+        }
+
+        // 2.5 Check snippet popup menu trigger key
+        if (
+            category !== 'snippetMenuTriggerKey' &&
+            snippetPopupTriggerKey &&
+            snippetPopupTriggerKey.toLowerCase() === k &&
+            snippetPopupTriggerKey.toLowerCase() !== ex
+        ) {
+            return getI18nText('snippetHelpPopupTitle', 'Menú de Acceso Rápido');
         }
 
         // 3. Check custom site commands
@@ -494,12 +511,16 @@ export async function initCustomizeHints() {
             HintCommon.stripHtml(expansion || ''),
         );
 
-        const formatBtn = HintCommon.RichTextFormatter.createFormatButton();
-        formatBtn.addEventListener('click', (e) => {
+        const openExpModal = (e) => {
             e.preventDefault();
             e.stopPropagation();
             HintCommon.RichTextFormatter.showModal(expSpan);
-        });
+        };
+
+        expSpan.addEventListener('click', openExpModal);
+
+        const formatBtn = HintCommon.RichTextFormatter.createFormatButton();
+        formatBtn.addEventListener('click', openExpModal);
 
         expWrapper.append(expSpan, formatBtn);
 
@@ -964,6 +985,21 @@ export async function initCustomizeHints() {
             if (item.dataset.updated === 'false') item.remove();
             else delete item.dataset.updated;
         });
+
+        const snippetTriggerContainer = document.getElementById('snippet-trigger-container');
+        if (snippetTriggerContainer) {
+            let triggerItem = snippetTriggerContainer.querySelector('#snippet-menu-trigger-item');
+            if (!triggerItem) {
+                triggerItem = createSnippetTriggerKeyItem('snippet-menu-trigger-item', 'snippet-menu-trigger-key');
+                snippetTriggerContainer.appendChild(triggerItem);
+            }
+            const inputEl = triggerItem.querySelector('.snippet-menu-trigger-input');
+            if (inputEl && document.activeElement !== inputEl) {
+                inputEl.value = snippetPopupTriggerKey || '$$';
+            }
+            updateSnippetTriggerDisplays(snippetPopupTriggerKey || '$$');
+            applyTranslations(snippetTriggerContainer);
+        }
     };
 
     const renderBlacklist = () => {
@@ -1069,6 +1105,8 @@ export async function initCustomizeHints() {
     };
 
     const setupTriggerKeyInputEvents = (input) => {
+        let errorTimeout = null;
+
         input.addEventListener('keydown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -1078,6 +1116,7 @@ export async function initCustomizeHints() {
                 return;
             }
             if (e.key === 'Backspace' || e.key === 'Delete') {
+                if (errorTimeout) clearTimeout(errorTimeout);
                 input.value = '';
                 input.classList.remove('error');
                 linkPreviewTriggerKey = '';
@@ -1091,11 +1130,19 @@ export async function initCustomizeHints() {
 
             const conflict = getKeyConflictInfo(keyVal, 'mapping', linkPreviewTriggerKey, 'triggerKey');
             if (conflict) {
+                input.value = keyVal;
                 input.classList.add('error');
                 showNotification('errorTriggerTakenBy', true, [conflict]);
+                if (errorTimeout) clearTimeout(errorTimeout);
+                errorTimeout = setTimeout(() => {
+                    input.classList.remove('error');
+                    input.value = linkPreviewTriggerKey;
+                    syncTriggerKeyInputs(linkPreviewTriggerKey, false, input);
+                }, 2000);
                 return;
             }
 
+            if (errorTimeout) clearTimeout(errorTimeout);
             input.classList.remove('error');
             input.value = keyVal;
             linkPreviewTriggerKey = keyVal;
@@ -1103,10 +1150,16 @@ export async function initCustomizeHints() {
             chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: keyVal });
         });
 
-        input.addEventListener('blur', () => {
+        input.addEventListener('focus', () => {
+            if (errorTimeout) clearTimeout(errorTimeout);
             input.classList.remove('error');
-            input.value = linkPreviewTriggerKey;
-            syncTriggerKeyInputs(linkPreviewTriggerKey, false, input);
+        });
+
+        input.addEventListener('blur', () => {
+            if (!input.classList.contains('error')) {
+                input.value = linkPreviewTriggerKey;
+                syncTriggerKeyInputs(linkPreviewTriggerKey, false, input);
+            }
         });
     };
 
@@ -1157,6 +1210,117 @@ export async function initCustomizeHints() {
 
         triggerItem.appendChild(input);
         triggerItem.appendChild(descContainer);
+        triggerItem.appendChild(spacer);
+
+        return triggerItem;
+    };
+
+    const updateSnippetTriggerDisplays = (val) => {
+        const triggerStr = val || '$$';
+        document.querySelectorAll('.snippet-trigger-display, .snippet-popup-trigger-code').forEach((el) => {
+            el.textContent = triggerStr;
+            el.style.color = 'var(--text-on-color)';
+        });
+    };
+
+    const createSnippetTriggerKeyItem = (itemId, inputId) => {
+        const triggerItem = document.createElement('li');
+        triggerItem.id = itemId;
+        triggerItem.className = 'command-item snippet-trigger-key-item';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = inputId;
+        input.className = 'command-keys snippet-menu-trigger-input';
+        input.maxLength = 2;
+        input.placeholder = '$$';
+        input.value = snippetPopupTriggerKey || '$$';
+        input.style.width = '100%';
+        input.style.boxSizing = 'border-box';
+        input.style.cursor = 'text';
+        input.style.margin = '0';
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+
+        let errorTimeout = null;
+
+        const validateAndSave = () => {
+            const trimmed = input.value.trim();
+            if (!trimmed) {
+                input.value = snippetPopupTriggerKey || '$$';
+                input.classList.remove('error');
+                return true;
+            }
+            if (trimmed === snippetPopupTriggerKey) {
+                input.classList.remove('error');
+                return true;
+            }
+            const conflict = getKeyConflictInfo(trimmed, 'snippet', snippetPopupTriggerKey, 'snippetMenuTriggerKey');
+            if (conflict) {
+                input.classList.add('error');
+                showNotification('errorTriggerTakenBy', true, [conflict]);
+                if (errorTimeout) clearTimeout(errorTimeout);
+                errorTimeout = setTimeout(() => {
+                    input.classList.remove('error');
+                    input.value = snippetPopupTriggerKey || '$$';
+                }, 2000);
+                return false;
+            }
+            if (errorTimeout) clearTimeout(errorTimeout);
+            input.classList.remove('error');
+            snippetPopupTriggerKey = trimmed;
+            updateSnippetTriggerDisplays(trimmed);
+            chrome.runtime.sendMessage({ action: 'setSnippetPopupTriggerKey', triggerKey: trimmed });
+            return true;
+        };
+
+        input.addEventListener('focus', () => {
+            if (errorTimeout) clearTimeout(errorTimeout);
+            input.classList.remove('error');
+        });
+
+        input.addEventListener('input', () => {
+            if (errorTimeout) clearTimeout(errorTimeout);
+            input.classList.remove('error');
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                const ok = validateAndSave();
+                if (ok) {
+                    input.blur();
+                }
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (errorTimeout) clearTimeout(errorTimeout);
+                input.classList.remove('error');
+                input.value = snippetPopupTriggerKey || '$$';
+                input.blur();
+            }
+        });
+
+        input.addEventListener('blur', () => {
+            validateAndSave();
+        });
+
+        const descSpan = HintCommon.DOM.create(
+            'span',
+            {
+                className: 'command-description',
+                'data-i18n': 'snippetHelpPopupTitle',
+                'data-i18n-title': 'snippetHelpPopupTitle',
+                title: getI18nText('snippetHelpPopupTitle', 'Menú de Acceso Rápido'),
+            },
+            getI18nText('snippetHelpPopupTitle', 'Menú de Acceso Rápido'),
+        );
+
+        const spacer = document.createElement('div');
+
+        triggerItem.appendChild(input);
+        triggerItem.appendChild(descSpan);
         triggerItem.appendChild(spacer);
 
         return triggerItem;
@@ -1628,8 +1792,13 @@ export async function initCustomizeHints() {
     restoreButton.addEventListener('click', async () => {
         await saveCustomShortcuts({});
         linkPreviewTriggerKey = '';
+        snippetPopupTriggerKey = '$$';
         await chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
+        await chrome.runtime.sendMessage({ action: 'setSnippetPopupTriggerKey', triggerKey: '$$' });
         syncTriggerKeyInputs('', false, null);
+        updateSnippetTriggerDisplays('$$');
+        const snippetInput = document.getElementById('snippet-menu-trigger-key');
+        if (snippetInput) snippetInput.value = '$$';
         showNotification('restoredDefaults');
     });
 
@@ -1638,6 +1807,14 @@ export async function initCustomizeHints() {
         if (request.action === 'hintCommandsUpdated' || request.action === 'snippetsUpdated') {
             // No longer needed here as onChanged handles it globally, but kept for direct trigger messages if any
             renderAll();
+        }
+        if (request.action === 'snippetPopupTriggerKeyUpdated') {
+            snippetPopupTriggerKey = request.triggerKey || '$$';
+            updateSnippetTriggerDisplays(snippetPopupTriggerKey);
+            const snippetInput = document.getElementById('snippet-menu-trigger-key');
+            if (snippetInput && document.activeElement !== snippetInput) {
+                snippetInput.value = snippetPopupTriggerKey;
+            }
         }
     });
 
@@ -1652,7 +1829,8 @@ export async function initCustomizeHints() {
             changes[STORAGE_KEYS.SNIPPETS] ||
             changes[STORAGE_KEYS.CUSTOM_SHORTCUTS] ||
             changes[STORAGE_KEYS.LINK_PREVIEW_BLACKLIST] ||
-            changes[STORAGE_KEYS.LINK_PREVIEW_TRIGGER_KEY]
+            changes[STORAGE_KEYS.LINK_PREVIEW_TRIGGER_KEY] ||
+            changes[STORAGE_KEYS.SNIPPET_POPUP_TRIGGER_KEY]
         ) {
             // Debounce render if many changes happen fast
             clearTimeout(window._renderTimeout);
@@ -1943,6 +2121,7 @@ export async function initCustomizeHints() {
     if (snippetHelpBtn && snippetHelpModal && closeSnippetHelpBtn) {
         const toggleHelpModal = (show) => {
             if (show) {
+                updateSnippetTriggerDisplays(snippetPopupTriggerKey || '$$');
                 snippetHelpModal.classList.add('visible');
             } else {
                 snippetHelpModal.classList.remove('visible');

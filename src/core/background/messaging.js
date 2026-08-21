@@ -1000,6 +1000,10 @@ const MESSAGE_HANDLERS = {
         handleSetLinkPreviewTriggerKey(message.triggerKey, sendResponse);
         return true;
     },
+    setSnippetPopupTriggerKey: (message, sender, sendResponse) => {
+        handleSetSnippetPopupTriggerKey(message.triggerKey, sendResponse);
+        return true;
+    },
     // Only the worker may create the offscreen document, so the player asks for it
     // here before sending it anything.
     musicEnsureOffscreen: (message, sender, sendResponse) => {

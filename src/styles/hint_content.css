@@ -1040,11 +1040,18 @@
     z-index: 5;
 }
 
-#hint-help-modal-content .itg-editable-key.itg-input-error:focus {
+#hint-help-modal-content .itg-editable-key.itg-input-error:focus,
+#hint-help-modal-content .itg-editable-key.error:focus,
+#hint-help-modal-content input.itg-input-error:focus,
+#hint-help-modal-content input.error:focus {
     border: 1px solid var(--error-color) !important;
+    color: var(--error-color) !important;
 }
 
-#hint-help-modal-content tr:has(.itg-editable-key.itg-input-error) .itg-description-cell {
+#hint-help-modal-content tr:has(.itg-editable-key.itg-input-error) .itg-description-cell,
+#hint-help-modal-content tr:has(.itg-editable-key.error) .itg-description-cell,
+#hint-help-modal-content tr:has(.itg-input-error) .itg-description-cell,
+#hint-help-modal-content tr:has(.error) .itg-description-cell {
     color: var(--error-color) !important;
 }
 
@@ -1827,8 +1834,32 @@ input[type='number'] {
     padding: 4px 0;
 }
 
-.itg-input-error {
+.itg-input-error,
+.error,
+input.itg-input-error,
+input.error,
+.itg-manage-input.itg-input-error,
+.itg-manage-input.error,
+.itg-manage-item-key.itg-input-error,
+.itg-manage-item-key.error {
+    border: 1px solid var(--error-color) !important;
     border-color: var(--error-color) !important;
+    color: var(--error-color) !important;
+}
+
+.itg-input-error:focus,
+.error:focus,
+input.itg-input-error:focus,
+input.error:focus,
+.itg-manage-input.itg-input-error:focus,
+.itg-manage-input.error:focus,
+.itg-manage-item-key.itg-input-error:focus,
+.itg-manage-item-key.error:focus {
+    border: 1px solid var(--error-color) !important;
+    border-color: var(--error-color) !important;
+    box-shadow: 0 0 0 1px var(--error-color) !important;
+    outline: none !important;
+    color: var(--error-color) !important;
 }
 
 /* Better styling for the small help button */

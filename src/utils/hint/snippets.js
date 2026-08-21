@@ -20,6 +20,8 @@ var SnippetManager = class SnippetManager {
         this.keyBuffer = [];
         this.bufferLimit = 50;
 
+        this.popupTriggerKey = '$$';
+
         // * Detect site/editor type
         this.siteInfo = this._detectSiteAndEditor();
 
@@ -29,6 +31,12 @@ var SnippetManager = class SnippetManager {
     }
     async load() {
         this.snippets = await HintCommon.Snippets.getAll();
+        try {
+            const data = await chrome.storage.sync.get(['snippetPopupTriggerKey']);
+            if (data && data.snippetPopupTriggerKey !== undefined) {
+                this.popupTriggerKey = data.snippetPopupTriggerKey || '$$';
+            }
+        } catch {}
     }
     async init() {
         if (this.initialized) return;
@@ -54,6 +62,9 @@ var SnippetManager = class SnippetManager {
         chrome.runtime.onMessage.addListener((msg) => {
             if (msg.action === 'snippetsUpdated') {
                 this._reloadSnippets();
+            }
+            if (msg.action === 'snippetPopupTriggerKeyUpdated') {
+                this.popupTriggerKey = msg.triggerKey || '$$';
             }
         });
     }
@@ -710,8 +721,13 @@ var SnippetManager = class SnippetManager {
             this.keyBuffer.push(e.key);
             if (this.keyBuffer.length > this.bufferLimit) this.keyBuffer.shift();
 
-            // Check $$ trigger
-            if (this.keyBuffer.length >= 2 && this.keyBuffer.slice(-2).join('') === '$$') {
+            // Check snippet menu popup trigger
+            const trigger = this.popupTriggerKey || '$$';
+            if (
+                trigger &&
+                this.keyBuffer.length >= trigger.length &&
+                this.keyBuffer.slice(-trigger.length).join('') === trigger
+            ) {
                 e.preventDefault();
                 e.stopPropagation();
                 this.keyBuffer = [];
@@ -1527,7 +1543,7 @@ ${finalHtml}
         this.shadowUI.getContainer().appendChild(popup);
 
         // 4. Position popup (Caret aware)
-        const coords = SnippetManager.getCaretCoordinates(this.targetElement, '$$');
+        const coords = SnippetManager.getCaretCoordinates(this.targetElement, this.popupTriggerKey || '$$');
 
         // Adjustments to keep it in viewport
         let left = coords.left;

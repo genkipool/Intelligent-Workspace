@@ -5804,8 +5804,11 @@
         "message": "Hola Alvaro, ¿estas libre para ir a tomar un café?"
     },
     "snippetHelpPopupTitle": {
-        "message": "Menú de Acceso Rápido",
-        "description": "Título para la sección del popup"
+        "message": "Menú de Acceso Rápido"
+    },
+    "snippetHelpPopupTooltip": {
+        "message": "Escribe $$ en cualquier campo de texto para abrir un menú con tus 5 snippets más usados.",
+        "description": "Tooltip para el menú de acceso rápido de snippets"
     },
     "snippetHelpPopupDescPrefix": {
         "message": "Escribe",
@@ -9571,5 +9574,80 @@
     },
     "radioStationAddTooltip": {
         "message": "Añadir o buscar nuevas emisoras de radio online"
+    },
+    "textFormattingTitle": {
+        "message": "Formato de texto"
+    },
+    "formatBold": {
+        "message": "Negrita (Ctrl+B)"
+    },
+    "formatItalic": {
+        "message": "Cursiva (Ctrl+I)"
+    },
+    "formatUnderline": {
+        "message": "Subrayado (Ctrl+U)"
+    },
+    "formatStrikethrough": {
+        "message": "Tachado"
+    },
+    "formatFontSize": {
+        "message": "Tamaño de fuente"
+    },
+    "formatTextColor": {
+        "message": "Color de texto"
+    },
+    "formatBgColor": {
+        "message": "Color de fondo"
+    },
+    "formatInsertLink": {
+        "message": "Insertar enlace"
+    },
+    "formatAlignLeft": {
+        "message": "Alinear a la izquierda"
+    },
+    "formatCenter": {
+        "message": "Centrar"
+    },
+    "formatAlignRight": {
+        "message": "Alinear a la derecha"
+    },
+    "formatNumberedList": {
+        "message": "Lista numerada"
+    },
+    "formatBulletList": {
+        "message": "Lista con viñetas"
+    },
+    "formatIncreaseIndent": {
+        "message": "Aumentar sangría"
+    },
+    "formatDecreaseIndent": {
+        "message": "Disminuir sangría"
+    },
+    "formatInsertEmoji": {
+        "message": "Insertar emoji"
+    },
+    "formatPreview": {
+        "message": "Vista previa:"
+    },
+    "formatApply": {
+        "message": "Aplicar"
+    },
+    "formatLinkTitle": {
+        "message": "Insertar enlace"
+    },
+    "formatLinkConfirm": {
+        "message": "Insertar"
+    },
+    "formatHexColor": {
+        "message": "Color hexadecimal"
+    },
+    "formatCustomizeGraphically": {
+        "message": "Personalizar gráficamente"
+    },
+    "previewSectionTitle": {
+        "message": "Vista previa"
+    },
+    "snippetMenuSectionTitle": {
+        "message": "Activar menú de Snippets"
     }
 }

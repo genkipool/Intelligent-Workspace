@@ -192,6 +192,13 @@
     width: auto !important;
 }
 
+.section-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-color);
+}
+
 .shortcuts-grid {
     grid-template-columns: 80px 1.5fr 2fr 30px;
 }
@@ -592,10 +599,30 @@ input.command-keys:focus {
 }
 
 .itg-manage-input.error,
+.itg-manage-input.itg-input-error,
 .form-group-inline input.error,
-[contenteditable].error {
+.form-group-inline input.itg-input-error,
+.command-keys.error,
+.command-keys.itg-input-error,
+.preview-trigger-key-input.error,
+.preview-trigger-key-input.itg-input-error,
+.snippet-menu-trigger-input.error,
+.snippet-menu-trigger-input.itg-input-error,
+.command-item input.error,
+.command-item input.itg-input-error,
+.var-name.error,
+.var-name.itg-input-error,
+.var-word.error,
+.var-word.itg-input-error,
+.var-def.error,
+.var-def.itg-input-error,
+[contenteditable].error,
+[contenteditable].itg-input-error,
+input.error,
+input.itg-input-error {
+    border: 1px solid var(--error-color) !important;
     border-color: var(--error-color) !important;
-    color: var(--error-color);
+    color: var(--error-color) !important;
 }
 
 /* Floating scroll buttons */
@@ -652,19 +679,49 @@ input.command-keys:focus {
 }
 
 .itg-manage-input.error:focus,
+.itg-manage-input.itg-input-error:focus,
 .form-group-inline input.error:focus,
-[contenteditable].error:focus {
+.form-group-inline input.itg-input-error:focus,
+.command-keys.error:focus,
+.command-keys.itg-input-error:focus,
+.preview-trigger-key-input.error:focus,
+.preview-trigger-key-input.itg-input-error:focus,
+.snippet-menu-trigger-input.error:focus,
+.snippet-menu-trigger-input.itg-input-error:focus,
+.command-item input.error:focus,
+.command-item input.itg-input-error:focus,
+.var-name.error:focus,
+.var-name.itg-input-error:focus,
+.var-word.error:focus,
+.var-word.itg-input-error:focus,
+.var-def.error:focus,
+.var-def.itg-input-error:focus,
+[contenteditable].error:focus,
+[contenteditable].itg-input-error:focus,
+input.error:focus,
+input.itg-input-error:focus {
+    border: 1px solid var(--error-color) !important;
     border-color: var(--error-color) !important;
     box-shadow: 0 0 0 1px var(--error-color) !important;
     outline: none !important;
     transition: none !important;
+    color: var(--error-color) !important;
 }
 
 /* Error text coloring */
+.command-item:has(.error) .command-description,
+.command-item:has(.itg-input-error) .command-description,
+.command-item:has(.error) .command-description *,
+.command-item:has(.itg-input-error) .command-description *,
+.command-item:has(.error) .command-keys,
+.command-item:has(.itg-input-error) .command-keys,
 .command-keys.error ~ .command-description,
+.command-keys.itg-input-error ~ .command-description,
 .itg-manage-input.error ~ .command-description,
-[contenteditable].error ~ .command-description {
-    color: var(--error-color);
+.itg-manage-input.itg-input-error ~ .command-description,
+[contenteditable].error ~ .command-description,
+[contenteditable].itg-input-error ~ .command-description {
+    color: var(--error-color) !important;
 }
 
 /* Content Editable Focus */
@@ -1692,6 +1749,7 @@ input.itg-input-error {
 }
 
 .snippet-help-modal-body p {
+    font-size: 13px;
     line-height: 1.6;
     margin-bottom: 12px;
     color: var(--text-color);
