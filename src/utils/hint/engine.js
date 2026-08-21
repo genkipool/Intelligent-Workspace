@@ -206,14 +206,56 @@ var HintEngine = class HintEngine {
         // Helper: Check hit target match including Shadow DOM, slots, and parent/descendant relationships
         const isHitTarget = (candidateEl, hitEl) => {
             if (!candidateEl || !hitEl) return false;
-            if (candidateEl === hitEl || candidateEl.contains(hitEl)) return true;
+            if (hitEl === document.body || hitEl === document.documentElement) return false;
+            if (candidateEl === hitEl || candidateEl.contains(hitEl) || isAncestorOf(candidateEl, hitEl)) return true;
+
+            // Direct parent or child
+            if (candidateEl.parentElement === hitEl || hitEl.parentElement === candidateEl) {
+                return true;
+            }
+
+            // Immediate leaf interactive host component
+            const immediateHost = candidateEl.closest?.(
+                'ytd-guide-entry-renderer, ytd-mini-guide-entry-renderer, yt-icon-button, ytd-button-renderer, ytd-topbar-logo-renderer, tp-yt-paper-item',
+            );
+            if (
+                immediateHost &&
+                (immediateHost === hitEl || immediateHost.contains(hitEl) || isAncestorOf(immediateHost, hitEl))
+            ) {
+                return true;
+            }
+
+            // Handle ripple / interaction overlays (e.g. YouTube yt-interaction, tp-yt-paper-ripple)
+            const interactionOverlay = hitEl.closest?.(
+                'yt-interaction, tp-yt-paper-ripple, [class*="interaction"], [class*="ripple"], .ripple, .overlay',
+            );
+            if (interactionOverlay) {
+                const overlayHost = interactionOverlay.parentElement;
+                if (
+                    overlayHost &&
+                    (overlayHost === candidateEl ||
+                        overlayHost === candidateEl.parentElement ||
+                        candidateEl.contains(overlayHost) ||
+                        (immediateHost && (immediateHost === overlayHost || isAncestorOf(immediateHost, overlayHost))))
+                ) {
+                    return true;
+                }
+            }
 
             const slot = candidateEl.assignedSlot || candidateEl.closest?.('[slot]')?.assignedSlot;
             if (slot) {
                 if (hitEl === slot || hitEl.contains(slot) || slot.contains(hitEl)) return true;
                 if (hitEl.tagName === 'SLOT' && typeof hitEl.assignedElements === 'function') {
                     const assigned = hitEl.assignedElements({ flatten: true });
-                    if (assigned.some((a) => a === candidateEl || a.contains(candidateEl) || candidateEl.contains(a))) {
+                    if (
+                        assigned.some(
+                            (a) =>
+                                a === candidateEl ||
+                                a.contains(candidateEl) ||
+                                candidateEl.contains(a) ||
+                                isAncestorOf(a, candidateEl),
+                        )
+                    ) {
                         return true;
                     }
                 }
@@ -227,7 +269,11 @@ var HintEngine = class HintEngine {
                         const assigned = s.assignedElements({ flatten: true });
                         if (
                             assigned.some(
-                                (a) => a === candidateEl || a.contains(candidateEl) || candidateEl.contains(a),
+                                (a) =>
+                                    a === candidateEl ||
+                                    a.contains(candidateEl) ||
+                                    candidateEl.contains(a) ||
+                                    isAncestorOf(a, candidateEl),
                             )
                         ) {
                             return true;
@@ -390,10 +436,26 @@ var HintEngine = class HintEngine {
                     Math.abs(hintA.rect.height - hintB.rect.height) < 3;
 
                 if (isNearlySameRect) {
+                    const isPrimaryA =
+                        (elA.tagName === 'A' && elA.hasAttribute('href')) ||
+                        elA.tagName === 'BUTTON' ||
+                        elA.tagName === 'SUMMARY';
+                    const isPrimaryB =
+                        (elB.tagName === 'A' && elB.hasAttribute('href')) ||
+                        elB.tagName === 'BUTTON' ||
+                        elB.tagName === 'SUMMARY';
+
                     if (isAncestorOf(elA, elB)) {
-                        return false; // Drop outer container elA
+                        if (isPrimaryA) {
+                            // Keep primary outer interactive elA (e.g. <a href="..."> wrapping <tp-yt-paper-item>)
+                        } else {
+                            return false; // Drop non-primary outer container elA
+                        }
                     }
                     if (isAncestorOf(elB, elA)) {
+                        if (isPrimaryB) {
+                            return false; // Drop inner elA in favor of outer primary interactive elB
+                        }
                         if (!isAtomicA && isAtomicB) return false;
                     }
                     if (!isAtomicA && isAtomicB) {
@@ -422,10 +484,41 @@ var HintEngine = class HintEngine {
             const el = hint.element;
             const rect = hint.rect;
 
+            // Check if any scrollable parent is clipping this element out of its scroll viewport (e.g. carousels)
+            let p = el.parentElement;
+            while (p && p !== document.documentElement && p !== document.body) {
+                if (p.scrollWidth > p.clientWidth || p.scrollHeight > p.clientHeight) {
+                    try {
+                        const pStyle = window.getComputedStyle(p);
+                        const overflowClips = ['hidden', 'clip', 'scroll', 'auto'].some(
+                            (val) => pStyle.overflowX === val || pStyle.overflowY === val || pStyle.overflow === val,
+                        );
+                        if (overflowClips) {
+                            const pRect = p.getBoundingClientRect();
+                            if (pRect.width > 0 && pRect.height > 0) {
+                                if (
+                                    rect.right <= pRect.left ||
+                                    rect.left >= pRect.right ||
+                                    rect.bottom <= pRect.top ||
+                                    rect.top >= pRect.bottom
+                                ) {
+                                    return false;
+                                }
+                            }
+                        }
+                    } catch {}
+                }
+                p = p.parentElement;
+            }
+
             // Check center
             const centerX = rect.left + rect.width * 0.5;
             const centerY = rect.top + rect.height * 0.5;
             if (centerX >= 0 && centerY >= 0 && centerX < window.innerWidth && centerY < window.innerHeight) {
+                const directEl = document.elementFromPoint(centerX, centerY);
+                if (isHitTarget(el, directEl)) {
+                    return true;
+                }
                 const elAtCenter = getElementAtPoint(centerX, centerY);
                 if (isHitTarget(el, elAtCenter)) {
                     return true;
@@ -433,15 +526,19 @@ var HintEngine = class HintEngine {
                 if (typeof document.elementsFromPoint === 'function') {
                     const stack = document.elementsFromPoint(centerX, centerY);
                     if (stack && stack.length > 0) {
-                        for (let i = 0; i < Math.min(stack.length, 3); i++) {
+                        for (let i = 0; i < Math.min(stack.length, 15); i++) {
                             if (isHitTarget(el, stack[i])) return true;
                         }
                     }
                 }
             }
 
-            // Check sample points across the element
+            // Check corners and sample points across the element
             const samplePoints = [
+                [rect.left + 0.1, rect.top + 0.1],
+                [rect.right - 0.1, rect.top + 0.1],
+                [rect.left + 0.1, rect.bottom - 0.1],
+                [rect.right - 0.1, rect.bottom - 0.1],
                 [rect.left + Math.min(6, rect.width * 0.25), rect.top + rect.height * 0.5],
                 [rect.right - Math.min(6, rect.width * 0.25), rect.top + rect.height * 0.5],
                 [rect.left + Math.min(4, rect.width * 0.1), rect.top + Math.min(4, rect.height * 0.1)],
@@ -450,6 +547,10 @@ var HintEngine = class HintEngine {
 
             for (const [px, py] of samplePoints) {
                 if (px < 0 || py < 0 || px >= window.innerWidth || py >= window.innerHeight) continue;
+                const directEl = document.elementFromPoint(px, py);
+                if (isHitTarget(el, directEl)) {
+                    return true;
+                }
                 const elAtPoint = getElementAtPoint(px, py);
                 if (isHitTarget(el, elAtPoint)) {
                     return true;
@@ -457,7 +558,7 @@ var HintEngine = class HintEngine {
                 if (typeof document.elementsFromPoint === 'function') {
                     const stack = document.elementsFromPoint(px, py);
                     if (stack && stack.length > 0) {
-                        for (let i = 0; i < Math.min(stack.length, 3); i++) {
+                        for (let i = 0; i < Math.min(stack.length, 15); i++) {
                             if (isHitTarget(el, stack[i])) return true;
                         }
                     }

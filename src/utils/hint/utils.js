@@ -314,10 +314,10 @@ var Utils = class Utils {
         const boundedRect = {
             left: Math.max(rect.left, 0),
             top: Math.max(rect.top, 0),
-            right: rect.right,
-            bottom: rect.bottom,
-            width: rect.right - Math.max(rect.left, 0),
-            height: rect.bottom - Math.max(rect.top, 0),
+            right: Math.min(rect.right, window.innerWidth),
+            bottom: Math.min(rect.bottom, window.innerHeight),
+            width: Math.min(rect.right, window.innerWidth) - Math.max(rect.left, 0),
+            height: Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0),
         };
         if (
             boundedRect.top >= window.innerHeight - 4 ||
