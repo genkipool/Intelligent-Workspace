@@ -69,6 +69,8 @@
             <input
                 type="text"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 class="prefix-input"
                 class:duplicate={duplicates.has('lock')}
                 id="modal-prefix-lock-input"
@@ -82,6 +84,8 @@
             <input
                 type="text"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 class="prefix-input"
                 class:duplicate={duplicates.has('openKey')}
                 id="modal-prefix-openKey-input"
@@ -95,6 +99,8 @@
             <input
                 type="text"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 class="prefix-input"
                 class:duplicate={duplicates.has('loupe')}
                 id="modal-prefix-loupe-input"
@@ -108,6 +114,8 @@
             <input
                 type="text"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 class="prefix-input"
                 class:duplicate={duplicates.has('checked')}
                 id="modal-prefix-checked-input"
@@ -121,6 +129,8 @@
             <input
                 type="text"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 class="prefix-input"
                 class:duplicate={duplicates.has('warning')}
                 id="modal-prefix-warning-input"

@@ -605,6 +605,7 @@
             <h3
                 id="ruleName"
                 class="rule-name"
+                translate="no"
                 tabindex="0"
                 role="button"
                 data-original-text={rule.name}

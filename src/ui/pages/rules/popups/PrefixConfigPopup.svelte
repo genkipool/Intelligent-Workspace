@@ -91,6 +91,8 @@
                 class:duplicate={duplicates.has('lock')}
                 id="prefix-lock-input"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 placeholder=""
                 value={lock}
                 oninput={(e) => handleInput(e, (v) => (lock = v))}
@@ -104,6 +106,8 @@
                 class:duplicate={duplicates.has('openKey')}
                 id="prefix-openKey-input"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 placeholder=""
                 value={openKey}
                 oninput={(e) => handleInput(e, (v) => (openKey = v))}
@@ -117,6 +121,8 @@
                 class:duplicate={duplicates.has('loupe')}
                 id="prefix-loupe-input"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 placeholder=""
                 value={loupe}
                 oninput={(e) => handleInput(e, (v) => (loupe = v))}
@@ -130,6 +136,8 @@
                 class:duplicate={duplicates.has('checked')}
                 id="prefix-checked-input"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 placeholder=""
                 value={checked}
                 oninput={(e) => handleInput(e, (v) => (checked = v))}
@@ -143,6 +151,8 @@
                 class:duplicate={duplicates.has('warning')}
                 id="prefix-warning-input"
                 autocomplete="off"
+                spellcheck="false"
+                translate="no"
                 placeholder=""
                 value={warning}
                 oninput={(e) => handleInput(e, (v) => (warning = v))}
