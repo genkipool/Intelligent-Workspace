@@ -10042,7 +10042,7 @@ body:not(.groups-view-active) .music-panel,
     justify-content: center;
     gap: 5px;
     padding: 6px 8px;
-    background: none;
+    background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
     color: var(--text-color);
@@ -10050,22 +10050,41 @@ body:not(.groups-view-active) .music-panel,
     font-size: var(--small-text, 12px);
     font-weight: 500;
     cursor: pointer;
+    user-select: none;
     transition:
-        opacity 0.15s,
-        border-color 0.15s,
-        background-color 0.15s;
+        opacity 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background-color 0.15s ease;
     border-radius: 4px 4px 0 0;
 }
 
-.music-tab-btn:hover {
+.music-tab-btn > * {
+    pointer-events: none;
+}
+
+.music-tab-btn:hover:not(.active) {
     opacity: 1;
+    color: #fff;
     background-color: var(--action-color);
+}
+
+.music-tab-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--interactive-color);
 }
 
 .music-tab-btn.active {
     opacity: 1;
+    color: var(--text-on-color);
     border-bottom-color: var(--interactive-color);
     font-weight: 600;
+    background-color: transparent;
+}
+
+.music-tab-btn.active:hover {
+    opacity: 1;
+    background-color: transparent;
 }
 
 .music-tab-badge {
@@ -10077,14 +10096,24 @@ body:not(.groups-view-active) .music-panel,
     padding: 0 4px;
     border-radius: 8px;
     background-color: var(--border-color);
+    color: var(--text-color);
     font-size: 10px;
     font-weight: 600;
     opacity: 0.9;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.music-tab-btn:hover:not(.active) .music-tab-badge {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
 }
 
 .music-tab-btn.active .music-tab-badge {
     background-color: var(--interactive-color);
     color: #fff;
+    opacity: 1;
 }
 
 /* ─── Radio Items & Live Indicators ──────────────────────────────── */
