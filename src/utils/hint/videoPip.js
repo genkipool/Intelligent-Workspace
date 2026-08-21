@@ -2425,6 +2425,20 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         doc.addEventListener('mousemove', wake);
         doc.addEventListener('mouseleave', () => this.sleep());
 
+        if (this.bar) {
+            this.bar.addEventListener('mouseenter', () => {
+                this.isOverControls = true;
+                this.wake();
+            });
+            this.bar.addEventListener('mouseleave', () => {
+                this.isOverControls = false;
+            });
+            this.bar.addEventListener('mousemove', () => {
+                this.isOverControls = true;
+                this.wake();
+            });
+        }
+
         this.holder.addEventListener('click', () => this.togglePlay());
 
         for (const [act, btn] of Object.entries(this.buttons)) {
@@ -3926,7 +3940,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     sleep() {
-        if (this.video.paused || this.dragging) return;
+        if (this.video.paused || this.dragging || this.isOverControls) return;
         const doc = this.pipWindow?.document;
         if (!doc) return;
 
@@ -3946,10 +3960,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (
             isHovered('.itg-pip-size-wrap:hover') ||
             isHovered('.itg-pip-size-menu:hover') ||
+            isHovered('.itg-pip-loop-wrap:hover') ||
+            isHovered('.itg-pip-loop-menu:hover') ||
             isHovered('.itg-pip-rate-wrap:hover') ||
             isHovered('.itg-pip-rate-menu:hover') ||
             isHovered('.itg-pip-more-wrap:hover') ||
             isHovered('.itg-pip-more-menu:hover') ||
+            isHovered('.itg-pip-volume:hover') ||
+            isHovered('.itg-pip-volume-pop:hover') ||
             isHovered('.itg-pip-bar:hover')
         ) {
             return;

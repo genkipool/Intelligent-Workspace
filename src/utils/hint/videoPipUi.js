@@ -164,7 +164,7 @@ textarea::selection,
     pointer-events: auto;
 }
 
-.itg-pip-progress { position: relative; z-index: 50; padding: 8px 4px; margin-bottom: 2px; cursor: pointer; touch-action: none; }
+.itg-pip-progress { position: relative; z-index: 10; padding: 8px 4px; margin-bottom: 2px; cursor: pointer; touch-action: none; }
 .itg-pip-progress-track { position: relative; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.28); }
 .itg-pip-buffered, .itg-pip-played {
     position: absolute; left: 0; top: 0; height: 100%; border-radius: 2px; width: 0;
@@ -178,23 +178,19 @@ textarea::selection,
 .itg-pip-progress:hover .itg-pip-knob { opacity: 1; }
 .itg-pip-progress:hover .itg-pip-progress-track { height: 6px; }
 
-/* Suppress popups whenever user hovers or interacts with the progress bar */
-.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-loop-menu,
-.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-size-menu,
-.itg-pip-progress:hover ~ .itg-pip-buttons .itg-pip-rate-menu,
-.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-loop-menu,
-.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-size-menu,
-.itg-pip-progress:active ~ .itg-pip-buttons .itg-pip-rate-menu,
+/* Suppress popups during progress bar scrubbing */
 .itg-pip-bar.is-scrubbing .itg-pip-loop-menu,
 .itg-pip-bar.is-scrubbing .itg-pip-size-menu,
-.itg-pip-bar.is-scrubbing .itg-pip-rate-menu {
+.itg-pip-bar.is-scrubbing .itg-pip-rate-menu,
+.itg-pip-bar.is-scrubbing .itg-pip-more-menu,
+.itg-pip-bar.is-scrubbing .itg-pip-volume-pop {
     opacity: 0 !important;
     pointer-events: none !important;
     transform: translateY(4px) !important;
     visibility: hidden !important;
 }
 
-.itg-pip-buttons { display: flex; align-items: center; gap: 2px; padding: 0 2px 2px; position: relative; z-index: 10; }
+.itg-pip-buttons { display: flex; align-items: center; gap: 2px; padding: 0 2px 2px; position: relative; z-index: 50; }
 .itg-pip-btn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 34px; height: 34px; padding: 6px; flex: 0 0 auto;
@@ -214,50 +210,97 @@ textarea::selection,
 }
 
 /* Speed menu: a horizontal strip above the button, on hover, no click needed. */
-.itg-pip-rate-wrap { position: relative; display: inline-flex; align-items: center; }
+.itg-pip-rate-wrap { position: relative; display: inline-flex; align-items: center; z-index: 50; }
+.itg-pip-rate-wrap:hover,
+.itg-pip-rate-wrap:focus-within { z-index: 100; }
+.itg-pip-rate-wrap::after {
+    content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: none; z-index: 100;
+}
+.itg-pip-rate-wrap:hover::after,
+.itg-pip-rate-wrap:focus-within::after {
+    pointer-events: auto;
+}
 .itg-pip-rate-menu {
-    position: absolute; bottom: calc(100% + 8px);
+    position: absolute; bottom: calc(100% + 4px);
     /* Anchored to the right edge, so it grows inwards. Centred on the button it ran
        off the side of the window — which on a small floating player is most of it. */
     right: 0; left: auto;
     display: flex; flex-wrap: wrap; justify-content: flex-end;
     width: max-content; max-width: calc(100vw - 16px); gap: 2px; padding: 4px;
-    border-radius: 8px; background: rgba(20, 20, 20, 0.95);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    opacity: 0; pointer-events: none; transform: translateY(4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    border-radius: 8px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+    color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    z-index: 100;
 }
 .itg-pip-rate-menu::after {
-    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: auto; z-index: 100;
 }
 .itg-pip-rate-wrap:hover .itg-pip-rate-menu,
-.itg-pip-rate-menu:hover { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-rate-wrap:focus-within .itg-pip-rate-menu,
+.itg-pip-rate-menu:hover,
+.itg-pip-rate-menu:focus-within {
+    opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0);
+}
 .itg-pip-rate-option {
     padding: 4px 7px; border: 0; border-radius: 5px; background: transparent;
-    color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer;
+    color: var(--text-color, #ffffff); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
 }
-.itg-pip-rate-option:hover { background: rgba(255, 255, 255, 0.18); }
-.itg-pip-rate-option.is-active { background: var(--interactive-color, #ff4444); font-weight: 600; }
+.itg-pip-rate-option:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 18%, transparent);
+    color: var(--interactive-color, #ff4444);
+}
+.itg-pip-rate-option.is-active {
+    background: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.itg-pip-rate-option.is-active:hover {
+    background: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
 
 /* Size menu, opened by hovering the size button. */
-.itg-pip-size-wrap { position: relative; display: inline-flex; align-items: center; }
+.itg-pip-size-wrap { position: relative; display: inline-flex; align-items: center; z-index: 50; }
+.itg-pip-size-wrap:hover,
+.itg-pip-size-wrap:focus-within { z-index: 100; }
+.itg-pip-size-wrap::after {
+    content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: none; z-index: 100;
+}
+.itg-pip-size-wrap:hover::after,
+.itg-pip-size-wrap:focus-within::after {
+    pointer-events: auto;
+}
 .itg-pip-size-menu {
-    position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
+    position: absolute; bottom: calc(100% + 4px); right: 0; left: auto;
     width: max-content; min-width: 216px; max-width: calc(100vw - 16px); padding: 8px;
-    border-radius: 8px; background: rgba(20, 20, 20, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    opacity: 0; pointer-events: none; transform: translateY(4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 20;
+    border-radius: 8px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+    color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    z-index: 100;
+    font-family: 'Roboto', system-ui, -apple-system, sans-serif;
 }
 .itg-pip-size-menu::after {
-    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: auto; z-index: 100;
 }
 .itg-pip-size-wrap:hover .itg-pip-size-menu,
 .itg-pip-size-wrap:focus-within .itg-pip-size-menu,
 .itg-pip-size-menu:hover,
-.itg-pip-size-menu:focus-within { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-size-menu:focus-within {
+    opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0);
+}
 .itg-pip-size-header {
     font-size: 11px;
     font-weight: 600;
@@ -269,31 +312,53 @@ textarea::selection,
     text-overflow: ellipsis;
     overflow: hidden;
     letter-spacing: 0.2px;
+    text-transform: uppercase;
 }
 .itg-pip-size-max {
     display: block; width: 100%; margin-bottom: 6px; padding: 5px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 6px;
-    background: transparent; color: #fff; font: inherit; font-size: 12px; cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25)); border-radius: 6px;
+    background: color-mix(in srgb, var(--text-color, #ffffff) 6%, transparent);
+    color: var(--text-color, #ffffff); font: inherit; font-size: 12px; cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.itg-pip-size-max:hover { border-color: var(--interactive-color, #fff); }
-.itg-pip-size-max.is-on {
-    background: color-mix(in srgb, var(--interactive-color, #ff4444) 25%, transparent);
+.itg-pip-size-max:hover {
     border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 16%, transparent);
+    color: var(--interactive-color, #ff4444);
+}
+.itg-pip-size-max.is-on {
+    background: var(--interactive-color, #ff4444);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.itg-pip-size-max.is-on:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 85%, black);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
 }
 .itg-pip-size-fields { display: flex; gap: 6px; }
 /* Each field takes half of whatever the menu is, so the pair fills it. */
-.itg-pip-size-fields label { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: rgba(255, 255, 255, 0.65); }
+.itg-pip-size-fields label {
+    flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+    font-size: 10px; font-weight: 500; color: var(--text-color, rgba(255, 255, 255, 0.65)); opacity: 0.85;
+}
 .itg-pip-size-fields input {
-    width: 100%; padding: 5px 6px; border-radius: 6px; color: #fff; font: inherit; font-size: 12px;
-    border: 1px solid var(--interactive-color, rgba(255, 255, 255, 0.25));
+    width: 100%; padding: 5px 6px; border-radius: 6px; color: var(--text-color, #ffffff); font: inherit; font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.22));
     background: rgba(255, 255, 255, 0.08); outline: none;
+    caret-color: var(--interactive-color, #ffffff);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .itg-pip-size-fields input:focus {
-    border-color: var(--interactive-color, #fff);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #fff) 35%, transparent);
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
 }
-.itg-pip-size-note { display: block; margin-top: 6px; font-size: 10px; color: rgba(255, 255, 255, 0.6); }
+.itg-pip-size-note {
+    display: block; margin-top: 6px; font-size: 10.5px; font-weight: 500;
+    color: var(--interactive-color, #ff4444);
+}
 /* The browser's own spinner cannot be tinted, so it is hidden and the arrows come
    in as a background image the theme colours — the same arrangement the rules page
    uses for its number fields. The image itself is written in by applyTheme(). */
@@ -306,27 +371,40 @@ textarea::selection,
 }
 
 /* Loop menu, opened by hovering or focusing the loop button */
-.itg-pip-loop-wrap { position: relative; display: inline-flex; align-items: center; }
+.itg-pip-loop-wrap { position: relative; display: inline-flex; align-items: center; z-index: 50; }
+.itg-pip-loop-wrap:hover,
+.itg-pip-loop-wrap:focus-within { z-index: 100; }
+.itg-pip-loop-wrap::after {
+    content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: none; z-index: 100;
+}
+.itg-pip-loop-wrap:hover::after,
+.itg-pip-loop-wrap:focus-within::after {
+    pointer-events: auto;
+}
 .itg-pip-loop-menu {
-    position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
+    position: absolute; bottom: calc(100% + 4px); right: 0; left: auto;
     width: 268px; max-width: calc(100vw - 16px); padding: 10px 10px 8px;
     border-radius: 10px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
     color: var(--text-color, #ffffff);
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(10px);
-    opacity: 0; pointer-events: none; transform: translateY(4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 20;
+    opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    z-index: 100;
     font-family: 'Roboto', system-ui, -apple-system, sans-serif;
 }
 .itg-pip-loop-menu::after {
-    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 10px;
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: auto; z-index: 100;
 }
 .itg-pip-loop-wrap:hover .itg-pip-loop-menu,
 .itg-pip-loop-wrap:focus-within .itg-pip-loop-menu,
 .itg-pip-loop-menu:hover,
-.itg-pip-loop-menu:focus-within { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-loop-menu:focus-within {
+    opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0);
+}
 
 /* Common loop popup component styling */
 .itg-loop-header {
@@ -721,49 +799,83 @@ div[class*='ytp-bezel'] {
 .itg-pip-comment.itg-pip-reply .itg-pip-comment-avatar { flex: 0 0 22px; width: 22px; height: 22px; }
 
 /* --- More options menu (3 vertical dots) --- */
-.itg-pip-more-wrap { position: relative; display: none; align-items: center; }
-.itg-pip-more-wrap::after { content: ''; position: absolute; left: -10px; right: -10px; bottom: 100%; height: 16px; }
+.itg-pip-more-wrap { position: relative; display: none; align-items: center; z-index: 50; }
+.itg-pip-more-wrap:hover,
+.itg-pip-more-wrap:focus-within { z-index: 100; }
+.itg-pip-more-wrap::after {
+    content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: none; z-index: 100;
+}
+.itg-pip-more-wrap:hover::after,
+.itg-pip-more-wrap:focus-within::after {
+    pointer-events: auto;
+}
 .itg-pip-more-menu {
-    position: absolute; bottom: calc(100% + 8px); right: 0; left: auto;
+    position: absolute; bottom: calc(100% + 4px); right: 0; left: auto;
     width: max-content; min-width: 190px; max-width: calc(100vw - 16px);
     padding: 8px 6px; border-radius: 10px;
-    background: rgba(20, 20, 20, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+    color: var(--text-color, #ffffff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
-    opacity: 0; pointer-events: none; transform: translateY(4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-    z-index: 20;
+    backdrop-filter: blur(10px);
+    opacity: 0; pointer-events: none; visibility: hidden; transform: translateY(4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    z-index: 100;
+    font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+}
+.itg-pip-more-menu::after {
+    content: ''; position: absolute; top: 100%; left: 0; right: 0; height: 16px;
+    pointer-events: auto; z-index: 100;
 }
 .itg-pip-more-wrap:hover .itg-pip-more-menu,
-.itg-pip-more-menu:hover { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.itg-pip-more-wrap:focus-within .itg-pip-more-menu,
+.itg-pip-more-menu:hover,
+.itg-pip-more-menu:focus-within {
+    opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0);
+}
 
 .itg-pip-more-section-title {
-    display: block; font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.6);
-    padding: 2px 6px 6px; text-transform: uppercase; letter-spacing: 0.05em;
+    display: block; font-size: 11px; font-weight: 600; color: var(--text-color, rgba(255, 255, 255, 0.6));
+    padding: 2px 6px 6px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;
 }
 .itg-pip-more-speed-grid {
     display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; padding: 0 2px 4px;
 }
 .itg-pip-more-speed-btn {
-    padding: 4px 0; border: 0; border-radius: 5px; background: rgba(255, 255, 255, 0.08);
-    color: #fff; font-size: 11.5px; font-variant-numeric: tabular-nums; cursor: pointer;
-    transition: background 0.15s ease; text-align: center;
+    padding: 4px 0; border: 0; border-radius: 5px;
+    background: color-mix(in srgb, var(--text-color, #ffffff) 8%, transparent);
+    color: var(--text-color, #ffffff); font-size: 11.5px; font-variant-numeric: tabular-nums; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease; text-align: center;
 }
-.itg-pip-more-speed-btn:hover { background: rgba(255, 255, 255, 0.22); }
-.itg-pip-more-speed-btn.is-active { background: var(--interactive-color, #ff4444); font-weight: 600; }
+.itg-pip-more-speed-btn:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 18%, transparent);
+    color: var(--interactive-color, #ff4444);
+}
+.itg-pip-more-speed-btn.is-active {
+    background: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.itg-pip-more-speed-btn.is-active:hover {
+    background: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
 
 .itg-pip-more-divider {
-    height: 1px; margin: 6px 0; background: rgba(255, 255, 255, 0.12);
+    height: 1px; margin: 6px 0; background: var(--border-color, rgba(255, 255, 255, 0.12));
 }
 
 .itg-pip-more-item {
     display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 8px;
-    border: 0; border-radius: 6px; background: transparent; color: #fff;
+    border: 0; border-radius: 6px; background: transparent; color: var(--text-color, #ffffff);
     font: inherit; font-size: 12px; cursor: pointer; text-align: left;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
 }
-.itg-pip-more-item:hover { background: rgba(255, 255, 255, 0.14); }
+.itg-pip-more-item:hover {
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 14%, transparent);
+    color: var(--interactive-color, #ff4444);
+}
 .itg-pip-more-item.is-on { color: var(--interactive-color, #ff4444); font-weight: 600; }
 .itg-pip-more-item[hidden] { display: none; }
 .itg-pip-more-icon { width: 16px; height: 16px; flex: 0 0 16px; display: flex; align-items: center; justify-content: center; }
@@ -792,18 +904,27 @@ div[class*='ytp-bezel'] {
         position: relative;
         display: inline-flex;
         align-items: center;
+        z-index: 50;
     }
+    .itg-pip-volume:hover,
+    .itg-pip-volume:focus-within { z-index: 100; }
     .itg-pip-volume::after {
         content: '';
         position: absolute;
-        left: -8px;
-        right: -8px;
         bottom: 100%;
+        left: 0;
+        right: 0;
         height: 16px;
+        pointer-events: none;
+        z-index: 100;
+    }
+    .itg-pip-volume:hover::after,
+    .itg-pip-volume:focus-within::after {
+        pointer-events: auto;
     }
     .itg-pip-volume-pop {
         position: absolute;
-        bottom: calc(100% + 8px);
+        bottom: calc(100% + 4px);
         left: 50%;
         transform: translateX(-50%) translateY(4px);
         width: 28px;
@@ -814,18 +935,29 @@ div[class*='ytp-bezel'] {
         align-items: center;
         justify-content: center;
         border-radius: 8px;
-        background: rgba(20, 20, 20, 0.95);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
+        border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        z-index: 25;
+        z-index: 100;
         transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease;
+    }
+    .itg-pip-volume-pop::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        height: 16px;
+        pointer-events: auto;
+        z-index: 100;
     }
     .itg-pip-volume:hover .itg-pip-volume-pop,
     .itg-pip-volume:focus-within .itg-pip-volume-pop,
-    .itg-pip-volume-pop:hover {
+    .itg-pip-volume-pop:hover,
+    .itg-pip-volume-pop:focus-within {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
