@@ -366,11 +366,20 @@ var ItgVideoLoopController =
             this.currentLoopRepetition = 0;
             this.currentSequenceCycle = 0;
             this.video = null;
+            this.currentVideoKey = this.getVideoKey();
             this.listeners = new Set();
             this._boundTimeUpdate = () => this.handleTimeUpdate();
             this._boundEnded = () => this.handleEnded();
             this._boundDurationChange = () => this.handleDurationChange();
+            this._boundVideoChange = () => this.checkVideoChange();
             this._isSeeking = false;
+
+            if (typeof window !== 'undefined') {
+                window.addEventListener('yt-navigate-finish', this._boundVideoChange);
+                window.addEventListener('yt-page-data-updated', this._boundVideoChange);
+                window.addEventListener('popstate', this._boundVideoChange);
+                window.addEventListener('hashchange', this._boundVideoChange);
+            }
         }
 
         _createDefaultLoop(num = 1, startTime = 0, endTime = 0, repeatCount = 0, name = '') {
@@ -431,14 +440,54 @@ var ItgVideoLoopController =
 
         getVideoKey() {
             try {
+                if (typeof ItgVideoPip !== 'undefined' && ItgVideoPip.current) {
+                    const pip = ItgVideoPip.current;
+                    if (pip.videoId) return `itg_loop_yt_${pip.videoId}`;
+                    if (pip.sourceUrl) {
+                        const ytId =
+                            typeof itgExtractYouTubeVideoId === 'function'
+                                ? itgExtractYouTubeVideoId(pip.sourceUrl)
+                                : '';
+                        if (ytId) return `itg_loop_yt_${ytId}`;
+                    }
+                }
                 const url = window.location.href;
                 const ytId = typeof itgExtractYouTubeVideoId === 'function' ? itgExtractYouTubeVideoId(url) : '';
                 if (ytId) return `itg_loop_yt_${ytId}`;
+                if (this.video && (this.video.src || this.video.currentSrc)) {
+                    const vSrc = this.video.src || this.video.currentSrc;
+                    const vYtId = typeof itgExtractYouTubeVideoId === 'function' ? itgExtractYouTubeVideoId(vSrc) : '';
+                    if (vYtId) return `itg_loop_yt_${vYtId}`;
+                    if (vSrc && !vSrc.startsWith('blob:') && !vSrc.startsWith('mediasource:')) {
+                        return `itg_loop_src_${vSrc.replace(/[^a-zA-Z0-9]/g, '_').slice(-60)}`;
+                    }
+                }
                 if (window.location.host) {
                     return `itg_loop_page_${window.location.host}_${(window.location.pathname || '').replace(/[^a-zA-Z0-9]/g, '_')}`;
                 }
             } catch {}
             return 'itg_loop_default';
+        }
+
+        checkVideoChange() {
+            const newKey = this.getVideoKey();
+            if (newKey && newKey !== this.currentVideoKey) {
+                this.currentVideoKey = newKey;
+                this.resetForNewVideo();
+            }
+        }
+
+        resetForNewVideo() {
+            this.isLooping = false;
+            this.currentLoopRepetition = 0;
+            this.currentSequenceCycle = 0;
+            this.activeLoopIndex = 0;
+            this.playbackMode = 'single';
+            this.sequenceRepeatCount = 1;
+            const dur = this.getDuration();
+            this.loops = [this._createDefaultLoop(1, 0, dur, 0)];
+            this.loadFromStorage();
+            this.notify();
         }
 
         saveToStorage() {
@@ -467,7 +516,9 @@ var ItgVideoLoopController =
             try {
                 if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
                     const key = this.getVideoKey();
+                    this.currentVideoKey = key;
                     chrome.storage.local.get([key], (res) => {
+                        if (this.getVideoKey() !== key) return;
                         if (res && res[key] && Array.isArray(res[key].loops) && res[key].loops.length > 0) {
                             this.loops = res[key].loops.map((l, idx) => ({
                                 id: l.id || `loop_${Date.now()}_${idx}`,
@@ -501,7 +552,8 @@ var ItgVideoLoopController =
         }
 
         attachVideo(video) {
-            if (this.video === video && video) return;
+            const keyChanged = this.currentVideoKey !== this.getVideoKey();
+            if (this.video === video && video && !keyChanged) return;
             if (this.video) {
                 this.detachVideo();
             }
@@ -517,15 +569,11 @@ var ItgVideoLoopController =
             video.addEventListener('ended', this._boundEnded);
             video.addEventListener('loadedmetadata', this._boundDurationChange);
             video.addEventListener('durationchange', this._boundDurationChange);
+            video.addEventListener('loadstart', this._boundVideoChange);
+            video.addEventListener('emptied', this._boundVideoChange);
 
-            this.loadFromStorage();
-
-            const curLoop = this.getCurrentLoop();
-            if (curLoop.endTime === 0 && video.duration && isFinite(video.duration)) {
-                curLoop.endTime = video.duration;
-            }
-
-            this.notify();
+            this.currentVideoKey = this.getVideoKey();
+            this.resetForNewVideo();
         }
 
         detachVideo() {
@@ -534,10 +582,13 @@ var ItgVideoLoopController =
             this.video.removeEventListener('ended', this._boundEnded);
             this.video.removeEventListener('loadedmetadata', this._boundDurationChange);
             this.video.removeEventListener('durationchange', this._boundDurationChange);
+            this.video.removeEventListener('loadstart', this._boundVideoChange);
+            this.video.removeEventListener('emptied', this._boundVideoChange);
             this.video = null;
         }
 
         getVideo() {
+            this.checkVideoChange();
             if (this.video && this.video.isConnected) return this.video;
             const v =
                 (typeof ItgVideoPip !== 'undefined' && ItgVideoPip.current?.video) || document.querySelector('video');
@@ -705,6 +756,7 @@ var ItgVideoLoopController =
         }
 
         handleDurationChange() {
+            this.checkVideoChange();
             const dur = this.getDuration();
             if (dur > 0) {
                 for (const loop of this.loops) {
@@ -717,6 +769,7 @@ var ItgVideoLoopController =
         }
 
         handleTimeUpdate() {
+            this.checkVideoChange();
             if (!this.isLooping || this._isSeeking) return;
             const v = this.getVideo();
             if (!v) return;
@@ -1900,6 +1953,7 @@ function itgAttachLoopMenu(button) {
         } catch {}
         itgRefreshContainerTranslations(menu);
         if (typeof itgVideoLoop !== 'undefined') {
+            itgVideoLoop.checkVideoChange();
             itgVideoLoop.notify();
         }
 
@@ -3022,6 +3076,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
         this.bindVideo();
         this.render();
+        if (typeof itgVideoLoop !== 'undefined' && next) {
+            itgVideoLoop.attachVideo(next);
+        }
         next.play?.().catch(() => {});
     }
 
