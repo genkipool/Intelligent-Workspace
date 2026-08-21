@@ -350,16 +350,137 @@ var ItgVideoLoopController =
     class {
         constructor() {
             this.isLooping = false;
-            this.startTime = 0;
-            this.endTime = 0;
-            this.repeatCount = 0; // 0 = infinite
-            this.currentRepetition = 0;
+            this.loops = [this._createDefaultLoop(1, 0, 0, 0)];
+            this.activeLoopIndex = 0;
+            this.playbackMode = 'single'; // 'single' | 'sequence'
+            this.currentLoopRepetition = 0;
+            this.currentSequenceCycle = 0;
             this.video = null;
             this.listeners = new Set();
             this._boundTimeUpdate = () => this.handleTimeUpdate();
             this._boundEnded = () => this.handleEnded();
             this._boundDurationChange = () => this.handleDurationChange();
             this._isSeeking = false;
+        }
+
+        _createDefaultLoop(num = 1, startTime = 0, endTime = 0, repeatCount = 0, name = '') {
+            return {
+                id: `loop_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                name: name || '',
+                startTime: typeof startTime === 'number' && !isNaN(startTime) ? Math.max(0, startTime) : 0,
+                endTime: typeof endTime === 'number' && !isNaN(endTime) ? Math.max(0, endTime) : 0,
+                repeatCount:
+                    typeof repeatCount === 'number' && !isNaN(repeatCount) ? Math.max(0, Math.floor(repeatCount)) : 0,
+            };
+        }
+
+        getCurrentLoop() {
+            if (!Array.isArray(this.loops) || this.loops.length === 0) {
+                this.loops = [this._createDefaultLoop(1, 0, this.getDuration(), 0)];
+            }
+            if (this.activeLoopIndex < 0 || this.activeLoopIndex >= this.loops.length) {
+                this.activeLoopIndex = 0;
+            }
+            return this.loops[this.activeLoopIndex];
+        }
+
+        get startTime() {
+            return this.getCurrentLoop().startTime;
+        }
+        set startTime(val) {
+            if (typeof val === 'number' && !isNaN(val)) {
+                this.getCurrentLoop().startTime = Math.max(0, val);
+            }
+        }
+
+        get endTime() {
+            const l = this.getCurrentLoop();
+            return l.endTime > 0 ? l.endTime : this.getDuration();
+        }
+        set endTime(val) {
+            if (typeof val === 'number' && !isNaN(val)) {
+                this.getCurrentLoop().endTime = Math.max(0, val);
+            }
+        }
+
+        get repeatCount() {
+            return this.getCurrentLoop().repeatCount;
+        }
+        set repeatCount(val) {
+            if (typeof val === 'number' && !isNaN(val)) {
+                this.getCurrentLoop().repeatCount = Math.max(0, Math.floor(val));
+            }
+        }
+
+        get currentRepetition() {
+            return this.currentLoopRepetition;
+        }
+        set currentRepetition(val) {
+            this.currentLoopRepetition = typeof val === 'number' ? Math.max(0, val) : 0;
+        }
+
+        getVideoKey() {
+            try {
+                const url = window.location.href;
+                const ytId = typeof itgExtractYouTubeVideoId === 'function' ? itgExtractYouTubeVideoId(url) : '';
+                if (ytId) return `itg_loop_yt_${ytId}`;
+                if (window.location.host) {
+                    return `itg_loop_page_${window.location.host}_${(window.location.pathname || '').replace(/[^a-zA-Z0-9]/g, '_')}`;
+                }
+            } catch {}
+            return 'itg_loop_default';
+        }
+
+        saveToStorage() {
+            try {
+                if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+                    const key = this.getVideoKey();
+                    const data = {
+                        loops: this.loops.map((l) => ({
+                            id: l.id,
+                            name: l.name || '',
+                            startTime: l.startTime,
+                            endTime: l.endTime,
+                            repeatCount: l.repeatCount,
+                        })),
+                        activeLoopIndex: this.activeLoopIndex,
+                        playbackMode: this.playbackMode,
+                    };
+                    chrome.storage.local.set({ [key]: data });
+                }
+            } catch {}
+        }
+
+        loadFromStorage() {
+            try {
+                if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+                    const key = this.getVideoKey();
+                    chrome.storage.local.get([key], (res) => {
+                        if (res && res[key] && Array.isArray(res[key].loops) && res[key].loops.length > 0) {
+                            this.loops = res[key].loops.map((l, idx) => ({
+                                id: l.id || `loop_${Date.now()}_${idx}`,
+                                name: l.name || '',
+                                startTime: typeof l.startTime === 'number' ? Math.max(0, l.startTime) : 0,
+                                endTime: typeof l.endTime === 'number' ? Math.max(0, l.endTime) : 0,
+                                repeatCount: typeof l.repeatCount === 'number' ? Math.max(0, l.repeatCount) : 0,
+                            }));
+                            if (
+                                typeof res[key].activeLoopIndex === 'number' &&
+                                res[key].activeLoopIndex >= 0 &&
+                                res[key].activeLoopIndex < this.loops.length
+                            ) {
+                                this.activeLoopIndex = res[key].activeLoopIndex;
+                            } else {
+                                this.activeLoopIndex = 0;
+                            }
+                            if (res[key].playbackMode === 'sequence' || res[key].playbackMode === 'single') {
+                                this.playbackMode = res[key].playbackMode;
+                            }
+                            this.notify();
+                        }
+                    });
+                }
+            } catch {}
         }
 
         attachVideo(video) {
@@ -380,8 +501,11 @@ var ItgVideoLoopController =
             video.addEventListener('loadedmetadata', this._boundDurationChange);
             video.addEventListener('durationchange', this._boundDurationChange);
 
-            if (this.endTime === 0 && video.duration && isFinite(video.duration)) {
-                this.endTime = video.duration;
+            this.loadFromStorage();
+
+            const curLoop = this.getCurrentLoop();
+            if (curLoop.endTime === 0 && video.duration && isFinite(video.duration)) {
+                curLoop.endTime = video.duration;
             }
 
             this.notify();
@@ -416,26 +540,133 @@ var ItgVideoLoopController =
             return v ? v.currentTime || 0 : 0;
         }
 
-        getEffectiveEndTime() {
+        getEffectiveStartTime(loop = this.getCurrentLoop()) {
+            return loop && typeof loop.startTime === 'number' ? Math.max(0, loop.startTime) : 0;
+        }
+
+        getEffectiveEndTime(loop = this.getCurrentLoop()) {
             const dur = this.getDuration();
-            if (this.endTime > 0 && isFinite(this.endTime)) {
-                return dur > 0 ? Math.min(this.endTime, dur) : this.endTime;
+            if (loop && loop.endTime > 0 && isFinite(loop.endTime)) {
+                return dur > 0 ? Math.min(loop.endTime, dur) : loop.endTime;
             }
             return dur;
+        }
+
+        addLoop(data = {}) {
+            const curTime = this.getCurrentTime();
+            const dur = this.getDuration();
+            let start = typeof data.startTime === 'number' ? data.startTime : curTime;
+            let end = typeof data.endTime === 'number' ? data.endTime : dur;
+
+            if (end > 0 && start >= end) {
+                start = 0;
+            }
+
+            const newLoop = this._createDefaultLoop(
+                this.loops.length + 1,
+                start,
+                end,
+                typeof data.repeatCount === 'number' ? data.repeatCount : 0,
+                data.name || '',
+            );
+            this.loops.push(newLoop);
+            this.activeLoopIndex = this.loops.length - 1;
+            this.currentLoopRepetition = 0;
+            this.saveToStorage();
+            this.notify();
+            return newLoop;
+        }
+
+        removeLoop(index = this.activeLoopIndex) {
+            if (this.loops.length <= 1) {
+                this.resetSettings();
+                return;
+            }
+            if (index >= 0 && index < this.loops.length) {
+                this.loops.splice(index, 1);
+                if (this.activeLoopIndex >= this.loops.length) {
+                    this.activeLoopIndex = Math.max(0, this.loops.length - 1);
+                }
+                this.currentLoopRepetition = 0;
+                this.saveToStorage();
+                this.notify();
+            }
+        }
+
+        setActiveLoop(index, seek = false) {
+            if (index >= 0 && index < this.loops.length) {
+                this.activeLoopIndex = index;
+                this.currentLoopRepetition = 0;
+                if (seek || this.isLooping) {
+                    const v = this.getVideo();
+                    const targetLoop = this.getCurrentLoop();
+                    if (v && targetLoop) {
+                        v.currentTime = targetLoop.startTime;
+                    }
+                }
+                this.saveToStorage();
+                this.notify();
+            }
+        }
+
+        setPlaybackMode(mode) {
+            this.playbackMode = mode === 'sequence' ? 'sequence' : 'single';
+            this.currentLoopRepetition = 0;
+            this.currentSequenceCycle = 0;
+            this.saveToStorage();
+            this.notify();
+        }
+
+        setLoopSettings(index, { startTime, endTime, repeatCount, name }) {
+            const targetIndex = typeof index === 'number' ? index : this.activeLoopIndex;
+            const loop = this.loops[targetIndex];
+            if (!loop) return;
+
+            if (typeof startTime === 'number' && !isNaN(startTime)) {
+                loop.startTime = Math.max(0, startTime);
+            }
+            if (typeof endTime === 'number' && !isNaN(endTime)) {
+                loop.endTime = Math.max(0, endTime);
+            }
+            if (typeof repeatCount === 'number' && !isNaN(repeatCount)) {
+                loop.repeatCount = Math.max(0, Math.floor(repeatCount));
+            }
+            if (typeof name === 'string') {
+                loop.name = name.trim();
+            }
+            this.currentLoopRepetition = 0;
+            this.saveToStorage();
+            this.notify();
+        }
+
+        setSettings({ startTime, endTime, repeatCount, name }) {
+            this.setLoopSettings(this.activeLoopIndex, { startTime, endTime, repeatCount, name });
+        }
+
+        resetSettings() {
+            this.loops = [this._createDefaultLoop(1, 0, this.getDuration(), 0)];
+            this.activeLoopIndex = 0;
+            this.playbackMode = 'single';
+            this.currentLoopRepetition = 0;
+            this.currentSequenceCycle = 0;
+            this.saveToStorage();
+            this.notify();
         }
 
         setLooping(active) {
             this.isLooping = !!active;
             if (this.isLooping) {
-                this.currentRepetition = 0;
+                this.currentLoopRepetition = 0;
+                this.currentSequenceCycle = 0;
                 const v = this.getVideo();
                 if (v) {
                     v.loop = false;
                     if (v.hasAttribute('loop')) v.removeAttribute('loop');
 
+                    const start = this.getEffectiveStartTime();
                     const end = this.getEffectiveEndTime();
-                    if (v.currentTime < this.startTime || (end > 0 && v.currentTime >= end)) {
-                        v.currentTime = this.startTime;
+                    if (v.currentTime < start || (end > 0 && v.currentTime >= end)) {
+                        v.currentTime = start;
                     }
                 }
             }
@@ -446,32 +677,14 @@ var ItgVideoLoopController =
             this.setLooping(!this.isLooping);
         }
 
-        setSettings({ startTime, endTime, repeatCount }) {
-            if (typeof startTime === 'number' && !isNaN(startTime)) {
-                this.startTime = Math.max(0, startTime);
-            }
-            if (typeof endTime === 'number' && !isNaN(endTime)) {
-                this.endTime = Math.max(0, endTime);
-            }
-            if (typeof repeatCount === 'number' && !isNaN(repeatCount)) {
-                this.repeatCount = Math.max(0, Math.floor(repeatCount));
-            }
-            this.currentRepetition = 0;
-            this.notify();
-        }
-
-        resetSettings() {
-            this.startTime = 0;
-            this.endTime = this.getDuration();
-            this.repeatCount = 0;
-            this.currentRepetition = 0;
-            this.notify();
-        }
-
         handleDurationChange() {
             const dur = this.getDuration();
-            if (dur > 0 && (this.endTime === 0 || this.endTime > dur)) {
-                this.endTime = dur;
+            if (dur > 0) {
+                for (const loop of this.loops) {
+                    if (loop.endTime === 0 || loop.endTime > dur) {
+                        loop.endTime = dur;
+                    }
+                }
             }
             this.notify();
         }
@@ -498,25 +711,78 @@ var ItgVideoLoopController =
             const v = this.getVideo();
             if (!v) return;
 
-            this.currentRepetition++;
+            const loop = this.getCurrentLoop();
+            this.currentLoopRepetition++;
 
-            if (this.repeatCount > 0 && this.currentRepetition >= this.repeatCount) {
-                this.isLooping = false;
+            if (this.loops.length <= 1) {
+                // Single loop mode
+                if (loop.repeatCount > 0 && this.currentLoopRepetition >= loop.repeatCount) {
+                    this.isLooping = false;
+                    this.currentLoopRepetition = 0;
+                    this.notify();
+                    v.pause();
+                    return;
+                }
+
+                this._isSeeking = true;
+                v.currentTime = this.getEffectiveStartTime(loop);
+                const playPromise = v.play();
+                if (playPromise && typeof playPromise.catch === 'function') {
+                    playPromise.catch(() => {});
+                }
                 this.notify();
-                v.pause();
-                return;
-            }
+                setTimeout(() => {
+                    this._isSeeking = false;
+                }, 150);
+            } else {
+                // Multiple loops -> sequence mode respecting repetitions of each loop
+                // If active loop has infinite repeat (repeatCount === 0), loop it indefinitely
+                if (loop.repeatCount === 0) {
+                    this._isSeeking = true;
+                    v.currentTime = this.getEffectiveStartTime(loop);
+                    const playPromise = v.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {});
+                    }
+                    this.notify();
+                    setTimeout(() => {
+                        this._isSeeking = false;
+                    }, 150);
+                    return;
+                }
 
-            this._isSeeking = true;
-            v.currentTime = this.startTime;
-            const playPromise = v.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {});
+                if (this.currentLoopRepetition < loop.repeatCount) {
+                    this._isSeeking = true;
+                    v.currentTime = this.getEffectiveStartTime(loop);
+                    const playPromise = v.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {});
+                    }
+                    this.notify();
+                    setTimeout(() => {
+                        this._isSeeking = false;
+                    }, 150);
+                } else {
+                    this.currentLoopRepetition = 0;
+                    const nextIndex = (this.activeLoopIndex + 1) % this.loops.length;
+                    if (nextIndex === 0) {
+                        this.currentSequenceCycle++;
+                    }
+                    this.activeLoopIndex = nextIndex;
+                    const nextLoop = this.getCurrentLoop();
+
+                    this._isSeeking = true;
+                    v.currentTime = this.getEffectiveStartTime(nextLoop);
+                    const playPromise = v.play();
+                    if (playPromise && typeof playPromise.catch === 'function') {
+                        playPromise.catch(() => {});
+                    }
+                    this.notify();
+                    setTimeout(() => {
+                        this._isSeeking = false;
+                    }, 150);
+                }
             }
-            this.notify();
-            setTimeout(() => {
-                this._isSeeking = false;
-            }, 150);
         }
 
         subscribe(listener) {
@@ -538,13 +804,19 @@ var ItgVideoLoopController =
 
         getState() {
             const duration = this.getDuration();
+            const currentLoop = this.getCurrentLoop();
             return {
                 isLooping: this.isLooping,
-                startTime: this.startTime,
-                endTime: this.endTime > 0 ? this.endTime : duration,
+                loops: this.loops.map((l) => ({ ...l })),
+                activeLoopIndex: this.activeLoopIndex,
+                playbackMode: this.loops.length > 1 ? 'sequence' : 'single',
+                currentLoop: { ...currentLoop },
+                startTime: currentLoop.startTime,
+                endTime: currentLoop.endTime > 0 ? currentLoop.endTime : duration,
                 duration: duration,
-                repeatCount: this.repeatCount,
-                currentRepetition: this.currentRepetition,
+                repeatCount: currentLoop.repeatCount,
+                currentRepetition: this.currentLoopRepetition,
+                currentSequenceCycle: this.currentSequenceCycle,
             };
         }
     };
@@ -556,6 +828,11 @@ window.itgVideoLoop = itgVideoLoop;
 
 function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMode = false) {
     if (!container) return () => {};
+    if (typeof container._itgUnsubscribe === 'function') {
+        container._itgUnsubscribe();
+        container._itgUnsubscribe = null;
+    }
+
     container.innerHTML = `
         <div class="itg-loop-header">
             <span class="itg-loop-title">
@@ -563,70 +840,43 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 <span class="itg-loop-title-text" data-i18n-text="pipLoopSettings">Configurar bucle</span>
             </span>
         </div>
-        <div class="itg-loop-section">
-            <div class="itg-loop-row">
-                <label class="itg-loop-label" data-i18n-text="pipLoopStartTime">Tiempo de inicio</label>
-                <div class="itg-loop-input-group">
-                    <input class="itg-loop-time-input itg-loop-start-input" type="text" placeholder="0:00" spellcheck="false" inputmode="numeric" />
-                    <div class="itg-loop-quick-actions">
-                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-start-zero" title="0:00" data-i18n-title="pipLoopSetStart">0:00</button>
-                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-start-curr" title="Posición actual del vídeo" data-i18n-title="pipLoopSetCurrent">
-                            ${ITG_PIP_ICONS.current}
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <div class="itg-loop-row">
-                <label class="itg-loop-label" data-i18n-text="pipLoopEndTime">Tiempo final</label>
-                <div class="itg-loop-input-group">
-                    <input class="itg-loop-time-input itg-loop-end-input" type="text" placeholder="0:00" spellcheck="false" inputmode="numeric" />
-                    <div class="itg-loop-quick-actions">
-                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-end-total" title="Total" data-i18n-title="pipLoopSetEnd">
-                            <span data-i18n-text="pipLoopSetEnd">Total</span>
-                        </button>
-                        <button type="button" class="itg-loop-quick-btn itg-loop-btn-end-curr" title="Posición actual del vídeo" data-i18n-title="pipLoopSetCurrent">
-                            ${ITG_PIP_ICONS.current}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="itg-loop-section">
-            <div class="itg-loop-row">
-                <label class="itg-loop-label" data-i18n-text="pipLoopRepeatCount">Repeticiones</label>
-                <div class="itg-loop-repeat-controls">
-                    <button type="button" class="itg-loop-repeat-mode-btn itg-loop-repeat-inf is-active">
-                        <span>∞</span>
-                        <small data-i18n-text="pipLoopInfinite">Infinito</small>
-                    </button>
-                    <button type="button" class="itg-loop-repeat-mode-btn itg-loop-repeat-custom">
-                        <input class="itg-loop-count-input" type="number" min="1" max="9999" step="1" value="3" inputmode="numeric" />
-                        <small data-i18n-text="pipLoopTimes">veces</small>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <div class="itg-loop-list"></div>
         <div class="itg-loop-footer">
-            <span class="itg-loop-status"></span>
-            <button type="button" class="itg-loop-reset-btn" data-i18n-text="pipLoopReset">Restablecer</button>
+            <div class="itg-loop-footer-status">
+                <span class="itg-loop-status"></span>
+            </div>
+            <div class="itg-loop-footer-center">
+                <span class="itg-loop-video-time" title="${itgPipMsg('pipLoopVideoTimeDesc', 'Posición actual y duración total del vídeo')}" data-i18n-title="pipLoopVideoTimeDesc">00:00 / 00:00</span>
+            </div>
+            <div class="itg-loop-footer-actions">
+                <button type="button" class="itg-loop-toggle-btn">
+                    <span class="itg-loop-toggle-text" data-i18n-text="pipLoopActivate">Activar bucle</span>
+                </button>
+                <button type="button" class="itg-loop-reset-all-btn" data-i18n-text="pipLoopReset">Restablecer</button>
+            </div>
         </div>
     `;
 
     const header = container.querySelector('.itg-loop-header');
     const titleEl = container.querySelector('.itg-loop-title');
-    const startInput = container.querySelector('.itg-loop-start-input');
-    const endInput = container.querySelector('.itg-loop-end-input');
-    const btnStartZero = container.querySelector('.itg-loop-btn-start-zero');
-    const btnStartCurr = container.querySelector('.itg-loop-btn-start-curr');
-    const btnEndTotal = container.querySelector('.itg-loop-btn-end-total');
-    const btnEndCurr = container.querySelector('.itg-loop-btn-end-curr');
-    const btnRepeatInf = container.querySelector('.itg-loop-repeat-inf');
-    const btnRepeatCustom = container.querySelector('.itg-loop-repeat-custom');
-    const countInput = container.querySelector('.itg-loop-count-input');
+    const loopListEl = container.querySelector('.itg-loop-list');
+    const toggleBtn = container.querySelector('.itg-loop-toggle-btn');
+    const toggleTextEl = container.querySelector('.itg-loop-toggle-text');
     const statusEl = container.querySelector('.itg-loop-status');
-    const resetBtn = container.querySelector('.itg-loop-reset-btn');
+    const videoTimeEl = container.querySelector('.itg-loop-video-time');
+    const resetAllBtn = container.querySelector('.itg-loop-reset-all-btn');
 
-    // Filter time input characters (only allow 0-9 and :)
+    toggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controller.toggleLoop();
+    });
+
+    resetAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        controller.resetSettings();
+    });
+
+    // Helper to sanitize time input keyboard events
     const sanitizeTimeKey = (e) => {
         if (
             ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(e.key) ||
@@ -651,159 +901,45 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
         }
     };
 
-    const commitStartTime = () => {
-        let val = itgParseTime(startInput.value);
-        const dur = controller.getDuration();
-        if (val < 0 || isNaN(val)) val = 0;
-        if (dur > 0 && val > dur) val = dur;
-        const end = controller.getEffectiveEndTime();
-        if (end > 0 && val > end) {
-            val = end;
-        }
-        controller.setSettings({ startTime: val });
-        startInput.value = itgFormatTime(val, true);
-    };
-
-    const commitEndTime = () => {
-        let val = itgParseTime(endInput.value);
-        const dur = controller.getDuration();
-        if (val < 0 || isNaN(val)) val = dur;
-        if (dur > 0 && val > dur) val = dur;
-        if (val < controller.startTime) {
-            val = controller.startTime;
-        }
-        if (val === 0 && dur > 0) val = dur;
-        controller.setSettings({ endTime: val });
-        endInput.value = itgFormatTime(val, true);
-    };
-
-    btnStartZero.addEventListener('click', (e) => {
-        e.stopPropagation();
-        controller.setSettings({ startTime: 0 });
-        startInput.value = '00:00';
-    });
-
-    btnStartCurr.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const cur = controller.getCurrentTime();
-        controller.setSettings({ startTime: cur });
-        startInput.value = itgFormatTime(cur, true);
-    });
-
-    btnEndTotal.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dur = controller.getDuration();
-        controller.setSettings({ endTime: dur });
-        endInput.value = itgFormatTime(dur, true);
-    });
-
-    btnEndCurr.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const cur = controller.getCurrentTime();
-        controller.setSettings({ endTime: cur });
-        endInput.value = itgFormatTime(cur, true);
-    });
-
-    startInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            commitStartTime();
-            startInput.blur();
-            return;
-        }
-        sanitizeTimeKey(e);
-    });
-    startInput.addEventListener('input', () => filterTimeInput(startInput));
-    startInput.addEventListener('change', commitStartTime);
-    startInput.addEventListener('blur', commitStartTime);
-
-    endInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            commitEndTime();
-            endInput.blur();
-            return;
-        }
-        sanitizeTimeKey(e);
-    });
-    endInput.addEventListener('input', () => filterTimeInput(endInput));
-    endInput.addEventListener('change', commitEndTime);
-    endInput.addEventListener('blur', commitEndTime);
-
-    // Number stepper and repetitions
-    const filterCountKey = (e) => {
-        if (
-            ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(e.key) ||
-            e.ctrlKey ||
-            e.metaKey
-        ) {
-            return;
-        }
-        if (!/^[0-9]$/.test(e.key)) {
-            e.preventDefault();
-        }
-    };
-
-    const commitCount = () => {
-        let count = Math.max(1, Math.min(9999, parseInt(countInput.value, 10) || 1));
-        countInput.value = String(count);
-        controller.setSettings({ repeatCount: count });
-    };
-
-    btnRepeatInf.addEventListener('click', (e) => {
-        e.stopPropagation();
-        controller.setSettings({ repeatCount: 0 });
-    });
-
-    btnRepeatCustom.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const count = Math.max(1, Math.min(9999, parseInt(countInput.value, 10) || 1));
-        controller.setSettings({ repeatCount: count });
-        countInput.focus();
-    });
-
-    countInput.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
-    countInput.addEventListener('keydown', filterCountKey);
-    countInput.addEventListener('input', () => {
-        countInput.value = countInput.value.replace(/[^0-9]/g, '');
-        const count = parseInt(countInput.value, 10);
-        if (!isNaN(count) && count >= 1) {
-            controller.setSettings({ repeatCount: Math.min(9999, count) });
-        }
-    });
-    countInput.addEventListener('change', commitCount);
-    countInput.addEventListener('blur', commitCount);
-
-    resetBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        controller.resetSettings();
-    });
-
     const updateUI = (state) => {
         header?.classList.toggle('is-active', state.isLooping);
         titleEl?.classList.toggle('is-active', state.isLooping);
 
-        const doc = container.ownerDocument || document;
-        if (doc.activeElement !== startInput) {
-            startInput.value = itgFormatTime(state.startTime, true);
-        }
-
-        if (doc.activeElement !== endInput) {
-            const displayEnd = state.endTime > 0 ? state.endTime : state.duration;
-            endInput.value = itgFormatTime(displayEnd, true);
-        }
-
-        const isInf = state.repeatCount === 0;
-        btnRepeatInf.classList.toggle('is-active', isInf);
-        btnRepeatCustom.classList.toggle('is-active', !isInf);
-        if (!isInf && doc.activeElement !== countInput) {
-            countInput.value = String(state.repeatCount);
+        toggleBtn?.classList.toggle('is-active', state.isLooping);
+        if (toggleTextEl) {
+            toggleTextEl.textContent = state.isLooping
+                ? itgPipMsg('pipLoopDeactivate', 'Desactivar bucle')
+                : itgPipMsg('pipLoopActivate', 'Activar bucle');
         }
 
         if (statusEl) {
             if (state.isLooping) {
-                if (state.repeatCount > 0) {
+                if (state.loops.length > 1) {
+                    if (state.repeatCount === 0) {
+                        statusEl.textContent = itgPipMsg(
+                            'pipLoopSequenceInf',
+                            `Sec: Bucle ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
+                            [state.activeLoopIndex + 1, state.loops.length],
+                        );
+                    } else if (state.repeatCount > 0) {
+                        statusEl.textContent = itgPipMsg(
+                            'pipLoopSequenceRep',
+                            `Sec: Bucle ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${state.repeatCount})`,
+                            [
+                                state.activeLoopIndex + 1,
+                                state.loops.length,
+                                state.currentRepetition + 1,
+                                state.repeatCount,
+                            ],
+                        );
+                    } else {
+                        statusEl.textContent = itgPipMsg(
+                            'pipLoopSequenceStatus',
+                            `Sec: Bucle ${state.activeLoopIndex + 1} de ${state.loops.length}`,
+                            [state.activeLoopIndex + 1, state.loops.length],
+                        );
+                    }
+                } else if (state.repeatCount > 0) {
                     statusEl.textContent = itgPipMsg(
                         'pipLoopProgress',
                         `Bucle ${state.currentRepetition + 1} de ${state.repeatCount}`,
@@ -822,10 +958,677 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 statusEl.textContent = '';
             }
         }
+
+        const dur = state.duration || controller.getDuration() || 0;
+        const curTime = controller.getCurrentTime() || 0;
+
+        if (videoTimeEl) {
+            const curStr = itgFormatTime(curTime, true);
+            const durStr = itgFormatTime(dur, true);
+            videoTimeEl.textContent = `${curStr} / ${durStr}`;
+            videoTimeEl.title = itgPipMsg('pipLoopVideoTimeDesc', 'Posición actual y duración total del vídeo');
+        }
+
+        if (!loopListEl) return;
+
+        const doc = container.ownerDocument || document;
+        const activeEl = doc.activeElement;
+
+        // Clean up excess rows if loops were removed
+        while (loopListEl.children.length > state.loops.length) {
+            loopListEl.removeChild(loopListEl.lastElementChild);
+        }
+
+        // Find index of first loop with infinite repeat (repeatCount === 0)
+        let firstInfIdx = -1;
+        for (let i = 0; i < state.loops.length; i++) {
+            if (state.loops[i].repeatCount === 0) {
+                firstInfIdx = i;
+                break;
+            }
+        }
+
+        state.loops.forEach((loop, idx) => {
+            let row = loopListEl.children[idx];
+            const isActiveRow = idx === state.activeLoopIndex;
+            const isPlayingRow = state.isLooping && isActiveRow;
+            const isUnreachable = firstInfIdx !== -1 && idx > firstInfIdx;
+            const effectiveEnd = loop.endTime > 0 ? loop.endTime : dur;
+
+            const startPct = dur > 0 ? Math.max(0, Math.min(100, (loop.startTime / dur) * 100)) : 0;
+            const endPct = dur > 0 ? Math.max(startPct, Math.min(100, (effectiveEnd / dur) * 100)) : 100;
+            const playheadPct = dur > 0 ? Math.max(0, Math.min(100, (curTime / dur) * 100)) : 0;
+            const isInf = loop.repeatCount === 0;
+
+            const timeAStr = itgFormatTime(loop.startTime, true);
+            const timeBStr = itgFormatTime(effectiveEnd, true);
+
+            const infTitle = isInf
+                ? itgPipMsg('pipLoopDeactivateInf', 'Desactivar repetición infinita')
+                : itgPipMsg('pipLoopActivateInf', 'Activar repetición infinita');
+
+            if (!row) {
+                row = document.createElement('div');
+                row.className = `itg-loop-row-item${isActiveRow ? ' is-active' : ''}${isPlayingRow ? ' is-playing' : ''}${isUnreachable ? ' is-disabled' : ''}`;
+                row.dataset.index = String(idx);
+                if (isUnreachable) {
+                    row.title = itgPipMsg(
+                        'pipLoopUnreachable',
+                        'Deshabilitado: un bucle anterior está configurado en repetición infinita',
+                    );
+                }
+
+                row.innerHTML = `
+                    <button type="button" class="itg-loop-row-num" title="${itgPipMsg('pipLoopNumber', `Bucle ${idx + 1}`, [idx + 1])}">#${idx + 1}</button>
+                    <div class="itg-loop-bar-column">
+                        <div class="itg-loop-inputs-row">
+                            <input type="text" class="itg-loop-time-input itg-loop-start-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopStartTime', 'Tiempo de inicio')}" value="${timeAStr}" ${isUnreachable ? 'disabled' : ''} />
+                            <span class="itg-loop-time-sep">-</span>
+                            <input type="text" class="itg-loop-time-input itg-loop-end-input" placeholder="00:00" spellcheck="false" inputmode="numeric" title="${itgPipMsg('pipLoopEndTime', 'Tiempo final')}" value="${timeBStr}" ${isUnreachable ? 'disabled' : ''} />
+                        </div>
+                        <div class="itg-loop-bar-wrap" title="${timeAStr} - ${timeBStr}">
+                            <div class="itg-loop-bar-track">
+                                <div class="itg-loop-bar-fill" style="left: ${startPct}%; width: ${Math.max(0, endPct - startPct)}%;"></div>
+                                ${isActiveRow ? `<div class="itg-loop-bar-playhead" style="left: ${playheadPct}%;"></div>` : ''}
+                                <div class="itg-loop-handle itg-loop-handle-a" tabindex="0" role="slider" aria-label="Punto A" style="left: ${startPct}%;" title="A: ${timeAStr}">A</div>
+                                <div class="itg-loop-handle itg-loop-handle-b" tabindex="0" role="slider" aria-label="Punto B" style="left: ${endPct}%;" title="B: ${timeBStr}">B</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="itg-loop-btns-column">
+                        <div class="itg-loop-btns-row itg-loop-btns-row-1">
+                            <button type="button" class="itg-loop-btn-a" title="${itgPipMsg('pipLoopSetA', 'Fijar inicio (A) en posición actual')}" data-i18n-title="pipLoopSetA" ${isUnreachable ? 'disabled' : ''}>A</button>
+                            <input type="number" min="1" max="100" maxlength="3" class="itg-loop-row-count" value="${isInf ? 3 : Math.min(100, loop.repeatCount)}" title="${itgPipMsg('pipLoopRepeatCount', 'Repeticiones')}" ${isUnreachable ? 'disabled' : ''} />
+                            <button type="button" class="itg-loop-row-inf${isInf ? ' is-active' : ''}" title="${infTitle}" ${isUnreachable ? 'disabled' : ''}>∞</button>
+                        </div>
+                        <div class="itg-loop-btns-row itg-loop-btns-row-2">
+                            <button type="button" class="itg-loop-btn-b" title="${itgPipMsg('pipLoopSetB', 'Fijar fin (B) en posición actual')}" data-i18n-title="pipLoopSetB" ${isUnreachable ? 'disabled' : ''}>B</button>
+                            <button type="button" class="itg-loop-row-reset" title="${itgPipMsg('pipLoopResetRow', 'Restablecer bucle')}" data-i18n-title="pipLoopResetRow" ${isUnreachable ? 'disabled' : ''}>↺</button>
+                            <button type="button" class="itg-loop-row-del${idx === 0 ? ' is-disabled' : ''}" ${idx === 0 || isUnreachable ? 'disabled' : ''} title="${idx === 0 ? itgPipMsg('pipLoopDeleteDisabled', 'El primer bucle no se puede eliminar') : itgPipMsg('pipLoopDelete', 'Eliminar bucle')}" data-i18n-title="${idx === 0 ? 'pipLoopDeleteDisabled' : 'pipLoopDelete'}">✕</button>
+                            <button type="button" class="itg-loop-row-add" title="${itgPipMsg('pipLoopAdd', 'Añadir bucle')}" data-i18n-title="pipLoopAdd" ${isUnreachable ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>
+                `;
+
+                const numBtn = row.querySelector('.itg-loop-row-num');
+                const startInput = row.querySelector('.itg-loop-start-input');
+                const endInput = row.querySelector('.itg-loop-end-input');
+                const track = row.querySelector('.itg-loop-bar-track');
+                const fill = row.querySelector('.itg-loop-bar-fill');
+                const handleA = row.querySelector('.itg-loop-handle-a');
+                const handleB = row.querySelector('.itg-loop-handle-b');
+                const btnA = row.querySelector('.itg-loop-btn-a');
+                const btnB = row.querySelector('.itg-loop-btn-b');
+                const countInput = row.querySelector('.itg-loop-row-count');
+                const infBtn = row.querySelector('.itg-loop-row-inf');
+                const resetRowBtn = row.querySelector('.itg-loop-row-reset');
+                const delBtn = row.querySelector('.itg-loop-row-del');
+                const addBtn = row.querySelector('.itg-loop-row-add');
+
+                // Select active loop on number click
+                numBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (row.classList.contains('is-disabled')) return;
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    controller.setActiveLoop(curIdx, true);
+                });
+
+                // Commit start time from input
+                const commitStartTime = () => {
+                    if (row.classList.contains('is-disabled')) return;
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const currentDur = controller.getDuration() || dur;
+                    let val = itgParseTime(startInput.value);
+                    if (val < 0 || isNaN(val)) val = 0;
+                    if (currentDur > 0 && val > currentDur) val = currentDur;
+                    const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                    if (effectiveCurEnd > 0 && val >= effectiveCurEnd) {
+                        val = Math.max(0, effectiveCurEnd - 0.5);
+                    }
+                    controller.setLoopSettings(curIdx, { startTime: val });
+                    startInput.value = itgFormatTime(val, true);
+                };
+
+                // Commit end time from input
+                const commitEndTime = () => {
+                    if (row.classList.contains('is-disabled')) return;
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const currentDur = controller.getDuration() || dur;
+                    let val = itgParseTime(endInput.value);
+                    if (val < 0 || isNaN(val)) val = currentDur;
+                    if (currentDur > 0 && val > currentDur) val = currentDur;
+                    if (val <= curLoop.startTime) {
+                        val = curLoop.startTime + 0.5;
+                    }
+                    if (val === 0 && currentDur > 0) val = currentDur;
+                    controller.setLoopSettings(curIdx, { endTime: val });
+                    endInput.value = itgFormatTime(val, true);
+                };
+
+                startInput.addEventListener('click', (e) => e.stopPropagation());
+                startInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        commitStartTime();
+                        startInput.blur();
+                        return;
+                    }
+                    sanitizeTimeKey(e);
+                });
+                startInput.addEventListener('input', () => filterTimeInput(startInput));
+                startInput.addEventListener('change', commitStartTime);
+                startInput.addEventListener('blur', commitStartTime);
+
+                endInput.addEventListener('click', (e) => e.stopPropagation());
+                endInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        commitEndTime();
+                        endInput.blur();
+                        return;
+                    }
+                    sanitizeTimeKey(e);
+                });
+                endInput.addEventListener('input', () => filterTimeInput(endInput));
+                endInput.addEventListener('change', commitEndTime);
+                endInput.addEventListener('blur', commitEndTime);
+
+                // Helper to adjust start time
+                const adjustStartTimeBy = (delta) => {
+                    if (row.classList.contains('is-disabled')) return;
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const currentDur = controller.getDuration() || dur || 1;
+                    const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                    const maxAllowed = Math.max(0, effectiveCurEnd - 0.2);
+                    const newStart = Math.max(0, Math.min(maxAllowed, (curLoop.startTime || 0) + delta));
+                    controller.setLoopSettings(curIdx, { startTime: newStart });
+                };
+
+                // Helper to adjust end time
+                const adjustEndTimeBy = (delta) => {
+                    if (row.classList.contains('is-disabled')) return;
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const currentDur = controller.getDuration() || dur || 1;
+                    const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                    const minAllowed = (curLoop.startTime || 0) + 0.2;
+                    const newEnd = Math.max(minAllowed, Math.min(currentDur, effectiveCurEnd + delta));
+                    controller.setLoopSettings(curIdx, { endTime: newEnd });
+                };
+
+                // Handle A drag
+                handleA.addEventListener('pointerdown', (e) => {
+                    if (row.classList.contains('is-disabled')) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleA.focus();
+                    handleA.setPointerCapture(e.pointerId);
+                    handleA.classList.add('is-dragging');
+
+                    const onPointerMove = (moveEv) => {
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        const curLoop = controller.loops[curIdx] || loop;
+                        const currentDur = controller.getDuration() || dur || 1;
+                        const rect = track.getBoundingClientRect();
+                        if (!rect.width) return;
+                        const pct = Math.max(0, Math.min(1, (moveEv.clientX - rect.left) / rect.width));
+                        const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                        const maxAllowed = Math.max(0, effectiveCurEnd - 0.2);
+                        const newStart = Math.min(maxAllowed, pct * currentDur);
+                        curLoop.startTime = Math.max(0, newStart);
+
+                        const curPct = (curLoop.startTime / currentDur) * 100;
+                        const curEndPct = (effectiveCurEnd / currentDur) * 100;
+                        handleA.style.left = `${curPct}%`;
+                        const formatted = itgFormatTime(curLoop.startTime, true);
+                        handleA.title = `A: ${formatted}`;
+                        startInput.value = formatted;
+                        fill.style.left = `${curPct}%`;
+                        fill.style.width = `${Math.max(0, curEndPct - curPct)}%`;
+                    };
+
+                    const onPointerUp = (upEv) => {
+                        try {
+                            handleA.releasePointerCapture(upEv.pointerId);
+                        } catch {}
+                        handleA.classList.remove('is-dragging');
+                        handleA.removeEventListener('pointermove', onPointerMove);
+                        handleA.removeEventListener('pointerup', onPointerUp);
+                        handleA.removeEventListener('pointercancel', onPointerUp);
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        const curLoop = controller.loops[curIdx] || loop;
+                        controller.setLoopSettings(curIdx, { startTime: curLoop.startTime });
+                    };
+
+                    handleA.addEventListener('pointermove', onPointerMove);
+                    handleA.addEventListener('pointerup', onPointerUp);
+                    handleA.addEventListener('pointercancel', onPointerUp);
+                });
+
+                // Handle A keyboard navigation
+                handleA.addEventListener('keydown', (e) => {
+                    if (['ArrowLeft', 'ArrowDown'].includes(e.key)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        adjustStartTimeBy(-step);
+                    } else if (['ArrowRight', 'ArrowUp'].includes(e.key)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        adjustStartTimeBy(step);
+                    }
+                });
+
+                // Handle A wheel navigation
+                handleA.addEventListener(
+                    'wheel',
+                    (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleA.focus();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        const delta = e.deltaY < 0 ? step : -step;
+                        adjustStartTimeBy(delta);
+                    },
+                    { passive: false },
+                );
+
+                // Handle B drag
+                handleB.addEventListener('pointerdown', (e) => {
+                    if (row.classList.contains('is-disabled')) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleB.focus();
+                    handleB.setPointerCapture(e.pointerId);
+                    handleB.classList.add('is-dragging');
+
+                    const onPointerMove = (moveEv) => {
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        const curLoop = controller.loops[curIdx] || loop;
+                        const currentDur = controller.getDuration() || dur || 1;
+                        const rect = track.getBoundingClientRect();
+                        if (!rect.width) return;
+                        const pct = Math.max(0, Math.min(1, (moveEv.clientX - rect.left) / rect.width));
+                        const minAllowed = curLoop.startTime + 0.2;
+                        const newEnd = Math.max(minAllowed, Math.min(currentDur, pct * currentDur));
+                        curLoop.endTime = newEnd;
+
+                        const curStartPct = (curLoop.startTime / currentDur) * 100;
+                        const curEndPct = (curLoop.endTime / currentDur) * 100;
+                        handleB.style.left = `${curEndPct}%`;
+                        const formatted = itgFormatTime(curLoop.endTime, true);
+                        handleB.title = `B: ${formatted}`;
+                        endInput.value = formatted;
+                        fill.style.width = `${Math.max(0, curEndPct - curStartPct)}%`;
+                    };
+
+                    const onPointerUp = (upEv) => {
+                        try {
+                            handleB.releasePointerCapture(upEv.pointerId);
+                        } catch {}
+                        handleB.classList.remove('is-dragging');
+                        handleB.removeEventListener('pointermove', onPointerMove);
+                        handleB.removeEventListener('pointerup', onPointerUp);
+                        handleB.removeEventListener('pointercancel', onPointerUp);
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        const curLoop = controller.loops[curIdx] || loop;
+                        controller.setLoopSettings(curIdx, { endTime: curLoop.endTime });
+                    };
+
+                    handleB.addEventListener('pointermove', onPointerMove);
+                    handleB.addEventListener('pointerup', onPointerUp);
+                    handleB.addEventListener('pointercancel', onPointerUp);
+                });
+
+                // Handle B keyboard navigation
+                handleB.addEventListener('keydown', (e) => {
+                    if (['ArrowLeft', 'ArrowDown'].includes(e.key)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        adjustEndTimeBy(-step);
+                    } else if (['ArrowRight', 'ArrowUp'].includes(e.key)) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        adjustEndTimeBy(step);
+                    }
+                });
+
+                // Handle B wheel navigation
+                handleB.addEventListener(
+                    'wheel',
+                    (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleB.focus();
+                        const step = e.shiftKey ? 2 : e.altKey ? 0.1 : 0.5;
+                        const delta = e.deltaY < 0 ? step : -step;
+                        adjustEndTimeBy(delta);
+                    },
+                    { passive: false },
+                );
+
+                // Track click to reposition nearest handle
+                track.addEventListener('click', (e) => {
+                    if (row.classList.contains('is-disabled')) return;
+                    if (e.target === handleA || e.target === handleB) return;
+                    e.stopPropagation();
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const currentDur = controller.getDuration() || dur || 1;
+                    const rect = track.getBoundingClientRect();
+                    if (!rect.width) return;
+                    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                    const clickTime = pct * currentDur;
+                    const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                    const distA = Math.abs(clickTime - curLoop.startTime);
+                    const distB = Math.abs(clickTime - effectiveCurEnd);
+
+                    if (distA <= distB) {
+                        const maxAllowed = Math.max(0, effectiveCurEnd - 0.2);
+                        controller.setLoopSettings(curIdx, { startTime: Math.min(maxAllowed, clickTime) });
+                    } else {
+                        const minAllowed = curLoop.startTime + 0.2;
+                        controller.setLoopSettings(curIdx, {
+                            endTime: Math.min(currentDur, Math.max(minAllowed, clickTime)),
+                        });
+                    }
+                });
+
+                // Button A: Set start time to video's current playback position
+                btnA.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const videoCur = controller.getCurrentTime();
+                    const currentDur = controller.getDuration() || dur;
+                    const effectiveCurEnd = curLoop.endTime > 0 ? curLoop.endTime : currentDur;
+                    const targetStart = Math.min(videoCur, Math.max(0, effectiveCurEnd - 0.5));
+                    controller.setLoopSettings(curIdx, { startTime: targetStart });
+                });
+
+                // Button B: Set end time to video's current playback position
+                btnB.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    const videoCur = controller.getCurrentTime();
+                    const currentDur = controller.getDuration() || dur;
+                    let targetEnd = Math.max(videoCur, curLoop.startTime + 0.5);
+                    if (currentDur > 0 && targetEnd > currentDur) {
+                        targetEnd = currentDur;
+                    }
+                    controller.setLoopSettings(curIdx, { endTime: targetEnd });
+                });
+
+                // Repetition number input (max 100, max 3 chars, paste protected)
+                countInput.addEventListener('click', (e) => e.stopPropagation());
+                countInput.addEventListener('keydown', (e) => {
+                    if (
+                        ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Home', 'End'].includes(
+                            e.key,
+                        ) ||
+                        e.ctrlKey ||
+                        e.metaKey
+                    ) {
+                        return;
+                    }
+                    if (!/^[0-9]$/.test(e.key)) {
+                        e.preventDefault();
+                        return;
+                    }
+                    const selLen = (countInput.selectionEnd || 0) - (countInput.selectionStart || 0);
+                    if (countInput.value.length >= 3 && selLen === 0) {
+                        e.preventDefault();
+                    }
+                });
+                countInput.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    const pasted = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+                    let clean = pasted.replace(/[^0-9]/g, '').slice(0, 3);
+                    let val = parseInt(clean, 10);
+                    if (isNaN(val) || val < 1) val = 1;
+                    if (val > 100) val = 100;
+                    countInput.value = String(val);
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    controller.setLoopSettings(curIdx, { repeatCount: val });
+                });
+                countInput.addEventListener('input', () => {
+                    let clean = countInput.value.replace(/[^0-9]/g, '');
+                    if (clean.length > 3) clean = clean.slice(0, 3);
+                    let val = parseInt(clean, 10);
+                    if (!isNaN(val) && val > 100) {
+                        val = 100;
+                        clean = '100';
+                    }
+                    if (countInput.value !== clean) {
+                        countInput.value = clean;
+                    }
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    if (!isNaN(val) && val >= 1) {
+                        controller.setLoopSettings(curIdx, { repeatCount: val });
+                    }
+                });
+                countInput.addEventListener('change', () => {
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const val = Math.max(1, Math.min(100, parseInt(countInput.value, 10) || 1));
+                    countInput.value = String(val);
+                    controller.setLoopSettings(curIdx, { repeatCount: val });
+                });
+                countInput.addEventListener('blur', () => {
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    if (!countInput.value || parseInt(countInput.value, 10) < 1) {
+                        countInput.value = '1';
+                        controller.setLoopSettings(curIdx, { repeatCount: 1 });
+                    } else if (parseInt(countInput.value, 10) > 100) {
+                        countInput.value = '100';
+                        controller.setLoopSettings(curIdx, { repeatCount: 100 });
+                    }
+                });
+
+                // Infinite toggle button
+                infBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const curLoop = controller.loops[curIdx] || loop;
+                    if (curLoop.repeatCount === 0) {
+                        const count = Math.max(1, Math.min(100, parseInt(countInput.value, 10) || 3));
+                        controller.setLoopSettings(curIdx, { repeatCount: count });
+                    } else {
+                        controller.setLoopSettings(curIdx, { repeatCount: 0 });
+                    }
+                });
+
+                // Reset single loop
+                resetRowBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const curIdx = parseInt(row.dataset.index, 10);
+                    const currentDur = controller.getDuration() || dur;
+                    controller.setLoopSettings(curIdx, { startTime: 0, endTime: currentDur, repeatCount: 0 });
+                });
+
+                // Delete loop
+                if (delBtn) {
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const curIdx = parseInt(row.dataset.index, 10);
+                        controller.removeLoop(curIdx);
+                    });
+                }
+
+                // Add loop
+                addBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    controller.addLoop();
+                });
+
+                loopListEl.appendChild(row);
+            } else {
+                // Row exists -> Update in-place without destroying DOM elements or losing focus!
+                row.className = `itg-loop-row-item${isActiveRow ? ' is-active' : ''}${isPlayingRow ? ' is-playing' : ''}${isUnreachable ? ' is-disabled' : ''}`;
+                row.dataset.index = String(idx);
+                if (isUnreachable) {
+                    row.title = itgPipMsg(
+                        'pipLoopUnreachable',
+                        'Deshabilitado: un bucle anterior está configurado en repetición infinita',
+                    );
+                } else {
+                    row.removeAttribute('title');
+                }
+
+                const numBtn = row.querySelector('.itg-loop-row-num');
+                const startInput = row.querySelector('.itg-loop-start-input');
+                const endInput = row.querySelector('.itg-loop-end-input');
+                const barWrap = row.querySelector('.itg-loop-bar-wrap');
+                const track = row.querySelector('.itg-loop-bar-track');
+                const fill = row.querySelector('.itg-loop-bar-fill');
+                const handleA = row.querySelector('.itg-loop-handle-a');
+                const handleB = row.querySelector('.itg-loop-handle-b');
+                const btnA = row.querySelector('.itg-loop-btn-a');
+                const btnB = row.querySelector('.itg-loop-btn-b');
+                const countInput = row.querySelector('.itg-loop-row-count');
+                const infBtn = row.querySelector('.itg-loop-row-inf');
+                const resetRowBtn = row.querySelector('.itg-loop-row-reset');
+                const delBtn = row.querySelector('.itg-loop-row-del');
+                const addBtn = row.querySelector('.itg-loop-row-add');
+
+                if (numBtn) {
+                    numBtn.textContent = `#${idx + 1}`;
+                    numBtn.title = itgPipMsg('pipLoopNumber', `Bucle ${idx + 1}`, [idx + 1]);
+                }
+
+                if (startInput) {
+                    startInput.disabled = isUnreachable;
+                    if (activeEl !== startInput) {
+                        startInput.value = timeAStr;
+                    }
+                }
+                if (endInput) {
+                    endInput.disabled = isUnreachable;
+                    if (activeEl !== endInput) {
+                        endInput.value = timeBStr;
+                    }
+                }
+                if (barWrap) {
+                    barWrap.title = `${timeAStr} - ${timeBStr}`;
+                }
+
+                if (handleA && !handleA.classList.contains('is-dragging')) {
+                    handleA.style.left = `${startPct}%`;
+                    handleA.title = `A: ${timeAStr}`;
+                }
+                if (handleB && !handleB.classList.contains('is-dragging')) {
+                    handleB.style.left = `${endPct}%`;
+                    handleB.title = `B: ${timeBStr}`;
+                }
+                if (
+                    fill &&
+                    (!handleA || !handleA.classList.contains('is-dragging')) &&
+                    (!handleB || !handleB.classList.contains('is-dragging'))
+                ) {
+                    fill.style.left = `${startPct}%`;
+                    fill.style.width = `${Math.max(0, endPct - startPct)}%`;
+                }
+
+                // Playhead
+                if (track) {
+                    let playheadEl = track.querySelector('.itg-loop-bar-playhead');
+                    if (isActiveRow) {
+                        if (!playheadEl) {
+                            playheadEl = document.createElement('div');
+                            playheadEl.className = 'itg-loop-bar-playhead';
+                            track.appendChild(playheadEl);
+                        }
+                        playheadEl.style.left = `${playheadPct}%`;
+                    } else if (playheadEl) {
+                        playheadEl.remove();
+                    }
+                }
+
+                // Buttons state
+                if (btnA) btnA.disabled = isUnreachable;
+                if (btnB) btnB.disabled = isUnreachable;
+                if (resetRowBtn) resetRowBtn.disabled = isUnreachable;
+                if (addBtn) addBtn.disabled = isUnreachable;
+
+                // Repetition input
+                if (countInput) {
+                    countInput.disabled = isUnreachable;
+                    if (activeEl !== countInput) {
+                        countInput.value = isInf
+                            ? countInput.value &&
+                              parseInt(countInput.value, 10) > 0 &&
+                              parseInt(countInput.value, 10) <= 100
+                                ? countInput.value
+                                : '3'
+                            : String(Math.min(100, loop.repeatCount));
+                    }
+                }
+
+                // Infinite button and intelligent title
+                if (infBtn) {
+                    infBtn.disabled = isUnreachable;
+                    infBtn.classList.toggle('is-active', isInf);
+                    infBtn.title = infTitle;
+                }
+
+                // Delete button
+                if (delBtn) {
+                    if (idx === 0) {
+                        delBtn.disabled = true;
+                        delBtn.classList.add('is-disabled');
+                        delBtn.title = itgPipMsg('pipLoopDeleteDisabled', 'El primer bucle no se puede eliminar');
+                        delBtn.setAttribute('data-i18n-title', 'pipLoopDeleteDisabled');
+                    } else {
+                        delBtn.disabled = isUnreachable;
+                        delBtn.classList.remove('is-disabled');
+                        delBtn.title = itgPipMsg('pipLoopDelete', 'Eliminar bucle');
+                        delBtn.setAttribute('data-i18n-title', 'pipLoopDelete');
+                    }
+                }
+            }
+        });
     };
 
     itgRefreshContainerTranslations(container);
-    const unsubscribe = controller.subscribe(updateUI);
+    const onVideoTimeUpdate = () => {
+        if (!container.isConnected) return;
+        const dur = controller.getDuration() || 0;
+        const curTime = controller.getCurrentTime() || 0;
+        if (videoTimeEl) {
+            const curStr = itgFormatTime(curTime, true);
+            const durStr = itgFormatTime(dur, true);
+            videoTimeEl.textContent = `${curStr} / ${durStr}`;
+            videoTimeEl.title = itgPipMsg('pipLoopVideoTimeDesc', 'Posición actual y duración total del vídeo');
+        }
+        if (loopListEl) {
+            const activeIdx = controller.activeLoopIndex;
+            const activeRow = loopListEl.querySelector(`.itg-loop-row-item[data-index="${activeIdx}"]`);
+            if (activeRow) {
+                const playhead = activeRow.querySelector('.itg-loop-bar-playhead');
+                if (playhead && dur > 0) {
+                    playhead.style.left = `${Math.max(0, Math.min(100, (curTime / dur) * 100))}%`;
+                }
+            }
+        }
+    };
+
+    const v = controller.getVideo();
+    if (v) {
+        v.addEventListener('timeupdate', onVideoTimeUpdate);
+    }
+
+    const controllerUnsub = controller.subscribe(updateUI);
+    const unsubscribe = () => {
+        controllerUnsub();
+        const vid = controller.getVideo();
+        if (vid) {
+            vid.removeEventListener('timeupdate', onVideoTimeUpdate);
+        }
+    };
     container._itgUnsubscribe = unsubscribe;
     return unsubscribe;
 }
@@ -875,7 +1678,7 @@ function itgAttachLoopMenu(button) {
         const above = rect.top > height + 16;
         menu.dataset.place = above ? 'above' : 'below';
         menu.style.top = above ? `${rect.top - height - 10}px` : `${rect.bottom + 10}px`;
-        const width = menu.offsetWidth || 272;
+        const width = menu.offsetWidth || 360;
         menu.style.left = `${Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + rect.width / 2 - width / 2))}px`;
     };
 

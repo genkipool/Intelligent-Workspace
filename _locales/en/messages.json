@@ -6149,6 +6149,104 @@
       }
     }
   },
+  "pipLoopAdd": {
+    "message": "Add loop"
+  },
+  "pipLoopActivate": {
+    "message": "Activate loop"
+  },
+  "pipLoopDeactivate": {
+    "message": "Deactivate loop"
+  },
+  "pipLoopActivateInf": {
+    "message": "Activate infinite loop"
+  },
+  "pipLoopDeactivateInf": {
+    "message": "Deactivate infinite loop"
+  },
+  "pipLoopSetA": {
+    "message": "Set start (A) to current video position"
+  },
+  "pipLoopSetB": {
+    "message": "Set end (B) to current video position"
+  },
+  "pipLoopResetRow": {
+    "message": "Reset loop"
+  },
+  "pipLoopDelete": {
+    "message": "Delete loop"
+  },
+  "pipLoopSingle": {
+    "message": "1 Loop"
+  },
+  "pipLoopSequence": {
+    "message": "Sequence"
+  },
+  "pipLoopModeSingle": {
+    "message": "Single loop mode"
+  },
+  "pipLoopModeSequence": {
+    "message": "Play all loops in sequence"
+  },
+  "pipLoopNumber": {
+    "message": "Loop $NUM$",
+    "placeholders": {
+      "num": {
+        "content": "$1"
+      }
+    }
+  },
+  "pipLoopSequenceStatus": {
+    "message": "Seq: Loop $CURRENT$ of $TOTAL$",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "pipLoopSequenceRep": {
+    "message": "Seq: Loop $CURRENT$/$TOTAL$ (rep $REP$/$MAX$)",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      },
+      "rep": {
+        "content": "$3"
+      },
+      "max": {
+        "content": "$4"
+      }
+    }
+  },
+  "pipLoopSequenceInf": {
+    "message": "Seq: Loop $CURRENT$/$TOTAL$ (∞)",
+    "placeholders": {
+      "current": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "pipLoopVideoTime": {
+    "message": "Video time"
+  },
+  "pipLoopVideoTimeDesc": {
+    "message": "Current playback position and total video duration"
+  },
+  "pipLoopDeleteDisabled": {
+    "message": "The first loop cannot be deleted"
+  },
+  "pipLoopUnreachable": {
+    "message": "Disabled: a preceding loop has infinite repetition"
+  },
   "pipVolume": {
     "message": "Volume"
   },

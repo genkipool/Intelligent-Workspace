@@ -116,6 +116,25 @@ html, body {
     margin: 0; padding: 0; height: 100%; width: 100%;
     overflow: hidden; background: #000; color: #fff;
     font-family: 'Roboto', system-ui, -apple-system, sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) var(--bg-color, #1a1a1a);
+}
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-color, #1a1a1a);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: var(--border-color, #444);
+    border-radius: 10px;
+    border: 2px solid var(--bg-color, #1a1a1a);
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--action-color, var(--interactive-color, #ff4444));
+    cursor: pointer;
 }
 ::selection {
     background: var(--interactive-color, #ff4444) !important;
@@ -384,7 +403,7 @@ textarea::selection,
 }
 .itg-pip-loop-menu {
     position: absolute; bottom: calc(100% + 4px); right: 0; left: auto;
-    width: 268px; max-width: calc(100vw - 16px); padding: 10px 10px 8px;
+    width: 360px; max-width: calc(100vw - 16px); padding: 8px 8px 6px;
     border-radius: 10px; background: var(--bg-panel-color, rgba(20, 20, 20, 0.96));
     color: var(--text-color, #ffffff);
     border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
@@ -406,17 +425,17 @@ textarea::selection,
     opacity: 1; pointer-events: auto; visibility: visible; transform: translateY(0);
 }
 
-/* Common loop popup component styling */
+/* Common loop popup component styling - Single row multi-loop layout */
 .itg-loop-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px; padding-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 6px; padding-bottom: 5px;
     border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
 }
 .itg-loop-title {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.05em; color: var(--text-color, #ffffff);
-    transition: color 0.2s ease;
+    transition: color 0.2s ease; white-space: nowrap;
 }
 .itg-loop-header.is-active .itg-loop-title,
 .itg-loop-title.is-active {
@@ -425,111 +444,308 @@ textarea::selection,
 .itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
 .itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
 
-.itg-loop-section { margin-bottom: 8px; }
-.itg-loop-row { margin-bottom: 6px; }
-.itg-loop-row:last-child { margin-bottom: 0; }
-.itg-loop-label {
-    display: block; font-size: 10px; font-weight: 500;
-    color: var(--text-color, rgba(255, 255, 255, 0.65)); opacity: 0.8; margin-bottom: 3px;
+.itg-loop-list {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 280px; overflow-y: auto; padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) var(--bg-color, rgba(0, 0, 0, 0.2));
 }
-.itg-loop-input-group {
-    display: flex; align-items: center; gap: 4px;
+.itg-loop-list::-webkit-scrollbar {
+    width: 8px;
+}
+.itg-loop-list::-webkit-scrollbar-track {
+    background: var(--bg-color, rgba(0, 0, 0, 0.2));
+    border-radius: 10px;
+}
+.itg-loop-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color, rgba(255, 255, 255, 0.25));
+    border-radius: 10px;
+    border: 2px solid var(--bg-color, rgba(0, 0, 0, 0.2));
+}
+.itg-loop-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--action-color, var(--interactive-color, #ff4444));
+    cursor: pointer;
+}
+
+.itg-loop-row-item {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 7px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    box-sizing: border-box; min-height: 56px;
+}
+.itg-loop-row-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+.itg-loop-row-item.is-active {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: var(--interactive-color, #ff4444);
+}
+.itg-loop-row-item.is-playing {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--interactive-color, #ff4444) 60%, transparent);
+}
+.itg-loop-row-item.is-disabled {
+    opacity: 0.38;
+    filter: grayscale(0.5);
+    cursor: not-allowed !important;
+}
+.itg-loop-row-item.is-disabled * {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.itg-loop-row-num {
+    font-size: 10.5px; font-weight: 700; color: var(--text-color, #ffffff);
+    min-width: 20px; height: 44px; text-align: center; cursor: pointer; padding: 0 2px;
+    border-radius: 5px; background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    user-select: none; flex-shrink: 0; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.itg-loop-row-num:hover,
+.itg-loop-row-item.is-active .itg-loop-row-num {
+    background: var(--interactive-color, #ff4444); color: #ffffff !important; border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-bar-column {
+    flex: 1 1 auto; min-width: 90px;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 5px;
+    padding: 0 4px; box-sizing: border-box;
+}
+.itg-loop-inputs-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 3px;
 }
 .itg-loop-time-input {
-    flex: 1 1 auto; min-width: 0; padding: 5px 6px;
-    border-radius: 6px; color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.22));
+    flex: 1 1 0; min-width: 36px; height: 21px; padding: 1px 2px;
+    border-radius: 4px; color: var(--text-color, #ffffff);
+    font: inherit; font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+    text-align: center;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
     background: rgba(255, 255, 255, 0.08); outline: none;
-    caret-color: var(--text-on-color, #ffffff);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     box-sizing: border-box;
+}
+.itg-pip-loop-menu *::selection,
+.itg-loop-time-input::selection,
+.itg-loop-row-count::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-pip-loop-menu *::-moz-selection,
+.itg-loop-time-input::-moz-selection,
+.itg-loop-row-count::-moz-selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
 }
 .itg-loop-time-input:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(255, 255, 255, 0.12);
 }
-.itg-loop-quick-actions {
-    display: flex; gap: 3px; flex: 0 0 auto;
-}
-.itg-loop-quick-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 4px 6px; height: 26px; border-radius: 5px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
-    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
-    white-space: nowrap; transition: background 0.15s ease, border-color 0.15s ease;
-    box-sizing: border-box;
-}
-.itg-loop-quick-btn svg { width: 14px; height: 14px; display: block; }
-.itg-loop-quick-btn:hover {
-    background: color-mix(in srgb, var(--interactive-color, #ff4444) 25%, transparent);
-    border-color: var(--interactive-color, #ff4444);
+.itg-loop-time-sep {
+    font-size: 10px; font-weight: bold; color: var(--text-color, rgba(255, 255, 255, 0.4));
+    flex-shrink: 0; user-select: none;
 }
 
-.itg-loop-repeat-controls {
-    display: flex; gap: 5px;
+.itg-loop-bar-wrap {
+    width: 100%; display: flex; flex-direction: column; justify-content: center;
+    position: relative; cursor: pointer; padding: 5px 0; user-select: none;
+    box-sizing: border-box;
 }
-.itg-loop-repeat-mode-btn {
-    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 5px 6px; min-height: 28px; border-radius: 6px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+.itg-loop-bar-track {
+    position: relative; width: 100%; height: 5px;
+    background: rgba(255, 255, 255, 0.15); border-radius: 3px;
+}
+.itg-loop-bar-fill {
+    position: absolute; top: 0; bottom: 0;
+    background: var(--interactive-color, #ff4444); border-radius: 3px;
+    opacity: 0.9; pointer-events: none;
+}
+.itg-loop-bar-playhead {
+    position: absolute; top: -4px; width: 2.5px; height: 13px;
+    background: #ffffff; border-radius: 1px; pointer-events: none;
+    transform: translateX(-50%); z-index: 3;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+}
+.itg-loop-handle {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #ffffff; color: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9.5px; font-weight: 800; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
+    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease;
+    user-select: none; box-sizing: border-box; outline: none;
+    padding: 0; margin: 0;
+}
+.itg-loop-handle:hover,
+.itg-loop-handle:focus,
+.itg-loop-handle:focus-visible,
+.itg-loop-handle.is-dragging {
+    transform: translate(-50%, -50%) scale(1.25);
+    box-shadow: 0 0 0 2px var(--interactive-color, #ff4444);
+    z-index: 5;
+}
+.itg-loop-handle-a { border: 2px solid var(--interactive-color, #ff4444); }
+.itg-loop-handle-b { border: 2px solid var(--interactive-color, #ff4444); }
+
+/* Right Buttons Column: 2 rows of buttons */
+.itg-loop-btns-column {
+    display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+}
+.itg-loop-btns-row {
+    display: flex; align-items: center; gap: 3px;
+}
+.itg-loop-btns-row-2 {
+    justify-content: flex-end;
+}
+
+.itg-loop-btn-a,
+.itg-loop-btn-b {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: 700 10.5px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-btn-a:hover,
+.itg-loop-btn-b:hover {
+    background: var(--interactive-color, #ff4444);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
+
+.itg-loop-row-count {
+    width: 47px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 11px; font-weight: 600; text-align: center;
+    outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.itg-loop-row-count::-webkit-outer-spin-button,
+.itg-loop-row-count::-webkit-inner-spin-button {
+    -webkit-appearance: none !important; margin: 0 !important;
+}
+.itg-loop-row-count:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.itg-loop-row-inf {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-inf:hover {
+    border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 20%, transparent);
+}
+.itg-loop-row-inf.is-active {
+    background: var(--interactive-color, #ff4444);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
+
+.itg-loop-row-reset {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    background: rgba(255, 255, 255, 0.06); color: var(--text-color, rgba(255, 255, 255, 0.7));
+    font: 12px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-reset:hover {
+    color: #ffffff; border-color: var(--interactive-color, #ff4444);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.itg-loop-row-del {
+    width: 22px; height: 21px; border-radius: 4px; border: none;
+    background: transparent; color: var(--text-color, rgba(255, 255, 255, 0.5));
+    font: bold 11px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-del:hover {
+    color: #ff5555; background: rgba(255, 85, 85, 0.15);
+}
+.itg-loop-row-del:disabled,
+.itg-loop-row-del.is-disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.itg-loop-row-add {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.3));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12.5px; cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    box-sizing: border-box;
+    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
-.itg-loop-repeat-mode-btn:hover { border-color: var(--interactive-color, #ff4444); }
-.itg-loop-repeat-mode-btn.is-active {
-    background: color-mix(in srgb, var(--interactive-color, #ff4444) 22%, transparent);
+.itg-loop-row-add:hover {
+    background: var(--interactive-color, #ff4444);
     border-color: var(--interactive-color, #ff4444);
-    font-weight: 600;
-}
-.itg-loop-repeat-mode-btn span {
-    font-size: 16px; font-weight: bold; line-height: 1; display: inline-flex; align-items: center;
-}
-.itg-loop-repeat-mode-btn small {
-    font-size: 12.5px; font-weight: 500; line-height: 1;
-}
-.itg-loop-count-input {
-    width: 40px; height: 20px; padding: 1px 3px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
-    background: rgba(255, 255, 255, 0.12); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums;
-    text-align: center; outline: none;
-    caret-color: var(--text-on-color, #ffffff);
-    -moz-appearance: textfield !important;
-    appearance: textfield !important;
-    box-sizing: border-box;
-}
-.itg-loop-count-input::-webkit-outer-spin-button,
-.itg-loop-count-input::-webkit-inner-spin-button {
-    -webkit-appearance: none !important;
-    margin: 0 !important;
-}
-.itg-loop-count-input:focus {
-    border-color: var(--interactive-color, #ff4444);
+    border-style: solid; color: #ffffff !important;
 }
 
 .itg-loop-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 8px; padding-top: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    margin-top: 6px; padding-top: 5px;
     border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
 }
+.itg-loop-footer-status {
+    flex: 1 1 0; min-width: 0; overflow: hidden;
+}
 .itg-loop-status {
-    font-size: 10.5px; font-weight: 500;
+    font-size: 10px; font-weight: 500;
     color: var(--interactive-color, #ff4444);
     font-variant-numeric: tabular-nums;
-    min-height: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
 }
-.itg-loop-reset-btn {
+.itg-loop-footer-center {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+}
+.itg-loop-video-time {
+    font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+    color: var(--text-color, #ffffff); opacity: 0.85;
+    letter-spacing: 0.2px; white-space: nowrap; user-select: none;
+    background: transparent; padding: 0; border: none;
+}
+.itg-loop-footer-actions {
+    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; flex-shrink: 0;
+}
+.itg-loop-toggle-btn {
     border: 0; background: transparent;
-    color: var(--text-color, rgba(255, 255, 255, 0.6)); opacity: 0.75;
+    color: var(--text-color, #ffffff); opacity: 0.85;
+    font: inherit; font-size: 10.5px; font-weight: 600;
+    cursor: pointer; padding: 2px 3px; white-space: nowrap;
+    text-decoration: underline; transition: opacity 0.15s ease, color 0.15s ease;
+}
+.itg-loop-toggle-btn:hover {
+    opacity: 1; color: var(--interactive-color, #ff4444);
+}
+.itg-loop-toggle-btn.is-active {
+    color: var(--interactive-color, #ff4444);
+    opacity: 1; font-weight: 700;
+}
+.itg-loop-reset-all-btn {
+    border: 0; background: transparent;
+    color: var(--text-color, #ffffff); opacity: 0.7;
     font: inherit; font-size: 10.5px;
-    cursor: pointer; text-decoration: underline; padding: 2px 4px;
+    cursor: pointer; padding: 2px 3px; white-space: nowrap;
     transition: opacity 0.15s ease, color 0.15s ease;
 }
-.itg-loop-reset-btn:hover { opacity: 1; color: var(--text-color, #ffffff); }
+.itg-loop-reset-all-btn:hover {
+    opacity: 1; color: var(--interactive-color, #ff4444);
+}
 
 /* Clean, robust, perfectly-centered PiP subtitles */
 .itg-pip-subtitles-display {
@@ -992,7 +1208,7 @@ div[class*='ytp-bezel'] {
 
 var ITG_LOOP_POPUP_STYLES = `
 .itg-yt-loop-menu {
-    position: fixed; z-index: 2147483647; width: 272px; padding: 10px 10px 8px;
+    position: fixed; z-index: 2147483647; width: 360px; max-width: calc(100vw - 16px); padding: 8px 8px 6px;
     border-radius: 10px;
     background: var(--bg-panel-color, #1c1c1c);
     color: var(--text-color, #fff);
@@ -1018,15 +1234,15 @@ var ITG_LOOP_POPUP_STYLES = `
 }
 
 .itg-loop-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 8px; padding-bottom: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin-bottom: 6px; padding-bottom: 5px;
     border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
 }
 .itg-loop-title {
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 600; text-transform: uppercase;
     letter-spacing: 0.05em; color: var(--text-color, #ffffff);
-    transition: color 0.2s ease;
+    transition: color 0.2s ease; white-space: nowrap;
 }
 .itg-loop-header.is-active .itg-loop-title,
 .itg-loop-title.is-active {
@@ -1035,111 +1251,308 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-title-icon { width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; }
 .itg-loop-title-icon svg { width: 100%; height: 100%; display: block; fill: currentColor; }
 
-.itg-loop-section { margin-bottom: 8px; }
-.itg-loop-row { margin-bottom: 6px; }
-.itg-loop-row:last-child { margin-bottom: 0; }
-.itg-loop-label {
-    display: block; font-size: 10px; font-weight: 500;
-    color: var(--text-color, rgba(255, 255, 255, 0.65)); opacity: 0.8; margin-bottom: 3px;
+.itg-loop-list {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 280px; overflow-y: auto; padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color, rgba(255, 255, 255, 0.25)) var(--bg-color, rgba(0, 0, 0, 0.2));
 }
-.itg-loop-input-group {
-    display: flex; align-items: center; gap: 4px;
+.itg-loop-list::-webkit-scrollbar {
+    width: 8px;
+}
+.itg-loop-list::-webkit-scrollbar-track {
+    background: var(--bg-color, rgba(0, 0, 0, 0.2));
+    border-radius: 10px;
+}
+.itg-loop-list::-webkit-scrollbar-thumb {
+    background-color: var(--border-color, rgba(255, 255, 255, 0.25));
+    border-radius: 10px;
+    border: 2px solid var(--bg-color, rgba(0, 0, 0, 0.2));
+}
+.itg-loop-list::-webkit-scrollbar-thumb:hover {
+    background-color: var(--action-color, var(--interactive-color, #ff4444));
+    cursor: pointer;
+}
+
+.itg-loop-row-item {
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 7px;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+    box-sizing: border-box; min-height: 56px;
+}
+.itg-loop-row-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+.itg-loop-row-item.is-active {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: var(--interactive-color, #ff4444);
+}
+.itg-loop-row-item.is-playing {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--interactive-color, #ff4444) 60%, transparent);
+}
+.itg-loop-row-item.is-disabled {
+    opacity: 0.38;
+    filter: grayscale(0.5);
+    cursor: not-allowed !important;
+}
+.itg-loop-row-item.is-disabled * {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+.itg-loop-row-num {
+    font-size: 10.5px; font-weight: 700; color: var(--text-color, #ffffff);
+    min-width: 20px; height: 44px; text-align: center; cursor: pointer; padding: 0 2px;
+    border-radius: 5px; background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    user-select: none; flex-shrink: 0; transition: all 0.15s ease;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.itg-loop-row-num:hover,
+.itg-loop-row-item.is-active .itg-loop-row-num {
+    background: var(--interactive-color, #ff4444); color: #ffffff !important; border-color: var(--interactive-color, #ff4444);
+}
+
+.itg-loop-bar-column {
+    flex: 1 1 auto; min-width: 90px;
+    display: flex; flex-direction: column; justify-content: space-between; gap: 5px;
+    padding: 0 4px; box-sizing: border-box;
+}
+.itg-loop-inputs-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 3px;
 }
 .itg-loop-time-input {
-    flex: 1 1 auto; min-width: 0; padding: 5px 6px;
-    border-radius: 6px; color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12px; font-variant-numeric: tabular-nums;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.22));
+    flex: 1 1 0; min-width: 36px; height: 21px; padding: 1px 2px;
+    border-radius: 4px; color: var(--text-color, #ffffff);
+    font: inherit; font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+    text-align: center;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
     background: rgba(255, 255, 255, 0.08); outline: none;
-    caret-color: var(--text-on-color, #ffffff);
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     box-sizing: border-box;
+}
+.itg-yt-loop-menu *::selection,
+.itg-loop-time-input::selection,
+.itg-loop-row-count::selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
+}
+.itg-yt-loop-menu *::-moz-selection,
+.itg-loop-time-input::-moz-selection,
+.itg-loop-row-count::-moz-selection {
+    background: var(--interactive-color, #ff4444) !important;
+    color: #ffffff !important;
 }
 .itg-loop-time-input:focus {
     border-color: var(--interactive-color, #ff4444);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(255, 255, 255, 0.12);
 }
-.itg-loop-quick-actions {
-    display: flex; gap: 3px; flex: 0 0 auto;
-}
-.itg-loop-quick-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    padding: 4px 6px; height: 26px; border-radius: 5px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
-    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 10.5px; font-weight: 500; cursor: pointer;
-    white-space: nowrap; transition: background 0.15s ease, border-color 0.15s ease;
-    box-sizing: border-box;
-}
-.itg-loop-quick-btn svg { width: 14px; height: 14px; display: block; }
-.itg-loop-quick-btn:hover {
-    background: color-mix(in srgb, var(--interactive-color, #ff4444) 25%, transparent);
-    border-color: var(--interactive-color, #ff4444);
+.itg-loop-time-sep {
+    font-size: 10px; font-weight: bold; color: var(--text-color, rgba(255, 255, 255, 0.4));
+    flex-shrink: 0; user-select: none;
 }
 
-.itg-loop-repeat-controls {
-    display: flex; gap: 5px;
+.itg-loop-bar-wrap {
+    width: 100%; display: flex; flex-direction: column; justify-content: center;
+    position: relative; cursor: pointer; padding: 5px 0; user-select: none;
+    box-sizing: border-box;
 }
-.itg-loop-repeat-mode-btn {
-    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 5px 6px; min-height: 28px; border-radius: 6px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.18));
+.itg-loop-bar-track {
+    position: relative; width: 100%; height: 5px;
+    background: rgba(255, 255, 255, 0.15); border-radius: 3px;
+}
+.itg-loop-bar-fill {
+    position: absolute; top: 0; bottom: 0;
+    background: var(--interactive-color, #ff4444); border-radius: 3px;
+    opacity: 0.9; pointer-events: none;
+}
+.itg-loop-bar-playhead {
+    position: absolute; top: -4px; width: 2.5px; height: 13px;
+    background: #ffffff; border-radius: 1px; pointer-events: none;
+    transform: translateX(-50%); z-index: 3;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+}
+.itg-loop-handle {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #ffffff; color: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9.5px; font-weight: 800; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
+    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease;
+    user-select: none; box-sizing: border-box; outline: none;
+    padding: 0; margin: 0;
+}
+.itg-loop-handle:hover,
+.itg-loop-handle:focus,
+.itg-loop-handle:focus-visible,
+.itg-loop-handle.is-dragging {
+    transform: translate(-50%, -50%) scale(1.25);
+    box-shadow: 0 0 0 2px var(--interactive-color, #ff4444);
+    z-index: 5;
+}
+.itg-loop-handle-a { border: 2px solid var(--interactive-color, #ff4444); }
+.itg-loop-handle-b { border: 2px solid var(--interactive-color, #ff4444); }
+
+/* Right Buttons Column: 2 rows of buttons */
+.itg-loop-btns-column {
+    display: flex; flex-direction: column; gap: 4px; flex-shrink: 0;
+}
+.itg-loop-btns-row {
+    display: flex; align-items: center; gap: 3px;
+}
+.itg-loop-btns-row-2 {
+    justify-content: flex-end;
+}
+
+.itg-loop-btn-a,
+.itg-loop-btn-b {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: 700 10.5px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-btn-a:hover,
+.itg-loop-btn-b:hover {
+    background: var(--interactive-color, #ff4444);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
+
+.itg-loop-row-count {
+    width: 47px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: inherit; font-size: 11px; font-weight: 600; text-align: center;
+    outline: none; flex-shrink: 0; padding: 0 2px; font-variant-numeric: tabular-nums;
+    -moz-appearance: textfield !important; appearance: textfield !important; box-sizing: border-box;
+    caret-color: var(--interactive-color, #ff4444);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.itg-loop-row-count::-webkit-outer-spin-button,
+.itg-loop-row-count::-webkit-inner-spin-button {
+    -webkit-appearance: none !important; margin: 0 !important;
+}
+.itg-loop-row-count:focus {
+    border-color: var(--interactive-color, #ff4444);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color, #ff4444) 35%, transparent);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.itg-loop-row-inf {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
+    background: rgba(255, 255, 255, 0.08); color: var(--text-color, #ffffff);
+    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-inf:hover {
+    border-color: var(--interactive-color, #ff4444);
+    background: color-mix(in srgb, var(--interactive-color, #ff4444) 20%, transparent);
+}
+.itg-loop-row-inf.is-active {
+    background: var(--interactive-color, #ff4444);
+    border-color: var(--interactive-color, #ff4444);
+    color: #ffffff !important;
+}
+
+.itg-loop-row-reset {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    background: rgba(255, 255, 255, 0.06); color: var(--text-color, rgba(255, 255, 255, 0.7));
+    font: 12px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-reset:hover {
+    color: #ffffff; border-color: var(--interactive-color, #ff4444);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.itg-loop-row-del {
+    width: 22px; height: 21px; border-radius: 4px; border: none;
+    background: transparent; color: var(--text-color, rgba(255, 255, 255, 0.5));
+    font: bold 11px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
+}
+.itg-loop-row-del:hover {
+    color: #ff5555; background: rgba(255, 85, 85, 0.15);
+}
+.itg-loop-row-del:disabled,
+.itg-loop-row-del.is-disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.itg-loop-row-add {
+    width: 22px; height: 21px; border-radius: 4px;
+    border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.3));
     background: rgba(255, 255, 255, 0.06); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12.5px; cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
-    box-sizing: border-box;
+    font: bold 13px 'Roboto', sans-serif; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0; transition: all 0.15s ease; padding: 0;
 }
-.itg-loop-repeat-mode-btn:hover { border-color: var(--interactive-color, #ff4444); }
-.itg-loop-repeat-mode-btn.is-active {
-    background: color-mix(in srgb, var(--interactive-color, #ff4444) 22%, transparent);
+.itg-loop-row-add:hover {
+    background: var(--interactive-color, #ff4444);
     border-color: var(--interactive-color, #ff4444);
-    font-weight: 600;
-}
-.itg-loop-repeat-mode-btn span {
-    font-size: 16px; font-weight: bold; line-height: 1; display: inline-flex; align-items: center;
-}
-.itg-loop-repeat-mode-btn small {
-    font-size: 12.5px; font-weight: 500; line-height: 1;
-}
-.itg-loop-count-input {
-    width: 40px; height: 20px; padding: 1px 3px; border-radius: 4px;
-    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.25));
-    background: rgba(255, 255, 255, 0.12); color: var(--text-color, #ffffff);
-    font: inherit; font-size: 12.5px; font-variant-numeric: tabular-nums;
-    text-align: center; outline: none;
-    caret-color: var(--text-on-color, #ffffff);
-    -moz-appearance: textfield !important;
-    appearance: textfield !important;
-    box-sizing: border-box;
-}
-.itg-loop-count-input::-webkit-outer-spin-button,
-.itg-loop-count-input::-webkit-inner-spin-button {
-    -webkit-appearance: none !important;
-    margin: 0 !important;
-}
-.itg-loop-count-input:focus {
-    border-color: var(--interactive-color, #ff4444);
+    border-style: solid; color: #ffffff !important;
 }
 
 .itg-loop-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 8px; padding-top: 6px;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    margin-top: 6px; padding-top: 5px;
     border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
 }
+.itg-loop-footer-status {
+    flex: 1 1 0; min-width: 0; overflow: hidden;
+}
 .itg-loop-status {
-    font-size: 10.5px; font-weight: 500;
+    font-size: 10px; font-weight: 500;
     color: var(--interactive-color, #ff4444);
     font-variant-numeric: tabular-nums;
-    min-height: 14px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: block;
 }
-.itg-loop-reset-btn {
+.itg-loop-footer-center {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+}
+.itg-loop-video-time {
+    font-size: 10.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+    color: var(--text-color, #ffffff); opacity: 0.85;
+    letter-spacing: 0.2px; white-space: nowrap; user-select: none;
+    background: transparent; padding: 0; border: none;
+}
+.itg-loop-footer-actions {
+    flex: 1 1 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; flex-shrink: 0;
+}
+.itg-loop-toggle-btn {
     border: 0; background: transparent;
-    color: var(--text-color, rgba(255, 255, 255, 0.6)); opacity: 0.75;
+    color: var(--text-color, #ffffff); opacity: 0.85;
+    font: inherit; font-size: 10.5px; font-weight: 600;
+    cursor: pointer; padding: 2px 3px; white-space: nowrap;
+    text-decoration: underline; transition: opacity 0.15s ease, color 0.15s ease;
+}
+.itg-loop-toggle-btn:hover {
+    opacity: 1; color: var(--interactive-color, #ff4444);
+}
+.itg-loop-toggle-btn.is-active {
+    color: var(--interactive-color, #ff4444);
+    opacity: 1; font-weight: 700;
+}
+.itg-loop-reset-all-btn {
+    border: 0; background: transparent;
+    color: var(--text-color, #ffffff); opacity: 0.7;
     font: inherit; font-size: 10.5px;
-    cursor: pointer; text-decoration: underline; padding: 2px 4px;
+    cursor: pointer; padding: 2px 3px; white-space: nowrap;
     transition: opacity 0.15s ease, color 0.15s ease;
 }
-.itg-loop-reset-btn:hover { opacity: 1; color: var(--text-color, #ffffff); }
+.itg-loop-reset-all-btn:hover {
+    opacity: 1; color: var(--interactive-color, #ff4444);
+}
 `;
 
 var ITG_INLINE_VOLUME_STYLES = `

@@ -6232,6 +6232,104 @@
             }
         }
     },
+    "pipLoopAdd": {
+        "message": "Añadir bucle"
+    },
+    "pipLoopActivate": {
+        "message": "Activar bucle"
+    },
+    "pipLoopDeactivate": {
+        "message": "Desactivar bucle"
+    },
+    "pipLoopActivateInf": {
+        "message": "Activar repetición infinita"
+    },
+    "pipLoopDeactivateInf": {
+        "message": "Desactivar repetición infinita"
+    },
+    "pipLoopSetA": {
+        "message": "Fijar inicio (A) en posición actual"
+    },
+    "pipLoopSetB": {
+        "message": "Fijar fin (B) en posición actual"
+    },
+    "pipLoopResetRow": {
+        "message": "Restablecer bucle"
+    },
+    "pipLoopDelete": {
+        "message": "Eliminar bucle"
+    },
+    "pipLoopSingle": {
+        "message": "1 Bucle"
+    },
+    "pipLoopSequence": {
+        "message": "Secuencia"
+    },
+    "pipLoopModeSingle": {
+        "message": "Modo de bucle individual"
+    },
+    "pipLoopModeSequence": {
+        "message": "Reproducir todos los bucles en secuencia"
+    },
+    "pipLoopNumber": {
+        "message": "Bucle $NUM$",
+        "placeholders": {
+            "num": {
+                "content": "$1"
+            }
+        }
+    },
+    "pipLoopSequenceStatus": {
+        "message": "Sec: Bucle $CURRENT$ de $TOTAL$",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "pipLoopSequenceRep": {
+        "message": "Sec: Bucle $CURRENT$/$TOTAL$ (rep $REP$/$MAX$)",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            },
+            "rep": {
+                "content": "$3"
+            },
+            "max": {
+                "content": "$4"
+            }
+        }
+    },
+    "pipLoopSequenceInf": {
+        "message": "Sec: Bucle $CURRENT$/$TOTAL$ (∞)",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "pipLoopVideoTime": {
+        "message": "Tiempo del vídeo"
+    },
+    "pipLoopVideoTimeDesc": {
+        "message": "Posición actual y duración total del vídeo"
+    },
+    "pipLoopDeleteDisabled": {
+        "message": "El primer bucle no se puede eliminar"
+    },
+    "pipLoopUnreachable": {
+        "message": "Deshabilitado: un bucle anterior está configurado en repetición infinita"
+    },
     "pipVolume": {
         "message": "Volumen"
     },
