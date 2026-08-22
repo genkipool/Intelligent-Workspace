@@ -8,11 +8,12 @@
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ThemeSelector from '../../components/common/ThemeSelector.svelte';
     import SettingsSection from '../../components/common/SettingsSection.svelte';
+    import ActionButtonGrid from '../../components/common/ActionButtonGrid.svelte';
+    import { openDashboard } from '../../services/dashboard/dashboardPages.js';
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import Notification from '../../components/common/Notification.svelte';
 
-    let shortcuts = [];
     let port = null;
     let isSidePanel = false;
     let contextsCache = null;
@@ -26,16 +27,6 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         isSidePanel = urlParams.get('context') === 'sidepanel';
-
-        const commands = await chrome.commands.getAll();
-        shortcuts = [
-            { id: 'Collapse/Expand All Tabs', nameKey: 'collapseAllGroups', command: 'toggle-all-groups' },
-            { id: 'Collapse/Expand Current Tabs', nameKey: 'collapseCurrentGroup', command: 'toggle-current-group' },
-            { id: 'Toggle Alphabetical Sorting', nameKey: 'toggleAlphabeticalSort', command: 'toggle-sort-alpha' },
-        ].map((s) => {
-            const cmd = commands.find((c) => c.name === s.command);
-            return { ...s, key: cmd?.shortcut || null };
-        });
 
         if (!isSidePanel) {
             contextsCache =
@@ -144,20 +135,57 @@
         );
     }
 
-    const shortcutDescriptions = {
-        'Collapse/Expand All Tabs': 'Collapse/Expand All Groups',
-        'Collapse/Expand Current Tabs': 'Collapse/Expand Current Groups',
-        'Toggle Alphabetical Sorting': 'Toggle Alphabetical Sorting',
-    };
-
-    function getShortcutDesc(keyName) {
-        return shortcutDescriptions[keyName] || keyName;
+    function openListGroupView(view) {
+        return (e) =>
+            handleNavigation(
+                e,
+                `../listGroup/listGroup.html?view=${view}`,
+                `src/ui/pages/listGroup/listGroup.html?view=${view}`,
+                '../popup/popup.html',
+            );
     }
 
-    function openShortcutSettings(shortcutId) {
-        const desc = encodeURIComponent(getShortcutDesc(shortcutId));
-        chrome.tabs.create({ url: `chrome://extensions/shortcuts#:~:text=${desc}` });
-    }
+    // Two views of the group list and two full dashboards, all reached the same way
+    // as the block above; only the icon and the destination change.
+    const quickAccessItems = [
+        {
+            id: 'quick-notes-btn',
+            titleKey: 'notesViewTitle',
+            labelKey: 'quickAccessNotesBtn',
+            tooltipKey: 'quickAccessNotesBtn',
+            icon: '#icon-note',
+            viewBox: '0 0 24 24',
+            onClick: openListGroupView('notes'),
+        },
+        {
+            id: 'quick-gallery-btn',
+            titleKey: 'screenshotGalleryTitle',
+            labelKey: 'quickAccessGalleryBtn',
+            tooltipKey: 'quickAccessGalleryBtn',
+            icon: '#icon-screenshot',
+            viewBox: '0 0 24 24',
+            onClick: openListGroupView('gallery'),
+        },
+        {
+            id: 'quick-pomodoro-dashboard-btn',
+            titleKey: 'pomodoroTitle',
+            labelKey: 'dashboardDashboard',
+            tooltipKey: 'pomodoroDashboardTitle',
+            icon: '#icon-pomodoro',
+            viewBox: '0 0 512 512',
+            svgAttrs: { fill: 'currentColor' },
+            onClick: () => openDashboard('pomodoro'),
+        },
+        {
+            id: 'quick-web-activity-btn',
+            titleKey: 'webActivityTitle',
+            labelKey: 'dashboardDashboard',
+            tooltipKey: 'webActivityDashboardTitle',
+            icon: '#icon-activity',
+            viewBox: '0 0 24 24',
+            onClick: () => openDashboard('webActivity'),
+        },
+    ];
 </script>
 
 <svg style="display: none;" aria-hidden="true">
@@ -181,6 +209,41 @@
                 fill="currentColor"
                 d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"
             ></path>
+        </g>
+        <g id="icon-note" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path
+                d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12c0 1.6.376 3.112 1.043 4.453.178.356.237.763.134 1.148l-.595 2.226a1.3 1.3 0 0 0 1.591 1.592l2.226-.596a1.63 1.63 0 0 1 1.149.133A9.96 9.96 0 0 0 12 22Z"
+            ></path>
+            <path d="M8 10.5h8M8 14h5.5" stroke-linecap="round"></path>
+        </g>
+        <g
+            id="icon-screenshot"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path d="M12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6"></path>
+            <path
+                d="M3 16.8V9.2c0-1.12 0-1.68.218-2.108a2 2 0 0 1 .874-.874C4.52 6 5.08 6 6.2 6h1.055c.123 0 .184 0 .24-.006a1 1 0 0 0 .725-.448c.03-.048.058-.103.113-.213.11-.22.165-.33.228-.425a2 2 0 0 1 1.447-.895C10.123 4 10.246 4 10.492 4h3.018c.246 0 .37 0 .482.013a2 2 0 0 1 1.448.895c.063.095.118.205.228.425.055.11.082.165.113.213a1 1 0 0 0 .724.447c.057.007.118.007.241.007H17.8c1.12 0 1.68 0 2.108.218a2 2 0 0 1 .874.874C21 7.52 21 8.08 21 9.2v7.6c0 1.12 0 1.68-.218 2.108a2 2 0 0 1-.874.874C19.48 20 18.92 20 17.8 20H6.2c-1.12 0-1.68 0-2.108-.218a2 2 0 0 1-.874-.874C3 18.48 3 17.92 3 16.8"
+            ></path>
+        </g>
+        <g id="icon-pomodoro">
+            <path
+                fill="currentColor"
+                d="M360 80c4.8-12.8 8-27.2 8-44.8 0-4.8-1.6-4.8-4.8-8s-8-4.8-12.8-4.8c-19.2 1.6-40 9.6-60.8 24-6.4-11.2-12.8-22.4-22.4-33.6C264 9.6 259.2 8 256 8c-4.8 0-9.6 1.6-11.2 6.4-9.6 11.2-17.6 20.8-24 33.6q-26.4-21.6-57.6-24c-4.8 0-9.6 1.6-12.8 4.8S144 35.2 144 40c0 16 1.6 28.8 6.4 40C59.2 104 0 176 0 260.8 0 376 108.8 504 256 504s256-128 256-243.2c0-88-59.2-156.8-152-180.8m-65.6 8c1.6 0 1.6-1.6 1.6-3.2 12.8-11.2 24-19.2 36.8-24-4.8 19.2-19.2 48-57.6 56C280 105.6 288 96 294.4 88M256 49.6c4.8 6.4 8 12.8 9.6 20.8-11.2 12.8-19.2 28.8-25.6 48-1.6 0-3.2-1.6-4.8-1.6 1.6-32 8-51.2 20.8-67.2m-48 28.8c-1.6 6.4-3.2 14.4-4.8 22.4-11.2-8-20.8-20.8-25.6-40 11.2 3.2 20.8 9.6 30.4 17.6M256 472C128 472 32 360 32 260.8c0-73.6 52.8-132.8 134.4-152 12.8 16 27.2 25.6 43.2 32 1.6 0 1.6 0 3.2 1.6 12.8 4.8 27.2 8 36.8 9.6h1.6c6.4 0 11.2-3.2 14.4-8 24-3.2 54.4-12.8 76.8-35.2 84.8 17.6 139.2 76.8 139.2 152C480 360 384 472 256 472"
+            ></path>
+        </g>
+        <g
+            id="icon-activity"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path d="M3 12h4l3 8 4-16 3 8h4"></path>
         </g>
         <g id="icon-hints">
             <path
@@ -251,24 +314,8 @@
             <SettingsSection onOpenRules={openRules} onOpenListGroup={openListGroup} onOpenGemini={openGemini} />
         </section>
 
-        <section class="section keyboard-shortcuts">
-            <div class="section-title">{$t('keyboardShortcuts')}</div>
-            <div class="shortcuts-list" tabindex="0">
-                {#each shortcuts as shortcut (shortcut.id)}
-                    <div class="shortcut" data-shortcut-name={shortcut.id}>
-                        <!-- Falls back to the raw key when a translation is missing -->
-                        <span class="shortcut-name">{$t(shortcut.nameKey) || shortcut.nameKey}</span>
-                        <span
-                            class="shortcut-key"
-                            role="button"
-                            tabindex="0"
-                            onclick={() => openShortcutSettings(shortcut.id)}
-                            onkeydown={(e) => e.key === 'Enter' && openShortcutSettings(shortcut.id)}
-                            >{shortcut.key || $t('notSet')}</span
-                        >
-                    </div>
-                {/each}
-            </div>
+        <section class="section settings-rules quick-access">
+            <ActionButtonGrid items={quickAccessItems} />
         </section>
 
         <DonationSection />

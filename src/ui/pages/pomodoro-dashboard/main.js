@@ -4,7 +4,7 @@ import '../../../lib/chart.local.js';
 import Dashboard from './Dashboard.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
-import './dashboard.css';
+import '../../../styles/dashboard.css';
 
 const app = mountPage(Dashboard, {
     target: document.body,

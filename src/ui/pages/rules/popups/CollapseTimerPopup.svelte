@@ -44,6 +44,48 @@
         }
     }
 
+    function handleNumericKeydown(e) {
+        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+            e.preventDefault();
+        }
+    }
+
+    function handleInactiveInput(e) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseFloat(val);
+            if (!Number.isNaN(num) && num > 1440) {
+                e.currentTarget.value = '1440';
+                inactiveTime = 1440;
+                return;
+            }
+            if (!Number.isNaN(num) && num < 0) {
+                e.currentTarget.value = '0';
+                inactiveTime = 0;
+                return;
+            }
+        }
+        inactiveTime = val === '' ? 0 : Number.parseFloat(val) || 0;
+    }
+
+    function handleActiveInput(e) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseFloat(val);
+            if (!Number.isNaN(num) && num > 1440) {
+                e.currentTarget.value = '1440';
+                activeTime = 1440;
+                return;
+            }
+            if (!Number.isNaN(num) && num < 0) {
+                e.currentTarget.value = '0';
+                activeTime = 0;
+                return;
+            }
+        }
+        activeTime = val === '' ? 0 : Number.parseFloat(val) || 0;
+    }
+
     onMount(() => {
         document.addEventListener('mousedown', handleClickOutside);
         document.addEventListener('contextmenu', handleContextMenuOutside);
@@ -76,9 +118,11 @@
                 id="inactive-time"
                 min="0"
                 step="0.1"
-                max="99999"
-                maxlength="5"
-                bind:value={inactiveTime}
+                max="1440"
+                maxlength="6"
+                value={inactiveTime}
+                onkeydown={handleNumericKeydown}
+                oninput={handleInactiveInput}
             />
             <small>{$t('inactiveTimeDesc')}</small>
         </label>
@@ -90,9 +134,11 @@
                 id="active-time"
                 min="0"
                 step="0.1"
-                max="99999"
-                maxlength="5"
-                bind:value={activeTime}
+                max="1440"
+                maxlength="6"
+                value={activeTime}
+                onkeydown={handleNumericKeydown}
+                oninput={handleActiveInput}
             />
             <small>{$t('activeTimeDesc')}</small>
         </label>

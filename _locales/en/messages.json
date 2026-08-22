@@ -433,10 +433,6 @@
     "message": "Manage Rules",
     "description": "Settings rules button"
   },
-  "keyboardShortcuts": {
-    "message": "Keyboard Shortcuts",
-    "description": "Keyboard shortcuts section title"
-  },
   "collapseExpandAllTabs": {
     "message": "Expand/Collapse All Tabs",
     "description": "Shortcut name"
@@ -624,10 +620,6 @@
   "invalidRuleFormat": {
     "message": "The file does not contain a valid rule format.",
     "description": "Error message for invalid rule format"
-  },
-  "notSet": {
-    "message": "Not Set",
-    "description": "Indicates that the shortcut is not configured"
   },
   "notFound": {
     "message": "Not Found",
@@ -3264,6 +3256,10 @@
   "deleteSchedule": {
     "message": "Delete schedule"
   },
+  "scheduleAllDay": {
+    "message": "All Day",
+    "description": "Button text to activate all-day schedule for theme scheduling."
+  },
   "scheduleTimeMissing": {
     "message": "Error: Start and end times are required for repeating schedules."
   },
@@ -3788,6 +3784,20 @@
       "char_count": {
         "content": "$2",
         "example": "789"
+      }
+    }
+  },
+  "noteEditorStatsWordsChars": {
+    "message": "$1 words / $2 characters",
+    "description": "Full statistics in the note text editor, showing word and character count.",
+    "placeholders": {
+      "word_count": {
+        "content": "$1",
+        "example": "5"
+      },
+      "char_count": {
+        "content": "$2",
+        "example": "49"
       }
     }
   },
@@ -9328,12 +9338,6 @@
     },
     "description": "Special action item title when only tabs are visible for restore"
   },
-  "collapseCurrentGroup": {
-    "message": "Expand/Collapse Current Tabs"
-  },
-  "toggleAlphabeticalSort": {
-    "message": "Toggle Alphabetical Sorting"
-  },
   "toolGetLinkPreviewSettings": {
     "message": "Reading the link preview settings"
   },
@@ -9823,5 +9827,747 @@
   },
   "snippetMenuSectionTitle": {
     "message": "Activate Snippets Menu"
+  },
+  "quickAccessNotesBtn": {
+    "message": "View notes",
+    "description": "Opens the notes view with every note saved, whatever group it came from"
+  },
+  "quickAccessGalleryBtn": {
+    "message": "View gallery",
+    "description": "Opens the screenshot gallery with every capture saved, whatever group it came from"
+  },
+  "webActivityTitle": {
+    "message": "Web activity",
+    "description": "Time and visits recorded per site"
+  },
+  "webActivityDashboardTitle": {
+    "message": "Web Activity Dashboard",
+    "description": "Statistics for the time spent browsing and the limits set per site"
+  },
+  "webActivityCategory_social": {
+    "message": "Social"
+  },
+  "webActivityCategory_video": {
+    "message": "Video"
+  },
+  "webActivityCategory_music": {
+    "message": "Music"
+  },
+  "webActivityCategory_news": {
+    "message": "News"
+  },
+  "webActivityCategory_shopping": {
+    "message": "Shopping"
+  },
+  "webActivityCategory_reading": {
+    "message": "Reading"
+  },
+  "webActivityCategory_entertainment": {
+    "message": "Entertainment"
+  },
+  "webActivityCategory_dev": {
+    "message": "Development"
+  },
+  "webActivityCategory_work": {
+    "message": "Work"
+  },
+  "webActivityCategory_education": {
+    "message": "Learning"
+  },
+  "webActivityCategory_games": {
+    "message": "Games"
+  },
+  "webActivityCategory_finance": {
+    "message": "Finance"
+  },
+  "webActivityCategory_mail": {
+    "message": "Mail"
+  },
+  "webActivityCategory_ai": {
+    "message": "AI"
+  },
+  "webActivityCategory_search": {
+    "message": "Search"
+  },
+  "webActivityCategory_other": {
+    "message": "Other"
+  },
+  "webActivitySites": {
+    "message": "Sites"
+  },
+  "webActivitySearchSites": {
+    "message": "Search sites"
+  },
+  "webActivityAllSites": {
+    "message": "All sites",
+    "description": "Clears the site filter and shows every site again"
+  },
+  "webActivityNoSites": {
+    "message": "No sites recorded in this period"
+  },
+  "webActivityFilterByCategory": {
+    "message": "Filter by this category"
+  },
+  "webActivityCategoryLabel": {
+    "message": "Category"
+  },
+  "webActivityAllCategories": {
+    "message": "All categories"
+  },
+  "webActivityCategoryFilterTitle": {
+    "message": "Show only the sites in one category"
+  },
+  "webActivityExport": {
+    "message": "Export",
+    "description": "Saves the whole record — days, limits and settings — as a JSON file"
+  },
+  "webActivityImport": {
+    "message": "Import",
+    "description": "Merges an exported file into the record instead of replacing it"
+  },
+  "webActivityUpdatedAt": {
+    "message": "Updated at $1"
+  },
+  "webActivityLiveNow": {
+    "message": "Counting now: $1"
+  },
+  "webActivityLiveHint": {
+    "message": "The site being timed right now. The clock stops when the browser loses focus or you stop typing."
+  },
+  "webActivityEmptyTitle": {
+    "message": "Nothing recorded yet"
+  },
+  "webActivityEmptySub": {
+    "message": "Browse for a while and the time, the visits and the patterns will show up here."
+  },
+  "webActivitySummaryTitle": {
+    "message": "General summary",
+    "description": "The headline figures for the period selected"
+  },
+  "webActivityPatterns": {
+    "message": "Patterns"
+  },
+  "webActivityPatternsHint": {
+    "message": "When you browse: the hours of the day and the days of the week"
+  },
+  "webActivityHourMeta": {
+    "message": "total time per hour"
+  },
+  "webActivityHourHint": {
+    "message": "Time accumulated in each hour of the day, over the whole period"
+  },
+  "webActivityWeekdayTitle": {
+    "message": "By day of the week"
+  },
+  "webActivityWeekdayMeta": {
+    "message": "hours per weekday"
+  },
+  "webActivityWeekdayHint": {
+    "message": "Which days you spend the most time browsing"
+  },
+  "webActivityHeatmapTitle": {
+    "message": "Activity calendar"
+  },
+  "webActivityHeatmapHint": {
+    "message": "Half a year at a glance: the darker the square, the more time that day"
+  },
+  "webActivityTrendsTitle": {
+    "message": "Time and categories"
+  },
+  "webActivityTrendsHint": {
+    "message": "How the time moves day by day and where it goes"
+  },
+  "webActivityDailyTitle": {
+    "message": "Time per day"
+  },
+  "webActivityDailyHint": {
+    "message": "Hours per day. Selecting a site in the sidebar narrows it to that site."
+  },
+  "webActivityCategoriesTitle": {
+    "message": "By category"
+  },
+  "webActivityCategoriesHint": {
+    "message": "The share of the time each kind of site takes"
+  },
+  "webActivitySitesTitle": {
+    "message": "Sites"
+  },
+  "webActivitySitesHint": {
+    "message": "Every site in the period, with what it cost and what it is allowed"
+  },
+  "webActivityTopSitesTitle": {
+    "message": "Most time spent"
+  },
+  "webActivityTopSitesMeta": {
+    "message": "top 10"
+  },
+  "webActivityTimelineTitle": {
+    "message": "Recent visits"
+  },
+  "webActivityTimelineHint": {
+    "message": "The last pages opened, newest first"
+  },
+  "webActivityNoVisits": {
+    "message": "No visits recorded yet"
+  },
+  "webActivityKpiTotalTime": {
+    "message": "Time browsing"
+  },
+  "webActivityKpiVisits": {
+    "message": "Visits"
+  },
+  "webActivityKpiVisitsSub": {
+    "message": "pages opened"
+  },
+  "webActivityKpiSites": {
+    "message": "Sites"
+  },
+  "webActivityKpiSitesSub": {
+    "message": "in $1 categories"
+  },
+  "webActivityKpiAvgPerDay": {
+    "message": "Average per day"
+  },
+  "webActivityKpiAvgPerDaySub": {
+    "message": "over $1 active days"
+  },
+  "webActivityKpiTopSite": {
+    "message": "Top site"
+  },
+  "webActivityKpiFocusRatio": {
+    "message": "Focus ratio"
+  },
+  "webActivityKpiFocusRatioSub": {
+    "message": "work vs distraction"
+  },
+  "webActivityKpiBusiestDay": {
+    "message": "Busiest day"
+  },
+  "webActivityKpiPeakHour": {
+    "message": "Peak hour"
+  },
+  "webActivityKpiPeakHourSub": {
+    "message": "when you browse the most"
+  },
+  "webActivityKpiPeakWeekday": {
+    "message": "Busiest weekday"
+  },
+  "webActivityKpiPeakWeekdaySub": {
+    "message": "most time on average"
+  },
+  "webActivityKpiSessions": {
+    "message": "Stretches"
+  },
+  "webActivityKpiSessionsSub": {
+    "message": "$1 each on average"
+  },
+  "webActivityKpiPerVisit": {
+    "message": "Per visit"
+  },
+  "webActivityKpiPerVisitSub": {
+    "message": "average time on a page"
+  },
+  "webActivityKpiStreak": {
+    "message": "Streak"
+  },
+  "webActivityKpiDistracting": {
+    "message": "Distraction"
+  },
+  "webActivityKpiDistractingSub": {
+    "message": "social, video, games, shopping"
+  },
+  "webActivityKpiProductive": {
+    "message": "Focused work"
+  },
+  "webActivityKpiProductiveSub": {
+    "message": "development, work, learning, mail"
+  },
+  "webActivityKpiLimits": {
+    "message": "Active limits"
+  },
+  "webActivityKpiLimitsSub": {
+    "message": "sites with a rule"
+  },
+  "webActivityKpiTopCategory": {
+    "message": "Top category"
+  },
+  "webActivityColSite": {
+    "message": "Site"
+  },
+  "webActivityColTime": {
+    "message": "Time"
+  },
+  "webActivityColVisits": {
+    "message": "Visits"
+  },
+  "webActivityColSessions": {
+    "message": "Stretches"
+  },
+  "webActivityColPerVisit": {
+    "message": "Per visit"
+  },
+  "webActivityColShare": {
+    "message": "Share"
+  },
+  "webActivityColLimit": {
+    "message": "Limit"
+  },
+  "webActivityColActions": {
+    "message": "Actions"
+  },
+  "webActivityClearSite": {
+    "message": "Forget this site",
+    "description": "Removes every record of this site from the history. The limit, if any, is kept."
+  },
+  "webActivityClearSiteConfirm": {
+    "message": "Delete every record of $1?"
+  },
+  "webActivityStateWatched": {
+    "message": "watched"
+  },
+  "webActivityStateBlocked_always": {
+    "message": "blocked"
+  },
+  "webActivityStateBlocked_schedule": {
+    "message": "blocked now"
+  },
+  "webActivityStateBlocked_daily": {
+    "message": "over limit"
+  },
+  "webActivityLimitsTitle": {
+    "message": "Limits and blocking"
+  },
+  "webActivityLimitsHintTitle": {
+    "message": "Daily allowances and blocked hours, and how each one is doing today"
+  },
+  "webActivityLimitsHint": {
+    "message": "A limit stops the site itself, not just the counter."
+  },
+  "webActivityNoLimits": {
+    "message": "No limits set yet"
+  },
+  "webActivityAddLimit": {
+    "message": "Add limit",
+    "description": "Sets a daily allowance or blocked hours for a site"
+  },
+  "webActivityEditLimit": {
+    "message": "Edit limit"
+  },
+  "webActivityDeleteLimit": {
+    "message": "Delete limit"
+  },
+  "webActivityDeleteLimitConfirm": {
+    "message": "Delete the limit for $1?"
+  },
+  "webActivitySnooze": {
+    "message": "Five more minutes",
+    "description": "Lifts the block for a while. It is recorded as a snooze, not as removing the limit."
+  },
+  "webActivitySnoozed": {
+    "message": "Block postponed"
+  },
+  "webActivityLimitPaused": {
+    "message": "paused"
+  },
+  "webActivityBlockAlways": {
+    "message": "Block always"
+  },
+  "webActivityLimitAlways": {
+    "message": "Always"
+  },
+  "webActivityBlockAlwaysHint": {
+    "message": "The site is blocked whatever the clock says."
+  },
+  "webActivityEveryDay": {
+    "message": "every day"
+  },
+  "webActivityRemaining": {
+    "message": "$1 left"
+  },
+  "webActivityExhausted": {
+    "message": "nothing left today"
+  },
+  "webActivityLimitSaved": {
+    "message": "Limit saved"
+  },
+  "webActivityFieldSite": {
+    "message": "Site",
+    "description": "Just the hostname, without https:// — pasting a full address works, only the host is kept"
+  },
+  "webActivityFieldDailyLimit": {
+    "message": "Daily allowance"
+  },
+  "webActivityDailyLimitHint": {
+    "message": "Once the day’s time is used up the site is blocked until midnight. Zero means no allowance."
+  },
+  "webActivityFieldSchedules": {
+    "message": "Blocked hours"
+  },
+  "webActivitySchedulesHint": {
+    "message": "A window that ends before it starts runs overnight, and its days are the ones it starts on."
+  },
+  "webActivityAddSchedule": {
+    "message": "Add a window"
+  },
+  "webActivityRemoveSchedule": {
+    "message": "Remove this window"
+  },
+  "webActivityFrom": {
+    "message": "From"
+  },
+  "webActivityTo": {
+    "message": "To"
+  },
+  "webActivityFieldCategory": {
+    "message": "Category",
+    "description": "Overrides the category guessed from the domain, which is what the focus ratio is built on"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Detect automatically"
+  },
+  "webActivityFieldNotifyAt": {
+    "message": "Warn at (%)"
+  },
+  "webActivityNotifyAtHint": {
+    "message": "A notification when this share of the allowance is gone. Leave empty for the general setting."
+  },
+  "webActivityLimitEnabled": {
+    "message": "Limit active"
+  },
+  "webActivityLimitEnabledHint": {
+    "message": "Turn it off to keep the rule without it blocking anything."
+  },
+  "webActivityHours": {
+    "message": "Hours"
+  },
+  "webActivityMinutes": {
+    "message": "Minutes"
+  },
+  "webActivityHoursShort": {
+    "message": "h"
+  },
+  "webActivityMinutesShort": {
+    "message": "min"
+  },
+  "webActivityClearAll": {
+    "message": "Delete everything",
+    "description": "Removes every day on record and the recent visits. Limits and settings are kept."
+  },
+  "webActivityClearAllConfirm": {
+    "message": "Delete the whole activity history?"
+  },
+  "webActivityImported": {
+    "message": "Data imported"
+  },
+  "webActivityImportFailed": {
+    "message": "That file could not be read"
+  },
+  "webActivityBlockedTitle": {
+    "message": "Site blocked"
+  },
+  "webActivityBlockedGeneric": {
+    "message": "A limit you set is stopping this site."
+  },
+  "webActivityBlockedReason_always": {
+    "message": "This site is set to be blocked at all times."
+  },
+  "webActivityBlockedReason_schedule": {
+    "message": "This site is inside one of its blocked hours."
+  },
+  "webActivityBlockedReason_daily": {
+    "message": "Today’s time on this site is used up."
+  },
+  "webActivityBlockedUntil": {
+    "message": "It comes back at $1."
+  },
+  "webActivityBlockedUntilMidnight": {
+    "message": "The allowance starts again at midnight."
+  },
+  "webActivityBlockedGoBack": {
+    "message": "Go back"
+  },
+  "webActivityBlockedSnooze": {
+    "message": "$1 more minutes"
+  },
+  "webActivityBlockedFooter": {
+    "message": "You set this yourself, from the web activity dashboard. You can change it there."
+  },
+  "webActivityLimitNearTitle": {
+    "message": "Almost out of time"
+  },
+  "webActivityLimitNearBody": {
+    "message": "$1: about $2 minutes left today."
+  },
+  "webActivityKpiAvgPerDaySub": {
+    "message": "active days: $1"
+  },
+  "webActivityKpiSitesSub": {
+    "message": "categories: $1"
+  },
+  "webActivityLimitNearBody": {
+    "message": "$1: about $2 min left today."
+  },
+  "webActivityHourSites": {
+    "message": "Websites visited: $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dashboardHourSessions": {
+    "message": "Pomodoro sessions: $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "dashboardHourSlotTitle": {
+    "message": "Time window: From $1:00 to $2:00\nTotal accumulated time: $3\n$4\n(Total activity recorded during this hour of the day in the selected period)",
+    "placeholders": {
+      "start": {
+        "content": "$1"
+      },
+      "end": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      },
+      "count": {
+        "content": "$4"
+      }
+    }
+  },
+  "permIdle": {
+    "message": "Notices when you step away from the keyboard, so the web activity clock stops instead of counting an empty chair."
+  },
+  "webActivityLogTitle": {
+    "message": "Visited sites log"
+  },
+  "webActivityLogHint": {
+    "message": "Every site of the period with its figures, and the boxes that set its daily allowance, its hours and its category."
+  },
+  "webActivityLogSummary": {
+    "message": "$1 sites · $2 in total"
+  },
+  "webActivityTotalRow": {
+    "message": "Total ($1)"
+  },
+  "webActivityColCategory": {
+    "message": "Category"
+  },
+  "webActivityColSchedule": {
+    "message": "Schedule"
+  },
+  "webActivityColState": {
+    "message": "State"
+  },
+  "webActivityColPerDay": {
+    "message": "Per day"
+  },
+  "webActivityColActiveDays": {
+    "message": "Active days"
+  },
+  "webActivityColLastSeen": {
+    "message": "Last visit"
+  },
+  "webActivityColSiteDesc": {
+    "message": "Domain name of the visited website"
+  },
+  "webActivityColCategoryDesc": {
+    "message": "Topic category assigned to this website"
+  },
+  "webActivityColVisitsDesc": {
+    "message": "Visits: Total number of pages or URLs you opened and browsed within this website"
+  },
+  "webActivityColTimeDesc": {
+    "message": "Total active time spent on this website"
+  },
+  "webActivityColShareDesc": {
+    "message": "Percentage of total browsing time spent on this site"
+  },
+  "webActivityColPerVisitDesc": {
+    "message": "Per visit: Average time spent on each opened page of this website"
+  },
+  "webActivityColSessionsDesc": {
+    "message": "Sessions: Number of times you accessed this website for continuous use (groups all pages visited until you switch websites, step away, or close the tab)"
+  },
+  "webActivityColPerDayDesc": {
+    "message": "Average browsing time per active day"
+  },
+  "webActivityColActiveDaysDesc": {
+    "message": "Number of distinct days with visits to this site"
+  },
+  "webActivityColLastSeenDesc": {
+    "message": "Date of the last recorded visit in this period"
+  },
+  "webActivityColLimitDesc": {
+    "message": "Maximum daily time limit allowed for this site"
+  },
+  "webActivityColScheduleDesc": {
+    "message": "Configured time window during which the site is blocked"
+  },
+  "webActivityColStateDesc": {
+    "message": "Current blocking status or percentage of daily quota used"
+  },
+  "webActivityColActionsDesc": {
+    "message": "Available actions for this website"
+  },
+  "webActivityStateWatchedTitle": {
+    "message": "Monitored website with no daily limit set"
+  },
+  "webActivityStateNoLimitTitle": {
+    "message": "No time limit or schedule configured"
+  },
+  "webActivityStateQuotaTitle": {
+    "message": "Consumed $1% of the daily quota of the configured limit $2 / $3",
+    "placeholders": {
+      "percent": {
+        "content": "$1"
+      },
+      "used": {
+        "content": "$2"
+      },
+      "limit": {
+        "content": "$3"
+      }
+    }
+  },
+  "webActivityTotalSitesHint": {
+    "message": "Total websites shown: $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityTotalVisitsHint": {
+    "message": "Total accumulated visits: $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityTotalTimeHint": {
+    "message": "Total time accumulated across all sites: $1",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityTotalShareHint": {
+    "message": "Represents 100% of total recorded time"
+  },
+  "webActivityTotalSessionsHint": {
+    "message": "Total recorded sessions: $1",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityTotalAvgVisitHint": {
+    "message": "Overall average duration per visit: $1",
+    "placeholders": {
+      "time": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityColRecord": {
+    "message": "Record"
+  },
+  "webActivityColRecordDesc": {
+    "message": "Controls whether activity is recorded for this site or excluded from tracking"
+  },
+  "webActivityNotConfigured": {
+    "message": "Not configured"
+  },
+  "webActivityConfigureLimit": {
+    "message": "Configure limit and schedule"
+  },
+  "webActivityIgnoreDomainTitle": {
+    "message": "Stop tracking domain"
+  },
+  "webActivityIgnoreDomainConfirm": {
+    "message": "Do you want to add '$1' to the list of untracked sites? Your time and visits on this website will no longer be recorded.",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityIgnoreDomainBtn": {
+    "message": "Do not record this domain"
+  },
+  "webActivityUnignoreDomainBtn": {
+    "message": "Resume recording this site"
+  },
+  "webActivityDomainIgnored": {
+    "message": "Domain added to the list of untracked sites"
+  },
+  "webActivityDomainRestored": {
+    "message": "Domain restored to activity tracking"
+  },
+  "webActivityRemoveLimit": {
+    "message": "Remove daily limit"
+  },
+  "webActivityRemoveSchedule": {
+    "message": "Remove configured schedule"
+  },
+  "webActivitySortBy": {
+    "message": "Sort by this column",
+    "description": "Click to sort; click again to reverse it"
+  },
+  "webActivityColumnsTitle": {
+    "message": "Columns"
+  },
+  "webActivityColumnsHint": {
+    "message": "Choose what the log shows. The choice is remembered."
+  },
+  "webActivityColumnsReset": {
+    "message": "Restore defaults"
+  },
+  "webActivityColumnPinned": {
+    "message": "Always shown"
+  },
+  "webActivityOn": {
+    "message": "On"
+  },
+  "webActivityOff": {
+    "message": "Off"
+  },
+  "webActivityFieldSchedules": {
+    "message": "Allowed hours",
+    "description": "The only hours the site can be opened. Leave empty to allow it at any time."
+  },
+  "webActivitySchedulesHint": {
+    "message": "Outside these hours the site is blocked. A window that ends before it starts runs overnight, and its days are the ones it starts on."
+  },
+  "webActivityAddSchedule": {
+    "message": "Add a window"
+  },
+  "webActivityBlockedReason_schedule": {
+    "message": "This site can only be opened inside the hours you set."
+  },
+  "webActivityBlockedUntil": {
+    "message": "It opens again at $1."
+  },
+  "webActivityBlockedUntilDay": {
+    "message": "It opens again on $1 at $2."
+  },
+  "webActivityAllowedWindow": {
+    "message": "only $1–$2"
+  },
+  "webActivityStateBlocked_schedule": {
+    "message": "outside hours"
+  },
+  "webActivityColSchedule": {
+    "message": "Allowed hours",
+    "description": "Only inside this window can the site be opened"
   }
 }

@@ -31,8 +31,46 @@
         notificationStore.show($t(ok ? 'addressCopied' : 'errorCopyingAddress'), ok ? 'success' : 'error');
     }
 
-    function openPaypal() {
-        chrome.tabs.create({ url: donationData.urls.paypal });
+    async function openPaypal(event) {
+        if (event) event.preventDefault();
+        const paypalUrl = encodeURIComponent(donationData.urls.paypal);
+        const popupUrl = `../listGroup/listGroup.html?view=url&url=${paypalUrl}`;
+        const sidePanelUrl = `src/ui/pages/listGroup/listGroup.html?view=url&url=${paypalUrl}`;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSidePanel = urlParams.get('context') === 'sidepanel';
+
+        let contextsCache = [];
+        if (typeof chrome.runtime?.getContexts === 'function') {
+            try {
+                contextsCache = await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] });
+            } catch {
+                contextsCache = [];
+            }
+        }
+        const hasSidePanel = (contextsCache?.length || 0) > 0;
+        const currentWin = await chrome.windows?.getCurrent().catch(() => null);
+        const isPopupWindow = currentWin?.type === 'popup';
+
+        if (isSidePanel || hasSidePanel || isPopupWindow || (event && event.ctrlKey)) {
+            window.location.href = `${popupUrl}&context=sidepanel`;
+            if (isSidePanel) {
+                chrome.runtime?.sendMessage?.({ action: 'sidePanelPathUpdated', path: popupUrl });
+            }
+        } else {
+            chrome.tabs?.query({ active: true, currentWindow: true }, ([tab]) => {
+                if (tab && chrome.sidePanel?.setOptions) {
+                    chrome.sidePanel.setOptions({
+                        path: `${sidePanelUrl}&context=sidepanel`,
+                        enabled: true,
+                    });
+                    chrome.sidePanel.open({ windowId: tab.windowId });
+                    window.close();
+                } else {
+                    chrome.tabs.create({ url: donationData.urls.paypal });
+                }
+            });
+        }
     }
 
     const imageItems = [
@@ -92,8 +130,8 @@
                 tabindex="0"
                 aria-label={$t(item.ariaLabelKey)}
                 title={$tt(item.titleKey)}
-                onclick={item.action}
-                onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && item.action()}
+                onclick={(e) => item.action(e)}
+                onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && item.action(e)}
             >
                 {#if isAbout}
                     <img src={item.img} alt={item.alt} class="donation-icon" />

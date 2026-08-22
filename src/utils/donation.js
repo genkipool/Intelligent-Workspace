@@ -32,11 +32,45 @@ export function initializeDonationLinks() {
         }
     };
 
-    const handlePaypalClick = (event) => {
-        event.preventDefault();
-        const url = donationData.urls.paypal;
-        if (url) {
-            chrome.tabs.create({ url: url });
+    const handlePaypalClick = async (event) => {
+        if (event) event.preventDefault();
+        const paypalUrl = encodeURIComponent(donationData.urls.paypal);
+        const popupUrl = `../listGroup/listGroup.html?view=url&url=${paypalUrl}`;
+        const sidePanelUrl = `src/ui/pages/listGroup/listGroup.html?view=url&url=${paypalUrl}`;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSidePanel = urlParams.get('context') === 'sidepanel';
+
+        let contextsCache = [];
+        if (typeof chrome.runtime?.getContexts === 'function') {
+            try {
+                contextsCache = await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] });
+            } catch {
+                contextsCache = [];
+            }
+        }
+        const hasSidePanel = (contextsCache?.length || 0) > 0;
+        const currentWin = await chrome.windows?.getCurrent().catch(() => null);
+        const isPopupWindow = currentWin?.type === 'popup';
+
+        if (isSidePanel || hasSidePanel || isPopupWindow || (event && event.ctrlKey)) {
+            window.location.href = `${popupUrl}&context=sidepanel`;
+            if (isSidePanel) {
+                chrome.runtime?.sendMessage?.({ action: 'sidePanelPathUpdated', path: popupUrl });
+            }
+        } else {
+            chrome.tabs?.query({ active: true, currentWindow: true }, ([tab]) => {
+                if (tab && chrome.sidePanel?.setOptions) {
+                    chrome.sidePanel.setOptions({
+                        path: `${sidePanelUrl}&context=sidepanel`,
+                        enabled: true,
+                    });
+                    chrome.sidePanel.open({ windowId: tab.windowId });
+                    window.close();
+                } else {
+                    chrome.tabs.create({ url: donationData.urls.paypal });
+                }
+            });
         }
     };
 

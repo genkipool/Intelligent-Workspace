@@ -158,10 +158,10 @@ export default [
         languageOptions: { globals: { ...globals.commonjs } },
     },
     {
-        // lib/chart.local.js is imported for its side effect by the dashboard's
+        // lib/chart.local.js is imported for its side effect by each dashboard's
         // entry point and defines globalThis.Chart. The global is real; it just
         // never arrives through a named import.
-        files: ['src/ui/pages/pomodoro-dashboard/**'],
+        files: ['src/ui/pages/pomodoro-dashboard/**', 'src/ui/pages/web-activity/**', 'src/ui/components/dashboard/**'],
         languageOptions: { globals: { Chart: 'readonly' } },
     },
     {

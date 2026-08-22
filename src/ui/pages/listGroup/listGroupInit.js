@@ -58,6 +58,7 @@ import {
     clearAllContextDataUI,
     closeScreenshotGallery,
     initScreenshotEvents,
+    showScreenshotGallery,
 } from '../../services/screenshotsService.js';
 import {
     getNoteHandlers,
@@ -111,6 +112,16 @@ import {
 } from '../../stores/appStore.svelte.js';
 
 import { geminiStore, conversationHistory } from '../../stores/geminiStore.js';
+
+/**
+ * Views the page can be opened straight into with `?view=`, that are not one of the
+ * main views switchMainView knows about. The popup's quick access uses these, and so
+ * would any other entry point: add the view here rather than special-casing the boot.
+ */
+const STANDALONE_VIEW_OPENERS = {
+    notes: () => showNotesView({ type: 'orphan' }),
+    gallery: () => showScreenshotGallery('orphan', null, null),
+};
 
 /**
  * What the main back button does. It was 65 lines inline inside
@@ -407,6 +418,19 @@ export async function initializeAllEvents() {
         await switchMainView('groups', false, { skipHeaderButtons: true });
         isStandaloneGemini.set(true);
         gs.switchToView();
+    } else if (requestedView === 'url') {
+        const targetUrl = urlParams.get('url');
+        await switchMainView('groups', false);
+        if (targetUrl) {
+            await openUrlInPanel(decodeURIComponent(targetUrl));
+        }
+    } else if (STANDALONE_VIEW_OPENERS[requestedView]) {
+        // Notes and gallery are not main views: they sit on top of the group list, and
+        // the 'orphan' context is the one the section under the groups opens — with no
+        // list passed in it resolves the collection itself, honouring the user's
+        // "always / only on delete" preference.
+        await switchMainView('groups', false);
+        await STANDALONE_VIEW_OPENERS[requestedView]();
     } else {
         await switchMainView(requestedView, false);
     }

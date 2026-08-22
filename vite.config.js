@@ -73,6 +73,8 @@ export default defineConfig({
                 customize_hints: resolve(__dirname, 'src/ui/pages/customize_hints/customize_hints.html'),
                 offscreen: resolve(__dirname, 'src/ui/pages/offscreen/offscreen.html'),
                 dashboard: resolve(__dirname, 'src/ui/pages/pomodoro-dashboard/dashboard.html'),
+                webActivity: resolve(__dirname, 'src/ui/pages/web-activity/web-activity.html'),
+                webActivityBlocked: resolve(__dirname, 'src/ui/pages/web-activity/blocked.html'),
                 preview: resolve(__dirname, 'src/ui/pages/selection-preview/preview.html'),
                 savedThemes: resolve(__dirname, 'src/ui/pages/savedThemes/savedThemes.html'),
                 permission: resolve(__dirname, 'src/ui/pages/permission/permission.html'),

@@ -5,6 +5,16 @@
 
     let contentEditor = $state(null);
 
+    let stats = $derived.by(() => {
+        if (!contentHTML) return { words: 0, chars: 0 };
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = contentHTML;
+        const text = (tempDiv.textContent || '').replace(/\u00A0/g, ' ').replace(/\r?\n$/, '');
+        const chars = text.length;
+        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+        return { words, chars };
+    });
+
     // The rich editor owns its own DOM while the user types
     $effect(() => {
         const html = contentHTML;
@@ -83,23 +93,28 @@
 
 <div class="note-editor active">
     <div class="form-group" style="padding: 0;">
-        <div
-            id="note-content-editor"
-            class="note-content-editable"
-            class:input-error={showValidation &&
-                noteType === 'text' &&
-                contentHTML.replace(/<[^>]*>/g, '').trim().length === 0 &&
-                !/<img[^>]*>/i.test(contentHTML)}
-            contenteditable="true"
-            role="textbox"
-            aria-multiline="true"
-            translate="no"
-            style="white-space: pre-wrap;"
-            data-i18n-placeholder={$t('noteContentPlaceholder')}
-            bind:this={contentEditor}
-            oninput={onContentInput}
-            onpaste={handlePaste}
-        ></div>
+        <div class="note-content-wrapper">
+            <div
+                id="note-content-editor"
+                class="note-content-editable"
+                class:input-error={showValidation &&
+                    noteType === 'text' &&
+                    contentHTML.replace(/<[^>]*>/g, '').trim().length === 0 &&
+                    !/<img[^>]*>/i.test(contentHTML)}
+                contenteditable="true"
+                role="textbox"
+                aria-multiline="true"
+                translate="no"
+                style="white-space: pre-wrap;"
+                data-i18n-placeholder={$t('noteContentPlaceholder')}
+                bind:this={contentEditor}
+                oninput={onContentInput}
+                onpaste={handlePaste}
+            ></div>
+            <span class="note-editor-stats" title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}>
+                {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+            </span>
+        </div>
         <label for="note-file-input" class="note-file-upload-label" title={$tt('uploadFileTooltip')}>
             <svg width="16" height="16">
                 <use href="#icon-upload"></use>

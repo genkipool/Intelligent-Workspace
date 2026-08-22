@@ -16,6 +16,15 @@
     --sidebar-w: 210px;
     --mono: 'Roboto Mono', monospace;
     --sans: 'Roboto Flex', system-ui, sans-serif;
+    /* Secondary and tertiary text.
+       These replace twenty-eight hand-picked `color-mix(... N%, transparent)`
+       values that ranged from 40% to 65%. The low end was unreadable in the dark
+       palette, where the base text is already a mid grey on a dark grey: below
+       about 60% the mix falls under a 3:1 ratio and the label disappears. Both
+       tiers here clear 3:1 in every theme; the hierarchy comes from size, weight
+       and capitals, which this design already leans on. */
+    --text-soft: color-mix(in srgb, var(--text-color) 82%, transparent);
+    --text-dim: color-mix(in srgb, var(--text-color) 66%, transparent);
     /* Layout rhythm */
     --section-gap: 24px;
     --card-radius: 14px;
@@ -77,7 +86,7 @@ body {
 .loader-text {
     font-family: var(--mono);
     font-size: 0.94rem;
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
     letter-spacing: 0.08em;
 }
 
@@ -152,6 +161,12 @@ body {
     display: none;
 }
 
+.filter-chips {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
 .filter-sep {
     width: 1px;
     height: 16px;
@@ -210,14 +225,12 @@ body {
     font-family: var(--sans);
     cursor: pointer;
     height: 28px;
-    /* A bit more height to avoid clipping */
     width: 170px;
     transition: border-color 0.13s;
 }
 
 .tag-select::picker-icon {
     display: none !important;
-    /* Remove duplicate native arrow */
 }
 
 .tag-select:focus {
@@ -318,6 +331,53 @@ selectedcontent {
 /* Hide native checkmark if desired */
 .tag-select option::checkmark {
     display: none;
+}
+
+/* Inside a table row 170px is too much; the trigger sizes to its content instead. */
+.tag-select-compact {
+    width: auto;
+    min-width: 118px;
+    max-width: 100%;
+    height: 26px;
+    font-size: 0.86rem;
+}
+
+.tag-select-compact button {
+    padding: 0 7px;
+    gap: 5px;
+}
+
+/* --- SHARED FIELD LOOK ------------------------------------------
+   The number boxes, the time triggers and the compact selects are
+   the same control in three flavours, so they share their metrics.
+   `TimeField` leaves its trigger to the host page, which is why this
+   rule lives here rather than inside the component. */
+.custom-input-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    min-width: 62px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+}
+
+.custom-input-trigger:hover,
+.custom-input-trigger:focus-visible {
+    border-color: var(--interactive-color);
+    outline: none;
+}
+
+.custom-input-trigger.is-empty {
+    color: var(--text-dim);
 }
 
 .header-actions {
@@ -663,7 +723,7 @@ selectedcontent {
 .folder-count {
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
     background: color-mix(in srgb, var(--bg-panel-color) 60%, var(--bg-color));
     padding: 1px 5px;
     border-radius: 10px;
@@ -672,7 +732,7 @@ selectedcontent {
 
 .folder-row.active .folder-count {
     background: color-mix(in srgb, var(--interactive-color) 12%, transparent);
-    color: var(--action-color);
+    color: var(--text-on-color);
 }
 
 .folder-children {
@@ -706,7 +766,7 @@ selectedcontent {
     font-family: var(--mono);
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: color-mix(in srgb, var(--text-color) 50%, transparent);
+    color: var(--text-dim);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -791,7 +851,7 @@ selectedcontent {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
     position: relative;
     z-index: 1;
 }
@@ -819,7 +879,7 @@ selectedcontent {
 
 .kpi-sub {
     font-size: 0.98rem;
-    color: color-mix(in srgb, var(--text-color) 50%, transparent);
+    color: var(--text-dim);
     position: relative;
     z-index: 1;
     margin-top: 1px;
@@ -830,6 +890,13 @@ selectedcontent {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
+}
+
+/* A grid track is `min-width: auto` by default, so a card holding a wide table pushes
+   its own column out and squeezes the chart beside it down to nothing. */
+.chart-grid-2 > *,
+.chart-grid-3 > * {
+    min-width: 0;
 }
 
 .chart-grid-3 {
@@ -875,7 +942,7 @@ selectedcontent {
 .chart-card-meta {
     font-family: var(--mono);
     font-size: 0.92rem;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
     align-self: flex-end;
 }
 
@@ -932,7 +999,7 @@ selectedcontent {
 .heatmap-day-label {
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--text-color) 50%, transparent);
+    color: var(--text-dim);
     height: 17px;
     /* must equal grid-template-rows cell size */
     line-height: 17px;
@@ -964,7 +1031,7 @@ selectedcontent {
     /* gap between label and first cell row */
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
     min-width: max-content;
     box-sizing: border-box;
 }
@@ -1071,7 +1138,7 @@ selectedcontent {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
 }
 
 /* -- HOUR BARS --------------------------------------------------- */
@@ -1079,16 +1146,24 @@ selectedcontent {
     display: grid;
     grid-template-columns: repeat(24, 1fr);
     gap: 2px;
-    align-items: end;
+    height: 100%;
+    align-items: stretch;
 }
 
 .hour-bar-col {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    justify-content: flex-end;
     height: 100%;
+    min-width: 0;
+}
+
+.hour-bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    min-height: 0;
 }
 
 .hour-bar {
@@ -1105,8 +1180,16 @@ selectedcontent {
 
 .hour-label {
     font-family: var(--mono);
-    font-size: 0.92rem;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-dim);
+    user-select: none;
+    white-space: nowrap;
+    margin-top: 4px;
 }
 
 /* -- TABLE ------------------------------------------------------- */
@@ -1121,7 +1204,7 @@ selectedcontent {
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
     padding: 8px 10px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
@@ -1178,7 +1261,7 @@ selectedcontent {
 .eff-pct {
     font-family: var(--mono);
     font-size: 0.98rem;
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
     width: 28px;
     text-align: right;
     flex-shrink: 0;
@@ -1253,7 +1336,7 @@ selectedcontent {
 .tl-chip {
     font-family: var(--mono);
     font-size: 0.75rem;
-    color: color-mix(in srgb, var(--text-color) 65%, transparent);
+    color: var(--text-soft);
     background: color-mix(in srgb, var(--bg-panel-color) 65%, var(--bg-color));
     padding: 2px 7px;
     border-radius: 5px;
@@ -1263,7 +1346,7 @@ selectedcontent {
 .tl-tag {
     background: color-mix(in srgb, var(--interactive-color) 10%, transparent);
     border-color: color-mix(in srgb, var(--interactive-color) 25%, transparent);
-    color: var(--action-color);
+    color: var(--text-on-color);
 }
 
 /* -- MISC -------------------------------------------------------- */
@@ -1289,7 +1372,7 @@ selectedcontent {
     gap: 5px;
     font-size: 0.92rem;
     font-family: var(--mono);
-    color: color-mix(in srgb, var(--text-color) 65%, transparent);
+    color: var(--text-soft);
 }
 
 .legend-dot {
@@ -1313,7 +1396,7 @@ selectedcontent {
 }
 
 .stat-row-label {
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
     display: flex;
     align-items: center;
 }
@@ -1325,7 +1408,7 @@ selectedcontent {
 
 .no-data-msg {
     font-size: 0.92rem;
-    color: color-mix(in srgb, var(--text-color) 50%, transparent);
+    color: var(--text-dim);
     text-align: center;
     padding: 28px;
     font-family: var(--mono);
@@ -1340,7 +1423,7 @@ selectedcontent {
     padding: 80px 32px;
     text-align: center;
     gap: 16px;
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
 }
 
 .empty-icon {
@@ -1359,7 +1442,7 @@ selectedcontent {
     font-size: 0.96rem;
     max-width: 340px;
     line-height: 1.7;
-    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+    color: var(--text-dim);
 }
 
 /* -- TOOLTIP (heatmap) ------------------------------------------- */
@@ -1384,7 +1467,7 @@ selectedcontent {
 .tt-date {
     display: block;
     font-size: 0.98rem;
-    color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    color: var(--text-soft);
     margin-bottom: 4px;
     text-transform: capitalize;
 }
@@ -1406,7 +1489,7 @@ selectedcontent {
 .tt-empty {
     display: block;
     font-size: 0.82rem;
-    color: color-mix(in srgb, var(--text-color) 40%, transparent);
+    color: var(--text-dim);
     font-style: italic;
 }
 
@@ -1512,4 +1595,155 @@ selectedcontent {
     .kpi-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* --- TOAST ------------------------------------------------------
+   `showNotification()` builds this element itself and drops it into the body, so
+   the styles have to be here rather than in a component. Every dashboard gets
+   them from this file; the older pages still carry their own copy. */
+.notification {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    z-index: 10002;
+    text-align: center;
+    width: 80%;
+    max-width: 320px;
+    animation: slide-bottom 3s ease-in-out forwards;
+}
+
+@keyframes slide-bottom {
+    0% {
+        transform: translate(-50%, 150%);
+    }
+
+    25%,
+    75% {
+        transform: translate(-50%, -55%);
+    }
+
+    100% {
+        transform: translate(-50%, 150%);
+    }
+}
+
+.notification:hover {
+    animation-play-state: paused;
+}
+
+.notification-success {
+    background-color: var(--interactive-color);
+    color: var(--text-color);
+}
+
+.notification-error {
+    background-color: var(--error-color);
+    color: var(--text-color);
+}
+
+/* --- MODAL CHROME ------------------------------------------------
+   Shared by any dashboard that needs a dialog of its own. ConfirmDialog carries
+   its own scoped copy — it is mounted on pages that do not load this file — and
+   the extra specificity of Svelte's scoping keeps it winning there. */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    padding: 16px;
+}
+
+.modal-content {
+    background-color: var(--bg-panel-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    width: 480px;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Not `--header-color`: that variable is only readable on a light surface, and on
+   the panel it is 1.4:1 in the dark palette — a dialog title nobody can read. */
+.modal-header h2 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    border-radius: 4px;
+}
+
+.close-modal-btn:hover {
+    color: var(--interactive-color);
+}
+
+.modal-body {
+    padding: 18px;
+    overflow-y: auto;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 0 18px 18px;
+}
+
+.modal-actions button {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    background-color: var(--action-color);
+    color: var(--text-color);
+}
+
+/* The same tint-and-border treatment as the selected chips, for the same reason:
+   no text colour in this palette is readable on a solid accent in every theme. */
+.modal-actions .modal-btn-save {
+    background-color: color-mix(in srgb, var(--interactive-color) 22%, transparent);
+    border-color: var(--interactive-color);
+    font-weight: 600;
+}
+
+.modal-actions .modal-btn-save:hover {
+    background-color: color-mix(in srgb, var(--interactive-color) 34%, transparent);
+}
+
+.modal-actions .modal-btn-cancel {
+    background-color: var(--bg-color);
+}
+
+.modal-actions button:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
 }

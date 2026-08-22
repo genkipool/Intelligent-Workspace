@@ -225,13 +225,13 @@
 }
 
 html {
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
 }
 
 body {
-    min-height: 100%;
+    min-height: 100vh;
     margin: 0;
     padding: 0;
     font-family:
@@ -246,7 +246,6 @@ body {
     scrollbar-gutter: stable both-edges;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     overflow-anchor: none;
     overscroll-behavior-y: none;
 
@@ -261,7 +260,7 @@ body {
     @media (width <=600px) {
         width: 100%;
         min-width: 360px;
-        min-height: 600px;
+        min-height: 100vh;
         background-color: var(--bg-color);
         color: var(--text-color);
         height: 100vh;
@@ -400,6 +399,8 @@ button {
     overflow: visible;
     text-align: left;
     min-height: calc(100vh - (2 * var(--container-padding)));
+    height: auto;
+    flex: 1 0 auto;
     display: flex;
     flex-direction: column;
 
@@ -1298,6 +1299,9 @@ h1 {
 #rules-list {
     margin-top: var(--spacing-vsm);
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
 
     @media (width <=600px) {
         flex: 1;
@@ -1637,6 +1641,21 @@ h1 {
             }
         }
     }
+}
+
+#rules-items-container {
+    width: 100%;
+    flex-grow: 1;
+}
+
+#rules-items-list {
+    width: 100%;
+}
+
+#footer-container-large {
+    margin-top: auto;
+    width: 100%;
+    flex-shrink: 0;
 }
 
 .color-indicator {

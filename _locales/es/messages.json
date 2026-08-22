@@ -437,10 +437,6 @@
         "message": "Gestionar Reglas",
         "description": "Botón para configurar reglas"
     },
-    "keyboardShortcuts": {
-        "message": "Atajos de Teclado",
-        "description": "Título de la sección de atajos de teclado"
-    },
     "collapseExpandAllTabs": {
         "message": "Expandir/Colapso Grupos",
         "description": "Nombre del atajo"
@@ -624,10 +620,6 @@
     "invalidRuleFormat": {
         "message": "El archivo no contiene un formato de regla válido.",
         "description": "Mensaje de error para formato de regla inválido"
-    },
-    "notSet": {
-        "message": "Sin configurar",
-        "description": "Indica que el atajo no está configurado"
     },
     "notFound": {
         "message": "No encontrado",
@@ -3227,6 +3219,10 @@
     "deleteSchedule": {
         "message": "Eliminar programación"
     },
+    "scheduleAllDay": {
+        "message": "Todo el día",
+        "description": "Texto del botón para activar el horario de todo el día para la programación de temas."
+    },
     "scheduleTimeMissing": {
         "message": "Error: Se requieren horas de inicio y fin para programaciones repetitivas."
     },
@@ -3791,6 +3787,20 @@
             "char_count": {
                 "content": "$2",
                 "example": "789"
+            }
+        }
+    },
+    "noteEditorStatsWordsChars": {
+        "message": "$1 palabras / $2 caracteres",
+        "description": "Estadísticas completas en el editor de texto de notas, mostrando el número de palabras y caracteres.",
+        "placeholders": {
+            "word_count": {
+                "content": "$1",
+                "example": "5"
+            },
+            "char_count": {
+                "content": "$2",
+                "example": "49"
             }
         }
     },
@@ -9333,12 +9343,6 @@
         },
         "description": "Special action item title when only tabs are visible for restore"
     },
-    "collapseCurrentGroup": {
-        "message": "Expandir/Colapso Grupo Actual"
-    },
-    "toggleAlphabeticalSort": {
-        "message": "Activar/Desactivar Orden Alfabético"
-    },
     "toolGetLinkPreviewSettings": {
         "message": "Consultando la configuración de vista previa"
     },
@@ -9828,5 +9832,744 @@
     },
     "snippetMenuSectionTitle": {
         "message": "Activar menú de Snippets"
+    },
+    "quickAccessNotesBtn": {
+        "message": "Ver notas",
+        "description": "Abre la vista de notas con todas las notas guardadas, vengan del grupo que vengan"
+    },
+    "quickAccessGalleryBtn": {
+        "message": "Ver galería",
+        "description": "Abre la galería con todas las capturas guardadas, vengan del grupo que vengan"
+    },
+    "webActivityTitle": {
+        "message": "Actividad web",
+        "description": "Tiempo y visitas registradas por sitio"
+    },
+    "webActivityDashboardTitle": {
+        "message": "Dashboard de Actividad Web",
+        "description": "Estadísticas del tiempo de navegación y los límites configurados por sitio"
+    },
+    "webActivityCategory_social": {
+        "message": "Redes sociales"
+    },
+    "webActivityCategory_video": {
+        "message": "Vídeo"
+    },
+    "webActivityCategory_music": {
+        "message": "Música"
+    },
+    "webActivityCategory_news": {
+        "message": "Noticias"
+    },
+    "webActivityCategory_shopping": {
+        "message": "Compras"
+    },
+    "webActivityCategory_reading": {
+        "message": "Lectura"
+    },
+    "webActivityCategory_entertainment": {
+        "message": "Entretenimiento"
+    },
+    "webActivityCategory_dev": {
+        "message": "Desarrollo"
+    },
+    "webActivityCategory_work": {
+        "message": "Trabajo"
+    },
+    "webActivityCategory_education": {
+        "message": "Formación"
+    },
+    "webActivityCategory_games": {
+        "message": "Juegos"
+    },
+    "webActivityCategory_finance": {
+        "message": "Finanzas"
+    },
+    "webActivityCategory_mail": {
+        "message": "Correo"
+    },
+    "webActivityCategory_ai": {
+        "message": "IA"
+    },
+    "webActivityCategory_search": {
+        "message": "Búsqueda"
+    },
+    "webActivityCategory_other": {
+        "message": "Otros"
+    },
+    "webActivitySites": {
+        "message": "Sitios"
+    },
+    "webActivitySearchSites": {
+        "message": "Buscar sitios"
+    },
+    "webActivityAllSites": {
+        "message": "Todos los sitios",
+        "description": "Quita el filtro de sitio y vuelve a mostrarlos todos"
+    },
+    "webActivityNoSites": {
+        "message": "Ningún sitio registrado en este periodo"
+    },
+    "webActivityFilterByCategory": {
+        "message": "Filtrar por esta categoría"
+    },
+    "webActivityCategoryLabel": {
+        "message": "Categoría"
+    },
+    "webActivityAllCategories": {
+        "message": "Todas las categorías"
+    },
+    "webActivityCategoryFilterTitle": {
+        "message": "Mostrar solo los sitios de una categoría"
+    },
+    "webActivityExport": {
+        "message": "Exportar",
+        "description": "Guarda todo el registro —días, límites y ajustes— en un fichero JSON"
+    },
+    "webActivityImport": {
+        "message": "Importar",
+        "description": "Fusiona un fichero exportado con el registro en lugar de reemplazarlo"
+    },
+    "webActivityUpdatedAt": {
+        "message": "Actualizado a las $1"
+    },
+    "webActivityLiveNow": {
+        "message": "Contando ahora: $1"
+    },
+    "webActivityLiveHint": {
+        "message": "El sitio que se está cronometrando ahora mismo. El reloj se para si el navegador pierde el foco o dejas de escribir."
+    },
+    "webActivityEmptyTitle": {
+        "message": "Todavía no hay nada registrado"
+    },
+    "webActivityEmptySub": {
+        "message": "Navega un rato y aquí aparecerán el tiempo, las visitas y los patrones."
+    },
+    "webActivitySummaryTitle": {
+        "message": "Resumen general",
+        "description": "Las cifras principales del periodo seleccionado"
+    },
+    "webActivityPatterns": {
+        "message": "Patrones"
+    },
+    "webActivityPatternsHint": {
+        "message": "Cuándo navegas: las horas del día y los días de la semana"
+    },
+    "webActivityHourMeta": {
+        "message": "tiempo total por hora"
+    },
+    "webActivityHourHint": {
+        "message": "Tiempo acumulado en cada hora del día, sobre todo el periodo"
+    },
+    "webActivityWeekdayTitle": {
+        "message": "Por día de la semana"
+    },
+    "webActivityWeekdayMeta": {
+        "message": "horas por día"
+    },
+    "webActivityWeekdayHint": {
+        "message": "Qué días pasas más tiempo navegando"
+    },
+    "webActivityHeatmapTitle": {
+        "message": "Calendario de actividad"
+    },
+    "webActivityHeatmapHint": {
+        "message": "Medio año de un vistazo: cuanto más oscuro el cuadro, más tiempo ese día"
+    },
+    "webActivityTrendsTitle": {
+        "message": "Tiempo y categorías"
+    },
+    "webActivityTrendsHint": {
+        "message": "Cómo evoluciona el tiempo día a día y en qué se va"
+    },
+    "webActivityDailyTitle": {
+        "message": "Tiempo por día"
+    },
+    "webActivityDailyHint": {
+        "message": "Horas por día. Si seleccionas un sitio en la barra lateral, se limita a ese sitio."
+    },
+    "webActivityCategoriesTitle": {
+        "message": "Por categoría"
+    },
+    "webActivityCategoriesHint": {
+        "message": "Qué parte del tiempo se lleva cada tipo de sitio"
+    },
+    "webActivitySitesTitle": {
+        "message": "Sitios"
+    },
+    "webActivitySitesHint": {
+        "message": "Todos los sitios del periodo, con lo que costaron y lo que tienen permitido"
+    },
+    "webActivityTopSitesTitle": {
+        "message": "Más tiempo"
+    },
+    "webActivityTopSitesMeta": {
+        "message": "los 10 primeros"
+    },
+    "webActivityTimelineTitle": {
+        "message": "Visitas recientes"
+    },
+    "webActivityTimelineHint": {
+        "message": "Las últimas páginas abiertas, la más reciente primero"
+    },
+    "webActivityNoVisits": {
+        "message": "Todavía no hay visitas registradas"
+    },
+    "webActivityKpiTotalTime": {
+        "message": "Tiempo navegando"
+    },
+    "webActivityKpiVisits": {
+        "message": "Visitas"
+    },
+    "webActivityKpiVisitsSub": {
+        "message": "páginas abiertas"
+    },
+    "webActivityKpiSites": {
+        "message": "Sitios"
+    },
+    "webActivityKpiSitesSub": {
+        "message": "en $1 categorías"
+    },
+    "webActivityKpiAvgPerDay": {
+        "message": "Media por día"
+    },
+    "webActivityKpiAvgPerDaySub": {
+        "message": "sobre $1 días activos"
+    },
+    "webActivityKpiTopSite": {
+        "message": "Sitio principal"
+    },
+    "webActivityKpiFocusRatio": {
+        "message": "Índice de foco"
+    },
+    "webActivityKpiFocusRatioSub": {
+        "message": "trabajo frente a distracción"
+    },
+    "webActivityKpiBusiestDay": {
+        "message": "Día más cargado"
+    },
+    "webActivityKpiPeakHour": {
+        "message": "Hora punta"
+    },
+    "webActivityKpiPeakHourSub": {
+        "message": "cuando más navegas"
+    },
+    "webActivityKpiPeakWeekday": {
+        "message": "Día de la semana"
+    },
+    "webActivityKpiPeakWeekdaySub": {
+        "message": "más tiempo de media"
+    },
+    "webActivityKpiSessions": {
+        "message": "Sesiones"
+    },
+    "webActivityKpiSessionsSub": {
+        "message": "$1 de media cada uno"
+    },
+    "webActivityKpiPerVisit": {
+        "message": "Por visita"
+    },
+    "webActivityKpiPerVisitSub": {
+        "message": "tiempo medio en una página"
+    },
+    "webActivityKpiStreak": {
+        "message": "Racha"
+    },
+    "webActivityKpiDistracting": {
+        "message": "Distracción"
+    },
+    "webActivityKpiDistractingSub": {
+        "message": "redes, vídeo, juegos, compras"
+    },
+    "webActivityKpiProductive": {
+        "message": "Trabajo enfocado"
+    },
+    "webActivityKpiProductiveSub": {
+        "message": "desarrollo, trabajo, formación, correo"
+    },
+    "webActivityKpiLimits": {
+        "message": "Límites activos"
+    },
+    "webActivityKpiLimitsSub": {
+        "message": "sitios con una regla"
+    },
+    "webActivityKpiTopCategory": {
+        "message": "Categoría principal"
+    },
+    "webActivityColSite": {
+        "message": "Sitio"
+    },
+    "webActivityColTime": {
+        "message": "Tiempo"
+    },
+    "webActivityColVisits": {
+        "message": "Visitas"
+    },
+    "webActivityColSessions": {
+        "message": "Sesiones"
+    },
+    "webActivityColPerVisit": {
+        "message": "Por visita"
+    },
+    "webActivityColShare": {
+        "message": "Peso"
+    },
+    "webActivityColLimit": {
+        "message": "Límite"
+    },
+    "webActivityColActions": {
+        "message": "Acciones"
+    },
+    "webActivityClearSite": {
+        "message": "Olvidar este sitio",
+        "description": "Borra todo el registro de este sitio del historial. El límite, si lo hay, se conserva."
+    },
+    "webActivityClearSiteConfirm": {
+        "message": "¿Borrar todo el registro de $1?"
+    },
+    "webActivityStateWatched": {
+        "message": "vigilado"
+    },
+    "webActivityStateBlocked_always": {
+        "message": "bloqueado"
+    },
+    "webActivityStateBlocked_schedule": {
+        "message": "bloqueado ahora"
+    },
+    "webActivityStateBlocked_daily": {
+        "message": "límite superado"
+    },
+    "webActivityLimitsTitle": {
+        "message": "Límites y bloqueos"
+    },
+    "webActivityLimitsHintTitle": {
+        "message": "Cuotas diarias y horas bloqueadas, y cómo va cada una hoy"
+    },
+    "webActivityLimitsHint": {
+        "message": "Un límite corta el sitio de verdad, no solo el contador."
+    },
+    "webActivityNoLimits": {
+        "message": "Todavía no hay límites"
+    },
+    "webActivityAddLimit": {
+        "message": "Añadir límite",
+        "description": "Define una cuota diaria u horas bloqueadas para un sitio"
+    },
+    "webActivityEditLimit": {
+        "message": "Editar límite"
+    },
+    "webActivityDeleteLimit": {
+        "message": "Borrar límite"
+    },
+    "webActivityDeleteLimitConfirm": {
+        "message": "¿Borrar el límite de $1?"
+    },
+    "webActivitySnooze": {
+        "message": "Cinco minutos más",
+        "description": "Levanta el bloqueo un rato. Queda registrado como aplazamiento, no como quitar el límite."
+    },
+    "webActivitySnoozed": {
+        "message": "Bloqueo aplazado"
+    },
+    "webActivityLimitPaused": {
+        "message": "en pausa"
+    },
+    "webActivityBlockAlways": {
+        "message": "Bloquear siempre"
+    },
+    "webActivityLimitAlways": {
+        "message": "Siempre"
+    },
+    "webActivityBlockAlwaysHint": {
+        "message": "El sitio se bloquea diga lo que diga el reloj."
+    },
+    "webActivityEveryDay": {
+        "message": "todos los días"
+    },
+    "webActivityRemaining": {
+        "message": "quedan $1"
+    },
+    "webActivityExhausted": {
+        "message": "no queda nada hoy"
+    },
+    "webActivityLimitSaved": {
+        "message": "Límite guardado"
+    },
+    "webActivityFieldSite": {
+        "message": "Sitio",
+        "description": "Solo el dominio, sin https:// — puedes pegar la dirección entera, se queda solo el host"
+    },
+    "webActivityFieldDailyLimit": {
+        "message": "Cuota diaria"
+    },
+    "webActivityDailyLimitHint": {
+        "message": "Cuando se agota el tiempo del día el sitio se bloquea hasta medianoche. Cero significa sin cuota."
+    },
+    "webActivityFieldSchedules": {
+        "message": "Horas bloqueadas"
+    },
+    "webActivitySchedulesHint": {
+        "message": "Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
+    },
+    "webActivityAddSchedule": {
+        "message": "Añadir franja"
+    },
+    "webActivityRemoveSchedule": {
+        "message": "Quitar esta franja"
+    },
+    "webActivityFrom": {
+        "message": "Desde"
+    },
+    "webActivityTo": {
+        "message": "Hasta"
+    },
+    "webActivityFieldCategory": {
+        "message": "Categoría",
+        "description": "Sustituye la categoría deducida del dominio, que es sobre la que se calcula el índice de foco"
+    },
+    "webActivityCategoryAuto": {
+        "message": "Detectar automáticamente"
+    },
+    "webActivityFieldNotifyAt": {
+        "message": "Avisar al (%)"
+    },
+    "webActivityNotifyAtHint": {
+        "message": "Una notificación cuando se haya ido esta parte de la cuota. Vacío para usar el ajuste general."
+    },
+    "webActivityLimitEnabled": {
+        "message": "Límite activo"
+    },
+    "webActivityLimitEnabledHint": {
+        "message": "Desactívalo para conservar la regla sin que bloquee nada."
+    },
+    "webActivityHours": {
+        "message": "Horas"
+    },
+    "webActivityMinutes": {
+        "message": "Minutos"
+    },
+    "webActivityHoursShort": {
+        "message": "h"
+    },
+    "webActivityMinutesShort": {
+        "message": "min"
+    },
+    "webActivityClearAll": {
+        "message": "Borrarlo todo",
+        "description": "Elimina todos los días registrados y las visitas recientes. Los límites y los ajustes se conservan."
+    },
+    "webActivityClearAllConfirm": {
+        "message": "¿Borrar todo el historial de actividad?"
+    },
+    "webActivityImported": {
+        "message": "Datos importados"
+    },
+    "webActivityImportFailed": {
+        "message": "No se ha podido leer ese fichero"
+    },
+    "webActivityBlockedTitle": {
+        "message": "Sitio bloqueado"
+    },
+    "webActivityBlockedGeneric": {
+        "message": "Un límite que pusiste está cortando este sitio."
+    },
+    "webActivityBlockedReason_always": {
+        "message": "Este sitio está configurado para bloquearse siempre."
+    },
+    "webActivityBlockedReason_schedule": {
+        "message": "Este sitio está dentro de una de sus franjas bloqueadas."
+    },
+    "webActivityBlockedReason_daily": {
+        "message": "El tiempo de hoy en este sitio se ha agotado."
+    },
+    "webActivityBlockedUntil": {
+        "message": "Vuelve a las $1."
+    },
+    "webActivityBlockedUntilMidnight": {
+        "message": "La cuota vuelve a empezar a medianoche."
+    },
+    "webActivityBlockedGoBack": {
+        "message": "Volver"
+    },
+    "webActivityBlockedSnooze": {
+        "message": "$1 minutos más"
+    },
+    "webActivityBlockedFooter": {
+        "message": "Esto lo configuraste tú, desde el dashboard de actividad web. Puedes cambiarlo allí."
+    },
+    "webActivityLimitNearTitle": {
+        "message": "Casi sin tiempo"
+    },
+    "webActivityLimitNearBody": {
+        "message": "$1: quedan unos $2 minutos hoy."
+    },
+    "webActivityKpiAvgPerDaySub": {
+        "message": "días activos: $1"
+    },
+    "webActivityKpiSitesSub": {
+        "message": "categorías: $1"
+    },
+    "webActivityHourSites": {
+        "message": "Sitios web visitados: $1",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "dashboardHourSessions": {
+        "message": "Sesiones de Pomodoro: $1",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "dashboardHourSlotTitle": {
+        "message": "Franja horaria: De $1:00 a $2:00 h\nTiempo total acumulado: $3\n$4\n(Actividad total registrada en esta hora del día durante el periodo seleccionado)",
+        "placeholders": {
+            "start": {
+                "content": "$1"
+            },
+            "end": {
+                "content": "$2"
+            },
+            "time": {
+                "content": "$3"
+            },
+            "count": {
+                "content": "$4"
+            }
+        }
+    },
+    "permIdle": {
+        "message": "Detecta cuando te alejas del teclado, para que el reloj de actividad web se pare en lugar de contar una silla vacía."
+    },
+    "webActivityLogTitle": {
+        "message": "Registro de webs visitadas"
+    },
+    "webActivityLogHint": {
+        "message": "Todas las webs del periodo con sus cifras, y los campos que fijan su cuota diaria, su horario y su categoría."
+    },
+    "webActivityLogSummary": {
+        "message": "$1 sitios · $2 en total"
+    },
+    "webActivityTotalRow": {
+        "message": "Total ($1)"
+    },
+    "webActivityColCategory": {
+        "message": "Categoría"
+    },
+    "webActivityColSchedule": {
+        "message": "Horario"
+    },
+    "webActivityColState": {
+        "message": "Estado"
+    },
+    "webActivityColPerDay": {
+        "message": "Por día"
+    },
+    "webActivityColActiveDays": {
+        "message": "Días activos"
+    },
+    "webActivityColLastSeen": {
+        "message": "Última visita"
+    },
+    "webActivityColSiteDesc": {
+        "message": "Nombre de dominio del sitio web visitado"
+    },
+    "webActivityColCategoryDesc": {
+        "message": "Categoría temática asignada a este sitio web"
+    },
+    "webActivityColVisitsDesc": {
+        "message": "Visitas: Número total de páginas o URLs que has abierto y navegado dentro de este sitio web"
+    },
+    "webActivityColTimeDesc": {
+        "message": "Tiempo total de uso activo acumulado en este sitio web"
+    },
+    "webActivityColShareDesc": {
+        "message": "Porcentaje del tiempo total de navegación dedicado a este sitio"
+    },
+    "webActivityColPerVisitDesc": {
+        "message": "Por visita: Tiempo medio transcurrido en cada página abierta de este sitio web"
+    },
+    "webActivityColSessionsDesc": {
+        "message": "Sesiones: Número de accesos a este sitio web para usarlo de forma continua (agrupa todas las páginas visitadas hasta que cambias de web, te ausentas o cierras la pestaña)"
+    },
+    "webActivityColPerDayDesc": {
+        "message": "Tiempo medio de navegación por cada día activo"
+    },
+    "webActivityColActiveDaysDesc": {
+        "message": "Cantidad de días distintos en los que se visitó este sitio"
+    },
+    "webActivityColLastSeenDesc": {
+        "message": "Fecha de la última visita registrada en el periodo"
+    },
+    "webActivityColLimitDesc": {
+        "message": "Límite de tiempo diario máximo permitido para este sitio"
+    },
+    "webActivityColScheduleDesc": {
+        "message": "Franja horaria configurada en la que el sitio permanece bloqueado"
+    },
+    "webActivityColStateDesc": {
+        "message": "Estado actual de bloqueo o porcentaje de cuota diaria consumida"
+    },
+    "webActivityColActionsDesc": {
+        "message": "Acciones disponibles para este sitio web"
+    },
+    "webActivityStateWatchedTitle": {
+        "message": "Sitio web supervisado sin límite de tiempo establecido"
+    },
+    "webActivityStateNoLimitTitle": {
+        "message": "Sin límite de tiempo ni horario configurado"
+    },
+    "webActivityStateQuotaTitle": {
+        "message": "Consumido el $1% de la cuota diaria del límite configurado $2 / $3",
+        "placeholders": {
+            "percent": {
+                "content": "$1"
+            },
+            "used": {
+                "content": "$2"
+            },
+            "limit": {
+                "content": "$3"
+            }
+        }
+    },
+    "webActivityTotalSitesHint": {
+        "message": "Total de sitios web mostrados: $1",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityTotalVisitsHint": {
+        "message": "Total de visitas acumuladas: $1",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityTotalTimeHint": {
+        "message": "Tiempo total acumulado en todos los sitios: $1",
+        "placeholders": {
+            "time": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityTotalShareHint": {
+        "message": "Representa el 100% del tiempo total registrado"
+    },
+    "webActivityTotalSessionsHint": {
+        "message": "Total de sesiones registradas: $1",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityTotalAvgVisitHint": {
+        "message": "Duración media global por visita: $1",
+        "placeholders": {
+            "time": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityColRecord": {
+        "message": "Registrar"
+    },
+    "webActivityColRecordDesc": {
+        "message": "Controla si se registra la actividad de este sitio o se excluye del seguimiento"
+    },
+    "webActivityNotConfigured": {
+        "message": "Sin configurar"
+    },
+    "webActivityConfigureLimit": {
+        "message": "Configurar límite y horario"
+    },
+    "webActivityIgnoreDomainTitle": {
+        "message": "Dejar de registrar dominio"
+    },
+    "webActivityIgnoreDomainConfirm": {
+        "message": "¿Quieres añadir '$1' a la lista de sitios no registrados? Ya no se registrará tu tiempo ni visitas en esta web.",
+        "placeholders": {
+            "domain": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityIgnoreDomainBtn": {
+        "message": "No registrar este dominio"
+    },
+    "webActivityUnignoreDomainBtn": {
+        "message": "Volver a registrar este sitio"
+    },
+    "webActivityDomainIgnored": {
+        "message": "Dominio añadido a la lista de sitios no registrados"
+    },
+    "webActivityDomainRestored": {
+        "message": "Dominio reincorporado al registro de actividad"
+    },
+    "webActivityRemoveLimit": {
+        "message": "Eliminar límite diario"
+    },
+    "webActivityRemoveSchedule": {
+        "message": "Eliminar horario configurado"
+    },
+    "webActivitySortBy": {
+        "message": "Ordenar por esta columna",
+        "description": "Pulsa para ordenar; vuelve a pulsar para invertir"
+    },
+    "webActivityColumnsTitle": {
+        "message": "Columnas"
+    },
+    "webActivityColumnsHint": {
+        "message": "Elige qué muestra el registro. La elección se recuerda."
+    },
+    "webActivityColumnsReset": {
+        "message": "Restaurar por defecto"
+    },
+    "webActivityColumnPinned": {
+        "message": "Siempre visible"
+    },
+    "webActivityOn": {
+        "message": "Activado"
+    },
+    "webActivityOff": {
+        "message": "Desactivado"
+    },
+    "webActivityFieldSchedules": {
+        "message": "Horario permitido",
+        "description": "Las únicas horas en que se puede abrir el sitio. Déjalo vacío para permitirlo a cualquier hora."
+    },
+    "webActivitySchedulesHint": {
+        "message": "Fuera de este horario el sitio se bloquea. Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
+    },
+    "webActivityAddSchedule": {
+        "message": "Añadir franja"
+    },
+    "webActivityBlockedReason_schedule": {
+        "message": "Este sitio solo se puede abrir dentro del horario que fijaste."
+    },
+    "webActivityBlockedUntil": {
+        "message": "Se vuelve a abrir a las $1."
+    },
+    "webActivityBlockedUntilDay": {
+        "message": "Se vuelve a abrir el $1 a las $2."
+    },
+    "webActivityAllowedWindow": {
+        "message": "solo $1–$2"
+    },
+    "webActivityStateBlocked_schedule": {
+        "message": "fuera de horario"
+    },
+    "webActivityColSchedule": {
+        "message": "Horario",
+        "description": "Solo dentro de esta franja se puede abrir el sitio"
     }
 }

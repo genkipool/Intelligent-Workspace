@@ -1,6 +1,7 @@
 import { showNotification } from '../../../../../utils/i18n.js';
 import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
 import { hidePanel } from '../../../../stores/musicPlayerStore.js';
+import { openDashboard } from '../../../../services/dashboard/dashboardPages.js';
 
 // ============================================================
 // POMODORO FRONTEND v3 — 3-division design, fixed sound, i18n
@@ -2089,10 +2090,7 @@ export function initPomodoro() {
     // ─── New corner / toolbar buttons ──────────────────────────
     // Note button (toolbar) — creates note
     pomodoroNoteBtn?.addEventListener('click', () => openPomoNoteModal());
-    pomodoroDashboardBtn?.addEventListener('click', () => {
-        const dashboardUrl = chrome.runtime.getURL('src/ui/pages/pomodoro-dashboard/dashboard.html');
-        chrome.tabs.create({ url: dashboardUrl, active: true });
-    });
+    pomodoroDashboardBtn?.addEventListener('click', () => openDashboard('pomodoro'));
 
     // Note button (corner of timer) — navigates to pomodoro notes view
     noteCornerBtn?.addEventListener('click', () => openPomoNotesView());

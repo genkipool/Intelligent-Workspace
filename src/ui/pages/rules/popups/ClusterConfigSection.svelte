@@ -96,13 +96,33 @@
     }
 
     function setThreshold(key, raw) {
-        const value = Number.parseInt(raw, 10);
+        let value = Number.parseInt(raw, 10);
         if (Number.isNaN(value)) return;
+        if (value > 100) value = 100;
+        if (value < 1) value = 1;
         if (key === 'compactMode') clusterConfig.compactMode.threshold = value;
         else if (key === 'domains') clusterConfig.domainThreshold = value;
         else if (key === 'subdomains') clusterConfig.subdomainThreshold = value;
         else clusterConfig.specialGroups[key].threshold = value;
         scheduleChange();
+    }
+
+    function handleNumericKeydown(e) {
+        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+            e.preventDefault();
+        }
+    }
+
+    function handleThresholdInput(e, key) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseInt(val, 10);
+            if (!Number.isNaN(num) && num > 100) {
+                e.currentTarget.value = '100';
+                val = '100';
+            }
+        }
+        setThreshold(key, val);
     }
 
     /** Domain and subdomain grouping are mutually exclusive: enabling one disables the other. */
@@ -208,12 +228,13 @@
             <input
                 type="number"
                 id="{idPrefix}{entry.thresholdId}"
-                min="2"
-                max="50"
+                min="1"
+                max="100"
                 aria-label={$t(entry.thresholdLabelKey)}
                 title={$tt('groupThresholdDesc')}
                 value={thresholdOf(entry.key)}
-                oninput={(e) => setThreshold(entry.key, e.currentTarget.value)}
+                onkeydown={handleNumericKeydown}
+                oninput={(e) => handleThresholdInput(e, entry.key)}
             />
             {@render toggle(entry.key, `${idPrefix}${entry.switchId}`)}
         </div>
@@ -248,12 +269,13 @@
         <input
             type="number"
             id="{idPrefix}{entry.key}-threshold"
-            min="2"
-            max="50"
+            min="1"
+            max="100"
             aria-label={$t(entry.thresholdLabelKey)}
             title={$tt('groupThresholdDesc')}
             value={thresholdOf(entry.key)}
-            oninput={(e) => setThreshold(entry.key, e.currentTarget.value)}
+            onkeydown={handleNumericKeydown}
+            oninput={(e) => handleThresholdInput(e, entry.key)}
         />
         {@render toggle(entry.key, `${idPrefix}enabled-${entry.key}`)}
     </div>

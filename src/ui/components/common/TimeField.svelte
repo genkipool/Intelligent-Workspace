@@ -10,9 +10,19 @@
      * @typedef {object} Props
      * @property {string} value - `HH:MM`.
      * @property {string} [id]
+     * @property {string} [placeholder] - Shown while there is no value. The default
+     *   keeps the original behaviour of reading as midnight; a caller for whom "not
+     *   set" and "midnight" are different things passes something else.
+     * @property {string} [title]
      * @property {(value: string) => void} [onchange] - For callers that cannot bind.
      */
-    let { value = $bindable('00:00'), id = undefined, onchange = undefined } = $props();
+    let {
+        value = $bindable('00:00'),
+        id = undefined,
+        placeholder = '00:00',
+        title = undefined,
+        onchange = undefined,
+    } = $props();
 
     let open = $state(false);
     let triggerEl = $state(null);
@@ -81,12 +91,14 @@
     {id}
     bind:this={triggerEl}
     class="custom-input-trigger time-trigger"
+    class:is-empty={!value}
     role="button"
     tabindex="0"
+    {title}
     onclick={toggle}
     onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggle())}
 >
-    {value || '00:00'}
+    {value || placeholder}
 </div>
 
 {#if open}

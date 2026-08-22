@@ -7,6 +7,48 @@
         timerActiveTime = $bindable(15),
         onreset = () => {},
     } = $props();
+
+    function handleNumericKeydown(e) {
+        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+            e.preventDefault();
+        }
+    }
+
+    function handleInactiveInput(e) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseFloat(val);
+            if (!Number.isNaN(num) && num > 1440) {
+                e.currentTarget.value = '1440';
+                timerInactiveTime = 1440;
+                return;
+            }
+            if (!Number.isNaN(num) && num < 0) {
+                e.currentTarget.value = '0';
+                timerInactiveTime = 0;
+                return;
+            }
+        }
+        timerInactiveTime = val === '' ? 0 : Number.parseFloat(val) || 0;
+    }
+
+    function handleActiveInput(e) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseFloat(val);
+            if (!Number.isNaN(num) && num > 1440) {
+                e.currentTarget.value = '1440';
+                timerActiveTime = 1440;
+                return;
+            }
+            if (!Number.isNaN(num) && num < 0) {
+                e.currentTarget.value = '0';
+                timerActiveTime = 0;
+                return;
+            }
+        }
+        timerActiveTime = val === '' ? 0 : Number.parseFloat(val) || 0;
+    }
 </script>
 
 <div class="settings-section" id="modal-timer-section">
@@ -64,9 +106,11 @@
                 id="modal-inactive-time"
                 min="0"
                 step="0.1"
-                max="99999"
-                maxlength="5"
-                bind:value={timerInactiveTime}
+                max="1440"
+                maxlength="6"
+                value={timerInactiveTime}
+                onkeydown={handleNumericKeydown}
+                oninput={handleInactiveInput}
             />
             <small>{$t('noteInactiveGroupsTime') || 'Minutes of inactivity before collapse'}</small>
         </label>
@@ -78,9 +122,11 @@
                 id="modal-active-time"
                 min="0"
                 step="0.1"
-                max="99999"
-                maxlength="5"
-                bind:value={timerActiveTime}
+                max="1440"
+                maxlength="6"
+                value={timerActiveTime}
+                onkeydown={handleNumericKeydown}
+                oninput={handleActiveInput}
             />
             <small>{$t('noteactiveGroupsTime') || 'Minutes of active period'}</small>
         </label>

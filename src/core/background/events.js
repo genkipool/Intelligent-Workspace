@@ -1111,7 +1111,16 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name !== PERIODIC_TASKS_ALARM) return;
     // Each one is independent: a failure in the first must not stop the others.
-    await Promise.allSettled([suspendInactiveTabsIntelligently(), checkSchedules(), checkGeminiSchedules()]);
+    // waSync is what keeps the web activity clock honest while nothing else happens:
+    // it banks the open segment, so a long read is not one huge lump at the end, and
+    // it is also when a blocking schedule that just opened takes effect.
+    await Promise.allSettled([
+        suspendInactiveTabsIntelligently(),
+        checkSchedules(),
+        checkGeminiSchedules(),
+        waSync(),
+        waPruneOldDays(),
+    ]);
 });
 chrome.runtime.onStartup.addListener(initializeExtensionStates);
 chrome.runtime.onInstalled.addListener(async (details) => {

@@ -48,13 +48,16 @@
             enablePrefixes: isPrefixesEnabled,
             userPrefixes: $state.snapshot(currentUserPrefixes),
             enableCollapseTimer: isCollapseTimerEnabled,
-            inactiveCollapseTime: timerInactiveTime,
-            activeCollapseTime: timerActiveTime,
+            inactiveCollapseTime: Math.min(1440, Math.max(0, timerInactiveTime)),
+            activeCollapseTime: Math.min(1440, Math.max(0, timerActiveTime)),
         };
     }
 
     function localSnapshot() {
-        return { discardingEnabled: isDiscardingEnabled, discardingTimeMinutes: discardingTime };
+        return {
+            discardingEnabled: isDiscardingEnabled,
+            discardingTimeMinutes: Math.min(1440, Math.max(1, discardingTime)),
+        };
     }
 
     async function loadAll() {
@@ -76,8 +79,8 @@
         isPrefixesEnabled = data.enablePrefixes ?? true;
         currentUserPrefixes = { ...currentUserPrefixes, ...(data.userPrefixes || {}) };
         isCollapseTimerEnabled = data.enableCollapseTimer ?? false;
-        timerInactiveTime = data.inactiveCollapseTime ?? 1;
-        timerActiveTime = data.activeCollapseTime ?? 15;
+        timerInactiveTime = Math.min(1440, Math.max(0, data.inactiveCollapseTime ?? 1));
+        timerActiveTime = Math.min(1440, Math.max(0, data.activeCollapseTime ?? 15));
 
         const localData = await chrome.storage.local.get([
             'discardingEnabled',
@@ -85,7 +88,7 @@
             'ruleStorageArea',
         ]);
         isDiscardingEnabled = localData.discardingEnabled !== false;
-        discardingTime = localData.discardingTimeMinutes ?? 60;
+        discardingTime = Math.min(1440, Math.max(1, localData.discardingTimeMinutes ?? 60));
         ruleStorageArea = localData.ruleStorageArea || 'sync';
 
         const { customRules = [] } = await getRuleStorage();

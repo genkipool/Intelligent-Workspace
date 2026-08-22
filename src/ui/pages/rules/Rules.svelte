@@ -137,13 +137,13 @@
             isCollapseTimerEnabled = settings.enableCollapseTimer ?? false;
             clusterConfig = mergeClusterConfig(settings.clusterConfig || {});
             if (settings.userPrefixes) userPrefixes = { ...userPrefixes, ...settings.userPrefixes };
-            timerInactiveTime = settings.inactiveCollapseTime ?? 1;
-            timerActiveTime = settings.activeCollapseTime ?? 15;
+            timerInactiveTime = Math.min(1440, Math.max(0, settings.inactiveCollapseTime ?? 1));
+            timerActiveTime = Math.min(1440, Math.max(0, settings.activeCollapseTime ?? 15));
             miscSortOption = settings.miscGroupSortOption || 'start';
             // ruleStorageArea and discardingTimeMinutes live in chrome.storage.local
             const localData = await chrome.storage.local.get(['ruleStorageArea', 'discardingTimeMinutes']);
             storageMode = localData.ruleStorageArea || 'sync';
-            discardingTime = localData.discardingTimeMinutes ?? 60;
+            discardingTime = Math.min(1440, Math.max(1, localData.discardingTimeMinutes ?? 60));
             // The quick guide opens by itself only while there are no rules yet; from
             // then on it is the Rules title and the "Rules" heading that summon it.
             showTutorial = $rulesStore.length === 0;
@@ -263,10 +263,13 @@
             const incoming = { ...userPrefixes, ...(changes.userPrefixes.newValue || {}) };
             if (JSON.stringify(incoming) !== JSON.stringify($state.snapshot(userPrefixes))) userPrefixes = incoming;
         }
-        if (changes.inactiveCollapseTime !== undefined) timerInactiveTime = changes.inactiveCollapseTime.newValue ?? 1;
-        if (changes.activeCollapseTime !== undefined) timerActiveTime = changes.activeCollapseTime.newValue ?? 15;
+        if (changes.inactiveCollapseTime !== undefined)
+            timerInactiveTime = Math.min(1440, Math.max(0, changes.inactiveCollapseTime.newValue ?? 1));
+        if (changes.activeCollapseTime !== undefined)
+            timerActiveTime = Math.min(1440, Math.max(0, changes.activeCollapseTime.newValue ?? 15));
         if (changes.miscGroupSortOption !== undefined) miscSortOption = changes.miscGroupSortOption.newValue || 'start';
-        if (changes.discardingTimeMinutes !== undefined) discardingTime = changes.discardingTimeMinutes.newValue ?? 60;
+        if (changes.discardingTimeMinutes !== undefined)
+            discardingTime = Math.min(1440, Math.max(1, changes.discardingTimeMinutes.newValue ?? 60));
     }
 
     function handleKeydown(e) {
@@ -1246,8 +1249,8 @@
     onSavePrefixes={savePrefixes}
     onSaveTimer={() =>
         saveSettings({
-            inactiveCollapseTime: timerInactiveTime,
-            activeCollapseTime: timerActiveTime,
+            inactiveCollapseTime: Math.min(1440, Math.max(0, timerInactiveTime)),
+            activeCollapseTime: Math.min(1440, Math.max(0, timerActiveTime)),
             enableCollapseTimer: true,
         })}
     onResetTimer={resetTimerDefaults}
@@ -1264,7 +1267,10 @@
     onCloseColor={() => (colorTargetIndex = -1)}
     onSelectStorage={switchStorageMode}
     onSaveDiscarding={() =>
-        chrome.storage.local.set({ discardingTimeMinutes: discardingTime, discardingEnabled: true })}
+        chrome.storage.local.set({
+            discardingTimeMinutes: Math.min(1440, Math.max(1, discardingTime)),
+            discardingEnabled: true,
+        })}
     onResetDiscarding={resetDiscardingDefaults}
 />
 

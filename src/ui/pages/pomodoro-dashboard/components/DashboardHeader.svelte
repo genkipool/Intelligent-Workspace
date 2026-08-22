@@ -32,7 +32,7 @@
     <!-- Period & tag filters -->
     <div class="header-filters">
         <span class="filter-label">{$t('dashboardPeriod') || 'Period'}</span>
-        <div style="display:flex;gap:5px;align-items:center" id="period-filters">
+        <div class="filter-chips" id="period-filters">
             <button class="filter-chip" type="button" data-period="1" title={$tt('titleFilterToday')}
                 >{$t('dashboardToday') || 'Today'}</button
             >

@@ -2,6 +2,30 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 
     let { isDiscardingEnabled = $bindable(true), discardingTime = $bindable(60), onreset = () => {} } = $props();
+
+    function handleNumericKeydown(e) {
+        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+            e.preventDefault();
+        }
+    }
+
+    function handleDiscardingInput(e) {
+        let val = e.currentTarget.value;
+        if (val !== '') {
+            const num = Number.parseInt(val, 10);
+            if (!Number.isNaN(num) && num > 1440) {
+                e.currentTarget.value = '1440';
+                discardingTime = 1440;
+                return;
+            }
+            if (!Number.isNaN(num) && num < 1) {
+                e.currentTarget.value = '1';
+                discardingTime = 1;
+                return;
+            }
+        }
+        discardingTime = val === '' ? 1 : Number.parseInt(val, 10) || 1;
+    }
 </script>
 
 <div class="settings-section" id="modal-discarding-section">
@@ -59,9 +83,11 @@
                 id="modal-discarding-time"
                 min="1"
                 step="1"
-                max="9999"
+                max="1440"
                 maxlength="4"
-                bind:value={discardingTime}
+                value={discardingTime}
+                onkeydown={handleNumericKeydown}
+                oninput={handleDiscardingInput}
             />
             <small>{$t('noteDiscardingTime') || 'Minutes before tabs are discarded'}</small>
         </label>

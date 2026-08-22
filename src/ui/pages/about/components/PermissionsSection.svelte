@@ -35,6 +35,7 @@
         <li><strong translate="no">clipboardWrite:</strong> <span>{$t('permClipboardWrite')}</span></li>
         <li><strong translate="no">alarms:</strong> <span>{$t('permAlarms')}</span></li>
         <li><strong translate="no">offscreen:</strong> <span>{$t('permOffscreen')}</span></li>
+        <li><strong translate="no">idle:</strong> <span>{$t('permIdle')}</span></li>
     </ul>
 
     <p>{$t('privacyCommitment')}</p>

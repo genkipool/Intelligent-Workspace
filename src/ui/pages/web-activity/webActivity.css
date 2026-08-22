@@ -1,0 +1,597 @@
+/* ===============================================================
+   Web activity — only what the shared dashboard stylesheet does not
+   already cover. Layout, cards, tables, heatmap, timeline and the
+   modal chrome all come from src/styles/dashboard.css; adding a rule
+   here that belongs to every dashboard belongs there instead.
+   =============================================================== */
+
+/* --- LOADING ---------------------------------------------------- */
+.wa-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    min-height: 50vh;
+}
+
+/* --- LIVE BADGE -------------------------------------------------
+   What is being timed right this second. It is the one thing on the
+   page that is not history, so it says so. */
+.wa-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: flex-start;
+    margin-bottom: 4px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-panel-color);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.03em;
+}
+
+.wa-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--interactive-color);
+    animation: wa-pulse 1.8s ease-in-out infinite;
+    flex-shrink: 0;
+}
+
+@keyframes wa-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+}
+
+/* --- SIDEBAR EXTRAS --------------------------------------------- */
+.si-favicon {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    object-fit: contain;
+}
+
+.folder-count {
+    cursor: pointer;
+}
+
+/* --- VISIT LOG --------------------------------------------------
+   The first thing on the page: every site, its numbers, and the boxes
+   that set its limit.
+
+   No card around it. The rest of the dashboard is a set of small
+   figures, each of which needs a frame to be read as one thing; the
+   log is the page's subject and a border around something that fills
+   the width only adds a line to look past. A table cannot reflow, so
+   it still scrolls inside its own bounds rather than widening the
+   page. */
+.wa-log {
+    display: flex;
+    flex-direction: column;
+    animation: fadeUp 0.4s ease both;
+}
+
+.table-scroll {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 62vh;
+    background-color: var(--bg-panel-color);
+}
+
+.table-scroll .data-table {
+    background-color: var(--bg-panel-color);
+}
+
+.table-scroll .data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--bg-panel-color);
+}
+
+/* The row is the unit of work here, so it gets enough height for the
+   editors to sit comfortably instead of being crushed. */
+.wa-log-table td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    background-color: var(--bg-panel-color);
+}
+
+.wa-log-table tr:hover td {
+    background-color: color-mix(in srgb, var(--interactive-color) 8%, var(--bg-panel-color));
+}
+
+.wa-log-table tr.is-blocked td:first-child {
+    box-shadow: inset 3px 0 0 var(--error-color);
+}
+
+.wa-log-table tfoot td {
+    position: sticky;
+    bottom: 0;
+    background-color: var(--bg-panel-color);
+    border-top: 1px solid var(--border-color);
+    font-weight: 600;
+}
+
+.wa-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.wa-sort-btn:hover {
+    color: var(--interactive-color);
+}
+
+.wa-sort-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+}
+
+/* The header text is already toned down, so an opacity on top of it stacks into
+   nothing. The mark states its own colour instead. */
+.wa-sort-mark {
+    font-size: 9px;
+    color: var(--text-dim);
+}
+
+.wa-sort-mark.active {
+    color: var(--text-on-color);
+}
+
+.wa-site-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.wa-site-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 190px;
+}
+
+.wa-cell-with-action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    min-width: 155px;
+    box-sizing: border-box;
+}
+
+.wa-cell-with-action .wa-cell-val {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wa-cell-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.wa-btn-placeholder {
+    display: inline-block;
+    width: 26px;
+    height: 26px;
+    visibility: hidden;
+    flex-shrink: 0;
+}
+
+.wa-row-actions {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+}
+
+.wa-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+        background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wa-edit-btn {
+    background: color-mix(in srgb, var(--interactive-color) 10%, transparent);
+    border-color: color-mix(in srgb, var(--border-color) 85%, transparent);
+    color: var(--text-color);
+    margin-left: auto;
+}
+
+.wa-edit-btn:hover {
+    background: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: var(--text-color);
+    transform: scale(1.08);
+}
+
+.wa-edit-btn:active {
+    transform: scale(0.94);
+}
+
+/* `--text-color` on an accent fill, never `--text-on-color`: in the light and
+   viridian palettes that variable is the accent colour itself, so the icon would
+   vanish into its own background. */
+.wa-icon-btn:hover {
+    background: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: var(--text-color);
+}
+
+.wa-icon-btn:active {
+    transform: scale(0.94);
+}
+
+.wa-icon-btn-danger:hover {
+    background: var(--error-color);
+    border-color: var(--error-color);
+    color: #fff;
+    transform: scale(1.08);
+}
+
+.wa-icon-btn-danger:active {
+    transform: scale(0.94);
+}
+
+.wa-icon-btn.is-ignored {
+    background: color-mix(in srgb, var(--error-color) 15%, transparent);
+    border-color: var(--error-color);
+    color: var(--error-color);
+}
+
+.wa-icon-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 1px;
+}
+
+/* --- BADGES ----------------------------------------------------- */
+.wa-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.wa-badge-blocked,
+.wa-chip-block {
+    background: color-mix(in srgb, var(--error-color) 25%, transparent);
+    border-color: var(--error-color);
+}
+
+.wa-muted {
+    color: var(--text-dim);
+}
+
+.wa-truncate {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- LIMITS ----------------------------------------------------- */
+.wa-limits-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.wa-limit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+}
+
+.wa-limit-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-color) 60%, transparent);
+}
+
+.wa-limit-card.is-blocked {
+    border-color: var(--error-color);
+}
+
+.wa-limit-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.wa-limit-domain {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wa-limit-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+.wa-limit-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+/* --- FORMS ------------------------------------------------------ */
+.wa-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.wa-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: none;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.wa-field-wide {
+    grid-column: 1 / -1;
+}
+
+.wa-field-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.wa-field-row > span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wa-field-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-soft);
+    padding: 0;
+}
+
+.wa-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.4;
+}
+
+.wa-inline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.wa-field input[type='text'],
+.wa-field input[type='number'],
+.wa-field input[type='time'],
+.wa-field select,
+.wa-field textarea {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+.wa-inline input[type='number'] {
+    width: 72px;
+}
+
+.wa-inline input[type='time'] {
+    width: auto;
+}
+
+.wa-field input:focus-visible,
+.wa-field select:focus-visible,
+.wa-field textarea:focus-visible {
+    outline: none;
+    border-color: var(--interactive-color);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color) 40%, transparent);
+}
+
+.wa-field input[readonly] {
+    opacity: 0.7;
+}
+
+.wa-field textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.wa-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.wa-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.wa-limit-modal .wa-form {
+    grid-template-columns: 1fr;
+}
+
+/* --- RESPONSIVE -------------------------------------------------
+   The shared stylesheet already collapses the sidebar and the chart
+   grids; these are the pieces this page adds. */
+@media (max-width: 860px) {
+    .wa-limit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wa-truncate {
+        max-width: 140px;
+    }
+}
+
+@media (max-width: 640px) {
+    .wa-form {
+        grid-template-columns: 1fr;
+    }
+
+    .table-scroll {
+        max-height: none;
+    }
+}
+
+/* --- BLOCK SCREEN -----------------------------------------------
+   Its own page, sharing this file's tokens so it looks like the rest
+   of the extension rather than a browser error. */
+.wa-block {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.wa-block-card {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 34px 28px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    background: var(--bg-panel-color);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.wa-block-icon {
+    color: var(--error-color);
+    line-height: 0;
+}
+
+.wa-block-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--header-color);
+}
+
+.wa-block-domain {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    word-break: break-all;
+}
+
+.wa-block-reason {
+    margin: 0;
+    color: var(--text-soft);
+    line-height: 1.5;
+}
+
+.wa-block-usage {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 12px;
+}
+
+.wa-block-usage .eff-bar {
+    width: 100%;
+}
+
+.wa-block-until {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-soft);
+}
+
+.wa-block-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.wa-block-footer {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+}

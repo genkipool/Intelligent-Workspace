@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" style="color-scheme: dark light">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title data-i18n="webActivityDashboardTitle">Web Activity Dashboard</title>
+        <link rel="icon" type="image/png" href="../../../../assets/icons/icon48.png" />
+        <style>
+            /* Paints the background before any script runs, so there is no white flash. */
+            html {
+                background-color: #f5f5f5;
+            }
+            @media (prefers-color-scheme: dark) {
+                html {
+                    background-color: #000000;
+                }
+            }
+            html[data-theme='dark'] {
+                background-color: #000000;
+            }
+            html[data-theme='light'] {
+                background-color: #f5f5f5;
+            }
+            html[data-theme='viridian'] {
+                background-color: #1b2631;
+            }
+        </style>
+        <script type="module" src="../../../utils/theme-init.js"></script>
+        <script type="module" src="../../../utils/i18n-init.js"></script>
+        <script type="module" src="./main.js"></script>
+    </head>
+    <body>
+        <a id="download-link" style="display: none"></a>
+    </body>
+</html>

@@ -58,16 +58,20 @@
         reading: 'readingListViewTitle',
         downloads: 'downloadsViewTitle',
         gemini: 'geminiViewTitle',
+        notes: 'notesViewTitle',
+        gallery: 'screenshotGalleryTitle',
     };
-    const initialTitleKey = VIEW_TITLE_KEYS[new URLSearchParams(window.location.search).get('view')] || 'listTabGroups';
+    // Notes and gallery are painted over the group list rather than replacing it, so
+    // they name the header but leave the layout and the controls as the group ones.
+    const OVERLAY_VIEWS = new Set(['notes', 'gallery']);
+    const requestedView = new URLSearchParams(window.location.search).get('view');
+    const initialTitleKey = VIEW_TITLE_KEYS[requestedView] || 'listTabGroups';
 
     // The markup used to start laid out for the group list whatever the URL asked for,
     // so opening another view showed the group shell for a few frames before the boot
     // swapped it. The initial layout now comes from the same per-view configuration
     // the boot itself uses, so there is nothing to swap.
-    const initialView = VIEW_TITLE_KEYS[new URLSearchParams(window.location.search).get('view')]
-        ? new URLSearchParams(window.location.search).get('view')
-        : 'groups';
+    const initialView = VIEW_TITLE_KEYS[requestedView] && !OVERLAY_VIEWS.has(requestedView) ? requestedView : 'groups';
     const initiallyHidden = hiddenControlsForView(initialView);
     const wantsAssistantView = initialView === 'gemini';
 
@@ -116,7 +120,7 @@
         // The palette is already on screen from the localStorage mirror, and the
         // assistant store is only needed when the assistant is the requested view.
         const themeMirrored = document.documentElement.hasAttribute('data-theme');
-        const wantsAssistant = new URLSearchParams(window.location.search).get('view') === 'gemini';
+        const wantsAssistant = requestedView === 'gemini';
 
         const blocking = [
             catchErrors('i18nStore.init', () => i18nStore.init()),

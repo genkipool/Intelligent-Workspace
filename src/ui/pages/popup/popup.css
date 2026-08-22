@@ -364,6 +364,28 @@ input:focus-visible + .slider {
 
 .settings-rules-actions .button svg {
     margin-right: 6px;
+    flex-shrink: 0;
+}
+
+/* The label is the only part that can give: without this a long translation makes
+   the button wider than its column and the whole popup scrolls sideways. */
+.settings-rules-actions .button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.button-wrapper .section-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+}
+
+/* Below this the two columns leave no room for a readable label. */
+@media (max-width: 340px) {
+    .settings-rules-actions {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* General Button Styles */
@@ -402,57 +424,6 @@ button:active {
 
 .button i {
     margin-right: 6px;
-}
-
-/* Shortcuts List */
-.shortcuts-list {
-    background-color: var(--bg-panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    padding: 12px;
-    margin-top: 8px;
-    max-height: 140px;
-}
-
-.shortcut {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.shortcut:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: none;
-}
-
-.shortcut-key:hover {
-    background-color: var(--interactive-color);
-    border-radius: 4px;
-}
-
-.shortcut-key:focus-visible {
-    background-color: var(--interactive-color);
-    border-radius: 4px;
-    outline: none;
-    border: 1px solid var(--border-color);
-    box-shadow: 0 0 0 2px var(--action-color);
-}
-
-.shortcut-name {
-    font-size: 13px;
-}
-
-.shortcut-key {
-    font-size: 12px;
-    background-color: var(--bg-color);
-    padding: 2px 6px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
 }
 
 /* Donation Section */
@@ -620,22 +591,6 @@ footer:hover {
 .footer-link:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--interactive-color);
-}
-
-.shortcuts-header-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.section.keyboard-shortcuts {
-    transition: background-color 0.3s ease;
-    /* Smooth transition */
-}
-
-/* When switch is disabled, apply panel color */
-.section.keyboard-shortcuts.is-disabled {
-    background-color: var(--bg-panel-color);
 }
 
 /* Feedback Section */

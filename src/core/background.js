@@ -35,6 +35,7 @@ importScripts('/background/state.js');
 importScripts('/background/stateManager.js');
 importScripts('/services/storage.js');
 importScripts('/services/dbSchema.js');
+importScripts('/services/webActivitySchema.js');
 importScripts('/background/db.js');
 importScripts('/background/utils.js');
 importScripts('/background/handlers/bookmarks.js');
@@ -50,6 +51,7 @@ importScripts('/background/handlers/ui.js');
 importScripts('/background/handlers/screenshots.js');
 importScripts('/background/handlers/dnr.js');
 importScripts('/background/handlers/pomodoro-handlers.js');
+importScripts('/background/handlers/web-activity.js');
 importScripts('/background/handlers/omnibar-data.js');
 importScripts('/background/group-analyzer.js');
 importScripts('/background/groupManager.js');
@@ -90,6 +92,10 @@ importScripts('/background/pomodoro.js');
         }
     }
     await initializeExtensionStates();
+
+    // The idle threshold is not persisted across worker starts, and a blocking
+    // schedule may have opened while nothing was running.
+    await initWebActivity();
 
     // Inject content scripts into open tabs upon reload / startup so changes apply immediately without manual refresh
     logMessage('[Service Worker Startup] Injecting content scripts into open tabs.');

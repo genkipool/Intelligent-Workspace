@@ -1,4 +1,10 @@
 <script>
+    /**
+     * `countLabel` is what the tooltip says about `c`, because what a cell counts
+     * differs by dashboard — pomodoro sessions on one, nothing worth naming on
+     * another, where the duration alone is the whole story. Returning an empty string
+     * leaves the line out.
+     */
     let {
         cells = [],
         monthPositions = [],
@@ -6,6 +12,8 @@
         i18n = () => '',
         fmtDur = () => '',
         tooltipEl = null,
+        countLabel = (count, translate) =>
+            `${count} ${translate(count === 1 ? 'dashboardSession' : 'dashboardSessions')}`,
     } = $props();
 
     const STRIDE = 20; // 17px cell + 3px gap
@@ -13,16 +21,16 @@
     function showTooltip(e, { c, focus, date }) {
         if (!tooltipEl) return;
         tooltipEl.style.display = 'block';
-        const sessW = c !== 1 ? i18n('dashboardSessions') : i18n('dashboardSession');
         const focusLine = focus > 0 ? `<span class="tt-focus">${fmtDur(focus)}</span>` : '';
+        const counted = c > 0 ? countLabel(c, i18n) : '';
         const countLine =
             c > 0
-                ? `<span class="tt-count">${c} ${sessW}</span>`
+                ? counted && `<span class="tt-count">${counted}</span>`
                 : `<span class="tt-empty">${i18n('dashboardLegendNone') || 'Sin actividad'}</span>`;
 
         tooltipEl.innerHTML =
             `<span class="tt-date">${date.toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</span>` +
-            countLine +
+            (countLine || '') +
             focusLine;
 
         moveTooltip(e);

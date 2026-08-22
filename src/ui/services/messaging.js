@@ -147,6 +147,14 @@ export const ACTIONS = {
     POMODORO_PAUSE: 'pomodoroPause',
     POMODORO_RESET: 'pomodoroReset',
 
+    // Web activity
+    WEB_ACTIVITY_GET_DATA: 'webActivityGetData',
+    WEB_ACTIVITY_GET_STATUS: 'webActivityGetStatus',
+    WEB_ACTIVITY_SAVE_LIMIT: 'webActivitySaveLimit',
+    WEB_ACTIVITY_SNOOZE: 'webActivitySnooze',
+    WEB_ACTIVITY_CLEAR: 'webActivityClear',
+    WEB_ACTIVITY_IMPORT: 'webActivityImport',
+
     // Themes
     THEME_CHANGED: 'themeChanged',
 

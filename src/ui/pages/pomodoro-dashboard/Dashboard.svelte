@@ -12,10 +12,10 @@
 
     import Sidebar from './components/Sidebar.svelte';
     import TagFilter from './components/TagFilter.svelte';
-    import KpiGrid from './components/KpiGrid.svelte';
-    import HourGrid from './components/HourGrid.svelte';
-    import Heatmap from './components/Heatmap.svelte';
-    import DonutStats from './components/DonutStats.svelte';
+    import KpiGrid from '../../components/dashboard/KpiGrid.svelte';
+    import HourGrid from '../../components/dashboard/HourGrid.svelte';
+    import Heatmap from '../../components/dashboard/Heatmap.svelte';
+    import DonutStats from '../../components/dashboard/DonutStats.svelte';
     import ProjectTable from './components/ProjectTable.svelte';
     import Timeline from './components/Timeline.svelte';
     import DashboardHeader from './components/DashboardHeader.svelte';
@@ -26,15 +26,19 @@
     import DashboardProjectAnalysisSection from './components/DashboardProjectAnalysisSection.svelte';
     import DashboardBreakdownSection from './components/DashboardBreakdownSection.svelte';
     import {
-        fmtDur,
-        fmtH,
-        fmtDateShort,
-        fmtTime,
-        dayKey,
-        effColor,
-        computeKpis,
-        computeStreak,
-    } from './dashboardAnalytics.js';
+        applyChartDefaults,
+        blendColors,
+        colorMix,
+        createVerticalGradient,
+        cssVar,
+        getSeriesColor as getProjectColor,
+        getThemeScoreColor as getThemeEffColor,
+        scaleDef,
+        tickDef,
+        tooltipDef,
+    } from '../../services/dashboard/chartTheme.js';
+    import { computeKpis, computeStreak, effColor } from './dashboardAnalytics.js';
+    import { dayKey, fmtDateShort, fmtDur, fmtH, fmtTime } from '../../services/dashboard/format.js';
 
     let apps = {
         sidebar: null,
@@ -225,157 +229,7 @@
     let sidebarQuery = '';
     let charts = {};
 
-    // --- CHART DEFAULTS -----------------------------------------------
-    Chart.defaults.color = cssVar('--text-color');
-    if (Chart.defaults.font) {
-        Chart.defaults.font.family = "'Roboto Mono', monospace";
-    }
-
-    const tooltipDef = () => ({
-        backgroundColor: cssVar('--bg-panel-color'),
-        borderColor: cssVar('--border-color'),
-        borderWidth: 1,
-        titleColor: cssVar('--text-on-color'),
-        bodyColor: cssVar('--text-color'),
-        padding: 10,
-        cornerRadius: 8,
-        titleFont: { family: "'Roboto Mono', monospace", size: 12, weight: '600' },
-        bodyFont: { family: "'Roboto Mono', monospace", size: 11 },
-        displayColors: true,
-        boxPadding: 4,
-    });
-
-    const scaleDef = () => ({
-        grid: { color: cssVar('--border-color'), drawBorder: false },
-        border: { display: false },
-    });
-
-    const tickDef = () => ({
-        color: cssVar('--text-color'),
-        font: { family: "'Roboto Mono', monospace", size: 11 },
-    });
-
-    // Creates vertical gradients using resolved theme variables
-    function createVerticalGradient(ctx, chartArea, varName, alphaStart = 0.8, alphaEnd = 0.2) {
-        if (!chartArea || !ctx) return 'rgba(52,152,219,0.5)';
-        const { top = 0, bottom = 100 } = chartArea;
-        const gradient = ctx.createLinearGradient(0, top, 0, bottom);
-        const baseColor = cssVar(varName) || '#3498db';
-        gradient.addColorStop(0, colorMix(baseColor, alphaStart));
-        gradient.addColorStop(1, colorMix(baseColor, alphaEnd));
-        return gradient;
-    }
-
-    function parseRgba(color) {
-        if (!color) return { r: 52, g: 152, b: 219, a: 1 };
-        const str = String(color).trim();
-
-        if (/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/.test(str)) {
-            const match = str.match(/^#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])$/);
-            return {
-                r: parseInt(match[1] + match[1], 16),
-                g: parseInt(match[2] + match[2], 16),
-                b: parseInt(match[3] + match[3], 16),
-                a: 1,
-            };
-        }
-
-        if (/^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})/.test(str)) {
-            return {
-                r: parseInt(str.slice(1, 3), 16),
-                g: parseInt(str.slice(3, 5), 16),
-                b: parseInt(str.slice(5, 7), 16),
-                a: 1,
-            };
-        }
-
-        const rgbMatch = str.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?/);
-        if (rgbMatch) {
-            return {
-                r: parseFloat(rgbMatch[1]),
-                g: parseFloat(rgbMatch[2]),
-                b: parseFloat(rgbMatch[3]),
-                a: rgbMatch[4] !== undefined ? parseFloat(rgbMatch[4]) : 1,
-            };
-        }
-
-        try {
-            const testCanvas = document.createElement('canvas');
-            testCanvas.width = 1;
-            testCanvas.height = 1;
-            const testCtx = testCanvas.getContext('2d');
-            testCtx.fillStyle = str;
-            testCtx.fillRect(0, 0, 1, 1);
-            const [r, g, b, a] = testCtx.getImageData(0, 0, 1, 1).data;
-            return { r, g, b, a: a / 255 };
-        } catch {
-            return { r: 52, g: 152, b: 219, a: 1 };
-        }
-    }
-
-    function blendColors(c1, c2, pct1 = 50) {
-        const rgb1 = parseRgba(c1);
-        const rgb2 = parseRgba(c2);
-        const w1 = pct1 / 100;
-        const w2 = 1 - w1;
-        const r = Math.round(rgb1.r * w1 + rgb2.r * w2);
-        const g = Math.round(rgb1.g * w1 + rgb2.g * w2);
-        const b = Math.round(rgb1.b * w1 + rgb2.b * w2);
-        return `rgb(${r},${g},${b})`;
-    }
-
-    function getThemeProjectColors() {
-        const cInteractive = cssVar('--interactive-color') || '#3498db';
-        const cAction = cssVar('--action-color') || '#3498db';
-        const cTextOn = cssVar('--text-on-color') || '#ffffff';
-        const cText = cssVar('--text-color') || '#000000';
-        const cError = cssVar('--error-color') || '#e74c3c';
-        const cHeader = cssVar('--header-color') || cAction;
-
-        return [
-            cInteractive,
-            cAction,
-            blendColors(cInteractive, cTextOn, 75),
-            blendColors(cAction, cTextOn, 75),
-            blendColors(cInteractive, cError, 65),
-            blendColors(cAction, cError, 65),
-            blendColors(cHeader, cInteractive, 60),
-            blendColors(cError, cAction, 60),
-            blendColors(cInteractive, cText, 70),
-            blendColors(cAction, cText, 70),
-            blendColors(cHeader, cTextOn, 70),
-            blendColors(cError, cTextOn, 70),
-        ];
-    }
-
-    function getProjectColor(idx) {
-        const palette = getThemeProjectColors();
-        return palette[idx % palette.length];
-    }
-
-    function getThemeEffColor(pct) {
-        const cInteractive = cssVar('--interactive-color') || '#3498db';
-        const cAction = cssVar('--action-color') || '#3498db';
-        const cTextOn = cssVar('--text-on-color') || '#ffffff';
-        const cError = cssVar('--error-color') || '#e74c3c';
-
-        if (pct >= 80) return blendColors(cInteractive, cTextOn, 75);
-        if (pct >= 60) return cInteractive;
-        if (pct >= 40) return blendColors(cInteractive, cAction, 60);
-        return cError;
-    }
-
-    function colorMix(color, alpha = 1) {
-        const rgba = parseRgba(color);
-        return `rgba(${rgba.r},${rgba.g},${rgba.b},${alpha})`;
-    }
-
-    // Resolves a CSS variable to its current computed value
-    // data-theme lives on document.body, so the values are read from body
-    function cssVar(v) {
-        const name = v.startsWith('var(') ? v.slice(4, -1) : v.startsWith('--') ? v : '--' + v;
-        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || name;
-    }
+    applyChartDefaults(Chart);
 
     // --- FILTER -------------------------------------------------------
     function applyFilters() {

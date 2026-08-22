@@ -1,5 +1,6 @@
 <script>
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
+    import { t } from '../../../stores/i18nStore.js';
     import DateField from '../../../components/common/DateField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
 
@@ -210,8 +211,8 @@
                                     class:selected={allDay}
                                     aria-pressed={allDay}
                                     onclick={() => (allDay = !allDay)}
-                                    data-i18n="scheduleAllDay"
-                                ></button>
+                                    data-i18n="scheduleAllDay">{$t('scheduleAllDay')}</button
+                                >
                             </div>
                         {/if}
 

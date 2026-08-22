@@ -972,6 +972,32 @@ const MESSAGE_HANDLERS = {
         handlePomodoroClearStats(sendResponse);
         return true;
     },
+
+    // --- Web Activity Handlers ---
+    webActivityGetData: (message, sender, sendResponse) => {
+        handleWebActivityGetData(message, sendResponse);
+        return true;
+    },
+    webActivityGetStatus: (message, sender, sendResponse) => {
+        handleWebActivityGetStatus(message, sendResponse);
+        return true;
+    },
+    webActivitySaveLimit: (message, sender, sendResponse) => {
+        handleWebActivitySaveLimit(message, sendResponse);
+        return true;
+    },
+    webActivitySnooze: (message, sender, sendResponse) => {
+        handleWebActivitySnooze(message, sendResponse);
+        return true;
+    },
+    webActivityClear: (message, sender, sendResponse) => {
+        handleWebActivityClear(message, sendResponse);
+        return true;
+    },
+    webActivityImport: (message, sender, sendResponse) => {
+        handleWebActivityImport(message, sendResponse);
+        return true;
+    },
     addLinkPreviewBlacklist: (message, sender, sendResponse) => {
         addLinkPreviewBlacklistDomain(message.domain).then(() =>
             sendResponse({
