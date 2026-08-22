@@ -4464,18 +4464,24 @@ IMPORTANT RULES:
                     });
                 } else if (type === 'video-pip-tab') {
                     const url = li.dataset.url;
-                    const tabId = li.dataset.tabId ? parseInt(li.dataset.tabId) : null;
-                    const windowId = li.dataset.windowId ? parseInt(li.dataset.windowId) : null;
-                    if (tabId && windowId) {
-                        chrome.runtime.sendMessage({
-                            action: 'openVideoPipWindow',
-                            tabId: tabId,
-                            windowId: windowId,
-                            url: url,
-                        });
-                    } else {
-                        await openVideoPip(url);
-                    }
+
+                    /**
+                     * [AI NOTE] Opening the player here, inside the keypress that
+                     * chose the row, is what keeps the current tab in front. The
+                     * worker route below has to focus the YouTube tab first and
+                     * hand the focus back afterwards, because `executeScript` does
+                     * not carry the user activation `requestWindow()` demands, and
+                     * that round trip is the flicker the user sees.
+                     *
+                     * It only became an option once the framed player stopped
+                     * answering Error 153 (see embedYouTubeVideo). The signed-in
+                     * session rides along on Google's SameSite=None cookies.
+                     *
+                     * `openVideoPip` still routes to the real <video> when the
+                     * chosen row is the page already in front; only the other
+                     * tabs' videos now come through as an embed.
+                     */
+                    await openVideoPip(url);
                     this.close();
                 } else if (type === 'prefix') {
                     const input = this.shadow.getElementById('hint-omni-input');
