@@ -670,12 +670,12 @@ textarea::selection,
     width: 16px; height: 16px; border-radius: 50%;
     background: var(--bg-panel-color, #ffffff); color: var(--text-color, #111111);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 9.5px; font-weight: 800; line-height: 1;
-    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; text-align: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
     z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
-    padding: 0; margin: 0;
+    padding: 0 0 1.5px 0; margin: 0;
 }
 .itg-loop-handle:hover,
 .itg-loop-handle:focus,
@@ -1568,12 +1568,12 @@ var ITG_LOOP_POPUP_STYLES = `
     width: 16px; height: 16px; border-radius: 50%;
     background: var(--bg-panel-color, #ffffff); color: var(--text-color, #111111);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 9.5px; font-weight: 800; line-height: 1;
-    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 800; line-height: 1;
+    display: inline-flex; align-items: center; justify-content: center; text-align: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
     z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
-    padding: 0; margin: 0;
+    padding: 0 0 1.5px 0; margin: 0;
 }
 .itg-loop-handle:hover,
 .itg-loop-handle:focus,
