@@ -656,9 +656,7 @@ textarea::selection,
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
     background: color-mix(in srgb, var(--text-color, #ffffff) 25%, transparent);
-    border: 1px solid color-mix(in srgb, var(--text-color, #ffffff) 15%, transparent);
     border-radius: 3px;
-    box-sizing: border-box;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
@@ -1561,9 +1559,7 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
     background: color-mix(in srgb, var(--text-color, #ffffff) 25%, transparent);
-    border: 1px solid color-mix(in srgb, var(--text-color, #ffffff) 15%, transparent);
     border-radius: 3px;
-    box-sizing: border-box;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
