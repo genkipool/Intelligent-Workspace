@@ -668,12 +668,12 @@ textarea::selection,
 .itg-loop-handle {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
     width: 16px; height: 16px; border-radius: 50%;
-    background: #ffffff; color: #111111;
+    background: var(--bg-panel-color, #ffffff); color: var(--text-color, #111111);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 9.5px; font-weight: 800; line-height: 1;
     display: inline-flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
-    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease;
+    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
     padding: 0; margin: 0;
 }
@@ -1566,12 +1566,12 @@ var ITG_LOOP_POPUP_STYLES = `
 .itg-loop-handle {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
     width: 16px; height: 16px; border-radius: 50%;
-    background: #ffffff; color: #111111;
+    background: var(--bg-panel-color, #ffffff); color: var(--text-color, #111111);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 9.5px; font-weight: 800; line-height: 1;
     display: inline-flex; align-items: center; justify-content: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
-    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease;
+    z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
     padding: 0; margin: 0;
 }
