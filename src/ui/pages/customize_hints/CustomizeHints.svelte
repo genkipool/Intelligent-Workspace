@@ -13,7 +13,8 @@
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
     import SnippetsSection from './components/SnippetsSection.svelte';
     import BlacklistSection from './components/BlacklistSection.svelte';
-    import AutoPipSection from './components/AutoPipSection.svelte';
+    import VideoPipSection from './components/VideoPipSection.svelte';
+    import YoutubeLoopSection from './components/YoutubeLoopSection.svelte';
     import AllowRightClickSection from './components/AllowRightClickSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
     import Notification from '../../components/common/Notification.svelte';
@@ -131,14 +132,17 @@
         <!-- Comandos Personalizados (Site Shortcuts) -->
         <SiteShortcutsSection />
 
-        <!-- Automatic Picture-in-Picture -->
-        <AutoPipSection />
-
         <!-- Snippets Section -->
         <SnippetsSection />
 
         <!-- Link Preview Blacklist Section -->
         <BlacklistSection {previewToggleTitle} {linkPreviewEnabled} onToggleLinkPreview={toggleLinkPreview} />
+
+        <!-- Picture-in-Picture (Video) -->
+        <VideoPipSection />
+
+        <!-- YouTube Loop -->
+        <YoutubeLoopSection />
 
         <!-- Right-click and copying -->
         <AllowRightClickSection />

@@ -1115,9 +1115,11 @@ ${finalHtml}
             let expandedText = expansion;
             snippet.variables.forEach((v) => {
                 const targetWord = v.word;
-                const replacement = v.defaultValue || targetWord;
+                // A typed variable (date, page URL, …) brings its own value; the
+                // default is only what a plain text variable falls back to.
+                const replacement = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || targetWord);
                 if (targetWord) {
-                    expandedText = expandedText.split(targetWord).join(replacement);
+                    expandedText = HintCommon.replaceSnippetWord(expandedText, targetWord, replacement);
                 }
             });
             return {
@@ -1157,14 +1159,18 @@ ${finalHtml}
                         tempVars[marker.id] = val;
                     }
                     for (const v of sortedVars) {
-                        if (!tempVars[v.id]) tempVars[v.id] = v.defaultValue || '';
+                        // Anything the user typed after the marker wins; otherwise a
+                        // typed variable computes its value and a text one falls back.
+                        if (!tempVars[v.id]) {
+                            tempVars[v.id] = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || '');
+                        }
                     }
                     let expandedText = snippet.expansion;
                     for (const v of sortedVars) {
                         const targetWord = v.word;
                         const replacement = tempVars[v.id] || targetWord;
                         if (targetWord) {
-                            expandedText = expandedText.split(targetWord).join(replacement);
+                            expandedText = HintCommon.replaceSnippetWord(expandedText, targetWord, replacement);
                         }
                     }
 
@@ -1780,13 +1786,13 @@ ${finalHtml}
         if (snippet.variables && snippet.variables.length > 0) {
             const tempVars = {};
             snippet.variables.forEach((v) => {
-                tempVars[v.id] = v.defaultValue || '';
+                tempVars[v.id] = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || '');
             });
             snippet.variables.forEach((v) => {
                 const targetWord = v.word;
                 const replacement = tempVars[v.id] || targetWord;
                 if (targetWord) {
-                    expandedText = expandedText.split(targetWord).join(replacement);
+                    expandedText = HintCommon.replaceSnippetWord(expandedText, targetWord, replacement);
                 }
             });
             match.expansion = expandedText;

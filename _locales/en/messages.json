@@ -2910,14 +2910,20 @@
     "message": "Color '$1' picked and copied to the clipboard",
     "description": "Shown after picking a color with the eyedropper when it also reached the clipboard",
     "placeholders": {
-      "hex_color": { "content": "$1", "example": "#7B30F7" }
+      "hex_color": {
+        "content": "$1",
+        "example": "#7B30F7"
+      }
     }
   },
   "colorPicked": {
     "message": "Color '$1' picked",
     "description": "Shown after picking a color with the eyedropper when the clipboard was not available",
     "placeholders": {
-      "hex_color": { "content": "$1", "example": "#7B30F7" }
+      "hex_color": {
+        "content": "$1",
+        "example": "#7B30F7"
+      }
     }
   },
   "colorPickerUnsupportedPage": {
@@ -4262,7 +4268,7 @@
     "message": "Toggle automatic Picture-in-Picture when leaving the tab"
   },
   "feature_allowRightClick": {
-      "message": "Right-click, text selection and copying restored on sites that block them."
+    "message": "Right-click, text selection and copying restored on sites that block them."
   },
   "allowRightClickSectionTitle": {
     "message": "Right-click and copying"
@@ -4277,6 +4283,34 @@
   "allowRightClickToggleDisable": {
     "message": "Disable right-click and copying",
     "description": "Tooltip for the right-click unblocker switch when it is on"
+  },
+  "videoPipSectionTitle": {
+    "message": "Picture-in-Picture (Video)"
+  },
+  "videoPipSectionDesc": {
+    "message": "Adds a floating Picture-in-Picture button to YouTube, Shorts, TikTok and HTML5 video players on the web, with automatic Picture-in-Picture triggers."
+  },
+  "videoPipToggleEnable": {
+    "message": "Enable Picture-in-Picture (Video)",
+    "description": "Tooltip for the video Picture-in-Picture switch when it is off"
+  },
+  "videoPipToggleDisable": {
+    "message": "Disable Picture-in-Picture (Video)",
+    "description": "Tooltip for the video Picture-in-Picture switch when it is on"
+  },
+  "youtubeLoopSectionTitle": {
+    "message": "YouTube Loop"
+  },
+  "youtubeLoopSectionDesc": {
+    "message": "Adds a loop repeat button and menu to the YouTube video player and YouTube Shorts to continuously loop videos or repeat custom intervals."
+  },
+  "youtubeLoopToggleEnable": {
+    "message": "Enable YouTube Loop",
+    "description": "Tooltip for the YouTube Loop switch when it is off"
+  },
+  "youtubeLoopToggleDisable": {
+    "message": "Disable YouTube Loop",
+    "description": "Tooltip for the YouTube Loop switch when it is on"
   },
   "autoPipSectionTitle": {
     "message": "Automatic Picture-in-Picture"
@@ -5798,6 +5832,9 @@
   "sh_space_res": {
     "message": "Hello Alvaro, are you free to go for a coffee?"
   },
+  "sh_spaces_code": {
+    "message": "/hi$1Alvaro$2to__go__for__a__coffee"
+  },
   "snippetHelpPopupTitle": {
     "message": "Quick Access Menu"
   },
@@ -5832,16 +5869,41 @@
   "omnibarPrefixTutorial": {
     "message": "Mini Omnibar Usage Tutorial"
   },
-  "omnibarPrefixSiteSearchDesc": {"message": "Search on $SITE$", "placeholders": {"site": {"content": "$1"}}},
-  "omnibarPrefixGoogleTitle": {"message": "Google"},
-  "omnibarPrefixYouTubeTitle": {"message": "YouTube"},
-  "omnibarPrefixDuckDuckGoTitle": {"message": "DuckDuckGo"},
-  "omnibarPrefixWikipediaTitle": {"message": "Wikipedia"},
-  "omnibarPrefixGoogleMapsTitle": {"message": "Google Maps"},
-  "omnibarPrefixXTitle": {"message": "X"},
-  "omnibarPrefixAmazonTitle": {"message": "Amazon"},
-  "omnibarPrefixAmazonESTitle": {"message": "Amazon Spain"},
-  "omnibarNoMatchingPrefixes": {"message": "No matching commands"},
+  "omnibarPrefixSiteSearchDesc": {
+    "message": "Search on $SITE$",
+    "placeholders": {
+      "site": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarPrefixGoogleTitle": {
+    "message": "Google"
+  },
+  "omnibarPrefixYouTubeTitle": {
+    "message": "YouTube"
+  },
+  "omnibarPrefixDuckDuckGoTitle": {
+    "message": "DuckDuckGo"
+  },
+  "omnibarPrefixWikipediaTitle": {
+    "message": "Wikipedia"
+  },
+  "omnibarPrefixGoogleMapsTitle": {
+    "message": "Google Maps"
+  },
+  "omnibarPrefixXTitle": {
+    "message": "X"
+  },
+  "omnibarPrefixAmazonTitle": {
+    "message": "Amazon"
+  },
+  "omnibarPrefixAmazonESTitle": {
+    "message": "Amazon Spain"
+  },
+  "omnibarNoMatchingPrefixes": {
+    "message": "No matching commands"
+  },
   "omnibarPrefixTutorialTitle": {
     "message": "Omnibar Tutorial"
   },
@@ -6374,12 +6436,6 @@
   },
   "pipVolume": {
     "message": "Volume"
-  },
-  "pipMute": {
-    "message": "Mute"
-  },
-  "pipUnmute": {
-    "message": "Unmute"
   },
   "pipFullscreen": {
     "message": "Full screen"
@@ -10066,13 +10122,13 @@
     "message": "Sites"
   },
   "webActivityKpiSitesSub": {
-    "message": "in $1 categories"
+    "message": "categories: $1"
   },
   "webActivityKpiAvgPerDay": {
     "message": "Average per day"
   },
   "webActivityKpiAvgPerDaySub": {
-    "message": "over $1 active days"
+    "message": "active days: $1"
   },
   "webActivityKpiTopSite": {
     "message": "Top site"
@@ -10172,7 +10228,7 @@
     "message": "blocked"
   },
   "webActivityStateBlocked_schedule": {
-    "message": "blocked now"
+    "message": "outside hours"
   },
   "webActivityStateBlocked_daily": {
     "message": "over limit"
@@ -10244,16 +10300,17 @@
     "message": "Once the day’s time is used up the site is blocked until midnight. Zero means no allowance."
   },
   "webActivityFieldSchedules": {
-    "message": "Blocked hours"
+    "message": "Allowed hours",
+    "description": "The only hours the site can be opened. Leave empty to allow it at any time."
   },
   "webActivitySchedulesHint": {
-    "message": "A window that ends before it starts runs overnight, and its days are the ones it starts on."
+    "message": "Outside these hours the site is blocked. A window that ends before it starts runs overnight, and its days are the ones it starts on."
   },
   "webActivityAddSchedule": {
     "message": "Add a window"
   },
   "webActivityRemoveSchedule": {
-    "message": "Remove this window"
+    "message": "Remove configured schedule"
   },
   "webActivityFrom": {
     "message": "From"
@@ -10315,13 +10372,13 @@
     "message": "This site is set to be blocked at all times."
   },
   "webActivityBlockedReason_schedule": {
-    "message": "This site is inside one of its blocked hours."
+    "message": "This site can only be opened inside the hours you set."
   },
   "webActivityBlockedReason_daily": {
     "message": "Today’s time on this site is used up."
   },
   "webActivityBlockedUntil": {
-    "message": "It comes back at $1."
+    "message": "It opens again at $1."
   },
   "webActivityBlockedUntilMidnight": {
     "message": "The allowance starts again at midnight."
@@ -10337,15 +10394,6 @@
   },
   "webActivityLimitNearTitle": {
     "message": "Almost out of time"
-  },
-  "webActivityLimitNearBody": {
-    "message": "$1: about $2 minutes left today."
-  },
-  "webActivityKpiAvgPerDaySub": {
-    "message": "active days: $1"
-  },
-  "webActivityKpiSitesSub": {
-    "message": "categories: $1"
   },
   "webActivityLimitNearBody": {
     "message": "$1: about $2 min left today."
@@ -10402,7 +10450,8 @@
     "message": "Category"
   },
   "webActivityColSchedule": {
-    "message": "Schedule"
+    "message": "Allowed hours",
+    "description": "Only inside this window can the site be opened"
   },
   "webActivityColState": {
     "message": "State"
@@ -10559,9 +10608,6 @@
   "webActivityRemoveLimit": {
     "message": "Remove daily limit"
   },
-  "webActivityRemoveSchedule": {
-    "message": "Remove configured schedule"
-  },
   "webActivitySortBy": {
     "message": "Sort by this column",
     "description": "Click to sort; click again to reverse it"
@@ -10584,33 +10630,91 @@
   "webActivityOff": {
     "message": "Off"
   },
-  "webActivityFieldSchedules": {
-    "message": "Allowed hours",
-    "description": "The only hours the site can be opened. Leave empty to allow it at any time."
-  },
-  "webActivitySchedulesHint": {
-    "message": "Outside these hours the site is blocked. A window that ends before it starts runs overnight, and its days are the ones it starts on."
-  },
-  "webActivityAddSchedule": {
-    "message": "Add a window"
-  },
-  "webActivityBlockedReason_schedule": {
-    "message": "This site can only be opened inside the hours you set."
-  },
-  "webActivityBlockedUntil": {
-    "message": "It opens again at $1."
-  },
   "webActivityBlockedUntilDay": {
     "message": "It opens again on $1 at $2."
   },
   "webActivityAllowedWindow": {
     "message": "only $1–$2"
   },
-  "webActivityStateBlocked_schedule": {
-    "message": "outside hours"
+  "varTypeTooltip": {
+    "message": "Choose what the variable is filled in with"
   },
-  "webActivityColSchedule": {
-    "message": "Allowed hours",
-    "description": "Only inside this window can the site be opened"
+  "varTypeGroupBasic": {
+    "message": "Basic"
+  },
+  "varTypeGroupDateTime": {
+    "message": "Date and time"
+  },
+  "varTypeGroupPage": {
+    "message": "Page"
+  },
+  "varTypeGroupOther": {
+    "message": "Other"
+  },
+  "varTypeText": {
+    "message": "Text"
+  },
+  "varTypeDate": {
+    "message": "Current date"
+  },
+  "varTypeIsoDate": {
+    "message": "ISO date (YYYY-MM-DD)"
+  },
+  "varTypeLongDate": {
+    "message": "Long date"
+  },
+  "varTypeTime": {
+    "message": "Current time"
+  },
+  "varTypeDateTime": {
+    "message": "Date and time"
+  },
+  "varTypeWeekday": {
+    "message": "Day of the week"
+  },
+  "varTypeDay": {
+    "message": "Day of the month"
+  },
+  "varTypeMonth": {
+    "message": "Month"
+  },
+  "varTypeYear": {
+    "message": "Year"
+  },
+  "varTypeTomorrow": {
+    "message": "Tomorrow's date"
+  },
+  "varTypeYesterday": {
+    "message": "Yesterday's date"
+  },
+  "varTypeNextWeek": {
+    "message": "Date in a week"
+  },
+  "varTypeTimestamp": {
+    "message": "Unix timestamp"
+  },
+  "varTypeUrl": {
+    "message": "Page URL"
+  },
+  "varTypeDomain": {
+    "message": "Page domain"
+  },
+  "varTypePageTitle": {
+    "message": "Page title"
+  },
+  "varTypeUuid": {
+    "message": "Unique identifier"
+  },
+  "varTypeRandom": {
+    "message": "Random number"
+  },
+  "varSelectPrompt": {
+    "message": "Mark the selected word as a variable…"
+  },
+  "varRemoveTooltip": {
+    "message": "Remove variable"
+  },
+  "errorSnippetTriggerFirst": {
+    "message": "Write the snippet trigger before editing the text to expand"
   }
 }

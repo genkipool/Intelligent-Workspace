@@ -5674,8 +5674,16 @@ window.__itgAutoPipSettings = itgAutoPipSettings;
 
 var ITG_AUTO_PIP_KEYS = { scroll: 'itgAutoPipOnScroll', hidden: 'itgAutoPipOnHidden' };
 
+var itgVideoPipGloballyEnabled = true;
+
 function itgLoadAutoPipSettings() {
     try {
+        chrome.storage.sync.get(['videoPipEnabled'], (syncStored) => {
+            if (syncStored && syncStored.videoPipEnabled !== undefined) {
+                itgVideoPipGloballyEnabled = syncStored.videoPipEnabled !== false;
+                itgWatchAutoPipTriggers();
+            }
+        });
         chrome.storage.local.get(Object.values(ITG_AUTO_PIP_KEYS), (stored) => {
             itgAutoPipSettings = {
                 scroll: stored?.[ITG_AUTO_PIP_KEYS.scroll] === true,
@@ -5692,6 +5700,23 @@ function itgLoadAutoPipSettings() {
             itgWatchAutoPipTriggers();
         });
         chrome.storage.onChanged.addListener((changes, area) => {
+            if (changes.videoPipEnabled !== undefined) {
+                itgVideoPipGloballyEnabled = changes.videoPipEnabled.newValue !== false;
+                itgWatchAutoPipTriggers();
+            }
+            if (changes.youtubeLoopEnabled !== undefined) {
+                const loopEnabled = changes.youtubeLoopEnabled.newValue !== false;
+                if (!loopEnabled) {
+                    document
+                        .querySelectorAll(
+                            '#itg-yt-loop-button, #itg-yt-shorts-loop-wrapper, #itg-yt-shorts-loop-button, #itg-yt-loop-menu, #itg-pip-loop-popup, .itg-yt-loop-menu, .ytp-loop-active',
+                        )
+                        .forEach((el) => el.remove());
+                    if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
+                        itgVideoLoop.setLoop(false);
+                    }
+                }
+            }
             if (area !== 'local') return;
             let changed = false;
             if (changes[ITG_AUTO_PIP_KEYS.scroll] !== undefined) {
@@ -5735,7 +5760,7 @@ function itgWatchAutoPipTriggers() {
 
     itgAutoPipState.dispose?.();
     itgAutoPipState.dispose = null;
-    if (!itgAutoPipSettings.scroll && !itgAutoPipSettings.hidden) return;
+    if (!itgVideoPipGloballyEnabled || (!itgAutoPipSettings.scroll && !itgAutoPipSettings.hidden)) return;
 
     const disposers = [];
 

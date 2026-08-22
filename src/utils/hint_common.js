@@ -455,6 +455,8 @@ var HintCommon = {
         let text = trigger;
         if (Array.isArray(variables)) {
             variables.forEach((v) => {
+                // A typed variable fills itself in, so there is nothing to type for it.
+                if (v.type && v.type !== 'text') return;
                 text += `${v.id}${v.defaultValue || ''}`;
             });
         }
@@ -464,6 +466,561 @@ var HintCommon = {
     validateSnippetVar(word, expansion) {
         if (!word || !expansion) return false;
         return expansion.includes(word);
+    },
+
+    /**
+     * The kinds of value a snippet variable can carry.
+     *
+     * `text` is the plain one: whatever the user types after the marker, or the
+     * marked word itself. Every other kind is resolved at expansion time from
+     * something real — the clock, the page — so a snippet can carry today's date
+     * or the URL it is being written on without the user typing anything.
+     *
+     * `group` only drives the picker's headings; the stored value is `value`.
+     */
+    SNIPPET_VAR_TYPES: [
+        { value: 'text', group: 'basic', key: 'varTypeText', fallback: 'Text' },
+        { value: 'date', group: 'datetime', key: 'varTypeDate', fallback: 'Current date' },
+        { value: 'isodate', group: 'datetime', key: 'varTypeIsoDate', fallback: 'ISO date (YYYY-MM-DD)' },
+        { value: 'longdate', group: 'datetime', key: 'varTypeLongDate', fallback: 'Long date' },
+        { value: 'time', group: 'datetime', key: 'varTypeTime', fallback: 'Current time' },
+        { value: 'datetime', group: 'datetime', key: 'varTypeDateTime', fallback: 'Date and time' },
+        { value: 'weekday', group: 'datetime', key: 'varTypeWeekday', fallback: 'Day of the week' },
+        { value: 'day', group: 'datetime', key: 'varTypeDay', fallback: 'Day of the month' },
+        { value: 'month', group: 'datetime', key: 'varTypeMonth', fallback: 'Month' },
+        { value: 'year', group: 'datetime', key: 'varTypeYear', fallback: 'Year' },
+        { value: 'tomorrow', group: 'datetime', key: 'varTypeTomorrow', fallback: "Tomorrow's date" },
+        { value: 'yesterday', group: 'datetime', key: 'varTypeYesterday', fallback: "Yesterday's date" },
+        { value: 'nextweek', group: 'datetime', key: 'varTypeNextWeek', fallback: 'Date in a week' },
+        { value: 'timestamp', group: 'datetime', key: 'varTypeTimestamp', fallback: 'Unix timestamp' },
+        { value: 'url', group: 'page', key: 'varTypeUrl', fallback: 'Page URL' },
+        { value: 'domain', group: 'page', key: 'varTypeDomain', fallback: 'Page domain' },
+        { value: 'pagetitle', group: 'page', key: 'varTypePageTitle', fallback: 'Page title' },
+        { value: 'uuid', group: 'other', key: 'varTypeUuid', fallback: 'Unique identifier' },
+        { value: 'random', group: 'other', key: 'varTypeRandom', fallback: 'Random number' },
+    ],
+
+    SNIPPET_VAR_TYPE_GROUPS: [
+        { id: 'basic', key: 'varTypeGroupBasic', fallback: 'Basic' },
+        { id: 'datetime', key: 'varTypeGroupDateTime', fallback: 'Date and time' },
+        { id: 'page', key: 'varTypeGroupPage', fallback: 'Page' },
+        { id: 'other', key: 'varTypeGroupOther', fallback: 'Other' },
+    ],
+
+    getSnippetVarTypeLabel(type) {
+        const entry = this.SNIPPET_VAR_TYPES.find((t) => t.value === type) || this.SNIPPET_VAR_TYPES[0];
+        return this.i18n.getMessage(entry.key, entry.fallback);
+    },
+
+    /** Letters, digits and underscore, accents included — `\b` only knows ASCII. */
+    isSnippetWordChar(ch) {
+        return !!ch && /[\p{L}\p{N}_]/u.test(ch);
+    },
+
+    /** Whether the slice at `index` is a word of its own rather than part of one. */
+    isSnippetWordBoundary(text, index, length) {
+        return !this.isSnippetWordChar(text[index - 1]) && !this.isSnippetWordChar(text[index + length]);
+    },
+
+    /**
+     * Replaces `word` with `replacement`, but only where it stands as a word.
+     *
+     * A variable named "casa" must not turn "casamiento" into "<date>miento": the
+     * marks in the editor are drawn on whole words, and this is what makes the
+     * expansion agree with them.
+     */
+    replaceSnippetWord(text, word, replacement) {
+        if (!text || !word) return text;
+        let out = '';
+        let from = 0;
+        for (;;) {
+            const idx = text.indexOf(word, from);
+            if (idx === -1) return out + text.slice(from);
+            out += text.slice(from, idx);
+            out += this.isSnippetWordBoundary(text, idx, word.length) ? replacement : word;
+            from = idx + word.length;
+        }
+    },
+
+    /**
+     * The variable-type picker, in the customizable-select dress the Pomodoro
+     * dashboard's tag filter wears: our own trigger button, `<selectedcontent>`
+     * and arrow, with `::picker(select)` styling the drop-down itself.
+     *
+     * @param {object} [options]
+     * @param {string} [options.className] extra classes for the <select>
+     * @param {string} [options.value] type to start on
+     * @param {string} [options.textLabel] what the `text` option reads as — a
+     *   variable's own default value, so a row shows the text it will insert
+     *   rather than the word "Text"
+     * @param {string} [options.prompt] a leading empty-valued option, for the
+     *   editor toolbar where nothing is selected until a word is marked
+     */
+    createVarTypeSelect({ className = '', value = 'text', textLabel = null, prompt = null } = {}) {
+        const select = document.createElement('select');
+        select.className = ['itg-var-type-select', className].filter(Boolean).join(' ');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.innerHTML = `<selectedcontent></selectedcontent>
+            <svg class="picker-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>`;
+        select.appendChild(trigger);
+
+        if (prompt !== null) {
+            const opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = prompt;
+            select.appendChild(opt);
+        }
+
+        this.SNIPPET_VAR_TYPE_GROUPS.forEach((group) => {
+            const types = this.SNIPPET_VAR_TYPES.filter((t) => t.group === group.id);
+            if (types.length === 0) return;
+            const optgroup = document.createElement('optgroup');
+            const legend = document.createElement('legend');
+            legend.textContent = this.i18n.getMessage(group.key, group.fallback);
+            optgroup.appendChild(legend);
+            types.forEach((t) => {
+                const opt = document.createElement('option');
+                opt.value = t.value;
+                opt.textContent = t.value === 'text' && textLabel ? textLabel : this.i18n.getMessage(t.key, t.fallback);
+                optgroup.appendChild(opt);
+            });
+            select.appendChild(optgroup);
+        });
+
+        select.value = prompt !== null && !value ? '' : value || 'text';
+        return select;
+    },
+
+    /** Keeps a row's picker showing the right label after its type or default changes. */
+    refreshVarTypeSelect(select, { value, textLabel } = {}) {
+        if (!select) return;
+        const textOption = select.querySelector('option[value="text"]');
+        if (textOption) {
+            textOption.textContent = textLabel || this.getSnippetVarTypeLabel('text');
+        }
+        if (value !== undefined) select.value = value || 'text';
+    },
+
+    /**
+     * Turns a variable type into the text that replaces the marked word.
+     * `text` (and anything unknown) has no computed value, so the caller keeps
+     * whatever the user typed or the word itself — that is what `null` means here.
+     */
+    resolveSnippetVarValue(type) {
+        if (!type || type === 'text') return null;
+        const now = new Date();
+        const shift = (days) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
+        const pad = (n) => String(n).padStart(2, '0');
+        const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        const day = (d) => d.toLocaleDateString();
+        try {
+            switch (type) {
+                case 'date':
+                    return day(now);
+                case 'isodate':
+                    return iso(now);
+                case 'longdate':
+                    return now.toLocaleDateString(undefined, {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                    });
+                case 'time':
+                    return now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                case 'datetime':
+                    return `${day(now)} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+                case 'weekday':
+                    return now.toLocaleDateString(undefined, { weekday: 'long' });
+                case 'day':
+                    return String(now.getDate());
+                case 'month':
+                    return now.toLocaleDateString(undefined, { month: 'long' });
+                case 'year':
+                    return String(now.getFullYear());
+                case 'tomorrow':
+                    return day(shift(1));
+                case 'yesterday':
+                    return day(shift(-1));
+                case 'nextweek':
+                    return day(shift(7));
+                case 'timestamp':
+                    return String(Date.now());
+                case 'url':
+                    return window.location.href;
+                case 'domain':
+                    return window.location.hostname;
+                case 'pagetitle':
+                    return document.title || '';
+                case 'uuid':
+                    return crypto.randomUUID ? crypto.randomUUID() : String(Date.now());
+                case 'random':
+                    return String(Math.floor(Math.random() * 1000) + 1);
+                default:
+                    return null;
+            }
+        } catch {
+            return null;
+        }
+    },
+
+    /**
+     * Snippet variables as they live inside the formatting editor.
+     *
+     * While the snippet is being written a variable is a marked span in the
+     * preview; once it is saved it is a plain word in the expansion plus an entry
+     * in the `variables` array, which is the shape the expansion engine has always
+     * read. `extract` performs that flattening and `applyMarks` puts the marks
+     * back when the snippet is opened again for editing.
+     */
+    SnippetVars: {
+        CLASS: 'itg-snippet-var',
+        WORD_CLASS: 'itg-snippet-var-word',
+        REMOVE_CLASS: 'itg-snippet-var-remove',
+
+        /** The selection's own document, which is a shadow root inside the page UI. */
+        _selectionOf(root) {
+            const node = root.getRootNode();
+            return node && node.getSelection ? node.getSelection() : window.getSelection();
+        },
+
+        /** The word a chip stands for, read past the remove button. */
+        wordOf(span) {
+            return (span.querySelector(`.${this.WORD_CLASS}`)?.textContent ?? span.textContent ?? '').trim();
+        },
+
+        /** The marked span the caret sits in, if any. */
+        activeSpan(previewArea) {
+            if (!previewArea) return null;
+            const sel = this._selectionOf(previewArea);
+            if (!sel || sel.rangeCount === 0) return null;
+            const range = sel.getRangeAt(0);
+            let node = range.commonAncestorContainer;
+            if (node.nodeType !== Node.ELEMENT_NODE) node = node.parentElement;
+            if (!node || !previewArea.contains(node)) return null;
+            return node.closest?.(`.${this.CLASS}`) || null;
+        },
+
+        /** `$1`, `$2`, … skipping the ids already taken in this preview. */
+        nextId(previewArea) {
+            const taken = new Set(
+                [...previewArea.querySelectorAll(`.${this.CLASS}`)].map((el) => el.dataset.varId).filter(Boolean),
+            );
+            for (let i = 1; i <= 99; i++) {
+                if (!taken.has(`$${i}`)) return `$${i}`;
+            }
+            return `$${taken.size + 1}`;
+        },
+
+        /** Every chip that stands for the same variable as this one. */
+        twins(previewArea, span) {
+            const id = span?.dataset.varId;
+            if (!previewArea || !id) return span ? [span] : [];
+            return [...previewArea.querySelectorAll(`.${this.CLASS}`)].filter((el) => el.dataset.varId === id);
+        },
+
+        /** Drops the chip but keeps its word where it was. */
+        unmark(span) {
+            if (!span || !span.parentNode) return;
+            const parent = span.parentNode;
+            parent.replaceChild(document.createTextNode(this.wordOf(span)), span);
+            parent.normalize();
+        },
+
+        /** Drops the whole variable: every chip standing for it. */
+        unmarkAll(previewArea, span) {
+            this.twins(previewArea, span).forEach((el) => this.unmark(el));
+        },
+
+        /**
+         * Marks the selection, or unmarks it when it already is a variable.
+         *
+         * Every identical word in the expansion is marked at once, because that is
+         * what actually happens on expansion: the value replaces all of them. Marking
+         * only the one the user highlighted would show a snippet that behaves
+         * differently from how it reads.
+         *
+         * Returns the chip under the caret, or null when there was nothing to mark.
+         */
+        toggle(previewArea, type = 'text') {
+            const existing = this.activeSpan(previewArea);
+            if (existing) {
+                this.unmarkAll(previewArea, existing);
+                return null;
+            }
+            const sel = this._selectionOf(previewArea);
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
+            const range = sel.getRangeAt(0);
+            if (!previewArea.contains(range.commonAncestorContainer)) return null;
+            const word = range.toString().trim();
+            if (!word) return null;
+
+            const id = this.nextId(previewArea);
+            sel.removeAllRanges();
+            const marked = this.markWord(previewArea, word, id, type);
+            // Leave the caret inside the first chip so the picker keeps showing the
+            // type that was just chosen instead of falling back to its prompt.
+            const wordEl = marked[0]?.querySelector(`.${this.WORD_CLASS}`);
+            if (wordEl) {
+                const caret = document.createRange();
+                caret.selectNodeContents(wordEl);
+                caret.collapse(false);
+                sel.addRange(caret);
+            }
+            return marked[0] || null;
+        },
+
+        /**
+         * The editor's text nodes, in order. The × of a chip is furniture rather
+         * than content, so it is left out and the words read as they were written.
+         */
+        _textNodes(previewArea) {
+            const walker = document.createTreeWalker(previewArea, NodeFilter.SHOW_TEXT, {
+                acceptNode: (node) =>
+                    node.parentElement?.closest(`.${this.REMOVE_CLASS}`)
+                        ? NodeFilter.FILTER_REJECT
+                        : NodeFilter.FILTER_ACCEPT,
+            });
+            const out = [];
+            let node;
+            while ((node = walker.nextNode())) out.push(node);
+            return out;
+        },
+
+        /**
+         * The next occurrence of `word` that is a word of its own and is not already
+         * inside a chip. Bounded by letters rather than by nothing, so marking "casa"
+         * leaves "casamiento" alone — the expansion engine reads the same boundary,
+         * so what the editor shows is what the snippet does.
+         */
+        _findWholeWord(previewArea, word, caretOffset = null) {
+            const nodes = this._textNodes(previewArea);
+            const full = nodes.map((n) => n.textContent).join('');
+            let from = 0;
+            for (;;) {
+                const idx = full.indexOf(word, from);
+                if (idx === -1) return null;
+                from = idx + 1;
+                if (!HintCommon.isSnippetWordBoundary(full, idx, word.length)) continue;
+                // The word being typed is not a word yet: "casa" on the way to
+                // "casamiento" would flash a mark and lose it at the next keystroke.
+                // It gets marked once the caret leaves it, which is what pressing
+                // space does.
+                if (caretOffset !== null && caretOffset > idx && caretOffset <= idx + word.length) continue;
+                let offset = 0;
+                for (const node of nodes) {
+                    const len = node.textContent.length;
+                    const fits = idx >= offset && idx + word.length <= offset + len;
+                    if (fits && !node.parentElement?.closest(`.${this.CLASS}`)) {
+                        return { node, idx: idx - offset };
+                    }
+                    offset += len;
+                }
+            }
+        },
+
+        /**
+         * Wraps every unmarked occurrence of `word`; returns the chips it made.
+         * `caretOffset` leaves the word under the caret alone — see `_findWholeWord`.
+         */
+        markWord(previewArea, word, id, type = 'text', caretOffset = null) {
+            const made = [];
+            if (!word) return made;
+            // The tree is rebuilt as chips replace text, so the search restarts after
+            // each hit rather than holding on to a stale walker.
+            for (let guard = 0; guard < 200; guard++) {
+                const hit = this._findWholeWord(previewArea, word, caretOffset);
+                if (!hit) break;
+                const range = document.createRange();
+                range.setStart(hit.node, hit.idx);
+                range.setEnd(hit.node, hit.idx + word.length);
+                const span = document.createElement('span');
+                span.className = this.CLASS;
+                span.dataset.varId = id;
+                span.dataset.varType = type;
+                range.deleteContents();
+                range.insertNode(span);
+                this._decorate(span, word);
+                made.push(span);
+            }
+            return made;
+        },
+
+        setType(previewArea, span, type) {
+            this.twins(previewArea, span).forEach((el) => {
+                el.dataset.varType = type || 'text';
+                this._decorate(el);
+            });
+        },
+
+        /** Builds the chip's insides: the word, and the × that retires the variable. */
+        _decorate(span, word) {
+            const text = word ?? this.wordOf(span);
+            const type = span.dataset.varType || 'text';
+            span.setAttribute('data-var-type', type);
+            span.setAttribute('contenteditable', 'false');
+            span.title = `${span.dataset.varId || ''} · ${HintCommon.getSnippetVarTypeLabel(type)}`;
+            span.textContent = '';
+
+            const wordEl = document.createElement('span');
+            wordEl.className = this.WORD_CLASS;
+            wordEl.textContent = text;
+
+            const remove = document.createElement('span');
+            remove.className = this.REMOVE_CLASS;
+            remove.textContent = '\u00D7';
+            remove.setAttribute('role', 'button');
+            remove.title = HintCommon.i18n.getMessage('varRemoveTooltip', 'Remove variable');
+
+            span.append(wordEl, remove);
+        },
+
+        /** Where the caret sits, counted in characters over the whole editor. */
+        _saveCaret(previewArea) {
+            const sel = this._selectionOf(previewArea);
+            if (!sel || sel.rangeCount === 0) return null;
+            const range = sel.getRangeAt(0);
+            if (!previewArea.contains(range.endContainer)) return null;
+            let offset = 0;
+            for (const node of this._textNodes(previewArea)) {
+                if (node === range.endContainer) return offset + range.endOffset;
+                offset += node.textContent.length;
+            }
+            return null;
+        },
+
+        /**
+         * Puts the caret back at that character. Landing inside a chip means the word
+         * being typed has just become a variable, so the caret goes after it — where
+         * the next keystroke belongs.
+         */
+        _restoreCaret(previewArea, offset) {
+            if (offset === null || offset === undefined) return;
+            const sel = this._selectionOf(previewArea);
+            if (!sel) return;
+            let remaining = offset;
+            for (const node of this._textNodes(previewArea)) {
+                const len = node.textContent.length;
+                if (remaining <= len) {
+                    const range = document.createRange();
+                    const chip = node.parentElement?.closest(`.${this.CLASS}`);
+                    if (chip) range.setStartAfter(chip);
+                    else range.setStart(node, remaining);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                    return;
+                }
+                remaining -= len;
+            }
+        },
+
+        /** Whether a chip is still bounded by non-letters on both sides. */
+        _standsAlone(previewArea, chip) {
+            const nodes = this._textNodes(previewArea);
+            const full = nodes.map((n) => n.textContent).join('');
+            let offset = 0;
+            let start = -1;
+            let end = -1;
+            for (const node of nodes) {
+                const len = node.textContent.length;
+                if (chip.contains(node)) {
+                    if (start === -1) start = offset;
+                    end = offset + len;
+                }
+                offset += len;
+            }
+            if (start === -1) return true;
+            return HintCommon.isSnippetWordBoundary(full, start, end - start);
+        },
+
+        /**
+         * Brings the marks in step with the text as it is typed.
+         *
+         * Writing the word again marks it there too, and typing letters onto a chip
+         * retires it — "casa" that grows into "casamiento" stops being the variable
+         * it was. Both directions keep the editor showing exactly what the snippet
+         * will do, without the user having to mark anything twice.
+         *
+         * `liveTyping` holds the word under the caret back until the caret leaves it,
+         * so a half-typed word does not flash a mark. The apply path calls this
+         * without it, to settle the last word before the snippet is read out.
+         */
+        refreshMarks(previewArea, { liveTyping = false } = {}) {
+            if (!previewArea) return;
+            const chips = [...previewArea.querySelectorAll(`.${this.CLASS}`)];
+            if (chips.length === 0) return;
+
+            const caret = this._saveCaret(previewArea);
+            let changed = false;
+
+            for (const chip of chips) {
+                if (!chip.isConnected || this._standsAlone(previewArea, chip)) continue;
+                this.unmark(chip);
+                changed = true;
+            }
+
+            const seen = new Map();
+            previewArea.querySelectorAll(`.${this.CLASS}`).forEach((chip) => {
+                const id = chip.dataset.varId;
+                if (!id || seen.has(id)) return;
+                seen.set(id, {
+                    word: this.wordOf(chip),
+                    type: chip.dataset.varType || 'text',
+                    def: chip.dataset.varDefault || '',
+                });
+            });
+
+            for (const [id, v] of seen) {
+                const made = this.markWord(previewArea, v.word, id, v.type, liveTyping ? caret : null);
+                if (made.length === 0) continue;
+                changed = true;
+                if (v.def) made.forEach((chip) => (chip.dataset.varDefault = v.def));
+            }
+
+            if (changed) this._restoreCaret(previewArea, caret);
+        },
+
+        /**
+         * Flattens the editor content: the HTML that gets stored plus the
+         * variable list that describes it.
+         */
+        extract(previewArea) {
+            const clone = previewArea.cloneNode(true);
+            const variables = [];
+            const seen = new Set();
+            clone.querySelectorAll(`.${this.CLASS}`).forEach((span) => {
+                const word = this.wordOf(span);
+                const id = span.dataset.varId || `$${variables.length + 1}`;
+                if (word && !seen.has(id)) {
+                    seen.add(id);
+                    variables.push({
+                        id,
+                        word,
+                        defaultValue: span.dataset.varDefault || word,
+                        type: span.dataset.varType || 'text',
+                    });
+                }
+                span.parentNode.replaceChild(document.createTextNode(word), span);
+            });
+            clone.normalize();
+            return { html: clone.innerHTML, variables };
+        },
+
+        /** Re-marks a saved snippet's words so editing picks up where it left off. */
+        applyMarks(previewArea, variables) {
+            if (!Array.isArray(variables) || variables.length === 0) return;
+            variables.forEach((v, i) => {
+                const word = (v.word || '').trim();
+                if (!word) return;
+                const made = this.markWord(previewArea, word, v.id || `$${i + 1}`, v.type || 'text');
+                if (v.defaultValue && v.defaultValue !== word) {
+                    made.forEach((span) => (span.dataset.varDefault = v.defaultValue));
+                }
+            });
+        },
     },
 
     validateSnippetVariableRow(id, word, def, expansion) {
@@ -592,12 +1149,14 @@ var HintCommon = {
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
                             </button>
                         </div>
+                        <!-- Row 3: mark the selected word as a variable and say what fills it in -->
+                        <div class="itg-format-toolbar-row itg-format-var-row"></div>
                     </div>
-                    
+
                     <div class="itg-emoji-picker itg-display-none">
                         <div class="itg-emoji-grid"></div>
                     </div>
-                    
+
                     <div class="itg-format-preview-container">
                         <label data-i18n="formatPreview">${getMsg('formatPreview', 'Preview:')}</label>
                         <div class="itg-format-preview" contenteditable="true" spellcheck="false"></div>
@@ -698,7 +1257,87 @@ var HintCommon = {
                 });
             }
 
+            // --- Variables: mark the selected word and say what fills it in ---
+            const varRow = root.querySelector('.itg-format-var-row');
+            let typeSelect = null;
+
+            /**
+             * Puts the caret back where it was before the picker took focus — but
+             * only when it has actually left the preview. A live selection is never
+             * overwritten with a remembered one, which would silently act on the
+             * wrong word.
+             */
+            const ensurePreviewSelection = () => {
+                if (!previewArea) return;
+                const rootNode = previewArea.getRootNode();
+                const sel = rootNode && rootNode.getSelection ? rootNode.getSelection() : window.getSelection();
+                if (sel && sel.rangeCount > 0) {
+                    const node = sel.getRangeAt(0).commonAncestorContainer;
+                    if (previewArea === node || previewArea.contains(node)) return;
+                }
+                this._restoreSavedRange();
+            };
+
+            /** Keeps the picker showing the type of whatever variable is under the caret. */
+            const syncTypeSelect = () => {
+                if (!typeSelect || !previewArea) return;
+                const span = HintCommon.SnippetVars.activeSpan(previewArea);
+                typeSelect.value = span ? span.dataset.varType || 'text' : '';
+            };
+
+            if (varRow && previewArea) {
+                typeSelect = HintCommon.createVarTypeSelect({
+                    className: 'itg-var-type-select-wide',
+                    prompt: HintCommon.i18n.getMessage('varSelectPrompt', 'Mark the selected word as a variable…'),
+                    value: '',
+                });
+                typeSelect.title = HintCommon.i18n.getMessage(
+                    'varTypeTooltip',
+                    'Choose what the variable is filled in with',
+                );
+                varRow.appendChild(typeSelect);
+
+                typeSelect.addEventListener('change', () => {
+                    const type = typeSelect.value;
+                    ensurePreviewSelection();
+                    const active = HintCommon.SnippetVars.activeSpan(previewArea);
+                    if (!type) {
+                        // Back to the resting entry: the variable is retired.
+                        if (active) HintCommon.SnippetVars.unmarkAll(previewArea, active);
+                    } else if (active) {
+                        HintCommon.SnippetVars.setType(previewArea, active, type);
+                    } else {
+                        HintCommon.SnippetVars.toggle(previewArea, type);
+                    }
+                    this.savedRange = null;
+                    syncTypeSelect();
+                });
+
+                // Typing keeps the marks honest: a word written again is marked
+                // there too, and a chip that grows into a longer word is retired.
+                previewArea.addEventListener('input', (e) => {
+                    if (e.isComposing) return;
+                    HintCommon.SnippetVars.refreshMarks(previewArea, { liveTyping: true });
+                    this.savedRange = null;
+                    syncTypeSelect();
+                });
+
+                // The × on a chip retires the whole variable, every twin of it.
+                previewArea.addEventListener('mousedown', (e) => {
+                    const remove = e.target.closest?.(`.${HintCommon.SnippetVars.REMOVE_CLASS}`);
+                    if (!remove) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const span = remove.closest(`.${HintCommon.SnippetVars.CLASS}`);
+                    HintCommon.SnippetVars.unmarkAll(previewArea, span);
+                    this.savedRange = null;
+                    syncTypeSelect();
+                });
+            }
+
             if (previewArea) {
+                previewArea.addEventListener('keyup', syncTypeSelect);
+                previewArea.addEventListener('mouseup', syncTypeSelect);
                 previewArea.addEventListener('keydown', (e) => {
                     if (e.ctrlKey || e.metaKey) {
                         if (e.key === 'b') {
@@ -749,9 +1388,10 @@ var HintCommon = {
          * Shows the formatting editor inline (collapsible section) inside a given container element.
          * @param {Element} inlineSection - The container element to embed the editor into
          * @param {Element} targetElement - The element whose content will be edited
-         * @param {Function} onApply - Callback called with the formatted HTML when apply is clicked
+         * @param {Function} onApply - Called with (html, variables) when apply is clicked
+         * @param {object} [options] - `variables` re-marks a saved snippet's words
          */
-        async showInline(inlineSection, targetElement, onApply) {
+        async showInline(inlineSection, targetElement, onApply, options = {}) {
             await HintCommon.i18n.loadMessages();
             // Build editor HTML inside inlineSection
             inlineSection.innerHTML = `<div class="itg-inline-editor-content">${this._editorInnerHTML(true, false)}</div>`;
@@ -769,14 +1409,16 @@ var HintCommon = {
                 currentContent = '';
             }
             this.previewArea.innerHTML = currentContent;
+            HintCommon.SnippetVars.applyMarks(this.previewArea, options.variables);
 
             // Apply button
             const applyBtn = editorContent.querySelector('.itg-format-apply-btn');
             if (applyBtn) {
                 applyBtn.addEventListener('click', () => {
-                    const formattedContent = this.previewArea.innerHTML;
+                    HintCommon.SnippetVars.refreshMarks(this.previewArea);
+                    const { html, variables } = HintCommon.SnippetVars.extract(this.previewArea);
                     if (typeof onApply === 'function') {
-                        onApply(formattedContent);
+                        onApply(html, variables);
                     } else {
                         this.applyToTarget();
                     }
@@ -1073,10 +1715,14 @@ var HintCommon = {
         },
 
         /**
-         * Shows the formatting modal
+         * Shows the formatting modal.
+         * @param {Element} targetElement - element whose content is being edited
+         * @param {object} [options] - `onApply(html, variables)` runs after the
+         *   content is written back, `variables` re-marks a saved snippet's words
          */
-        async showModal(targetElement) {
+        async showModal(targetElement, options = {}) {
             this.targetElement = targetElement;
+            this.onApply = typeof options.onApply === 'function' ? options.onApply : null;
             await HintCommon.i18n.loadMessages();
 
             // Create modal if it doesn't exist
@@ -1117,6 +1763,11 @@ var HintCommon = {
                 currentContent = '';
             }
             this.previewArea.innerHTML = currentContent;
+            HintCommon.SnippetVars.applyMarks(this.previewArea, options.variables);
+
+            // The picker rests on its prompt until a word is marked in this snippet.
+            const typePicker = this.modal.querySelector('.itg-var-type-select');
+            if (typePicker) typePicker.value = '';
 
             // Show modal
             this.modal.classList.add('itg-format-modal-visible');
@@ -1148,8 +1799,12 @@ var HintCommon = {
                     emojiPicker.classList.add('itg-display-none');
                 }
                 this.closeAllPopups();
+                const typeSelect = this.modal.querySelector('.itg-var-type-select');
+                if (typeSelect) typeSelect.value = '';
             }
             this.targetElement = null;
+            this.onApply = null;
+            this.savedRange = null;
         },
 
         /**
@@ -1774,7 +2429,13 @@ var HintCommon = {
          */
         applyToTarget() {
             if (this.targetElement && this.previewArea) {
-                const formattedContent = this.previewArea.innerHTML;
+                // The word the caret was still sitting on is settled first, then the
+                // marked variables are flattened back to plain words: the stored
+                // expansion stays clean HTML and the marks travel in `variables`.
+                HintCommon.SnippetVars.refreshMarks(this.previewArea);
+                const { html: formattedContent, variables } = HintCommon.SnippetVars.extract(this.previewArea);
+                const target = this.targetElement;
+                const onApply = this.onApply;
 
                 // Set the content
                 if (this.targetElement.tagName === 'INPUT' || this.targetElement.tagName === 'TEXTAREA') {
@@ -1795,7 +2456,10 @@ var HintCommon = {
                 // Manually trigger blur to ensure setupInlineEdit saves the changes
                 this.targetElement.dispatchEvent(new Event('blur'));
 
+                // hideModal() drops targetElement, so the callback runs on the copies
+                // taken above and can safely reset the form it belongs to.
                 this.hideModal();
+                if (onApply) onApply(formattedContent, variables, target);
             }
         },
     },

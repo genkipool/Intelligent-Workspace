@@ -2879,14 +2879,20 @@
         "message": "Color '$1' seleccionado y copiado al portapapeles",
         "description": "Aviso tras seleccionar un color con el cuentagotas cuando también se ha copiado",
         "placeholders": {
-            "hex_color": { "content": "$1", "example": "#7B30F7" }
+            "hex_color": {
+                "content": "$1",
+                "example": "#7B30F7"
+            }
         }
     },
     "colorPicked": {
         "message": "Color '$1' seleccionado",
         "description": "Aviso tras seleccionar un color con el cuentagotas cuando no se pudo copiar",
         "placeholders": {
-            "hex_color": { "content": "$1", "example": "#7B30F7" }
+            "hex_color": {
+                "content": "$1",
+                "example": "#7B30F7"
+            }
         }
     },
     "colorPickerUnsupportedPage": {
@@ -4280,6 +4286,34 @@
     "allowRightClickToggleDisable": {
         "message": "Desactivar el clic derecho y el copiado",
         "description": "Tooltip del interruptor de desbloqueo del clic derecho cuando está activado"
+    },
+    "videoPipSectionTitle": {
+        "message": "Picture-in-Picture (Vídeo)"
+    },
+    "videoPipSectionDesc": {
+        "message": "Añade un botón flotante de Picture-in-Picture en YouTube, Shorts, TikTok y reproductores de vídeo HTML5 en la web, con activadores automáticos de Picture-in-Picture."
+    },
+    "videoPipToggleEnable": {
+        "message": "Activar Picture-in-Picture (Vídeo)",
+        "description": "Tooltip del interruptor de Picture-in-Picture de vídeo cuando está desactivado"
+    },
+    "videoPipToggleDisable": {
+        "message": "Desactivar Picture-in-Picture (Vídeo)",
+        "description": "Tooltip del interruptor de Picture-in-Picture de vídeo cuando está activado"
+    },
+    "youtubeLoopSectionTitle": {
+        "message": "Bucle de YouTube"
+    },
+    "youtubeLoopSectionDesc": {
+        "message": "Añade un botón y menú de repetición en el reproductor de YouTube y YouTube Shorts para reproducir vídeos en bucle continuo o repetir intervalos personalizados."
+    },
+    "youtubeLoopToggleEnable": {
+        "message": "Activar el bucle de YouTube",
+        "description": "Tooltip del interruptor de bucle de YouTube cuando está desactivado"
+    },
+    "youtubeLoopToggleDisable": {
+        "message": "Desactivar el bucle de YouTube",
+        "description": "Tooltip del interruptor de bucle de YouTube cuando está activado"
     },
     "autoPipSectionTitle": {
         "message": "Picture-in-Picture automático"
@@ -5856,6 +5890,9 @@
     "sh_space_res": {
         "message": "Hola Alvaro, ¿estas libre para ir a tomar un café?"
     },
+    "sh_spaces_code": {
+        "message": "/hi$1Alvaro$2para__ir__a__tomar__un__café"
+    },
     "snippetHelpPopupTitle": {
         "message": "Menú de Acceso Rápido"
     },
@@ -6216,7 +6253,7 @@
         "message": "Silenciar"
     },
     "pipUnmute": {
-        "message": "Activar el sonido"
+        "message": "Activar sonido"
     },
     "pipSpeed": {
         "message": "Velocidad de reproducción"
@@ -6457,12 +6494,6 @@
     },
     "pipVolume": {
         "message": "Volumen"
-    },
-    "pipMute": {
-        "message": "Silenciar"
-    },
-    "pipUnmute": {
-        "message": "Activar sonido"
     },
     "pipFullscreen": {
         "message": "Pantalla completa"
@@ -10071,13 +10102,13 @@
         "message": "Sitios"
     },
     "webActivityKpiSitesSub": {
-        "message": "en $1 categorías"
+        "message": "categorías: $1"
     },
     "webActivityKpiAvgPerDay": {
         "message": "Media por día"
     },
     "webActivityKpiAvgPerDaySub": {
-        "message": "sobre $1 días activos"
+        "message": "días activos: $1"
     },
     "webActivityKpiTopSite": {
         "message": "Sitio principal"
@@ -10177,7 +10208,7 @@
         "message": "bloqueado"
     },
     "webActivityStateBlocked_schedule": {
-        "message": "bloqueado ahora"
+        "message": "fuera de horario"
     },
     "webActivityStateBlocked_daily": {
         "message": "límite superado"
@@ -10249,16 +10280,17 @@
         "message": "Cuando se agota el tiempo del día el sitio se bloquea hasta medianoche. Cero significa sin cuota."
     },
     "webActivityFieldSchedules": {
-        "message": "Horas bloqueadas"
+        "message": "Horario permitido",
+        "description": "Las únicas horas en que se puede abrir el sitio. Déjalo vacío para permitirlo a cualquier hora."
     },
     "webActivitySchedulesHint": {
-        "message": "Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
+        "message": "Fuera de este horario el sitio se bloquea. Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
     },
     "webActivityAddSchedule": {
         "message": "Añadir franja"
     },
     "webActivityRemoveSchedule": {
-        "message": "Quitar esta franja"
+        "message": "Eliminar horario configurado"
     },
     "webActivityFrom": {
         "message": "Desde"
@@ -10320,13 +10352,13 @@
         "message": "Este sitio está configurado para bloquearse siempre."
     },
     "webActivityBlockedReason_schedule": {
-        "message": "Este sitio está dentro de una de sus franjas bloqueadas."
+        "message": "Este sitio solo se puede abrir dentro del horario que fijaste."
     },
     "webActivityBlockedReason_daily": {
         "message": "El tiempo de hoy en este sitio se ha agotado."
     },
     "webActivityBlockedUntil": {
-        "message": "Vuelve a las $1."
+        "message": "Se vuelve a abrir a las $1."
     },
     "webActivityBlockedUntilMidnight": {
         "message": "La cuota vuelve a empezar a medianoche."
@@ -10345,12 +10377,6 @@
     },
     "webActivityLimitNearBody": {
         "message": "$1: quedan unos $2 minutos hoy."
-    },
-    "webActivityKpiAvgPerDaySub": {
-        "message": "días activos: $1"
-    },
-    "webActivityKpiSitesSub": {
-        "message": "categorías: $1"
     },
     "webActivityHourSites": {
         "message": "Sitios web visitados: $1",
@@ -10404,7 +10430,8 @@
         "message": "Categoría"
     },
     "webActivityColSchedule": {
-        "message": "Horario"
+        "message": "Horario",
+        "description": "Solo dentro de esta franja se puede abrir el sitio"
     },
     "webActivityColState": {
         "message": "Estado"
@@ -10561,9 +10588,6 @@
     "webActivityRemoveLimit": {
         "message": "Eliminar límite diario"
     },
-    "webActivityRemoveSchedule": {
-        "message": "Eliminar horario configurado"
-    },
     "webActivitySortBy": {
         "message": "Ordenar por esta columna",
         "description": "Pulsa para ordenar; vuelve a pulsar para invertir"
@@ -10586,33 +10610,91 @@
     "webActivityOff": {
         "message": "Desactivado"
     },
-    "webActivityFieldSchedules": {
-        "message": "Horario permitido",
-        "description": "Las únicas horas en que se puede abrir el sitio. Déjalo vacío para permitirlo a cualquier hora."
-    },
-    "webActivitySchedulesHint": {
-        "message": "Fuera de este horario el sitio se bloquea. Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
-    },
-    "webActivityAddSchedule": {
-        "message": "Añadir franja"
-    },
-    "webActivityBlockedReason_schedule": {
-        "message": "Este sitio solo se puede abrir dentro del horario que fijaste."
-    },
-    "webActivityBlockedUntil": {
-        "message": "Se vuelve a abrir a las $1."
-    },
     "webActivityBlockedUntilDay": {
         "message": "Se vuelve a abrir el $1 a las $2."
     },
     "webActivityAllowedWindow": {
         "message": "solo $1–$2"
     },
-    "webActivityStateBlocked_schedule": {
-        "message": "fuera de horario"
+    "varTypeTooltip": {
+        "message": "Elige con qué se rellena la variable"
     },
-    "webActivityColSchedule": {
-        "message": "Horario",
-        "description": "Solo dentro de esta franja se puede abrir el sitio"
+    "varTypeGroupBasic": {
+        "message": "Básico"
+    },
+    "varTypeGroupDateTime": {
+        "message": "Fecha y hora"
+    },
+    "varTypeGroupPage": {
+        "message": "Página"
+    },
+    "varTypeGroupOther": {
+        "message": "Otros"
+    },
+    "varTypeText": {
+        "message": "Texto"
+    },
+    "varTypeDate": {
+        "message": "Fecha actual"
+    },
+    "varTypeIsoDate": {
+        "message": "Fecha ISO (AAAA-MM-DD)"
+    },
+    "varTypeLongDate": {
+        "message": "Fecha larga"
+    },
+    "varTypeTime": {
+        "message": "Hora actual"
+    },
+    "varTypeDateTime": {
+        "message": "Fecha y hora"
+    },
+    "varTypeWeekday": {
+        "message": "Día de la semana"
+    },
+    "varTypeDay": {
+        "message": "Día del mes"
+    },
+    "varTypeMonth": {
+        "message": "Mes"
+    },
+    "varTypeYear": {
+        "message": "Año"
+    },
+    "varTypeTomorrow": {
+        "message": "Fecha de mañana"
+    },
+    "varTypeYesterday": {
+        "message": "Fecha de ayer"
+    },
+    "varTypeNextWeek": {
+        "message": "Fecha dentro de una semana"
+    },
+    "varTypeTimestamp": {
+        "message": "Marca de tiempo Unix"
+    },
+    "varTypeUrl": {
+        "message": "URL de la página"
+    },
+    "varTypeDomain": {
+        "message": "Dominio de la página"
+    },
+    "varTypePageTitle": {
+        "message": "Título de la página"
+    },
+    "varTypeUuid": {
+        "message": "Identificador único"
+    },
+    "varTypeRandom": {
+        "message": "Número aleatorio"
+    },
+    "varSelectPrompt": {
+        "message": "Marcar la palabra seleccionada como variable…"
+    },
+    "varRemoveTooltip": {
+        "message": "Quitar variable"
+    },
+    "errorSnippetTriggerFirst": {
+        "message": "Escribe el activador del snippet antes de editar el texto a expandir"
     }
 }

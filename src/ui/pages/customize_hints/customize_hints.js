@@ -99,6 +99,11 @@ export async function initCustomizeHints() {
     const clearShortcutDesc = setupContentEditablePlaceholder(document.getElementById('command-desc'));
     const clearSnippetExp = setupContentEditablePlaceholder(document.getElementById('snippet-expansion'));
 
+    // Wired further down, once the snippet form exists. Applying the text editor
+    // is what adds the snippet now, so there is no separate "+" button to forget.
+    let submitSnippetForm = null;
+    let fillSnippetFormVariables = null;
+
     // Initialize format buttons
     const initFormatButtons = () => {
         // Format button for snippet expansion only
@@ -108,7 +113,23 @@ export async function initCustomizeHints() {
             const formatBtn = HintCommon.RichTextFormatter.createFormatButton();
             const openModal = (e) => {
                 e.preventDefault();
-                HintCommon.RichTextFormatter.showModal(snippetExpField);
+                // Applying is what saves the snippet, and a snippet with no trigger
+                // cannot be saved — so the editor does not open on a nameless one.
+                const triggerField = document.getElementById('snippet-trigger');
+                if (!triggerField?.value.trim()) {
+                    triggerField?.classList.add('itg-input-error');
+                    triggerField?.focus();
+                    setTimeout(() => triggerField?.classList.remove('itg-input-error'), 2000);
+                    showNotification('errorSnippetTriggerFirst', true);
+                    return;
+                }
+                HintCommon.RichTextFormatter.showModal(snippetExpField, {
+                    variables: readSnippetFormVariables(),
+                    onApply: (html, variables) => {
+                        fillSnippetFormVariables?.(variables);
+                        submitSnippetForm?.();
+                    },
+                });
             };
             formatBtn.addEventListener('click', openModal);
             if (snippetExpField) {
@@ -116,6 +137,20 @@ export async function initCustomizeHints() {
             }
             snippetExpWrapper.appendChild(formatBtn);
         }
+    };
+
+    /** The variables currently typed into the form, so reopening the editor keeps its marks. */
+    const readSnippetFormVariables = () => {
+        const container = document.getElementById('snippet-variables-container');
+        if (!container) return [];
+        return [...container.querySelectorAll('.itg-var-row')]
+            .map((row) => ({
+                id: row.querySelector('.itg-var-id')?.value.trim() || '',
+                word: row.querySelector('.itg-var-word')?.value.trim() || '',
+                defaultValue: row.querySelector('.itg-var-default')?.value.trim() || '',
+                type: row.dataset.varType || 'text',
+            }))
+            .filter((v) => v.id && v.word);
     };
 
     initFormatButtons();
@@ -514,7 +549,24 @@ export async function initCustomizeHints() {
         const openExpModal = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            HintCommon.RichTextFormatter.showModal(expSpan);
+            HintCommon.RichTextFormatter.showModal(expSpan, {
+                // Re-mark the words this snippet already treats as variables, so the
+                // editor opens on the snippet as it was written, not as it reads.
+                variables: readItemVariables(),
+                onApply: async (html, variables) => {
+                    const newSnippets = { ...snippets };
+                    if (variables.length > 0) {
+                        newSnippets[li.dataset.trigger] = { expansion: html, variables };
+                    } else {
+                        const previous = newSnippets[li.dataset.trigger];
+                        newSnippets[li.dataset.trigger] =
+                            typeof previous === 'object' && previous
+                                ? { ...previous, expansion: html, variables: [] }
+                                : html;
+                    }
+                    await saveSnippets(newSnippets);
+                },
+            });
         };
 
         expSpan.addEventListener('click', openExpModal);
@@ -536,8 +588,31 @@ export async function initCustomizeHints() {
         // 2. Variables List
         const varsContainer = HintCommon.DOM.create('div', { className: 'snippet-variables-list' });
 
-        variables.forEach((v, idx) => {
-            const row = HintCommon.DOM.create('div', { className: 'variable-row', dataset: { index: idx } });
+        /** This snippet's variables as its rows currently read them. */
+        const readItemVariables = () =>
+            [...varsContainer.querySelectorAll('.variable-row')]
+                .map((row) => ({
+                    id: row.querySelector('.var-id')?.value.trim() || '',
+                    word: row.querySelector('.var-name')?.value.trim() || '',
+                    defaultValue: row.dataset.varDefault || row.querySelector('.var-name')?.value.trim() || '',
+                    type: row.dataset.varType || 'text',
+                }))
+                .filter((v) => v.id && v.word);
+
+        /**
+         * One variable of a saved snippet. The last field is the type picker: a
+         * plain text variable reads as the text it inserts, anything else as what
+         * it is filled in with, so one control both shows and changes the kind.
+         */
+        const buildVariableRow = (v, idx) => {
+            const row = HintCommon.DOM.create('div', {
+                className: 'variable-row',
+                dataset: {
+                    index: idx,
+                    varType: v.type || 'text',
+                    varDefault: v.defaultValue || v.word || '',
+                },
+            });
 
             const idInput = HintCommon.DOM.create('input', {
                 className: 'var-id',
@@ -551,14 +626,13 @@ export async function initCustomizeHints() {
                 maxlength: '50',
                 title: chrome.i18n.getMessage('varWordLabel') || 'Word to replace',
             });
-            const defInput = HintCommon.DOM.create('input', {
-                className: 'var-value',
-                value: v.defaultValue || '',
-                maxlength: '1000',
-                title: chrome.i18n.getMessage('varDefaultLabel') || 'Default value',
+            const typeSelect = HintCommon.createVarTypeSelect({
+                className: 'var-value tag-select-compact',
+                value: row.dataset.varType,
+                textLabel: row.dataset.varDefault || null,
             });
+            typeSelect.title = chrome.i18n.getMessage('varTypeTooltip') || 'Variable type';
 
-            // Attach Logic (copied from previous version, but with secure elements)
             const validateRow = () => {
                 const currentExp = li.querySelector('[data-type="expansion"]').innerText;
 
@@ -578,12 +652,16 @@ export async function initCustomizeHints() {
                     wordInput.title = '';
                 }
 
-                toggleErr(defInput, !defInput.value.trim());
                 updateUsage();
             };
 
+            typeSelect.addEventListener('change', () => {
+                row.dataset.varType = typeSelect.value || 'text';
+                updateUsage();
+            });
+
             idInput.addEventListener('keydown', HintCommon.preventInputSpace);
-            [idInput, wordInput, defInput].forEach((input) => {
+            [idInput, wordInput].forEach((input) => {
                 input.addEventListener('input', validateRow);
                 input.addEventListener('focus', () => (input.dataset.originalVal = input.value));
                 input.addEventListener('keydown', (e) => {
@@ -607,9 +685,18 @@ export async function initCustomizeHints() {
                 });
             });
 
-            row.append(idInput, wordInput, defInput);
-            varsContainer.appendChild(row);
-        });
+            // The word a text variable stands for is also the text it inserts.
+            wordInput.addEventListener('input', () => {
+                if (row.dataset.varType !== 'text') return;
+                row.dataset.varDefault = wordInput.value.trim();
+                HintCommon.refreshVarTypeSelect(typeSelect, { textLabel: row.dataset.varDefault || null });
+            });
+
+            row.append(idInput, wordInput, typeSelect);
+            return row;
+        };
+
+        variables.forEach((v, idx) => varsContainer.appendChild(buildVariableRow(v, idx)));
 
         li.appendChild(varsContainer);
 
@@ -647,7 +734,8 @@ export async function initCustomizeHints() {
                 currentVars.push({
                     id: row.querySelector('.var-id').value,
                     word: row.querySelector('.var-name').value,
-                    defaultValue: row.querySelector('.var-value').value,
+                    defaultValue: row.dataset.varDefault || row.querySelector('.var-name').value,
+                    type: row.dataset.varType || 'text',
                 });
             });
 
@@ -658,7 +746,7 @@ export async function initCustomizeHints() {
                     // Simple fallback
                     // Try to increment ID if it looks like a number or $number
                     let nextId = '$' + (i + 1);
-                    currentVars.push({ id: nextId, word: '', defaultValue: '' });
+                    currentVars.push({ id: nextId, word: '', defaultValue: '', type: 'text' });
                 }
             } else if (newCount < currentVars.length) {
                 // Remove variables
@@ -667,77 +755,7 @@ export async function initCustomizeHints() {
 
             // Re-render only this row to show errors
             varsContainer.innerHTML = '';
-            currentVars.forEach((v, idx) => {
-                const row = HintCommon.DOM.create('div', { className: 'variable-row', dataset: { index: idx } });
-
-                const idInput = HintCommon.DOM.create('input', {
-                    className: 'var-id',
-                    value: v.id,
-                    maxlength: '3',
-                    title: chrome.i18n.getMessage('varIdLabel') || 'ID',
-                });
-                const wordInput = HintCommon.DOM.create('input', {
-                    className: 'var-name',
-                    value: v.word,
-                    maxlength: '50',
-                    title: chrome.i18n.getMessage('varWordLabel') || 'Word to replace',
-                });
-                const defInput = HintCommon.DOM.create('input', {
-                    className: 'var-value',
-                    value: v.defaultValue || '',
-                    maxlength: '1000',
-                    title: chrome.i18n.getMessage('varDefaultLabel') || 'Default value',
-                });
-
-                // Attach Validation Logic (Reused)
-                const validateRow = () => {
-                    const currentExp = li.querySelector('[data-type="expansion"]').innerText;
-                    const toggleErr = (el, condition) => {
-                        if (condition) el.classList.add('itg-input-error');
-                        else el.classList.remove('itg-input-error');
-                    };
-                    toggleErr(idInput, !idInput.value.trim());
-
-                    if (!wordInput.value.trim() || !currentExp.includes(wordInput.value.trim())) {
-                        wordInput.classList.add('itg-input-error');
-                        if (!currentExp.includes(wordInput.value.trim()))
-                            wordInput.title = chrome.i18n.getMessage('errorVarWordNotFound');
-                    } else {
-                        wordInput.classList.remove('itg-input-error');
-                        wordInput.title = '';
-                    }
-                    toggleErr(defInput, !defInput.value.trim());
-                    updateUsage();
-                };
-
-                idInput.addEventListener('keydown', HintCommon.preventInputSpace);
-                [idInput, wordInput, defInput].forEach((input) => {
-                    input.addEventListener('input', validateRow);
-                    input.addEventListener('focus', () => (input.dataset.originalVal = input.value));
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Escape') {
-                            e.preventDefault();
-                            if (input.dataset.originalVal !== undefined) input.value = input.dataset.originalVal;
-                            input.classList.remove('itg-input-error');
-                            input.blur();
-                            validateRow();
-                        } else if (e.key === 'Enter') {
-                            e.preventDefault();
-                            input.blur();
-                        }
-                    });
-                    input.addEventListener('blur', () => {
-                        if (input.classList.contains('itg-input-error')) {
-                            if (input.dataset.originalVal !== undefined) input.value = input.dataset.originalVal;
-                            input.classList.remove('itg-input-error');
-                            validateRow();
-                        }
-                    });
-                });
-
-                row.append(idInput, wordInput, defInput);
-                varsContainer.appendChild(row);
-            });
+            currentVars.forEach((v, idx) => varsContainer.appendChild(buildVariableRow(v, idx)));
 
             // Trigger save update (using the existing change listener flow)
             // We can manually trigger a change event on the container to save
@@ -755,7 +773,8 @@ export async function initCustomizeHints() {
             varsContainer.querySelectorAll('.variable-row').forEach((row) => {
                 vars.push({
                     id: row.querySelector('.var-id').value.trim(),
-                    defaultValue: row.querySelector('.var-value').value.trim(),
+                    defaultValue: row.dataset.varDefault || row.querySelector('.var-name').value.trim(),
+                    type: row.dataset.varType || 'text',
                 });
             });
             const text = HintCommon.generateSnippetUsageText(trig, vars);
@@ -768,7 +787,7 @@ export async function initCustomizeHints() {
         // (Kept identical to your previous version, just ensure to use them over the 'li' and 'mainRow' references created here)
 
         varsContainer.addEventListener('change', async (e) => {
-            if (e.target.tagName === 'INPUT' || e.target === varsContainer) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target === varsContainer) {
                 const newVars = [];
                 let hasError = false;
                 // FIX: Use local dates to avoid time zone issues with toISOString
@@ -777,7 +796,7 @@ export async function initCustomizeHints() {
                 varsContainer.querySelectorAll('.variable-row').forEach((row) => {
                     const id = row.querySelector('.var-id').value.trim();
                     const word = row.querySelector('.var-name').value.trim();
-                    const def = row.querySelector('.var-value').value.trim();
+                    const def = row.dataset.varDefault || word;
 
                     if (!id || !word || !def) hasError = true;
                     if (word && !HintCommon.validateSnippetVar(word, currentExp)) {
@@ -786,7 +805,7 @@ export async function initCustomizeHints() {
                     } else {
                         row.querySelector('.var-name').classList.remove('itg-input-error');
                     }
-                    newVars.push({ id, word, defaultValue: def });
+                    newVars.push({ id, word, defaultValue: def, type: row.dataset.varType || 'text' });
                 });
 
                 if (!hasError) {
@@ -1527,7 +1546,6 @@ export async function initCustomizeHints() {
     const expansionInput = document.getElementById('snippet-expansion');
     const varCountInput = document.getElementById('snippet-var-count');
     const varsContainer = document.getElementById('snippet-variables-container');
-    const addSnippetBtn = document.getElementById('add-snippet-btn');
 
     const updateVariablesUI = () => {
         const count = parseInt(varCountInput.value) || 0;
@@ -1539,15 +1557,17 @@ export async function initCustomizeHints() {
                 id: row.querySelector('.itg-var-id').value,
                 word: row.querySelector('.itg-var-word').value,
                 def: row.querySelector('.itg-var-default').value,
+                type: row.dataset.varType || 'text',
             });
         });
 
         varsContainer.innerHTML = '';
 
         for (let i = 1; i <= count; i++) {
-            const prev = currentValues[i - 1] || { id: `$${i}`, word: '', def: '' };
+            const prev = currentValues[i - 1] || { id: `$${i}`, word: '', def: '', type: 'text' };
 
             const row = HintCommon.DOM.create('div', { className: 'itg-var-row' });
+            row.dataset.varType = prev.type || 'text';
 
             const idInput = HintCommon.DOM.create('input', {
                 type: 'text',
@@ -1579,9 +1599,41 @@ export async function initCustomizeHints() {
 
             if (prev.word) validateVariableWord(wordInput); // Re-validate when restoring
 
-            row.append(idInput, wordInput, defInput);
+            // The type is set in the text editor, so here it is shown, not edited.
+            const typeTag = HintCommon.DOM.create(
+                'span',
+                { className: 'itg-var-type-tag' },
+                HintCommon.getSnippetVarTypeLabel(prev.type),
+            );
+            typeTag.classList.toggle('itg-display-none', !prev.type || prev.type === 'text');
+
+            row.append(idInput, wordInput, defInput, typeTag);
             varsContainer.appendChild(row);
         }
+    };
+
+    /**
+     * Mirrors the variables marked in the text editor onto the form rows, which
+     * stay the single place the add routine reads them from.
+     */
+    fillSnippetFormVariables = (variables) => {
+        const list = Array.isArray(variables) ? variables : [];
+        varsContainer.innerHTML = '';
+        varCountInput.value = String(list.length);
+        updateVariablesUI();
+        varsContainer.querySelectorAll('.itg-var-row').forEach((row, i) => {
+            const v = list[i];
+            if (!v) return;
+            row.dataset.varType = v.type || 'text';
+            row.querySelector('.itg-var-id').value = v.id || `$${i + 1}`;
+            row.querySelector('.itg-var-word').value = v.word || '';
+            row.querySelector('.itg-var-default').value = v.defaultValue || v.word || '';
+            const tag = row.querySelector('.itg-var-type-tag');
+            if (tag) {
+                tag.textContent = HintCommon.getSnippetVarTypeLabel(row.dataset.varType);
+                tag.classList.toggle('itg-display-none', row.dataset.varType === 'text');
+            }
+        });
     };
 
     const validateVariableWord = (input) => {
@@ -1617,100 +1669,98 @@ export async function initCustomizeHints() {
             varsContainer.querySelectorAll('.itg-var-word').forEach((inp) => validateVariableWord(inp));
         });
 
-    if (addSnippetBtn) {
-        addSnippetBtn.addEventListener('click', async () => {
-            const trigger = triggerInput.value.trim();
-            const expansion =
-                expansionInput.innerHTML === expansionInput.getAttribute('data-i18n-placeholder')
-                    ? ''
-                    : expansionInput.dataset.html || expansionInput.innerHTML;
+    // Applying the text editor is what saves the snippet; the old "+" button was a
+    // second step people did not expect after pressing Apply, so it is gone.
+    submitSnippetForm = async () => {
+        const trigger = triggerInput.value.trim();
+        const expansion = expansionInput.dataset.html || expansionInput.innerHTML;
 
-            if (!trigger || !expansion) {
-                showNotification('errorEmptyFields', true);
-                return;
-            }
+        if (!trigger || !expansion) {
+            showNotification('errorEmptyFields', true);
+            return;
+        }
 
-            const conflict = getKeyConflictInfo(trigger, 'snippet', null, 'snippet');
-            if (conflict) {
-                triggerInput.classList.add('itg-input-error');
-                setTimeout(() => triggerInput.classList.remove('itg-input-error'), 1500);
-                showNotification('errorTriggerTakenBy', true, [conflict]);
-                return;
-            }
+        const conflict = getKeyConflictInfo(trigger, 'snippet', null, 'snippet');
+        if (conflict) {
+            triggerInput.classList.add('itg-input-error');
+            setTimeout(() => triggerInput.classList.remove('itg-input-error'), 1500);
+            showNotification('errorTriggerTakenBy', true, [conflict]);
+            return;
+        }
 
-            let hasError = false;
-            // Refresh the whole table to ensure order and consistency
-            // Track if error is specifically about not found word
-            let isWordNotFoundError = false;
+        let hasError = false;
+        // Refresh the whole table to ensure order and consistency
+        // Track if error is specifically about not found word
+        let isWordNotFoundError = false;
 
-            const variables = [];
-            const rows = varsContainer.querySelectorAll('.itg-var-row');
+        const variables = [];
+        const rows = varsContainer.querySelectorAll('.itg-var-row');
 
-            rows.forEach((row) => {
-                const idInput = row.querySelector('.itg-var-id');
-                const wordInput = row.querySelector('.itg-var-word');
-                const defInput = row.querySelector('.itg-var-default');
+        rows.forEach((row) => {
+            const idInput = row.querySelector('.itg-var-id');
+            const wordInput = row.querySelector('.itg-var-word');
+            const defInput = row.querySelector('.itg-var-default');
 
-                const id = idInput.value.trim();
-                const word = wordInput.value.trim();
-                const def = defInput.value.trim();
-                const expansionText = HintCommon.stripHtml(expansion);
+            const id = idInput.value.trim();
+            const word = wordInput.value.trim();
+            const type = row.dataset.varType || 'text';
+            const def = row.dataset.varDefault || word;
+            const expansionText = HintCommon.stripHtml(expansion);
 
-                // 1. Use centralized validation
-                const validation = HintCommon.validateSnippetVariableRow(id, word, def, expansionText);
+            // 1. Use centralized validation
+            const validation = HintCommon.validateSnippetVariableRow(id, word, def, expansionText);
 
-                if (!validation.isValid) {
-                    hasError = true;
-                    // Switch listener
-                    // Detect if the specific error is that the word doesn't exist
-                    if (validation.errors.word === 'errorVarWordNotFound') {
-                        isWordNotFoundError = true;
-                    }
+            if (!validation.isValid) {
+                hasError = true;
+                // Switch listener
+                // Detect if the specific error is that the word doesn't exist
+                if (validation.errors.word === 'errorVarWordNotFound') {
+                    isWordNotFoundError = true;
                 }
-
-                // 2. Helper to apply error class and message (tooltip)
-                const setFeedback = (input, errorKey) => {
-                    if (errorKey) {
-                        input.classList.add('itg-input-error');
-                        // Get translated message
-                        input.title = chrome.i18n.getMessage(errorKey) || errorKey;
-                    } else {
-                        input.classList.remove('itg-input-error');
-                        input.title = '';
-                    }
-                };
-
-                // 3. Apply specific feedback to the inputs
-                setFeedback(idInput, validation.errors.id);
-                setFeedback(wordInput, validation.errors.word);
-                setFeedback(defInput, validation.errors.def);
-
-                if (id) variables.push({ id, word, defaultValue: def });
-            });
-
-            if (hasError) {
-                // If it's not a rename, just add/upsert
-                // If we detect that the word is missing, use the specific message 'errorSnippetVarNotFound'
-                // Otherwise, use the generic 'errorSnippetIncomplete'
-                const errorKey = isWordNotFoundError ? 'errorSnippetVarNotFound' : 'errorSnippetIncomplete';
-                showNotification(errorKey, true);
-                return;
             }
 
-            // OPTIMIZED: USING HINTCOMMON
-            await HintCommon.Snippets.add(trigger, expansion, variables);
+            // 2. Helper to apply error class and message (tooltip)
+            const setFeedback = (input, errorKey) => {
+                if (errorKey) {
+                    input.classList.add('itg-input-error');
+                    // Get translated message
+                    input.title = chrome.i18n.getMessage(errorKey) || errorKey;
+                } else {
+                    input.classList.remove('itg-input-error');
+                    input.title = '';
+                }
+            };
 
-            // Force immediate render (Previous correction)
-            await renderAll();
+            // 3. Apply specific feedback to the inputs
+            setFeedback(idInput, validation.errors.id);
+            setFeedback(wordInput, validation.errors.word);
+            setFeedback(defInput, validation.errors.def);
 
-            showNotification('snippetAddedSuccess');
-
-            triggerInput.value = '';
-            clearSnippetExp();
-            varCountInput.value = 0;
-            updateVariablesUI();
+            if (id) variables.push({ id, word, defaultValue: def, type });
         });
-    }
+
+        if (hasError) {
+            // If it's not a rename, just add/upsert
+            // If we detect that the word is missing, use the specific message 'errorSnippetVarNotFound'
+            // Otherwise, use the generic 'errorSnippetIncomplete'
+            const errorKey = isWordNotFoundError ? 'errorSnippetVarNotFound' : 'errorSnippetIncomplete';
+            showNotification(errorKey, true);
+            return;
+        }
+
+        // OPTIMIZED: USING HINTCOMMON
+        await HintCommon.Snippets.add(trigger, expansion, variables);
+
+        // Force immediate render (Previous correction)
+        await renderAll();
+
+        showNotification('snippetAddedSuccess');
+
+        triggerInput.value = '';
+        clearSnippetExp();
+        varCountInput.value = 0;
+        updateVariablesUI();
+    };
 
     // --- INTERACTION ---
 

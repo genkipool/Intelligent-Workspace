@@ -47,9 +47,14 @@ var Main = class Main {
         this.helpModal = new HelpModal(this.shadowUI, this.commands, this.snippetManager, this.linkPreviewManager);
         this.commands.setHelpModal(this.helpModal);
         this._ytPipObserver = null;
+        this._ytLoopObserver = null;
+        this._mediaStorageListener = null;
         this._altSequenceBuffer = '';
         this._altSequenceTimer = null;
         this._isAltHeld = false;
+        this.videoPipEnabled = true;
+        this.youtubeLoopEnabled = true;
+        this._setupMediaFeaturesStorageListener();
     }
     async init() {
         // The floating player's window loads these scripts too; it needs none of them.
@@ -71,8 +76,10 @@ var Main = class Main {
                 if (res.globalPageMode) document.documentElement.setAttribute('itg-global-mode', res.globalPageMode);
                 if (res.activeTheme) this.shadowUI.applyTheme(res.activeTheme);
             });
-            const data = await chrome.storage.sync.get(['hintsEnabled']);
+            const data = await chrome.storage.sync.get(['hintsEnabled', 'videoPipEnabled', 'youtubeLoopEnabled']);
             this.hintsGloballyEnabled = data.hintsEnabled !== false;
+            this.videoPipEnabled = data.videoPipEnabled !== false;
+            this.youtubeLoopEnabled = data.youtubeLoopEnabled !== false;
             await this.commands.loadUserCommands();
 
             // * NEW: Synchronize hint letters with current commands
@@ -96,11 +103,15 @@ var Main = class Main {
             };
             this._videoCheckInterval = setInterval(checkForVideo, 1000);
             checkForVideo();
-            this._injectYoutubePipButton();
-            this._injectYoutubeLoopButton();
+            if (this.videoPipEnabled) {
+                this._injectYoutubePipButton();
+                this._injectTiktokPipButton();
+                this._injectGenericVideoPipButton();
+            }
+            if (this.youtubeLoopEnabled) {
+                this._injectYoutubeLoopButton();
+            }
             this._injectYoutubeInlineVolumeControl();
-            this._injectTiktokPipButton();
-            this._injectGenericVideoPipButton();
         }
         if (isVideoPipMode) {
             document.documentElement.style.overflow = 'hidden';
@@ -945,6 +956,7 @@ var Main = class Main {
     }
     _injectYoutubePipButton() {
         if (itgIsInsidePipWindow()) return;
+        if (this.videoPipEnabled === false) return;
         if (!window.location.hostname.includes('youtube.com')) return;
         const pipTitle =
             (typeof itgPipMsg === 'function'
@@ -1026,11 +1038,17 @@ var Main = class Main {
             shortsRightControls.insertBefore(wrapper, fullscreenShape);
         };
         const addAllButtons = () => {
+            if (this.videoPipEnabled === false) return;
             addPlayerButton();
             addShortsButton();
         };
+        if (this._ytPipObserver) {
+            this._ytPipObserver.disconnect();
+            this._ytPipObserver = null;
+        }
         addAllButtons();
         this._ytPipObserver = new MutationObserver(() => {
+            if (this.videoPipEnabled === false) return;
             addAllButtons();
         });
         this._ytPipObserver.observe(document.body, {
@@ -1040,6 +1058,7 @@ var Main = class Main {
     }
     _injectYoutubeLoopButton() {
         if (itgIsInsidePipWindow()) return;
+        if (this.youtubeLoopEnabled === false) return;
         if (!window.location.hostname.includes('youtube.com')) return;
 
         const loopTitle =
@@ -1169,12 +1188,18 @@ var Main = class Main {
         };
 
         const addAllLoopButtons = () => {
+            if (this.youtubeLoopEnabled === false) return;
             addLoopButton();
             addShortsLoopButton();
         };
 
+        if (this._ytLoopObserver) {
+            this._ytLoopObserver.disconnect();
+            this._ytLoopObserver = null;
+        }
         addAllLoopButtons();
         this._ytLoopObserver = new MutationObserver(() => {
+            if (this.youtubeLoopEnabled === false) return;
             addAllLoopButtons();
         });
         this._ytLoopObserver.observe(document.body, {
@@ -1553,6 +1578,7 @@ var Main = class Main {
 
     _injectTiktokPipButton() {
         if (itgIsInsidePipWindow()) return;
+        if (this.videoPipEnabled === false) return;
         if (!window.location.hostname.includes('tiktok.com')) return;
         if (!document.getElementById('itg-tiktok-pip-styles')) {
             const styleEl = document.createElement('style');
@@ -1714,6 +1740,7 @@ var Main = class Main {
      */
     _injectGenericVideoPipButton() {
         if (window.top !== window || itgIsInsidePipWindow()) return;
+        if (this.videoPipEnabled === false) return;
         // These two have buttons inside their own player controls already.
         if (window.location.hostname.includes('youtube.com') || window.location.hostname.includes('tiktok.com')) return;
 
@@ -1811,9 +1838,78 @@ var Main = class Main {
             button?.remove();
         };
     }
+
+    _setupMediaFeaturesStorageListener() {
+        if (this._mediaStorageListener) return;
+        this._mediaStorageListener = (changes, area) => {
+            if (changes.videoPipEnabled !== undefined) {
+                this.videoPipEnabled = changes.videoPipEnabled.newValue !== false;
+                this._updateVideoPipState();
+            }
+            if (changes.youtubeLoopEnabled !== undefined) {
+                this.youtubeLoopEnabled = changes.youtubeLoopEnabled.newValue !== false;
+                this._updateYoutubeLoopState();
+            }
+        };
+        try {
+            chrome.storage.onChanged.addListener(this._mediaStorageListener);
+        } catch {}
+    }
+
+    _updateVideoPipState() {
+        if (this.videoPipEnabled) {
+            this._injectYoutubePipButton();
+            this._injectTiktokPipButton();
+            this._injectGenericVideoPipButton();
+        } else {
+            if (this._ytPipObserver) {
+                this._ytPipObserver.disconnect();
+                this._ytPipObserver = null;
+            }
+            if (this._tiktokPipObserver) {
+                this._tiktokPipObserver.disconnect();
+                this._tiktokPipObserver = null;
+            }
+            if (this._genericPipCleanup) {
+                this._genericPipCleanup();
+                this._genericPipCleanup = null;
+            }
+            document
+                .querySelectorAll(
+                    '#itg-yt-pip-button, #itg-yt-shorts-pip-button, .itg-tiktok-pip-button, #itg-generic-pip-button, #itg-autopip-menu',
+                )
+                .forEach((el) => el.remove());
+        }
+    }
+
+    _updateYoutubeLoopState() {
+        if (this.youtubeLoopEnabled) {
+            this._injectYoutubeLoopButton();
+        } else {
+            if (this._ytLoopObserver) {
+                this._ytLoopObserver.disconnect();
+                this._ytLoopObserver = null;
+            }
+            document
+                .querySelectorAll(
+                    '#itg-yt-loop-button, #itg-yt-shorts-loop-wrapper, #itg-yt-shorts-loop-button, #itg-yt-loop-menu, #itg-pip-loop-popup, .itg-yt-loop-menu, .ytp-loop-active',
+                )
+                .forEach((el) => el.remove());
+            if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
+                itgVideoLoop.setLoop(false);
+            }
+        }
+    }
+
     cleanup() {
         this._isCleanedUp = true;
         console.log('[HintMain] Cleaning up previous content script instance...');
+        if (this._mediaStorageListener) {
+            try {
+                chrome.storage.onChanged.removeListener(this._mediaStorageListener);
+            } catch {}
+            this._mediaStorageListener = null;
+        }
         if (this._boundFocusInHandler) document.removeEventListener('focusin', this._boundFocusInHandler);
         if (this._boundFocusOutHandler) document.removeEventListener('focusout', this._boundFocusOutHandler);
         if (this._boundMainKeyDownHandler) document.removeEventListener('keydown', this._boundMainKeyDownHandler, true);
@@ -1828,6 +1924,10 @@ var Main = class Main {
         if (this._ytPipObserver) {
             this._ytPipObserver.disconnect();
             this._ytPipObserver = null;
+        }
+        if (this._ytLoopObserver) {
+            this._ytLoopObserver.disconnect();
+            this._ytLoopObserver = null;
         }
         if (this._tiktokPipObserver) {
             this._tiktokPipObserver.disconnect();

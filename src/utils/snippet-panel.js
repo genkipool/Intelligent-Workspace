@@ -217,7 +217,8 @@
 
                 let expanded = expansion;
                 snippet.variables.forEach((v) => {
-                    if (v.word) expanded = expanded.split(v.word).join(v.defaultValue || v.word);
+                    const value = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || v.word);
+                    if (v.word) expanded = HintCommon.replaceSnippetWord(expanded, v.word, value);
                 });
                 return { expansion: expanded, matchLength: rawToken.length + 1, trigger: rawToken };
             }
@@ -250,12 +251,14 @@
                     tempVars[m.id] = remaining.substring(start, end).replace(/__/g, ' ');
                 }
                 for (const v of sortedVars) {
-                    if (!tempVars[v.id]) tempVars[v.id] = v.defaultValue || '';
+                    if (!tempVars[v.id]) {
+                        tempVars[v.id] = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || '');
+                    }
                 }
 
                 let expanded = snippet.expansion;
                 for (const v of sortedVars) {
-                    if (v.word) expanded = expanded.split(v.word).join(tempVars[v.id] || v.word);
+                    if (v.word) expanded = HintCommon.replaceSnippetWord(expanded, v.word, tempVars[v.id] || v.word);
                 }
                 if (forcePlainText) expanded = HintCommon.stripHtml(expanded);
 
@@ -564,7 +567,8 @@
             let expansion = snippet.expansion;
             if (snippet.variables?.length > 0) {
                 snippet.variables.forEach((v) => {
-                    if (v.word) expansion = expansion.split(v.word).join(v.defaultValue || v.word);
+                    const value = HintCommon.resolveSnippetVarValue(v.type) ?? (v.defaultValue || v.word);
+                    if (v.word) expansion = HintCommon.replaceSnippetWord(expansion, v.word, value);
                 });
             }
 

@@ -177,7 +177,8 @@
                         <div class="usage-group">
                             <div class="usage-row">
                                 <span class="label" data-i18n="sh_usage"></span>
-                                <code>/hi$1Alvaro$2today</code> <span data-i18n="sh_plus_space"></span>
+                                <code>/hi$1Alvaro$2<span data-i18n="sh_today">today</span></code>
+                                <span data-i18n="sh_plus_space"></span>
                             </div>
                             <div class="usage-row">
                                 <span class="label" data-i18n="sh_result"></span>
@@ -189,19 +190,19 @@
             </section>
 
             <section class="help-section">
-                <h3 data-i18n="snippetHelpSpacesTitle">Example with Multiple Variables and Spaces</h3>
+                <h3 data-i18n="snippetHelpSpacesTitle"></h3>
                 <p data-i18n="sh_spaces_desc" class="help-section-desc-spaced"></p>
                 <div class="example-box">
                     <div class="example-usage">
                         <div class="usage-group">
                             <div class="usage-row">
-                                <span class="label" data-i18n="sh_usage">Usage:</span>
-                                <code>/hi$1Alvaro$2to__go__for__a__coffee</code>
-                                <span data-i18n="sh_plus_space">+ Space</span>
+                                <span class="label" data-i18n="sh_usage"></span>
+                                <code data-i18n="sh_spaces_code">/hi$1Alvaro$2to__go__for__a__coffee</code>
+                                <span data-i18n="sh_plus_space"></span>
                             </div>
                             <div class="usage-row">
-                                <span class="label" data-i18n="sh_result">Result:</span>
-                                <span data-i18n="sh_space_res">Hello Alvaro, are you free to go for a coffee?</span>
+                                <span class="label" data-i18n="sh_result"></span>
+                                <span data-i18n="sh_space_res"></span>
                             </div>
                         </div>
                     </div>

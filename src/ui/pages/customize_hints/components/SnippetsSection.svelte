@@ -60,7 +60,6 @@
                     value="0"
                 />
             </div>
-            <button id="add-snippet-btn" type="button" class="button add-btn snippet-add-btn">+</button>
         </div>
 
         <div id="snippet-variables-container" class="snippet-vars-container"></div>

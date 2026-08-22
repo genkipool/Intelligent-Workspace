@@ -3154,3 +3154,237 @@ input.error:focus,
     margin-left: 2px;
     margin-right: 12px;
 }
+
+/* --- SNIPPET VARIABLES IN THE TEXT EDITOR --------------------------
+   Same controls as the settings page, squeezed into the help modal's
+   inline editor. Its toolbar flattens its rows with display:contents to
+   keep one visual line, so the variable row asks for a line of its own. */
+.itg-inline-editor-content .itg-format-toolbar {
+    flex-wrap: wrap;
+}
+
+.itg-format-var-row,
+.itg-inline-editor-content .itg-format-var-row {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: center;
+    padding-top: 6px;
+    margin-top: 2px;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.itg-var-type-select,
+.itg-var-type-select::picker(select) {
+    appearance: base-select;
+}
+
+.itg-var-type-select {
+    display: flex;
+    align-items: center;
+    /* The trigger sizes itself against this box, so any inherited padding would
+       leave it short of the control's own height. */
+    padding: 0;
+    background: color-mix(in srgb, var(--bg-panel-color) 80%, var(--bg-color));
+    border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+    color: var(--text-color);
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    height: 30px;
+    width: 100%;
+    min-width: 0;
+    transition: border-color 0.13s;
+}
+
+/* In the editor toolbar the picker is the whole row. */
+.itg-var-type-select-wide,
+.itg-inline-editor-content .itg-var-type-select-wide {
+    flex: 1 1 auto;
+}
+
+/* A saved snippet's rows put it where the default-value field used to sit, at
+   the size of the inputs beside it. */
+.itg-var-type-select.tag-select-compact,
+.variable-row .var-value {
+    width: 100%;
+    height: 28px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.itg-var-type-select.tag-select-compact button,
+.variable-row .var-value button {
+    padding: 0 7px;
+    gap: 5px;
+}
+
+.itg-var-type-select::picker-icon {
+    display: none !important;
+}
+
+.itg-var-type-select:focus {
+    border-color: var(--interactive-color);
+    outline: none;
+}
+
+/* The trigger. Without this the button stays `display: contents` and the label
+   sits unpadded against the top-left corner of the control. The toolbar copies of
+   the selector are what outrank `.itg-format-toolbar button`. */
+.itg-var-type-select button,
+.itg-format-toolbar .itg-var-type-select button,
+.itg-inline-editor-content .itg-format-toolbar .itg-var-type-select button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    align-self: stretch;
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    padding: 0 9px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: inherit;
+    font: inherit;
+    gap: 6px;
+    line-height: 1;
+}
+
+.itg-var-type-select button:hover,
+.itg-format-toolbar .itg-var-type-select button:hover,
+.itg-inline-editor-content .itg-format-toolbar .itg-var-type-select button:hover {
+    background: transparent;
+    border-color: transparent;
+    color: inherit;
+}
+
+.itg-var-type-select selectedcontent {
+    display: block;
+    flex: 1;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.itg-var-type-select .picker-icon {
+    transition: transform 0.2s ease;
+    color: color-mix(in srgb, var(--text-color) 50%, transparent);
+    flex-shrink: 0;
+    width: 11px;
+    height: 11px;
+}
+
+.itg-var-type-select:open .picker-icon {
+    transform: rotate(180deg);
+}
+
+.itg-var-type-select::picker(select) {
+    background: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    padding: 4px;
+    margin-top: 4px;
+    max-height: 300px;
+
+    opacity: 0;
+    transform: translateY(-5px);
+    transition:
+        opacity 0.2s,
+        transform 0.2s,
+        overlay 0.2s allow-discrete,
+        display 0.2s allow-discrete;
+}
+
+.itg-var-type-select:open::picker(select) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Scrollbar of the drop-down, in the colours the group list page uses. Written
+   with the standard properties rather than ::-webkit-scrollbar because the build's
+   CSS minifier will not parse a pseudo-element chained onto ::picker(select). */
+.itg-var-type-select::picker(select) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-color);
+}
+
+@starting-style {
+    .itg-var-type-select:open::picker(select) {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+}
+
+.itg-var-type-select option {
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--text-color);
+    font-size: 12px;
+    transition: background 0.1s;
+}
+
+.itg-var-type-select option:hover {
+    background-color: var(--interactive-color);
+    color: var(--text-color);
+}
+
+.itg-var-type-select option:checked {
+    background-color: color-mix(in srgb, var(--interactive-color) 15%, transparent);
+    color: var(--action-color);
+    font-weight: 600;
+}
+
+.itg-var-type-select option::checkmark {
+    display: none;
+}
+
+.itg-var-type-select optgroup {
+    padding: 0;
+}
+
+.itg-var-type-select optgroup legend {
+    padding: 7px 12px 3px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: color-mix(in srgb, var(--text-color) 55%, transparent);
+}
+
+.itg-snippet-var {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    padding: 0 4px 0 5px;
+    border-radius: 5px;
+    background-color: color-mix(in srgb, var(--interactive-color) 22%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-color) 55%, transparent);
+    color: var(--text-color);
+    cursor: default;
+}
+
+.itg-snippet-var:not([data-var-type='text']) .itg-snippet-var-word::after {
+    content: '\27F3';
+    margin-left: 4px;
+    font-size: 0.75em;
+    opacity: 0.75;
+}
+
+.itg-snippet-var-remove {
+    cursor: pointer;
+    font-size: 0.85em;
+    line-height: 1;
+    opacity: 0.55;
+    transition:
+        opacity 0.15s ease,
+        color 0.15s ease;
+}
+
+.itg-snippet-var-remove:hover {
+    opacity: 1;
+    color: var(--error-color);
+}
