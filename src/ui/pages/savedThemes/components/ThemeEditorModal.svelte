@@ -11,20 +11,25 @@
         onColorInput = () => {},
     } = $props();
 
-    async function pickColor(key, id) {
-        if (typeof window !== 'undefined' && 'EyeDropper' in window) {
-            try {
-                const eyeDropper = new window.EyeDropper();
-                const result = await eyeDropper.open();
-                if (result?.sRGBHex) {
-                    editorColors[key] = result.sRGBHex;
-                    onColorInput({ target: { value: result.sRGBHex } }, key);
-                }
-            } catch {
-                // User aborted or canceled the eyedropper
+    async function pickColor(e, key) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation?.();
+        }
+        const EyeDropperClass = window.EyeDropper || globalThis.EyeDropper;
+        if (!EyeDropperClass) {
+            return;
+        }
+        try {
+            const eyeDropper = new EyeDropperClass();
+            const result = await eyeDropper.open();
+            if (result?.sRGBHex) {
+                editorColors[key] = result.sRGBHex;
+                onColorInput({ target: { value: result.sRGBHex } }, key);
             }
-        } else {
-            document.getElementById(id)?.click();
+        } catch {
+            // User aborted or canceled the eyedropper
         }
     }
 </script>
@@ -45,7 +50,7 @@
                     {#each [{ id: 'bg-color', k: 'bgColor', l: 'bgColor' }, { id: 'bg-panel-color', k: 'bgPanelColor', l: 'bgPanelColor' }, { id: 'text-color', k: 'textColor', l: 'textColor' }, { id: 'text-on-color', k: 'textOnColor', l: 'textOnColor' }, { id: 'action-color', k: 'actionColor', l: 'actionColor' }, { id: 'interactive-color', k: 'interactiveColor', l: 'interactiveColor' }, { id: 'border-color', k: 'borderColor', l: 'borderColor' }, { id: 'error-color', k: 'errorColor', l: 'errorColor' }, { id: 'header-color', k: 'headerColor', l: 'headerColor' }] as colorInput (colorInput.id)}
                         <div class="color-option">
                             <label for={colorInput.id} data-i18n={colorInput.l}></label>
-                            <div class="color-input-group">
+                            <div class="color-input-wrapper">
                                 <input
                                     type="color"
                                     id={colorInput.id}
@@ -57,15 +62,16 @@
                                     class="button-eyedropper"
                                     data-i18n-title="pickColorEyeDropper"
                                     data-i18n-aria-label="pickColorEyeDropper"
-                                    onclick={() => pickColor(colorInput.k, colorInput.id)}
+                                    onmousedown={(e) => e.stopPropagation()}
+                                    onclick={(e) => pickColor(e, colorInput.k)}
                                 >
                                     <svg
                                         viewBox="0 0 24 24"
-                                        width="16"
-                                        height="16"
+                                        width="15"
+                                        height="15"
                                         fill="none"
                                         stroke="currentColor"
-                                        stroke-width="2"
+                                        stroke-width="2.2"
                                         stroke-linecap="round"
                                         stroke-linejoin="round"
                                         aria-hidden="true"
@@ -105,77 +111,102 @@
 {/if}
 
 <style>
-    .color-input-group {
+    .color-input-wrapper {
+        position: relative;
+        width: 100%;
+        height: 32px;
         display: flex;
         align-items: center;
-        gap: 6px;
-        width: 100%;
     }
 
-    .color-input-group input[type='color'] {
+    .color-input-wrapper input[type='color'] {
         width: 100%;
-        flex: 1 1 auto;
-        min-width: 0;
-        height: 32px;
+        height: 100%;
         border: 1px solid var(--border-color, #ccc);
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
         background-color: transparent;
         box-sizing: border-box;
+        padding: 0;
+        margin: 0;
     }
 
-    .color-input-group input[type='color']:hover {
+    .color-input-wrapper input[type='color']:hover {
         border-color: var(--border-color, #ccc);
         transform: translateY(-1px);
         box-shadow: 0 0 5px 1px var(--interactive-color, #3498db);
     }
 
-    .color-input-group input[type='color']:focus-visible {
+    .color-input-wrapper input[type='color']:focus-visible {
         outline: none;
         border-color: var(--border-color, #ccc);
         box-shadow: 0 0 0 2px var(--interactive-color, #3498db);
     }
 
+    .color-input-wrapper input[type='color']::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    .color-input-wrapper input[type='color']::-webkit-color-swatch {
+        border: none;
+        border-radius: 5px;
+    }
+
+    .color-input-wrapper input[type='color']::-moz-color-swatch {
+        border: none;
+        border-radius: 5px;
+    }
+
     .button-eyedropper {
+        position: absolute;
+        right: 7px;
+        top: 50%;
+        transform: translateY(-50%);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 32px;
-        flex-shrink: 0;
-        background-color: var(--bg-color, #f5f5f5);
-        border: 1px solid var(--border-color, #ccc);
-        border-radius: 6px;
-        color: var(--text-color, #000);
-        cursor: pointer;
+        width: 22px;
+        height: 22px;
+        background: transparent;
+        border: none;
+        outline: none;
         padding: 0;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
+        margin: 0;
+        cursor: pointer;
+        color: #ffffff;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.85));
+        transition:
+            transform 0.15s ease,
+            filter 0.15s ease,
+            opacity 0.15s ease;
+        z-index: 2;
+        box-shadow: none;
     }
 
     .button-eyedropper:hover {
-        background-color: var(--interactive-color, #3498db);
-        border-color: var(--interactive-color, #3498db);
-        color: var(--text-on-color, #ffffff);
-        transform: translateY(-1px);
-        box-shadow: 0 0 5px 1px var(--interactive-color, #3498db);
+        transform: translateY(-50%) scale(1.22);
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 1)) drop-shadow(0 0 2px var(--interactive-color, #3498db));
+        color: #ffffff;
+        background: transparent;
+        box-shadow: none;
+        border: none;
     }
 
     .button-eyedropper:focus-visible {
         outline: none;
-        border-color: var(--interactive-color, #3498db);
-        box-shadow: 0 0 0 2px var(--interactive-color, #3498db);
+        transform: translateY(-50%) scale(1.22);
+        filter: drop-shadow(0 0 3px var(--interactive-color, #3498db));
     }
 
     .button-eyedropper:active {
-        transform: translateY(0);
+        transform: translateY(-50%) scale(1.05);
     }
 
     .button-eyedropper svg {
         display: block;
         pointer-events: none;
+        width: 15px;
+        height: 15px;
     }
 </style>
