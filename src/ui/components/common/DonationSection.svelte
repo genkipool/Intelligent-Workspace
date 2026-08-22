@@ -33,6 +33,10 @@
 
     async function openPaypal(event) {
         if (event) event.preventDefault();
+        if (isAbout) {
+            chrome.tabs.create({ url: donationData.urls.paypal, active: true });
+            return;
+        }
         const paypalUrl = encodeURIComponent(donationData.urls.paypal);
         const popupUrl = `../listGroup/listGroup.html?view=url&url=${paypalUrl}`;
         const sidePanelUrl = `src/ui/pages/listGroup/listGroup.html?view=url&url=${paypalUrl}`;
