@@ -1953,7 +1953,7 @@ function itgCancelLoopHide() {
     }
 }
 
-function itgScheduleLoopHide(delay = 500) {
+function itgScheduleLoopHide(delay = 250) {
     itgCancelLoopHide();
     itgLoopHideTimeout = setTimeout(() => {
         const menu = document.getElementById('itg-yt-loop-menu');
@@ -1999,7 +1999,7 @@ function itgAttachLoopMenu(button) {
     button.addEventListener('mouseenter', show);
     button.addEventListener('mouseleave', (e) => {
         if (menu.contains(e.relatedTarget)) return;
-        itgScheduleLoopHide(500);
+        itgScheduleLoopHide(250);
     });
     button.addEventListener('mousemove', () => {
         itgCancelLoopHide();
@@ -2031,7 +2031,7 @@ function itgGetOrCreateYtLoopMenu() {
     menu.addEventListener('mouseenter', () => itgCancelLoopHide());
     menu.addEventListener('mouseleave', (e) => {
         if (itgLoopActiveButton && itgLoopActiveButton.contains(e.relatedTarget)) return;
-        itgScheduleLoopHide(500);
+        itgScheduleLoopHide(250);
     });
     menu.addEventListener('mousemove', () => itgCancelLoopHide());
 
@@ -5328,7 +5328,7 @@ function itgStopAutoPipKeepAlive() {
     }
 }
 
-function itgScheduleAutoPipHide(delay = 500) {
+function itgScheduleAutoPipHide(delay = 250) {
     clearTimeout(itgAutoPipHideTimer);
     itgAutoPipHideTimer = setTimeout(() => {
         const menu = document.getElementById('itg-autopip-menu');
@@ -5387,7 +5387,7 @@ function itgAttachAutoPipMenu(button) {
         if (menu.contains(e.relatedTarget)) {
             return;
         }
-        itgScheduleAutoPipHide(500);
+        itgScheduleAutoPipHide(250);
     });
     button.addEventListener('mousemove', () => {
         itgCancelAutoPipHide();
@@ -5487,7 +5487,7 @@ function itgAutoPipMenu() {
         if (itgAutoPipActiveButton && itgAutoPipActiveButton.contains(e.relatedTarget)) {
             return;
         }
-        itgScheduleAutoPipHide(500);
+        itgScheduleAutoPipHide(250);
     });
     menu.addEventListener('mousemove', () => {
         itgCancelAutoPipHide();
