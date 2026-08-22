@@ -24,15 +24,17 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            # v5 and up on all three: the v4 line runs on Node 20, which the runners
+            # now force onto Node 24 and annotate every run about.
+            - uses: actions/checkout@v5
 
             # The repository is on a pnpm lockfile, so pnpm is what must install it —
             # npm would resolve different versions and check a different tree.
-            - uses: pnpm/action-setup@v4
+            - uses: pnpm/action-setup@v6
               with:
                   version: 11
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v5
               with:
                   node-version: 22
                   cache: pnpm
