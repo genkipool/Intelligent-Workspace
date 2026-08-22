@@ -1,46 +1,34 @@
 /**
  * ColorPickerService — one call that returns the colour under the cursor.
  *
- * Chrome's own EyeDropper is the first choice, but it only exists on Windows, macOS
- * and ChromeOS: on Linux `window.EyeDropper` is undefined, which is why the pipette
- * of the theme editor silently did nothing there. When it is missing (or refuses to
- * open, as it does in contexts Chrome does not host in a browser window) the
- * extension opens its own magnifier over the active tab instead — a still capture of
- * the viewport with a zoom lens, see src/utils/screen-color-picker.js.
+ * The extension brings its own magnifier and uses it on every platform, rather than
+ * Chrome's EyeDropper where that exists. Two reasons, and the second is the one that
+ * settles it:
  *
- * The fallback reads the page, not the whole desktop: that is as far as an extension
- * can see without asking for a screen-share prompt on every pick.
+ * - The same pipette everywhere. The lens, the hex readout, the copy to the
+ *   clipboard, Escape and the arrow keys behave identically on Linux, Windows and
+ *   macOS, which is not something a mix of two pickers can promise.
+ * - Chrome's eyedropper is drawn by the browser window that hosts the page asking
+ *   for it, and a side panel — where the theme editor lives — is not hosted by one.
+ *   `window.EyeDropper` is undefined on Linux to begin with, and where the class does
+ *   exist there is good reason to expect `open()` to end immediately instead of
+ *   showing anything. Relying on it would mean shipping a path that cannot be
+ *   exercised from this side of the fence.
  *
- * Either way the picked colour ends up on the clipboard.
+ * What it costs: ours reads the visible tab, so it cannot sample the browser's own
+ * chrome, another window or the desktop, and it cannot open on the pages an
+ * extension may not touch (`chrome://`, the Web Store). Chrome's could, on the
+ * platforms that have it. That is the trade the consistency is bought with.
+ *
+ * The lens itself is src/utils/screen-color-picker.js, injected over the active tab.
  */
-
-import { copyText } from '../../utils/copyText.js';
 
 /**
  * @returns {Promise<{ color: string|null, copied?: boolean, reason?: string }>}
  *          The picked colour in `#rrggbb`, or null with a reason when nothing was
  *          picked. `copied` says whether it also reached the clipboard.
  */
-export async function pickScreenColor() {
-    const EyeDropperClass = globalThis.EyeDropper;
-    if (EyeDropperClass) {
-        try {
-            const result = await new EyeDropperClass().open();
-            if (!result?.sRGBHex) {
-                return { color: null, reason: 'canceled' };
-            }
-            // Chrome's eyedropper hands the focus back to this page, so the copy can
-            // be made from here.
-            return { color: result.sRGBHex, copied: await copyText(result.sRGBHex) };
-        } catch (error) {
-            // AbortError is the user pressing Escape; anything else means Chrome could
-            // not show the eyedropper here, and the overlay is worth trying.
-            if (error?.name === 'AbortError') {
-                return { color: null, reason: 'canceled' };
-            }
-        }
-    }
-
+export function pickScreenColor() {
     return pickWithOverlay();
 }
 

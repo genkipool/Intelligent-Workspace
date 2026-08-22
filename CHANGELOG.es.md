@@ -39,8 +39,9 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 - **Seleccionar un color de la pantalla en el editor de temas.** La pipeta que hay
   junto a cada color abre una lupa sobre la página, con rejilla de píxeles y el valor
   hexadecimal bajo el cursor; al hacer clic se toma el color y además se copia al
-  portapapeles, y con Esc se cancela. Donde existe se usa el cuentagotas propio de
-  Chrome — en Linux no existe, y por eso el botón no hacía nada.
+  portapapeles, y con Esc se cancela. La lupa es la misma en todos los sistemas, así
+  que la pipeta se comporta igual en cualquiera — el cuentagotas propio de Chrome no
+  existe en Linux, y por eso el botón no hacía nada.
 - **Clic derecho y copiado en las webs que los bloquean.** Vuelven el menú
   contextual, la selección de texto, el copiar, el cortar, el pegar y el arrastrar,
   incluidas las imágenes tapadas por una capa transparente. Viene activado y se

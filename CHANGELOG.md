@@ -39,8 +39,9 @@ Each version holds two different things, and they are worth keeping apart:
 - **Pick a colour from the screen in the theme editor.** The pipette next to each
   colour opens a magnifier over the page, with a pixel grid and the hex value under
   the cursor; clicking takes the colour and also puts it on the clipboard, and Escape
-  calls the pick off. Chrome's own eyedropper is used where it exists — on Linux it
-  does not, which is why the button did nothing there.
+  calls the pick off. It is the extension's own magnifier on every platform, so the
+  pipette behaves the same everywhere — Chrome's built-in eyedropper does not exist
+  on Linux at all, which is why the button used to do nothing there.
 - **Right-click and copying on sites that block them.** The context menu, text
   selection, copy, cut, paste and dragging come back, images covered by a
   transparent layer included. It is on from the start and can be switched off in

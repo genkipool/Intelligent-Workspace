@@ -17,9 +17,9 @@
      * The pipette used to call `new EyeDropper()` here and give up without a word
      * when the class was missing. It is missing on Linux — Chrome only ships the
      * EyeDropper API on Windows, macOS and ChromeOS — so the button did nothing at
-     * all on those machines. pickScreenColor() keeps the native eyedropper where it
-     * exists and opens the extension's own magnifier over the page where it does not,
-     * and leaves the colour it picked on the clipboard.
+     * all on those machines. pickScreenColor() opens the extension's own magnifier
+     * instead, the same one on every platform, and leaves the colour on the
+     * clipboard.
      */
     async function pickColor(e, key) {
         if (e) {
