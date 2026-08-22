@@ -11,19 +11,20 @@
         onColorInput = () => {},
     } = $props();
 
-    const isEyeDropperSupported = typeof window !== 'undefined' && 'EyeDropper' in window;
-
-    async function pickColor(key) {
-        if (!('EyeDropper' in window)) return;
-        try {
-            const eyeDropper = new window.EyeDropper();
-            const result = await eyeDropper.open();
-            if (result?.sRGBHex) {
-                editorColors[key] = result.sRGBHex;
-                onColorInput({ target: { value: result.sRGBHex } }, key);
+    async function pickColor(key, id) {
+        if (typeof window !== 'undefined' && 'EyeDropper' in window) {
+            try {
+                const eyeDropper = new window.EyeDropper();
+                const result = await eyeDropper.open();
+                if (result?.sRGBHex) {
+                    editorColors[key] = result.sRGBHex;
+                    onColorInput({ target: { value: result.sRGBHex } }, key);
+                }
+            } catch {
+                // User aborted or canceled the eyedropper
             }
-        } catch {
-            // User aborted or canceled the eyedropper
+        } else {
+            document.getElementById(id)?.click();
         }
     }
 </script>
@@ -51,34 +52,32 @@
                                     value={editorColors[colorInput.k]}
                                     oninput={(e) => onColorInput(e, colorInput.k)}
                                 />
-                                {#if isEyeDropperSupported}
-                                    <button
-                                        type="button"
-                                        class="button-eyedropper"
-                                        data-i18n-title="pickColorEyeDropper"
-                                        data-i18n-aria-label="pickColorEyeDropper"
-                                        onclick={() => pickColor(colorInput.k)}
+                                <button
+                                    type="button"
+                                    class="button-eyedropper"
+                                    data-i18n-title="pickColorEyeDropper"
+                                    data-i18n-aria-label="pickColorEyeDropper"
+                                    onclick={() => pickColor(colorInput.k, colorInput.id)}
+                                >
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        width="16"
+                                        height="16"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        aria-hidden="true"
+                                        focusable="false"
                                     >
-                                        <svg
-                                            viewBox="0 0 24 24"
-                                            width="16"
-                                            height="16"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            aria-hidden="true"
-                                            focusable="false"
-                                        >
-                                            <path d="m14 7 3 3" />
-                                            <path
-                                                d="M12 9 6.5 14.5a2.12 2.12 0 0 0-.6 1.2L5 20l4.3-.9c.4-.1.8-.3 1.2-.6L16 13"
-                                            />
-                                            <path d="m19 8 1-1a2.12 2.12 0 0 0 0-3 2.12 2.12 0 0 0-3 0l-1 1" />
-                                        </svg>
-                                    </button>
-                                {/if}
+                                        <path d="m14 7 3 3" />
+                                        <path
+                                            d="M12 9 6.5 14.5a2.12 2.12 0 0 0-.6 1.2L5 20l4.3-.9c.4-.1.8-.3 1.2-.6L16 13"
+                                        />
+                                        <path d="m19 8 1-1a2.12 2.12 0 0 0 0-3 2.12 2.12 0 0 0-3 0l-1 1" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     {/each}
@@ -104,3 +103,79 @@
         </div>
     </div>
 {/if}
+
+<style>
+    .color-input-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .color-input-group input[type='color'] {
+        width: 100%;
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 32px;
+        border: 1px solid var(--border-color, #ccc);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        background-color: transparent;
+        box-sizing: border-box;
+    }
+
+    .color-input-group input[type='color']:hover {
+        border-color: var(--border-color, #ccc);
+        transform: translateY(-1px);
+        box-shadow: 0 0 5px 1px var(--interactive-color, #3498db);
+    }
+
+    .color-input-group input[type='color']:focus-visible {
+        outline: none;
+        border-color: var(--border-color, #ccc);
+        box-shadow: 0 0 0 2px var(--interactive-color, #3498db);
+    }
+
+    .button-eyedropper {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        background-color: var(--bg-color, #f5f5f5);
+        border: 1px solid var(--border-color, #ccc);
+        border-radius: 6px;
+        color: var(--text-color, #000);
+        cursor: pointer;
+        padding: 0;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    .button-eyedropper:hover {
+        background-color: var(--interactive-color, #3498db);
+        border-color: var(--interactive-color, #3498db);
+        color: var(--text-on-color, #ffffff);
+        transform: translateY(-1px);
+        box-shadow: 0 0 5px 1px var(--interactive-color, #3498db);
+    }
+
+    .button-eyedropper:focus-visible {
+        outline: none;
+        border-color: var(--interactive-color, #3498db);
+        box-shadow: 0 0 0 2px var(--interactive-color, #3498db);
+    }
+
+    .button-eyedropper:active {
+        transform: translateY(0);
+    }
+
+    .button-eyedropper svg {
+        display: block;
+        pointer-events: none;
+    }
+</style>

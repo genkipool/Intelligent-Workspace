@@ -14,6 +14,7 @@
     import SnippetsSection from './components/SnippetsSection.svelte';
     import BlacklistSection from './components/BlacklistSection.svelte';
     import AutoPipSection from './components/AutoPipSection.svelte';
+    import AllowRightClickSection from './components/AllowRightClickSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
     import Notification from '../../components/common/Notification.svelte';
 
@@ -138,6 +139,9 @@
 
         <!-- Link Preview Blacklist Section -->
         <BlacklistSection {previewToggleTitle} {linkPreviewEnabled} onToggleLinkPreview={toggleLinkPreview} />
+
+        <!-- Right-click and copying -->
+        <AllowRightClickSection />
 
         <div class="itg-scroll-buttons-float">
             <button id="itg-scroll-up" type="button" data-i18n-aria-label="scrollToTop">
