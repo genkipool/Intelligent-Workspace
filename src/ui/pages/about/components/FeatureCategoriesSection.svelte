@@ -151,8 +151,6 @@
         <FeatureItem isMaterial={false} svgId="icon-reader" textKey="feature_readerView" />
         <FeatureItem isMaterial={true} iconName="auto_stories" textKey="feature_changePageMode" />
         <FeatureItem isMaterial={true} iconName="smart_display" textKey="feature_youtubeIntegration" />
-        <FeatureItem isMaterial={true} iconName="video_library" textKey="feature_videoPip" />
-        <FeatureItem isMaterial={true} iconName="file_download" textKey="feature_fileDownloader" />
     </div>
 </section>
 
@@ -165,6 +163,7 @@
         <FeatureItem isMaterial={true} iconName="calendar_month" textKey="feature_downloads_date_filter" />
         <FeatureItem isMaterial={true} iconName="folder_open" textKey="feature_downloads_open_folder" />
         <FeatureItem isMaterial={true} iconName="delete_sweep" textKey="feature_downloads_delete" />
+        <FeatureItem isMaterial={true} iconName="file_download" textKey="feature_fileDownloader" />
     </div>
 </section>
 
@@ -187,10 +186,12 @@
         <FeatureItem isMaterial={true} iconName="contrast" textKey="feature_display_mode_shortcuts" />
         <FeatureItem isMaterial={true} iconName="settings_backup_restore" textKey="feature_shortcuts_backup_reset" />
         <FeatureItem isMaterial={true} iconName="keyboard_alt" textKey="feature_omnibar_prefix_customization" />
+        <FeatureItem isMaterial={true} iconName="video_library" textKey="feature_videoPip" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_navigationPipPopup" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_navigationVideoPip" />
         <FeatureItem isMaterial={true} iconName="open_in_new" textKey="feature_contextMenuPipPopup" />
         <FeatureItem isMaterial={true} iconName="video_settings" textKey="feature_contextMenuVideoPip" />
+        <FeatureItem isMaterial={true} iconName="ads_click" textKey="feature_allowRightClick" />
         <FeatureItem isMaterial={true} iconName="save" textKey="feature_shortcuts_backup_restore_groups" />
     </div>
 </section>

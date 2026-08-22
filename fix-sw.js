@@ -40,6 +40,23 @@ try {
         "world": "MAIN"
       },
       {
+        // Main world too: the right-click unblocker has to reach preventDefault,
+        // the on* handler properties and Selection from the page's own context.
+        "matches": ["<all_urls>"],
+        "js": ["src/utils/allowRightClickHook.js"],
+        "all_frames": true,
+        "match_about_blank": true,
+        "run_at": "document_start",
+        "world": "MAIN"
+      },
+      {
+        "matches": ["<all_urls>"],
+        "js": ["src/utils/allowRightClick.js"],
+        "all_frames": true,
+        "match_about_blank": true,
+        "run_at": "document_start"
+      },
+      {
         "matches": ["<all_urls>"],
         "js": [
           "src/utils/hint_common.js",

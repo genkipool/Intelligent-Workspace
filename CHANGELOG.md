@@ -36,6 +36,11 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- **Right-click and copying on sites that block them.** The context menu, text
+  selection, copy, cut, paste and dragging come back, images covered by a
+  transparent layer included. It is on from the start and can be switched off in
+  Navigation settings. The page's own handlers still run, so a site with its own
+  context menu keeps working.
 - **Music player.** Pick a folder on your computer and load all its music: play,
   pause, stop, previous and next track, a progress bar with quick jumps, search
   within the folder and the full track list. The audio keeps playing while you work
@@ -63,6 +68,7 @@ Each version holds two different things, and they are worth keeping apart:
 
 ```
 What's new
+• Right-click, text selection and copying work again on sites that block them.
 • Music player: pick a folder and listen to your music while you work, with search, track list and full controls.
 • Scheduled assistant queries can now run at several times of day.
 • Themes scheduled by weekday now support "all day".

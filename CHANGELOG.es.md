@@ -36,6 +36,12 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- **Clic derecho y copiado en las webs que los bloquean.** Vuelven el menú
+  contextual, la selección de texto, el copiar, el cortar, el pegar y el arrastrar,
+  incluidas las imágenes tapadas por una capa transparente. Viene activado y se
+  desactiva en los ajustes de navegación. Los manejadores de la propia página
+  siguen ejecutándose, así que una web con su propio menú contextual sigue
+  funcionando.
 - **Reproductor de música.** Se elige una carpeta del equipo y se carga toda su
   música: reproducir, pausar, detener, pista anterior y siguiente, barra de progreso
   con saltos rápidos, búsqueda dentro de la carpeta y lista completa de pistas. El
@@ -64,6 +70,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ```
 Novedades
+• El clic derecho, la selección de texto y el copiado vuelven a funcionar en las webs que los bloquean.
 • Reproductor de música: elige una carpeta y escucha tu música mientras trabajas, con búsqueda, lista de pistas y controles completos.
 • El asistente ya admite varias horas para una misma consulta programada.
 • Los temas programados por días de la semana admiten "todo el día".

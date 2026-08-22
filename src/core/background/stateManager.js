@@ -523,6 +523,7 @@ async function setupDefaultSettings() {
         discardingTimeMinutes: 60,
         linkPreviewEnabled: true,
         linkPreviewTriggerKey: '',
+        allowRightClickEnabled: true,
     };
     try {
         await chrome.storage.sync.set(defaultSettings);

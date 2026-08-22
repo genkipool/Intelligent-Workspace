@@ -76,6 +76,29 @@
         "<all_urls>"
       ],
       "js": [
+        "src/utils/allowRightClickHook.js"
+      ],
+      "all_frames": true,
+      "match_about_blank": true,
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/utils/allowRightClick.js"
+      ],
+      "all_frames": true,
+      "match_about_blank": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "src/utils/hint_common.js",
         "src/utils/hint/utils.js",
         "src/utils/hint/videoPipUi.js",
@@ -146,6 +169,8 @@
         "src/utils/hint/videoPipUi.js",
         "src/utils/hint/videoPip.js",
         "src/utils/hint/videoPipHook.js",
+        "src/utils/allowRightClick.js",
+        "src/utils/allowRightClickHook.js",
         "src/utils/hint/ui.js",
         "src/utils/hint/snippets.js",
         "src/utils/hint/omnibar.js",
