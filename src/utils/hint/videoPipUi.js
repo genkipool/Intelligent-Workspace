@@ -652,7 +652,9 @@ textarea::selection,
 }
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
-    background: rgba(255, 255, 255, 0.14); border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--text-color, #ffffff) 20%, transparent);
+    border-radius: 3px;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
@@ -1550,7 +1552,9 @@ var ITG_LOOP_POPUP_STYLES = `
 }
 .itg-loop-bar-track {
     position: relative; width: 100%; height: 5px;
-    background: rgba(255, 255, 255, 0.14); border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    background: color-mix(in srgb, var(--text-color, #ffffff) 20%, transparent);
+    border-radius: 3px;
 }
 .itg-loop-bar-fill {
     position: absolute; top: 0; bottom: 0;
