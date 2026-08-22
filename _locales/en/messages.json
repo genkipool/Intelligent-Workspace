@@ -2906,6 +2906,28 @@
     "message": "Pick color from screen",
     "description": "Pick color from screen using eyedropper"
   },
+  "colorPickedAndCopied": {
+    "message": "Color '$1' picked and copied to the clipboard",
+    "description": "Shown after picking a color with the eyedropper when it also reached the clipboard",
+    "placeholders": {
+      "hex_color": { "content": "$1", "example": "#7B30F7" }
+    }
+  },
+  "colorPicked": {
+    "message": "Color '$1' picked",
+    "description": "Shown after picking a color with the eyedropper when the clipboard was not available",
+    "placeholders": {
+      "hex_color": { "content": "$1", "example": "#7B30F7" }
+    }
+  },
+  "colorPickerUnsupportedPage": {
+    "message": "The color picker cannot open on this page. Switch to a normal web page and try again.",
+    "description": "Shown when the eyedropper fallback cannot be injected into the active tab"
+  },
+  "colorPickerCaptureFailed": {
+    "message": "The page could not be captured, so there are no pixels to pick from.",
+    "description": "Shown when captureVisibleTab fails while opening the eyedropper fallback"
+  },
   "geminiFooterModel": {
     "message": "Model",
     "description": "Label for the AI model name in Gemini response footer."

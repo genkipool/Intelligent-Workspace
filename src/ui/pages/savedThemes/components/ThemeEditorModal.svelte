@@ -1,5 +1,7 @@
 <script>
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
+    import { pickScreenColor } from '../../../services/colorPickerService.js';
+    import { showNotification } from '../../../../utils/i18n.js';
 
     let {
         show = false,
@@ -11,25 +13,34 @@
         onColorInput = () => {},
     } = $props();
 
+    /**
+     * The pipette used to call `new EyeDropper()` here and give up without a word
+     * when the class was missing. It is missing on Linux — Chrome only ships the
+     * EyeDropper API on Windows, macOS and ChromeOS — so the button did nothing at
+     * all on those machines. pickScreenColor() keeps the native eyedropper where it
+     * exists and opens the extension's own magnifier over the page where it does not,
+     * and leaves the colour it picked on the clipboard.
+     */
     async function pickColor(e, key) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation?.();
         }
-        const EyeDropperClass = window.EyeDropper || globalThis.EyeDropper;
-        if (!EyeDropperClass) {
+        const { color, copied, reason } = await pickScreenColor();
+        if (color) {
+            editorColors[key] = color;
+            onColorInput({ target: { value: color } }, key);
+            const hex = color.toUpperCase();
+            showNotification(copied ? 'colorPickedAndCopied' : 'colorPicked', false, [hex]);
             return;
         }
-        try {
-            const eyeDropper = new EyeDropperClass();
-            const result = await eyeDropper.open();
-            if (result?.sRGBHex) {
-                editorColors[key] = result.sRGBHex;
-                onColorInput({ target: { value: result.sRGBHex } }, key);
-            }
-        } catch {
-            // User aborted or canceled the eyedropper
+        // Cancelling is not a failure and says nothing; being unable to open the
+        // magnifier at all is worth explaining, or the button looks broken again.
+        if (reason === 'unsupportedPage' || reason === 'injectionFailed') {
+            showNotification('colorPickerUnsupportedPage', true);
+        } else if (reason === 'captureFailed') {
+            showNotification('colorPickerCaptureFailed', true);
         }
     }
 </script>

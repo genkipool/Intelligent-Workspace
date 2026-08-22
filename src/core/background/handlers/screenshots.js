@@ -289,3 +289,59 @@ function handleCaptureAreaFromShortcut(message, sender, sendResponse) {
         success: true,
     });
 }
+
+// --- Screen colour picker ---
+//
+// `window.EyeDropper` only exists on Windows, macOS and ChromeOS. On Linux Chrome
+// does not expose the interface at all, so the pipette button of the theme editor
+// had nothing to open and did nothing at all. These two handlers back a fallback
+// built out of what an extension does have: a capture of the visible tab and an
+// overlay injected over it (src/utils/screen-color-picker.js).
+
+/** Pages the picker can be injected into. Chrome's own pages reject any injection. */
+function canInjectColorPicker(url) {
+    return typeof url === 'string' && /^(https?|file):/i.test(url);
+}
+
+/**
+ * Opens the magnifier over the active tab. Called from an extension page (the theme
+ * editor lives in the side panel, which has no tab of its own), so the target has to
+ * be looked up rather than taken from the sender.
+ */
+async function handleStartScreenColorPicker(message, sender, sendResponse) {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (!tab || !tab.id || !canInjectColorPicker(tab.url)) {
+            sendResponse({ success: false, reason: 'unsupportedPage' });
+            return;
+        }
+
+        // No insertCSS here: the overlay lives in a shadow root and fetches its own
+        // stylesheet, which is why both files are web-accessible resources.
+        await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['src/utils/screen-color-picker.js'],
+            world: 'ISOLATED',
+        });
+        sendResponse({ success: true, tabId: tab.id });
+    } catch (error) {
+        console.error('Error injecting the screen colour picker:', error);
+        sendResponse({ success: false, reason: 'injectionFailed', message: String(error) });
+    }
+}
+
+/**
+ * The still the lens magnifies. Asked for by the overlay itself, before it is on
+ * screen, so that the capture does not include it.
+ */
+function handleCaptureForColorPicker(sender, sendResponse) {
+    const windowId = sender?.tab?.windowId;
+    if (windowId === undefined) {
+        sendResponse({ success: false, message: 'The request did not come from a tab.' });
+        return;
+    }
+    chrome.tabs
+        .captureVisibleTab(windowId, { format: 'png' })
+        .then((dataUrl) => sendResponse({ success: true, dataUrl }))
+        .catch((error) => sendResponse({ success: false, message: String(error) }));
+}

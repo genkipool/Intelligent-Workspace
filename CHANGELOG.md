@@ -36,6 +36,11 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- **Pick a colour from the screen in the theme editor.** The pipette next to each
+  colour opens a magnifier over the page, with a pixel grid and the hex value under
+  the cursor; clicking takes the colour and also puts it on the clipboard, and Escape
+  calls the pick off. Chrome's own eyedropper is used where it exists — on Linux it
+  does not, which is why the button did nothing there.
 - **Right-click and copying on sites that block them.** The context menu, text
   selection, copy, cut, paste and dragging come back, images covered by a
   transparent layer included. It is on from the start and can be switched off in
@@ -68,6 +73,7 @@ Each version holds two different things, and they are worth keeping apart:
 
 ```
 What's new
+• Pick any colour on screen with the pipette in the theme editor: a magnifier, the hex value, and a copy to the clipboard.
 • Right-click, text selection and copying work again on sites that block them.
 • Music player: pick a folder and listen to your music while you work, with search, track list and full controls.
 • Scheduled assistant queries can now run at several times of day.

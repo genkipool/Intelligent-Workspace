@@ -2875,6 +2875,28 @@
         "message": "Seleccionar color de la pantalla",
         "description": "Seleccionar color de la pantalla con cuentagotas"
     },
+    "colorPickedAndCopied": {
+        "message": "Color '$1' seleccionado y copiado al portapapeles",
+        "description": "Aviso tras seleccionar un color con el cuentagotas cuando también se ha copiado",
+        "placeholders": {
+            "hex_color": { "content": "$1", "example": "#7B30F7" }
+        }
+    },
+    "colorPicked": {
+        "message": "Color '$1' seleccionado",
+        "description": "Aviso tras seleccionar un color con el cuentagotas cuando no se pudo copiar",
+        "placeholders": {
+            "hex_color": { "content": "$1", "example": "#7B30F7" }
+        }
+    },
+    "colorPickerUnsupportedPage": {
+        "message": "El selector de color no puede abrirse en esta página. Ve a una página web normal e inténtalo de nuevo.",
+        "description": "Aviso cuando el cuentagotas alternativo no puede inyectarse en la pestaña activa"
+    },
+    "colorPickerCaptureFailed": {
+        "message": "No se ha podido capturar la página, así que no hay píxeles que seleccionar.",
+        "description": "Aviso cuando captureVisibleTab falla al abrir el cuentagotas alternativo"
+    },
     "geminiFooterModel": {
         "message": "Modelo",
         "description": "Label for the AI model name in Gemini response footer."

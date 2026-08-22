@@ -36,6 +36,11 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- **Seleccionar un color de la pantalla en el editor de temas.** La pipeta que hay
+  junto a cada color abre una lupa sobre la página, con rejilla de píxeles y el valor
+  hexadecimal bajo el cursor; al hacer clic se toma el color y además se copia al
+  portapapeles, y con Esc se cancela. Donde existe se usa el cuentagotas propio de
+  Chrome — en Linux no existe, y por eso el botón no hacía nada.
 - **Clic derecho y copiado en las webs que los bloquean.** Vuelven el menú
   contextual, la selección de texto, el copiar, el cortar, el pegar y el arrastrar,
   incluidas las imágenes tapadas por una capa transparente. Viene activado y se
@@ -70,6 +75,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ```
 Novedades
+• Toma cualquier color de la pantalla con la pipeta del editor de temas: lupa, valor hexadecimal y copia al portapapeles.
 • El clic derecho, la selección de texto y el copiado vuelven a funcionar en las webs que los bloquean.
 • Reproductor de música: elige una carpeta y escucha tu música mientras trabajas, con búsqueda, lista de pistas y controles completos.
 • El asistente ya admite varias horas para una misma consulta programada.

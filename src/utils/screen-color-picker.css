@@ -1,0 +1,66 @@
+/*
+ * The magnifier the pipette button opens when Chrome has no EyeDropper of its own.
+ *
+ * These rules live inside the overlay's shadow root — screen-color-picker.js fetches
+ * this file and puts it there — so the plain class names cannot collide with the
+ * page's, and the page's rules cannot reach them.
+ */
+
+.lens {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    width: 143px;
+    height: 143px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.9),
+        0 0 0 3px rgba(0, 0, 0, 0.55),
+        0 6px 18px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    /* Placed by script; kept off screen until the pointer gives it a position. */
+    transform: translate(-9999px, -9999px);
+}
+
+.lens canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+}
+
+.label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: max-content;
+    height: auto;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(17, 17, 17, 0.92);
+    color: #fff;
+    font:
+        600 12px/1.2 ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-9999px, -9999px);
+}
+
+.swatch {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.75);
+}

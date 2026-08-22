@@ -141,6 +141,8 @@
         "_locales/es/messages.json",
         "src/utils/area-selector.js",
         "src/utils/area-selector.css",
+        "src/utils/screen-color-picker.js",
+        "src/utils/screen-color-picker.css",
         "src/styles/hint_content.css",
         "src/styles/prevent_flash.css",
         "src/utils/hint_common.js",

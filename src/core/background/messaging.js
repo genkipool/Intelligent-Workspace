@@ -686,6 +686,14 @@ const MESSAGE_HANDLERS = {
         handleCaptureAreaFromShortcut(message, sender, sendResponse);
         return true;
     },
+    startScreenColorPicker: (message, sender, sendResponse) => {
+        handleStartScreenColorPicker(message, sender, sendResponse);
+        return true;
+    },
+    captureForColorPicker: (message, sender, sendResponse) => {
+        handleCaptureForColorPicker(sender, sendResponse);
+        return true;
+    },
     addUrlToRule: (message, sender, sendResponse) => {
         handleAddUrlToRule(message, sendResponse);
         return true;
@@ -1078,6 +1086,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         'linkPreviewStatusChanged',
         'linkPreviewBlacklistUpdated',
         'linkPreviewTriggerKeyUpdated',
+        // Announced by the colour picker overlay for whichever extension page opened
+        // it; the worker only had to inject it.
+        'screenColorPicked',
+        'screenColorPickCanceled',
     ];
     if (!ignoredBroadcastActions.includes(message.action)) {
         console.warn(`[onMessage] Action "${message.action}" not handled.`);
