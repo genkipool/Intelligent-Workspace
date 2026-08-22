@@ -29,6 +29,7 @@
     --section-gap: 24px;
     --card-radius: 14px;
     --card-pad: 18px 20px;
+    --small-spacing: clamp(6px, 0.42vw, 24px);
 }
 
 /* --- BASE ------------------------------------------------------- */
@@ -50,6 +51,7 @@ body {
     font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    scrollbar-gutter: stable both-edges;
     transition:
         background 0.25s,
         color 0.2s;
@@ -649,8 +651,6 @@ selectedcontent {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 4px 8px 16px;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--border-color) 60%, transparent) transparent;
 }
 
 .sidebar-divider {
@@ -1017,8 +1017,6 @@ selectedcontent {
 .heatmap-wrap {
     overflow-x: auto;
     padding-bottom: 4px;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--border-color) 50%, transparent) transparent;
     min-width: 0;
 }
 
@@ -1273,8 +1271,6 @@ selectedcontent {
     flex-direction: column;
     max-height: 360px;
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--border-color) 60%, transparent) transparent;
 }
 
 .timeline-item {
@@ -1495,21 +1491,24 @@ selectedcontent {
 
 /* -- SCROLLBAR --------------------------------------------------- */
 ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: var(--small-spacing);
+    height: var(--small-spacing);
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--bg-color);
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--border-color) 60%, transparent);
-    border-radius: 3px;
-}
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
 
-::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--text-color) 40%, transparent);
+    &:hover {
+        background-color: var(--text-on-color);
+        cursor: default;
+    }
 }
 
 /* -- ANIMATIONS -------------------------------------------------- */

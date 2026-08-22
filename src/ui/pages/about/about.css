@@ -71,6 +71,28 @@ body {
     width: 100vw;
     min-width: 380px;
     overflow-x: hidden;
+    scrollbar-gutter: stable both-edges;
+}
+
+::-webkit-scrollbar {
+    width: var(--small-spacing);
+    height: var(--small-spacing);
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-color);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    border: 2px solid var(--border-color);
+
+    &:hover {
+        background-color: var(--text-on-color);
+        cursor: default;
+    }
 }
 .page-container {
     display: flex;
