@@ -594,6 +594,10 @@ const MESSAGE_HANDLERS = {
         handlePrepareUrlForSidePanel(message, sendResponse);
         return true;
     },
+    prepareYouTubeEmbed: (message, sender, sendResponse) => {
+        handlePrepareYouTubeEmbed(sendResponse);
+        return true;
+    },
     prepareVideoUrlForPip: (message, sender, sendResponse) => {
         handlePrepareVideoUrlForPip(message, sendResponse);
         return true;

@@ -43,12 +43,33 @@ export function extractYouTubeVideoIdFromUrl(url) {
     if (!url) return null;
     // Regular expression to match various YouTube URL formats.
     const youtubeRegex =
-        /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([^"&?\/\s]{11})/;
+        /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/)|youtu\.be\/)([^"&?\/\s]{11})/;
     const match = url.match(youtubeRegex);
     if (match && match[1]) {
         return match[1];
     }
     return null;
+}
+
+/**
+ * [AI NOTE] YouTube answers "Error 153 — Video player configuration error" to
+ * any embed framed by a `chrome-extension://` page, so the worker installs a
+ * DNR rule that gives the frame request a plausible https Referer. The request
+ * has to go out *after* the rule exists, which is why the src is assigned in a
+ * callback instead of inline. The promise is cached so a note with ten videos
+ * only asks once.
+ */
+let youtubeEmbedRule = null;
+
+function ensureYouTubeEmbedRule() {
+    if (!youtubeEmbedRule) {
+        youtubeEmbedRule = chrome.runtime.sendMessage({ action: 'prepareYouTubeEmbed' }).catch((e) => {
+            console.warn('Could not install the YouTube embed rule:', e);
+            // Retry on the next embed rather than caching the failure.
+            youtubeEmbedRule = null;
+        });
+    }
+    return youtubeEmbedRule;
 }
 
 export function createYouTubeEmbed(videoId) {
@@ -66,8 +87,6 @@ export function createYouTubeEmbed(videoId) {
     videoContainer.style.borderRadius = '8px';
 
     const iframe = document.createElement('iframe');
-    // Using nocookie and a very minimal parameter set to avoid redirects and configuration errors
-    iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0`;
 
     // Use attributes for dimensions as well as styles for maximum compatibility
     iframe.setAttribute('width', '100%');
@@ -85,8 +104,12 @@ export function createYouTubeEmbed(videoId) {
         'allow',
         'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen',
     );
-    // Minimal referrerpolicy
-    iframe.setAttribute('referrerpolicy', 'no-referrer');
+
+    // nocookie keeps the embed out of the user's watch history.
+    const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0`;
+    ensureYouTubeEmbedRule().then(() => {
+        iframe.src = src;
+    });
 
     videoContainer.appendChild(iframe);
     return videoContainer;
