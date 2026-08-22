@@ -10,6 +10,22 @@
         onRandom = () => {},
         onColorInput = () => {},
     } = $props();
+
+    const isEyeDropperSupported = typeof window !== 'undefined' && 'EyeDropper' in window;
+
+    async function pickColor(key) {
+        if (!('EyeDropper' in window)) return;
+        try {
+            const eyeDropper = new window.EyeDropper();
+            const result = await eyeDropper.open();
+            if (result?.sRGBHex) {
+                editorColors[key] = result.sRGBHex;
+                onColorInput({ target: { value: result.sRGBHex } }, key);
+            }
+        } catch {
+            // User aborted or canceled the eyedropper
+        }
+    }
 </script>
 
 {#if show}
@@ -28,12 +44,42 @@
                     {#each [{ id: 'bg-color', k: 'bgColor', l: 'bgColor' }, { id: 'bg-panel-color', k: 'bgPanelColor', l: 'bgPanelColor' }, { id: 'text-color', k: 'textColor', l: 'textColor' }, { id: 'text-on-color', k: 'textOnColor', l: 'textOnColor' }, { id: 'action-color', k: 'actionColor', l: 'actionColor' }, { id: 'interactive-color', k: 'interactiveColor', l: 'interactiveColor' }, { id: 'border-color', k: 'borderColor', l: 'borderColor' }, { id: 'error-color', k: 'errorColor', l: 'errorColor' }, { id: 'header-color', k: 'headerColor', l: 'headerColor' }] as colorInput (colorInput.id)}
                         <div class="color-option">
                             <label for={colorInput.id} data-i18n={colorInput.l}></label>
-                            <input
-                                type="color"
-                                id={colorInput.id}
-                                value={editorColors[colorInput.k]}
-                                oninput={(e) => onColorInput(e, colorInput.k)}
-                            />
+                            <div class="color-input-group">
+                                <input
+                                    type="color"
+                                    id={colorInput.id}
+                                    value={editorColors[colorInput.k]}
+                                    oninput={(e) => onColorInput(e, colorInput.k)}
+                                />
+                                {#if isEyeDropperSupported}
+                                    <button
+                                        type="button"
+                                        class="button-eyedropper"
+                                        data-i18n-title="pickColorEyeDropper"
+                                        data-i18n-aria-label="pickColorEyeDropper"
+                                        onclick={() => pickColor(colorInput.k)}
+                                    >
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            width="16"
+                                            height="16"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <path d="m14 7 3 3" />
+                                            <path
+                                                d="M12 9 6.5 14.5a2.12 2.12 0 0 0-.6 1.2L5 20l4.3-.9c.4-.1.8-.3 1.2-.6L16 13"
+                                            />
+                                            <path d="m19 8 1-1a2.12 2.12 0 0 0 0-3 2.12 2.12 0 0 0-3 0l-1 1" />
+                                        </svg>
+                                    </button>
+                                {/if}
+                            </div>
                         </div>
                     {/each}
                     <div class="color-option">

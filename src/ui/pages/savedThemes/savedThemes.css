@@ -649,6 +649,10 @@ button:focus-visible {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+#theme-editor-modal .modal-content {
+    max-width: 380px;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -1005,8 +1009,18 @@ button:focus-visible {
     font-weight: 500;
 }
 
-.color-option input[type='color'] {
+.color-input-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     width: 100%;
+}
+
+.color-option input[type='color'],
+.color-input-group input[type='color'] {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     height: 32px;
     border: 1px solid var(--border-color);
     border-radius: 6px;
@@ -1017,30 +1031,75 @@ button:focus-visible {
     background-color: transparent;
 }
 
-.color-option input[type='color']:hover {
+.color-option input[type='color']:hover,
+.color-input-group input[type='color']:hover {
     border-color: var(--border-color);
     transform: translateY(-1px);
     box-shadow: 0 0 5px 1px var(--interactive-color);
 }
 
-.color-option input[type='color']:focus-visible {
+.color-option input[type='color']:focus-visible,
+.color-input-group input[type='color']:focus-visible {
     outline: none;
     border-color: var(--border-color);
     box-shadow: 0 0 0 2px var(--interactive-color);
 }
 
-.color-option input[type='color']::-webkit-color-swatch-wrapper {
+.color-option input[type='color']::-webkit-color-swatch-wrapper,
+.color-input-group input[type='color']::-webkit-color-swatch-wrapper {
     padding: 0;
 }
 
-.color-option input[type='color']::-webkit-color-swatch {
+.color-option input[type='color']::-webkit-color-swatch,
+.color-input-group input[type='color']::-webkit-color-swatch {
     border: none;
     border-radius: 4px;
 }
 
-.color-option input[type='color']::-moz-color-swatch {
+.color-option input[type='color']::-moz-color-swatch,
+.color-input-group input[type='color']::-moz-color-swatch {
     border: none;
     border-radius: 4px;
+}
+
+.button-eyedropper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.button-eyedropper:hover {
+    background-color: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: var(--text-on-color, #ffffff);
+    transform: translateY(-1px);
+    box-shadow: 0 0 5px 1px var(--interactive-color);
+}
+
+.button-eyedropper:focus-visible {
+    outline: none;
+    border-color: var(--interactive-color);
+    box-shadow: 0 0 0 2px var(--interactive-color);
+}
+
+.button-eyedropper:active {
+    transform: translateY(0);
+}
+
+.button-eyedropper svg {
+    display: block;
+    pointer-events: none;
 }
 
 .button-random {

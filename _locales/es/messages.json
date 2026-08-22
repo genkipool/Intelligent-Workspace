@@ -2871,6 +2871,10 @@
         "message": "Crear Tema Personalizado",
         "description": "Crear Tema Personalizado"
     },
+    "pickColorEyeDropper": {
+        "message": "Seleccionar color de la pantalla",
+        "description": "Seleccionar color de la pantalla con cuentagotas"
+    },
     "geminiFooterModel": {
         "message": "Modelo",
         "description": "Label for the AI model name in Gemini response footer."
@@ -4237,6 +4241,23 @@
     },
     "hintDesc_ah": {
         "message": "Activar o desactivar el Picture-in-Picture automático al salir de la pestaña"
+    },
+    "feature_allowRightClick": {
+        "message": "Clic derecho, selección de texto y copiado recuperados en las webs que los bloquean."
+    },
+    "allowRightClickSectionTitle": {
+        "message": "Clic derecho y copiado"
+    },
+    "allowRightClickDesc": {
+        "message": "Devuelve el menú contextual, la selección de texto, el copiar, el pegar y el arrastrar en las webs que los bloquean, incluidas las imágenes tapadas por una capa transparente. Los manejadores de la propia página siguen ejecutándose, así que una web con su propio menú contextual o su propio pegado sigue funcionando."
+    },
+    "allowRightClickToggleEnable": {
+        "message": "Activar el clic derecho y el copiado",
+        "description": "Tooltip del interruptor de desbloqueo del clic derecho cuando está desactivado"
+    },
+    "allowRightClickToggleDisable": {
+        "message": "Desactivar el clic derecho y el copiado",
+        "description": "Tooltip del interruptor de desbloqueo del clic derecho cuando está activado"
     },
     "autoPipSectionTitle": {
         "message": "Picture-in-Picture automático"

@@ -2902,6 +2902,10 @@
     "message": "Create Custom Theme",
     "description": "Create Custom Theme"
   },
+  "pickColorEyeDropper": {
+    "message": "Pick color from screen",
+    "description": "Pick color from screen using eyedropper"
+  },
   "geminiFooterModel": {
     "message": "Model",
     "description": "Label for the AI model name in Gemini response footer."
@@ -4234,6 +4238,23 @@
   },
   "hintDesc_ah": {
     "message": "Toggle automatic Picture-in-Picture when leaving the tab"
+  },
+  "feature_allowRightClick": {
+      "message": "Right-click, text selection and copying restored on sites that block them."
+  },
+  "allowRightClickSectionTitle": {
+    "message": "Right-click and copying"
+  },
+  "allowRightClickDesc": {
+    "message": "Gives back the context menu, text selection, copying, pasting and dragging on sites that block them, including images covered by a transparent layer. The page's own handlers still run, so a site with its own context menu or its own paste keeps working."
+  },
+  "allowRightClickToggleEnable": {
+    "message": "Enable right-click and copying",
+    "description": "Tooltip for the right-click unblocker switch when it is off"
+  },
+  "allowRightClickToggleDisable": {
+    "message": "Disable right-click and copying",
+    "description": "Tooltip for the right-click unblocker switch when it is on"
   },
   "autoPipSectionTitle": {
     "message": "Automatic Picture-in-Picture"
