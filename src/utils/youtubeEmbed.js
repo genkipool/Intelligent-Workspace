@@ -106,7 +106,7 @@ export function createYouTubeEmbed(videoId) {
     );
 
     // nocookie keeps the embed out of the user's watch history.
-    const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0`;
+    const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?rel=0&itg_embed=1`;
     ensureYouTubeEmbedRule().then(() => {
         iframe.src = src;
     });
