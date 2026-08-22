@@ -1209,8 +1209,29 @@ export async function openUrlInPanel(url, context = null) {
             iframe.style.height = 'calc(100% - 55px)';
             iframe.style.width = '100%';
             iframe.style.border = 'none';
-            iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms';
-            iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
+            /**
+             * A framed site behaves like a real tab only if it is allowed to do
+             * what a tab does: open windows, download, show modals, ask for
+             * storage access. Trimming this list is what leaves x.com or
+             * WhatsApp Web stuck on a blank shell.
+             */
+            iframe.sandbox =
+                'allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals allow-storage-access-by-user-activation allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation';
+            iframe.allow = [
+                'fullscreen',
+                'clipboard-read',
+                'clipboard-write',
+                'encrypted-media',
+                'autoplay',
+                'picture-in-picture',
+                'camera',
+                'microphone',
+                'display-capture',
+                'geolocation',
+            ]
+                .map((feature) => `${feature} *`)
+                .join('; ');
+            iframe.referrerPolicy = 'no-referrer';
             iframe.src = url;
 
             container.appendChild(iframe);
