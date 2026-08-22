@@ -137,21 +137,30 @@ async function clearMirroredCookies(cookieUrl, topLevelSite) {
 }
 
 /**
+ * [AI NOTE] Hosts whose session cannot be completed inside a frame, so the
+ * mirror below leaves them alone.
+ *
+ * The test that matters is not "does the site use httpOnly cookies" — x.com
+ * does, and mirroring is exactly what makes it work. It is whether the
+ * cookies we cannot copy would arrive on their own. x.com sends `auth_token`
+ * as httpOnly but SameSite=None, so the session reaches the frame by itself
+ * and copying the readable `ct0` (SameSite=Lax, and the CSRF token every
+ * GraphQL call needs) completes the set: without it the shell renders and the
+ * timeline stays empty. Google's session cookies are httpOnly *and* Lax —
+ * unreachable and uncopyable both — so any copy is half a session, and
+ * YouTube then tries to restore a login it cannot validate and lands on the
+ * accounts.google.com "problem with your cookie settings" page. Mirroring
+ * nothing there simply shows the site logged out, which works.
+ */
+const SIDEPANEL_NO_COOKIE_MIRROR =
+    /(^|\.)(google\.[a-z.]+|youtube\.com|youtu\.be|googleusercontent\.com|gstatic\.com)$/;
+
+/**
  * [AI NOTE] Chrome partitions third-party cookies by top-level site, so the
  * cookies the user already has for a site are invisible to an iframe whose
- * top-level site is `chrome-extension://<id>`: the site loads logged out.
- * Copying the cookies into the extension's partition with SameSite=None makes
- * the framed site see the same session as a normal tab.
- *
- * The copy is all-or-nothing on purpose. HttpOnly cookies cannot be read
- * through this API, so on a site that uses them the copy would carry the
- * readable half of a session and leave the credential behind. Google is the
- * case that proved it: with a partial copy YouTube tries to restore a session
- * it then cannot validate, and the frame ends up on the accounts.google.com
- * "We've detected a problem with your cookie settings" page — where mirroring
- * nothing at all simply shows the site logged out, which works. Sites whose
- * cookies are all script-readable (as.com and its DataDome cookie, for one)
- * get the full copy and behave exactly as in a normal tab.
+ * top-level site is `chrome-extension://<id>`: the site loads logged out, or
+ * half-logged-in. Copying the readable cookies into the extension's partition
+ * with SameSite=None makes the framed site see what a normal tab sees.
  */
 async function mirrorCookiesIntoExtensionPartition(url) {
     if (!chrome.cookies) return;
@@ -168,20 +177,22 @@ async function mirrorCookiesIntoExtensionPartition(url) {
     const cookieUrl = target.toString();
     const topLevelSite = chrome.runtime.getURL('/');
 
+    if (SIDEPANEL_NO_COOKIE_MIRROR.test(target.hostname.toLowerCase())) {
+        // Clear anything an earlier version of this code mirrored, so the host
+        // is never left holding half a session.
+        const dropped = await clearMirroredCookies(cookieUrl, topLevelSite);
+        logMessage(
+            `[DNR] ${target.hostname} cannot complete a session in a frame; mirroring skipped` +
+                (dropped ? ` (${dropped} stale mirrored cookies removed)` : ''),
+        );
+        return;
+    }
+
     let cookies;
     try {
         cookies = await chrome.cookies.getAll({ url: cookieUrl });
     } catch (e) {
         logMessage('[DNR] Could not read cookies for ' + target.hostname + ': ' + e.message);
-        return;
-    }
-
-    if (cookies.some((c) => c.httpOnly)) {
-        const dropped = await clearMirroredCookies(cookieUrl, topLevelSite);
-        logMessage(
-            `[DNR] ${target.hostname} keeps its session in httpOnly cookies; mirroring skipped` +
-                (dropped ? ` (${dropped} stale mirrored cookies removed)` : ''),
-        );
         return;
     }
 
