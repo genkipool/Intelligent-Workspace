@@ -2694,22 +2694,6 @@ function itgOpenYouTubeVideo(videoId, session = null) {
     }
 }
 
-/**
- * Asks the worker for the DNR rule that gives YouTube embeds a referer it
- * accepts. Cached, so a session that swaps videos only asks once.
- */
-var itgYouTubeEmbedRule = null;
-function itgEnsureYouTubeEmbedRule() {
-    if (!itgYouTubeEmbedRule) {
-        itgYouTubeEmbedRule = chrome.runtime.sendMessage({ action: 'prepareYouTubeEmbed' }).catch((e) => {
-            console.warn('[ITG PiP] Could not install the YouTube embed rule:', e);
-            // Retry next time rather than caching the failure.
-            itgYouTubeEmbedRule = null;
-        });
-    }
-    return itgYouTubeEmbedRule;
-}
-
 /** Extracts YouTube video ID from various YouTube URL formats. */
 function itgExtractYouTubeVideoId(urlStr) {
     if (!urlStr) return '';
@@ -4498,83 +4482,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         this.holder.innerHTML = '';
         const iframe = doc.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&enablejsapi=1`;
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.border = 'none';
         iframe.allow = 'autoplay; encrypted-media; picture-in-picture';
         iframe.allowFullscreen = true;
-
-        /**
-         * [AI NOTE] The floating window is an `about:blank` document, so the
-         * player's frame request carries no referer YouTube will accept and it
-         * answers "Error 153 — Video player configuration error". That is what
-         * forced the omnibar to jump to the YouTube tab and open the player
-         * from there. The worker installs a rule that supplies a referer,
-         * keyed on the `itg_embed` marker below, and the src is only assigned
-         * once that rule is in place.
-         *
-         * The session comes along on its own: Google's `__Secure-3PSID` family
-         * is SameSite=None, so a cross-site frame gets the signed-in user.
-         */
-        const src = `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&enablejsapi=1&itg_embed=1`;
         this.holder.appendChild(iframe);
-        itgEnsureYouTubeEmbedRule().then(() => {
-            iframe.src = src;
-            this.rescueEmbedAutoplay(iframe);
-        });
-    }
-
-    /**
-     * [AI NOTE] Chrome hands the floating window no user activation of its own —
-     * `navigator.userActivation.hasBeenActive` is false in there even when the
-     * window was opened from a click, and assigning the src inside that same
-     * click does not change it. So a player asked to autoplay with sound is
-     * refused and sits on the poster frame.
-     *
-     * Muted playback is always allowed, so: try with sound, and if the player
-     * has not started shortly after, mute it and start it, then give the sound
-     * back on the first gesture anywhere in the window. Clicks that land inside
-     * the player itself belong to YouTube's own controls, which carry their own
-     * unmute button.
-     */
-    rescueEmbedAutoplay(iframe) {
-        const win = this.pipWindow;
-        if (!win) return;
-
-        const command = (func) => {
-            try {
-                iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args: [] }), '*');
-            } catch {}
-        };
-
-        let started = false;
-        const onMessage = (event) => {
-            if (event.source !== iframe.contentWindow) return;
-            try {
-                const data = JSON.parse(event.data);
-                // 1 is PLAYING in the YouTube iframe API.
-                if (data?.event === 'onStateChange' && data.info === 1) started = true;
-            } catch {}
-        };
-        win.addEventListener('message', onMessage);
-
-        iframe.addEventListener(
-            'load',
-            () => {
-                try {
-                    iframe.contentWindow?.postMessage(JSON.stringify({ event: 'listening' }), '*');
-                } catch {}
-                win.setTimeout(() => {
-                    if (started) return;
-                    command('mute');
-                    command('playVideo');
-                    const unmute = () => command('unMute');
-                    win.addEventListener('pointerdown', unmute, { once: true });
-                    win.addEventListener('keydown', unmute, { once: true });
-                }, 1500);
-            },
-            { once: true },
-        );
     }
 
     renderSearch() {

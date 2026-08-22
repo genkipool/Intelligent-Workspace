@@ -432,8 +432,6 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
  * extension's own pages are touched.
  */
 const YOUTUBE_EMBED_REFERER = 'https://intelligent-tab-group.invalid/';
-// Marker the extension appends to every YouTube embed URL it builds.
-const ITG_EMBED_MARKER = 'itg_embed=1';
 
 function handlePrepareYouTubeEmbed(sendResponse) {
     (async () => {
@@ -450,16 +448,11 @@ function handlePrepareYouTubeEmbed(sendResponse) {
                             requestHeaders: [{ header: 'referer', operation: 'set', value: YOUTUBE_EMBED_REFERER }],
                         },
                         condition: {
+                            initiatorDomains: [chrome.runtime.id],
                             requestDomains: ['youtube.com', 'youtube-nocookie.com'],
-                            /**
-                             * Matched on a marker only this extension puts in the
-                             * URL, so a YouTube embed on any page the user visits
-                             * keeps its own referer. It cannot key on the initiator
-                             * instead: the document PiP player is framed by an
-                             * `about:blank` window belonging to whatever tab opened
-                             * it, not by an extension page.
-                             */
-                            urlFilter: ITG_EMBED_MARKER,
+                            // Only the embedded player; opening youtube.com itself in
+                            // the side panel keeps its own referer.
+                            urlFilter: '/embed/',
                             resourceTypes: ['sub_frame'],
                         },
                     },
