@@ -675,7 +675,7 @@ textarea::selection,
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
     z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
-    padding: 0 0 1.5px 0; margin: 0;
+    padding: 1px 0 0 0; margin: 0;
 }
 .itg-loop-handle:hover,
 .itg-loop-handle:focus,
@@ -1573,7 +1573,7 @@ var ITG_LOOP_POPUP_STYLES = `
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); cursor: ew-resize;
     z-index: 4; transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.15s ease, color 0.15s ease;
     user-select: none; box-sizing: border-box; outline: none;
-    padding: 0 0 1.5px 0; margin: 0;
+    padding: 1px 0 0 0; margin: 0;
 }
 .itg-loop-handle:hover,
 .itg-loop-handle:focus,
