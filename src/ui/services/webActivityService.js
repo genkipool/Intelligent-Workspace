@@ -25,3 +25,6 @@ export const snoozeLimit = (domain, minutes) => messaging.send(ACTIONS.WEB_ACTIV
 export const clearActivity = (domain = null) => messaging.send(ACTIONS.WEB_ACTIVITY_CLEAR, { domain });
 
 export const importActivity = (payload) => messaging.send(ACTIONS.WEB_ACTIVITY_IMPORT, { payload });
+
+/** Saves the tracking preferences, including the categories the user added. */
+export const saveSettings = (settings) => messaging.send(ACTIONS.WEB_ACTIVITY_SAVE_SETTINGS, { settings });

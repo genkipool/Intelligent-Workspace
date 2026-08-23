@@ -7,6 +7,7 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { PERIODS } from '../webActivityAnalytics.js';
     import SelectField from '../../../components/common/SelectField.svelte';
+    import { categoryOptions } from '../categories.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
@@ -14,6 +15,7 @@
         period = 7,
         category = '',
         categories = [],
+        customCategories = [],
         lastUpdated = 0,
         refreshing = false,
         onPeriodChange,
@@ -25,10 +27,23 @@
 
     let fileInput = $state(null);
 
-    const categoryList = $derived.by(() => {
-        const set = new Set([...(categories || []), ...(WA?.CATEGORIES || [])]);
-        return [...set];
-    });
+    /**
+     * The built-in buckets, plus any the sites on screen are filed under. A category
+     * the user deleted can still be on a site, and leaving it out of the filter would
+     * make those sites unreachable from here.
+     */
+    const builtInIds = $derived([
+        ...new Set([...(WA?.CATEGORIES || []), ...(categories || []).filter((id) => !WA.isCustomCategory(id))]),
+    ]);
+
+    const categoryChoices = $derived(
+        categoryOptions({
+            custom: customCategories,
+            t: (key) => $t(key),
+            ids: builtInIds,
+            lead: [{ value: '', label: $t('webActivityAllCategories') }],
+        }),
+    );
 
     function handleFile(event) {
         const [file] = event.target.files || [];
@@ -67,10 +82,7 @@
             value={category}
             ariaLabel={$t('webActivityCategoryLabel')}
             title={$tt('webActivityCategoryFilterTitle')}
-            options={[
-                { value: '', label: $t('webActivityAllCategories') },
-                ...categoryList.map((id) => ({ value: id, label: $t('webActivityCategory_' + id) })),
-            ]}
+            options={categoryChoices}
             onchange={onCategoryChange}
         />
     </div>

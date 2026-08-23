@@ -197,7 +197,11 @@
                         <div class="usage-group">
                             <div class="usage-row">
                                 <span class="label" data-i18n="sh_usage"></span>
-                                <code data-i18n="sh_spaces_code">/hi$1Alvaro$2to__go__for__a__coffee</code>
+                                <!-- The `$1`/`$2` markers stay in the markup, exactly as in the example
+                                     above: a message with a bare `$` between two more of
+                                     them reads as a placeholder reference to Chrome, and an
+                                     undefined one stops the whole extension from loading. -->
+                                <code>/hi$1Alvaro$2<span data-i18n="sh_spaces_tail">to__go__for__a__coffee</span></code>
                                 <span data-i18n="sh_plus_space"></span>
                             </div>
                             <div class="usage-row">

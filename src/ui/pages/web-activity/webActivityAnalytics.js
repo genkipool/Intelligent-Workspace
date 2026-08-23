@@ -221,7 +221,10 @@ export function heatmapCells(days, weeks = 26, now = Date.now()) {
  * The headline numbers. Each is `{label, value, sub, color}` — the shape KpiGrid
  * takes, which is why this dashboard reuses the pomodoro one's card component.
  */
-export function computeKpis({ sites, days, dayKeys, limits, lang, i18n }) {
+export function computeKpis({ sites, days, dayKeys, limits, lang, i18n, categoryLabel = null }) {
+    // A category the user added has no translation key — its name is the word they
+    // typed — so naming one is the caller's job when it can do it.
+    const nameCategory = categoryLabel || ((id) => i18n('webActivityCategory_' + id));
     const totalSeconds = sites.reduce((sum, site) => sum + site.seconds, 0);
     const totalVisits = sites.reduce((sum, site) => sum + site.visits, 0);
     const totalSessions = sites.reduce((sum, site) => sum + site.sessions, 0);
@@ -343,7 +346,7 @@ export function computeKpis({ sites, days, dayKeys, limits, lang, i18n }) {
         },
         {
             label: i18n('webActivityKpiTopCategory'),
-            value: categories.length ? i18n('webActivityCategory_' + categories[0].category) : '--',
+            value: categories.length ? nameCategory(categories[0].category) : '--',
             sub: categories.length ? fmtDur(categories[0].seconds) : '--',
             color: secondary,
         },
@@ -353,14 +356,25 @@ export function computeKpis({ sites, days, dayKeys, limits, lang, i18n }) {
 /**
  * How each configured limit stands right now. The verdict itself comes from the
  * schema, so the badge here and the rule that actually blocks cannot disagree.
+ *
+ * The week is folded up here rather than asked of the worker: the dashboard already
+ * holds every day record it needs, and a second round trip for a number it can add up
+ * itself would only be one refresh out of date.
  */
 export function limitRows(limits, days, now = Date.now()) {
     const today = days[dayKey(now)]?.domains || {};
+    const weekKeys = WA.weekDayKeys(now);
+    const week = {};
+    for (const key of weekKeys) {
+        for (const [domain, entry] of Object.entries(days[key]?.domains || {})) {
+            week[domain] = (week[domain] || 0) + (entry.t || 0);
+        }
+    }
     return Object.keys(limits)
         .map((domain) => ({
             domain,
             limit: WA.normalizeLimit(limits[domain]),
-            verdict: WA.evaluate(domain, limits, today[domain]?.t || 0, new Date(now)),
+            verdict: WA.evaluate(domain, limits, today[domain]?.t || 0, new Date(now), week[domain] || 0),
         }))
         .sort((a, b) => b.verdict.usedSeconds - a.verdict.usedSeconds);
 }

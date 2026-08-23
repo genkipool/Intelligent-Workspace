@@ -15,6 +15,7 @@
         $confirmRequest?.resolve(true);
     }
 
+    /** The close cross and the backdrop both mean "no"; there is no separate cancel. */
     function reject() {
         $confirmRequest?.resolve(false);
     }
@@ -51,7 +52,6 @@
                 >
                     {$t($confirmRequest.confirmKey)}
                 </button>
-                <button type="button" class="modal-btn-cancel" onclick={reject}>{$t('cancel')}</button>
             </div>
         </div>
     </div>
@@ -111,8 +111,9 @@
         border-radius: 4px;
     }
 
+    /* The cross is now the only way to say no, so it wears the colour that means it. */
     .close-modal-btn:hover {
-        color: var(--interactive-color);
+        color: var(--error-color);
     }
 
     .modal-body {
@@ -129,6 +130,11 @@
         justify-content: flex-end;
         gap: 8px;
         padding: 0 18px 18px;
+    }
+
+    /* One action, so it fills the row rather than hugging a corner of it. */
+    .modal-actions > button:only-child {
+        width: 100%;
     }
 
     .modal-actions button {
@@ -169,16 +175,6 @@
         background-color: var(--bg-color);
         color: var(--text-on-color);
         box-shadow: 0 0 5px 1px var(--interactive-color);
-    }
-
-    .modal-actions .modal-btn-cancel {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        border-color: var(--border-color);
-    }
-
-    .modal-actions .modal-btn-cancel:hover {
-        background-color: var(--border-color);
     }
 
     /* In the side panel every modal is capped so it fits. */

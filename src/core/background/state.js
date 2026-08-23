@@ -110,6 +110,7 @@ let pendingPrefixUpdates = new Map();
 let isRulesPinned = false;
 let isListGroupPinned = false;
 let isGeminiPinned = false;
+let isWebActivityPinned = false;
 let lastSidePanelPathBeforeFullscreen = null;
 let dbPromise = null;
 let currentActiveTabId = null;
@@ -446,14 +447,21 @@ function handleGetActiveTheme(sendResponse) {
 }
 
 async function updatePinState() {
-    const result = await chrome.storage.local.get(['isPinned', 'isListGroupPinned', 'isGeminiPinned']);
+    const result = await chrome.storage.local.get([
+        'isPinned',
+        'isListGroupPinned',
+        'isGeminiPinned',
+        'isWebActivityPinned',
+    ]);
 
     isRulesPinned = !!result.isPinned;
     isListGroupPinned = !!result.isListGroupPinned;
     isGeminiPinned = !!result.isGeminiPinned;
+    isWebActivityPinned = !!result.isWebActivityPinned;
 
     logMessage(
-        `Estado del pin actualizado en memoria: Rules=${isRulesPinned}, ListGroup=${isListGroupPinned}, Gemini=${isGeminiPinned}`,
+        `Estado del pin actualizado en memoria: Rules=${isRulesPinned}, ListGroup=${isListGroupPinned}, ` +
+            `Gemini=${isGeminiPinned}, WebActivity=${isWebActivityPinned}`,
     );
 
     // Removed chrome.sidePanel.setOptions({ path: ... }) to prevent

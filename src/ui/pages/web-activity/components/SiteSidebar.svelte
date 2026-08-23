@@ -8,6 +8,7 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { SvelteMap, SvelteSet } from 'svelte/reactivity';
     import { fmtDur } from '../../../services/dashboard/format.js';
+    import { categoryLabel } from '../categories.js';
 
     let {
         sites = [],
@@ -16,11 +17,18 @@
         selectedSite = null,
         selectedCategory = '',
         openCategories = new SvelteSet(),
+        customCategories = [],
+        /** 'dashboard' or 'settings' — which of the two the main column is showing. */
+        view = 'dashboard',
         onQuery,
         onSelectSite,
         onSelectCategory,
         onToggleCategory,
+        onOpenSettings,
     } = $props();
+
+    /** Built-in buckets are translated; the user's own are called what they called them. */
+    const nameOf = $derived((id) => categoryLabel(id, customCategories, (key) => $t(key)));
 
     /** Sites that match the search box, grouped under the category they belong to. */
     const grouped = $derived.by(() => {
@@ -117,7 +125,7 @@
                             ><use href="#wa-chevron"></use></svg
                         >
                     </span>
-                    <span class="folder-label">{$t('webActivityCategory_' + group.category)}</span>
+                    <span class="folder-label">{nameOf(group.category)}</span>
                     <span class="folder-count">
                         {fmtDur(group.seconds)}
                     </span>
@@ -144,5 +152,24 @@
         {#if !grouped.length}
             <div class="no-data-msg">{$t('webActivityNoSites')}</div>
         {/if}
+    </div>
+
+    <!-- Pinned to the bottom, away from the list it has nothing to do with: this is
+         the one row that changes what the main column *is* rather than filtering it. -->
+    <div class="sidebar-footer">
+        <div
+            class="sidebar-item wa-settings-item"
+            class:active={view === 'settings'}
+            role="button"
+            tabindex="0"
+            title={$tt('webActivitySettingsHint')}
+            onclick={() => onOpenSettings()}
+            onkeydown={(e) => e.key === 'Enter' && onOpenSettings()}
+        >
+            <svg class="si-icon" width="14" height="14" aria-hidden="true" focusable="false"
+                ><use href="#wa-settings"></use></svg
+            >
+            <span class="si-name">{$t('webActivitySettings')}</span>
+        </div>
     </div>
 </aside>

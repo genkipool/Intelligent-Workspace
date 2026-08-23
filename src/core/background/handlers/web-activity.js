@@ -112,6 +112,46 @@ async function waUsedToday(domain, now = Date.now()) {
     return day.domains?.[domain]?.t || 0;
 }
 
+/**
+ * Whether any limit at all has a weekly allowance.
+ *
+ * Reading the week costs seven storage reads, and this runs on the minute tick. Most
+ * users never set a weekly allowance, and for them the week is never read at all.
+ */
+function waHasWeeklyLimit(limits) {
+    return Object.values(limits).some((limit) => Number(limit?.weeklyLimitSeconds) > 0);
+}
+
+/**
+ * Seconds per site since Monday, for every site at once.
+ *
+ * The blocker has to judge every limited site on the same tick, and asking per site
+ * would re-read the same seven day records once per rule.
+ */
+async function waWeekTotals(now = Date.now()) {
+    const keys = ITG_WEB_ACTIVITY.weekDayKeys(now);
+    const stored = await chrome.storage.local.get(keys.map((day) => ITG_WEB_ACTIVITY.dayStorageKey(day)));
+    const totals = {};
+    for (const day of keys) {
+        const domains = stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains || {};
+        for (const [domain, entry] of Object.entries(domains)) {
+            totals[domain] = (totals[domain] || 0) + (entry.t || 0);
+        }
+    }
+    return totals;
+}
+
+/** Seconds spent on a site since Monday, which is what a weekly allowance is measured against. */
+async function waUsedThisWeek(domain, now = Date.now()) {
+    if (!domain) return 0;
+    const keys = ITG_WEB_ACTIVITY.weekDayKeys(now);
+    const stored = await chrome.storage.local.get(keys.map((day) => ITG_WEB_ACTIVITY.dayStorageKey(day)));
+    return keys.reduce(
+        (total, day) => total + (stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains?.[domain]?.t || 0),
+        0,
+    );
+}
+
 // ---------------------------------------------------------------- writing counters
 
 /**
@@ -178,6 +218,22 @@ async function waPushRecent(visit) {
 // ---------------------------------------------------------------- what is in front
 
 /**
+ * Whatever is playing, as a context to keep timing. Shared by the idle path and by
+ * the "browser is in the background" one, which ask the same question.
+ */
+async function waAudibleContext(settings) {
+    let tab = null;
+    try {
+        [tab] = await chrome.tabs.query({ audible: true, muted: false });
+    } catch {
+        /* No tab is playing anything. */
+    }
+    const domain = ITG_WEB_ACTIVITY.domainOf(tab?.url);
+    if (!domain || settings.ignoredDomains.includes(domain)) return null;
+    return { domain, tabId: tab.id, url: tab.url, title: tab.title || '' };
+}
+
+/**
  * The site the user is actually looking at, or null when they are not looking at one:
  * tracking off, browser in the background, user away from the keyboard, or a page
  * that is not browsing at all.
@@ -190,7 +246,15 @@ async function waResolveActiveContext(settings) {
     const idleState = await new Promise((resolve) =>
         chrome.idle.queryState(Math.max(15, settings.idleSeconds), resolve),
     );
-    if (idleState !== 'active') return null;
+    // Watching something is not being away. The keyboard and the mouse are the only
+    // things Chrome counts as activity, so an hour of video with nobody touching
+    // anything reads as idle and the clock stops — which is exactly backwards for the
+    // sites a limit is most often put on. Sound coming out of a tab is the evidence
+    // that somebody is still there.
+    if (idleState !== 'active') {
+        if (!settings.countAudible) return null;
+        return waAudibleContext(settings);
+    }
 
     let tab = null;
     try {
@@ -201,19 +265,12 @@ async function waResolveActiveContext(settings) {
     }
 
     // Nothing browsable is in front — the browser is in the background, or the front
-    // tab is a settings page — but something is still playing. A video left running in
-    // another window is time spent on that site, and not counting it makes the media
+    // tab is a settings page — but something may still be playing. A video left running
+    // in another window is time spent on that site, and not counting it makes the media
     // sites read as far quieter than they are.
-    if (!ITG_WEB_ACTIVITY.domainOf(tab?.url) && settings.countAudible) {
-        try {
-            [tab] = await chrome.tabs.query({ audible: true, muted: false });
-        } catch {
-            /* ignore */
-        }
-    }
-
     const domain = ITG_WEB_ACTIVITY.domainOf(tab?.url);
-    if (!domain || settings.ignoredDomains.includes(domain)) return null;
+    if (!domain) return settings.countAudible ? waAudibleContext(settings) : null;
+    if (settings.ignoredDomains.includes(domain)) return null;
     return { domain, tabId: tab.id, url: tab.url, title: tab.title || '' };
 }
 
@@ -287,8 +344,19 @@ async function waBlockedDomains(now = new Date()) {
     // One read for the whole day rather than one per site: this runs on the minute
     // tick, and a user with thirty limits would otherwise make thirty reads a minute.
     const today = await waGetDay(ITG_WEB_ACTIVITY.dayKey(now.getTime()));
+    // Same again for the week, and only when there is a weekly allowance to check.
+    const week = waHasWeeklyLimit(limits) ? await waWeekTotals(now.getTime()) : null;
     return domains
-        .filter((domain) => ITG_WEB_ACTIVITY.evaluate(domain, limits, today.domains?.[domain]?.t || 0, now).blocked)
+        .filter(
+            (domain) =>
+                ITG_WEB_ACTIVITY.evaluate(
+                    domain,
+                    limits,
+                    today.domains?.[domain]?.t || 0,
+                    now,
+                    week ? week[domain] || 0 : null,
+                ).blocked,
+        )
         .sort();
 }
 
@@ -347,7 +415,8 @@ async function waRebuildBlockRules() {
  */
 async function waEnforce(domain, usedToday, settings, now = Date.now()) {
     const limits = await waGetLimits();
-    const verdict = ITG_WEB_ACTIVITY.evaluate(domain, limits, usedToday, new Date(now));
+    const usedWeek = Number(limits[domain]?.weeklyLimitSeconds) > 0 ? await waUsedThisWeek(domain, now) : null;
+    const verdict = ITG_WEB_ACTIVITY.evaluate(domain, limits, usedToday, new Date(now), usedWeek);
     if (!verdict.configured) return;
 
     const warnAt = limits[domain]?.notifyAtPercent ?? settings.notifyAtPercent;
@@ -456,9 +525,11 @@ function handleWebActivityGetStatus(message, sendResponse) {
         const now = Date.now();
         const limits = await waGetLimits();
         const used = await waUsedToday(message.domain, now);
+        const usedWeek =
+            Number(limits[message.domain]?.weeklyLimitSeconds) > 0 ? await waUsedThisWeek(message.domain, now) : null;
         sendResponse({
             success: true,
-            verdict: ITG_WEB_ACTIVITY.evaluate(message.domain, limits, used, new Date(now)),
+            verdict: ITG_WEB_ACTIVITY.evaluate(message.domain, limits, used, new Date(now), usedWeek),
             settings: await waGetSettings(),
         });
     })();
@@ -490,6 +561,28 @@ function handleWebActivitySnooze(message, sendResponse) {
         });
         await waSaveLimits(limits);
         sendResponse({ success: true, until: limits[message.domain].snoozeUntil });
+    });
+}
+
+/**
+ * Saves the tracking preferences.
+ *
+ * It goes through the worker rather than being written straight to storage from the
+ * settings page because two of the fields have an immediate effect the page cannot
+ * produce: the idle threshold is a browser-level setting, and turning a site's
+ * tracking off has to take the clock off it now rather than at the next event.
+ */
+function handleWebActivitySaveSettings(message, sendResponse) {
+    waSerial(async () => {
+        const settings = { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...(message.settings || {}) };
+        await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: settings });
+        try {
+            await chrome.idle.setDetectionInterval(Math.max(15, settings.idleSeconds));
+        } catch (error) {
+            logMessage('[webActivity] Could not apply the idle threshold: ' + error.message);
+        }
+        await waSyncNow();
+        sendResponse({ success: true, settings });
     });
 }
 

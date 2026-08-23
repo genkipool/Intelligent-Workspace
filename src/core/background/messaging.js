@@ -1010,6 +1010,10 @@ const MESSAGE_HANDLERS = {
         handleWebActivityImport(message, sendResponse);
         return true;
     },
+    webActivitySaveSettings: (message, sender, sendResponse) => {
+        handleWebActivitySaveSettings(message, sendResponse);
+        return true;
+    },
     addLinkPreviewBlacklist: (message, sender, sendResponse) => {
         addLinkPreviewBlacklistDomain(message.domain).then(() =>
             sendResponse({

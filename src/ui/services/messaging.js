@@ -154,6 +154,7 @@ export const ACTIONS = {
     WEB_ACTIVITY_SNOOZE: 'webActivitySnooze',
     WEB_ACTIVITY_CLEAR: 'webActivityClear',
     WEB_ACTIVITY_IMPORT: 'webActivityImport',
+    WEB_ACTIVITY_SAVE_SETTINGS: 'webActivitySaveSettings',
 
     // Themes
     THEME_CHANGED: 'themeChanged',

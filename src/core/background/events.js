@@ -1193,23 +1193,33 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     if (shouldIgnoreEventDuringInitialization('onChanged', area)) return;
     logMessage('chrome.storage.onChanged.addListener triggered.');
     if (area === 'local') {
+        // Only one view can be pinned, so whichever was just pinned turns the rest off.
         if (changes.isPinned && changes.isPinned.newValue === true) {
             chrome.storage.local.set({
                 isListGroupPinned: false,
                 isGeminiPinned: false,
+                isWebActivityPinned: false,
             });
         } else if (changes.isListGroupPinned && changes.isListGroupPinned.newValue === true) {
             chrome.storage.local.set({
                 isPinned: false,
                 isGeminiPinned: false,
+                isWebActivityPinned: false,
             });
         } else if (changes.isGeminiPinned && changes.isGeminiPinned.newValue === true) {
             chrome.storage.local.set({
                 isPinned: false,
                 isListGroupPinned: false,
+                isWebActivityPinned: false,
+            });
+        } else if (changes.isWebActivityPinned && changes.isWebActivityPinned.newValue === true) {
+            chrome.storage.local.set({
+                isPinned: false,
+                isListGroupPinned: false,
+                isGeminiPinned: false,
             });
         }
-        if (changes.isPinned || changes.isListGroupPinned || changes.isGeminiPinned) {
+        if (changes.isPinned || changes.isListGroupPinned || changes.isGeminiPinned || changes.isWebActivityPinned) {
             logMessage('Pin state change detected, updating memory cache.');
             await updatePinState();
         }
@@ -1354,6 +1364,14 @@ chrome.action.onClicked.addListener((tab) => {
     } else if (isListGroupPinned) {
         chrome.sidePanel.setOptions({
             path: 'src/ui/pages/listGroup/listGroup.html',
+            enabled: true,
+        });
+        chrome.sidePanel.open({
+            windowId: tab.windowId,
+        });
+    } else if (isWebActivityPinned) {
+        chrome.sidePanel.setOptions({
+            path: 'src/ui/pages/web-activity/web-activity.html?context=sidepanel',
             enabled: true,
         });
         chrome.sidePanel.open({

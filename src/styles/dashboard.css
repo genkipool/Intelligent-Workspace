@@ -212,142 +212,8 @@ body {
     color: var(--text-color);
 }
 
-/* --- CUSTOMIZABLE SELECT API (2026+) -------------------------- */
-.tag-select,
-.tag-select::picker(select) {
-    appearance: base-select;
-}
-
-.tag-select {
-    background: color-mix(in srgb, var(--bg-panel-color) 80%, var(--bg-color));
-    border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
-    color: var(--text-color);
-    border-radius: 7px;
-    font-size: 0.92rem;
-    font-family: var(--sans);
-    cursor: pointer;
-    height: 28px;
-    width: 170px;
-    transition: border-color 0.13s;
-}
-
-.tag-select::picker-icon {
-    display: none !important;
-}
-
-.tag-select:focus {
-    border-color: var(--interactive-color);
-    outline: none;
-}
-
-/* The trigger button */
-.tag-select button {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    height: 100%;
-    padding: 0 10px;
-    background: transparent;
-    border: none;
-    color: inherit;
-    font: inherit;
-    gap: 8px;
-    line-height: 1;
-}
-
-selectedcontent {
-    display: block;
-    flex: 1;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Custom picker arrow */
-.tag-select .picker-icon {
-    transition: transform 0.2s ease;
-    color: color-mix(in srgb, var(--text-color) 50%, transparent);
-    flex-shrink: 0;
-    width: 12px;
-    height: 12px;
-}
-
-.tag-select:open .picker-icon {
-    transform: rotate(180deg);
-}
-
-/* Dropdown menu (Top Layer) */
-.tag-select::picker(select) {
-    background: var(--bg-panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-    padding: 4px;
-    margin-top: 4px;
-
-    /* Entry/exit animation 2026 */
-    opacity: 0;
-    transform: translateY(-5px);
-    transition:
-        opacity 0.2s,
-        transform 0.2s,
-        overlay 0.2s allow-discrete,
-        display 0.2s allow-discrete;
-}
-
-.tag-select:open::picker(select) {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-@starting-style {
-    .tag-select:open::picker(select) {
-        opacity: 0;
-        transform: translateY(-5px);
-    }
-}
-
-/* Option styles */
-.tag-select option {
-    padding: 6px 12px;
-    border-radius: 5px;
-    cursor: pointer;
-    color: var(--text-color);
-    font-size: 0.92rem;
-    transition: background 0.1s;
-}
-
-.tag-select option:hover {
-    background-color: var(--interactive-color);
-    color: var(--text-color);
-}
-
-.tag-select option:checked {
-    background-color: color-mix(in srgb, var(--interactive-color) 15%, transparent);
-    color: var(--action-color);
-    font-weight: 600;
-}
-
-/* Hide native checkmark if desired */
-.tag-select option::checkmark {
-    display: none;
-}
-
-/* Inside a table row 170px is too much; the trigger sizes to its content instead. */
-.tag-select-compact {
-    width: auto;
-    min-width: 118px;
-    max-width: 100%;
-    height: 26px;
-    font-size: 0.86rem;
-}
-
-.tag-select-compact button {
-    padding: 0 7px;
-    gap: 5px;
-}
+/* The select lives in `src/styles/select.css`, loaded next to this file, so the
+   dashboards and the navigation settings page share one definition. */
 
 /* --- SHARED FIELD LOOK ------------------------------------------
    The number boxes, the time triggers and the compact selects are
@@ -358,7 +224,9 @@ selectedcontent {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 26px;
+    /* Kept level with `NumberField`: the two stand side by side in the same rows and
+       a two-pixel difference between them reads as a misalignment, not a style. */
+    height: 32px;
     min-width: 62px;
     padding: 0 8px;
     box-sizing: border-box;
@@ -1700,8 +1568,10 @@ selectedcontent {
     border-radius: 4px;
 }
 
+/* Error red, the same as every other close cross in the extension: it is now the
+   only way out of a dialog, so it says so. */
 .close-modal-btn:hover {
-    color: var(--interactive-color);
+    color: var(--error-color);
 }
 
 .modal-body {
@@ -1709,11 +1579,17 @@ selectedcontent {
     overflow-y: auto;
 }
 
+/* A dialog carries no cancel button — the close cross is the way out — so a single
+   action fills the row rather than hugging one corner of it. */
 .modal-actions {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
     padding: 0 18px 18px;
+}
+
+.modal-actions > button:only-child {
+    width: 100%;
 }
 
 .modal-actions button {

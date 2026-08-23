@@ -1,214 +1,202 @@
 <script>
     /**
-     * The editor for one site's limit: a daily allowance, hours it is blocked
-     * outright, and which category it belongs to.
+     * [AI INSTRUCTION]
+     * HOW LONG A SITE IS ALLOWED — the time half of a rule.
      *
-     * The form holds a copy and only hands it back on save, so closing it never
-     * half-applies a change.
+     * Two allowances, one per tab, because they answer two different questions and
+     * are almost never set together. A daily one paces a habit and refills at
+     * midnight; a weekly one budgets it and refills on Monday. The tabs keep each
+     * answer whole instead of stacking two nearly identical forms down one column.
+     *
+     * The daily allowance carries the weekdays it applies on — half an hour of this
+     * on a working day and no limit at the weekend is the ordinary thing to want.
+     * The weekly one has no days: a week is the same week whichever day you look at
+     * it from, which is why that tab is the same form minus the day row.
+     *
+     * An allowance of `00:00` is no allowance. That is why there is no "remove"
+     * button and no "block always" switch: clearing the field is how a rule is
+     * taken off, and it is the same gesture in both dialogs.
      */
     import '../../../../core/services/webActivitySchema.js';
-    import { t, tt, currentLang } from '../../../stores/i18nStore.js';
-    import { weekdayNames } from '../../../services/dashboard/format.js';
-    import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
+    import { t, tt } from '../../../stores/i18nStore.js';
     import NumberField from '../../../components/common/NumberField.svelte';
-    import SelectField from '../../../components/common/SelectField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
-    import ToggleButton from '../../../components/common/ToggleButton.svelte';
+    import RuleModalShell from './RuleModalShell.svelte';
+    import { DAY_CHIPS, hhMmToSeconds, secondsToHhMm } from '../ruleFields.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
     let { domain = '', limit = null, onSave, onClose } = $props();
 
     const base = WA.normalizeLimit(limit || {});
+    const isNew = !domain;
 
+    let tab = $state('daily');
     let site = $state(domain);
-    let enabled = $state(base.enabled);
-    let blockAlways = $state(base.blockAlways);
-    let limitHours = $state(Math.floor(base.dailyLimitSeconds / 3600));
-    let limitMinutes = $state(Math.round((base.dailyLimitSeconds % 3600) / 60));
-    let category = $state(base.category || '');
+    let dailyTime = $state(secondsToHhMm(base.dailyLimitSeconds));
+    let weeklyTime = $state(secondsToHhMm(base.weeklyLimitSeconds, 168));
+    let dailyDays = $state([...base.dailyLimitDays]);
     let notifyAtPercent = $state(base.notifyAtPercent ?? 0);
-    let schedules = $state(base.schedules.map((s) => ({ ...s, days: [...(s.days || [0, 1, 2, 3, 4, 5, 6])] })));
 
-    const dayNames = $derived(weekdayNames($currentLang, 'short'));
-    const isNew = !limit;
+    const dailySeconds = $derived(hhMmToSeconds(dailyTime));
+    const weeklySeconds = $derived(hhMmToSeconds(weeklyTime));
 
-    function addSchedule() {
-        schedules = [...schedules, { start: '22:00', end: '07:00', days: [0, 1, 2, 3, 4, 5, 6] }];
+    /** A daily allowance with no day ticked can never fire, which is worth saying. */
+    const noDays = $derived(dailySeconds > 0 && dailyDays.length === 0);
+
+    function toggleDay(day) {
+        dailyDays = dailyDays.includes(day) ? dailyDays.filter((d) => d !== day) : [...dailyDays, day];
     }
 
-    function removeSchedule(index) {
-        schedules = schedules.filter((_, i) => i !== index);
-    }
-
-    function toggleDay(index, day) {
-        const current = schedules[index].days;
-        schedules[index].days = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
-    }
-
-    function save() {
+    function apply() {
+        if (tab === 'daily' && noDays) return;
         // Whatever the user typed, only the hostname is a site: pasting a full URL is
         // the obvious thing to do and should not silently create a limit that matches
         // nothing.
         const cleaned = WA.domainOf(site.includes('://') ? site : `https://${site.trim()}`);
         if (!cleaned) return;
         onSave(cleaned, {
-            enabled,
-            blockAlways,
-            dailyLimitSeconds: Number(limitHours) * 3600 + Number(limitMinutes) * 60,
-            schedules: schedules.filter((s) => s.start && s.end),
-            // Zero is 'no warning for this site'; null would mean 'use the general setting',
-            // and there is no longer a settings panel to hold one.
+            ...base,
+            dailyLimitSeconds: dailySeconds,
+            dailyLimitDays: [...dailyDays],
+            weeklyLimitSeconds: weeklySeconds,
+            // Zero is 'no warning for this site'; the general default lives on the
+            // settings page.
             notifyAtPercent: Number(notifyAtPercent) || 0,
-            category: category || null,
-            snoozeUntil: base.snoozeUntil,
         });
     }
 </script>
 
-<div
-    class="modal-overlay"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="wa-limit-title"
-    tabindex="-1"
-    use:dismissOnBackdrop={onClose}
-    onkeydown={(e) => e.key === 'Escape' && onClose()}
->
-    <div class="modal-content wa-limit-modal" role="none" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h2 id="wa-limit-title">{$t(isNew ? 'webActivityAddLimit' : 'webActivityEditLimit')}</h2>
-            <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
-        </div>
+<!--
+    The allowance and the warning threshold, side by side because they are one
+    decision read left to right: how long, and how early to say something about it.
+    `maxHour` is what separates the two tabs: a day cannot hold more than 23 hours of
+    browsing, a week can hold a great deal more.
 
-        <div class="modal-body wa-form">
-            <label class="wa-field">
-                <span class="wa-field-label">{$t('webActivityFieldSite')}</span>
-                <input
-                    type="text"
-                    bind:value={site}
-                    readonly={!isNew}
-                    placeholder="example.com"
-                    title={$tt('webActivityFieldSite')}
-                />
-            </label>
+    What each field means is on the field, as a tooltip. Spelled out under every row
+    the explanations were longer than the form and pushed the controls off the bottom
+    of a dialog that has only four of them.
+-->
+{#snippet allowance(value, setValue, maxHour, hintKey)}
+    <div class="form-group wa-allowance-row">
+        <label class="wa-allowance-time" title={$tt(hintKey)}>
+            <span class="field-label">{$t('webActivityFieldAllowance')}</span>
+            <TimeField
+                value={value()}
+                suggestNow={false}
+                {maxHour}
+                pickerLabel={$t('webActivityDurationLabel')}
+                title={$tt(hintKey)}
+                onchange={setValue}
+            />
+        </label>
 
-            <fieldset class="wa-field">
-                <legend class="wa-field-label">{$t('webActivityFieldDailyLimit')}</legend>
-                <div class="wa-inline">
-                    <NumberField
-                        bind:value={limitHours}
-                        min={0}
-                        max={23}
-                        digits={2}
-                        ariaLabel={$t('webActivityHours')}
-                    />
-                    <span class="wa-muted">{$t('webActivityHoursShort')}</span>
-                    <NumberField
-                        bind:value={limitMinutes}
-                        min={0}
-                        max={59}
-                        step={5}
-                        digits={2}
-                        ariaLabel={$t('webActivityMinutes')}
-                    />
-                    <span class="wa-muted">{$t('webActivityMinutesShort')}</span>
-                </div>
-                <span class="wa-hint">{$t('webActivityDailyLimitHint')}</span>
-            </fieldset>
-
-            <div class="wa-field">
-                <span class="wa-field-label">{$t('webActivityBlockAlways')}</span>
-                <ToggleButton
-                    pressed={blockAlways}
-                    label={$t(blockAlways ? 'webActivityOn' : 'webActivityOff')}
-                    title={$tt('webActivityBlockAlways')}
-                    onchange={(next) => (blockAlways = next)}
-                />
-                <span class="wa-hint">{$t('webActivityBlockAlwaysHint')}</span>
-            </div>
-
-            <fieldset class="wa-field">
-                <legend class="wa-field-label">{$t('webActivityFieldSchedules')}</legend>
-                <span class="wa-hint">{$t('webActivitySchedulesHint')}</span>
-                {#each schedules as schedule, index (index)}
-                    <div class="wa-schedule">
-                        <div class="wa-inline">
-                            <TimeField bind:value={schedule.start} title={$tt('webActivityFrom')} />
-                            <span class="wa-muted">→</span>
-                            <TimeField bind:value={schedule.end} title={$tt('webActivityTo')} />
-                            <button
-                                class="wa-icon-btn wa-icon-btn-danger"
-                                type="button"
-                                title={$tt('webActivityRemoveSchedule')}
-                                aria-label={$t('webActivityRemoveSchedule')}
-                                onclick={() => removeSchedule(index)}
-                            >
-                                <svg width="14" height="14" aria-hidden="true" focusable="false"
-                                    ><use href="#wa-close"></use></svg
-                                >
-                            </button>
-                        </div>
-                        <div class="wa-days">
-                            {#each dayNames as name, day (day)}
-                                <button
-                                    type="button"
-                                    class="filter-chip"
-                                    class:active={schedule.days.includes(day)}
-                                    onclick={() => toggleDay(index, day)}>{name}</button
-                                >
-                            {/each}
-                        </div>
-                    </div>
-                {/each}
-                <button class="btn" type="button" onclick={addSchedule}>
-                    <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-plus"></use></svg>
-                    <span>{$t('webActivityAddSchedule')}</span>
-                </button>
-            </fieldset>
-
-            <div class="wa-field">
-                <span class="wa-field-label">{$t('webActivityFieldCategory')}</span>
-                <SelectField
-                    value={category}
-                    title={$tt('webActivityFieldCategory')}
-                    ariaLabel={$t('webActivityFieldCategory')}
-                    options={[
-                        { value: '', label: $t('webActivityCategoryAuto') },
-                        ...WA.CATEGORIES.map((id) => ({ value: id, label: $t('webActivityCategory_' + id) })),
-                    ]}
-                    onchange={(next) => (category = next)}
-                />
-            </div>
-
-            <div class="wa-field">
-                <span class="wa-field-label">{$t('webActivityFieldNotifyAt')}</span>
-                <NumberField
-                    bind:value={notifyAtPercent}
-                    min={0}
-                    max={100}
-                    step={5}
-                    digits={3}
-                    ariaLabel={$t('webActivityFieldNotifyAt')}
-                />
-                <span class="wa-hint">{$t('webActivityNotifyAtHint')}</span>
-            </div>
-
-            <div class="wa-field">
-                <span class="wa-field-label">{$t('webActivityLimitEnabled')}</span>
-                <ToggleButton
-                    pressed={enabled}
-                    label={$t(enabled ? 'webActivityOn' : 'webActivityOff')}
-                    title={$tt('webActivityLimitEnabled')}
-                    onchange={(next) => (enabled = next)}
-                />
-                <span class="wa-hint">{$t('webActivityLimitEnabledHint')}</span>
-            </div>
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" class="modal-btn-save" onclick={save}>{$t('save')}</button>
-            <button type="button" class="modal-btn-cancel" onclick={onClose}>{$t('cancel')}</button>
-        </div>
+        <label class="wa-allowance-notify" title={$tt('webActivityNotifyAtHint')}>
+            <span class="field-label">{$t('webActivityFieldNotifyAt')}</span>
+            <NumberField
+                wide
+                bind:value={notifyAtPercent}
+                min={0}
+                max={100}
+                step={5}
+                digits={3}
+                title={$tt('webActivityNotifyAtHint')}
+                ariaLabel={$t('webActivityFieldNotifyAt')}
+            />
+        </label>
     </div>
-</div>
+{/snippet}
+
+<RuleModalShell
+    titleId="wa-limit-title"
+    title={$t('webActivityLimitModalTitle')}
+    applyLabel={$t('apply')}
+    disabled={(tab === 'daily' && noDays) || (isNew && !site.trim())}
+    onApply={apply}
+    {onClose}
+>
+    {#if isNew}
+        <div class="form-group">
+            <label for="wa-limit-site">{$t('webActivityFieldSite')}</label>
+            <input
+                id="wa-limit-site"
+                type="text"
+                bind:value={site}
+                placeholder="example.com"
+                autocomplete="off"
+                spellcheck="false"
+            />
+        </div>
+    {/if}
+
+    <div class="wa-tabs" role="tablist">
+        <button
+            type="button"
+            role="tab"
+            class="wa-tab"
+            class:selected={tab === 'daily'}
+            aria-selected={tab === 'daily'}
+            onclick={() => (tab = 'daily')}
+        >
+            {$t('webActivityFieldDailyLimit')}
+        </button>
+        <button
+            type="button"
+            role="tab"
+            class="wa-tab"
+            class:selected={tab === 'weekly'}
+            aria-selected={tab === 'weekly'}
+            onclick={() => (tab = 'weekly')}
+        >
+            {$t('webActivityFieldWeeklyLimit')}
+        </button>
+    </div>
+
+    <!-- Under the tabs rather than over them: the tabs are what the dialog is doing,
+         and the site is what it is doing it to. Reading them the other way round put
+         a bare hostname above a strip that had nothing to do with it. -->
+    {#if !isNew}
+        <div class="form-group wa-site-group">
+            <div class="field-label">{$t('webActivityFieldSite')}</div>
+            <p class="wa-modal-site">{domain}</p>
+        </div>
+    {/if}
+
+    <div class="wa-tab-panel">
+        {#if tab === 'daily'}
+            <div class="form-group">
+                <div class="field-label" title={$tt('webActivityLimitDaysHint')}>{$t('daysOfWeek')}</div>
+                <div class="days-selector">
+                    {#each DAY_CHIPS as chip (chip.day)}
+                        <button
+                            type="button"
+                            class:selected={dailyDays.includes(chip.day)}
+                            aria-pressed={dailyDays.includes(chip.day)}
+                            onclick={() => toggleDay(chip.day)}>{$t(chip.key)}</button
+                        >
+                    {/each}
+                </div>
+                <!-- Always in the layout, spoken only when there is something to say:
+                     a line that appears out of nowhere shoves the controls under the
+                     pointer down a row just as it is reaching for them. -->
+                <p class="wa-field-warning" aria-live="polite">
+                    {noDays ? $t('webActivityLimitNoDays') : ''}
+                </p>
+            </div>
+
+            {@render allowance(
+                () => dailyTime,
+                (next) => (dailyTime = next),
+                23,
+                'webActivityDailyLimitHint',
+            )}
+        {:else}
+            {@render allowance(
+                () => weeklyTime,
+                (next) => (weeklyTime = next),
+                167,
+                'webActivityWeeklyLimitHint',
+            )}
+        {/if}
+    </div>
+</RuleModalShell>

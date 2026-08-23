@@ -25,8 +25,13 @@
  * nothing else, however many months of history are kept.
  *
  *   DomainDay = { t: seconds, v: visits, s: sessions, h: { hour: seconds } }
- *   Limit     = { enabled, dailyLimitSeconds, blockAlways, schedules: [{start,end,days}],
+ *   Limit     = { limitEnabled, scheduleEnabled, dailyLimitSeconds, dailyLimitDays,
+ *                 weeklyLimitSeconds, blockAlways, schedules: [{start,end,days}],
  *                 notifyAtPercent, snoozeUntil, category }
+ * The two halves of a rule switch on and off separately: pausing a night-time window
+ * for one evening should not also hand back a daily allowance that was already spent.
+ * `enabled` is the old single flag; it is still written, as the OR of the two, so
+ * anything reading a record from before this still gets a sensible answer.
  *
  * `schedules` are the hours the site IS allowed. Outside every one of them it is
  * blocked. An empty list means no restriction by the clock at all — which is why an
@@ -54,8 +59,14 @@ const ITG_WEB_ACTIVITY = {
 
     DEFAULT_SETTINGS: {
         enabled: true,
-        /** No keyboard or mouse for this long and the clock stops. */
-        idleSeconds: 60,
+        /**
+         * No keyboard or mouse for this long and the clock stops — unless something is
+         * playing, which is what `countAudible` is for: watching a video is not being
+         * away. Five minutes rather than one because a minute of reading a long page
+         * without touching anything is ordinary, and the clock stopping on it is what
+         * makes the reading sites read as quieter than they are.
+         */
+        idleSeconds: 300,
         /** Days of history kept; older records are dropped as the day rolls over. */
         retentionDays: 180,
         /** Keep counting a tab that is playing audio even when the browser is not focused. */
@@ -66,7 +77,17 @@ const ITG_WEB_ACTIVITY = {
         notifyAtPercent: 80,
         /** How long the "just five more minutes" button on the block screen lasts. */
         snoozeMinutes: 5,
+        /**
+         * Categories the user added, as `[{ id, label }]`. The id always carries the
+         * `custom:` prefix, so a name the user picks can never collide with a built-in
+         * bucket and a stale one is recognisable long after the category was deleted.
+         * The label is stored rather than translated: it is the user's own word.
+         */
+        customCategories: [],
     },
+
+    /** What marks a category as the user's own rather than one of ours. */
+    CUSTOM_CATEGORY_PREFIX: 'custom:',
 
     /**
      * The buckets the sidebar groups sites into. `other` is the fallback and must
@@ -92,6 +113,29 @@ const ITG_WEB_ACTIVITY = {
         'search',
         'other',
     ],
+
+    /** Whether a category id belongs to the user rather than to the list above. */
+    isCustomCategory(id) {
+        return typeof id === 'string' && id.startsWith(ITG_WEB_ACTIVITY.CUSTOM_CATEGORY_PREFIX);
+    },
+
+    /**
+     * The id for a category name the user typed. Accents are folded and anything that
+     * is not a letter or a digit becomes a dash, so the id stays safe to use as an
+     * object key and as part of a CSS selector.
+     *
+     * @returns {string|null} null when the name has nothing usable in it.
+     */
+    customCategoryId(label) {
+        const slug = String(label || '')
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 32);
+        return slug ? ITG_WEB_ACTIVITY.CUSTOM_CATEGORY_PREFIX + slug : null;
+    },
 
     /**
      * Which categories count as focused work and which as a distraction. The
@@ -314,12 +358,34 @@ const ITG_WEB_ACTIVITY = {
     },
 
     /**
+     * The seven day keys of the week `ts` falls in, Monday first.
+     *
+     * Monday rather than Sunday because a weekly allowance is something a person
+     * plans their working week around, and because that is where the week starts in
+     * every locale this extension ships in. The allowance therefore refills on Monday
+     * at midnight, which is what the block screen says out loud.
+     */
+    weekDayKeys(ts = Date.now()) {
+        const date = new Date(ts);
+        const offset = (date.getDay() + 6) % 7;
+        const keys = [];
+        for (let index = 0; index < 7; index++) {
+            const day = new Date(date.getFullYear(), date.getMonth(), date.getDate() - offset + index);
+            keys.push(ITG_WEB_ACTIVITY.dayKey(day.getTime()));
+        }
+        return keys;
+    },
+
+    /**
      * The category a site belongs to. An explicit choice on its limit record always
      * wins, so the user can correct anything the hints get wrong.
      */
     categoryOf(domain, limits = {}) {
         const explicit = limits?.[domain]?.category;
-        if (explicit && ITG_WEB_ACTIVITY.CATEGORIES.includes(explicit)) return explicit;
+        // A category the user added is as valid as one of ours; only an id that is
+        // neither is stale and falls through to the hints.
+        if (explicit && (ITG_WEB_ACTIVITY.CATEGORIES.includes(explicit) || ITG_WEB_ACTIVITY.isCustomCategory(explicit)))
+            return explicit;
         if (!domain) return 'other';
         for (const category of ITG_WEB_ACTIVITY.CATEGORIES) {
             const hints = ITG_WEB_ACTIVITY.CATEGORY_HINTS[category];
@@ -335,9 +401,25 @@ const ITG_WEB_ACTIVITY = {
 
     /** A limit record with every field filled in, whatever the stored one is missing. */
     normalizeLimit(limit = {}) {
+        // A record from before the split carries one flag for both halves, which is
+        // exactly what it meant at the time.
+        const legacy = limit.enabled !== false;
+        const limitEnabled = limit.limitEnabled === undefined ? legacy : limit.limitEnabled !== false;
+        const scheduleEnabled = limit.scheduleEnabled === undefined ? legacy : limit.scheduleEnabled !== false;
         return {
-            enabled: limit.enabled !== false,
+            limitEnabled,
+            scheduleEnabled,
+            /** Kept for anything still reading the single flag. */
+            enabled: limitEnabled || scheduleEnabled,
             dailyLimitSeconds: Number(limit.dailyLimitSeconds) || 0,
+            /**
+             * The weekdays the daily allowance applies on. A record from before this
+             * existed has none, and means every day; an empty list is a deliberate
+             * "no day", which leaves the allowance switched off rather than silently
+             * turning it into an everyday one.
+             */
+            dailyLimitDays: Array.isArray(limit.dailyLimitDays) ? limit.dailyLimitDays : [0, 1, 2, 3, 4, 5, 6],
+            weeklyLimitSeconds: Number(limit.weeklyLimitSeconds) || 0,
             blockAlways: !!limit.blockAlways,
             schedules: Array.isArray(limit.schedules) ? limit.schedules : [],
             notifyAtPercent: limit.notifyAtPercent === undefined ? null : limit.notifyAtPercent,
@@ -387,8 +469,11 @@ const ITG_WEB_ACTIVITY = {
      * @param {object} limits    the whole `wa:limits` record
      * @param {number} usedToday seconds already spent on the site today
      * @param {Date}   now
+     * @param {number} usedThisWeek seconds spent on the site since Monday. Only the
+     *   callers that have a weekly allowance to check need to pay for reading the
+     *   week, so it defaults to today's figure being the whole of it.
      */
-    evaluate(domain, limits = {}, usedToday = 0, now = new Date()) {
+    evaluate(domain, limits = {}, usedToday = 0, now = new Date(), usedThisWeek = null) {
         const raw = limits?.[domain];
         const verdict = {
             domain,
@@ -401,6 +486,11 @@ const ITG_WEB_ACTIVITY = {
              *  over the message channel as JSON, which would turn that into null anyway. */
             remainingSeconds: null,
             percent: 0,
+            /** The same three figures for the weekly allowance. */
+            weekLimitSeconds: 0,
+            weekUsedSeconds: usedThisWeek === null ? usedToday : usedThisWeek,
+            remainingWeekSeconds: null,
+            weekPercent: 0,
             snoozed: false,
             /** When the clock is what blocks it, the minute the next allowed window opens. */
             unblocksAtMinute: null,
@@ -410,19 +500,25 @@ const ITG_WEB_ACTIVITY = {
         if (!raw) return verdict;
 
         const limit = ITG_WEB_ACTIVITY.normalizeLimit(raw);
+        const usedWeek = verdict.weekUsedSeconds;
         verdict.limitSeconds = limit.dailyLimitSeconds;
+        verdict.weekLimitSeconds = limit.weeklyLimitSeconds;
         if (limit.dailyLimitSeconds > 0) {
             verdict.remainingSeconds = Math.max(0, limit.dailyLimitSeconds - usedToday);
             verdict.percent = Math.min(100, Math.round((usedToday / limit.dailyLimitSeconds) * 100));
         }
-        if (!limit.enabled) return verdict;
+        if (limit.weeklyLimitSeconds > 0) {
+            verdict.remainingWeekSeconds = Math.max(0, limit.weeklyLimitSeconds - usedWeek);
+            verdict.weekPercent = Math.min(100, Math.round((usedWeek / limit.weeklyLimitSeconds) * 100));
+        }
+        if (!limit.limitEnabled && !limit.scheduleEnabled) return verdict;
 
         if (limit.snoozeUntil > now.getTime()) {
             verdict.snoozed = true;
             return verdict;
         }
 
-        if (limit.blockAlways) {
+        if (limit.scheduleEnabled && limit.blockAlways) {
             verdict.blocked = true;
             verdict.reason = 'always';
             return verdict;
@@ -430,7 +526,7 @@ const ITG_WEB_ACTIVITY = {
 
         // The windows say when the site is allowed, so having any at all and being
         // outside every one of them is what blocks it.
-        const windows = limit.schedules.filter((s) => s.start && s.end);
+        const windows = limit.scheduleEnabled ? limit.schedules.filter((s) => s.start && s.end) : [];
         if (windows.length && !windows.some((s) => ITG_WEB_ACTIVITY.isWithinSchedule(s, now))) {
             verdict.blocked = true;
             verdict.reason = 'schedule';
@@ -440,9 +536,27 @@ const ITG_WEB_ACTIVITY = {
             return verdict;
         }
 
-        if (limit.dailyLimitSeconds > 0 && usedToday >= limit.dailyLimitSeconds) {
+        // The allowance is still measured on a day it does not apply to — the figures
+        // are true whatever the rule does with them — but only a day it applies to can
+        // block.
+        if (!limit.limitEnabled) return verdict;
+
+        if (
+            limit.dailyLimitSeconds > 0 &&
+            usedToday >= limit.dailyLimitSeconds &&
+            limit.dailyLimitDays.includes(now.getDay())
+        ) {
             verdict.blocked = true;
             verdict.reason = 'daily';
+            return verdict;
+        }
+
+        // The weekly allowance is checked last so the reason the user is told is the
+        // one that lifts soonest: a day that is spent comes back at midnight, a week
+        // that is spent does not come back until Monday.
+        if (limit.weeklyLimitSeconds > 0 && usedWeek >= limit.weeklyLimitSeconds) {
+            verdict.blocked = true;
+            verdict.reason = 'weekly';
         }
         return verdict;
     },

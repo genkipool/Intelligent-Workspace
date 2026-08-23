@@ -8,12 +8,26 @@
      * everything else on the row, and can hold an icon. `aria-pressed` is what carries
      * the state to a screen reader, so the label never has to change wording.
      */
-    let { pressed = false, label = '', title = '', disabled = false, onchange, children } = $props();
+    let {
+        pressed = false,
+        label = '',
+        title = '',
+        disabled = false,
+        /**
+         * `pill` is the original round-ended shape. `rounded` is the 7px corner the
+         * dashboards use for every other button and field, for pages where a pill is
+         * the only round-ended thing on screen.
+         */
+        variant = 'pill',
+        onchange,
+        children,
+    } = $props();
 </script>
 
 <button
     type="button"
     class="toggle-button"
+    class:is-rounded={variant === 'rounded'}
     class:pressed
     aria-pressed={pressed}
     {disabled}
@@ -28,20 +42,38 @@
     .toggle-button {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
-        padding: 5px 12px;
+        padding: 4px 12px;
+        min-width: 96px;
+        min-height: 24px;
+        box-sizing: border-box;
         border: 1px solid var(--border-color);
         border-radius: 999px;
         background: transparent;
         color: var(--text-color);
         font-family: inherit;
         font-size: 11px;
-        line-height: 1.4;
+        line-height: 1;
         cursor: pointer;
         transition:
             background 0.15s ease,
             border-color 0.15s ease,
             color 0.15s ease;
+    }
+
+    .toggle-button span {
+        display: inline-flex;
+        align-items: center;
+        line-height: 1;
+        padding-top: 1px;
+    }
+
+    .toggle-button.is-rounded {
+        border-radius: 7px;
+        padding: 5px 10px;
+        min-width: 96px;
+        font-size: 12px;
     }
 
     .toggle-button:hover:not(:disabled) {

@@ -14,6 +14,13 @@
      *   keeps the original behaviour of reading as midnight; a caller for whom "not
      *   set" and "midnight" are different things passes something else.
      * @property {string} [title]
+     * @property {boolean} [suggestNow] - Whether opening on `00:00` offers the current
+     *   time. True for a moment on the clock, where zero means "not filled in yet";
+     *   false for a length of time, where zero is a real answer and jumping to 14:37
+     *   would be nonsense.
+     * @property {number} [maxHour] - The largest hour accepted. 23 for a time of day;
+     *   a length of time can be longer than a day.
+     * @property {string} [pickerLabel] - The caption under the picker.
      * @property {(value: string) => void} [onchange] - For callers that cannot bind.
      */
     let {
@@ -21,6 +28,9 @@
         id = undefined,
         placeholder = '00:00',
         title = undefined,
+        suggestNow = true,
+        maxHour = 23,
+        pickerLabel = '24h',
         onchange = undefined,
     } = $props();
 
@@ -38,7 +48,7 @@
     }
 
     function commit() {
-        const next = `${clamp(hour, 23)}:${clamp(minute, 59)}`;
+        const next = `${clamp(hour, maxHour)}:${clamp(minute, 59)}`;
         if (next === value) return;
         value = next;
         onchange?.(value);
@@ -60,10 +70,13 @@
         if (!open) return;
         // Opening on 00:00 means "not set yet", so offer the current time instead.
         const [h, m] = (value || '00:00').split(':');
-        if (value === '00:00' || !value) {
+        if (suggestNow && (value === '00:00' || !value)) {
             const now = new Date();
             hour = String(now.getHours()).padStart(2, '0');
             minute = String(now.getMinutes()).padStart(2, '0');
+        } else if (!value) {
+            hour = '00';
+            minute = '00';
         } else {
             hour = h;
             minute = m;
@@ -72,20 +85,31 @@
     }
 
     function step(unit, delta) {
-        if (unit === 'hour') hour = String((Number(hour) + delta + 24) % 24).padStart(2, '0');
+        if (unit === 'hour') hour = String((Number(hour) + delta + maxHour + 1) % (maxHour + 1)).padStart(2, '0');
         else minute = String((Number(minute) + delta + 60) % 60).padStart(2, '0');
         commit();
     }
 
+    /** A click anywhere else keeps what was dialled in and puts the picker away. */
     function handleOutside(e) {
         if (!open) return;
         if (popupEl?.contains(e.target) || triggerEl?.contains(e.target)) return;
+        hour = clamp(hour, maxHour);
+        minute = clamp(minute, 59);
         commit();
         open = false;
     }
 </script>
 
-<svelte:window onclick={handleOutside} onresize={place} onscroll={place} />
+<!--
+    Capture, not bubble. Inside a dialog the content stops click from propagating so a
+    stray click cannot dismiss the backdrop, and a listener on `window` in the bubble
+    phase therefore never hears about it: the picker stayed open, and whatever was
+    dialled in was thrown away rather than applied. Capture runs on the way down, so it
+    hears every click wherever it lands. The same goes for `scroll`, which does not
+    bubble at all — a fixed popup has to follow a body that scrolls under it.
+-->
+<svelte:window onclickcapture={handleOutside} onresize={place} onscrollcapture={place} />
 
 <div
     {id}
@@ -115,13 +139,13 @@
             <div class="time-input-container">
                 <input
                     type="text"
-                    maxlength="2"
+                    maxlength={String(maxHour).length}
                     inputmode="numeric"
                     placeholder="00"
                     bind:value={hour}
                     oninput={commit}
                     onblur={() => {
-                        hour = clamp(hour, 23);
+                        hour = clamp(hour, maxHour);
                         commit();
                     }}
                 />
@@ -149,7 +173,7 @@
             </div>
         </div>
         <!-- The original shows the bare format, not the sentence in messages.json. -->
-        <div class="time-picker-label">24h</div>
+        <div class="time-picker-label">{pickerLabel}</div>
     </div>
 {/if}
 

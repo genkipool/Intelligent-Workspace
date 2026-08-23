@@ -13,6 +13,10 @@
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import Notification from '../../components/common/Notification.svelte';
+    import '../../../core/services/webActivitySchema.js';
+    import { saveSettings } from '../../services/webActivityService.js';
+
+    const WA = globalThis.ITG_WEB_ACTIVITY;
 
     let port = null;
     let isSidePanel = false;
@@ -145,6 +149,38 @@
             );
     }
 
+    /**
+     * Whether the clock is running, mirrored from the same key the settings page
+     * writes. Both are views of one setting, so both listen: flipping it here moves
+     * the switch on a settings page that is already open, and the other way round.
+     */
+    let trackingEnabled = $state(true);
+    let onSettingsChanged = null;
+
+    onMount(async () => {
+        const { [WA.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(WA.KEYS.SETTINGS);
+        trackingEnabled = { ...WA.DEFAULT_SETTINGS, ...(stored || {}) }.enabled !== false;
+
+        onSettingsChanged = (changes, area) => {
+            if (area !== 'local' || !changes[WA.KEYS.SETTINGS]) return;
+            trackingEnabled =
+                { ...WA.DEFAULT_SETTINGS, ...(changes[WA.KEYS.SETTINGS].newValue || {}) }.enabled !== false;
+        };
+        chrome.storage.onChanged.addListener(onSettingsChanged);
+    });
+
+    onDestroy(() => {
+        if (onSettingsChanged) chrome.storage.onChanged.removeListener(onSettingsChanged);
+    });
+
+    /** Through the worker, which is what stops the clock now rather than at the next event. */
+    async function setTracking(next) {
+        const { [WA.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(WA.KEYS.SETTINGS);
+        const settings = { ...WA.DEFAULT_SETTINGS, ...(stored || {}), enabled: next };
+        trackingEnabled = next;
+        await saveSettings(settings);
+    }
+
     // Two views of the group list and two full dashboards, all reached the same way
     // as the block above; only the icon and the destination change.
     const quickAccessItems = [
@@ -179,14 +215,44 @@
         {
             id: 'quick-web-activity-btn',
             titleKey: 'webActivityTitle',
-            labelKey: 'dashboardDashboard',
-            tooltipKey: 'webActivityDashboardTitle',
+            labelKey: 'webActivityPanelBtn',
+            tooltipKey: 'webActivityPanelTitle',
             icon: '#icon-activity',
             viewBox: '0 0 24 24',
-            onClick: () => openDashboard('webActivity'),
+            // The side panel, not a tab: the activity is read while browsing, beside
+            // the browsing. The panel's own resize button opens the full dashboard.
+            onClick: (e) =>
+                handleNavigation(
+                    e,
+                    '../web-activity/web-activity.html',
+                    'src/ui/pages/web-activity/web-activity.html',
+                    '../popup/popup.html',
+                ),
         },
     ];
 </script>
+
+<!--
+    Beside "Web activity", because it is the switch that decides whether there is any.
+    It is the popup's own `mini-switch`, the same one the rules and navigation rows two
+    lines up already use — a different-looking control for the same kind of setting,
+    in the same grid, would be the odd one out on this page whatever it looked like
+    elsewhere. It writes through the worker, so the clock stops now rather than at the
+    next tab switch, and it and the settings page follow the same stored key.
+-->
+{#snippet trackingToggle()}
+    <label class="switch mini-switch" id="web-activity-toggle-label" title={$tt('webActivityTrackingEnabled')}>
+        <input
+            type="checkbox"
+            id="web-activity-enabled-toggle"
+            tabindex="0"
+            checked={trackingEnabled}
+            aria-label={$t('webActivityTrackingEnabled')}
+            onchange={(e) => setTracking(e.currentTarget.checked)}
+        />
+        <span class="slider"></span>
+    </label>
+{/snippet}
 
 <svg style="display: none;" aria-hidden="true">
     <defs>
@@ -315,7 +381,7 @@
         </section>
 
         <section class="section settings-rules quick-access">
-            <ActionButtonGrid items={quickAccessItems} />
+            <ActionButtonGrid items={quickAccessItems} toggles={{ 'quick-web-activity-btn': trackingToggle }} />
         </section>
 
         <DonationSection />

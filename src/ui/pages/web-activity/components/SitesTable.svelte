@@ -3,38 +3,61 @@
      * [AI INSTRUCTION]
      * THE VISIT LOG — every site, what it cost, and what it is allowed.
      *
-     * The limit, the schedule and the category are edited here, in the row, because
-     * that is where the user decides they want them: the numbers that justify a limit
-     * are on the same line as the box that sets it. The columns themselves come from
-     * `siteColumns.js`; add one there rather than growing this file sideways.
+     * It is laid out to be read, not scrolled: `table-layout: fixed` with a weight per
+     * column (see `siteColumns.js`) so every column fits the width it is given, and a
+     * cap of `MAX_TABLE_ROWS` rows so the page ends. The footer counts every site, not
+     * just the ones drawn, and says so when the two differ.
      *
-     * Edits are debounced and sent as a whole limit record, so a site with no rule yet
-     * gets one created the moment a figure is typed into its row.
+     * The category is edited in the row, because it is one choice from a list. The
+     * limit and the schedule are not: each opens its own dialog, since neither fits in
+     * a cell and both are more than one field. The cell itself is the button — a
+     * value plus a pencil, so the whole width is a target rather than a 13px icon.
      */
     import '../../../../core/services/webActivitySchema.js';
     import { t, tt, currentLang } from '../../../stores/i18nStore.js';
-    import { fmtDateShort, fmtDur } from '../../../services/dashboard/format.js';
+    import { fmtDateShort, fmtDur, fmtHm } from '../../../services/dashboard/format.js';
     import SelectField from '../../../components/common/SelectField.svelte';
-    import { SITE_COLUMNS, sortRows } from './siteColumns.js';
+    import RuleControls from './RuleControls.svelte';
+    import { categoryOptions } from '../categories.js';
+    import { MAX_TABLE_ROWS, SITE_COLUMNS, columnWidths, sortRows } from './siteColumns.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
+
+    /** Which half of the rule a set of controls is acting on, for its tooltips. */
+    const LIMIT_KEYS = {
+        enable: 'webActivityEnableLimit',
+        disable: 'webActivityDisableLimit',
+        clear: 'webActivityRemoveLimit',
+    };
+    const SCHEDULE_KEYS = {
+        enable: 'webActivityEnableSchedule',
+        disable: 'webActivityDisableSchedule',
+        clear: 'webActivityRemoveSchedule',
+    };
 
     let {
         sites = [],
         limits = {},
         settings = {},
         verdicts = {},
+        customCategories = [],
         prefs,
         onSort,
         onSaveLimit,
         onOpenLimitEditor,
+        onOpenScheduleEditor,
         onIgnoreDomain,
     } = $props();
 
     /** The columns actually drawn, in the order they are declared. */
     const columns = $derived(SITE_COLUMNS.filter((column) => column.pinned || prefs.columns.includes(column.id)));
-    const rows = $derived(sortRows(sites, prefs.sortBy, prefs.sortDir));
+    const widths = $derived(columnWidths(columns));
+    const sorted = $derived(sortRows(sites, prefs.sortBy, prefs.sortDir));
+    const rows = $derived(sorted.slice(0, MAX_TABLE_ROWS));
+    const hiddenRows = $derived(sorted.length - rows.length);
 
+    // The totals are of every site in the period, not of the hundred on screen: a
+    // footer that only added up what fits would quietly contradict the summary above.
     const totals = $derived({
         seconds: sites.reduce((sum, site) => sum + site.seconds, 0),
         visits: sites.reduce((sum, site) => sum + site.visits, 0),
@@ -47,7 +70,14 @@
         `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent('https://' + domain)}&size=16`;
 
     const limitOf = (domain) => WA.normalizeLimit(limits[domain] || {});
-    const scheduleOf = (domain) => limitOf(domain).schedules?.[0] || null;
+    const scheduleOf = (domain) => limitOf(domain).schedules?.filter((s) => s.start && s.end) || [];
+
+    const categoryChoices = $derived(
+        categoryOptions({
+            custom: customCategories,
+            t: (key) => $t(key),
+        }),
+    );
 
     async function setCategory(domain, category) {
         await onSaveLimit(domain, { ...limitOf(domain), category: category || null });
@@ -59,22 +89,52 @@
     }
 </script>
 
+<!--
+    A limit or a schedule cell: the value and the three things that can be done to it.
+    Nothing set reads as a dash rather than "not configured" — the column is narrow by
+    design, and a sentence that ends in an ellipsis looks like a value that was cut
+    off rather than one that was never there. The words are in the tooltip.
+-->
+{#snippet ruleCell(label, isSet, enabled, editTitle, keys, onOpen, onToggle, onClear)}
+    <div class="wa-cell-with-action">
+        <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={editTitle}>
+            {isSet ? label : '—'}
+        </span>
+        <RuleControls
+            {isSet}
+            {enabled}
+            {editTitle}
+            enableKey={keys.enable}
+            disableKey={keys.disable}
+            clearKey={keys.clear}
+            onEdit={onOpen}
+            {onToggle}
+            {onClear}
+        />
+    </div>
+{/snippet}
+
 {#snippet cell(column, row)}
     {#if column.id === 'site'}
-        <span class="wa-site-cell" title={$tt('webActivityColSiteDesc')}>
+        <span class="wa-site-cell" title={row.domain}>
             <img class="si-favicon" src={faviconFor(row.domain)} alt="" loading="lazy" />
-            <span class="wa-site-name" title={row.domain}>{row.domain}</span>
+            <span class="wa-site-name">{row.domain}</span>
         </span>
     {:else if column.id === 'category'}
+        <!--
+            The value is the category the site is actually filed under, whether that
+            was detected or chosen. There is no "automatic" row: a picker whose
+            selected item says "Auto" is hiding the very thing the column is for, and
+            a site always belongs to exactly one category — the question is only
+            whether the extension worked it out or the user corrected it.
+        -->
         <SelectField
             compact
-            value={limitOf(row.domain).category || ''}
+            wide
+            value={row.category}
             title={$tt('webActivityColCategoryDesc')}
             ariaLabel={$t('webActivityColCategory')}
-            options={[
-                { value: '', label: $t('webActivityCategory_' + row.category) },
-                ...WA.CATEGORIES.map((id) => ({ value: id, label: $t('webActivityCategory_' + id) })),
-            ]}
+            options={categoryChoices}
             onchange={(next) => setCategory(row.domain, next)}
         />
     {:else if column.id === 'visits'}
@@ -97,105 +157,62 @@
         </span>
     {:else if column.id === 'limit'}
         {@const lim = limitOf(row.domain)}
-        {@const limitSec = lim.dailyLimitSeconds}
-        {@const isAlways = lim.blockAlways}
-        <div class="wa-cell-with-action" title={$tt('webActivityColLimitDesc')}>
-            <span class="wa-cell-val">
-                {#if isAlways}
-                    <span class="wa-badge wa-badge-blocked" title={$tt('webActivityBlockAlways')}
-                        >{$t('webActivityLimitAlways')}</span
-                    >
-                {:else if limitSec > 0}
-                    <span>{fmtDur(limitSec)}</span>
-                {:else}
-                    <span class="wa-muted">{$t('webActivityNotConfigured')}</span>
-                {/if}
-            </span>
-            <div class="wa-cell-actions">
-                <button
-                    class="wa-icon-btn wa-edit-btn"
-                    type="button"
-                    title={$tt('webActivityConfigureLimit')}
-                    aria-label={$t('webActivityConfigureLimit')}
-                    onclick={() => onOpenLimitEditor(row.domain)}
-                >
-                    <svg width="13" height="13" aria-hidden="true" focusable="false"><use href="#wa-edit"></use></svg>
-                </button>
-                {#if isAlways || limitSec > 0}
-                    <button
-                        class="wa-icon-btn wa-icon-btn-danger"
-                        type="button"
-                        title={$tt('webActivityRemoveLimit')}
-                        aria-label={$t('webActivityRemoveLimit')}
-                        onclick={() =>
-                            onSaveLimit(row.domain, {
-                                ...limitOf(row.domain),
-                                dailyLimitSeconds: 0,
-                                blockAlways: false,
-                            })}
-                    >
-                        <svg width="12" height="12" aria-hidden="true" focusable="false"
-                            ><use href="#wa-close"></use></svg
-                        >
-                    </button>
-                {:else}
-                    <span class="wa-btn-placeholder" aria-hidden="true"></span>
-                {/if}
-            </div>
-        </div>
+        {@render ruleCell(
+            fmtHm(lim.dailyLimitSeconds),
+            lim.dailyLimitSeconds > 0,
+            lim.limitEnabled,
+            $tt('webActivityConfigureLimit'),
+            LIMIT_KEYS,
+            () => onOpenLimitEditor(row.domain),
+            (next) => onSaveLimit(row.domain, { ...lim, limitEnabled: next }),
+            () => onSaveLimit(row.domain, { ...lim, dailyLimitSeconds: 0 }),
+        )}
+    {:else if column.id === 'weekly'}
+        {@const lim = limitOf(row.domain)}
+        {@render ruleCell(
+            fmtHm(lim.weeklyLimitSeconds),
+            lim.weeklyLimitSeconds > 0,
+            lim.limitEnabled,
+            $tt('webActivityConfigureLimit'),
+            LIMIT_KEYS,
+            () => onOpenLimitEditor(row.domain),
+            (next) => onSaveLimit(row.domain, { ...lim, limitEnabled: next }),
+            () => onSaveLimit(row.domain, { ...lim, weeklyLimitSeconds: 0 }),
+        )}
     {:else if column.id === 'schedule'}
-        {@const sched = scheduleOf(row.domain)}
-        <div class="wa-cell-with-action" title={$tt('webActivityColScheduleDesc')}>
-            <span class="wa-cell-val">
-                {#if sched?.start && sched?.end}
-                    <span>{sched.start} → {sched.end}</span>
-                {:else}
-                    <span class="wa-muted">{$t('webActivityNotConfigured')}</span>
-                {/if}
-            </span>
-            <div class="wa-cell-actions">
-                <button
-                    class="wa-icon-btn wa-edit-btn"
-                    type="button"
-                    title={$tt('webActivityConfigureLimit')}
-                    aria-label={$t('webActivityConfigureLimit')}
-                    onclick={() => onOpenLimitEditor(row.domain)}
-                >
-                    <svg width="13" height="13" aria-hidden="true" focusable="false"><use href="#wa-edit"></use></svg>
-                </button>
-                {#if sched?.start && sched?.end}
-                    <button
-                        class="wa-icon-btn wa-icon-btn-danger"
-                        type="button"
-                        title={$tt('webActivityRemoveSchedule')}
-                        aria-label={$t('webActivityRemoveSchedule')}
-                        onclick={() => onSaveLimit(row.domain, { ...limitOf(row.domain), schedules: [] })}
-                    >
-                        <svg width="12" height="12" aria-hidden="true" focusable="false"
-                            ><use href="#wa-close"></use></svg
-                        >
-                    </button>
-                {:else}
-                    <span class="wa-btn-placeholder" aria-hidden="true"></span>
-                {/if}
-            </div>
-        </div>
+        {@const lim = limitOf(row.domain)}
+        {@const windows = scheduleOf(row.domain)}
+        {@render ruleCell(
+            lim.blockAlways
+                ? $t('webActivityLimitAlways')
+                : windows.length === 1
+                  ? `${windows[0].start}-${windows[0].end}`
+                  : $t('webActivityWindowCount', [String(windows.length)]),
+            lim.blockAlways || windows.length > 0,
+            lim.scheduleEnabled,
+            $tt('webActivityConfigureSchedule'),
+            SCHEDULE_KEYS,
+            () => onOpenScheduleEditor(row.domain),
+            (next) => onSaveLimit(row.domain, { ...lim, scheduleEnabled: next }),
+            () => onSaveLimit(row.domain, { ...lim, schedules: [], blockAlways: false }),
+        )}
     {:else if column.id === 'state'}
         {@const verdict = verdicts[row.domain]}
         {#if verdict?.blocked}
             <span class="wa-badge wa-badge-blocked" title={$tt('webActivityStateBlocked_' + verdict.reason)}>
                 {$t('webActivityStateBlocked_' + verdict.reason)}
             </span>
-        {:else if verdict?.limitSeconds > 0}
+        {:else if verdict?.limitSeconds > 0 || verdict?.weekLimitSeconds > 0}
+            {@const percent = Math.max(verdict.percent || 0, verdict.weekPercent || 0)}
             <span
                 class="eff-pct"
                 title={$tt('webActivityStateQuotaTitle', [
-                    String(verdict.percent),
-                    fmtDur(verdict.usedSeconds),
-                    fmtDur(verdict.limitSeconds),
+                    String(percent),
+                    fmtDur(verdict.limitSeconds > 0 ? verdict.usedSeconds : verdict.weekUsedSeconds),
+                    fmtDur(verdict.limitSeconds > 0 ? verdict.limitSeconds : verdict.weekLimitSeconds),
                 ])}
             >
-                {verdict.percent}%
+                {percent}%
             </span>
         {:else if verdict?.configured}
             <span class="wa-badge" title={$tt('webActivityStateWatchedTitle')}>
@@ -206,7 +223,7 @@
         {/if}
     {:else if column.id === 'record' || column.id === 'actions'}
         {@const isIgnored = (settings?.ignoredDomains || []).includes(row.domain)}
-        <span class="wa-row-actions" title={$tt('webActivityColRecordDesc')}>
+        <span class="wa-row-actions">
             <button
                 class="wa-icon-btn wa-icon-btn-danger"
                 class:is-ignored={isIgnored}
@@ -221,12 +238,18 @@
     {/if}
 {/snippet}
 
-<div class="table-scroll">
+<div class="wa-table-frame">
     <table class="data-table wa-log-table">
+        <colgroup>
+            {#each columns as column, index (column.id)}
+                <col data-col={column.id} style:width={widths[index]} />
+            {/each}
+        </colgroup>
         <thead>
             <tr>
                 {#each columns as column (column.id)}
                     <th
+                        data-col={column.id}
                         class:is-sortable={!!column.sortValue}
                         style:text-align={column.align || 'center'}
                         title={$tt(column.descKey)}
@@ -243,13 +266,13 @@
                                 title={$tt(column.descKey)}
                                 onclick={() => headerSort(column)}
                             >
-                                <span>{$t(column.labelKey)}</span>
+                                <span class="wa-sort-label">{$t(column.labelKey)}</span>
                                 <span class="wa-sort-mark" class:active={prefs.sortBy === column.id}>
                                     {prefs.sortBy === column.id ? (prefs.sortDir === 'asc' ? '▲' : '▼') : '↕'}
                                 </span>
                             </button>
                         {:else}
-                            {$t(column.labelKey)}
+                            <span class="wa-sort-label">{$t(column.labelKey)}</span>
                         {/if}
                     </th>
                 {/each}
@@ -260,6 +283,7 @@
                 <tr class:is-blocked={verdicts[row.domain]?.blocked}>
                     {#each columns as column (column.id)}
                         <td
+                            data-col={column.id}
                             class:td-mono={column.align !== 'left'}
                             class:td-name={column.id === 'site'}
                             style:text-align={column.align || 'center'}
@@ -274,10 +298,10 @@
             <tfoot>
                 <tr>
                     {#each columns as column (column.id)}
-                        <td class="td-mono" style:text-align={column.align || 'center'}>
+                        <td class="td-mono" data-col={column.id} style:text-align={column.align || 'center'}>
                             {#if column.id === 'site'}
-                                <span title={$tt('webActivityTotalSitesHint', [String(rows.length)])}>
-                                    {$t('webActivityTotalRow', [String(rows.length)])}
+                                <span title={$tt('webActivityTotalSitesHint', [String(sites.length)])}>
+                                    {$t('webActivityTotalRow', [String(sites.length)])}
                                 </span>
                             {:else if column.id === 'visits'}
                                 <span title={$tt('webActivityTotalVisitsHint', [String(totals.visits)])}>
@@ -308,6 +332,12 @@
             </tfoot>
         {/if}
     </table>
+
+    {#if hiddenRows > 0}
+        <div class="wa-table-capped" title={$tt('webActivityTableCappedHint')}>
+            {$t('webActivityTableCapped', [String(rows.length), String(sorted.length)])}
+        </div>
+    {/if}
     {#if !rows.length}
         <div class="no-data-msg">{$t('webActivityNoSites')}</div>
     {/if}

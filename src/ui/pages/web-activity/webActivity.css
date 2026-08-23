@@ -1,8 +1,9 @@
 /* ===============================================================
    Web activity — only what the shared dashboard stylesheet does not
    already cover. Layout, cards, tables, heatmap, timeline and the
-   modal chrome all come from src/styles/dashboard.css; adding a rule
-   here that belongs to every dashboard belongs there instead.
+   modal chrome all come from src/styles/dashboard.css, and the
+   selects from src/styles/select.css; adding a rule here that
+   belongs to every dashboard belongs there instead.
    =============================================================== */
 
 /* --- LOADING ---------------------------------------------------- */
@@ -60,52 +61,96 @@
     height: 14px;
     border-radius: 3px;
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .folder-count {
     cursor: pointer;
 }
 
+/* The settings row sits apart from the list of sites: it does not filter the
+   dashboard, it replaces it. */
+.sidebar-footer {
+    flex-shrink: 0;
+    padding: 6px 8px 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.wa-settings-item .si-name {
+    font-weight: 500;
+}
+
 /* --- VISIT LOG --------------------------------------------------
-   The first thing on the page: every site, its numbers, and the boxes
-   that set its limit.
+   The first thing on the page: every site and its numbers.
 
    No card around it. The rest of the dashboard is a set of small
    figures, each of which needs a frame to be read as one thing; the
    log is the page's subject and a border around something that fills
-   the width only adds a line to look past. A table cannot reflow, so
-   it still scrolls inside its own bounds rather than widening the
-   page. */
+   the width only adds a line to look past.
+
+   It never scrolls sideways. `table-layout: fixed` plus a width per
+   column (see `siteColumns.js`) is what makes that true: left to
+   itself a table sizes every column to its widest cell and pushes the
+   whole thing off the right of the window, and then half the figures
+   are behind a scrollbar nobody notices. Length is a different
+   matter — the rows scroll under a header that stays put, and the log
+   draws at most `MAX_TABLE_ROWS` of them. */
 .wa-log {
     display: flex;
     flex-direction: column;
     animation: fadeUp 0.4s ease both;
 }
 
-.table-scroll {
-    overflow-x: auto;
+.wa-table-frame {
+    overflow-x: hidden;
     overflow-y: auto;
+    /* The gutter is reserved whether or not the rows overflow, so the table is laid
+       out against the width it will actually have and the last column is never
+       clipped by a scrollbar that appears after the fact. */
+    scrollbar-gutter: stable;
     max-height: 62vh;
     background-color: var(--bg-panel-color);
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-color);
 }
 
-.table-scroll .data-table {
+.wa-table-frame .data-table {
+    table-layout: fixed;
+    width: 100%;
     background-color: var(--bg-panel-color);
 }
 
-.table-scroll .data-table th {
+.wa-table-frame .data-table th {
     position: sticky;
     top: 0;
     z-index: 2;
     background-color: var(--bg-panel-color);
+    padding: 8px 6px;
+    /* The shared table sets 0.1em of tracking, which is a tenth of the width back on
+       every heading. In a column sized to the figures below it that is the difference
+       between "Visitas" and "Visit…". */
+    letter-spacing: 0.04em;
+    font-size: 0.72rem;
+    /* Headings wrap rather than ellipsise. The shared table sets `nowrap`, and a
+       fixed layout will not widen a column to fit a heading, so the alternative to
+       a second line is a word cut short — which is the one thing on this page the
+       reader cannot recover by hovering a row. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+    vertical-align: bottom;
 }
 
-/* The row is the unit of work here, so it gets enough height for the
-   editors to sit comfortably instead of being crushed. */
 .wa-log-table td {
-    padding: 8px 10px;
+    padding: 7px 8px;
     vertical-align: middle;
     background-color: var(--bg-panel-color);
+    /* Every cell is a single line that ends in an ellipsis rather than a column
+       that grows: the width is fixed, so something has to give, and a truncated
+       value with the whole of it in the tooltip is the readable half of the trade. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .wa-log-table tr:hover td {
@@ -124,10 +169,23 @@
     font-weight: 600;
 }
 
+.wa-table-capped {
+    padding: 9px 12px;
+    border-top: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-color) 55%, var(--bg-panel-color));
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: center;
+}
+
 .wa-sort-btn {
     display: inline-flex;
-    align-items: center;
-    gap: 5px;
+    align-items: flex-end;
+    justify-content: inherit;
+    text-align: inherit;
+    gap: 4px;
+    max-width: 100%;
     padding: 0;
     border: none;
     background: none;
@@ -136,7 +194,11 @@
     text-transform: inherit;
     letter-spacing: inherit;
     cursor: pointer;
-    white-space: nowrap;
+}
+
+.wa-sort-label {
+    display: inline-block;
+    max-width: 100%;
 }
 
 .wa-sort-btn:hover {
@@ -153,6 +215,7 @@
 .wa-sort-mark {
     font-size: 9px;
     color: var(--text-dim);
+    flex-shrink: 0;
 }
 
 .wa-sort-mark.active {
@@ -160,7 +223,7 @@
 }
 
 .wa-site-cell {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     gap: 7px;
     min-width: 0;
@@ -170,41 +233,47 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 190px;
 }
 
+/* --- RULE CELLS -------------------------------------------------
+   The limit and the schedule read as a value with its two controls
+   beside it: a pencil that opens the dialog and a cross that clears
+   the value outright. The cross is worth its own place in the row —
+   taking a limit off is a one-click thing people do often, and making
+   them open a dialog to empty a field is a dialog they did not need.
+
+   The cross keeps its footprint when there is nothing to clear, so
+   the pencils line up down the column. */
+/* Centred, like the figures either side of it: the value and its two controls are
+   one unit in the middle of the column rather than a value pinned left and a pair of
+   buttons pinned right with a gap of nothing between them. */
 .wa-cell-with-action {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
-    min-width: 155px;
+    min-width: 0;
     box-sizing: border-box;
 }
 
-.wa-cell-with-action .wa-cell-val {
-    flex: 1;
-    text-align: left;
+.wa-cell-val {
+    flex: 0 1 auto;
+    text-align: center;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* The same size as every other monospaced figure in the row. A limit is a figure
+       like any other, and one column set even half a point apart from its neighbours
+       reads as a mistake. */
+    font-family: var(--mono);
+    font-size: 0.92rem;
 }
 
-.wa-cell-actions {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-    margin-left: auto;
-}
-
-.wa-btn-placeholder {
-    display: inline-block;
-    width: 26px;
-    height: 26px;
-    visibility: hidden;
-    flex-shrink: 0;
+.wa-edit-btn {
+    background: transparent;
+    border-color: var(--border-color);
 }
 
 .wa-row-actions {
@@ -227,52 +296,25 @@
     cursor: pointer;
     flex-shrink: 0;
     transition:
-        background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-        transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+        border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.wa-edit-btn {
-    background: color-mix(in srgb, var(--interactive-color) 10%, transparent);
-    border-color: color-mix(in srgb, var(--border-color) 85%, transparent);
-    color: var(--text-color);
-    margin-left: auto;
-}
-
-.wa-edit-btn:hover {
-    background: var(--interactive-color);
-    border-color: var(--interactive-color);
-    color: var(--text-color);
-    transform: scale(1.08);
-}
-
-.wa-edit-btn:active {
-    transform: scale(0.94);
-}
-
-/* `--text-color` on an accent fill, never `--text-on-color`: in the light and
-   viridian palettes that variable is the accent colour itself, so the icon would
-   vanish into its own background. */
 .wa-icon-btn:hover {
-    background: var(--interactive-color);
+    background: color-mix(in srgb, var(--interactive-color) 25%, transparent);
     border-color: var(--interactive-color);
-    color: var(--text-color);
+    color: var(--interactive-color);
 }
 
 .wa-icon-btn:active {
-    transform: scale(0.94);
+    opacity: 0.85;
 }
 
 .wa-icon-btn-danger:hover {
-    background: var(--error-color);
+    background: color-mix(in srgb, var(--error-color) 20%, transparent);
     border-color: var(--error-color);
-    color: #fff;
-    transform: scale(1.08);
-}
-
-.wa-icon-btn-danger:active {
-    transform: scale(0.94);
+    color: var(--error-color);
 }
 
 .wa-icon-btn.is-ignored {
@@ -286,312 +328,1757 @@
     outline-offset: 1px;
 }
 
-/* --- BADGES ----------------------------------------------------- */
+.wa-window-remove,
+.wa-row-actions .wa-icon-btn-danger,
+.wa-ignored-cell .wa-icon-btn {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+}
+
+.wa-window-remove:hover,
+.wa-row-actions .wa-icon-btn-danger:hover,
+.wa-ignored-cell .wa-icon-btn:hover {
+    background: transparent;
+    border-color: transparent;
+    color: var(--error-color);
+}
+
+/* Button that throws away all data */
+.btn.wa-btn-danger {
+    color: var(--text-color);
+}
+
+.btn.wa-btn-danger:hover {
+    color: var(--error-color);
+    border-color: var(--error-color);
+}
+
+/* --- STATE TEXT (no pill/box) ----------------------------------- */
 .wa-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    max-width: 100%;
+    font-size: 11px;
+    line-height: 1;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-soft);
+    vertical-align: middle;
 }
 
-.wa-badge-blocked,
-.wa-chip-block {
-    background: color-mix(in srgb, var(--error-color) 25%, transparent);
-    border-color: var(--error-color);
+.wa-badge-blocked {
+    color: var(--error-color);
+    font-weight: 500;
+}
+
+.wa-badge-soft {
+    color: var(--interactive-color);
+    font-weight: 500;
+}
+
+.eff-pct {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+td[data-col='state'] {
+    vertical-align: middle;
 }
 
 .wa-muted {
     color: var(--text-dim);
 }
 
+/* The path of a recent visit, which can be any length at all. */
 .wa-truncate {
+    display: inline-block;
     max-width: 240px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    vertical-align: bottom;
 }
 
-/* --- LIMITS ----------------------------------------------------- */
-.wa-limits-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
+.wa-empty-line {
+    margin: 0;
+    padding: 12px 0;
+    color: var(--text-dim);
+    font-size: 12px;
 }
 
-.wa-limit-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-}
-
-.wa-limit-card {
+/* --- BLOCKS SECTION ---------------------------------------------
+   What is shut right now. A list of lines rather than a grid of
+   cards: there are rarely more than a handful, each needs a sentence
+   of explanation, and a card would put that sentence in a box of its
+   own for no reason. */
+.wa-blocks {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 14px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--bg-color) 60%, transparent);
+    gap: 12px;
 }
 
-.wa-limit-card.is-blocked {
-    border-color: var(--error-color);
-}
-
-.wa-limit-head {
+.wa-blocks-empty {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 14px;
+    padding: 10px 4px;
 }
 
-.wa-limit-domain {
-    font-family: var(--mono);
+.wa-blocks-empty-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--interactive-color) 12%, transparent);
+    color: var(--interactive-color);
+    flex-shrink: 0;
+}
+
+.wa-blocks-empty-title {
+    font-weight: 600;
+}
+
+.wa-blocks-empty-sub {
+    color: var(--text-dim);
     font-size: 12px;
+}
+
+.wa-block-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.wa-block-row {
+    display: grid;
+    grid-template-columns: 3px 16px 1fr auto;
+    align-items: start;
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.wa-block-row:first-child {
+    border-top: none;
+}
+
+.wa-block-mark {
+    align-self: stretch;
+    border-radius: 3px;
+    background: var(--error-color);
+}
+
+.wa-block-favicon {
+    margin-top: 3px;
+}
+
+.wa-block-main {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.wa-block-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.wa-block-name {
+    font-family: var(--mono);
+    font-size: 13px;
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.wa-limit-meta {
+.wa-block-why {
+    color: var(--text-soft);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.wa-block-meter {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 10px;
     font-family: var(--mono);
     font-size: 11px;
 }
 
-.wa-limit-tags {
+.wa-block-meter-label {
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 9.5px;
+}
+
+.wa-block-meter-val {
+    color: var(--text-soft);
+    white-space: nowrap;
+}
+
+.wa-block-lifts {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+}
+
+.wa-block-actions-col {
+    align-self: center;
+}
+
+/* --- RULE DIALOGS -----------------------------------------------
+   Two views of one record, wearing the extension's ordinary modal
+   chrome. Everything below is what the dashboard has to add for
+   itself: the pages that own these dialogs elsewhere carry the form
+   classes in their own stylesheet, and this page does not load it. */
+.wa-modal {
+    width: 460px;
+}
+
+/* The accent title of the group list's dialogs, not the body colour the shared
+   dashboard chrome falls back to. */
+.wa-modal .modal-header h2 {
+    color: var(--text-on-color);
+}
+
+.wa-modal-body {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 18px 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-color);
+}
+
+/* The schedule dialog grows a window at a time and is the only one that can run off
+   the screen, so it is the only one with a ceiling: past three windows it scrolls
+   instead of pushing its own Apply button out of reach. */
+.wa-schedule-modal .wa-modal-body {
+    max-height: 46vh;
+}
+
+/* The site the dialog is about, under a label like any other field. */
+.wa-site-group {
     gap: 4px;
 }
 
-/* --- FORMS ------------------------------------------------------ */
-.wa-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 16px;
-}
-
-.wa-field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    border: none;
-    padding: 0;
+.wa-modal-site {
     margin: 0;
-    min-width: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-on-color);
+    word-break: break-all;
 }
 
-.wa-field-wide {
-    grid-column: 1 / -1;
-}
-
-.wa-field-row {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-.wa-field-row > span {
+.wa-modal .form-group {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 7px;
+    margin-bottom: 14px;
 }
 
-.wa-field-label {
+.wa-modal .form-group > label,
+.wa-modal .field-label {
     font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-soft);
-    padding: 0;
 }
 
-.wa-hint {
-    font-size: 11px;
-    color: var(--text-dim);
-    line-height: 1.4;
-}
-
-.wa-inline {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.wa-field input[type='text'],
-.wa-field input[type='number'],
-.wa-field input[type='time'],
-.wa-field select,
-.wa-field textarea {
-    background: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 7px 10px;
-    font-family: var(--mono);
-    font-size: 12px;
+/* The plain text box of the settings forms — the category name and the site to stop
+   recording. It went out with a rewrite of the dialogs, which is how both of those
+   ended up as unstyled boxes. Same metrics as the number field and the time trigger:
+   they are one control in three flavours. */
+.wa-text-input {
     width: 100%;
     min-width: 0;
-}
-
-.wa-inline input[type='number'] {
-    width: 72px;
-}
-
-.wa-inline input[type='time'] {
-    width: auto;
-}
-
-.wa-field input:focus-visible,
-.wa-field select:focus-visible,
-.wa-field textarea:focus-visible {
-    outline: none;
-    border-color: var(--interactive-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color) 40%, transparent);
-}
-
-.wa-field input[readonly] {
-    opacity: 0.7;
-}
-
-.wa-field textarea {
-    resize: vertical;
-    line-height: 1.5;
-}
-
-.wa-schedule {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 10px;
+    height: 32px;
+    padding: 4px 10px;
+    box-sizing: border-box;
     border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: 7px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    caret-color: var(--text-on-color);
+    font-family: var(--sans);
+    font-size: 12px;
 }
 
-.wa-days {
+.wa-text-input::placeholder {
+    color: var(--text-dim);
+}
+
+.wa-text-input:hover {
+    border-color: color-mix(in srgb, var(--text-on-color) 60%, var(--border-color));
+}
+
+.wa-text-input:focus {
+    outline: none;
+    border-color: var(--text-on-color);
+}
+
+.wa-modal input[type='text'] {
+    width: 100%;
+    height: 32px;
+    padding: 4px 10px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    caret-color: var(--text-on-color);
+    font-family: var(--mono);
+    font-size: 12px;
+}
+
+.wa-modal input[type='text']:focus {
+    outline: none;
+    border-color: var(--text-on-color);
+}
+
+/* --- TABS -------------------------------------------------------
+   The daily allowance and the weekly one are two answers to two
+   questions, not two halves of one form, so only one is on screen at
+   a time. The dot marks the tab that has something set, which is the
+   thing a tab strip otherwise hides. */
+.wa-tabs {
     display: flex;
-    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.wa-tab {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -3px;
+    background: none;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition:
+        color 0.15s,
+        border-color 0.15s;
+}
+
+.wa-tab:hover {
+    color: var(--text-color);
+}
+
+.wa-tab.selected {
+    color: var(--text-on-color);
+    border-bottom-color: var(--action-color);
+    font-weight: 600;
+}
+
+.wa-tab:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: -2px;
+}
+
+/* One height for both tabs. The daily one carries a row of weekdays the weekly one
+   has no use for, and without a floor the dialog jumped a hundred pixels every time
+   the strip was touched — including under the pointer that touched it. */
+.wa-tab-panel {
+    /* The daily tab measures 164px — the weekday row plus the allowance row — and the
+       weekly one 70px. The floor is the taller of the two, so the dialog is the size
+       it will be whichever tab is showing. */
+    min-height: 164px;
+}
+
+/* --- WEEKDAYS ---------------------------------------------------
+   The same row of seven the theme and Gemini schedule dialogs use,
+   down to the class names, so a week looks like a week everywhere in
+   the extension. */
+.days-selector {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     gap: 4px;
 }
 
-.wa-limit-modal .wa-form {
-    grid-template-columns: 1fr;
+.days-selector button {
+    padding: 8px 4px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-on-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition:
+        border-color 0.2s,
+        background-color 0.2s,
+        color 0.2s;
 }
 
-/* --- RESPONSIVE -------------------------------------------------
-   The shared stylesheet already collapses the sidebar and the chart
-   grids; these are the pieces this page adds. */
-@media (max-width: 860px) {
-    .wa-limit-grid {
-        grid-template-columns: 1fr;
+.days-selector button:hover {
+    border-color: var(--interactive-color);
+}
+
+.days-selector button.selected {
+    background-color: var(--action-color);
+    border-color: var(--action-color);
+    color: var(--text-color);
+}
+
+.days-selector button:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 1px;
+}
+
+/* --- THE ALLOWANCE ROW -------------------------------------------
+   How long, and how early to warn: one decision read left to right.
+   The time is the subject of the dialog and takes seven tenths of the
+   row; the percentage needs only three digits. */
+/* `.wa-modal .form-group` sets the column direction with two classes' worth of
+   weight, so the row that overrides it has to carry the same. */
+.wa-modal .form-group.wa-allowance-row {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+.wa-allowance-time,
+.wa-allowance-notify {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.wa-allowance-time {
+    flex: 0 0 70%;
+}
+
+.wa-allowance-notify {
+    flex: 1 1 auto;
+}
+
+/* The time trigger fills the column it is given rather than sizing to its content,
+   so the 70/30 split is the one on screen. The number box does the same through its
+   own `wide` prop, which is the only way to outrank a scoped rule of equal weight. */
+.wa-allowance-row .custom-input-trigger {
+    width: 100%;
+}
+
+/* Reserved, not conditional. The line is always in the flow and only sometimes has
+   words in it, so saying something never moves what is underneath. */
+.wa-field-warning {
+    margin: 0;
+    min-height: 1.45em;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--error-color);
+}
+
+.wa-unit {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+/* --- A WINDOW ----------------------------------------------------
+   Its hours and the days it runs on, together, because they are one
+   answer. Adding a window gives you both again. */
+.wa-window {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 11px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--bg-color) 55%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 50%, transparent);
+}
+
+.wa-window + .wa-window {
+    margin-top: 8px;
+}
+
+.wa-window-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+/* The two hours share the row with the buttons and take what is left of it. */
+.wa-window-row .custom-input-trigger {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.wa-window-restore {
+    align-self: flex-start;
+}
+
+.wa-window-arrow {
+    color: var(--text-dim);
+}
+
+/* Both controls sit at the far end of the row, together. */
+.wa-window-remove,
+.wa-window-add {
+    flex-shrink: 0;
+}
+
+.wa-window-row .wa-window-remove {
+    margin-left: auto;
+}
+
+.wa-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wa-modal-actions .modal-btn-save {
+    width: 100%;
+}
+
+.wa-modal-warning {
+    margin: 0;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--error-color);
+}
+
+/* --- SETTINGS PAGE ----------------------------------------------
+   Deliberately not a grid of cards. Settings are already a list of
+   small decisions; a frame around each one turns a page you can scan
+   into a wall of boxes. What separates them is space and a hairline,
+   and what carries the design is the rhythm of the rows. */
+.wa-settings {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+    gap: 18px;
+    animation: fadeUp 0.35s ease both;
+}
+
+.wa-set-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 8px;
+    margin-left: -20px;
+}
+
+.wa-set-title {
+    margin: 0;
+    font-size: 1.65rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--text-color);
+}
+
+.wa-set-subtitle {
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.wa-set-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 4px -20px;
+    font-family: var(--mono);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+}
+
+.wa-set-head:first-of-type {
+    margin-top: 6px;
+}
+
+.wa-set-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--interactive-color) 45%, transparent), transparent 90%);
+}
+
+.wa-set-section {
+    background-color: var(--bg-panel-color);
+    border: none;
+    border-radius: 8px;
+    padding: 22px 24px;
+    margin-bottom: 6px;
+}
+
+.wa-set-block {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 0;
+}
+
+/* The "add" actions of the settings page: a word and a plus, not a boxed button.
+   They sit beside the thing they add to and are read as part of it; a bordered pill
+   next to a bordered input is two frames arguing about which one is the control. */
+.wa-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px;
+    border: none;
+    background: none;
+    color: var(--text-on-color);
+    font-family: var(--sans);
+    font-size: 0.92rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.13s;
+}
+
+.wa-add-btn:hover:not(:disabled) {
+    color: var(--interactive-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.wa-add-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.wa-add-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.wa-set-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.wa-set-note {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62ch;
+}
+
+.wa-set-figure {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-soft);
+}
+
+.wa-set-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 6px;
+}
+
+.wa-set-subhead {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.wa-set-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Each setting is a line: what it is on the left, the control on the right. */
+.wa-set-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.wa-set-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 14px 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+}
+
+.wa-set-row:first-child {
+    border-top: none;
+}
+
+.wa-set-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.wa-set-row-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.wa-set-row-note {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-dim);
+    max-width: 58ch;
+}
+
+/* Two tracks: the control, then its unit. Every row uses them, so the boxes line up
+   down the column and so do the units beside them — which sizing each box to its own
+   digit count could never do. A switch simply sits in the first track. */
+.wa-set-row-control {
+    display: grid;
+    /* 96px because that is the state button's own minimum width, which wins over the
+       `width: 100%` below. A narrower track let the button overflow it and knocked its
+       centre four pixels off the number boxes above. */
+    grid-template-columns: 96px 40px;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    justify-items: start;
+}
+
+.wa-set-row-control .wa-unit {
+    justify-self: start;
+}
+
+/* Filling the same track the number boxes fill, so a column of controls reads down
+   one axis whether the row holds a state button or a figure. Centring it was not
+   enough: the button is wider than the track its own text asks for, and a centred
+   overflow put it two pixels off the boxes above it. */
+.wa-set-row-control > .toggle-button {
+    width: 100%;
+    justify-self: stretch;
+}
+
+/* --- SETTINGS: RULES --------------------------------------------
+   The same table as the log, so the shared rules do the work. Only
+   the frame differs: this list is short and sits inside a settings
+   panel, so it neither caps its height nor paints its own surface. */
+.wa-rules-frame {
+    max-height: none;
+    background-color: transparent;
+}
+
+.wa-rules-frame .data-table,
+.wa-rules-frame .wa-log-table td,
+.wa-rules-frame .data-table th {
+    background-color: transparent;
+}
+
+.wa-rules-frame .wa-log-table tr:hover td {
+    background-color: color-mix(in srgb, var(--interactive-color) 8%, transparent);
+}
+
+.wa-rules-frame .wa-log-table tr.is-paused td {
+    opacity: 0.62;
+}
+
+/* --- SETTINGS: CATEGORIES ---------------------------------------- */
+.wa-cat-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.wa-cat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wa-cat-count {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--interactive-color) 22%, transparent);
+}
+
+.wa-cat-list {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.wa-cat-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+}
+
+.wa-cat-row:first-child {
+    border-top: none;
+}
+
+.wa-cat-name {
+    justify-self: start;
+    max-width: 100%;
+    padding: 3px 8px;
+    margin-left: -8px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: text;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wa-cat-name:hover {
+    border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+.wa-cat-input {
+    max-width: 260px;
+    font-family: var(--sans);
+}
+
+.wa-cat-usage {
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.wa-inline-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+}
+
+.wa-inline-form .wa-text-input {
+    width: auto;
+    flex: 1 1 220px;
+    max-width: 320px;
+}
+
+/* --- SETTINGS: IGNORED SITES -------------------------------------
+   Three columns rather than a wrapping row of tags: the entries are
+   all hostnames of similar length, and a grid of them can be read
+   down a column, which a ragged row of pills cannot. */
+.wa-ignored-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.wa-ignored-table td {
+    width: 33.333%;
+    padding: 5px 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+    vertical-align: middle;
+}
+
+.wa-ignored-table tr:first-child td {
+    border-top: none;
+}
+
+.wa-ignored-table td + td {
+    padding-left: 14px;
+}
+
+.wa-ignored-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.wa-ignored-name {
+    flex: 1;
+    min-width: 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wa-text-input.input-error {
+    border-color: var(--error-color);
+}
+
+/* --- THE LOG AT NARROW WIDTHS -----------------------------------
+   There is a width below which ten columns cannot all be read, and
+   the table has to give something up. It gives up the derived
+   figures, in the order they can most easily be worked out from what
+   is left: the per-visit average, then the share, then the visit
+   count. What it never gives up is the time, the rule cells and the
+   state, which are the reasons the table exists.
+
+   Keyed on `data-col`, not on `:nth-child`: which column is sixth
+   depends on what the user has turned on, so a positional rule hides
+   whatever happens to be standing there. `<col>` has to be hidden
+   along with the cells or the remaining widths no longer line up. */
+/* Eleven columns need a window this wide; below it the per-visit average — which is
+   the time divided by the visits, both of which are still on the row — is the first
+   to go. */
+@media (max-width: 1320px) {
+    .wa-log-table col[data-col='perVisit'],
+    .wa-log-table th[data-col='perVisit'],
+    .wa-log-table td[data-col='perVisit'] {
+        display: none;
+    }
+}
+
+@media (max-width: 1080px) {
+    .wa-log-table col[data-col='share'],
+    .wa-log-table th[data-col='share'],
+    .wa-log-table td[data-col='share'] {
+        display: none;
     }
 
-    .wa-truncate {
-        max-width: 140px;
+    .wa-log-table td,
+    .wa-table-frame .data-table th {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
+
+/* Narrower still and the category picker goes too. It is an editor rather than a
+   figure — the same choice is one row away on the settings page — and it is the
+   widest thing left standing between the site and the time it cost. */
+@media (max-width: 830px) {
+    .wa-log-table col[data-col='category'],
+    .wa-log-table th[data-col='category'],
+    .wa-log-table td[data-col='category'] {
+        display: none;
+    }
+}
+
+@media (max-width: 920px) {
+    .wa-log-table col[data-col='visits'],
+    .wa-log-table th[data-col='visits'],
+    .wa-log-table td[data-col='visits'],
+    .wa-log-table col[data-col='state'],
+    .wa-log-table th[data-col='state'],
+    .wa-log-table td[data-col='state'] {
+        display: none;
+    }
+}
+
+/* The rules table gives up its two derived columns before the log does: it is
+   inside a settings panel, so it has less room to start with. */
+@media (max-width: 860px) {
+    .wa-rules-frame col[data-col='weekly'],
+    .wa-rules-frame th[data-col='weekly'],
+    .wa-rules-frame td[data-col='weekly'],
+    .wa-rules-frame col[data-col='state'],
+    .wa-rules-frame th[data-col='state'],
+    .wa-rules-frame td[data-col='state'] {
+        display: none;
+    }
+}
+
+/* At phone widths the last thing to give is the type size. Five columns of
+   figures in a 470px window fit at 0.78rem and do not at 0.9rem, and a smaller
+   figure that can be read beats a whole one that is cut in half. */
+@media (max-width: 780px) {
+    .wa-log-table td,
+    .wa-log-table .td-mono {
+        font-size: 0.78rem;
+    }
+
+    .wa-cell-val {
+        font-size: 0.78rem;
     }
 }
 
 @media (max-width: 640px) {
-    .wa-form {
-        grid-template-columns: 1fr;
+    .wa-table-frame {
+        max-height: none;
     }
 
-    .table-scroll {
-        max-height: none;
+    .wa-set-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .wa-set-hero,
+    .wa-set-head {
+        margin-left: 0;
     }
 }
 
+/* --- THE SIDE PANEL ---------------------------------------------
+   A column a few hundred pixels wide, so: a toolbar, then one box per
+   site. The box is the group list's own — panel surface, one border,
+   a header with a rule under it — because a list in a side panel
+   already looks like that everywhere else in the extension. */
+/* The group list's own shell: a full-height flex column whose head does not shrink
+   and whose list takes the rest and scrolls. */
+.wa-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--bg-color);
+}
+
+/* --- THE PANEL'S HEADER -----------------------------------------
+   `header-main-menu`, the bar every side-panel page of this extension
+   wears. The rules page's rules are written out with the values its
+   clamps take below 600px, which is the branch a side panel is always
+   in. */
+.wa-panel .header-main-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 8px;
+    padding: 6px 12px 6px 16px;
+    width: 100%;
+    box-sizing: border-box;
+    background-color: var(--header-color);
+    color: var(--text-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.wa-panel .header-main-title {
+    flex-grow: 1;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wa-panel .header-main-menu button {
+    display: flex;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 6px;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wa-panel .header-main-menu button:hover,
+.wa-panel .header-main-menu button:focus-visible {
+    color: var(--text-on-color);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--interactive-color);
+    border-radius: 4px;
+}
+
+/* `.back-button, .home-button` carry a colour on the rules page and `.pin-button,
+   .buttom-list-group` do not — the icons inside all four set their own inline. Split
+   the same way, so the two headers compute the same values. */
+.wa-panel .home-button,
+.wa-panel .back-button {
+    color: var(--text-color);
+}
+
+.wa-panel .home-button:hover,
+.wa-panel .home-button:focus-visible,
+.wa-panel .back-button:hover,
+.wa-panel .back-button:focus-visible {
+    color: var(--text-on-color);
+}
+
+/* Pinned reads as a filled disc, the same as on the rules page. */
+.wa-panel .pin-button.pinned {
+    background-color: var(--action-color);
+    border-radius: 50%;
+}
+
+/* --- THE SEARCH ROW ----------------------------------------------
+   The group list's `search-and-controls`, not the rules page's: this
+   is the row that page puts under its header, and the panel is a list
+   like that one. Its variables resolve to fixed values there, so they
+   are written out. */
+/*
+ * The screen-reader-only label. The group list defines this and the panel's search row
+ * is copied from there, so without it the label is simply a paragraph: "Buscar sitios"
+ * sits next to the box, wraps onto two lines and pushes the row out of shape. A class
+ * that exists on the page a snippet came from and not on the page it was copied to is
+ * the whole failure mode — and this is the second time it has been lost to a rewrite
+ * of the block above it.
+ */
+.wa-panel .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.wa-panel .search-and-controls {
+    display: flex;
+    align-items: start;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    padding: 4px 6px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.wa-panel .search-container {
+    min-width: 150px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    margin: 6px 0;
+}
+
+.wa-panel .search-input {
+    width: 100%;
+    padding: 6px 70px 6px 30px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-family: var(--sans);
+    font-size: 0.9rem;
+    outline: none;
+    transition:
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 8px center;
+    background-size: 16px;
+    caret-color: var(--text-on-color);
+    box-sizing: border-box;
+}
+
+/* The group list reserves 70px on the right for the three buttons it puts inside the
+   box, and takes it back when they are hidden. This panel has none of them, so it is
+   always in that state. */
+.wa-panel .search-container--compact .search-input {
+    padding-right: 8px;
+}
+
+.wa-panel .search-input:focus {
+    border-color: var(--action-color);
+    box-shadow: 0 0 0 2px var(--action-color);
+}
+
+.wa-panel .search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    height: 14px;
+    width: 14px;
+    display: inline-block;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='red'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
+    cursor: pointer;
+}
+
+/* The row itself is aligned to `start`, exactly as the group list has it; only this
+   block is centred inside it, so the two buttons sit on the same line as the middle
+   of the search box rather than a few pixels above it. */
+.wa-panel .controls-container {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    justify-content: flex-end;
+    margin-left: 6px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    gap: 2px;
+    overflow: visible;
+}
+
+/* The resize button sits among the group list's controls, so it wears their clothes.
+   Without a rule of its own a bare <button> falls back to Chrome's default chrome — a
+   light grey block — which is what it had become. */
+.wa-panel .resize-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 6px;
+    border: none;
+    outline: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-color);
+    cursor: pointer;
+    opacity: 0.6;
+    transition:
+        color 0.2s ease,
+        opacity 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.wa-panel .resize-button:hover {
+    opacity: 1;
+}
+
+.wa-panel .resize-button:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 1px;
+}
+
+.wa-panel .control-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 6px;
+    transition:
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 4px;
+    opacity: 0.6;
+}
+
+.wa-panel .control-btn:hover:not(:disabled) {
+    opacity: 1;
+}
+
+.wa-panel .control-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+}
+
+.wa-panel .control-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 1px;
+}
+
+.wa-panel-list {
+    flex: 1;
+    /* Without this a flex item will not shrink below its content, and the list would
+       push the panel taller than the window instead of scrolling inside it. */
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* The extra room at the foot is not decoration: the last box's controls sat
+       against the edge of the panel, which is the hardest place on screen to aim at. */
+    padding: 10px 10px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) var(--bg-color);
+}
+
+.wa-panel-box {
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    /*
+     * The reason the panel had no scrollbar at all.
+     *
+     * `overflow: hidden` sets a flex item's automatic minimum size to zero, so the
+     * boxes were free to shrink — and in a column of fourteen they did, squeezing
+     * themselves down to fit the window rather than overflowing it. The list was
+     * never taller than its own box, so `overflow-y: auto` had nothing to scroll.
+     */
+    flex-shrink: 0;
+}
+
+.wa-panel-box.is-blocked {
+    border-color: var(--error-color);
+}
+
+/* The site of the tab in front, so the eye lands on it after the list scrolls. */
+.wa-panel-box.is-active {
+    border-color: var(--interactive-color);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--interactive-color) 45%, transparent);
+}
+
+/* The header is the whole fold control, and what is left when it is folded. */
+.wa-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 10px;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.wa-panel-box.is-open .wa-panel-head {
+    border-bottom: 2px solid var(--border-color);
+}
+
+.wa-panel-head:hover {
+    background: color-mix(in srgb, var(--interactive-color) 8%, transparent);
+}
+
+.wa-panel-head:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: -2px;
+}
+
+.wa-panel-domain {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.92rem;
+}
+
+/* The badge shares the header with the time, so it takes what is left of the row
+   rather than pushing the clock off it. */
+.wa-panel-head .wa-badge {
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.wa-panel-time {
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    color: var(--text-on-color);
+}
+
+.wa-panel-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Three figures across, each under its own word. */
+.wa-panel-figures {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 9px 10px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.wa-panel-figure {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: center;
+    min-width: 0;
+}
+
+.wa-panel-figure-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+}
+
+.wa-panel-figure-val {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* The allowance and the hours: what it is, what it says, how it is going, and the
+   three things that can be done to it. */
+.wa-panel-row {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+}
+
+.wa-panel-row + .wa-panel-row {
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
+}
+
+.wa-panel-row-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+}
+
+.wa-panel-row-val {
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    justify-self: center;
+}
+
+/* The shared `.eff-pct` is 28px wide, sized for the two digits the dashboard's table
+   shows it in. "100%" is three, and it spilled out of its own box. Here it sizes to
+   what it says. */
+.wa-panel-row-pct .eff-pct {
+    width: auto;
+}
+
+.wa-panel-row-pct {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    justify-self: center;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+/* --- THE THREE CONTROLS ------------------------------------------
+   Edit, pause, clear. The same set appears in the dashboard's log, in
+   the settings table and in the side panel, so it is styled once here
+   rather than three times. */
+.wa-rule-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    justify-self: end;
+}
+
+/* Two pixels narrower inside the log, and one less between them. Three controls at
+   panel size cost 144px of an 1158px table — an eighth of it spent on buttons — and
+   it came out of the values they sit beside, which is what left the hours reading
+   "20:0…" and the total "199h 3…". The panel has the room; the table does not. */
+.wa-log-table .wa-rule-controls {
+    gap: 2px;
+}
+
+.wa-log-table .wa-rule-controls .wa-icon-btn {
+    width: 20px;
+    height: 20px;
+}
+
+.wa-log-table td[data-col='limit'],
+.wa-log-table td[data-col='weekly'],
+.wa-log-table td[data-col='schedule'] {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.wa-rule-controls .wa-icon-btn {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: transparent;
+}
+
+.wa-rule-controls .wa-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.wa-rule-controls .wa-icon-btn:disabled:hover {
+    background: transparent;
+    border-color: var(--border-color);
+    color: var(--text-color);
+    transform: none;
+}
+
+/* Edit button gets the same hover treatment as active power button */
+.wa-rule-controls .wa-edit-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--interactive-color) 40%, transparent);
+    border-color: var(--interactive-color);
+    color: var(--interactive-color);
+}
+
+/* Clear contrast between enabled/active and disabled/off power buttons */
+.wa-rule-controls .wa-icon-btn[aria-pressed='true']:not(:disabled) {
+    background: color-mix(in srgb, var(--interactive-color) 25%, transparent);
+    border-color: var(--interactive-color);
+    color: var(--interactive-color);
+}
+
+.wa-rule-controls .wa-icon-btn[aria-pressed='true']:not(:disabled):hover {
+    background: color-mix(in srgb, var(--interactive-color) 40%, transparent);
+    border-color: var(--interactive-color);
+    color: var(--interactive-color);
+}
+
+.wa-rule-controls .wa-power-btn.is-off:not(:disabled) {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px dashed color-mix(in srgb, var(--border-color) 80%, transparent);
+    opacity: 0.55;
+}
+
+.wa-rule-controls .wa-power-btn.is-off:not(:disabled):hover {
+    background: color-mix(in srgb, var(--text-dim) 15%, transparent);
+    color: var(--text-color);
+    border-style: solid;
+    border-color: var(--text-soft);
+    opacity: 1;
+}
+
+/* A half of a rule that is paused says so on the value it is no longer applying to,
+   not only on the button that paused it. */
+.wa-cell-val.is-paused,
+.wa-panel-row-val.is-paused {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
 /* --- BLOCK SCREEN -----------------------------------------------
-   Its own page, sharing this file's tokens so it looks like the rest
-   of the extension rather than a browser error. */
-.wa-block {
+   Its own page, sharing this file's tokens so it looks like part of
+   the extension rather than a browser error. It is named `wa-gate-`
+   rather than `wa-block-` so it cannot be confused with the blocks
+   list on the dashboard, which is a different thing entirely.
+
+   It stands between somebody and what they asked for, so it is calm:
+   one column, a lot of air, the figures that justify the decision,
+   and the ways out at the bottom. */
+.wa-gate {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 32px 20px;
+    /* Two very soft accent washes, so the page has some depth without a picture. */
+    background:
+        radial-gradient(60% 55% at 15% 0%, color-mix(in srgb, var(--interactive-color) 13%, transparent), transparent),
+        radial-gradient(55% 50% at 100% 100%, color-mix(in srgb, var(--error-color) 10%, transparent), transparent);
 }
 
-.wa-block-card {
+.wa-gate-card {
     width: 100%;
-    max-width: 460px;
+    max-width: 520px;
     display: flex;
     flex-direction: column;
+    gap: 18px;
+    padding: 34px 34px 26px;
+    border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--bg-panel-color) 92%, transparent);
+    /* Elevation out of the palette, not out of black. `--border-color` is the one
+       token darker than the panel in every theme, so the card lifts off the page on
+       the light one too — where a black shadow was invisible and a white inner edge
+       was a stripe of nothing. */
+    box-shadow: 0 24px 70px -28px color-mix(in srgb, var(--border-color) 85%, transparent);
+    animation: fadeUp 0.45s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+.wa-gate-top {
+    display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 34px 28px;
-    text-align: center;
-    border: 1px solid var(--border-color);
-    border-radius: var(--card-radius);
-    background: var(--bg-panel-color);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    gap: 14px;
 }
 
-.wa-block-icon {
+.wa-gate-shield {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
     color: var(--error-color);
-    line-height: 0;
+    background: color-mix(in srgb, var(--error-color) 13%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--error-color) 32%, transparent);
+    flex-shrink: 0;
 }
 
-.wa-block-title {
-    margin: 0;
-    font-size: 1.25rem;
+.wa-gate-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-dim);
+}
+
+.wa-gate-title {
+    margin: 2px 0 0;
+    font-size: 1.4rem;
     font-weight: 600;
-    color: var(--header-color);
+    letter-spacing: -0.015em;
+    color: var(--text-color);
+    line-height: 1.2;
 }
 
-.wa-block-domain {
-    margin: 0;
+.wa-gate-site {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--bg-color) 65%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-color) 55%, transparent);
+}
+
+.wa-gate-tag {
+    margin-left: auto;
+}
+
+.wa-gate-domain {
     font-family: var(--mono);
     font-size: 0.95rem;
     word-break: break-all;
 }
 
-.wa-block-reason {
+.wa-gate-reason {
     margin: 0;
     color: var(--text-soft);
-    line-height: 1.5;
+    line-height: 1.6;
+    font-size: 0.92rem;
 }
 
-.wa-block-usage {
-    width: 100%;
+.wa-gate-meters {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wa-gate-meter {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    align-items: center;
-    font-family: var(--mono);
-    font-size: 12px;
 }
 
-.wa-block-usage .eff-bar {
-    width: 100%;
+/* `.eff-bar-fill` carries no colour of its own — every other user of it sets one
+   inline from the score palette. Here the colour is the message: accent while there
+   is time left, alarm once there is not. */
+/* `flex: none` matters as much as the height. The shared `.eff-bar` carries `flex: 1`
+   for the rows it was written for, which lay it out along a row; stacked in a column
+   that same rule resolves its *height* from a zero basis it can never grow out of, so
+   the bar was there all along and measured nothing. */
+.wa-gate-meter .eff-bar {
+    flex: none;
+    height: 6px;
+    border-radius: 3px;
 }
 
-.wa-block-until {
-    margin: 0;
+.wa-gate-meter .eff-bar-fill {
+    background: var(--interactive-color);
+}
+
+.wa-gate-meter.is-spent .eff-bar-fill {
+    background: var(--error-color);
+}
+
+.wa-gate-meter-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
     font-family: var(--mono);
-    font-size: 12px;
+    font-size: 11px;
+}
+
+.wa-gate-meter-label {
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-dim);
+    font-size: 9.5px;
+}
+
+.wa-gate-meter-val {
     color: var(--text-soft);
 }
 
-.wa-block-actions {
+.wa-gate-until {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 6px;
+    align-items: center;
+    gap: 9px;
+    margin: 0;
+    padding: 11px 13px;
+    border-left: 2px solid var(--interactive-color);
+    border-radius: 0 10px 10px 0;
+    background: color-mix(in srgb, var(--interactive-color) 9%, transparent);
+    font-size: 12.5px;
+    line-height: 1.5;
 }
 
-.wa-block-footer {
-    margin: 6px 0 0;
+.wa-gate-until svg {
+    color: var(--interactive-color);
+    flex-shrink: 0;
+}
+
+.wa-gate-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 4px;
+}
+
+.wa-gate-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+}
+
+.wa-gate-footer {
+    margin: 0;
+    padding-top: 14px;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 45%, transparent);
     font-size: 11px;
     color: var(--text-dim);
-    line-height: 1.5;
+    line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+    .wa-gate-card {
+        padding: 24px 20px 20px;
+        border-radius: 16px;
+    }
+
+    .wa-gate-title {
+        font-size: 1.2rem;
+    }
 }

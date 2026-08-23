@@ -18,6 +18,20 @@ export const fmtDur = (secs) => {
     return `${s}s`;
 };
 
+/**
+ * A configured allowance: hours and minutes, never seconds.
+ *
+ * `fmtDur` is for measured time, where the seconds are real. An allowance is always
+ * a whole number of minutes, so "30m 0s" only spends four characters saying nothing.
+ */
+export const fmtHm = (secs) => {
+    secs = Math.max(0, Math.round(secs));
+    const h = Math.floor(secs / 3600);
+    const m = Math.round((secs % 3600) / 60);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    return `${m}m`;
+};
+
 /** Hours with one decimal, for axis labels and tight cells. */
 export const fmtH = (secs, abbrev = 'h') => (secs / 3600).toFixed(1) + abbrev;
 

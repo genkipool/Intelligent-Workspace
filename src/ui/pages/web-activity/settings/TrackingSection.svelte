@@ -1,0 +1,147 @@
+<script>
+    /**
+     * [AI INSTRUCTION]
+     * HOW THE CLOCK BEHAVES.
+     *
+     * Six settings, and every one of them changes a number the dashboard shows, which
+     * is the test for whether a setting belongs on this page at all. They are written
+     * through the service worker rather than straight to storage: the idle threshold
+     * is a browser-level setting and turning the tracking off has to stop the clock
+     * now, not at the next tab switch.
+     */
+    import '../../../../core/services/webActivitySchema.js';
+    import { t, tt } from '../../../stores/i18nStore.js';
+    import NumberField from '../../../components/common/NumberField.svelte';
+    import ToggleButton from '../../../components/common/ToggleButton.svelte';
+
+    const WA = globalThis.ITG_WEB_ACTIVITY;
+
+    let { settings = {}, onChange } = $props();
+
+    const set = (patch) => onChange(patch);
+
+    /**
+     * The stored value, or the shipped default — never a number written out here. A
+     * fallback typed into the markup is a second place the default lives, and it
+     * drifts: this file still said 60 seconds long after the default became 300, so
+     * a fresh profile showed a number the tracker was not using.
+     */
+    const valueOf = (key) => settings[key] ?? WA.DEFAULT_SETTINGS[key];
+    const isOn = (key) => (settings[key] ?? WA.DEFAULT_SETTINGS[key]) !== false;
+</script>
+
+<div class="wa-set-block">
+    <div class="wa-set-rows">
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivityTrackingEnabled')}</span>
+                <span class="wa-set-row-note">{$t('webActivityTrackingEnabledHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <ToggleButton
+                    variant="rounded"
+                    pressed={isOn('enabled')}
+                    label={$t(isOn('enabled') ? 'webActivityOn' : 'webActivityOff')}
+                    title={$tt('webActivityTrackingEnabled')}
+                    onchange={(next) => set({ enabled: next })}
+                />
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivityIdleSeconds')}</span>
+                <span class="wa-set-row-note">{$t('webActivityIdleSecondsHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <NumberField
+                    wide
+                    value={valueOf('idleSeconds')}
+                    min={15}
+                    max={900}
+                    step={15}
+                    digits={3}
+                    ariaLabel={$t('webActivityIdleSeconds')}
+                    onchange={(next) => set({ idleSeconds: next })}
+                />
+                <span class="wa-unit">{$t('webActivitySecondsShort')}</span>
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivityCountAudible')}</span>
+                <span class="wa-set-row-note">{$t('webActivityCountAudibleHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <ToggleButton
+                    variant="rounded"
+                    pressed={isOn('countAudible')}
+                    label={$t(isOn('countAudible') ? 'webActivityOn' : 'webActivityOff')}
+                    title={$tt('webActivityCountAudible')}
+                    onchange={(next) => set({ countAudible: next })}
+                />
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivityNotifyAtDefault')}</span>
+                <span class="wa-set-row-note">{$t('webActivityNotifyAtDefaultHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <NumberField
+                    wide
+                    value={valueOf('notifyAtPercent')}
+                    min={0}
+                    max={100}
+                    step={5}
+                    digits={3}
+                    ariaLabel={$t('webActivityNotifyAtDefault')}
+                    onchange={(next) => set({ notifyAtPercent: next })}
+                />
+                <span class="wa-unit">%</span>
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivitySnoozeMinutes')}</span>
+                <span class="wa-set-row-note">{$t('webActivitySnoozeMinutesHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <NumberField
+                    wide
+                    value={valueOf('snoozeMinutes')}
+                    min={0}
+                    max={120}
+                    step={5}
+                    digits={3}
+                    ariaLabel={$t('webActivitySnoozeMinutes')}
+                    onchange={(next) => set({ snoozeMinutes: next })}
+                />
+                <span class="wa-unit">{$t('webActivityMinutesShort')}</span>
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivityRetentionDays')}</span>
+                <span class="wa-set-row-note">{$t('webActivityRetentionDaysHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <NumberField
+                    wide
+                    value={valueOf('retentionDays')}
+                    min={7}
+                    max={730}
+                    step={7}
+                    digits={3}
+                    ariaLabel={$t('webActivityRetentionDays')}
+                    onchange={(next) => set({ retentionDays: next })}
+                />
+                <span class="wa-unit">{$t('webActivityDaysShort')}</span>
+            </span>
+        </div>
+    </div>
+</div>

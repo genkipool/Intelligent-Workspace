@@ -5,6 +5,7 @@ import WebActivity from './WebActivity.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
 import '../../../styles/dashboard.css';
+import '../../../styles/select.css';
 import './webActivity.css';
 
 const app = mountPage(WebActivity, {

@@ -5890,9 +5890,6 @@
     "sh_space_res": {
         "message": "Hola Alvaro, ¿estas libre para ir a tomar un café?"
     },
-    "sh_spaces_code": {
-        "message": "/hi$1Alvaro$2para__ir__a__tomar__un__café"
-    },
     "snippetHelpPopupTitle": {
         "message": "Menú de Acceso Rápido"
     },
@@ -10277,14 +10274,14 @@
         "message": "Cuota diaria"
     },
     "webActivityDailyLimitHint": {
-        "message": "Cuando se agota el tiempo del día el sitio se bloquea hasta medianoche. Cero significa sin cuota."
+        "message": "Cuando se agota el tiempo del día el sitio se bloquea hasta medianoche. 00:00 significa sin cuota."
     },
     "webActivityFieldSchedules": {
         "message": "Horario permitido",
         "description": "Las únicas horas en que se puede abrir el sitio. Déjalo vacío para permitirlo a cualquier hora."
     },
     "webActivitySchedulesHint": {
-        "message": "Fuera de este horario el sitio se bloquea. Una franja que acaba antes de empezar cruza la noche, y sus días son aquellos en los que empieza."
+        "message": "Fuera de este horario el sitio se bloquea. Una franja que acaba antes de empezar cruza la noche. Sin ninguna franja no hay restricción por el reloj."
     },
     "webActivityAddSchedule": {
         "message": "Añadir franja"
@@ -10302,14 +10299,11 @@
         "message": "Categoría",
         "description": "Sustituye la categoría deducida del dominio, que es sobre la que se calcula el índice de foco"
     },
-    "webActivityCategoryAuto": {
-        "message": "Detectar automáticamente"
-    },
     "webActivityFieldNotifyAt": {
         "message": "Avisar al (%)"
     },
     "webActivityNotifyAtHint": {
-        "message": "Una notificación cuando se haya ido esta parte de la cuota. Vacío para usar el ajuste general."
+        "message": "Una notificación cuando se haya ido esta parte de la cuota. Cero desactiva el aviso para este sitio."
     },
     "webActivityLimitEnabled": {
         "message": "Límite activo"
@@ -10586,7 +10580,7 @@
         "message": "Dominio reincorporado al registro de actividad"
     },
     "webActivityRemoveLimit": {
-        "message": "Eliminar límite diario"
+        "message": "Quitar esta cuota"
     },
     "webActivitySortBy": {
         "message": "Ordenar por esta columna",
@@ -10696,5 +10690,513 @@
     },
     "errorSnippetTriggerFirst": {
         "message": "Escribe el activador del snippet antes de editar el texto a expandir"
+    },
+    "webActivityCategoryGroupBuiltIn": {
+        "message": "Predefinidas",
+        "description": "Las categorías que vienen con la extensión"
+    },
+    "webActivityCategoryGroupCustom": {
+        "message": "Tuyas",
+        "description": "Las categorías que has añadido tú"
+    },
+    "webActivitySettings": {
+        "message": "Ajustes",
+        "description": "Reglas, categorías y cómo se registra la actividad"
+    },
+    "webActivitySettingsHint": {
+        "message": "Reglas, categorías y cómo se registra la actividad",
+        "description": "Reglas, categorías y cómo se registra la actividad"
+    },
+    "webActivitySettingsSubtitle": {
+        "message": "Todo lo que decide qué se registra, cómo se llama y qué tiene permitido.",
+        "description": "Todo lo que decide qué se registra, cómo se llama y qué tiene permitido"
+    },
+    "webActivitySettingsRules": {
+        "message": "Reglas por sitio",
+        "description": "Todos los sitios con límite de tiempo u horario"
+    },
+    "webActivitySettingsRulesHint": {
+        "message": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no.",
+        "description": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no"
+    },
+    "webActivitySettingsCategories": {
+        "message": "Categorías",
+        "description": "Los grupos en los que se clasifica un sitio"
+    },
+    "webActivitySettingsCategoriesHint": {
+        "message": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas. Añade las tuyas para lo que la detección automática no sepa nombrar.",
+        "description": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas"
+    },
+    "webActivitySettingsTracking": {
+        "message": "Registro",
+        "description": "Cómo se comporta el reloj"
+    },
+    "webActivitySettingsTrackingHint": {
+        "message": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro.",
+        "description": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro"
+    },
+    "webActivitySettingsIgnored": {
+        "message": "Sitios sin registrar",
+        "description": "Sitios en los que el reloj no corre nunca"
+    },
+    "webActivitySettingsIgnoredHint": {
+        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro.",
+        "description": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro"
+    },
+    "webActivitySettingsData": {
+        "message": "Tus datos",
+        "description": "Llévatelos, recupéralos o bórralos"
+    },
+    "webActivitySettingsDataHint": {
+        "message": "Todo se guarda solo en este dispositivo. No se envía nada a ninguna parte.",
+        "description": "Todo se guarda solo en este dispositivo"
+    },
+    "webActivitySettingsSaved": {
+        "message": "Ajustes guardados",
+        "description": "Ajustes guardados"
+    },
+    "webActivityAddRule": {
+        "message": "Añadir sitio",
+        "description": "Poner un límite o un horario a un sitio"
+    },
+    "webActivityRulesEmpty": {
+        "message": "Todavía ningún sitio tiene límite ni horario.",
+        "description": "Todavía ningún sitio tiene límite ni horario"
+    },
+    "webActivityDataFigures": {
+        "message": "$1 días registrados · $2 sitios en el periodo en pantalla",
+        "description": "Cuánto hay registrado"
+    },
+    "webActivityCleared": {
+        "message": "Historial borrado",
+        "description": "Historial borrado"
+    },
+    "webActivityCategoryNew": {
+        "message": "Nueva categoría",
+        "description": "Añadir una categoría tuya"
+    },
+    "webActivityCategoryNamePlaceholder": {
+        "message": "Nombre de la categoría",
+        "description": "Nombre de la categoría"
+    },
+    "webActivityCategoryAdd": {
+        "message": "Añadir",
+        "description": "Añadir esta categoría"
+    },
+    "webActivityCategoryRename": {
+        "message": "Renombrar",
+        "description": "Haz clic para renombrar esta categoría"
+    },
+    "webActivityCategoryDelete": {
+        "message": "Borrar categoría",
+        "description": "Borrar esta categoría"
+    },
+    "webActivityCategoryDeleteConfirm": {
+        "message": "¿Borrar la categoría «$1»? Los sitios clasificados en ella vuelven a detectarse automáticamente.",
+        "description": "Borrar esta categoría"
+    },
+    "webActivityCategoryExists": {
+        "message": "Ya tienes una categoría con ese nombre.",
+        "description": "Ya tienes una categoría con ese nombre"
+    },
+    "webActivityCategoryNameInvalid": {
+        "message": "Ponle a la categoría un nombre con al menos una letra o un número.",
+        "description": "Ponle a la categoría un nombre utilizable"
+    },
+    "webActivityCategoryCustomEmpty": {
+        "message": "Todavía no has añadido ninguna categoría tuya.",
+        "description": "Todavía no has añadido ninguna categoría tuya"
+    },
+    "webActivityCategoryBuiltInHint": {
+        "message": "Son las que la detección automática sabe reconocer. Un sitio se puede sacar de una desde su fila del registro.",
+        "description": "Las categorías que vienen con la extensión"
+    },
+    "webActivityCategorySites": {
+        "message": "$1 sitios",
+        "description": "Cuántos sitios hay clasificados en esta categoría"
+    },
+    "webActivityCategoryUnused": {
+        "message": "sin sitios todavía",
+        "description": "Todavía no hay ningún sitio en esta categoría"
+    },
+    "webActivityTrackingEnabled": {
+        "message": "Registrar actividad",
+        "description": "Encender o apagar el reloj"
+    },
+    "webActivityTrackingEnabledHint": {
+        "message": "Con esto apagado no se registra nada nuevo. Lo ya registrado se conserva.",
+        "description": "Con esto apagado no se registra nada nuevo"
+    },
+    "webActivityIdleSeconds": {
+        "message": "Parar el reloj tras",
+        "description": "Cuánto tiempo sin teclado ni ratón cuenta como ausencia"
+    },
+    "webActivityIdleSecondsHint": {
+        "message": "Si pasas este tiempo sin tocar el teclado ni el ratón cuentas como ausente y el tiempo se para — salvo que una pestaña esté sonando, que cuenta como estar viéndola.",
+        "description": "Cuánto tiempo sin teclado ni ratón cuenta como ausencia"
+    },
+    "webActivityCountAudible": {
+        "message": "Seguir contando el audio en segundo plano",
+        "description": "Contar una pestaña que suena aunque el navegador no esté delante"
+    },
+    "webActivityCountAudibleHint": {
+        "message": "Un vídeo que sigue sonando en otra ventana también es tiempo en ese sitio.",
+        "description": "Contar una pestaña que suena aunque el navegador no esté delante"
+    },
+    "webActivityNotifyAtDefault": {
+        "message": "Avisar por defecto al",
+        "description": "La parte de la cuota que dispara el aviso"
+    },
+    "webActivityNotifyAtDefaultHint": {
+        "message": "Una notificación cuando se haya ido esta parte de la cuota. Cada sitio puede cambiarlo. Cero desactiva los avisos.",
+        "description": "La parte de la cuota que dispara el aviso"
+    },
+    "webActivitySnoozeMinutes": {
+        "message": "«Cinco minutos más» dura",
+        "description": "Cuánto aguanta el aplazamiento de la pantalla de bloqueo"
+    },
+    "webActivitySnoozeMinutesHint": {
+        "message": "Cuánto tiempo aparta el bloqueo el botón de aplazar. Cero quita el botón.",
+        "description": "Cuánto aguanta el aplazamiento de la pantalla de bloqueo"
+    },
+    "webActivityRetentionDays": {
+        "message": "Conservar el historial",
+        "description": "Días de historial que se guardan antes de descartar los más antiguos"
+    },
+    "webActivityRetentionDaysHint": {
+        "message": "Los días más antiguos que esto se borran al cambiar el día.",
+        "description": "Días de historial que se guardan antes de descartar los más antiguos"
+    },
+    "webActivitySecondsShort": {
+        "message": "s",
+        "description": "Segundos, abreviado"
+    },
+    "webActivityDaysShort": {
+        "message": "días",
+        "description": "Días, abreviado"
+    },
+    "webActivityIgnoredEmpty": {
+        "message": "Se están registrando todos los sitios.",
+        "description": "Se están registrando todos los sitios"
+    },
+    "webActivityIgnoredAdd": {
+        "message": "Añadir sitio",
+        "description": "Dejar de registrar un sitio"
+    },
+    "webActivityLimitModalTitle": {
+        "message": "Límite de tiempo",
+        "description": "Cuánto tiempo tiene permitido este sitio"
+    },
+    "webActivityLimitModalSub": {
+        "message": "Cuánto tiempo tiene permitido este sitio antes de bloquearse.",
+        "description": "Cuánto tiempo tiene permitido este sitio antes de bloquearse"
+    },
+    "webActivityFieldWeeklyLimit": {
+        "message": "Cuota semanal",
+        "description": "Tiempo permitido en este sitio por semana"
+    },
+    "webActivityWeeklyLimitHint": {
+        "message": "Cuando se agota el tiempo de la semana el sitio se bloquea hasta el lunes. 00:00 significa sin cuota semanal.",
+        "description": "Tiempo permitido en este sitio por semana, contado desde el lunes"
+    },
+    "webActivityWeeklyBelowDaily": {
+        "message": "La cuota semanal es menor que la diaria, así que un solo día se la llevaría entera.",
+        "description": "La cuota semanal es menor que la diaria"
+    },
+    "webActivityLimitSummaryNone": {
+        "message": "Sin cuota: este sitio se cuenta pero su tiempo nunca lo bloquea.",
+        "description": "Sin cuota configurada"
+    },
+    "webActivityLimitSummaryDaily": {
+        "message": "Se bloquea al llegar a $1 hoy. La cuota vuelve a empezar a medianoche.",
+        "description": "Lo que hará este límite"
+    },
+    "webActivityLimitSummaryWeekly": {
+        "message": "Se bloquea al llegar a $1 esta semana. La cuota vuelve a empezar el lunes.",
+        "description": "Lo que hará este límite"
+    },
+    "webActivityLimitSummaryBoth": {
+        "message": "Se bloquea al llegar a $1 en un día o a $2 en una semana, lo que ocurra antes.",
+        "description": "Lo que hará este límite"
+    },
+    "webActivityFieldSiteHint": {
+        "message": "Solo el dominio. Una dirección completa se recorta hasta él.",
+        "description": "Solo el dominio"
+    },
+    "webActivityPresetTitle": {
+        "message": "Poner esta cuota",
+        "description": "Poner esta cuota"
+    },
+    "webActivityPresetNone": {
+        "message": "Ninguna",
+        "description": "Sin cuota"
+    },
+    "webActivityPresetNoneTitle": {
+        "message": "Sin cuota",
+        "description": "Sin cuota"
+    },
+    "webActivityScheduleModalTitle": {
+        "message": "Horario permitido",
+        "description": "Las horas a las que se puede abrir este sitio"
+    },
+    "webActivityScheduleModalSub": {
+        "message": "Las horas a las que se puede abrir este sitio. Fuera de cada franja se bloquea.",
+        "description": "Las horas a las que se puede abrir este sitio"
+    },
+    "webActivityScheduleSummaryNone": {
+        "message": "Sin franjas: este sitio se puede abrir a cualquier hora.",
+        "description": "Sin restricción por el reloj"
+    },
+    "webActivityScheduleSummaryAlways": {
+        "message": "Bloqueado a todas horas y todos los días.",
+        "description": "Bloqueado siempre"
+    },
+    "webActivityScheduleSummaryWindows": {
+        "message": "Permitido solo dentro del horario configurado. Fuera de él se bloquea.",
+        "description": "Lo que hará este horario"
+    },
+    "webActivityNoWindows": {
+        "message": "Todavía no hay ninguna franja. Añade una y el sitio se bloquea fuera de ella.",
+        "description": "Todavía no hay ninguna franja"
+    },
+    "webActivityWindowLabel": {
+        "message": "Franja $1",
+        "description": "Una de las franjas horarias permitidas"
+    },
+    "webActivityWindowCount": {
+        "message": "$1 franjas",
+        "description": "Cuántas franjas horarias permitidas hay configuradas"
+    },
+    "webActivityWindowNoDays": {
+        "message": "Elige al menos un día, o esta franja no hace nada.",
+        "description": "Elige al menos un día"
+    },
+    "webActivityRemoveWindow": {
+        "message": "Eliminar esta franja",
+        "description": "Eliminar esta franja"
+    },
+    "webActivityOvernight": {
+        "message": "cruza la noche",
+        "description": "Esta franja pasa de la medianoche"
+    },
+    "webActivityOvernightHint": {
+        "message": "Acaba antes de empezar, así que cruza la medianoche. Sus días son aquellos en los que empieza.",
+        "description": "Esta franja pasa de la medianoche"
+    },
+    "webActivityDaysAll": {
+        "message": "Todos",
+        "description": "Seleccionar todos los días de la semana"
+    },
+    "webActivityDaysWeekdays": {
+        "message": "Entre semana",
+        "description": "Seleccionar de lunes a viernes"
+    },
+    "webActivityDaysWeekend": {
+        "message": "Fin de semana",
+        "description": "Seleccionar sábado y domingo"
+    },
+    "webActivityRuleEnabledHint": {
+        "message": "Desactívalo para conservar la cuota y el horario sin que ninguno bloquee nada.",
+        "description": "Activar o desactivar toda la regla de este sitio"
+    },
+    "webActivityConfigureSchedule": {
+        "message": "Configurar horario permitido",
+        "description": "Configurar las horas a las que se puede abrir este sitio"
+    },
+    "webActivityBlocksTitle": {
+        "message": "Bloqueos",
+        "description": "Los sitios que están bloqueados ahora mismo"
+    },
+    "webActivityBlocksHintTitle": {
+        "message": "Los sitios que una regla está cortando ahora mismo, y cuándo se levanta cada uno",
+        "description": "Los sitios que una regla está cortando ahora mismo, y cuándo se levanta cada uno"
+    },
+    "webActivityNoBlocks": {
+        "message": "Ahora mismo no hay nada bloqueado",
+        "description": "Ahora mismo no hay nada bloqueado"
+    },
+    "webActivityNoBlocksSub": {
+        "message": "Todos los sitios con regla están dentro de su cuota y de su horario.",
+        "description": "Todos los sitios con regla están dentro de su cuota y de su horario"
+    },
+    "webActivityMeterDaily": {
+        "message": "Hoy",
+        "description": "Tiempo consumido de la cuota diaria"
+    },
+    "webActivityMeterWeekly": {
+        "message": "Esta semana",
+        "description": "Tiempo consumido de la cuota semanal"
+    },
+    "webActivityColWeekly": {
+        "message": "Semanal",
+        "description": "Cuota de tiempo semanal configurada para este sitio"
+    },
+    "webActivityColWeeklyDesc": {
+        "message": "Límite de tiempo semanal máximo permitido para este sitio, contado desde el lunes",
+        "description": "Límite de tiempo semanal máximo permitido para este sitio, contado desde el lunes"
+    },
+    "webActivityTableCapped": {
+        "message": "Mostrando los $1 sitios de $2 que encabezan este orden",
+        "description": "Solo se dibujan las primeras filas"
+    },
+    "webActivityTableCappedHint": {
+        "message": "El registro dibuja las primeras filas del orden en el que esté. Los totales de abajo siguen contando todos los sitios.",
+        "description": "El registro dibuja las primeras filas del orden en el que esté"
+    },
+    "webActivityStateBlocked_weekly": {
+        "message": "semana agotada",
+        "description": "La cuota semanal de este sitio se ha agotado"
+    },
+    "webActivityBlockedReason_weekly": {
+        "message": "El tiempo de esta semana en este sitio se ha agotado.",
+        "description": "La cuota semanal de este sitio se ha agotado"
+    },
+    "webActivityBlockedUntilMonday": {
+        "message": "La cuota semanal vuelve a empezar el lunes.",
+        "description": "La cuota semanal vuelve a empezar el lunes"
+    },
+    "webActivityBlockedChangeRule": {
+        "message": "Cambiar la regla",
+        "description": "Abrir el dashboard para cambiar esta regla"
+    },
+    "sh_spaces_tail": {
+        "message": "para__ir__a__tomar__un__café",
+        "description": "The words of the snippet spaces example, after the /hi$1Alvaro$2 marker that stays untranslated"
+    },
+    "webActivityRemoveLimits": {
+        "message": "Eliminar cuotas",
+        "description": "Quitar la cuota diaria y la semanal de este sitio"
+    },
+    "webActivityRemoveScheduleShort": {
+        "message": "Eliminar horario",
+        "description": "Quitar el horario permitido de este sitio"
+    },
+    "webActivityRuleEnabled": {
+        "message": "Regla activa",
+        "description": "Activar o desactivar toda la regla de este sitio"
+    },
+    "webActivityCategorySite": {
+        "message": "1 sitio",
+        "description": "Hay un sitio clasificado en esta categoría"
+    },
+    "apply": {
+        "message": "Aplicar",
+        "description": "Guardar estos ajustes y cerrar la ventana"
+    },
+    "webActivityFieldAllowance": {
+        "message": "Tiempo permitido",
+        "description": "Cuánto tiempo tiene permitido este sitio"
+    },
+    "webActivityDurationLabel": {
+        "message": "hh:mm",
+        "description": "La cuota se escribe en horas y minutos, no como una hora del día"
+    },
+    "webActivityLimitNoDays": {
+        "message": "Elige al menos un día, o la cuota diaria no hace nada.",
+        "description": "Elige al menos un día"
+    },
+    "webActivityIgnoredInvalid": {
+        "message": "Eso no es un sitio web. Escribe un dominio como example.com.",
+        "description": "Eso no es un sitio web"
+    },
+    "webActivityIgnoredDuplicate": {
+        "message": "Ese sitio ya está en la lista.",
+        "description": "Ese sitio ya está en la lista"
+    },
+    "webActivityLimitDaysHint": {
+        "message": "Los días en los que se aplica esta cuota. El resto de días el sitio no tiene límite diario.",
+        "description": "Los días en los que se aplica esta cuota"
+    },
+    "webActivityWindowDaysHint": {
+        "message": "Los días en los que rige esta franja. Cada franja tiene los suyos.",
+        "description": "Los días en los que rige esta franja"
+    },
+    "webActivityRestoreDefaults": {
+        "message": "Restaurar valores por defecto",
+        "description": "Devolver los ajustes de registro a los que trae la extensión"
+    },
+    "webActivityRestoreDefaultsConfirm": {
+        "message": "¿Devolver los ajustes de registro a sus valores por defecto? Tus categorías, tus reglas y tu historial no se tocan.",
+        "description": "Restaurar los ajustes de registro"
+    },
+    "webActivityDefaultsRestored": {
+        "message": "Valores por defecto restaurados",
+        "description": "Valores por defecto restaurados"
+    },
+    "webActivityPanelBtn": {
+        "message": "Panel actividad",
+        "description": "Abrir la actividad web en el panel lateral"
+    },
+    "webActivityPanelTitle": {
+        "message": "Abrir la actividad en el panel lateral",
+        "description": "Abrir la actividad en el panel lateral"
+    },
+    "webActivityOpenInTab": {
+        "message": "Abrir en una pestaña",
+        "description": "Abrir el dashboard completo de actividad web en una pestaña"
+    },
+    "webActivitySearchPanel": {
+        "message": "Buscar sitios",
+        "description": "Filtrar la lista por sitio"
+    },
+    "webActivityExpandAll": {
+        "message": "Desplegar todos los sitios",
+        "description": "Desplegar todos los sitios"
+    },
+    "webActivityCollapseAll": {
+        "message": "Plegar todos los sitios",
+        "description": "Plegar todos los sitios"
+    },
+    "webActivityToggleRule": {
+        "message": "Activar o desactivar esta regla",
+        "description": "Activar o desactivar esta regla"
+    },
+    "webActivityPanelEmpty": {
+        "message": "Todavía no hay nada registrado hoy.",
+        "description": "Todavía no hay nada registrado hoy"
+    },
+    "webActivityEnableLimit": {
+        "message": "Volver a activar esta cuota",
+        "description": "Volver a activar esta cuota"
+    },
+    "webActivityDisableLimit": {
+        "message": "Pausar esta cuota sin borrarla",
+        "description": "Pausar esta cuota sin borrarla"
+    },
+    "webActivityEnableSchedule": {
+        "message": "Volver a activar este horario",
+        "description": "Volver a activar este horario"
+    },
+    "webActivityDisableSchedule": {
+        "message": "Pausar este horario sin borrarlo",
+        "description": "Pausar este horario sin borrarlo"
+    },
+    "webActivityNothingToToggle": {
+        "message": "Aquí todavía no hay nada configurado",
+        "description": "Aquí no hay nada que activar ni desactivar"
+    },
+    "webActivityPanelTitleBar": {
+        "message": "Actividad web",
+        "description": "Actividad web"
+    },
+    "webActivityPinPage": {
+        "message": "Fijar el panel de actividad",
+        "description": "Fijar el panel de actividad"
+    },
+    "webActivityPinPageTitle": {
+        "message": "Fijar esta vista: la extensión la abrirá desde la barra de herramientas",
+        "description": "Fijar esta vista para que el botón de la barra la abra"
+    },
+    "webActivityUnpinPageTitle": {
+        "message": "Dejar de fijar esta vista",
+        "description": "Que el botón de la barra deje de abrir esta vista"
+    },
+    "webActivityPagePinned": {
+        "message": "Panel de actividad fijado",
+        "description": "Panel de actividad fijado"
+    },
+    "webActivityPageUnpinned": {
+        "message": "Panel de actividad no fijado",
+        "description": "Panel de actividad no fijado"
     }
 }

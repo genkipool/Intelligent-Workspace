@@ -9,6 +9,22 @@
  *
  * `sortValue` is what the column sorts on; columns without one are not sortable
  * because there is nothing sensible to compare (the editors and the actions).
+ *
+ * `weight` is the column's share of the table's width. The table is laid out with
+ * `table-layout: fixed` so that every row fits on screen without a sideways scroll,
+ * and a fixed layout needs to be told what each column is worth — left to itself it
+ * sizes to the widest cell and pushes the table past the window. The weights are
+ * normalised against whichever columns are actually on, so turning one off widens the
+ * rest instead of leaving a gap.
+ *
+ * The numbers are the widths the browser gives each column when the table is allowed
+ * to size itself — measured, not estimated. Eyeballing them meant the footer's own
+ * total, the category select's chevron and the three controls in a rule cell were all
+ * missed in turn, and something was cut short after every adjustment.
+ *
+ * They come to slightly more than the table has, and the shortfall is taken out of
+ * the site column on purpose: a domain ends in an ellipsis with the whole of it in
+ * the tooltip, which is a far better thing to lose than a figure or a category.
  */
 
 export const SITE_COLUMNS = [
@@ -20,6 +36,7 @@ export const SITE_COLUMNS = [
         pinned: true,
         defaultVisible: true,
         align: 'left',
+        weight: 134,
         sortValue: (row) => row.domain,
     },
     {
@@ -29,6 +46,7 @@ export const SITE_COLUMNS = [
         defaultVisible: true,
         align: 'left',
         editable: true,
+        weight: 141,
         sortValue: (row) => row.category,
     },
     {
@@ -36,6 +54,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColVisits',
         descKey: 'webActivityColVisitsDesc',
         defaultVisible: true,
+        weight: 74,
         sortValue: (row) => row.visits,
     },
     {
@@ -43,6 +62,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColTime',
         descKey: 'webActivityColTimeDesc',
         defaultVisible: true,
+        weight: 87,
         sortValue: (row) => row.seconds,
     },
     {
@@ -50,6 +70,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColShare',
         descKey: 'webActivityColShareDesc',
         defaultVisible: true,
+        weight: 52,
         sortValue: (row) => row.seconds,
     },
     {
@@ -57,13 +78,15 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColPerVisit',
         descKey: 'webActivityColPerVisitDesc',
         defaultVisible: true,
+        weight: 96,
         sortValue: (row) => row.perVisit,
     },
     {
         id: 'sessions',
         labelKey: 'webActivityColSessions',
         descKey: 'webActivityColSessionsDesc',
-        defaultVisible: false,
+        defaultVisible: true,
+        weight: 81,
         sortValue: (row) => row.sessions,
     },
     {
@@ -71,6 +94,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColPerDay',
         descKey: 'webActivityColPerDayDesc',
         defaultVisible: false,
+        weight: 87,
         sortValue: (row) => row.perDay,
     },
     {
@@ -78,6 +102,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColActiveDays',
         descKey: 'webActivityColActiveDaysDesc',
         defaultVisible: false,
+        weight: 81,
         sortValue: (row) => row.days,
     },
     {
@@ -85,6 +110,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColLastSeen',
         descKey: 'webActivityColLastSeenDesc',
         defaultVisible: false,
+        weight: 100,
         sortValue: (row) => row.lastDay || '',
     },
     {
@@ -92,22 +118,31 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColLimit',
         descKey: 'webActivityColLimitDesc',
         defaultVisible: true,
-        align: 'left',
         editable: true,
+        weight: 107,
+    },
+    {
+        id: 'weekly',
+        labelKey: 'webActivityColWeekly',
+        descKey: 'webActivityColWeeklyDesc',
+        defaultVisible: false,
+        editable: true,
+        weight: 107,
     },
     {
         id: 'schedule',
         labelKey: 'webActivityColSchedule',
         descKey: 'webActivityColScheduleDesc',
         defaultVisible: true,
-        align: 'left',
         editable: true,
+        weight: 178,
     },
     {
         id: 'state',
         labelKey: 'webActivityColState',
         descKey: 'webActivityColStateDesc',
         defaultVisible: true,
+        weight: 129,
     },
     {
         id: 'record',
@@ -115,8 +150,20 @@ export const SITE_COLUMNS = [
         descKey: 'webActivityColRecordDesc',
         pinned: true,
         defaultVisible: true,
+        weight: 79,
     },
 ];
+
+/**
+ * How many rows the log draws.
+ *
+ * The table is meant to be read at a glance, with every row and every column on
+ * screen at once. Six months of browsing is thousands of sites, and a table that long
+ * is not a table anyone reads — it is a scroll. The rows are sorted first, so the cap
+ * always keeps the hundred that matter under whatever question the table is being
+ * asked, and the footer keeps counting all of them.
+ */
+export const MAX_TABLE_ROWS = 100;
 
 /** Where the chosen columns and sort order are remembered between visits. */
 export const SITE_TABLE_PREFS_KEY = 'wa:tablePrefs';
@@ -128,18 +175,32 @@ export const DEFAULT_TABLE_PREFS = {
     sortDir: 'desc',
 };
 
-/** Fills in anything a stored preference is missing, and drops columns that no longer exist. */
+/**
+ * Fills in anything a stored preference is missing.
+ *
+ * The column set is deliberately *not* read back from storage. Nothing on the page
+ * can change it — there is no picker — so a stored set can only ever be a snapshot of
+ * what the defaults happened to be on the day it was written, and it silently hides
+ * any column added since. That is how the log lost its sessions column. Only the sort
+ * is a real preference, because only the sort can be changed.
+ */
 export function normalizeTablePrefs(stored) {
-    const known = new Set(SITE_COLUMNS.map((column) => column.id));
-    const columns = Array.isArray(stored?.columns)
-        ? stored.columns.map((id) => (id === 'actions' ? 'record' : id)).filter((id) => known.has(id))
-        : null;
     const sortable = SITE_COLUMNS.find((column) => column.id === stored?.sortBy && column.sortValue);
     return {
-        columns: columns?.length ? columns : DEFAULT_TABLE_PREFS.columns,
+        columns: DEFAULT_TABLE_PREFS.columns,
         sortBy: sortable ? stored.sortBy : DEFAULT_TABLE_PREFS.sortBy,
         sortDir: stored?.sortDir === 'asc' ? 'asc' : 'desc',
     };
+}
+
+/**
+ * Each column's width as a percentage string, normalised over the columns on screen.
+ * A column with no weight of its own counts as an average one.
+ */
+export function columnWidths(columns) {
+    const weights = columns.map((column) => column.weight || 10);
+    const total = weights.reduce((sum, weight) => sum + weight, 0) || 1;
+    return weights.map((weight) => ((weight / total) * 100).toFixed(3) + '%');
 }
 
 /**

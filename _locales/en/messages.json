@@ -5832,9 +5832,6 @@
   "sh_space_res": {
     "message": "Hello Alvaro, are you free to go for a coffee?"
   },
-  "sh_spaces_code": {
-    "message": "/hi$1Alvaro$2to__go__for__a__coffee"
-  },
   "snippetHelpPopupTitle": {
     "message": "Quick Access Menu"
   },
@@ -10297,14 +10294,14 @@
     "message": "Daily allowance"
   },
   "webActivityDailyLimitHint": {
-    "message": "Once the day’s time is used up the site is blocked until midnight. Zero means no allowance."
+    "message": "Once the day’s time is used up the site is blocked until midnight. 00:00 means no allowance."
   },
   "webActivityFieldSchedules": {
     "message": "Allowed hours",
     "description": "The only hours the site can be opened. Leave empty to allow it at any time."
   },
   "webActivitySchedulesHint": {
-    "message": "Outside these hours the site is blocked. A window that ends before it starts runs overnight, and its days are the ones it starts on."
+    "message": "Outside these hours the site is blocked. A window that ends before it starts runs overnight. No window at all means no restriction by the clock."
   },
   "webActivityAddSchedule": {
     "message": "Add a window"
@@ -10322,14 +10319,11 @@
     "message": "Category",
     "description": "Overrides the category guessed from the domain, which is what the focus ratio is built on"
   },
-  "webActivityCategoryAuto": {
-    "message": "Detect automatically"
-  },
   "webActivityFieldNotifyAt": {
     "message": "Warn at (%)"
   },
   "webActivityNotifyAtHint": {
-    "message": "A notification when this share of the allowance is gone. Leave empty for the general setting."
+    "message": "A notification when this share of the allowance is gone. Zero turns the warning off for this site."
   },
   "webActivityLimitEnabled": {
     "message": "Limit active"
@@ -10606,7 +10600,7 @@
     "message": "Domain restored to activity tracking"
   },
   "webActivityRemoveLimit": {
-    "message": "Remove daily limit"
+    "message": "Clear this allowance"
   },
   "webActivitySortBy": {
     "message": "Sort by this column",
@@ -10716,5 +10710,513 @@
   },
   "errorSnippetTriggerFirst": {
     "message": "Write the snippet trigger before editing the text to expand"
+  },
+  "webActivityCategoryGroupBuiltIn": {
+    "message": "Built-in",
+    "description": "The categories that come with the extension"
+  },
+  "webActivityCategoryGroupCustom": {
+    "message": "Yours",
+    "description": "The categories you added yourself"
+  },
+  "webActivitySettings": {
+    "message": "Settings",
+    "description": "Rules, categories and how the activity is recorded"
+  },
+  "webActivitySettingsHint": {
+    "message": "Rules, categories and how the activity is recorded",
+    "description": "Rules, categories and how the activity is recorded"
+  },
+  "webActivitySettingsSubtitle": {
+    "message": "Everything that decides what is recorded, what it is called and what it is allowed.",
+    "description": "Everything that decides what is recorded, what it is called and what it is allowed"
+  },
+  "webActivitySettingsRules": {
+    "message": "Rules by site",
+    "description": "Every site with a time limit or a schedule"
+  },
+  "webActivitySettingsRulesHint": {
+    "message": "Every site with an allowance or a schedule, whether or not you have opened it lately.",
+    "description": "Every site with an allowance or a schedule, whether or not you have opened it lately"
+  },
+  "webActivitySettingsCategories": {
+    "message": "Categories",
+    "description": "The buckets a site can be filed under"
+  },
+  "webActivitySettingsCategoriesHint": {
+    "message": "A site's category groups it in the sidebar and in the charts. Add your own for anything the automatic detection cannot name.",
+    "description": "A site's category groups it in the sidebar and in the charts"
+  },
+  "webActivitySettingsTracking": {
+    "message": "Recording",
+    "description": "How the clock behaves"
+  },
+  "webActivitySettingsTrackingHint": {
+    "message": "How the clock decides you are browsing, and how long the record is kept.",
+    "description": "How the clock decides you are browsing, and how long the record is kept"
+  },
+  "webActivitySettingsIgnored": {
+    "message": "Sites never recorded",
+    "description": "Sites the clock never runs on"
+  },
+  "webActivitySettingsIgnoredHint": {
+    "message": "Time on these sites is never counted and they never appear in the log.",
+    "description": "Time on these sites is never counted and they never appear in the log"
+  },
+  "webActivitySettingsData": {
+    "message": "Your data",
+    "description": "Take it away, bring it back, or delete it"
+  },
+  "webActivitySettingsDataHint": {
+    "message": "Everything is stored on this device only. Nothing is ever sent anywhere.",
+    "description": "Everything is stored on this device only"
+  },
+  "webActivitySettingsSaved": {
+    "message": "Settings saved",
+    "description": "Settings saved"
+  },
+  "webActivityAddRule": {
+    "message": "Add site",
+    "description": "Set a limit or a schedule on a site"
+  },
+  "webActivityRulesEmpty": {
+    "message": "No site has a limit or a schedule yet.",
+    "description": "No site has a limit or a schedule yet"
+  },
+  "webActivityDataFigures": {
+    "message": "$1 days on record · $2 sites in the period on screen",
+    "description": "How much has been recorded"
+  },
+  "webActivityCleared": {
+    "message": "History deleted",
+    "description": "History deleted"
+  },
+  "webActivityCategoryNew": {
+    "message": "New category",
+    "description": "Add a category of your own"
+  },
+  "webActivityCategoryNamePlaceholder": {
+    "message": "Category name",
+    "description": "Category name"
+  },
+  "webActivityCategoryAdd": {
+    "message": "Add",
+    "description": "Add this category"
+  },
+  "webActivityCategoryRename": {
+    "message": "Rename",
+    "description": "Click to rename this category"
+  },
+  "webActivityCategoryDelete": {
+    "message": "Delete category",
+    "description": "Delete this category"
+  },
+  "webActivityCategoryDeleteConfirm": {
+    "message": "Delete the category “$1”? The sites filed under it go back to being detected automatically.",
+    "description": "Delete this category"
+  },
+  "webActivityCategoryExists": {
+    "message": "You already have a category with that name.",
+    "description": "You already have a category with that name"
+  },
+  "webActivityCategoryNameInvalid": {
+    "message": "Give the category a name with at least one letter or digit.",
+    "description": "Give the category a usable name"
+  },
+  "webActivityCategoryCustomEmpty": {
+    "message": "You have not added any category of your own yet.",
+    "description": "You have not added any category of your own yet"
+  },
+  "webActivityCategoryBuiltInHint": {
+    "message": "These are what the automatic detection knows how to recognise. A site can be moved out of one from its row in the log.",
+    "description": "The categories that come with the extension"
+  },
+  "webActivityCategorySites": {
+    "message": "$1 sites",
+    "description": "How many sites are filed under this category"
+  },
+  "webActivityCategoryUnused": {
+    "message": "no sites yet",
+    "description": "No site is filed under this category yet"
+  },
+  "webActivityTrackingEnabled": {
+    "message": "Record activity",
+    "description": "Turn the clock on or off"
+  },
+  "webActivityTrackingEnabledHint": {
+    "message": "With this off nothing new is recorded. What is already on record is kept.",
+    "description": "With this off nothing new is recorded"
+  },
+  "webActivityIdleSeconds": {
+    "message": "Stop the clock after",
+    "description": "How long without keyboard or mouse counts as away"
+  },
+  "webActivityIdleSecondsHint": {
+    "message": "With no keyboard or mouse for this long you count as away and the time stops — unless a tab is playing sound, which counts as watching.",
+    "description": "How long without keyboard or mouse counts as away"
+  },
+  "webActivityCountAudible": {
+    "message": "Keep counting audio in the background",
+    "description": "Count a tab that is playing sound even when the browser is not in front"
+  },
+  "webActivityCountAudibleHint": {
+    "message": "A video still playing in another window is still time on that site.",
+    "description": "Count a tab that is playing sound even when the browser is not in front"
+  },
+  "webActivityNotifyAtDefault": {
+    "message": "Warn by default at",
+    "description": "The share of an allowance that triggers a warning"
+  },
+  "webActivityNotifyAtDefaultHint": {
+    "message": "A notification when this share of an allowance is gone. A site can override it. Zero turns the warnings off.",
+    "description": "The share of an allowance that triggers a warning"
+  },
+  "webActivitySnoozeMinutes": {
+    "message": "“Five more minutes” lasts",
+    "description": "How long the block screen's snooze button holds the block off"
+  },
+  "webActivitySnoozeMinutesHint": {
+    "message": "How long the block screen's snooze holds the block off. Zero removes the button.",
+    "description": "How long the block screen's snooze button holds the block off"
+  },
+  "webActivityRetentionDays": {
+    "message": "Keep the history for",
+    "description": "Days of history kept before the oldest is dropped"
+  },
+  "webActivityRetentionDaysHint": {
+    "message": "Days older than this are deleted as the day rolls over.",
+    "description": "Days of history kept before the oldest is dropped"
+  },
+  "webActivitySecondsShort": {
+    "message": "s",
+    "description": "Seconds, abbreviated"
+  },
+  "webActivityDaysShort": {
+    "message": "days",
+    "description": "Days, abbreviated"
+  },
+  "webActivityIgnoredEmpty": {
+    "message": "Every site is being recorded.",
+    "description": "Every site is being recorded"
+  },
+  "webActivityIgnoredAdd": {
+    "message": "Add site",
+    "description": "Stop recording a site"
+  },
+  "webActivityLimitModalTitle": {
+    "message": "Time limit",
+    "description": "How long this site is allowed"
+  },
+  "webActivityLimitModalSub": {
+    "message": "How long this site is allowed before it is blocked.",
+    "description": "How long this site is allowed before it is blocked"
+  },
+  "webActivityFieldWeeklyLimit": {
+    "message": "Weekly allowance",
+    "description": "Time allowed on this site per week"
+  },
+  "webActivityWeeklyLimitHint": {
+    "message": "Once the week’s time is used up the site is blocked until Monday. 00:00 means no weekly allowance.",
+    "description": "Time allowed on this site per week, counted from Monday"
+  },
+  "webActivityWeeklyBelowDaily": {
+    "message": "The weekly allowance is smaller than the daily one, so a single day would use it all up.",
+    "description": "The weekly allowance is smaller than the daily one"
+  },
+  "webActivityLimitSummaryNone": {
+    "message": "No allowance: this site is counted but never blocked by its time.",
+    "description": "No allowance set"
+  },
+  "webActivityLimitSummaryDaily": {
+    "message": "Blocked after $1 today. The allowance starts again at midnight.",
+    "description": "What this limit will do"
+  },
+  "webActivityLimitSummaryWeekly": {
+    "message": "Blocked after $1 this week. The allowance starts again on Monday.",
+    "description": "What this limit will do"
+  },
+  "webActivityLimitSummaryBoth": {
+    "message": "Blocked after $1 in a day or $2 in a week, whichever comes first.",
+    "description": "What this limit will do"
+  },
+  "webActivityFieldSiteHint": {
+    "message": "Just the domain. A full address is trimmed down to it.",
+    "description": "Just the domain"
+  },
+  "webActivityPresetTitle": {
+    "message": "Set this allowance",
+    "description": "Set this allowance"
+  },
+  "webActivityPresetNone": {
+    "message": "None",
+    "description": "No allowance at all"
+  },
+  "webActivityPresetNoneTitle": {
+    "message": "No allowance at all",
+    "description": "No allowance at all"
+  },
+  "webActivityScheduleModalTitle": {
+    "message": "Allowed hours",
+    "description": "The hours this site can be opened"
+  },
+  "webActivityScheduleModalSub": {
+    "message": "The hours this site can be opened. Outside every window it is blocked.",
+    "description": "The hours this site can be opened"
+  },
+  "webActivityScheduleSummaryNone": {
+    "message": "No window: this site can be opened at any hour.",
+    "description": "No restriction by the clock"
+  },
+  "webActivityScheduleSummaryAlways": {
+    "message": "Blocked at every hour of every day.",
+    "description": "Blocked at all times"
+  },
+  "webActivityScheduleSummaryWindows": {
+    "message": "Allowed only inside the hours you set. Blocked outside them.",
+    "description": "What this schedule will do"
+  },
+  "webActivityNoWindows": {
+    "message": "No window yet. Add one and the site is blocked outside it.",
+    "description": "No window yet"
+  },
+  "webActivityWindowLabel": {
+    "message": "Window $1",
+    "description": "One of the allowed time windows"
+  },
+  "webActivityWindowCount": {
+    "message": "$1 windows",
+    "description": "How many allowed time windows are set"
+  },
+  "webActivityWindowNoDays": {
+    "message": "Pick at least one day, or this window does nothing.",
+    "description": "Pick at least one day"
+  },
+  "webActivityRemoveWindow": {
+    "message": "Remove this window",
+    "description": "Remove this window"
+  },
+  "webActivityOvernight": {
+    "message": "overnight",
+    "description": "This window runs past midnight"
+  },
+  "webActivityOvernightHint": {
+    "message": "It ends before it starts, so it runs past midnight. Its days are the ones it starts on.",
+    "description": "This window runs past midnight"
+  },
+  "webActivityDaysAll": {
+    "message": "Every day",
+    "description": "Select every day of the week"
+  },
+  "webActivityDaysWeekdays": {
+    "message": "Weekdays",
+    "description": "Select Monday to Friday"
+  },
+  "webActivityDaysWeekend": {
+    "message": "Weekend",
+    "description": "Select Saturday and Sunday"
+  },
+  "webActivityRuleEnabledHint": {
+    "message": "Turn it off to keep the allowance and the hours without either of them blocking anything.",
+    "description": "Turn the whole rule for this site on or off"
+  },
+  "webActivityConfigureSchedule": {
+    "message": "Configure allowed hours",
+    "description": "Configure the hours this site can be opened"
+  },
+  "webActivityBlocksTitle": {
+    "message": "Blocks",
+    "description": "The sites being blocked right now"
+  },
+  "webActivityBlocksHintTitle": {
+    "message": "The sites a rule is stopping right now, and when each one lifts",
+    "description": "The sites a rule is stopping right now, and when each one lifts"
+  },
+  "webActivityNoBlocks": {
+    "message": "Nothing is blocked right now",
+    "description": "Nothing is blocked right now"
+  },
+  "webActivityNoBlocksSub": {
+    "message": "Every site with a rule is inside its allowance and its hours.",
+    "description": "Every site with a rule is inside its allowance and its hours"
+  },
+  "webActivityMeterDaily": {
+    "message": "Today",
+    "description": "Time used against the daily allowance"
+  },
+  "webActivityMeterWeekly": {
+    "message": "This week",
+    "description": "Time used against the weekly allowance"
+  },
+  "webActivityColWeekly": {
+    "message": "Weekly",
+    "description": "Weekly time allowance set for this site"
+  },
+  "webActivityColWeeklyDesc": {
+    "message": "Maximum weekly time allowed for this site, counted from Monday",
+    "description": "Maximum weekly time allowed for this site, counted from Monday"
+  },
+  "webActivityTableCapped": {
+    "message": "Showing the $1 of $2 sites that lead this order",
+    "description": "Only the first rows are drawn"
+  },
+  "webActivityTableCappedHint": {
+    "message": "The log draws the leading rows of whatever order it is sorted in. The totals below still count every site.",
+    "description": "The log draws the leading rows of whatever order it is sorted in"
+  },
+  "webActivityStateBlocked_weekly": {
+    "message": "week used up",
+    "description": "The weekly allowance for this site is gone"
+  },
+  "webActivityBlockedReason_weekly": {
+    "message": "This week's time on this site is used up.",
+    "description": "The weekly allowance for this site is gone"
+  },
+  "webActivityBlockedUntilMonday": {
+    "message": "The weekly allowance starts again on Monday.",
+    "description": "The weekly allowance starts again on Monday"
+  },
+  "webActivityBlockedChangeRule": {
+    "message": "Change the rule",
+    "description": "Open the dashboard to change this rule"
+  },
+  "sh_spaces_tail": {
+    "message": "to__go__for__a__coffee",
+    "description": "The words of the snippet spaces example, after the /hi$1Alvaro$2 marker that stays untranslated"
+  },
+  "webActivityRemoveLimits": {
+    "message": "Remove limits",
+    "description": "Clear the daily and weekly allowances for this site"
+  },
+  "webActivityRemoveScheduleShort": {
+    "message": "Remove schedule",
+    "description": "Clear the allowed hours for this site"
+  },
+  "webActivityRuleEnabled": {
+    "message": "Rule active",
+    "description": "Turn the whole rule for this site on or off"
+  },
+  "webActivityCategorySite": {
+    "message": "1 site",
+    "description": "One site is filed under this category"
+  },
+  "apply": {
+    "message": "Apply",
+    "description": "Save these settings and close the dialog"
+  },
+  "webActivityFieldAllowance": {
+    "message": "Allowed time",
+    "description": "How long this site is allowed"
+  },
+  "webActivityDurationLabel": {
+    "message": "hh:mm",
+    "description": "The allowance is written as hours and minutes, not as a time of day"
+  },
+  "webActivityLimitNoDays": {
+    "message": "Pick at least one day, or the daily allowance does nothing.",
+    "description": "Pick at least one day"
+  },
+  "webActivityIgnoredInvalid": {
+    "message": "That is not a website. Write a domain such as example.com.",
+    "description": "That is not a website"
+  },
+  "webActivityIgnoredDuplicate": {
+    "message": "That site is already on the list.",
+    "description": "That site is already on the list"
+  },
+  "webActivityLimitDaysHint": {
+    "message": "The days this allowance applies on. On any other day the site has no daily limit.",
+    "description": "The days this allowance applies on"
+  },
+  "webActivityWindowDaysHint": {
+    "message": "The days this window runs on. Each window has its own.",
+    "description": "The days this window runs on"
+  },
+  "webActivityRestoreDefaults": {
+    "message": "Restore defaults",
+    "description": "Put the recording settings back to what the extension ships with"
+  },
+  "webActivityRestoreDefaultsConfirm": {
+    "message": "Put the recording settings back to their defaults? Your categories, your rules and your history are left alone.",
+    "description": "Restore the recording settings"
+  },
+  "webActivityDefaultsRestored": {
+    "message": "Defaults restored",
+    "description": "Defaults restored"
+  },
+  "webActivityPanelBtn": {
+    "message": "Activity panel",
+    "description": "Open the web activity in the side panel"
+  },
+  "webActivityPanelTitle": {
+    "message": "Open the activity in the side panel",
+    "description": "Open the activity in the side panel"
+  },
+  "webActivityOpenInTab": {
+    "message": "Open in a tab",
+    "description": "Open the full web activity dashboard in a tab"
+  },
+  "webActivitySearchPanel": {
+    "message": "Search sites",
+    "description": "Filter the list by site"
+  },
+  "webActivityExpandAll": {
+    "message": "Expand every site",
+    "description": "Expand every site"
+  },
+  "webActivityCollapseAll": {
+    "message": "Collapse every site",
+    "description": "Collapse every site"
+  },
+  "webActivityToggleRule": {
+    "message": "Turn this rule on or off",
+    "description": "Turn this rule on or off"
+  },
+  "webActivityPanelEmpty": {
+    "message": "Nothing recorded today yet.",
+    "description": "Nothing recorded today yet"
+  },
+  "webActivityEnableLimit": {
+    "message": "Turn this allowance back on",
+    "description": "Turn this allowance back on"
+  },
+  "webActivityDisableLimit": {
+    "message": "Pause this allowance, keeping it",
+    "description": "Pause this allowance without deleting it"
+  },
+  "webActivityEnableSchedule": {
+    "message": "Turn these hours back on",
+    "description": "Turn these hours back on"
+  },
+  "webActivityDisableSchedule": {
+    "message": "Pause these hours, keeping them",
+    "description": "Pause these hours without deleting them"
+  },
+  "webActivityNothingToToggle": {
+    "message": "Nothing set here yet",
+    "description": "There is nothing here to turn on or off"
+  },
+  "webActivityPanelTitleBar": {
+    "message": "Web activity",
+    "description": "Web activity"
+  },
+  "webActivityPinPage": {
+    "message": "Pin the activity panel",
+    "description": "Pin the activity panel"
+  },
+  "webActivityPinPageTitle": {
+    "message": "Pin this view — the extension will open it from the toolbar",
+    "description": "Pin this view so the toolbar button opens it"
+  },
+  "webActivityUnpinPageTitle": {
+    "message": "Unpin this view",
+    "description": "Stop the toolbar button opening this view"
+  },
+  "webActivityPagePinned": {
+    "message": "Activity panel pinned",
+    "description": "Activity panel pinned"
+  },
+  "webActivityPageUnpinned": {
+    "message": "Activity panel unpinned",
+    "description": "Activity panel unpinned"
   }
 }

@@ -5,6 +5,7 @@ import Dashboard from './Dashboard.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
 import '../../../styles/dashboard.css';
+import '../../../styles/select.css';
 
 const app = mountPage(Dashboard, {
     target: document.body,
