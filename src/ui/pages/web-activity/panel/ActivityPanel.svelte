@@ -15,6 +15,7 @@
     import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../../stores/i18nStore.js';
     import { showNotification } from '../../../../utils/i18n.js';
+    import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import PanelSite from './PanelSite.svelte';
 
     let {
@@ -71,6 +72,53 @@
         window.location.href = '../popup/popup.html?context=sidepanel';
         chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../popup/popup.html' });
     }
+
+    /**
+     * The four navigation buttons, in the order every side-panel header carries them.
+     *
+     * No `viewBox` on any of them, unlike the rules page. That page's sprite holds its
+     * icons in `<g>` elements, which carry no coordinate system of their own, so its
+     * buttons supply one. This page's sprite uses `<symbol>`, which does — and setting
+     * it again on the `<svg>` applies it twice, which is what left the house icon
+     * drawn at the wrong scale and off centre inside its button.
+     */
+    const headerActions = $derived([
+        {
+            id: 'pin-toggle',
+            class: 'pin-button',
+            pinned: isPinned,
+            pressed: isPinned,
+            // Matching the rules page, which makes this one focusable explicitly.
+            tabindex: '0',
+            icon: '#wa-pin',
+            ariaLabel: $t('webActivityPinPage'),
+            title: $tt(isPinned ? 'webActivityUnpinPageTitle' : 'webActivityPinPageTitle'),
+            onclick: togglePin,
+        },
+        {
+            id: 'list-groups-btn',
+            class: 'buttom-list-group',
+            icon: '#wa-list-group',
+            ariaLabel: $t('listTabGroups'),
+            title: $tt('listTabGroups'),
+            onclick: goToGroups,
+        },
+        {
+            id: 'home-btn',
+            class: 'home-button',
+            icon: '#wa-home',
+            ariaLabel: $t('backToHome'),
+            title: $tt('backToHome'),
+            onclick: goHome,
+        },
+        {
+            class: 'back-button',
+            icon: '#wa-back',
+            ariaLabel: $t('backToMainPopup'),
+            title: $tt('backToHome'),
+            onclick: goBack,
+        },
+    ]);
 
     async function goBack() {
         const { navSource } = await chrome.storage.local.get('navSource');
@@ -130,96 +178,10 @@
 
 <div class="wa-panel">
     <!--
-        The header every side-panel page of this extension wears: the page's name and
-        the same four navigation buttons, with the same glyphs at the same size. Under
-        it, the group list's `search-and-controls` row with the two controls this panel
-        needs.
+        The bar every side-panel page of this extension wears, and the group list's
+        search row under it with the two controls this panel needs.
     -->
-    <header class="header-main-menu">
-        <h1 class="header-main-title">{$t('webActivityPanelTitleBar')}</h1>
-        <button
-            id="pin-toggle"
-            class="pin-button"
-            class:pinned={isPinned}
-            type="button"
-            translate="no"
-            tabindex="0"
-            aria-pressed={isPinned}
-            aria-label={$t('webActivityPinPage')}
-            title={$tt(isPinned ? 'webActivityUnpinPageTitle' : 'webActivityPinPageTitle')}
-            onclick={togglePin}
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#wa-pin"></use>
-            </svg>
-        </button>
-        <button
-            id="list-groups-btn"
-            class="buttom-list-group"
-            type="button"
-            translate="no"
-            aria-label={$t('listTabGroups')}
-            title={$tt('listTabGroups')}
-            onclick={goToGroups}
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 512 512"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#wa-list-group"></use>
-            </svg>
-        </button>
-        <button
-            id="home-btn"
-            class="home-button"
-            type="button"
-            translate="no"
-            aria-label={$t('backToHome')}
-            title={$tt('backToHome')}
-            onclick={goHome}
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="2 2 20 20"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#wa-home"></use>
-            </svg>
-        </button>
-        <button
-            class="back-button"
-            type="button"
-            translate="no"
-            aria-label={$t('backToMainPopup')}
-            title={$tt('backToHome')}
-            onclick={goBack}
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#wa-back"></use>
-            </svg>
-        </button>
-    </header>
+    <SidePanelHeader title={$t('webActivityPanelTitleBar')} actions={headerActions} />
 
     <div class="search-and-controls">
         <div class="search-container search-container--compact">

@@ -19,6 +19,7 @@
     import SettingsModal from './SettingsModal.svelte';
     import Tutorial from './Tutorial.svelte';
     import RulesToolbar from './RulesToolbar.svelte';
+    import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import RulesPopupHost from './popups/RulesPopupHost.svelte';
     import ImportPopup from './popups/ImportPopup.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
@@ -797,6 +798,53 @@
         URL.revokeObjectURL(url);
     }
 
+    /**
+     * The four navigation buttons of the header. The ids and classes are the ones this
+     * page's stylesheet already targets, so moving the markup into a shared component
+     * changes nothing that is rendered.
+     */
+    let headerActions = $derived([
+        {
+            id: 'pin-toggle',
+            class: 'pin-button',
+            pinned: isPinned,
+            pressed: isPinned,
+            // The only one of the four this page made focusable explicitly.
+            tabindex: '0',
+            icon: '#icon-pin',
+            viewBox: '0 0 24 24',
+            ariaLabel: $t('pinRulesPage') || 'Pin rules page',
+            title: $tt(isPinned ? 'pinTooltipPinned' : 'pinTooltipUnpinned'),
+            onclick: togglePin,
+        },
+        {
+            id: 'list-groups-btn',
+            class: 'buttom-list-group',
+            icon: '#icon-list-group',
+            viewBox: '0 0 512 512',
+            ariaLabel: $t('listTabGroups') || 'List tab groups',
+            title: $tt('listTabGroups') || 'List tab groups',
+            onclick: listGroups,
+        },
+        {
+            id: 'home-btn',
+            class: 'home-button',
+            icon: '#icon-home',
+            viewBox: '2 2 20 20',
+            ariaLabel: $t('backToHome') || 'Back to home',
+            title: $tt('backToHome') || 'Back to home',
+            onclick: goHome,
+        },
+        {
+            class: 'back-button',
+            icon: '#icon-back',
+            viewBox: '0 0 24 24',
+            ariaLabel: $t('backToMainPopup'),
+            title: $tt('backToHome'),
+            onclick: goBack,
+        },
+    ]);
+
     async function togglePin() {
         const newState = !isPinned;
         try {
@@ -898,101 +946,12 @@
 
 <div class="container">
     <div class="sticky-rules-header">
-        <header class="header-main-menu">
-            <h1
-                id="header-main-title-rules"
-                class="header-main-title"
-                style="cursor: pointer;"
-                role="button"
-                tabindex="0"
-                onclick={toggleTutorial}
-                onkeydown={(e) => e.key === 'Enter' && toggleTutorial()}
-            >
-                {$t('manageRules') || 'Manage Rules'}
-            </h1>
-            <button
-                id="pin-toggle"
-                class="pin-button"
-                type="button"
-                translate="no"
-                class:pinned={isPinned}
-                aria-pressed={isPinned}
-                onclick={togglePin}
-                aria-label={$t('pinRulesPage') || 'Pin rules page'}
-                title={$tt(isPinned ? 'pinTooltipPinned' : 'pinTooltipUnpinned')}
-                tabindex="0"
-            >
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-pin"></use>
-                </svg>
-            </button>
-            <button
-                id="list-groups-btn"
-                class="buttom-list-group"
-                type="button"
-                translate="no"
-                onclick={listGroups}
-                aria-label={$t('listTabGroups') || 'List tab groups'}
-                title={$tt('listTabGroups') || 'List tab groups'}
-            >
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 512 512"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-list-group"></use>
-                </svg>
-            </button>
-            <button
-                id="home-btn"
-                class="home-button"
-                type="button"
-                translate="no"
-                onclick={goHome}
-                aria-label={$t('backToHome') || 'Back to home'}
-                title={$tt('backToHome') || 'Back to home'}
-            >
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="2 2 20 20"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-home"></use>
-                </svg>
-            </button>
-            <button
-                class="back-button"
-                type="button"
-                translate="no"
-                onclick={goBack}
-                aria-label={$t('backToMainPopup')}
-                title={$tt('backToHome')}
-            >
-                <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-back"></use>
-                </svg>
-            </button>
-        </header>
+        <SidePanelHeader
+            title={$t('manageRules') || 'Manage Rules'}
+            titleId="header-main-title-rules"
+            onTitleClick={toggleTutorial}
+            actions={headerActions}
+        />
         <menu class="main-menu">
             <div class="action-buttons">
                 <button

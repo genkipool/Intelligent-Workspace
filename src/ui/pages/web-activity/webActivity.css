@@ -1249,17 +1249,26 @@ td[data-col='state'] {
    the table has to give something up. It gives up the derived
    figures, in the order they can most easily be worked out from what
    is left: the per-visit average, then the share, then the visit
-   count. What it never gives up is the time, the rule cells and the
-   state, which are the reasons the table exists.
+   count, then the category, the sessions and finally the state.
+   What it holds on to longest is the time and the two rule cells,
+   which are the reasons the table exists.
+
+   The widths are the window's, but what the table gets is about 280px
+   less than that: the sidebar and the page padding come off first.
+   These used to be set against the window as if the table had all of
+   it, so every one of them fired around 300px too late and the table
+   spent that range shrinking columns below the width their contents
+   need — a schedule read "20:…" and a state "límite superado" ended
+   in an ellipsis. Each threshold here is the window width at which
+   the columns still standing stop fitting at their measured widths,
+   with the site column left to absorb whatever is over, because a
+   domain has its full text in the tooltip.
 
    Keyed on `data-col`, not on `:nth-child`: which column is sixth
    depends on what the user has turned on, so a positional rule hides
    whatever happens to be standing there. `<col>` has to be hidden
    along with the cells or the remaining widths no longer line up. */
-/* Eleven columns need a window this wide; below it the per-visit average — which is
-   the time divided by the visits, both of which are still on the row — is the first
-   to go. */
-@media (max-width: 1320px) {
+@media (max-width: 1480px) {
     .wa-log-table col[data-col='perVisit'],
     .wa-log-table th[data-col='perVisit'],
     .wa-log-table td[data-col='perVisit'] {
@@ -1267,24 +1276,26 @@ td[data-col='state'] {
     }
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1390px) {
     .wa-log-table col[data-col='share'],
     .wa-log-table th[data-col='share'],
     .wa-log-table td[data-col='share'] {
         display: none;
     }
+}
 
-    .wa-log-table td,
-    .wa-table-frame .data-table th {
-        padding-left: 5px;
-        padding-right: 5px;
+@media (max-width: 1320px) {
+    .wa-log-table col[data-col='visits'],
+    .wa-log-table th[data-col='visits'],
+    .wa-log-table td[data-col='visits'] {
+        display: none;
     }
 }
 
-/* Narrower still and the category picker goes too. It is an editor rather than a
-   figure — the same choice is one row away on the settings page — and it is the
-   widest thing left standing between the site and the time it cost. */
-@media (max-width: 830px) {
+/* The category picker goes next. It is an editor rather than a figure — the same
+   choice is one row away on the settings page — and it is the widest thing left
+   standing between the site and the time it cost. */
+@media (max-width: 1240px) {
     .wa-log-table col[data-col='category'],
     .wa-log-table th[data-col='category'],
     .wa-log-table td[data-col='category'] {
@@ -1292,13 +1303,37 @@ td[data-col='state'] {
     }
 }
 
-@media (max-width: 920px) {
-    .wa-log-table col[data-col='visits'],
-    .wa-log-table th[data-col='visits'],
-    .wa-log-table td[data-col='visits'],
+@media (max-width: 1080px) {
+    .wa-log-table td,
+    .wa-table-frame .data-table th {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+}
+
+@media (max-width: 1060px) {
+    .wa-log-table col[data-col='sessions'],
+    .wa-log-table th[data-col='sessions'],
+    .wa-log-table td[data-col='sessions'] {
+        display: none;
+    }
+}
+
+/* Below this the state has to go too, which is the one the table would most like to
+   keep: a blocked site is still marked by the red edge of its row and by the state of
+   its own rule cells, so nothing is lost outright. */
+@media (max-width: 1010px) {
     .wa-log-table col[data-col='state'],
     .wa-log-table th[data-col='state'],
     .wa-log-table td[data-col='state'] {
+        display: none;
+    }
+}
+
+@media (max-width: 820px) {
+    .wa-log-table col[data-col='record'],
+    .wa-log-table th[data-col='record'],
+    .wa-log-table td[data-col='record'] {
         display: none;
     }
 }
@@ -1316,10 +1351,10 @@ td[data-col='state'] {
     }
 }
 
-/* At phone widths the last thing to give is the type size. Five columns of
-   figures in a 470px window fit at 0.78rem and do not at 0.9rem, and a smaller
-   figure that can be read beats a whole one that is cut in half. */
-@media (max-width: 780px) {
+/* At narrow widths the last thing to give is the type size. The four columns left
+   below this fit at 0.78rem and do not at 0.9rem, and a smaller figure that can be
+   read beats a whole one that is cut in half. */
+@media (max-width: 820px) {
     .wa-log-table td,
     .wa-log-table .td-mono {
         font-size: 0.78rem;
@@ -1327,6 +1362,15 @@ td[data-col='state'] {
 
     .wa-cell-val {
         font-size: 0.78rem;
+    }
+
+    /* Narrower than this, a value and its three buttons side by side leave the value
+       about sixty pixels and "20:00-22:00" comes out as "20:…". Stacked, the value has
+       the whole column to itself and the row grows by a line instead, which is the
+       cheaper thing to spend at a width where there are only four columns left. */
+    .wa-log-table .wa-cell-with-action {
+        flex-direction: column;
+        gap: 2px;
     }
 }
 

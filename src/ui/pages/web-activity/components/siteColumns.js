@@ -25,6 +25,13 @@
  * They come to slightly more than the table has, and the shortfall is taken out of
  * the site column on purpose: a domain ends in an ellipsis with the whole of it in
  * the tooltip, which is a far better thing to lose than a figure or a category.
+ *
+ * A measured width is only as good as what was in the cell when it was measured, and
+ * the shortfall is shared out among all of them — so a column sized to exactly what
+ * it held on the day has nothing to give and cuts its content short in any window
+ * narrow enough. Three of them are sized above their measurement for that reason: the
+ * two duration columns for three-digit hours, which is what a year of history on a
+ * daily site comes to, and the share for "100%".
  */
 
 export const SITE_COLUMNS = [
@@ -62,7 +69,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColTime',
         descKey: 'webActivityColTimeDesc',
         defaultVisible: true,
-        weight: 87,
+        weight: 116,
         sortValue: (row) => row.seconds,
     },
     {
@@ -70,7 +77,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColShare',
         descKey: 'webActivityColShareDesc',
         defaultVisible: true,
-        weight: 52,
+        weight: 64,
         sortValue: (row) => row.seconds,
     },
     {
@@ -94,7 +101,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColPerDay',
         descKey: 'webActivityColPerDayDesc',
         defaultVisible: false,
-        weight: 87,
+        weight: 100,
         sortValue: (row) => row.perDay,
     },
     {

@@ -11,6 +11,7 @@
     import { initCustomizeHints } from './customize_hints.js';
     import { getCurrentLang, loadMessages, resolveMessage } from '../../../utils/i18n.js';
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
+    import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import SnippetsSection from './components/SnippetsSection.svelte';
     import BlacklistSection from './components/BlacklistSection.svelte';
     import VideoPipSection from './components/VideoPipSection.svelte';
@@ -71,39 +72,58 @@
         chrome.storage.onChanged.addListener(onStorageChanged);
         return () => chrome.storage.onChanged.removeListener(onStorageChanged);
     });
+
+    /**
+     * The one navigation button this page has. The id is what `customize_hints.js`
+     * looks up to attach its handler, and the classes are the ones the group list and
+     * the themes page use for the same button.
+     */
+    const headerActions = [
+        {
+            id: 'home-btn',
+            class: 'home-button header-action-btn',
+            i18nTitle: 'backToHome',
+            i18nAriaLabel: 'backToHome',
+        },
+    ];
 </script>
+
+<!-- Drawn here rather than pointed at a sprite: this page has no icon sheet. -->
+{#snippet homeIcon()}
+    <svg
+        width="20"
+        height="20"
+        viewBox="2 2 20 20"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-hidden="true"
+        focusable="false"
+    >
+        <g stroke-width="0"></g>
+        <g stroke-linecap="round" stroke-linejoin="round"></g>
+        <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="m12 3.188 9.45 7.087-.45 1.35h-.75v8.625H3.75v-8.625H3l-.45-1.35zm-6.75 6.937v8.625h13.5v-8.625L12 5.063z"
+            fill="var(--text-color)"
+        ></path>
+    </svg>
+{/snippet}
 
 <div class="container option-page">
     <Notification />
-    <header class="header">
-        <h1 data-i18n="customizeCommandsTitle"></h1>
-        <button
-            type="button"
-            id="home-btn"
-            class="header-button"
-            data-i18n-title="backToHome"
-            data-i18n-aria-label="backToHome"
-        >
-            <svg
-                width="20"
-                height="20"
-                viewBox="2 2 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <g stroke-width="0"></g>
-                <g stroke-linecap="round" stroke-linejoin="round"></g>
-                <path
-                    fill-rule="evenodd"
-                    clip-rule="evenodd"
-                    d="m12 3.188 9.45 7.087-.45 1.35h-.75v8.625H3.75v-8.625H3l-.45-1.35zm-6.75 6.937v8.625h13.5v-8.625L12 5.063z"
-                    fill="var(--text-color)"
-                ></path>
-            </svg>
-        </button>
-    </header>
+    <!-- The bar every other page of this extension wears. It had the same markup but
+         none of the styling — this page's stylesheet never defined `.header` — which
+         is why its one button sat unstyled and out of place. -->
+    <SidePanelHeader
+        title=""
+        titleClass=""
+        titleI18n="customizeCommandsTitle"
+        headerClass="header"
+        actionsClass="header-actions"
+        actions={headerActions}
+        icons={{ 'home-btn': homeIcon }}
+    />
 
     <main class="content-scroll">
         <!-- Search bar for filtering commands -->

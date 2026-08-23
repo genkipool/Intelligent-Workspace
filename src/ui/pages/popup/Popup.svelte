@@ -13,6 +13,7 @@
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import Notification from '../../components/common/Notification.svelte';
+    import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import '../../../core/services/webActivitySchema.js';
     import { saveSettings } from '../../services/webActivityService.js';
 
@@ -138,6 +139,42 @@
             '../popup/popup.html',
         );
     }
+
+    /**
+     * The two buttons in the top bar, in the order they have always been drawn.
+     *
+     * `viewBox` on both, because this page's sprite is `<g>` elements, which carry no
+     * coordinate system of their own. The rules icon also needs its stroke here: its
+     * three lines are bare paths with `fill="none"`, so with nothing painting them
+     * the button would show three dots and no rules.
+     */
+    let headerActions = $derived([
+        {
+            id: 'rules-toggle',
+            class: 'header-button',
+            icon: '#icon-rules',
+            viewBox: '0 0 24 24',
+            svgAttrs: {
+                fill: 'none',
+                stroke: 'var(--text-color)',
+                'stroke-width': '2',
+                'stroke-linecap': 'round',
+                'stroke-linejoin': 'round',
+            },
+            ariaLabel: $t('openRulesPage'),
+            title: $tt('openRulesPage'),
+            onclick: openRules,
+        },
+        {
+            id: 'list-group-toggle',
+            class: 'header-button',
+            icon: '#icon-list-group',
+            viewBox: '0 0 512 512',
+            ariaLabel: $t('listTabGroups'),
+            title: $tt('listTabGroups'),
+            onclick: openListGroup,
+        },
+    ]);
 
     function openListGroupView(view) {
         return (e) =>
@@ -327,50 +364,13 @@
 <div class="container">
     <Notification />
     <div class="sticky-header">
-        <header class="header">
-            <h1>{$t('appName')}</h1>
-            <div class="header-actions">
-                <button
-                    id="rules-toggle"
-                    type="button"
-                    class="header-button"
-                    title={$tt('openRulesPage')}
-                    aria-label={$t('openRulesPage')}
-                    onclick={openRules}
-                >
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="var(--text-color)"
-                        style="color: var(--text-color);"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                        focusable="false"><use href="#icon-rules"></use></svg
-                    >
-                </button>
-                <button
-                    id="list-group-toggle"
-                    type="button"
-                    class="header-button"
-                    title={$tt('listTabGroups')}
-                    aria-label={$t('listTabGroups')}
-                    onclick={openListGroup}
-                >
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 512 512"
-                        style="color: var(--text-color);"
-                        aria-hidden="true"
-                        focusable="false"><use href="#icon-list-group"></use></svg
-                    >
-                </button>
-            </div>
-        </header>
+        <SidePanelHeader
+            headerClass="header"
+            titleClass=""
+            title={$t('appName')}
+            actionsClass="header-actions"
+            actions={headerActions}
+        />
     </div>
 
     <main>

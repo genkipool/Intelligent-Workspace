@@ -3,6 +3,7 @@
     import { isCtrlHeld } from '../../../stores/modifierKeysStore.js';
     import { searchToggles, currentMainView } from '../../../stores/appStore.svelte.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
+    import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
 
     let {
         initialTitleKey = 'listTabGroups',
@@ -28,69 +29,66 @@
     };
 
     let titleKey = $derived(VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
+
+    /**
+     * The header's buttons. No handlers: this page attaches them by id from plain JS,
+     * so the ids and classes here are the contract and must stay exactly as they were.
+     */
+    let headerActions = $derived([
+        {
+            id: 'pin-toggle',
+            class: 'pin-button header-action-btn',
+            pressed: 'false',
+            hidden: startsHidden('pin-toggle'),
+            icon: '#icon-pin',
+            title: $tt('pinListPage'),
+        },
+        {
+            id: 'rules-toggle',
+            class: 'header-action-btn',
+            icon: '#icon-rules',
+            ariaLabel: $t('openRulesPage'),
+            title: $tt('openRulesPage'),
+        },
+        {
+            id: 'list-groups-btn',
+            class: 'header-action-btn',
+            hidden: startsHidden('list-groups-btn'),
+            icon: '#icon-tab-groups',
+            title: $tt('listTabGroups'),
+        },
+        {
+            id: 'home-btn',
+            class: 'home-button header-action-btn',
+            icon: '#icon-home',
+            ariaLabel: $t('backToHome'),
+            title: $tt('backToHome'),
+        },
+        {
+            id: 'main-back-btn',
+            class: 'back-button header-action-btn',
+            icon: '#icon-back',
+            ariaLabel: $t('backToMainPopup'),
+            title: $tt('backButton'),
+        },
+    ]);
 </script>
 
-<header class="header">
-    <h1 id="main-header-title" data-i18n={titleKey}>{$t(titleKey)}</h1>
-    <div class="header-actions">
-        <button
-            id="pin-toggle"
-            class="pin-button header-action-btn"
-            type="button"
-            aria-pressed="false"
-            title={$tt('pinListPage')}
-            class:hidden={startsHidden('pin-toggle')}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-pin"></use>
-            </svg>
-        </button>
-        <button
-            id="rules-toggle"
-            class="header-action-btn"
-            type="button"
-            title={$tt('openRulesPage')}
-            aria-label={$t('openRulesPage')}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-rules"></use>
-            </svg>
-        </button>
-        <button
-            id="list-groups-btn"
-            class="header-action-btn"
-            class:hidden={startsHidden('list-groups-btn')}
-            type="button"
-            title={$tt('listTabGroups')}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-tab-groups"></use>
-            </svg>
-        </button>
-        <button
-            id="home-btn"
-            class="home-button header-action-btn"
-            type="button"
-            aria-label={$t('backToHome')}
-            title={$tt('backToHome')}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-home"></use>
-            </svg>
-        </button>
-        <button
-            id="main-back-btn"
-            class="back-button header-action-btn"
-            type="button"
-            aria-label={$t('backToMainPopup')}
-            title={$tt('backButton')}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-back"></use>
-            </svg>
-        </button>
-    </div>
-</header>
+<!--
+    The same bar as the rules page and the activity panel. It keeps its own wrapper
+    class and its own `header-actions` box, because this page's stylesheet and its
+    vanilla listeners both target them: the buttons here carry no `onclick`, they are
+    wired by id from `listGroupInit.js` and `viewsService.js`.
+-->
+<SidePanelHeader
+    title={$t(titleKey)}
+    titleId="main-header-title"
+    titleClass=""
+    titleI18n={titleKey}
+    headerClass="header"
+    actionsClass="header-actions"
+    actions={headerActions}
+/>
 <div class="search-and-controls">
     <div class="search-container">
         <label for="search-input" class="visually-hidden">{$t('searchGroupPlaceholder')}</label>
