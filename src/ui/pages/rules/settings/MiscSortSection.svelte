@@ -1,4 +1,6 @@
 <script>
+    import SettingsToggleSection from './SettingsToggleSection.svelte';
+    import OptionButtons from '../components/OptionButtons.svelte';
     import { t } from '../../../stores/i18nStore.js';
 
     let { isSortGroupsEnabled = $bindable(true), miscSortOption = $bindable('start'), onset = () => {} } = $props();
@@ -9,78 +11,24 @@
     }
 </script>
 
-<div class="settings-section" id="modal-sort-section">
-    <div class="settings-entry-general" class:switch-on={isSortGroupsEnabled}>
-        <div class="setting-label-group">
-            <span class="svg-settings-container button-rules-header">
-                <svg
-                    width="30"
-                    height="30"
-                    viewBox="-51.2 -51.2 614.4 614.4"
-                    style="color: var(--text-color); --icon-bg: var(--bg-panel-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-sort-groups"></use>
-                </svg>
-            </span>
-            <span class="setting-text-label">{$t('toggleSortGroups') || 'Sort Groups'}</span>
-        </div>
-        <label class="switch" translate="no">
-            <input type="checkbox" class="input-settings-container" bind:checked={isSortGroupsEnabled} />
-            <span class="slider" translate="no">
-                <span class="switch-text-on" translate="no">on</span>
-                <span class="switch-text-off" translate="no">off</span>
-                <span class="switch-handle"><span class="switch-light"></span></span>
-            </span>
-        </label>
-        <button
-            type="button"
-            class="svg-toggle-button"
-            translate="no"
-            aria-pressed={isSortGroupsEnabled}
-            onclick={() => (isSortGroupsEnabled = !isSortGroupsEnabled)}
-        >
-            <svg width="20" height="20" viewBox="0 0 24 24"
-                ><text
-                    class="svg-toggle-text"
-                    x="50%"
-                    y="55%"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="var(--text-on-color)"
-                    translate="no">{isSortGroupsEnabled ? 'ON' : 'OFF'}</text
-                ></svg
-            >
-        </button>
-    </div>
+<SettingsToggleSection
+    id="modal-sort-section"
+    icon="#icon-sort-groups"
+    viewBox="-51.2 -51.2 614.4 614.4"
+    iconStyle="color: var(--text-color); --icon-bg: var(--bg-panel-color);"
+    label={$t('toggleSortGroups') || 'Sort Groups'}
+    bind:checked={isSortGroupsEnabled}
+>
     <div class="misc-sort-popup">
-        <h3>{$t('miscSortTitle')}</h3>
-        <div class="misc-sort-options-container">
-            <button
-                type="button"
-                class="option-button"
-                translate="no"
-                data-value="start"
-                class:selected={miscSortOption === 'start'}
-                onclick={() => setMiscSort('start')}>{$t('miscSortStart') || 'Start'}</button
-            >
-            <button
-                type="button"
-                class="option-button"
-                translate="no"
-                data-value="end"
-                class:selected={miscSortOption === 'end'}
-                onclick={() => setMiscSort('end')}>{$t('miscSortEnd') || 'End'}</button
-            >
-            <button
-                type="button"
-                class="option-button"
-                translate="no"
-                data-value="alpha"
-                class:selected={miscSortOption === 'alpha'}
-                onclick={() => setMiscSort('alpha')}>{$t('miscSortAlpha') || 'Alphabetical'}</button
-            >
-        </div>
+        <OptionButtons
+            title={$t('miscSortTitle')}
+            selected={miscSortOption}
+            options={[
+                { value: 'start', label: $t('miscSortStart') || 'Start' },
+                { value: 'end', label: $t('miscSortEnd') || 'End' },
+                { value: 'alpha', label: $t('miscSortAlpha') || 'Alphabetical' },
+            ]}
+            onselect={setMiscSort}
+        />
     </div>
-</div>
+</SettingsToggleSection>

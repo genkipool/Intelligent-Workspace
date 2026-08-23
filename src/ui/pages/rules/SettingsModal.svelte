@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import ClusterConfigSection from './popups/ClusterConfigSection.svelte';
+    import SettingsToggleSection from './settings/SettingsToggleSection.svelte';
     import MiscSortSection from './settings/MiscSortSection.svelte';
     import PrefixConfigSection from './settings/PrefixConfigSection.svelte';
     import CollapseTimerSection from './settings/CollapseTimerSection.svelte';
@@ -251,56 +252,18 @@
         </div>
         <div class="settings-modal-body">
             <!-- SECTION 1: CLUSTER -->
-            <div class="settings-section" id="modal-cluster-section">
-                <div class="settings-entry-general" class:switch-on={isClusterEnabled}>
-                    <div class="setting-label-group">
-                        <span class="svg-settings-container button-rules-header">
-                            <svg
-                                width="30"
-                                height="30"
-                                viewBox="0 0 512 512"
-                                style="color: var(--text-color);"
-                                aria-hidden="true"
-                                focusable="false"
-                            >
-                                <use href="#icon-cluster"></use>
-                            </svg>
-                        </span>
-                        <span class="setting-text-label">{$t('toggleCluster') || 'Create Groups'}</span>
-                    </div>
-                    <label class="switch" translate="no">
-                        <input
-                            type="checkbox"
-                            class="input-settings-container"
-                            checked={isClusterEnabled}
-                            onchange={(e) => setClusterEnabled(e.currentTarget.checked)}
-                        />
-                        <span class="slider" translate="no">
-                            <span class="switch-text-on" translate="no">on</span>
-                            <span class="switch-text-off" translate="no">off</span>
-                            <span class="switch-handle"><span class="switch-light"></span></span>
-                        </span>
-                    </label>
-                    <button
-                        type="button"
-                        class="svg-toggle-button"
-                        translate="no"
-                        aria-pressed={isClusterEnabled}
-                        onclick={() => setClusterEnabled(!isClusterEnabled)}
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24"
-                            ><text
-                                class="svg-toggle-text"
-                                x="50%"
-                                y="55%"
-                                text-anchor="middle"
-                                dominant-baseline="middle"
-                                fill="var(--text-on-color)"
-                                translate="no">{isClusterEnabled ? 'ON' : 'OFF'}</text
-                            ></svg
-                        >
-                    </button>
-                </div>
+            <!--
+                The master switch does not own its state: it fans out to every grouping
+                and regroups the tabs, so it takes the event rather than a binding.
+            -->
+            <SettingsToggleSection
+                id="modal-cluster-section"
+                icon="#icon-cluster"
+                viewBox="0 0 512 512"
+                label={$t('toggleCluster') || 'Create Groups'}
+                checked={isClusterEnabled}
+                onchange={setClusterEnabled}
+            >
                 <div class="cluster-config-popup">
                     <ClusterConfigSection
                         bind:clusterConfig
@@ -309,7 +272,7 @@
                         onreset={resetClusterDefaults}
                     />
                 </div>
-            </div>
+            </SettingsToggleSection>
 
             <!-- SECTION 2: SORT -->
             <MiscSortSection bind:isSortGroupsEnabled bind:miscSortOption onset={setMiscSort} />

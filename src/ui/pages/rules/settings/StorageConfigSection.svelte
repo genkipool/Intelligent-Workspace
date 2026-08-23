@@ -1,4 +1,6 @@
 <script>
+    import SettingsToggleSection from './SettingsToggleSection.svelte';
+    import OptionButtons from '../components/OptionButtons.svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
 
     let {
@@ -9,75 +11,34 @@
     } = $props();
 </script>
 
-<div class="settings-section" id="modal-storage-section">
-    <div class="settings-entry-general" class:switch-on={allRulesActive}>
-        <div class="setting-label-group">
-            <span
-                class="svg-settings-container all-rules-checks button-rules-header"
-                title={$tt('configureStorageCtrlClick')}
-            >
-                <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 48 48"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-all-rules"></use>
-                </svg>
-            </span>
-            <span class="setting-text-label">{$t('toggleAllRules') || 'All Rules'}</span>
-        </div>
-        <label class="switch" translate="no">
-            <input type="checkbox" class="input-settings-container" checked={allRulesActive} onchange={ontoggleall} />
-            <span class="slider" translate="no">
-                <span class="switch-text-on" translate="no">on</span>
-                <span class="switch-text-off" translate="no">off</span>
-                <span class="switch-handle"><span class="switch-light"></span></span>
-            </span>
-        </label>
-        <button
-            type="button"
-            class="svg-toggle-button"
-            translate="no"
-            aria-pressed={allRulesActive}
-            onclick={ontoggleall}
-        >
-            <svg width="20" height="20" viewBox="0 0 24 24"
-                ><text
-                    class="svg-toggle-text"
-                    x="50%"
-                    y="55%"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="var(--text-on-color)"
-                    translate="no">{allRulesActive ? 'ON' : 'OFF'}</text
-                ></svg
-            >
-        </button>
-    </div>
+<!--
+    The switch here does not own its state: flipping it rewrites `active` on every
+    stored rule and the row follows what came back, so it hands the event straight to
+    `ontoggleall` rather than settling the binding itself.
+-->
+<SettingsToggleSection
+    id="modal-storage-section"
+    icon="#icon-all-rules"
+    viewBox="0 0 48 48"
+    iconClass="svg-settings-container all-rules-checks button-rules-header"
+    iconTitle={$tt('configureStorageCtrlClick')}
+    label={$t('toggleAllRules') || 'All Rules'}
+    checked={allRulesActive}
+    onchange={() => ontoggleall()}
+>
     <div class="storage-config-popup misc-sort-popup">
-        <h3>{$t('configureStorageTitle')}</h3>
-        <div class="misc-sort-options-container">
-            <button
-                type="button"
-                class="option-button"
-                translate="no"
-                data-value="sync"
-                class:selected={ruleStorageArea === 'sync'}
-                onclick={() => onsetstorage('sync')}
-                title={$tt('storageSyncDesc') || 'Sync storage'}>{$t('storageSync') || 'Sync'}</button
-            >
-            <button
-                type="button"
-                class="option-button"
-                translate="no"
-                data-value="local"
-                class:selected={ruleStorageArea === 'local'}
-                onclick={() => onsetstorage('local')}
-                title={$tt('storageLocalDesc') || 'Local storage'}>{$t('storageLocal') || 'Local'}</button
-            >
-        </div>
+        <OptionButtons
+            title={$t('configureStorageTitle')}
+            selected={ruleStorageArea}
+            options={[
+                { value: 'sync', label: $t('storageSync') || 'Sync', title: $tt('storageSyncDesc') || 'Sync storage' },
+                {
+                    value: 'local',
+                    label: $t('storageLocal') || 'Local',
+                    title: $tt('storageLocalDesc') || 'Local storage',
+                },
+            ]}
+            onselect={onsetstorage}
+        />
     </div>
-</div>
+</SettingsToggleSection>

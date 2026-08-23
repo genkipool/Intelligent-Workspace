@@ -7,7 +7,24 @@
  * indistinguishable.
  */
 
-export const PREFIX_FIELDS = ['lock', 'openKey', 'loupe', 'checked', 'warning'];
+/**
+ * The five markers, in the order both forms list them, with the message key each is
+ * labelled by. The popup and the settings modal build their rows from this, so a
+ * sixth marker is one entry here rather than two more blocks of markup.
+ *
+ * `checked` is labelled `prefixEmptyLabel` and not `prefixCheckedLabel`: the marker
+ * means "nothing pending" and the message was named after what it shows, not after
+ * the field. Renaming it would orphan the translations already shipped.
+ */
+export const PREFIX_ENTRIES = [
+    { field: 'lock', labelKey: 'prefixLockLabel', fallback: 'Lock' },
+    { field: 'openKey', labelKey: 'prefixKeyLabel', fallback: 'Open Key' },
+    { field: 'loupe', labelKey: 'prefixLoupeLabel', fallback: 'Loupe' },
+    { field: 'checked', labelKey: 'prefixEmptyLabel', fallback: 'Checked' },
+    { field: 'warning', labelKey: 'prefixWarningLabel', fallback: 'Warning' },
+];
+
+export const PREFIX_FIELDS = PREFIX_ENTRIES.map((entry) => entry.field);
 
 /** Keeps the first character of what was typed, counting an emoji as one. */
 export function firstCharacter(value) {

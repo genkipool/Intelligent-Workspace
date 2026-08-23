@@ -1,6 +1,7 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import { lightThemeColors, darkThemeColors } from '../../../services/constants.js';
+    import { blockNumericKeys } from '../../../services/numericInput.js';
     import ColorPopup from './ColorPopup.svelte';
 
     /**
@@ -105,12 +106,6 @@
         else if (key === 'subdomains') clusterConfig.subdomainThreshold = value;
         else clusterConfig.specialGroups[key].threshold = value;
         scheduleChange();
-    }
-
-    function handleNumericKeydown(e) {
-        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
-            e.preventDefault();
-        }
     }
 
     function handleThresholdInput(e, key) {
@@ -233,7 +228,7 @@
                 aria-label={$t(entry.thresholdLabelKey)}
                 title={$tt('groupThresholdDesc')}
                 value={thresholdOf(entry.key)}
-                onkeydown={handleNumericKeydown}
+                onkeydown={blockNumericKeys}
                 oninput={(e) => handleThresholdInput(e, entry.key)}
             />
             {@render toggle(entry.key, `${idPrefix}${entry.switchId}`)}
@@ -274,7 +269,7 @@
             aria-label={$t(entry.thresholdLabelKey)}
             title={$tt('groupThresholdDesc')}
             value={thresholdOf(entry.key)}
-            onkeydown={handleNumericKeydown}
+            onkeydown={blockNumericKeys}
             oninput={(e) => handleThresholdInput(e, entry.key)}
         />
         {@render toggle(entry.key, `${idPrefix}enabled-${entry.key}`)}

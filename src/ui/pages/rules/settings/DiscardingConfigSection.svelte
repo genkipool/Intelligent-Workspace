@@ -1,78 +1,22 @@
 <script>
+    import SettingsToggleSection from './SettingsToggleSection.svelte';
+    import { blockNumericKeys, clampNumericInput } from '../../../services/numericInput.js';
     import { t, tt } from '../../../stores/i18nStore.js';
 
     let { isDiscardingEnabled = $bindable(true), discardingTime = $bindable(60), onreset = () => {} } = $props();
 
-    function handleNumericKeydown(e) {
-        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
-            e.preventDefault();
-        }
-    }
-
-    function handleDiscardingInput(e) {
-        let val = e.currentTarget.value;
-        if (val !== '') {
-            const num = Number.parseInt(val, 10);
-            if (!Number.isNaN(num) && num > 1440) {
-                e.currentTarget.value = '1440';
-                discardingTime = 1440;
-                return;
-            }
-            if (!Number.isNaN(num) && num < 1) {
-                e.currentTarget.value = '1';
-                discardingTime = 1;
-                return;
-            }
-        }
-        discardingTime = val === '' ? 1 : Number.parseInt(val, 10) || 1;
-    }
+    // Whole minutes, at least one — the same bounds the toolbar popup uses.
+    const BOUNDS = { min: 1, max: 1440, integer: true };
 </script>
 
-<div class="settings-section" id="modal-discarding-section">
-    <div class="settings-entry-general" class:switch-on={isDiscardingEnabled}>
-        <div class="setting-label-group">
-            <span class="svg-settings-container button-rules-header" title={$tt('configureDiscarding')}>
-                <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 265.523 265.523"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-memory"></use>
-                </svg>
-            </span>
-            <span class="setting-text-label">{$t('configureDiscarding') || 'Discard Tabs'}</span>
-        </div>
-        <label class="switch" translate="no">
-            <input type="checkbox" class="input-settings-container" bind:checked={isDiscardingEnabled} />
-            <span class="slider" translate="no">
-                <span class="switch-text-on" translate="no">on</span>
-                <span class="switch-text-off" translate="no">off</span>
-                <span class="switch-handle"><span class="switch-light"></span></span>
-            </span>
-        </label>
-        <button
-            type="button"
-            class="svg-toggle-button"
-            translate="no"
-            aria-pressed={isDiscardingEnabled}
-            onclick={() => (isDiscardingEnabled = !isDiscardingEnabled)}
-        >
-            <svg width="20" height="20" viewBox="0 0 24 24"
-                ><text
-                    class="svg-toggle-text"
-                    x="50%"
-                    y="55%"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="var(--text-on-color)"
-                    translate="no">{isDiscardingEnabled ? 'ON' : 'OFF'}</text
-                ></svg
-            >
-        </button>
-    </div>
+<SettingsToggleSection
+    id="modal-discarding-section"
+    icon="#icon-memory"
+    viewBox="0 0 265.523 265.523"
+    iconTitle={$tt('configureDiscarding')}
+    label={$t('configureDiscarding') || 'Discard Tabs'}
+    bind:checked={isDiscardingEnabled}
+>
     <div class="discarding-config-popup">
         <h3>{$t('configureDiscarding')}</h3>
         <label for="modal-discarding-time">
@@ -86,8 +30,8 @@
                 max="1440"
                 maxlength="4"
                 value={discardingTime}
-                onkeydown={handleNumericKeydown}
-                oninput={handleDiscardingInput}
+                onkeydown={blockNumericKeys}
+                oninput={(e) => (discardingTime = clampNumericInput(e, BOUNDS))}
             />
             <small>{$t('noteDiscardingTime') || 'Minutes before tabs are discarded'}</small>
         </label>
@@ -101,4 +45,4 @@
             >
         </div>
     </div>
-</div>
+</SettingsToggleSection>

@@ -1,6 +1,7 @@
 <script>
+    import SettingsToggleSection from './SettingsToggleSection.svelte';
     import { t } from '../../../stores/i18nStore.js';
-    import { duplicateMarkerFields, firstCharacter } from '../modules/prefixMarkers.js';
+    import { PREFIX_ENTRIES, duplicateMarkerFields, firstCharacter } from '../modules/prefixMarkers.js';
 
     let {
         isPrefixesEnabled = $bindable(true),
@@ -19,132 +20,36 @@
     }
 </script>
 
-<div class="settings-section" id="modal-prefixes-section">
-    <div class="settings-entry-general" class:switch-on={isPrefixesEnabled}>
-        <div class="setting-label-group">
-            <span class="svg-settings-container button-rules-header">
-                <svg
-                    width="30"
-                    height="30"
-                    viewBox="0 0 512 512"
-                    style="color: var(--text-color);"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <use href="#icon-prefixes"></use>
-                </svg>
-            </span>
-            <span class="setting-text-label">{$t('togglePrefixes') || 'Prefixes'}</span>
-        </div>
-        <label class="switch" translate="no">
-            <input type="checkbox" class="input-settings-container" bind:checked={isPrefixesEnabled} />
-            <span class="slider" translate="no">
-                <span class="switch-text-on" translate="no">on</span>
-                <span class="switch-text-off" translate="no">off</span>
-                <span class="switch-handle"><span class="switch-light"></span></span>
-            </span>
-        </label>
-        <button
-            type="button"
-            class="svg-toggle-button"
-            translate="no"
-            aria-pressed={isPrefixesEnabled}
-            onclick={() => (isPrefixesEnabled = !isPrefixesEnabled)}
-        >
-            <svg width="20" height="20" viewBox="0 0 24 24"
-                ><text
-                    class="svg-toggle-text"
-                    x="50%"
-                    y="55%"
-                    text-anchor="middle"
-                    dominant-baseline="middle"
-                    fill="var(--text-on-color)"
-                    translate="no">{isPrefixesEnabled ? 'ON' : 'OFF'}</text
-                ></svg
-            >
-        </button>
-    </div>
+<SettingsToggleSection
+    id="modal-prefixes-section"
+    icon="#icon-prefixes"
+    viewBox="0 0 512 512"
+    label={$t('togglePrefixes') || 'Prefixes'}
+    bind:checked={isPrefixesEnabled}
+>
     <div class="prefix-config-popup">
         <h3>{$t('configurePrefixesTitle')}</h3>
-        <div class="prefix-entry">
-            <label for="modal-prefix-lock-input">{$t('prefixLockLabel') || 'Lock'}</label>
-            <input
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                class="prefix-input"
-                class:duplicate={duplicates.has('lock')}
-                id="modal-prefix-lock-input"
-                placeholder=""
-                value={currentUserPrefixes.lock}
-                oninput={(e) => handleInput(e, 'lock')}
-            />
-        </div>
-        <div class="prefix-entry">
-            <label for="modal-prefix-openKey-input">{$t('prefixKeyLabel') || 'Open Key'}</label>
-            <input
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                class="prefix-input"
-                class:duplicate={duplicates.has('openKey')}
-                id="modal-prefix-openKey-input"
-                placeholder=""
-                value={currentUserPrefixes.openKey}
-                oninput={(e) => handleInput(e, 'openKey')}
-            />
-        </div>
-        <div class="prefix-entry">
-            <label for="modal-prefix-loupe-input">{$t('prefixLoupeLabel') || 'Loupe'}</label>
-            <input
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                class="prefix-input"
-                class:duplicate={duplicates.has('loupe')}
-                id="modal-prefix-loupe-input"
-                placeholder=""
-                value={currentUserPrefixes.loupe}
-                oninput={(e) => handleInput(e, 'loupe')}
-            />
-        </div>
-        <div class="prefix-entry">
-            <label for="modal-prefix-checked-input">{$t('prefixEmptyLabel') || 'Checked'}</label>
-            <input
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                class="prefix-input"
-                class:duplicate={duplicates.has('checked')}
-                id="modal-prefix-checked-input"
-                placeholder=""
-                value={currentUserPrefixes.checked}
-                oninput={(e) => handleInput(e, 'checked')}
-            />
-        </div>
-        <div class="prefix-entry">
-            <label for="modal-prefix-warning-input">{$t('prefixWarningLabel') || 'Warning'}</label>
-            <input
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                class="prefix-input"
-                class:duplicate={duplicates.has('warning')}
-                id="modal-prefix-warning-input"
-                placeholder=""
-                value={currentUserPrefixes.warning}
-                oninput={(e) => handleInput(e, 'warning')}
-            />
-        </div>
+        {#each PREFIX_ENTRIES as entry (entry.field)}
+            <div class="prefix-entry">
+                <label for="modal-prefix-{entry.field}-input">{$t(entry.labelKey) || entry.fallback}</label>
+                <input
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
+                    class="prefix-input"
+                    class:duplicate={duplicates.has(entry.field)}
+                    id="modal-prefix-{entry.field}-input"
+                    placeholder=""
+                    value={currentUserPrefixes[entry.field]}
+                    oninput={(e) => handleInput(e, entry.field)}
+                />
+            </div>
+        {/each}
         <div class="popup-actions">
             <button id="modal-reset-prefixes-btn" type="button" class="popup-reset-btn" translate="no" onclick={onreset}
                 >{$t('resetClusterDefaults') || 'Reset to defaults'}</button
             >
         </div>
     </div>
-</div>
+</SettingsToggleSection>

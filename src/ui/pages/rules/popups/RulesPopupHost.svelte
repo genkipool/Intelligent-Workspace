@@ -58,11 +58,7 @@
 <PrefixConfigPopup
     show={showPrefixPopup}
     trigger={popupTrigger}
-    bind:lock={userPrefixes.lock}
-    bind:openKey={userPrefixes.openKey}
-    bind:loupe={userPrefixes.loupe}
-    bind:checked={userPrefixes.checked}
-    bind:warning={userPrefixes.warning}
+    bind:prefixes={userPrefixes}
     onclose={() => {
         showPrefixPopup = false;
         onSavePrefixes();
