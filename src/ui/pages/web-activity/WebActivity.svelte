@@ -31,16 +31,26 @@
 
     import ActivityHeader from './components/ActivityHeader.svelte';
     import BlocksList from './components/BlocksList.svelte';
+    import SnoozedList from './components/SnoozedList.svelte';
     import LimitModal from './components/LimitModal.svelte';
-    import ScheduleModal from './components/ScheduleModal.svelte';
     import SiteSidebar from './components/SiteSidebar.svelte';
     import SitesTable from './components/SitesTable.svelte';
     import VisitTimeline from './components/VisitTimeline.svelte';
     import WebActivityIcons from './components/WebActivityIcons.svelte';
+    import PasswordPromptModal from './components/PasswordPromptModal.svelte';
     import SettingsView from './settings/SettingsView.svelte';
+    import SettingsDialog from '../../components/common/SettingsDialog.svelte';
     import ActivityPanel from './panel/ActivityPanel.svelte';
 
     import { categoryLabel, customCategoriesOf } from './categories.js';
+    import { hasLock, loosensRule, snoozeNeedsPassword, verifyLock } from './blockLock.js';
+    import { sortable } from '../../actions/sortable.js';
+    import {
+        applyOrder,
+        loadLayout,
+        savePanelOrder,
+        saveSectionOrder,
+    } from '../../services/dashboard/dashboardLayout.js';
     import {
         clearActivity,
         fetchActivity,
@@ -63,9 +73,9 @@
     } from './webActivityAnalytics.js';
     import {
         applyChartDefaults,
+        accentRamp,
         createVerticalGradient,
         cssVar,
-        getSeriesColor,
         scaleDef,
         tickDef,
         tooltipDef,
@@ -84,7 +94,14 @@
     applyChartDefaults(Chart);
 
     // ── State ─────────────────────────────────────────────────────────────────
-    let payload = $state({ days: {}, limits: {}, settings: { ...WA.DEFAULT_SETTINGS }, recent: [], openSegment: null });
+    let payload = $state({
+        days: {},
+        limits: {},
+        settings: { ...WA.DEFAULT_SETTINGS },
+        recent: [],
+        openSegment: null,
+        snoozeUses: 0,
+    });
     let loading = $state(true);
     let refreshing = $state(false);
     let error = $state(null);
@@ -96,11 +113,19 @@
     let sidebarQuery = $state('');
     // A SvelteSet is reactive on its own, so it is not wrapped in $state.
     const openCategories = new SvelteSet();
-    /** `{ domain, limit }` while the time dialog is open, and the same for the clock one. */
+    /** `{ domain, limit, tab }` while the rule dialog is open. */
     let editingLimit = $state(null);
-    let editingSchedule = $state(null);
     /** Which of the two things the main column is showing: 'dashboard' or 'settings'. */
     let view = $state('dashboard');
+    /** The panel has no main column to give over, so its settings open in a dialog. */
+    let panelSettingsOpen = $state(false);
+
+    /**
+     * The password prompt, while one is open: `{ resolve }`, the promise the guarded
+     * action is waiting on. One at a time, because it is modal.
+     */
+    let passwordPrompt = $state(null);
+    const blockLock = $derived(payload.settings?.blockPassword || null);
 
     /**
      * Whether this is the side panel rather than a tab. The same page serves both —
@@ -139,10 +164,53 @@
     let themeVersion = $state(0);
     let tooltipEl = $state(null);
 
+    // ── Layout ────────────────────────────────────────────────────────────────
+    /**
+     * The sections this page has, in the order it declares them, and the panels of the
+     * two sections that hold more than one. Everything drag-and-drop needs is here: the
+     * markup renders `sectionOrder`, each multi-panel grid renders its own list, and a
+     * drop only ever rewrites one of these arrays.
+     */
+    const SECTION_IDS = ['log', 'blocks', 'grace', 'summary', 'patterns', 'heatmap', 'trends', 'sites', 'timeline'];
+    const PANEL_IDS = {
+        patterns: ['hours', 'weekday'],
+        trends: ['daily', 'categories'],
+    };
+
+    let sectionOrder = $state([...SECTION_IDS]);
+    let panelOrder = $state({ ...PANEL_IDS });
+
+    async function restoreLayout() {
+        const layout = await loadLayout('webActivity');
+        sectionOrder = applyOrder(SECTION_IDS, layout.sections);
+        panelOrder = Object.fromEntries(
+            Object.entries(PANEL_IDS).map(([section, ids]) => [section, applyOrder(ids, layout.panels?.[section])]),
+        );
+    }
+
+    function reorderSections(ids) {
+        sectionOrder = ids;
+        saveSectionOrder('webActivity', ids);
+    }
+
+    function reorderPanels(section, ids) {
+        panelOrder = { ...panelOrder, [section]: ids };
+        savePanelOrder('webActivity', section, ids);
+    }
+
     // ── Derived ───────────────────────────────────────────────────────────────
     const dayKeys = $derived(daysInPeriod(payload.days, period));
     /** Every site in the period, before the sidebar filters — the sidebar lists them all. */
-    const allSites = $derived(aggregateSites(payload.days, dayKeys, payload.limits));
+    const allSites = $derived(
+        aggregateSites(payload.days, dayKeys, payload.limits).filter(
+            (site) => !(payload.settings?.ignoredDomains || []).includes(site.domain),
+        ),
+    );
+    const allKnownDomains = $derived(
+        Array.from(new Set([...allSites.map((s) => s.domain), ...Object.keys(payload.limits || {})])).filter(
+            (d) => !(payload.settings?.ignoredDomains || []).includes(d) && d !== '*',
+        ),
+    );
     const sites = $derived(
         allSites.filter(
             (site) =>
@@ -165,13 +233,43 @@
     const customCategories = $derived(customCategoriesOf(payload.settings));
     const nameCategory = $derived((id) => categoryLabel(id, customCategories, (key) => $t(key)));
 
+    /**
+     * The four filled bands of the calendar's legend.
+     *
+     * A cell's level is a quarter of the busiest day on record (see `heatmapCells`),
+     * so the legend can say what each shade is worth instead of leaving the reader to
+     * guess. The swatches are the very colours the cells use, quoted from the same
+     * stylesheet rules.
+     */
+    const HEATMAP_LEGEND = $derived(
+        [
+            { level: 1, color: 'color-mix(in srgb,var(--interactive-color) 20%,var(--bg-color))' },
+            { level: 2, color: 'color-mix(in srgb,var(--interactive-color) 42%,var(--bg-color))' },
+            { level: 3, color: 'color-mix(in srgb,var(--interactive-color) 68%,var(--bg-color))' },
+            { level: 4, color: 'var(--interactive-color)' },
+        ].map((band) => ({
+            ...band,
+            label: (band.level < 4 ? '≤ ' : '') + fmtDur((heatmap.max * band.level) / 4),
+        })),
+    );
+
     /** Only the sites the blocker is stopping right now — what the dashboard reports. */
     const blockedRows = $derived(rows.filter((row) => row.verdict.blocked));
+
+    /** Sites currently under grace period (snoozed). */
+    const snoozedRows = $derived.by(() => {
+        minuteTick;
+        return rows.filter(
+            (row) => row.verdict.snoozed || (row.limit.snoozeUntil && row.limit.snoozeUntil > Date.now()),
+        );
+    });
 
     /** Today's sites, longest first — what the side panel is asked about. */
     const todaySites = $derived.by(() => {
         minuteTick;
-        return aggregateSites(payload.days, daysInPeriod(payload.days, 1), payload.limits);
+        return aggregateSites(payload.days, daysInPeriod(payload.days, 1), payload.limits).filter(
+            (site) => !(payload.settings?.ignoredDomains || []).includes(site.domain),
+        );
     });
     const todayTotal = $derived(todaySites.reduce((sum, site) => sum + site.seconds, 0));
 
@@ -197,13 +295,17 @@
         }),
     );
 
-    const donutRows = $derived(
-        categoryRows.slice(0, 10).map((row, index) => ({
+    const donutRows = $derived.by(() => {
+        const top = categoryRows.slice(0, 10);
+        const ramp = accentRamp(top.length);
+        const total = top.reduce((sum, r) => sum + r.seconds, 0);
+        return top.map((row, index) => ({
             label: nameCategory(row.category),
             val: fmtDur(row.seconds),
-            color: getSeriesColor(index),
-        })),
-    );
+            percent: total > 0 ? Math.round((row.seconds / total) * 100) : 0,
+            color: ramp[index],
+        }));
+    });
 
     // ── Chart configurations ──────────────────────────────────────────────────
     // Each one reads `themeVersion` so a palette change rebuilds it.
@@ -256,14 +358,17 @@
     const categoryConfig = $derived.by(() => {
         themeVersion;
         if (!categoryRows.length) return null;
+        const top = categoryRows.slice(0, 10);
+        const ramp = accentRamp(top.length);
+        const total = top.reduce((sum, r) => sum + r.seconds, 0);
         return {
             type: 'doughnut',
             data: {
-                labels: categoryRows.map((row) => nameCategory(row.category)),
+                labels: top.map((row) => nameCategory(row.category)),
                 datasets: [
                     {
-                        data: categoryRows.map((row) => +(row.seconds / 3600).toFixed(2)),
-                        backgroundColor: categoryRows.map((_, index) => getSeriesColor(index)),
+                        data: top.map((row) => +(row.seconds / 3600).toFixed(2)),
+                        backgroundColor: ramp,
                         borderColor: cssVar('--bg-panel-color'),
                         borderWidth: 2,
                     },
@@ -275,29 +380,54 @@
                 cutout: '62%',
                 plugins: {
                     legend: { display: false },
-                    tooltip: { ...tooltipDef(), callbacks: { label: (item) => ` ${fmtDur(item.raw * 3600)}` } },
+                    tooltip: {
+                        ...tooltipDef(),
+                        callbacks: {
+                            label: (item) => {
+                                const val = fmtDur(item.raw * 3600);
+                                const pct = total > 0 ? Math.round(((item.raw * 3600) / total) * 100) : 0;
+                                return ` ${val} (${pct}%)`;
+                            },
+                        },
+                    },
                 },
             },
         };
     });
 
+    /**
+     * Time per weekday.
+     *
+     * A bar chart, not a radar one: `lib/chart.local.js` is the extension's own
+     * charting engine and draws exactly three types — bar, line and doughnut. A
+     * `radar` config built cleanly and was then simply never painted, which is why
+     * this card had been empty since the day it was written. Monday first, because
+     * that is the week the calendar above it draws.
+     */
     const weekdayConfig = $derived.by(() => {
         themeVersion;
         if (!dayKeys.length) return null;
         const names = weekdayNames($currentLang, 'short');
         const totals = secondsPerWeekday(dayKeys, perDay);
+        // `secondsPerWeekday` counts Sunday first, as `Date#getDay` does.
+        const order = [1, 2, 3, 4, 5, 6, 0];
         return {
-            type: 'radar',
+            type: 'bar',
             data: {
-                labels: names,
+                labels: order.map((day) => names[day]),
                 datasets: [
                     {
                         label: i18n('webActivityColTime'),
-                        data: totals.map((seconds) => +(seconds / 3600).toFixed(2)),
-                        backgroundColor: 'color-mix(in srgb, var(--interactive-color) 30%, transparent)',
-                        borderColor: cssVar('--interactive-color'),
-                        pointBackgroundColor: cssVar('--interactive-color'),
-                        borderWidth: 2,
+                        data: order.map((day) => +(totals[day] / 3600).toFixed(2)),
+                        backgroundColor: (context) => {
+                            const { ctx, chartArea } = context.chart;
+                            return chartArea
+                                ? createVerticalGradient(ctx, chartArea, '--interactive-color', 0.85, 0.35)
+                                : null;
+                        },
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        maxBarThickness: 30,
                     },
                 ],
             },
@@ -309,11 +439,11 @@
                     tooltip: { ...tooltipDef(), callbacks: { label: (item) => ` ${fmtDur(item.raw * 3600)}` } },
                 },
                 scales: {
-                    r: {
-                        angleLines: { color: cssVar('--border-color') },
-                        grid: { color: cssVar('--border-color') },
-                        pointLabels: { color: cssVar('--text-color'), font: { size: 11 } },
-                        ticks: { display: false },
+                    x: { ...scaleDef(), ticks: tickDef() },
+                    y: {
+                        ...scaleDef(),
+                        beginAtZero: true,
+                        ticks: { ...tickDef(), callback: (value) => value + 'h' },
                     },
                 },
             },
@@ -332,7 +462,8 @@
                     {
                         label: i18n('webActivityColTime'),
                         data: top.map((site) => +(site.seconds / 3600).toFixed(2)),
-                        backgroundColor: top.map((_, index) => getSeriesColor(index)),
+                        // Longest first, so the ramp runs strong to faint down the axis.
+                        backgroundColor: accentRamp(top.length),
                         borderRadius: 4,
                         maxBarThickness: 22,
                     },
@@ -366,6 +497,7 @@
                 settings: { ...WA.DEFAULT_SETTINGS, ...(response.settings || {}) },
                 recent: response.recent || [],
                 openSegment: response.openSegment || null,
+                snoozeUses: response.snoozeUses || 0,
             };
             lastUpdated = Date.now();
             error = null;
@@ -412,29 +544,85 @@
         else openCategories.add(category);
     }
 
+    /**
+     * Asks for the password and resolves to whether it was right.
+     *
+     * Every path that could weaken a rule goes through here, and there is exactly one
+     * of them per kind of change: `commitLimit` catches the switches and the crosses
+     * wherever they are drawn, and the two editor openers catch the dialogs. Guarding
+     * the buttons instead would have meant remembering the guard in three tables, a
+     * side panel and two dialogs — and forgetting it in one of them.
+     */
+    function askForPassword() {
+        if (!hasLock(blockLock)) return Promise.resolve(true);
+        // A second prompt while one is open would strand the first one's promise.
+        if (passwordPrompt) return Promise.resolve(false);
+        return new Promise((resolve) => {
+            passwordPrompt = { resolve };
+        });
+    }
+
+    function closePasswordPrompt(accepted) {
+        const pending = passwordPrompt;
+        passwordPrompt = null;
+        pending?.resolve(accepted);
+    }
+
     /** The stored rule for a site, or an empty one so a dialog can always open. */
     const limitFor = (domain) => (domain ? payload.limits[domain] || null : null);
 
     /** The same, filled in — what the panel draws from. */
     const normalizedLimit = (domain) => WA.normalizeLimit(payload.limits[domain] || {});
 
-    function openLimitEditor(domain = '') {
-        editingLimit = { domain, limit: limitFor(domain) };
+    /**
+     * @param {string} [domain]
+     * @param {'daily'|'weekly'|'schedule'} [tab] Which tab the dialog opens on.
+     */
+    async function openLimitEditor(domain = '', tab = 'daily') {
+        // Writing a new rule is not editing one, so it never asks.
+        if (limitFor(domain) && !(await askForPassword())) return;
+        editingLimit = { domain, limit: limitFor(domain), tab };
     }
 
-    function openScheduleEditor(domain = '') {
-        editingSchedule = { domain, limit: limitFor(domain) };
+    async function openScheduleEditor(domain = '') {
+        if (limitFor(domain) && !(await askForPassword())) return;
+        editingLimit = { domain, limit: limitFor(domain), tab: 'schedule' };
     }
 
     /**
      * @param {boolean} [announce] A dialog says so out loud and then closes; an edit
      *   made straight in a table row does neither, because it is one of many.
      */
-    async function commitLimit(domain, limit, announce = false) {
+    async function commitLimit(domain, limit, announce = false, unlocked = false, domains = null) {
         // A rule that sets nothing is not a rule. Clearing the allowance and the hours
         // is how one is deleted now — there is no separate delete button — so the
         // record goes with them rather than lingering as a row of dashes. A category
         // the user picked is their own choice and keeps the record alive.
+        // The dialogs asked when they opened, so whatever they save is already past the
+        // lock; everything else — a switch in a table, a cross in the panel — arrives
+        // here unannounced and is checked against what is stored.
+        if (!unlocked && hasLock(blockLock)) {
+            if (domains && Array.isArray(domains)) {
+                if (!(await askForPassword())) return;
+            } else {
+                const before = payload.limits[domain] ? WA.normalizeLimit(payload.limits[domain]) : null;
+                const after = limit === null ? null : WA.normalizeLimit(limit);
+                if (loosensRule(before, after) && !(await askForPassword())) return;
+            }
+        }
+
+        if (domains && Array.isArray(domains)) {
+            const response = await saveLimit('*', limit, domains.length ? domains : ['*']);
+            if (response?.success) {
+                payload = { ...payload, limits: response.limits };
+                if (announce) showNotification('webActivityLimitsAppliedToAll');
+            }
+            if (announce) {
+                editingLimit = null;
+            }
+            return;
+        }
+
         const stripped = WA.normalizeLimit(limit || {});
         const setsNothing =
             !stripped.dailyLimitSeconds &&
@@ -449,11 +637,18 @@
         }
         if (announce) {
             editingLimit = null;
-            editingSchedule = null;
         }
     }
 
     async function snooze(domain) {
+        // The grace button is the one that undoes a block on purpose, so it is the one
+        // the password was set for; how soon it starts asking is `snoozePasswordAfter`.
+        if (
+            snoozeNeedsPassword(blockLock, payload.snoozeUses, payload.settings?.snoozePasswordAfter) &&
+            !(await askForPassword())
+        ) {
+            return;
+        }
         await snoozeLimit(domain);
         showNotification('webActivitySnoozed');
         await load();
@@ -481,6 +676,12 @@
     let pendingSettings = {};
 
     function patchSettingsDebounced(patch) {
+        // On screen at once, saved a moment later. A switch whose "on" only appears
+        // after a debounce plus a round trip to the worker feels broken: the click
+        // lands, nothing happens, and half a second later the button moves. The write
+        // is still the authority — `patchSettings` replaces this with whatever the
+        // worker stored, and the storage listener catches anything written elsewhere.
+        payload = { ...payload, settings: { ...(payload.settings || WA.DEFAULT_SETTINGS), ...patch } };
         pendingSettings = { ...pendingSettings, ...patch };
         clearTimeout(settingsTimer);
         settingsTimer = setTimeout(() => {
@@ -513,6 +714,16 @@
         // The counters change as well as the settings: an ignored site stops being
         // timed from this moment, so the live segment has to be re-read.
         await load();
+    }
+
+    /**
+     * The lock itself. `PasswordSection` has already checked the current password
+     * before asking for this, which is what stops the "remove password" button from
+     * being the very door the password guards.
+     */
+    async function saveBlockPassword(nextLock) {
+        if (!(await patchSettings({ blockPassword: nextLock }, false))) return;
+        showNotification(nextLock ? 'webActivityBlockPasswordSaved' : 'webActivityBlockPasswordRemoved');
     }
 
     async function addCategory(entry) {
@@ -561,6 +772,9 @@
             ...WA.DEFAULT_SETTINGS,
             customCategories: kept.customCategories || [],
             ignoredDomains: kept.ignoredDomains || [],
+            // A "restore defaults" that quietly unlocked every rule would be the
+            // shortest way round the lock on the page.
+            blockPassword: kept.blockPassword || null,
         });
     }
 
@@ -645,6 +859,7 @@
         initNumberSpinnerArrows();
         const stored = await chrome.storage.local.get(SITE_TABLE_PREFS_KEY);
         tablePrefs = normalizeTablePrefs(stored[SITE_TABLE_PREFS_KEY]);
+        await restoreLayout();
         await load();
 
         onRuntimeMessage = (message) => {
@@ -666,6 +881,7 @@
         // under the reader while they are working through it is worse than a stale
         // one they chose to leave open.
         if (isPanel) {
+            document.body.classList.add('is-sidepanel');
             minuteTimer = setInterval(() => {
                 minuteTick += 1;
                 load();
@@ -700,6 +916,7 @@
     });
 
     onDestroy(() => {
+        if (isPanel) document.body.classList.remove('is-sidepanel');
         if (onRuntimeMessage) chrome.runtime.onMessage.removeListener(onRuntimeMessage);
         if (onVisibility) document.removeEventListener('visibilitychange', onVisibility);
         if (onStorageChanged) chrome.storage.onChanged.removeListener(onStorageChanged);
@@ -711,6 +928,39 @@
 
 <WebActivityIcons />
 <div id="tooltip" bind:this={tooltipEl}></div>
+
+{#snippet settingsPanel(compact)}
+    <SettingsView
+        {compact}
+        rules={rows}
+        settings={payload.settings}
+        {customCategories}
+        {categoryUsage}
+        dayCount={Object.keys(payload.days).length}
+        siteCount={allSites.length}
+        onEditLimit={openLimitEditor}
+        onEditSchedule={openScheduleEditor}
+        onSaveLimit={commitLimit}
+        onAddRule={() => openLimitEditor('')}
+        onAddCategory={addCategory}
+        onRenameCategory={renameCategory}
+        onDeleteCategory={deleteCategory}
+        onChangeSettings={patchSettingsDebounced}
+        onChangeBlockPassword={saveBlockPassword}
+        onIgnoreAdd={(domain) =>
+            patchSettings({
+                ignoredDomains: [...new Set([...(payload.settings.ignoredDomains || []), domain])],
+            })}
+        onIgnoreRemove={(domain) =>
+            patchSettings({
+                ignoredDomains: (payload.settings.ignoredDomains || []).filter((entry) => entry !== domain),
+            })}
+        onExport={exportJson}
+        onImport={importJson}
+        onClearAll={clearEverything}
+        onRestoreDefaults={restoreDefaults}
+    />
+{/snippet}
 
 {#if isPanel}
     <!-- The side panel: the same data and the same dialogs, in the only shape a
@@ -728,16 +978,36 @@
             limitOf={normalizedLimit}
             onEditLimit={openLimitEditor}
             onEditSchedule={openScheduleEditor}
-            onToggleLimit={(domain, next) => commitLimit(domain, { ...normalizedLimit(domain), limitEnabled: next })}
+            onToggleLimit={(domain, which, next) =>
+                commitLimit(domain, {
+                    ...normalizedLimit(domain),
+                    ...(which === 'weekly' ? { weeklyLimitEnabled: next } : { dailyLimitEnabled: next }),
+                })}
             onToggleSchedule={(domain, next) =>
                 commitLimit(domain, { ...normalizedLimit(domain), scheduleEnabled: next })}
-            onClearLimit={(domain) =>
-                commitLimit(domain, { ...normalizedLimit(domain), dailyLimitSeconds: 0, weeklyLimitSeconds: 0 })}
+            onClearLimit={(domain, which) =>
+                commitLimit(domain, {
+                    ...normalizedLimit(domain),
+                    ...(which === 'weekly' ? { weeklyLimitSeconds: 0 } : { dailyLimitSeconds: 0 }),
+                })}
             onClearSchedule={(domain) =>
                 commitLimit(domain, { ...normalizedLimit(domain), schedules: [], blockAlways: false })}
             {activeDomain}
             onOpenInTab={() => chrome.tabs.create({ url: chrome.runtime.getURL(PAGE_PATH) })}
+            onOpenSettings={() => (panelSettingsOpen = true)}
         />
+
+        <!-- The same drawer the rules page's settings button opens, down to the slide:
+             two settings screens in one extension that arrive differently are two
+             products. It stays mounted so the closing animation can finish. -->
+        <SettingsDialog
+            open={panelSettingsOpen}
+            titleId="wa-settings-title"
+            title={$t('webActivitySettings')}
+            onClose={() => (panelSettingsOpen = false)}
+        >
+            {@render settingsPanel(true)}
+        </SettingsDialog>
     {/if}
 {:else}
     <ActivityHeader
@@ -777,7 +1047,17 @@
             onOpenSettings={() => (view = view === 'settings' ? 'dashboard' : 'settings')}
         />
 
-        <main class="main-content">
+        <!-- The sections can be dragged into another order; see `actions/sortable.js`.
+             The action lives on the column rather than on a wrapper of its own so the
+             loading, error and settings views inside it are untouched — it only ever
+             looks at children carrying a `data-sort-id`.
+
+             `items` names the element and not just the attribute on purpose: the panels
+             inside a section carry one too, so `closest('[data-sort-id]')` from a point
+             over a chart would answer with the panel, whose parent is the grid rather
+             than this column, and the section being dragged over would never be
+             recognised. -->
+        <main class="main-content" use:sortable={{ items: 'section[data-sort-id]', onReorder: reorderSections }}>
             {#if loading}
                 <div class="wa-loading">
                     <div class="loader-ring"></div>
@@ -794,34 +1074,7 @@
                     <div class="empty-sub">{error}</div>
                 </div>
             {:else if view === 'settings'}
-                <SettingsView
-                    rules={rows}
-                    settings={payload.settings}
-                    {customCategories}
-                    {categoryUsage}
-                    dayCount={Object.keys(payload.days).length}
-                    siteCount={allSites.length}
-                    onEditLimit={openLimitEditor}
-                    onEditSchedule={openScheduleEditor}
-                    onSaveLimit={commitLimit}
-                    onAddRule={() => openLimitEditor('')}
-                    onAddCategory={addCategory}
-                    onRenameCategory={renameCategory}
-                    onDeleteCategory={deleteCategory}
-                    onChangeSettings={patchSettingsDebounced}
-                    onIgnoreAdd={(domain) =>
-                        patchSettings({
-                            ignoredDomains: [...new Set([...(payload.settings.ignoredDomains || []), domain])],
-                        })}
-                    onIgnoreRemove={(domain) =>
-                        patchSettings({
-                            ignoredDomains: (payload.settings.ignoredDomains || []).filter((entry) => entry !== domain),
-                        })}
-                    onExport={exportJson}
-                    onImport={importJson}
-                    onClearAll={clearEverything}
-                    onRestoreDefaults={restoreDefaults}
-                />
+                {@render settingsPanel(false)}
             {:else}
                 {#if payload.openSegment}
                     <div class="wa-live" title={$tt('webActivityLiveHint')}>
@@ -841,139 +1094,316 @@
                         <div class="empty-sub">{$t('webActivityEmptySub')}</div>
                     </div>
                 {:else}
-                    <DashboardSection title={$t('webActivityLogTitle')} tooltip={$tt('webActivityLogHint')}>
-                        <div class="wa-log">
-                            <SitesTable
-                                {sites}
-                                limits={payload.limits}
-                                settings={payload.settings}
-                                {verdicts}
-                                {customCategories}
-                                prefs={tablePrefs}
-                                onSort={(sortBy, sortDir) => persistTablePrefs({ ...tablePrefs, sortBy, sortDir })}
-                                onSaveLimit={commitLimit}
-                                onOpenLimitEditor={openLimitEditor}
-                                onOpenScheduleEditor={openScheduleEditor}
-                                onIgnoreDomain={toggleIgnoreDomain}
-                            />
-                        </div>
-                    </DashboardSection>
+                    <!--
+                        THE SECTIONS, IN WHATEVER ORDER THE READER LEFT THEM.
 
-                    <DashboardSection title={$t('dashboardSummary')} tooltip={$tt('webActivitySummaryTitle')}>
-                        <div class="kpi-grid"><KpiGrid {kpis} /></div>
-                    </DashboardSection>
-
-                    <DashboardSection title={$t('webActivityPatterns')} tooltip={$tt('webActivityPatternsHint')}>
-                        <div class="chart-grid-2">
-                            <ChartCard
-                                title={$t('dashboardHourDistrib')}
-                                meta={$t('webActivityHourMeta')}
-                                tooltip={$tt('webActivityHourHint')}
-                            >
-                                <div class="hour-bar-grid" style="height:88px">
-                                    <HourGrid
-                                        hours={hours.map((seconds) => seconds / 3600)}
-                                        cnts={hourCounts}
-                                        maxH={Math.max(...hours.map((s) => s / 3600), 0.001)}
-                                        fmtH={(seconds) => fmtDur(seconds)}
-                                        {i18n}
-                                        countLabel={(count) => i18n('webActivityHourSites', count)}
-                                    />
-                                </div>
-                            </ChartCard>
-                            <ChartCard
-                                title={$t('webActivityWeekdayTitle')}
-                                meta={$t('webActivityWeekdayMeta')}
-                                tooltip={$tt('webActivityWeekdayHint')}
-                            >
-                                <ChartCanvas
-                                    config={weekdayConfig}
-                                    height={200}
-                                    ariaLabel={$t('webActivityWeekdayTitle')}
+                        Each one is a snippet and `sectionOrder` is the order, so dragging a
+                        section only ever changes a list of ids — nothing moves DOM that Svelte
+                        owns. `sortId` is what the grip in the heading reports and what the
+                        layout is stored under, so a section keeps its place whatever language
+                        its title is in.
+                    -->
+                    {#snippet section_log()}
+                        <DashboardSection
+                            sortId="log"
+                            title={$t('webActivityLogTitle')}
+                            tooltip={$tt('webActivityLogHint')}
+                        >
+                            <div class="wa-log">
+                                <SitesTable
+                                    {sites}
+                                    limits={payload.limits}
+                                    settings={payload.settings}
+                                    {verdicts}
+                                    {customCategories}
+                                    prefs={tablePrefs}
+                                    onSort={(sortBy, sortDir) => persistTablePrefs({ ...tablePrefs, sortBy, sortDir })}
+                                    onSaveLimit={commitLimit}
+                                    onOpenLimitEditor={openLimitEditor}
+                                    onOpenScheduleEditor={openScheduleEditor}
+                                    onIgnoreDomain={toggleIgnoreDomain}
                                 />
-                            </ChartCard>
-                        </div>
-                    </DashboardSection>
-
-                    <DashboardSection title={$t('webActivityHeatmapTitle')} tooltip={$tt('webActivityHeatmapHint')}>
-                        <div class="chart-card animate-in delay-2">
-                            <div class="heatmap-container">
-                                <div class="heatmap-wrap">
-                                    <Heatmap
-                                        cells={heatmap.cells}
-                                        monthPositions={heatmap.monthPositions.map((mp) => ({
-                                            ...mp,
-                                            label: new Intl.DateTimeFormat($currentLang === 'es' ? 'es-ES' : 'en-GB', {
-                                                month: 'short',
-                                            }).format(new Date(2024, mp.month, 1)),
-                                        }))}
-                                        locale={$currentLang === 'es' ? 'es-ES' : 'en-GB'}
-                                        {i18n}
-                                        fmtDur={(seconds) => fmtDur(seconds)}
-                                        {tooltipEl}
-                                        countLabel={() => ''}
-                                    />
-                                </div>
                             </div>
-                        </div>
-                    </DashboardSection>
+                        </DashboardSection>
+                    {/snippet}
 
-                    <DashboardSection title={$t('webActivityTrendsTitle')} tooltip={$tt('webActivityTrendsHint')}>
-                        <div class="chart-grid-2">
-                            <ChartCard
-                                title={$t('webActivityDailyTitle')}
-                                meta={siteFilter || $t('webActivityAllSites')}
-                                tooltip={$tt('webActivityDailyHint')}
-                            >
-                                <ChartCanvas
-                                    config={trendConfig}
-                                    height={260}
-                                    ariaLabel={$t('webActivityDailyTitle')}
-                                />
-                            </ChartCard>
-                            <ChartCard
-                                title={$t('webActivityCategoriesTitle')}
-                                meta={fmtH(totalSeconds, $t('dashboardFocusH_abbrev'))}
-                                tooltip={$tt('webActivityCategoriesHint')}
-                            >
-                                <ChartCanvas
-                                    config={categoryConfig}
-                                    height={200}
-                                    ariaLabel={$t('webActivityCategoriesTitle')}
-                                />
-                                <DonutStats stats={donutRows} columns={5} />
-                            </ChartCard>
-                        </div>
-                    </DashboardSection>
-
-                    <DashboardSection title={$t('webActivitySitesTitle')} tooltip={$tt('webActivitySitesHint')}>
-                        <ChartCard title={$t('webActivityTopSitesTitle')} meta={$t('webActivityTopSitesMeta')}>
-                            <ChartCanvas
-                                config={topSitesConfig}
-                                height={320}
-                                ariaLabel={$t('webActivityTopSitesTitle')}
-                            />
-                        </ChartCard>
-                    </DashboardSection>
-
-                    <DashboardSection title={$t('webActivityBlocksTitle')} tooltip={$tt('webActivityBlocksHintTitle')}>
-                        <div class="chart-card animate-in delay-1">
+                    {#snippet section_blocks()}
+                        <DashboardSection
+                            sortId="blocks"
+                            title={$t('webActivityBlocksTitle')}
+                            tooltip={$tt('webActivityBlocksHintTitle')}
+                        >
                             <BlocksList
                                 rows={blockedRows}
+                                snoozeMinutes={payload.settings?.snoozeMinutes ?? 5}
                                 onEditLimit={openLimitEditor}
-                                onEditSchedule={openScheduleEditor}
                                 onSnooze={snooze}
                             />
-                        </div>
-                    </DashboardSection>
+                        </DashboardSection>
+                    {/snippet}
 
-                    <DashboardSection title={$t('webActivityTimelineTitle')} tooltip={$tt('webActivityTimelineHint')}>
-                        <div class="chart-card animate-in delay-1">
-                            <VisitTimeline
-                                visits={siteFilter ? payload.recent.filter((v) => v.d === siteFilter) : payload.recent}
+                    {#snippet section_grace()}
+                        <DashboardSection
+                            sortId="grace"
+                            title={$t('webActivityGracePeriodTitle')}
+                            tooltip={$tt('webActivityGracePeriodHint')}
+                        >
+                            <SnoozedList
+                                rows={snoozedRows}
+                                snoozeMinutes={payload.settings?.snoozeMinutes ?? 5}
+                                onEditLimit={openLimitEditor}
+                                onSnooze={snooze}
                             />
-                        </div>
-                    </DashboardSection>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet section_summary()}
+                        <DashboardSection
+                            sortId="summary"
+                            title={$t('dashboardSummary')}
+                            tooltip={$tt('webActivitySummaryTitle')}
+                        >
+                            <div class="kpi-grid"><KpiGrid {kpis} /></div>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet section_patterns()}
+                        <DashboardSection
+                            sortId="patterns"
+                            title={$t('webActivityPatterns')}
+                            tooltip={$tt('webActivityPatternsHint')}
+                        >
+                            <!-- The grid is the container, so a panel dragged out of it has
+                                 nowhere to land: a panel only ever moves within its section. -->
+                            <div
+                                class="chart-grid-2"
+                                use:sortable={{ onReorder: (ids) => reorderPanels('patterns', ids) }}
+                            >
+                                {#each panelOrder.patterns as panel (panel)}
+                                    {#if panel === 'hours'}
+                                        {@render panelHours()}
+                                    {:else if panel === 'weekday'}
+                                        {@render panelWeekday()}
+                                    {/if}
+                                {/each}
+                            </div>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet panelHours()}
+                        <ChartCard
+                            sortId="hours"
+                            title={$t('dashboardHourDistrib')}
+                            meta={$t('webActivityHourMeta')}
+                            tooltip={$tt('webActivityHourHint')}
+                        >
+                            <!-- Grows into the card rather than sitting 88px tall in one
+                                 stretched to match its neighbour. -->
+                            <div class="hour-bar-grid" style="flex:1 1 auto;min-height:120px">
+                                <HourGrid
+                                    hours={hours.map((seconds) => seconds / 3600)}
+                                    cnts={hourCounts}
+                                    maxH={Math.max(...hours.map((s) => s / 3600), 0.001)}
+                                    fmtH={(seconds) => fmtDur(seconds)}
+                                    {i18n}
+                                    countLabel={(count) => i18n('webActivityHourSites', count)}
+                                />
+                            </div>
+                        </ChartCard>
+                    {/snippet}
+
+                    {#snippet panelWeekday()}
+                        <ChartCard
+                            sortId="weekday"
+                            title={$t('webActivityWeekdayTitle')}
+                            meta={$t('webActivityWeekdayMeta')}
+                            tooltip={$tt('webActivityWeekdayHint')}
+                        >
+                            <ChartCanvas
+                                grow
+                                config={weekdayConfig}
+                                height={180}
+                                ariaLabel={$t('webActivityWeekdayTitle')}
+                            />
+                        </ChartCard>
+                    {/snippet}
+
+                    {#snippet section_heatmap()}
+                        <!-- The same calendar the pomodoro dashboard draws, down to the day
+                             column, the month strip and the legend: one card, one grammar.
+                             Only the scale differs, because a cell here is worth an amount
+                             of time rather than a number of sessions, so the legend spells
+                             out the four bands in hours instead of counts. -->
+                        <DashboardSection
+                            sortId="heatmap"
+                            title={$t('webActivityHeatmapTitle')}
+                            tooltip={$tt('webActivityHeatmapHint')}
+                        >
+                            <div class="chart-card animate-in delay-2">
+                                <div class="chart-card-header">
+                                    <div class="chart-card-title" title={$tt('webActivityHeatmapHint')}>
+                                        {$t('webActivityHeatmapCardTitle')}
+                                    </div>
+                                    <div class="chart-card-meta">
+                                        {$t('webActivityHeatmapMeta', [fmtDur(heatmap.max)])}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="heatmap-container">
+                                        <div class="heatmap-days">
+                                            <div class="heatmap-months-spacer"></div>
+                                            <div class="heatmap-day-label">{$t('dashboardMonday')}</div>
+                                            <div class="heatmap-day-label"></div>
+                                            <div class="heatmap-day-label">{$t('dashboardWednesday')}</div>
+                                            <div class="heatmap-day-label"></div>
+                                            <div class="heatmap-day-label">{$t('dashboardFriday')}</div>
+                                            <div class="heatmap-day-label"></div>
+                                            <div class="heatmap-day-label">{$t('dashboardSunday')}</div>
+                                        </div>
+                                        <div class="heatmap-wrap">
+                                            <Heatmap
+                                                cells={heatmap.cells}
+                                                monthPositions={heatmap.monthPositions.map((mp) => ({
+                                                    ...mp,
+                                                    label: new Intl.DateTimeFormat(
+                                                        $currentLang === 'es' ? 'es-ES' : 'en-GB',
+                                                        { month: 'short' },
+                                                    ).format(new Date(2024, mp.month, 1)),
+                                                }))}
+                                                locale={$currentLang === 'es' ? 'es-ES' : 'en-GB'}
+                                                {i18n}
+                                                fmtDur={(seconds) => fmtDur(seconds)}
+                                                {tooltipEl}
+                                                countLabel={() => ''}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="legend" style="margin-top:12px">
+                                        <div class="legend-item">
+                                            <div
+                                                class="legend-dot"
+                                                style="background:color-mix(in srgb,var(--bg-panel-color) 40%,var(--bg-color))"
+                                            ></div>
+                                            <span>{$t('dashboardLegendNone')}</span>
+                                        </div>
+                                        {#each HEATMAP_LEGEND as band (band.level)}
+                                            <div class="legend-item">
+                                                <div class="legend-dot" style="background:{band.color}"></div>
+                                                <span>{band.label}</span>
+                                            </div>
+                                        {/each}
+                                        <div class="legend-item" style="margin-left:6px">
+                                            <div
+                                                class="legend-dot"
+                                                style="box-shadow:inset 0 0 0 1.5px var(--interactive-color);background:color-mix(in srgb,var(--interactive-color) 10%,var(--bg-color))"
+                                            ></div>
+                                            <span>{$t('dashboardToday')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet section_trends()}
+                        <DashboardSection
+                            sortId="trends"
+                            title={$t('webActivityTrendsTitle')}
+                            tooltip={$tt('webActivityTrendsHint')}
+                        >
+                            <div
+                                class="chart-grid-2"
+                                use:sortable={{ onReorder: (ids) => reorderPanels('trends', ids) }}
+                            >
+                                {#each panelOrder.trends as panel (panel)}
+                                    {#if panel === 'daily'}
+                                        {@render panelDaily()}
+                                    {:else if panel === 'categories'}
+                                        {@render panelCategories()}
+                                    {/if}
+                                {/each}
+                            </div>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet panelDaily()}
+                        <ChartCard
+                            sortId="daily"
+                            title={$t('webActivityDailyTitle')}
+                            meta={siteFilter || $t('webActivityAllSites')}
+                            tooltip={$tt('webActivityDailyHint')}
+                        >
+                            <ChartCanvas
+                                grow
+                                config={trendConfig}
+                                height={220}
+                                ariaLabel={$t('webActivityDailyTitle')}
+                            />
+                        </ChartCard>
+                    {/snippet}
+
+                    {#snippet panelCategories()}
+                        <ChartCard
+                            sortId="categories"
+                            title={$t('webActivityCategoriesTitle')}
+                            meta={fmtH(totalSeconds, $t('dashboardFocusH_abbrev'))}
+                            tooltip={$tt('webActivityCategoriesHint')}
+                        >
+                            <ChartCanvas
+                                config={categoryConfig}
+                                height={200}
+                                ariaLabel={$t('webActivityCategoriesTitle')}
+                            />
+                            <DonutStats stats={donutRows} columns={2} />
+                        </ChartCard>
+                    {/snippet}
+
+                    {#snippet section_sites()}
+                        <DashboardSection
+                            sortId="sites"
+                            title={$t('webActivitySitesTitle')}
+                            tooltip={$tt('webActivitySitesHint')}
+                        >
+                            <ChartCard title={$t('webActivityTopSitesTitle')} meta={$t('webActivityTopSitesMeta')}>
+                                <ChartCanvas
+                                    config={topSitesConfig}
+                                    height={320}
+                                    ariaLabel={$t('webActivityTopSitesTitle')}
+                                />
+                            </ChartCard>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#snippet section_timeline()}
+                        <DashboardSection
+                            sortId="timeline"
+                            title={$t('webActivityTimelineTitle')}
+                            tooltip={$tt('webActivityTimelineHint')}
+                        >
+                            <div class="chart-card animate-in delay-1">
+                                <VisitTimeline
+                                    visits={payload.recent.filter(
+                                        (v) =>
+                                            (!siteFilter || v.d === siteFilter) &&
+                                            !(payload.settings?.ignoredDomains || []).includes(v.d),
+                                    )}
+                                />
+                            </div>
+                        </DashboardSection>
+                    {/snippet}
+
+                    {#each sectionOrder as id (id)}
+                        {#if id === 'log'}{@render section_log()}
+                        {:else if id === 'blocks'}{@render section_blocks()}
+                        {:else if id === 'grace'}{@render section_grace()}
+                        {:else if id === 'summary'}{@render section_summary()}
+                        {:else if id === 'patterns'}{@render section_patterns()}
+                        {:else if id === 'heatmap'}{@render section_heatmap()}
+                        {:else if id === 'trends'}{@render section_trends()}
+                        {:else if id === 'sites'}{@render section_sites()}
+                        {:else if id === 'timeline'}{@render section_timeline()}
+                        {/if}
+                    {/each}
                 {/if}
             {/if}
         </main>
@@ -984,17 +1414,26 @@
     <LimitModal
         domain={editingLimit.domain}
         limit={editingLimit.limit}
-        onSave={(domain, limit) => commitLimit(domain, limit, true)}
+        initialTab={editingLimit.tab}
+        onSave={(domain, limit, applyToAll) => {
+            if (applyToAll) {
+                commitLimit('*', limit, true, true, allKnownDomains);
+            } else {
+                commitLimit(domain, limit, true, true);
+            }
+        }}
         onClose={() => (editingLimit = null)}
     />
 {/if}
 
-{#if editingSchedule}
-    <ScheduleModal
-        domain={editingSchedule.domain}
-        limit={editingSchedule.limit}
-        onSave={(domain, limit) => commitLimit(domain, limit, true)}
-        onClose={() => (editingSchedule = null)}
+{#if passwordPrompt}
+    <PasswordPromptModal
+        onSubmit={async (password) => {
+            const accepted = await verifyLock(blockLock, password);
+            if (accepted) closePasswordPrompt(true);
+            return accepted;
+        }}
+        onClose={() => closePasswordPrompt(false)}
     />
 {/if}
 

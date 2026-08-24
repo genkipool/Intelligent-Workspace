@@ -17,7 +17,13 @@
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
-    let { domains = [], onAdd, onRemove } = $props();
+    let {
+        domains = [],
+        /** How many names stand side by side. */
+        columns = 3,
+        onAdd,
+        onRemove,
+    } = $props();
 
     let draft = $state('');
     let error = $state('');
@@ -57,7 +63,8 @@
     }
 
     /** Three columns, filled left to right, so the list reads as rows of a table. */
-    const COLUMNS = 3;
+    /** Three across a page, two across a panel: any narrower and the names ellipsise. */
+    const COLUMNS = $derived(columns);
 
     const rows = $derived.by(() => {
         const out = [];

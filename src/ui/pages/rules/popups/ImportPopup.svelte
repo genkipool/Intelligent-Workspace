@@ -6,6 +6,7 @@
      * page, and the three buttons close it through `method="dialog"`.
      */
     import { t } from '../../../stores/i18nStore.js';
+    import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
 
     let { isOpen = false, onclose, onimport } = $props();
 
@@ -19,12 +20,20 @@
 
     function handleClose(e) {
         const value = e.currentTarget.returnValue;
+        if (dialogEl) dialogEl.returnValue = '';
         if (value === 'add' || value === 'overwrite') onimport?.({ mode: value });
         onclose?.();
     }
 </script>
 
-<dialog bind:this={dialogEl} id="import-popup" class="import-modal" closedby="any" onclose={handleClose}>
+<dialog
+    bind:this={dialogEl}
+    id="import-popup"
+    class="import-modal"
+    closedby="any"
+    onclose={handleClose}
+    use:dismissOnBackdrop={() => onclose?.()}
+>
     <div class="modal-content-import">
         <h2 class="title-modal">{$t('importRules')}</h2>
         <p>{$t('importOptions')}</p>

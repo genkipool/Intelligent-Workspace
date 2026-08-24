@@ -52,6 +52,33 @@ const ITG_WEB_ACTIVITY = {
         LIMITS: 'wa:limits',
         /** chrome.storage.session — the segment currently being timed. */
         OPEN_SEGMENT: 'wa:openSegment',
+        /**
+         * chrome.storage.local — this browser's own id inside the synced record. Each
+         * browser writes its days under its own key so two of them counting the same
+         * Tuesday add up instead of overwriting one another.
+         */
+        SYNC_DEVICE: 'wa:syncDevice',
+        /**
+         * chrome.storage.local — how many times the grace button has been used today,
+         * as `{ day, count }`. Kept by the worker because the block screen uses that
+         * button too, and a count each page kept for itself would be no count at all.
+         */
+        SNOOZE_USES: 'wa:snoozeUses',
+    },
+
+    /**
+     * The keys the synced copy lives under. Everything is prefixed so the shared area
+     * — which also holds whatever else the user's profile syncs — can be swept clean
+     * the moment the switch is turned off.
+     */
+    SYNC: {
+        PREFIX: 'wa:s:',
+        SETTINGS: 'wa:s:settings',
+        LIMITS: 'wa:s:limits',
+        /** `wa:s:d:<device>:<day>` — one day, as counted by one browser. */
+        DAY_PREFIX: 'wa:s:d:',
+        /** How many days back are shared. The whole area is 100KB. */
+        DAYS: 21,
     },
 
     /** How many visits the timeline remembers. */
@@ -78,12 +105,34 @@ const ITG_WEB_ACTIVITY = {
         /** How long the "just five more minutes" button on the block screen lasts. */
         snoozeMinutes: 5,
         /**
+         * Which use of that button starts asking for the block password, counting from
+         * the first one today. 2 — the default — means the first one is free and the
+         * second is not, which is the point: one more go is a decision, three more is a
+         * habit. 0 never asks, and none of it means anything without a password set.
+         */
+        snoozePasswordAfter: 2,
+        /**
+         * Whether the record, the rules and these preferences ride along in the
+         * browser's own profile sync, so the same extension in another browser shows
+         * the same figures. Off by default: `chrome.storage.sync` is a shared, quota'd
+         * area that leaves the machine, and where somebody has been is not something to
+         * start shipping anywhere without being asked.
+         */
+        syncEnabled: false,
+        /**
          * Categories the user added, as `[{ id, label }]`. The id always carries the
          * `custom:` prefix, so a name the user picks can never collide with a built-in
          * bucket and a stale one is recognisable long after the category was deleted.
          * The label is stored rather than translated: it is the user's own word.
          */
         customCategories: [],
+        /**
+         * The password that stands in front of weakening a rule, as
+         * `{ salt, hash }`, or null. Never the password itself — see
+         * `ui/pages/web-activity/blockLock.js`, which is the only thing that reads or
+         * writes this and explains what it is and is not.
+         */
+        blockPassword: null,
     },
 
     /** What marks a category as the user's own rather than one of ours. */
@@ -396,8 +445,15 @@ const ITG_WEB_ACTIVITY = {
 
     /** An empty per-day record for a site. */
     emptyDomainDay() {
-        return { t: 0, v: 0, s: 0, h: {} };
+        // `p` is the same seconds again, split by the pomodoro phase that was running
+        // while they were spent: `w` focus, `s` short break, `l` long break. Time spent
+        // with no timer going is in `t` and in none of them, which is what makes the
+        // three of them add up to less than `t` rather than to it.
+        return { t: 0, v: 0, s: 0, h: {}, p: { w: 0, s: 0, l: 0 } };
     },
+
+    /** Which key of `entry.p` a pomodoro mode is banked under. */
+    POMODORO_PHASE_FIELD: { work: 'w', short: 's', long: 'l' },
 
     /** A limit record with every field filled in, whatever the stored one is missing. */
     normalizeLimit(limit = {}) {
@@ -405,13 +461,39 @@ const ITG_WEB_ACTIVITY = {
         // exactly what it meant at the time.
         const legacy = limit.enabled !== false;
         const limitEnabled = limit.limitEnabled === undefined ? legacy : limit.limitEnabled !== false;
+        const dailyLimitEnabled =
+            limit.dailyLimitEnabled === undefined ? limitEnabled : limit.dailyLimitEnabled !== false;
+        const weeklyLimitEnabled =
+            limit.weeklyLimitEnabled === undefined ? limitEnabled : limit.weeklyLimitEnabled !== false;
         const scheduleEnabled = limit.scheduleEnabled === undefined ? legacy : limit.scheduleEnabled !== false;
+
+        const dailyLimitSeconds = Number(limit.dailyLimitSeconds) || 0;
+        const weeklyLimitSeconds = Number(limit.weeklyLimitSeconds) || 0;
+        const blockAlways = !!limit.blockAlways;
+        const schedules = Array.isArray(limit.schedules) ? limit.schedules : [];
+
+        const hasDaily = dailyLimitSeconds > 0;
+        const hasWeekly = weeklyLimitSeconds > 0;
+        const hasSchedule = blockAlways || schedules.some((s) => s.start && s.end);
+
+        const activeDaily = hasDaily && dailyLimitEnabled;
+        const activeWeekly = hasWeekly && weeklyLimitEnabled;
+        const activeSchedule = hasSchedule && scheduleEnabled;
+
+        const hasAnyConfig = hasDaily || hasWeekly || hasSchedule;
+        const isLimitActive = hasAnyConfig ? activeDaily || activeWeekly : dailyLimitEnabled || weeklyLimitEnabled;
+        const isOverallActive = hasAnyConfig
+            ? activeDaily || activeWeekly || activeSchedule
+            : dailyLimitEnabled || weeklyLimitEnabled || scheduleEnabled;
+
         return {
-            limitEnabled,
+            dailyLimitEnabled,
+            weeklyLimitEnabled,
             scheduleEnabled,
-            /** Kept for anything still reading the single flag. */
-            enabled: limitEnabled || scheduleEnabled,
-            dailyLimitSeconds: Number(limit.dailyLimitSeconds) || 0,
+            /** Kept for legacy callers reading limitEnabled / enabled */
+            limitEnabled: isLimitActive,
+            enabled: isOverallActive,
+            dailyLimitSeconds,
             /**
              * The weekdays the daily allowance applies on. A record from before this
              * existed has none, and means every day; an empty list is a deliberate
@@ -419,9 +501,9 @@ const ITG_WEB_ACTIVITY = {
              * turning it into an everyday one.
              */
             dailyLimitDays: Array.isArray(limit.dailyLimitDays) ? limit.dailyLimitDays : [0, 1, 2, 3, 4, 5, 6],
-            weeklyLimitSeconds: Number(limit.weeklyLimitSeconds) || 0,
-            blockAlways: !!limit.blockAlways,
-            schedules: Array.isArray(limit.schedules) ? limit.schedules : [],
+            weeklyLimitSeconds,
+            blockAlways,
+            schedules,
             notifyAtPercent: limit.notifyAtPercent === undefined ? null : limit.notifyAtPercent,
             snoozeUntil: Number(limit.snoozeUntil) || 0,
             category: limit.category || null,
@@ -511,7 +593,7 @@ const ITG_WEB_ACTIVITY = {
             verdict.remainingWeekSeconds = Math.max(0, limit.weeklyLimitSeconds - usedWeek);
             verdict.weekPercent = Math.min(100, Math.round((usedWeek / limit.weeklyLimitSeconds) * 100));
         }
-        if (!limit.limitEnabled && !limit.scheduleEnabled) return verdict;
+        if (!limit.dailyLimitEnabled && !limit.weeklyLimitEnabled && !limit.scheduleEnabled) return verdict;
 
         if (limit.snoozeUntil > now.getTime()) {
             verdict.snoozed = true;
@@ -539,9 +621,8 @@ const ITG_WEB_ACTIVITY = {
         // The allowance is still measured on a day it does not apply to — the figures
         // are true whatever the rule does with them — but only a day it applies to can
         // block.
-        if (!limit.limitEnabled) return verdict;
-
         if (
+            limit.dailyLimitEnabled &&
             limit.dailyLimitSeconds > 0 &&
             usedToday >= limit.dailyLimitSeconds &&
             limit.dailyLimitDays.includes(now.getDay())
@@ -554,7 +635,7 @@ const ITG_WEB_ACTIVITY = {
         // The weekly allowance is checked last so the reason the user is told is the
         // one that lifts soonest: a day that is spent comes back at midnight, a week
         // that is spent does not come back until Monday.
-        if (limit.weeklyLimitSeconds > 0 && usedWeek >= limit.weeklyLimitSeconds) {
+        if (limit.weeklyLimitEnabled && limit.weeklyLimitSeconds > 0 && usedWeek >= limit.weeklyLimitSeconds) {
             verdict.blocked = true;
             verdict.reason = 'weekly';
         }

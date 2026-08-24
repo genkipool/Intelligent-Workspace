@@ -17,7 +17,20 @@
     import { fmtHm } from '../../../services/dashboard/format.js';
     import RuleControls from '../components/RuleControls.svelte';
 
-    let { rows = [], onEditLimit, onEditSchedule, onSaveLimit, onAdd } = $props();
+    let {
+        rows = [],
+        /**
+         * In the side panel the table is left out and only the "add" button stays.
+         * Every rule it would list is already a card in the panel behind this dialog,
+         * with the same three controls on it — printing them again a centimetre away is
+         * two lists of the same thing, and the second one is the one nobody asked for.
+         */
+        compact = false,
+        onEditLimit,
+        onEditSchedule,
+        onSaveLimit,
+        onAdd,
+    } = $props();
 
     const LIMIT_KEYS = {
         enable: 'webActivityEnableLimit',
@@ -50,7 +63,7 @@
     /** The same shape as `siteColumns.js`, kept here because these are not those columns. */
     const COLUMNS = [
         { id: 'site', labelKey: 'webActivityColSite', weight: 20, align: 'left' },
-        { id: 'limit', labelKey: 'webActivityColLimit', weight: 20 },
+        { id: 'limit', labelKey: 'webActivityColDaily', weight: 20 },
         { id: 'weekly', labelKey: 'webActivityColWeekly', weight: 20 },
         { id: 'schedule', labelKey: 'webActivityColSchedule', weight: 24 },
         // "fuera de horario" is sixteen letters of small caps; twelve was not enough
@@ -66,6 +79,25 @@
     /** Whether the clock half of the rule says anything at all. */
     const hasSchedule = (limit) => limit.blockAlways || limit.schedules.some((s) => s.start && s.end);
 
+    /**
+     * What a cell's tooltip says once there is something to say: the figures actually
+     * configured, rather than the pencil's "configure this" repeated on the value.
+     */
+    const limitTitle = (limit) => {
+        const parts = [];
+        if (limit.dailyLimitSeconds > 0) parts.push(`${$t('webActivityColDaily')}: ${fmtHm(limit.dailyLimitSeconds)}`);
+        if (limit.weeklyLimitSeconds > 0)
+            parts.push(`${$t('webActivityColWeekly')}: ${fmtHm(limit.weeklyLimitSeconds)}`);
+        return parts.join(' · ');
+    };
+
+    const scheduleTitle = (limit) => {
+        if (limit.blockAlways) return `${$t('webActivityColSchedule')}: ${$t('webActivityLimitAlways')}`;
+        const windows = (limit.schedules || []).filter((entry) => entry.start && entry.end);
+        if (!windows.length) return '';
+        return `${$t('webActivityColSchedule')}: ${windows.map((w) => `${w.start}-${w.end}`).join(', ')}`;
+    };
+
     /** "09:00-18:00", "3 windows", "always" — whatever the clock half of the rule says. */
     function scheduleText(limit) {
         if (limit.blockAlways) return $t('webActivityLimitAlways');
@@ -76,9 +108,9 @@
     }
 </script>
 
-{#snippet ruleCell(label, isSet, enabled, editTitle, keys, onEdit, onToggle, onClear)}
+{#snippet ruleCell(label, isSet, enabled, editTitle, valueTitle, keys, onEdit, onToggle, onClear)}
     <div class="wa-cell-with-action">
-        <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={editTitle}>
+        <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={valueTitle}>
             {isSet ? label : '—'}
         </span>
         <RuleControls
@@ -96,14 +128,16 @@
 {/snippet}
 
 <div class="wa-set-block">
-    <div class="wa-set-block-head">
+    <div class="wa-set-block-head" class:wa-set-block-head-center={compact}>
         <button class="wa-add-btn" type="button" title={$tt('webActivityAddRule')} onclick={onAdd}>
             <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-plus"></use></svg>
             <span>{$t('webActivityAddRule')}</span>
         </button>
     </div>
 
-    {#if !configured.length}
+    {#if compact}
+        <!-- Nothing else: the rules are the cards in the panel behind this dialog. -->
+    {:else if !configured.length}
         <p class="wa-empty-line">{$t('webActivityRulesEmpty')}</p>
     {:else}
         <div class="wa-table-frame wa-rules-frame">
@@ -132,38 +166,44 @@
                                 </span>
                             </td>
 
-                            <td data-col="limit">
+                            <td data-col="limit" data-label={$t('webActivityColDaily')}>
                                 {@render ruleCell(
                                     fmtHm(row.limit.dailyLimitSeconds),
                                     row.limit.dailyLimitSeconds > 0,
-                                    row.limit.limitEnabled,
+                                    row.limit.dailyLimitEnabled,
                                     $tt('webActivityConfigureLimit'),
+                                    limitTitle(row.limit) || $tt('webActivityConfigureLimit'),
                                     LIMIT_KEYS,
-                                    () => onEditLimit(row.domain),
-                                    (next) => onSaveLimit(row.domain, { ...row.limit, limitEnabled: next }),
+                                    () => onEditLimit(row.domain, 'daily'),
+                                    (next) => onSaveLimit(row.domain, { ...row.limit, dailyLimitEnabled: next }),
                                     () => onSaveLimit(row.domain, { ...row.limit, dailyLimitSeconds: 0 }),
                                 )}
                             </td>
 
-                            <td data-col="weekly">
+                            <td data-col="weekly" data-label={$t('webActivityColWeekly')}>
                                 {@render ruleCell(
                                     fmtHm(row.limit.weeklyLimitSeconds),
                                     row.limit.weeklyLimitSeconds > 0,
-                                    row.limit.limitEnabled,
+                                    row.limit.weeklyLimitEnabled,
                                     $tt('webActivityConfigureLimit'),
+                                    limitTitle(row.limit) || $tt('webActivityConfigureLimit'),
                                     LIMIT_KEYS,
-                                    () => onEditLimit(row.domain),
-                                    (next) => onSaveLimit(row.domain, { ...row.limit, limitEnabled: next }),
+                                    // The week column opens the dialog on its own tab: a
+                                    // pencil that lands on the daily form is a pencil that
+                                    // edited the wrong half of the rule.
+                                    () => onEditLimit(row.domain, 'weekly'),
+                                    (next) => onSaveLimit(row.domain, { ...row.limit, weeklyLimitEnabled: next }),
                                     () => onSaveLimit(row.domain, { ...row.limit, weeklyLimitSeconds: 0 }),
                                 )}
                             </td>
 
-                            <td data-col="schedule">
+                            <td data-col="schedule" data-label={$t('webActivityColSchedule')}>
                                 {@render ruleCell(
                                     scheduleText(row.limit),
                                     hasSchedule(row.limit),
                                     row.limit.scheduleEnabled,
                                     $tt('webActivityConfigureSchedule'),
+                                    scheduleTitle(row.limit) || $tt('webActivityConfigureSchedule'),
                                     SCHEDULE_KEYS,
                                     () => onEditSchedule(row.domain),
                                     (next) => onSaveLimit(row.domain, { ...row.limit, scheduleEnabled: next }),
@@ -176,7 +216,7 @@
                                 )}
                             </td>
 
-                            <td data-col="state" class="td-mono">
+                            <td data-col="state" class="td-mono" data-label={$t('webActivityColState')}>
                                 {#if !row.limit.enabled}
                                     <span class="wa-badge" title={$tt('webActivityLimitEnabledHint')}>
                                         {$t('webActivityLimitPaused')}

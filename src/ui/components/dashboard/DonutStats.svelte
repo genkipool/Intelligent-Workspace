@@ -14,10 +14,16 @@
 <div class="donut-stats" style:--donut-stat-columns={columns} class:is-grid={columns > 1}>
     {#each stats as r (r.label)}
         <div class="stat-row">
-            <span class="stat-row-label">
-                <span class="dot" style="background:{r.color}"></span>{r.label}
+            <span class="stat-row-label" title={r.label}>
+                <span class="dot" style="background:{r.color}"></span>
+                <span class="label-text">{r.label}</span>
             </span>
-            <span class="stat-row-val">{r.val}</span>
+            <span class="stat-row-val">
+                {r.val}
+                {#if r.percent !== undefined && r.percent > 0}
+                    <span class="stat-row-pct">({r.percent}%)</span>
+                {/if}
+            </span>
         </div>
     {/each}
 </div>
@@ -31,22 +37,56 @@
     .donut-stats.is-grid {
         display: grid;
         grid-template-columns: repeat(var(--donut-stat-columns), minmax(0, 1fr));
-        column-gap: 18px;
+        column-gap: 20px;
+        row-gap: 4px;
+        font-size: 0.88rem;
     }
 
-    /* In a grid the bottom rule would draw a ragged line across a short last column,
-       so the separator goes and the columns are held apart by the gap instead. */
     .donut-stats.is-grid .stat-row {
-        border-bottom: none;
-        gap: 10px;
+        border-bottom: 1px solid color-mix(in srgb, var(--border-color) 30%, transparent);
+        padding: 6px 0;
+        gap: 12px;
         min-width: 0;
     }
 
-    .donut-stats.is-grid .stat-row :global(.stat-row-label) {
+    .stat-row-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        overflow: hidden;
+        color: var(--text-color);
+    }
+
+    .stat-row-label .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .stat-row-label .label-text {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .stat-row-val {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-family: var(--mono);
+        font-size: 0.88rem;
+        color: var(--text-on-color);
+        display: flex;
+        align-items: baseline;
+        gap: 4px;
+    }
+
+    .stat-row-pct {
+        font-family: inherit;
+        font-size: 0.78rem;
+        color: var(--text-soft);
     }
 
     @media (max-width: 1100px) {

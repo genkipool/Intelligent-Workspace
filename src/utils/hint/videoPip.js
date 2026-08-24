@@ -648,7 +648,7 @@ var ItgVideoLoopController =
                 this.loops.length + 1,
                 start,
                 end,
-                typeof data.repeatCount === 'number' ? data.repeatCount : 0,
+                typeof data.repeatCount === 'number' ? data.repeatCount : 1,
                 data.name || '',
             );
             this.loops.push(newLoop);
@@ -958,7 +958,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                 <span class="itg-loop-title-text" data-i18n-text="pipLoopSettings">${itgPipMsg('pipLoopSettings', 'Loop settings')}</span>
             </span>
         </div>
-        <div class="itg-loop-sequence-bar is-disabled" title="${itgPipMsg('pipLoopSequenceDisabledHelp', 'Disabled: sequence loop requires more than 1 loop')}" data-i18n-title="pipLoopSequenceDisabledHelp">
+        <div class="itg-loop-sequence-bar is-disabled" title="${itgPipMsg('pipLoopSequenceDisabledHelp', 'Disabled: cycle mode requires more than 1 loop')}" data-i18n-title="pipLoopSequenceDisabledHelp">
             <div class="itg-loop-seq-info" title="${itgPipMsg('pipLoopSequenceDesc', "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)")}" data-i18n-title="pipLoopSequenceDesc">
                 <span class="itg-loop-seq-icon">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -968,10 +968,10 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                     </svg>
                 </span>
-                <span class="itg-loop-seq-label" data-i18n-text="pipLoopSequence" title="${itgPipMsg('pipLoopSequenceDesc', "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)")}" data-i18n-title="pipLoopSequenceDesc">${itgPipMsg('pipLoopSequence', 'Sequence')}</span>
+                <span class="itg-loop-seq-label" data-i18n-text="pipLoopSequence" title="${itgPipMsg('pipLoopSequenceDesc', "Plays all loops in consecutive order according to each loop's repetitions for the configured number of cycles (or infinitely)")}" data-i18n-title="pipLoopSequenceDesc">${itgPipMsg('pipLoopSequence', 'Cycle')}</span>
             </div>
             <div class="itg-loop-seq-controls">
-                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="itg-loop-seq-count" value="1" title="${itgPipMsg('pipLoopSequenceRepeatCount', 'Sequence repetitions')}" data-i18n-title="pipLoopSequenceRepeatCount" disabled />
+                <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" class="itg-loop-seq-count" value="1" title="${itgPipMsg('pipLoopSequenceRepeatCount', 'Cycle repetitions')}" data-i18n-title="pipLoopSequenceRepeatCount" disabled />
                 <button type="button" class="itg-loop-seq-inf" title="${itgPipMsg('pipLoopActivateInf', 'Activate infinite loop')}" data-i18n-title="pipLoopActivateInf" disabled>${ITG_PIP_ICONS.infinity}</button>
             </div>
         </div>
@@ -1167,7 +1167,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
             if (!hasMultipleLoops) {
                 seqBar.title = itgPipMsg(
                     'pipLoopSequenceDisabledHelp',
-                    'Disabled: sequence loop requires more than 1 loop',
+                    'Disabled: cycle mode requires more than 1 loop',
                 );
                 seqBar.setAttribute('data-i18n-title', 'pipLoopSequenceDisabledHelp');
             } else {
@@ -1178,7 +1178,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
 
         if (seqCountInput) {
             seqCountInput.disabled = !hasMultipleLoops;
-            seqCountInput.title = itgPipMsg('pipLoopSequenceRepeatCount', 'Sequence repetitions');
+            seqCountInput.title = itgPipMsg('pipLoopSequenceRepeatCount', 'Cycle repetitions');
             seqCountInput.setAttribute('data-i18n-title', 'pipLoopSequenceRepeatCount');
             if (activeEl !== seqCountInput) {
                 seqCountInput.value = isSeqInf
@@ -1210,13 +1210,13 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         if (isLoopInf) {
                             statusEl.textContent = itgPipMsg(
                                 'pipLoopSequenceInf',
-                                `Seq: Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
+                                `Cycle: Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
                                 [state.activeLoopIndex + 1, state.loops.length],
                             );
                         } else {
                             statusEl.textContent = itgPipMsg(
                                 'pipLoopSequenceInfRep',
-                                `Seq (∞): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
+                                `Cycle (∞): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
                                 [
                                     state.activeLoopIndex + 1,
                                     state.loops.length,
@@ -1229,7 +1229,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         if (isLoopInf) {
                             statusEl.textContent = itgPipMsg(
                                 'pipLoopSequenceCycleInf',
-                                `Seq (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
+                                `Cycle (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (∞)`,
                                 [
                                     state.currentSequenceCycle + 1,
                                     state.sequenceRepeatCount,
@@ -1240,7 +1240,7 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         } else {
                             statusEl.textContent = itgPipMsg(
                                 'pipLoopSequenceCycleRep',
-                                `Seq (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
+                                `Cycle (${state.currentSequenceCycle + 1}/${state.sequenceRepeatCount}): Loop ${state.activeLoopIndex + 1}/${state.loops.length} (${state.currentRepetition + 1}/${curLoop.repeatCount})`,
                                 [
                                     state.currentSequenceCycle + 1,
                                     state.sequenceRepeatCount,
@@ -2204,17 +2204,54 @@ function itgIsInsidePipWindow() {
 }
 
 /**
- * Sites whose player must not have its <video> taken away.
+ * [AI INSTRUCTION]
+ * SITES WHERE THE BROWSER'S OWN PICTURE-IN-PICTURE IS THE RIGHT ANSWER.
  *
- * X rebuilds its player from a component tree that owns those nodes: move the video
- * out and the next render finds the DOM it expected gone, which is what breaks the
- * player there. For these the node stays exactly where it is and the floating window
- * shows a capture of it instead — the page is never touched, so nothing can break.
+ * X rebuilds its player from a component tree that owns the `<video>`, over and over,
+ * and there is no way to follow it from outside: move the node and the next render
+ * finds the DOM it expected gone; mirror it instead and the window spends its life
+ * chasing a node that keeps being replaced, until it gives up and closes. Both were
+ * tried. What does work on X is X's own player and the browser's own floating window,
+ * so that is what these sites get — no window of ours, and none of our controls.
+ *
+ * A floating window that closes itself after a few seconds is worse than one that was
+ * never ours to begin with.
  */
-var ITG_PIP_STREAM_HOSTS = [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/];
+var ITG_PIP_NATIVE_HOSTS = [/(^|\.)x\.com$/, /(^|\.)twitter\.com$/];
 
+/** Whether this page's player is one we hand over to the browser. */
+function itgPrefersNativePip() {
+    return ITG_PIP_NATIVE_HOSTS.some((rule) => rule.test(location.hostname));
+}
+
+/**
+ * The browser's own picture-in-picture, for the players above.
+ *
+ * @returns {Promise<boolean>} Whether it opened. False falls back to ours, which is
+ *   better than nothing on a browser without the native one.
+ */
+async function itgOpenNativePip(video) {
+    if (!video || !document.pictureInPictureEnabled || video.disablePictureInPicture) return false;
+    try {
+        if (document.pictureInPictureElement === video) {
+            await document.exitPictureInPicture();
+            return true;
+        }
+        await video.requestPictureInPicture();
+        return true;
+    } catch (e) {
+        console.warn('[ITG PiP] The browser would not open its own picture-in-picture:', e?.name || e);
+        return false;
+    }
+}
+
+/**
+ * How the floating window gets its picture: by moving the page's `<video>` into it, or
+ * by mirroring the node where it stands. Only the sites above ever ask for the mirror,
+ * and only when the browser has no picture-in-picture of its own to hand them to.
+ */
 function itgPipModeFor(video) {
-    if (ITG_PIP_STREAM_HOSTS.some((rule) => rule.test(location.hostname))) return 'stream';
+    if (itgPrefersNativePip()) return 'stream';
     // Without captureStream there is no alternative to moving the node anyway.
     return typeof video.captureStream === 'function' || typeof video.mozCaptureStream === 'function' ? 'move' : 'move';
 }
@@ -5165,6 +5202,11 @@ var ItgVideoPip = {
         if (!target && !targetId) {
             console.warn('[ITG PiP] No playable video found on this page.');
             return false;
+        }
+
+        // Some players are better left to the browser; see ITG_PIP_NATIVE_HOSTS.
+        if (target && !targetId && itgPrefersNativePip() && (await itgOpenNativePip(target))) {
+            return true;
         }
 
         if (!target && targetId) {

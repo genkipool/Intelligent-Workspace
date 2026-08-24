@@ -1977,10 +1977,12 @@ var Main = class Main {
         ) {
             if (event.key === 'Enter' || event.code === 'Enter') {
                 if (this._altSequenceBuffer) {
-                    const match = this._altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d+)$/);
+                    // The digits are optional: the letters alone name the group and land
+                    // on its first tab, and `0` is the shorthand for its last one.
+                    const match = this._altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d*)$/);
                     if (match) {
                         const groupPrefix = match[1].trim();
-                        const tabIndex = parseInt(match[2], 10);
+                        const tabIndex = match[2] === '' ? 1 : parseInt(match[2], 10);
                         chrome.runtime.sendMessage({
                             action: 'navigateToGroupTab',
                             groupPrefix,

@@ -35,6 +35,23 @@
     const _themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
     let groupColorHex = $derived(_themeColors[rule.color] || _themeColors.blue);
 
+    /**
+     * Whether the card itself is a control, and so a stop on the way round with Tab.
+     *
+     * It is one exactly where clicking it opens and closes it: the narrow layout, which
+     * is what the side panel always is. There the URLs are hidden until the card is
+     * opened and there is no other way in from the keyboard. On a wide screen the URLs
+     * are already on show and the only thing left to open is the overflow, which has a
+     * button of its own — so the card is not a control there and must not be a stop
+     * where pressing Enter would do nothing.
+     *
+     * The key press itself is nobody's business here: `keyboardNav.js` turns Enter and
+     * Space on any tab stop into a click, and the click is already handled. Adding a
+     * keydown handler as well toggled the card twice per press, which looked exactly
+     * like nothing happening.
+     */
+    let cardIsExpander = $derived((rule.urls || []).length > 0 && !isLargeScreen);
+
     let displayUrls = $derived.by(() => {
         let urls = rule.urls || [];
         if (isAlphaSort) {
@@ -213,36 +230,22 @@
         showNotification('urlUpdateCancelled');
     }
 
-    // The edit/delete icons only exist visually while the row is hovered or focused, and
-    // an element that is display:none is skipped by the arrow-key navigation. Keeping the
-    // row's focus state here is what puts those two icons back on the keyboard path.
-    let focusedUrlIndex = $state(-1);
-
-    function handleUrlFocusIn(urlIndex) {
-        focusedUrlIndex = urlIndex;
-    }
-
-    function handleUrlFocusOut(e, urlIndex) {
-        const next = e.relatedTarget;
-        if ((!next || !e.currentTarget.contains(next)) && focusedUrlIndex === urlIndex) {
-            focusedUrlIndex = -1;
-        }
-    }
-
-    /** Tab walks link → edit icon → delete icon inside the row, as in the original. */
-    function handleUrlKeydown(e) {
-        if (e.key !== 'Tab') return;
-        const wrapper = e.currentTarget;
-        const link = wrapper.querySelector('.rule-urls');
-        const editIcon = wrapper.querySelector('.edit-icon');
-        if (e.target === link && !e.shiftKey && editIcon) {
-            e.preventDefault();
-            editIcon.focus();
-        } else if (e.target.closest('.edit-icon') && e.shiftKey && link) {
-            e.preventDefault();
-            link.focus();
-        }
-    }
+    /*
+     * Tab used to be walked through each URL row by hand — focus in, remember which
+     * row it was in, reveal that row's icons, and intercept Tab to push focus from the
+     * link to the pencil to the bin. All of it was working around one thing: the icons
+     * were `display: none` until something revealed them, and an element that is not
+     * displayed is not in the document's focus order at all.
+     *
+     * Forcing focus onto them covered the forward direction and nothing else. Coming
+     * back the other way there is no handler to run — Shift+Tab from a link is a key
+     * press in the row *above* the icons being skipped — so the two buttons of every
+     * row were simply unreachable backwards.
+     *
+     * They are now laid out at all times and merely faded out (see `.icons-container`
+     * in rules.css), which puts them where the browser already looks. Tab and
+     * Shift+Tab walk the row on their own, and none of this code is needed.
+     */
 
     function changeColor(e) {
         const rect = e?.currentTarget?.getBoundingClientRect();
@@ -519,14 +522,25 @@
     });
 </script>
 
+<!--
+    The card itself is focusable, because clicking it is what opens and closes it and a
+    keyboard has to be able to do the same. It deliberately keeps its generic role
+    rather than becoming a `role="button"`: it holds a dozen real buttons and a set of
+    links, and a button is not allowed to contain any of them — declaring it one would
+    hide everything inside it from a screen reader in exchange for a label. What it
+    does declare is `aria-expanded`, which is the part that matters: whether this card
+    is open. A rule with no URLs has nothing to open and stays out of the tab order.
+-->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
     bind:this={cardEl}
     class="rule-item"
     data-index={index}
     class:expanded={isExpanded}
     class:dragging={isDragging}
+    tabindex={cardIsExpander ? 0 : -1}
+    aria-expanded={cardIsExpander ? isExpanded : undefined}
     onclick={handleCardClick}
     {ondragover}
     {ondragend}
@@ -681,14 +695,7 @@
             <span class="rule-urls">{$t('noUrlsAssociated') || 'No URLs associated'}</span>
         {:else}
             {#each renderedUrls as url, urlIndex (url)}
-                <div
-                    class="rule-urls-wrapper"
-                    data-url={url}
-                    data-url-index={urlIndex}
-                    onfocusin={() => handleUrlFocusIn(urlIndex)}
-                    onfocusout={(e) => handleUrlFocusOut(e, urlIndex)}
-                    onkeydown={handleUrlKeydown}
-                >
+                <div class="rule-urls-wrapper" data-url={url} data-url-index={urlIndex}>
                     {#if editingDomainIndex === urlIndex}
                         <!--
                             The editor keeps the size the link had, otherwise swapping it
@@ -728,7 +735,7 @@
                             onclick={(e) => handleUrlClick(e, url)}>{@render highlighted(displayText(url))}</a
                         >
                     {/if}
-                    <div class="icons-container" class:focus-visible={focusedUrlIndex === urlIndex}>
+                    <div class="icons-container">
                         <button class="edit-icon" type="button" tabindex="0" translate="no" title={$tt('editDomain')}>
                             <svg width="30" height="30" viewBox="0 0 512 512" aria-hidden="true" focusable="false">
                                 <use href="#icon-url-edit"></use>

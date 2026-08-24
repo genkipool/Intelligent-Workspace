@@ -773,6 +773,19 @@ body {
     gap: 12px;
 }
 
+/* Three cards that are three answers to the same question, so they get the same
+   width. `.chart-grid-3` is weighted 2:1:1 for a row where the first card is a chart
+   and the other two are legends, which is not this. */
+.chart-grid-3-even {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.chart-grid-3-even > * {
+    min-width: 0;
+}
+
 /* -- CHART CARD -------------------------------------------------- */
 .chart-card {
     background: var(--bg-panel-color);
@@ -801,10 +814,137 @@ body {
 }
 
 .chart-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-on-color);
     letter-spacing: -0.01em;
+}
+
+/* --- REARRANGING THE PAGE ----------------------------------------
+   Sections can be dragged into another order, and the panels inside a section among
+   themselves. Both use `actions/sortable.js`, which asks only for a grip to start
+   from and paints the line it draws with these classes.
+
+   The grip is faint until the block is hovered: it is a thing you go looking for once
+   and then forget about, and six dotted handles competing with the headings would be
+   a page about its own furniture. */
+.sort-grip {
+    width: 12px;
+    height: 16px;
+    flex-shrink: 0;
+    cursor: grab;
+    border-radius: 3px;
+    opacity: 0;
+    transition:
+        opacity 0.15s ease,
+        background-color 0.15s ease;
+    background-image: radial-gradient(circle at 1.5px 1.5px, currentColor 1.5px, transparent 1.6px);
+    background-size: 5px 5px;
+    background-position: 1px 2px;
+    background-repeat: repeat;
+    color: var(--text-dim);
+}
+
+section:hover > .section-title > .sort-grip,
+.chart-card:hover .chart-card-title > .sort-grip,
+.sort-grip:focus-visible {
+    opacity: 0.75;
+}
+
+.sort-grip:hover {
+    opacity: 1;
+    color: var(--interactive-color);
+}
+
+.sort-grip:active {
+    cursor: grabbing;
+}
+
+.section-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The block being carried. Kept visible rather than hidden: the page it came from is
+   the page it is going back to, and a hole where it was is harder to aim at. */
+.is-dragging {
+    opacity: 0.45;
+}
+
+/* Where it would land. A line rather than a moved node, because half of these lists
+   are rendered by Svelte and their children are not ours to move mid-drag. */
+.is-drop-before,
+.is-drop-after {
+    position: relative;
+}
+
+.is-drop-before::after,
+.is-drop-after::after {
+    content: '';
+    position: absolute;
+    background: var(--interactive-color);
+    border-radius: 2px;
+    pointer-events: none;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-color) 60%, transparent);
+}
+
+/* A column of sections: the line goes across, above or below. */
+.is-drop-before::after,
+.is-drop-after::after {
+    left: -2px;
+    right: -2px;
+    height: 3px;
+}
+
+.is-drop-before::after {
+    top: -7px;
+}
+
+.is-drop-after::after {
+    bottom: -7px;
+}
+
+/* A row of panels: the same line, stood on end. */
+.chart-grid-2 > .is-drop-before::after,
+.chart-grid-2 > .is-drop-after::after,
+.chart-grid-3 > .is-drop-before::after,
+.chart-grid-3 > .is-drop-after::after,
+.chart-grid-3-even > .is-drop-before::after,
+.chart-grid-3-even > .is-drop-after::after {
+    left: auto;
+    right: auto;
+    top: -2px;
+    bottom: -2px;
+    width: 3px;
+    height: auto;
+}
+
+.chart-grid-2 > .is-drop-before::after,
+.chart-grid-3 > .is-drop-before::after,
+.chart-grid-3-even > .is-drop-before::after {
+    left: -7px;
+}
+
+.chart-grid-2 > .is-drop-after::after,
+.chart-grid-3 > .is-drop-after::after,
+.chart-grid-3-even > .is-drop-after::after {
+    right: -7px;
+}
+
+/* While a drag is in flight nothing inside a card should look clickable: the pointer
+   is carrying something, and a chart tooltip following it is noise. */
+.is-sorting .chart-card * {
+    pointer-events: none;
+}
+
+.is-sorting .sort-grip {
+    pointer-events: auto;
 }
 
 .chart-card-meta {
@@ -1422,6 +1562,12 @@ body {
 @media (max-width: 1200px) {
     .chart-grid-3 {
         grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 1100px) {
+    .chart-grid-3-even {
+        grid-template-columns: 1fr;
     }
 }
 

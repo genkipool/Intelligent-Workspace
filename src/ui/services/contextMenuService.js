@@ -1,4 +1,4 @@
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations } from '../../utils/i18n.js';
 import { get } from 'svelte/store';
 import {
     activeContextMenu,
@@ -6,10 +6,10 @@ import {
     bookmarkActionVisibilitySettings as bookmarkActionVisibilitySettingsStore,
 } from '../stores/appStore.svelte.js';
 export { activeContextMenu };
-import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS } from './constants.js';
-import { renderGroups } from './groupsService.js';
-import { withTabActivation } from './screenshotsService.js';
-import { dataUrlToBlob } from './utils.js';
+import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS, PAGE_MODES } from './constants.js';
+import { applyPageMode } from './groupsService.js';
+import { captureGroupTabsById, captureTabArea, handleScreenshotRequest } from './screenshotsService.js';
+import { readAloudTargetOf, startReadAloud } from './readAloudService.js';
 
 // Read from the appStore stores populated by loadActionVisibilitySettings().
 function _actionVis() {
@@ -22,6 +22,67 @@ function _bookmarkActionVis() {
 let activeOverflowPopup = null;
 let activeOverflowSource = null;
 let activeOverflowTimeout = null;
+
+/**
+ * One row of an overflow popup.
+ *
+ * Every branch below used to clone the template, poke three nodes and attach the
+ * same click handler by hand; this is that, once. `i18n` labels a row that the
+ * translation pass fills in, `text` one whose wording is already known.
+ *
+ * @param {HTMLElement} popupEl
+ * @param {HTMLTemplateElement} itemTemplate
+ * @param {string} iconHtml
+ * @param {{i18n?: string, text?: string, count?: number|string|null}} options
+ * @param {() => void} onClick
+ */
+function appendOverflowItem(popupEl, itemTemplate, iconHtml, options, onClick) {
+    const item = itemTemplate.content.cloneNode(true).firstElementChild;
+    item.querySelector('.overflow-item-icon').innerHTML = iconHtml;
+
+    const textEl = item.querySelector('.overflow-item-text');
+    if (options.i18n) textEl.setAttribute('data-i18n', options.i18n);
+    else textEl.textContent = options.text || '';
+
+    if (options.count !== null && options.count !== undefined && options.count !== '') {
+        const counter = document.createElement('span');
+        counter.className = 'context-menu-counter';
+        counter.textContent = options.count;
+        item.appendChild(counter);
+    }
+
+    item.addEventListener('click', (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        onClick();
+        closeOverflowMenu();
+    });
+    popupEl.appendChild(item);
+    return item;
+}
+
+/** The whole document of the tab a card stands for — as one image, or as several. */
+async function captureTabFullPage(tabItemEl, mode) {
+    const tabId = parseInt(tabItemEl?.dataset?.tabId, 10);
+    if (isNaN(tabId)) return;
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (!tab) return;
+    // `_context` is what the card was rendered under — the group or the subgroup the
+    // capture has to be filed in. Without it the image lands in the wrong gallery.
+    await handleScreenshotRequest(tab, tabItemEl._context || { type: 'group', id: tab.groupId }, { mode });
+}
+
+/** The area picker, from a card that only knows the tab's id. */
+async function captureTabAreaById(tabId) {
+    if (isNaN(tabId)) return;
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (tab) await captureTabArea(tab);
+}
+
+/** Every tab of the group a card stands for. */
+function captureGroupFromCard(groupEl, options) {
+    captureGroupTabsById(groupEl?.dataset?.groupId, options);
+}
 
 export function closeOverflowMenu() {
     if (activeOverflowSource) {
@@ -190,56 +251,95 @@ export async function showContextMenu(event, contextElement) {
             const iconHtml = svgIcon ? svgIcon.outerHTML : '';
 
             if (originalButton.classList.contains('screenshot-btn')) {
+                const tabId = parseInt(contextElement.dataset.tabId, 10);
+                // The same three ways to capture the camera's hover menu offers.
                 createMenuItem({
                     list,
                     itemTemplate,
                     iconHtml: iconHtml,
-                    text: chrome.i18n.getMessage('captureFullPage') || 'Capture webpage',
+                    i18nKey: 'captureVisibleArea',
+                    text: '',
                     count: null,
                     onClick: () => originalButton.click(),
                 });
-
-                const tabId = parseInt(contextElement.dataset.tabId, 10);
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'captureFullPageScroll',
+                    text: '',
+                    count: null,
+                    onClick: () => captureTabFullPage(contextElement, 'fullPage'),
+                });
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'captureFullPageSplit',
+                    text: '',
+                    count: null,
+                    onClick: () => captureTabFullPage(contextElement, 'fullPageParts'),
+                });
                 if (!isNaN(tabId)) {
                     createMenuItem({
                         list,
                         itemTemplate,
                         iconHtml: iconHtml,
-                        text: chrome.i18n.getMessage('captureWebpageArea') || 'Capture Web Area',
+                        i18nKey: 'captureWebpageArea',
+                        text: '',
                         count: null,
-                        onClick: async () => {
-                            const tab = await chrome.tabs.get(tabId);
-                            let areaDataUrl = null;
-                            await withTabActivation(tab, () => {
-                                return new Promise((resolve) => {
-                                    const listener = (message) => {
-                                        if (message.action === 'areaScreenshotProcessFinished') {
-                                            chrome.runtime.onMessage.removeListener(listener);
-                                            if (message.success) {
-                                                areaDataUrl = message.dataUrl || null;
-                                            } else {
-                                                showNotification('errorTakingScreenshot', true);
-                                            }
-                                            renderGroups();
-                                            resolve();
-                                        }
-                                    };
-                                    chrome.runtime.onMessage.addListener(listener);
-                                    chrome.runtime.sendMessage({ action: 'injectAreaSelector', tabId: tab.id });
-                                });
-                            });
-                            if (areaDataUrl) {
-                                try {
-                                    const blob = await dataUrlToBlob(areaDataUrl);
-                                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                                    showNotification('screenshotCopied');
-                                } catch {
-                                    showNotification('screenshotSavedNoCopy', true);
-                                }
-                            }
-                        },
+                        onClick: () => captureTabAreaById(tabId),
                     });
                 }
+            } else if (originalButton.classList.contains('capture-group-btn')) {
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'captureGroupTabsVisible',
+                    text: '',
+                    count: null,
+                    onClick: () => originalButton.click(),
+                });
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'captureGroupTabsFullPage',
+                    text: '',
+                    count: null,
+                    onClick: () => captureGroupFromCard(contextElement, { mode: 'fullPage' }),
+                });
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'captureFullPageSplit',
+                    text: '',
+                    count: null,
+                    onClick: () => captureGroupFromCard(contextElement, { mode: 'fullPageParts' }),
+                });
+            } else if (originalButton.classList.contains('gemini-summary-btn')) {
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml: iconHtml,
+                    i18nKey: 'summarizeWithGemini',
+                    text: '',
+                    count: null,
+                    onClick: () => originalButton.click(),
+                });
+                createMenuItem({
+                    list,
+                    itemTemplate,
+                    iconHtml:
+                        document.getElementById('tab-item-template')?.content.querySelector('.read-page-btn')
+                            ?.innerHTML || iconHtml,
+                    i18nKey: 'readPageAloud',
+                    text: '',
+                    count: null,
+                    onClick: () => startReadAloud(readAloudTargetOf(contextElement)),
+                });
             } else if (originalButton.classList.contains('view-notes-btn')) {
                 const noteBadge = contextElement.querySelector('.note-count-badge:not(.hidden)');
                 const noteCount = noteBadge ? parseInt(noteBadge.textContent, 10) : 0;
@@ -279,33 +379,16 @@ export async function showContextMenu(event, contextElement) {
                 }
             } else if (originalButton.classList.contains('page-mode-btn')) {
                 const tabId = parseInt(contextElement.dataset.tabId, 10);
-                const pageModePopupTemplate = document.getElementById('page-mode-popup-template');
-                if (pageModePopupTemplate && !isNaN(tabId)) {
-                    pageModePopupTemplate.content.querySelectorAll('.page-mode-item').forEach((modeItem) => {
-                        const mode = modeItem.dataset.mode;
-                        const i18nKey = modeItem.getAttribute('data-i18n');
-
+                if (!isNaN(tabId)) {
+                    PAGE_MODES.forEach(({ mode, i18n }) => {
                         createMenuItem({
                             list,
                             itemTemplate,
                             iconHtml: iconHtml,
-                            i18nKey: i18nKey,
+                            i18nKey: i18n,
                             text: '',
                             count: null,
-                            onClick: () => {
-                                const itemText = chrome.i18n.getMessage(i18nKey) || mode;
-                                chrome.runtime.sendMessage(
-                                    { action: 'setPageMode', mode: mode, scope: 'tab', tabId: tabId },
-                                    (response) => {
-                                        if (chrome.runtime.lastError || !response?.success) {
-                                            showNotification('errorApplyingMode', true);
-                                        } else {
-                                            showNotification('modeAppliedSuccessfully', false, [itemText]);
-                                            renderGroups();
-                                        }
-                                    },
-                                );
-                            },
+                            onClick: () => applyPageMode(tabId, mode, i18n),
                         });
                     });
                 }
@@ -452,6 +535,10 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
         info.classes.forEach((cls) => (classToKey[cls] = key));
     });
 
+    // The gallery badge is offered once per popup, no matter how many camera buttons
+    // the card happens to carry.
+    let galleryOffered = false;
+
     const buttons = actionsContainer.querySelectorAll('.action-btn');
     buttons.forEach((originalBtn) => {
         let actionKey = null;
@@ -469,167 +556,86 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
         if (isHiddenInSettings && !originalBtn.classList.contains('hidden')) {
             const btnSelector = ACTION_GROUPS[actionKey].classes.map((cls) => `.${cls}`).join(', ');
             const templateBtn = actionTemplate.content.querySelector(btnSelector) || originalBtn;
+            // The gallery badge has a row of its own further down; without this it
+            // also came through here and the menu listed it twice.
+            const isGalleryBadge = originalBtn.classList.contains('view-screenshots-btn');
 
-            if (templateBtn) {
+            if (templateBtn && !isGalleryBadge) {
                 const iconHTML = templateBtn.innerHTML;
+                /** Shorthand for the common case: one row in this popup, this icon. */
+                const addRow = (options, onClick, icon = iconHTML) =>
+                    appendOverflowItem(popupEl, itemTemplate, icon, options, onClick);
+                /** Rows that stand in for a button that is on the card but hidden. */
+                const addProxyRow = (options) => addRow(options, () => originalBtn.click());
 
                 if (actionKey === 'notes') {
                     const noteBadge = contextElement.querySelector('.note-count-badge:not(.hidden)');
                     const noteCount = noteBadge ? parseInt(noteBadge.textContent, 10) : 0;
-                    const noteBtnTemplate = document.getElementById('add-note-btn-template');
-                    if (noteBtnTemplate) {
-                        const iconHtml = noteBtnTemplate.content.querySelector('svg')?.outerHTML || '';
-                        const createNoteItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                        createNoteItem.querySelector('.overflow-item-icon').innerHTML = iconHtml;
-                        createNoteItem.querySelector('.overflow-item-text').setAttribute('data-i18n', 'createNote');
-                        createNoteItem.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            originalBtn.click();
-                            closeOverflowMenu();
-                        });
-                        popupEl.appendChild(createNoteItem);
-                        if (noteCount > 0) {
-                            const viewNotesItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                            viewNotesItem.querySelector('.overflow-item-icon').innerHTML = iconHtml;
-                            viewNotesItem.querySelector('.overflow-item-text').setAttribute('data-i18n', 'viewNotes');
-                            const counterSpan = document.createElement('span');
-                            counterSpan.className = 'context-menu-counter';
-                            counterSpan.textContent = noteCount;
-                            viewNotesItem.appendChild(counterSpan);
-                            viewNotesItem.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                noteBadge.click();
-                                closeOverflowMenu();
-                            });
-                            popupEl.appendChild(viewNotesItem);
-                        }
-                    }
-                } else if (actionKey === 'capture' && contextElement.classList.contains('tab-item')) {
-                    const tabId = parseInt(contextElement.dataset.tabId, 10);
-                    const fullPageItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                    fullPageItem.querySelector('.overflow-item-icon').innerHTML = iconHTML;
-                    fullPageItem.querySelector('.overflow-item-text').setAttribute('data-i18n', 'captureFullPage');
-                    fullPageItem.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        originalBtn.click();
-                        closeOverflowMenu();
-                    });
-                    popupEl.appendChild(fullPageItem);
+                    const noteIcon =
+                        document.getElementById('add-note-btn-template')?.content.querySelector('svg')?.outerHTML || '';
 
-                    const areaPageItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                    areaPageItem.querySelector('.overflow-item-icon').innerHTML = iconHTML;
-                    areaPageItem.querySelector('.overflow-item-text').setAttribute('data-i18n', 'captureWebpageArea');
-                    areaPageItem.addEventListener('click', async (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        const tab = await chrome.tabs.get(tabId);
-                        let areaDataUrl = null;
-                        await withTabActivation(tab, () => {
-                            return new Promise((resolve) => {
-                                const listener = (message) => {
-                                    if (message.action === 'areaScreenshotProcessFinished') {
-                                        chrome.runtime.onMessage.removeListener(listener);
-                                        if (message.success) {
-                                            areaDataUrl = message.dataUrl || null;
-                                        } else {
-                                            showNotification('errorTakingScreenshot', true);
-                                        }
-                                        renderGroups();
-                                        resolve();
-                                    }
-                                };
-                                chrome.runtime.onMessage.addListener(listener);
-                                chrome.runtime.sendMessage({ action: 'injectAreaSelector', tabId: tab.id });
-                            });
-                        });
-                        if (areaDataUrl) {
-                            try {
-                                const blob = await dataUrlToBlob(areaDataUrl);
-                                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                                showNotification('screenshotCopied');
-                            } catch {
-                                showNotification('screenshotSavedNoCopy', true);
-                            }
-                        }
-                        closeOverflowMenu();
-                    });
-                    popupEl.appendChild(areaPageItem);
-                } else if (actionKey === 'themes') {
-                    const pageModePopupTemplate = document.getElementById('page-mode-popup-template');
+                    addRow({ i18n: 'createNote' }, () => originalBtn.click(), noteIcon);
+                    if (noteCount > 0) {
+                        addRow({ i18n: 'viewNotes', count: noteCount }, () => noteBadge.click(), noteIcon);
+                    }
+                } else if (originalBtn.classList.contains('screenshot-btn')) {
+                    const tabId = parseInt(contextElement.dataset.tabId, 10);
+                    // The three ways to capture one tab, the same three the camera's
+                    // own hover menu offers.
+                    addProxyRow({ i18n: 'captureVisibleArea' });
+                    addRow({ i18n: 'captureFullPageScroll' }, () => captureTabFullPage(contextElement, 'fullPage'));
+                    addRow({ i18n: 'captureFullPageSplit' }, () => captureTabFullPage(contextElement, 'fullPageParts'));
+                    addRow({ i18n: 'captureWebpageArea' }, () => captureTabAreaById(tabId));
+                } else if (originalBtn.classList.contains('capture-group-btn')) {
+                    addProxyRow({ i18n: 'captureGroupTabsVisible' });
+                    addRow({ i18n: 'captureGroupTabsFullPage' }, () =>
+                        captureGroupFromCard(contextElement, { mode: 'fullPage' }),
+                    );
+                    addRow({ i18n: 'captureFullPageSplit' }, () =>
+                        captureGroupFromCard(contextElement, { mode: 'fullPageParts' }),
+                    );
+                } else if (actionKey === 'summary') {
                     const tabItemEl = contextElement.closest('.tab-item');
-                    if (pageModePopupTemplate && tabItemEl) {
+                    const readerIcon =
+                        document.getElementById('tab-item-template')?.content.querySelector('.read-page-btn')
+                            ?.innerHTML || iconHTML;
+
+                    addProxyRow({ i18n: 'summarizeWithGemini' });
+                    if (tabItemEl) {
+                        addRow(
+                            { i18n: 'readPageAloud' },
+                            () => startReadAloud(readAloudTargetOf(tabItemEl)),
+                            readerIcon,
+                        );
+                    }
+                } else if (actionKey === 'themes') {
+                    const tabItemEl = contextElement.closest('.tab-item');
+                    if (tabItemEl) {
                         const tabId = parseInt(tabItemEl.dataset.tabId, 10);
-                        pageModePopupTemplate.content.querySelectorAll('.page-mode-item').forEach((modeItem) => {
-                            const popupItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                            popupItem.querySelector('.overflow-item-icon').innerHTML = iconHTML;
-                            const i18nKey = modeItem.getAttribute('data-i18n');
-                            const mode = modeItem.dataset.mode;
-                            const textEl = popupItem.querySelector('.overflow-item-text');
-                            textEl.setAttribute('data-i18n', i18nKey);
-                            popupItem.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                if (!isNaN(tabId)) {
-                                    chrome.runtime.sendMessage(
-                                        { action: 'setPageMode', mode: mode, scope: 'tab', tabId: tabId },
-                                        (response) => {
-                                            if (chrome.runtime.lastError || !response?.success)
-                                                showNotification('errorApplyingMode', true);
-                                            else {
-                                                showNotification('modeAppliedSuccessfully', false, [
-                                                    textEl.textContent,
-                                                ]);
-                                                renderGroups();
-                                            }
-                                        },
-                                    );
-                                }
-                                closeOverflowMenu();
-                            });
-                            popupEl.appendChild(popupItem);
-                        });
+                        PAGE_MODES.forEach(({ mode, i18n }) =>
+                            addRow({ i18n }, () => applyPageMode(tabId, mode, i18n)),
+                        );
                     }
                 } else {
-                    const popupItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                    popupItem.querySelector('.overflow-item-icon').innerHTML = iconHTML;
-                    popupItem.querySelector('.overflow-item-text').textContent = originalBtn.title;
-                    popupItem.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        originalBtn.click();
-                        closeOverflowMenu();
-                    });
-                    popupEl.appendChild(popupItem);
+                    addProxyRow({ text: originalBtn.title });
                 }
             }
 
-            if (actionKey === 'capture') {
+            if (actionKey === 'capture' && !galleryOffered) {
                 const galleryBtn = contextElement.querySelector('.view-screenshots-btn');
                 if (galleryBtn && !galleryBtn.classList.contains('hidden')) {
-                    const galleryTemplate = document.getElementById('view-screenshots-btn-template');
-                    if (galleryTemplate) {
-                        const iconHtml = galleryTemplate.content.querySelector('svg')?.outerHTML || '';
-                        const popupItem = itemTemplate.content.cloneNode(true).firstElementChild;
-                        popupItem.querySelector('.overflow-item-icon').innerHTML = iconHtml;
-                        popupItem.querySelector('.overflow-item-text').setAttribute('data-i18n', 'viewScreenshots');
-                        const badge = galleryBtn.querySelector('.screenshot-count-badge');
-                        if (badge) {
-                            const counterSpan = document.createElement('span');
-                            counterSpan.className = 'context-menu-counter';
-                            counterSpan.textContent = badge.textContent;
-                            popupItem.appendChild(counterSpan);
-                        }
-                        popupItem.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            galleryBtn.click();
-                            closeOverflowMenu();
-                        });
-                        popupEl.appendChild(popupItem);
-                    }
+                    galleryOffered = true;
+                    const galleryIcon =
+                        document.getElementById('view-screenshots-btn-template')?.content.querySelector('svg')
+                            ?.outerHTML || '';
+                    const badge = galleryBtn.querySelector('.screenshot-count-badge');
+                    appendOverflowItem(
+                        popupEl,
+                        itemTemplate,
+                        galleryIcon,
+                        { i18n: 'viewScreenshots', count: badge ? badge.textContent : null },
+                        () => galleryBtn.click(),
+                    );
                 }
             }
         }

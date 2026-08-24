@@ -15,8 +15,9 @@ export const fetchActivity = (days = 0) => messaging.send(ACTIONS.WEB_ACTIVITY_G
 /** The verdict for a single site, which is all the block screen needs. */
 export const fetchStatus = (domain) => messaging.send(ACTIONS.WEB_ACTIVITY_GET_STATUS, { domain });
 
-/** Saves a limit, or removes it when `limit` is null. */
-export const saveLimit = (domain, limit) => messaging.send(ACTIONS.WEB_ACTIVITY_SAVE_LIMIT, { domain, limit });
+/** Saves a limit, or removes it when `limit` is null. `domains` allows batch saving to multiple sites. */
+export const saveLimit = (domain, limit, domains = null) =>
+    messaging.send(ACTIONS.WEB_ACTIVITY_SAVE_LIMIT, { domain, limit, domains });
 
 /** Lifts a block for a few minutes. Omitting `minutes` uses the configured default. */
 export const snoozeLimit = (domain, minutes) => messaging.send(ACTIONS.WEB_ACTIVITY_SNOOZE, { domain, minutes });

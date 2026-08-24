@@ -226,7 +226,72 @@ chrome.runtime.onConnect.addListener((port) => {
         });
     }
 });
-function openOrToggleSidePanel(basePath, sendResponse) {
+/**
+ * [AI INSTRUCTION]
+ * OPEN A SIDE PANEL TARGET, OR MOVE THE ONE THAT IS OPEN TO IT.
+ *
+ * Three cases, and the middle one is the one that was missing:
+ *
+ * - The panel is showing another page → navigate to this one.
+ * - The panel is showing this page on another view → ask the page to switch in place.
+ *   `openOrToggleSidePanel` compared base paths only, so `pl` while the assistant was
+ *   open (both `listGroup.html`) read as "already here" and closed the panel; the same
+ *   happened from bookmarks, history and every other view of that page.
+ * - The panel is showing exactly this → close it, which is the toggle the shortcuts
+ *   have always had.
+ *
+ * The page answers `{ switched }`: false means it was already on that view, and that
+ * is the only thing that turns the request into a close.
+ *
+ * @param {{ path: string, view?: string, query?: string }} target See SIDE_PANEL_TARGETS.
+ */
+function openSidePanelTarget(target, sendResponse) {
+    const isOpenHere = !!activeSidePanelPath && activeSidePanelPath.includes(target.path);
+
+    if (isOpenHere && target.view) {
+        chrome.runtime.sendMessage({ action: 'panelShowView', view: target.view }, (response) => {
+            // No listener means the page is not really there — the worker's idea of
+            // what is open outlived the panel — so fall through and open it.
+            if (chrome.runtime.lastError || !response) {
+                openOrToggleSidePanel(pathWithQuery(target), sendResponse, { neverClose: true });
+                return;
+            }
+            if (response.switched) {
+                if (sendResponse) sendResponse({ success: true, switched: true });
+                return;
+            }
+            openOrToggleSidePanel(pathWithQuery(target), sendResponse);
+        });
+        return;
+    }
+
+    openOrToggleSidePanel(pathWithQuery(target), sendResponse);
+}
+
+/**
+ * The address that opens a target from cold.
+ *
+ * The view has to be *in the URL*, not only in the `panelShowView` message: that
+ * message is for a panel that is already open on this page, and there is nothing to
+ * send it to when the panel is being opened for the first time. Leaving it out is what
+ * made `pa`, `pk`, `ps` and `pw` all open the group list — the page loaded with no
+ * `?view=` and did the only thing it could.
+ *
+ * `groups` is left off because it is what the page does anyway, and a URL that says so
+ * is a URL that has to be kept in step for nothing.
+ */
+function pathWithQuery(target) {
+    const params = [];
+    if (target.view && target.view !== 'groups') params.push(`view=${encodeURIComponent(target.view)}`);
+    if (target.query) params.push(target.query);
+    return params.length ? `${target.path}?${params.join('&')}` : target.path;
+}
+
+/**
+ * @param {{ neverClose?: boolean }} [options] Set when the caller has already decided
+ *   this is an open, not a toggle — the page it asked did not answer.
+ */
+function openOrToggleSidePanel(basePath, sendResponse, { neverClose = false } = {}) {
     const cleanBasePath = basePath.split('?')[0];
     chrome.tabs.query(
         {
@@ -243,7 +308,7 @@ function openOrToggleSidePanel(basePath, sendResponse) {
                     });
                 return;
             }
-            if (activeSidePanelPath && activeSidePanelPath.includes(cleanBasePath)) {
+            if (!neverClose && activeSidePanelPath && activeSidePanelPath.includes(cleanBasePath)) {
                 logMessage(`[openOrToggleSidePanel] Panel is already open with ${cleanBasePath}. Closing it.`);
                 chrome.sidePanel.setOptions(
                     {
@@ -676,6 +741,14 @@ const MESSAGE_HANDLERS = {
     },
     captureFullPageFromShortcut: (message, sender, sendResponse) => {
         handleCaptureFullPageFromShortcut(message, sender, sendResponse);
+        return true;
+    },
+    captureFullPage: (message, sender, sendResponse) => {
+        handleCaptureFullPage(message, sender, sendResponse);
+        return true;
+    },
+    startReadAloud: (message, sender, sendResponse) => {
+        handleStartReadAloud(message, sender, sendResponse);
         return true;
     },
     injectAreaSelector: (message, sender, sendResponse) => {

@@ -1,4 +1,5 @@
 <script>
+    import SettingsDialog from '../../components/common/SettingsDialog.svelte';
     import { onMount } from 'svelte';
     import ClusterConfigSection from './popups/ClusterConfigSection.svelte';
     import SettingsToggleSection from './settings/SettingsToggleSection.svelte';
@@ -7,7 +8,6 @@
     import CollapseTimerSection from './settings/CollapseTimerSection.svelte';
     import DiscardingConfigSection from './settings/DiscardingConfigSection.svelte';
     import StorageConfigSection from './settings/StorageConfigSection.svelte';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { getSettings, saveSettings, getRuleStorage, setRuleStorage, groupTabs } from './modules/rules-api.js';
     import { hasDuplicateMarkers } from './modules/prefixMarkers.js';
@@ -211,22 +211,9 @@
         allRulesActive = newState;
     }
 
-    let dialogEl = $state(null);
-
-    // The dialog stays in the DOM and only its `open` state changes: removing it
-    // would cut the closing transition short.
-    $effect(() => {
-        if (!dialogEl) return;
-        if (isOpen && !dialogEl.open) dialogEl.showModal();
-        if (!isOpen && dialogEl.open) dialogEl.close();
-    });
-
     function close() {
         onclose?.();
     }
-
-    // A backdrop click only dismisses when the press *and* the release happen on the
-    // backdrop, so dragging a selection out of the dialog does not close it.
 
     function openThemeSelector() {
         chrome.runtime.sendMessage({ action: 'openSidePanelThemes' });
@@ -234,91 +221,85 @@
     }
 </script>
 
-<dialog id="settings-modal" class="import-modal" bind:this={dialogEl} onclose={close} use:dismissOnBackdrop={close}>
-    <div class="modal-content-import" id="settings-modal-content">
-        <div class="modal-header">
-            <h2 class="title-modal">{$t('settingsActions') || 'Settings'}</h2>
-            <span
-                id="close-settings-modal"
-                class="close"
-                tabindex="0"
-                role="button"
-                translate="no"
-                title={$tt('closeModal')}
-                aria-label={$t('closeModal')}
-                onclick={close}
-                onkeydown={(e) => e.key === 'Enter' && close()}>x</span
-            >
-        </div>
-        <div class="settings-modal-body">
-            <!-- SECTION 1: CLUSTER -->
-            <!--
+<!--
+    The drawer itself is `components/common/SettingsDialog.svelte` — the same one the
+    web activity panel opens, so both settings screens slide in the same way from the
+    same edge. Everything below is what this page puts inside it.
+-->
+<SettingsDialog
+    open={isOpen}
+    title={$t('settingsActions') || 'Settings'}
+    bodyClass="settings-modal-body"
+    onClose={close}
+>
+    <div id="settings-modal-content">
+        <!-- SECTION 1: CLUSTER -->
+        <!--
                 The master switch does not own its state: it fans out to every grouping
                 and regroups the tabs, so it takes the event rather than a binding.
             -->
-            <SettingsToggleSection
-                id="modal-cluster-section"
-                icon="#icon-cluster"
-                viewBox="0 0 512 512"
-                label={$t('toggleCluster') || 'Create Groups'}
-                checked={isClusterEnabled}
-                onchange={setClusterEnabled}
-            >
-                <div class="cluster-config-popup">
-                    <ClusterConfigSection
-                        bind:clusterConfig
-                        idPrefix="modal-"
-                        onchange={onClusterChanged}
-                        onreset={resetClusterDefaults}
-                    />
-                </div>
-            </SettingsToggleSection>
-
-            <!-- SECTION 2: SORT -->
-            <MiscSortSection bind:isSortGroupsEnabled bind:miscSortOption onset={setMiscSort} />
-
-            <!-- SECTION 3: PREFIXES -->
-            <PrefixConfigSection bind:isPrefixesEnabled bind:currentUserPrefixes onreset={resetPrefixesDefaults} />
-
-            <!-- SECTION 4: TIMER -->
-            <CollapseTimerSection
-                bind:isCollapseTimerEnabled
-                bind:timerInactiveTime
-                bind:timerActiveTime
-                onreset={resetTimerDefaults}
-            />
-
-            <!-- SECTION 5: DISCARDING -->
-            <DiscardingConfigSection bind:isDiscardingEnabled bind:discardingTime onreset={resetDiscardingDefaults} />
-
-            <!-- SECTION 6: STORAGE -->
-            <StorageConfigSection
-                bind:allRulesActive
-                bind:ruleStorageArea
-                ontoggleall={toggleAllRules}
-                onsetstorage={setStorageArea}
-            />
-
-            <!-- SECTION 7: THEME -->
-            <div class="settings-section" id="modal-theme-section">
-                <button
-                    type="button"
-                    class="option-button theme-action-button"
-                    id="modal-select-theme-btn"
-                    translate="no"
-                    title={$tt('openThemeSelector')}
-                    onclick={openThemeSelector}
-                >
-                    <div class="setting-label-group">
-                        <span class="svg-settings-container">
-                            <svg width="30" height="30" viewBox="0 0 48 48" style="color: var(--text-on-color);">
-                                <use href="#icon-theme"></use>
-                            </svg>
-                        </span>
-                        <span class="setting-text-label">{$t('openThemeSelector') || 'Open Theme Selector'}</span>
-                    </div>
-                </button>
+        <SettingsToggleSection
+            id="modal-cluster-section"
+            icon="#icon-cluster"
+            viewBox="0 0 512 512"
+            label={$t('toggleCluster') || 'Create Groups'}
+            checked={isClusterEnabled}
+            onchange={setClusterEnabled}
+        >
+            <div class="cluster-config-popup">
+                <ClusterConfigSection
+                    bind:clusterConfig
+                    idPrefix="modal-"
+                    onchange={onClusterChanged}
+                    onreset={resetClusterDefaults}
+                />
             </div>
+        </SettingsToggleSection>
+
+        <!-- SECTION 2: SORT -->
+        <MiscSortSection bind:isSortGroupsEnabled bind:miscSortOption onset={setMiscSort} />
+
+        <!-- SECTION 3: PREFIXES -->
+        <PrefixConfigSection bind:isPrefixesEnabled bind:currentUserPrefixes onreset={resetPrefixesDefaults} />
+
+        <!-- SECTION 4: TIMER -->
+        <CollapseTimerSection
+            bind:isCollapseTimerEnabled
+            bind:timerInactiveTime
+            bind:timerActiveTime
+            onreset={resetTimerDefaults}
+        />
+
+        <!-- SECTION 5: DISCARDING -->
+        <DiscardingConfigSection bind:isDiscardingEnabled bind:discardingTime onreset={resetDiscardingDefaults} />
+
+        <!-- SECTION 6: STORAGE -->
+        <StorageConfigSection
+            bind:allRulesActive
+            bind:ruleStorageArea
+            ontoggleall={toggleAllRules}
+            onsetstorage={setStorageArea}
+        />
+
+        <!-- SECTION 7: THEME -->
+        <div class="settings-section" id="modal-theme-section">
+            <button
+                type="button"
+                class="option-button theme-action-button"
+                id="modal-select-theme-btn"
+                translate="no"
+                title={$tt('openThemeSelector')}
+                onclick={openThemeSelector}
+            >
+                <div class="setting-label-group">
+                    <span class="svg-settings-container">
+                        <svg width="30" height="30" viewBox="0 0 48 48" style="color: var(--text-on-color);">
+                            <use href="#icon-theme"></use>
+                        </svg>
+                    </span>
+                    <span class="setting-text-label">{$t('openThemeSelector') || 'Open Theme Selector'}</span>
+                </div>
+            </button>
         </div>
     </div>
-</dialog>
+</SettingsDialog>

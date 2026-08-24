@@ -15,11 +15,13 @@
     import { onDestroy, onMount } from 'svelte';
     import { SvelteDate } from 'svelte/reactivity';
     import '../../../core/services/webActivitySchema.js';
-    import { t, tt, currentLang } from '../../stores/i18nStore.js';
+    import { t, currentLang } from '../../stores/i18nStore.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { fetchStatus, snoozeLimit } from '../../services/webActivityService.js';
     import { openDashboard } from '../../services/dashboard/dashboardPages.js';
     import { fmtDur, fmtHm, weekdayNames } from '../../services/dashboard/format.js';
+    import { snoozeNeedsPassword, verifyLock } from './blockLock.js';
+    import PasswordPromptModal from './components/PasswordPromptModal.svelte';
 
     const domain = new URLSearchParams(window.location.search).get('d') || '';
 
@@ -37,6 +39,10 @@
     let verdict = $state(null);
     let settings = $state(null);
     let busy = $state(false);
+    /** How many times the grace button has already been used today. */
+    let snoozeUses = $state(0);
+    /** Open while the password is being asked for. */
+    let askingPassword = $state(false);
 
     const faviconFor = (host) =>
         `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent('https://' + host)}&size=32`;
@@ -78,10 +84,27 @@
         if (response?.success) {
             verdict = response.verdict;
             settings = response.settings;
+            snoozeUses = response.snoozeUses || 0;
         }
     }
 
+    /**
+     * "Five more minutes", and what it costs.
+     *
+     * The password stands in front of this from the use the settings name — the first
+     * one of the day is usually free, the second is not. Asking here rather than in the
+     * worker keeps the decision where the user is: the dialog is on the page they are
+     * looking at, and a wrong answer leaves them exactly where they were.
+     */
     async function snooze() {
+        if (snoozeNeedsPassword(settings?.blockPassword, snoozeUses, settings?.snoozePasswordAfter)) {
+            askingPassword = true;
+            return;
+        }
+        await applySnooze();
+    }
+
+    async function applySnooze() {
         busy = true;
         await snoozeLimit(domain);
         // Straight back to the site: the snooze is only worth anything if it takes the
@@ -198,14 +221,20 @@
         {/if}
 
         <div class="wa-gate-actions">
-            <button class="btn btn-accent" type="button" onclick={() => history.back()}>
+            <button class="btn" type="button" onclick={() => history.back()}>
                 {$t('webActivityBlockedGoBack')}
             </button>
             <button class="btn" type="button" onclick={() => openDashboard('webActivity')}>
                 {$t('webActivityBlockedChangeRule')}
             </button>
             {#if settings?.snoozeMinutes > 0}
-                <button class="btn" type="button" disabled={busy} title={$tt('webActivitySnooze')} onclick={snooze}>
+                <button
+                    class="btn"
+                    type="button"
+                    disabled={busy}
+                    title={$t('webActivitySnoozeWithTime', [String(settings.snoozeMinutes)])}
+                    onclick={snooze}
+                >
                     {$t('webActivityBlockedSnooze', [String(settings.snoozeMinutes)])}
                 </button>
             {/if}
@@ -214,3 +243,17 @@
         <p class="wa-gate-footer" lang={$currentLang}>{$t('webActivityBlockedFooter')}</p>
     </div>
 </div>
+
+{#if askingPassword}
+    <PasswordPromptModal
+        onSubmit={async (password) => {
+            const accepted = await verifyLock(settings?.blockPassword, password);
+            if (accepted) {
+                askingPassword = false;
+                await applySnooze();
+            }
+            return accepted;
+        }}
+        onClose={() => (askingPassword = false)}
+    />
+{/if}

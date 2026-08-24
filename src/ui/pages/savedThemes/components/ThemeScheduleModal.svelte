@@ -3,6 +3,7 @@
     import { t } from '../../../stores/i18nStore.js';
     import DateField from '../../../components/common/DateField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
+    import ModalHeader from '../../../components/common/ModalHeader.svelte';
 
     let {
         show = false,
@@ -44,16 +45,14 @@
         onscroll={onScroll}
     >
         <div class="modal-content">
+            <!-- Outside the padded section on purpose: the bar brings its own padding
+                 and has to reach the corners of the dialog, like every other one. -->
+            <ModalHeader
+                titleId="schedule-modal-title"
+                title={currentThemeForScheduling ? currentThemeForScheduling.name : $t('scheduleThemes')}
+                {onClose}
+            />
             <section class="section">
-                <div class="section-title">
-                    <span
-                        id="schedule-modal-title"
-                        class="createThemeTitle"
-                        data-i18n={currentThemeForScheduling ? '' : 'scheduleThemes'}
-                        >{currentThemeForScheduling ? currentThemeForScheduling.name : ''}</span
-                    >
-                    <button id="close-schedule-modal" class="close-button" type="button" onclick={onClose}>x</button>
-                </div>
                 <h3 class="titleSchedules">
                     <span data-i18n="existingSchedules"></span> (<span id="schedule-count">{totalScheduleCount}</span
                     >/7)

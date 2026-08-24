@@ -245,6 +245,37 @@
     "dashboardDashboard": {
         "message": "Panel"
     },
+    "dashboardSwitchDashboard": {
+        "message": "Cambiar de panel",
+        "description": "Abre la lista de paneles: actividad web y pomodoro."
+    },
+    "dashboardDragSection": {
+        "message": "Arrastra para mover esta sección",
+        "description": "Cambia el orden de las secciones del panel. Se recuerda."
+    },
+    "dashboardDragPanel": {
+        "message": "Arrastra para mover este panel",
+        "description": "Cambia el orden de los paneles dentro de su sección. No puede salir de ella."
+    },
+    "dashboardWebPhases": {
+        "message": "Navegación durante el temporizador",
+        "description": "Qué webs se han visitado mientras corría cada fase del pomodoro. El tiempo navegado sin el temporizador en marcha no aparece en ninguna de las tres tarjetas."
+    },
+    "dashboardWebPhaseFocus": {
+        "message": "Durante el foco",
+        "description": "Tiempo en cada web mientras corría un bloque de foco."
+    },
+    "dashboardWebPhaseShort": {
+        "message": "Durante el descanso corto",
+        "description": "Tiempo en cada web mientras corría un descanso corto."
+    },
+    "dashboardWebPhaseLong": {
+        "message": "Durante el descanso largo",
+        "description": "Tiempo en cada web mientras corría un descanso largo."
+    },
+    "dashboardWebPhaseEmpty": {
+        "message": "Sin navegación en esta fase"
+    },
     "appName": {
         "message": "Intelligent Workspace",
         "description": "El nombre de la aplicación"
@@ -2995,6 +3026,198 @@
         "message": "Haz click para activar las consultas en la barra de búsqueda. click largo o Ctrl+click para abrir las consultas de Gemini en el panel lateral.",
         "description": "Haz click para activar las consultas en la barra de búsqueda.\n\n Click largo o Ctrl+click para abrir las consultas de Gemini en el panel lateral."
     },
+    "localAiAcceptBtn": {
+        "message": "Aceptar",
+        "description": "Botón inferior de la pestaña de IA local cuando el modelo ya está instalado."
+    },
+    "localAiAcceptInstallBtn": {
+        "message": "Aceptar e instalar",
+        "description": "Botón inferior de la pestaña de IA local que descarga el modelo."
+    },
+    "localAiUninstallBtn": {
+        "message": "Desinstalar",
+        "description": "Botón que deja de usar el modelo local y abre la página de modelos de Chrome."
+    },
+    "localAiLocationTitle": {
+        "message": "Dónde está instalada",
+        "description": "Título de la sección que muestra la carpeta del modelo."
+    },
+    "localAiLocationHelp": {
+        "message": "El modelo lo guarda Chrome, no la extensión, y lo comparte todo el navegador. Normalmente está en la carpeta de tu perfil:",
+        "description": "Explicación encima de la ruta del modelo."
+    },
+    "localAiUninstallOpened": {
+        "message": "La extensión deja de usarla. El archivo es de Chrome, así que hemos abierto chrome://on-device-internals, donde el navegador gestiona y borra el modelo.",
+        "description": "Aviso tras pulsar desinstalar cuando se ha abierto la página de Chrome."
+    },
+    "localAiUninstallHelp": {
+        "message": "La extensión deja de usarla. Para borrar el archivo, abre chrome://on-device-internals, donde el navegador gestiona el modelo.",
+        "description": "Aviso tras desinstalar cuando no se ha podido abrir la página."
+    },
+    "localAiModelLabel": {
+        "message": "IA local de Chrome",
+        "description": "Nombre del modelo local en el selector de modelos."
+    },
+    "localAiRecheck": {
+        "message": "Volver a comprobar",
+        "description": "Título del botón pequeño que vuelve a preguntar a Chrome por el modelo."
+    },
+    "localAiStaleHint": {
+        "message": "¿La acabas de instalar o desinstalar y aquí sigue el estado anterior? La respuesta la da Chrome, y un navegador que ya está abierto se queda con la que tenía: reinicia Chrome y vuelve a abrir esta pestaña.",
+        "description": "Explica por qué el estado puede ir por detrás del navegador."
+    },
+    "localAiGuideTitle": {
+        "message": "Cómo se instalan los modelos de IA en Chrome",
+        "description": "Resumen de la guía desplegable de instalación."
+    },
+    "localAiGuideStep1": {
+        "message": "Comprueba que el equipo cumple: Windows 10 u 11, macOS 13 o posterior, Linux o ChromeOS; al menos **22 GB libres** en la unidad donde está tu perfil de Chrome; y una gráfica con **más de 4 GB de memoria de vídeo** o bien **16 GB de RAM y 4 núcleos**.",
+        "description": "Paso 1 de la guía de instalación."
+    },
+    "localAiGuideStep2": {
+        "message": "Enciende la función en chrome://settings/system, en **IA en el dispositivo**. Ese interruptor es también el que la quita: apagado, Chrome borra el modelo y no vuelve a descargarlo.",
+        "description": "Paso 2 de la guía de instalación."
+    },
+    "localAiGuideStep3": {
+        "message": "Abre chrome://on-device-internals y ve a la pestaña **Model Status**. Ahí ves qué versión ha cargado Chrome, en qué carpeta está, cuánto ocupa y sobre qué backend corre. Desde esa misma página se desinstala, y su campo **Model directory** con **Load Default** es por donde se carga un modelo que tengas en otro sitio.",
+        "description": "Paso 3 de la guía de instalación."
+    },
+    "localAiGuideStep4": {
+        "message": "Descárgalo: el botón del pie de esta pestaña le pide el modelo a Chrome, que es lo mismo que ocurre la primera vez que cualquier página usa la API. Es una descarga de **unos 4 GB**, y la comparte todo el navegador.",
+        "description": "Paso 4 de la guía de instalación."
+    },
+    "localAiGuideStep5": {
+        "message": "Si Chrome decide que tu equipo no da la talla y no estás de acuerdo, pon chrome://flags/#optimization-guide-on-device-model en **Enabled BypassPerfRequirement** y reinicia. En los canales donde la API siga detrás de un flag, se enciende en chrome://flags/#prompt-api-for-gemini-nano.",
+        "description": "Paso 5 de la guía de instalación."
+    },
+    "localAiGuideStep6": {
+        "message": "Chrome lo mantiene al día él solo, cambiando de versión en caliente, y lo vuelve a borrar si el disco se queda corto o si el equipo deja de cumplir los requisitos durante **30 días**.",
+        "description": "Paso 6 de la guía de instalación."
+    },
+    "localAiGuideModelChoice": {
+        "message": "Qué modelo te toca **lo decide Chrome, no la extensión**: hace una prueba corta de GPU e instala la variante que le cabe, y la API entrega el build que haya sin decir cuál es. Para usar otro (una **Gemma** que elijas tú, por ejemplo) hay que apuntarle con el campo **Model directory** de chrome://on-device-internals y cargarlo desde ahí; la extensión usará lo que Chrome acabe sirviendo.",
+        "description": "Explica que una página no puede elegir el modelo."
+    },
+    "localAiGuideOpenSettings": {
+        "message": "Abrir los ajustes de IA de Chrome",
+        "description": "Botón que abre chrome://settings/system."
+    },
+    "localAiGuideOpenInternals": {
+        "message": "Abrir la página del modelo",
+        "description": "Botón que abre chrome://on-device-internals."
+    },
+    "localAiModelUnknown": {
+        "message": "Chrome no le dice a las páginas qué modelo ha instalado, así que el selector lo llama por el nombre genérico. La versión exacta está en la pestaña Model Status de chrome://on-device-internals.",
+        "description": "Explica que el nombre del modelo instalado no se puede leer desde la página."
+    },
+    "localAiAgentsYes": {
+        "message": "Modo agente: admitido",
+        "description": "Capacidad de la IA local: sí admite herramientas, así que hay agente."
+    },
+    "localAiAgentsChecking": {
+        "message": "Modo agente: comprobándolo",
+        "description": "Capacidad de la IA local mientras se ejecuta la prueba de herramientas."
+    },
+    "localAiAgentProbeNote": {
+        "message": "Para saberlo le damos una herramienta al modelo y miramos si la usa. La respuesta se guarda; el botón de recargar de arriba vuelve a preguntársela.",
+        "description": "Explica cómo se comprueba si el modelo admite el modo agente."
+    },
+    "localAiWebNo": {
+        "message": "Búsqueda en internet: no admitida",
+        "description": "Capacidad de la IA local: no consulta la red."
+    },
+    "localAiWebNote": {
+        "message": "El modelo local responde solo con lo que aprendió mientras se entrenaba: no consulta Google ni abre páginas, así que no sabe nada posterior a su corte de datos ni nada que haya detrás de un enlace que le pegues. Con la clave API, Gemini sí busca en Google mientras responde. Las herramientas del agente no se ven afectadas: actúan sobre el navegador y no dependen de que el modelo tenga red.",
+        "description": "Explica que el modelo local no tiene salida a internet."
+    },
+    "geminiApiKeyTabApi": {
+        "message": "Clave API",
+        "description": "Pestaña del modal de la clave de Gemini que guarda las claves API."
+    },
+    "geminiApiKeyTabLocal": {
+        "message": "IA local",
+        "description": "Pestaña del modal de la clave de Gemini para la IA integrada de Chrome."
+    },
+    "localAiIntro": {
+        "message": "Chrome puede ejecutar Gemini Nano en tu propio equipo. Responde sin clave, sin cuota y sin conexión, y el asistente recurre a él cuando todas las claves API se quedan sin cuota.",
+        "description": "Párrafo inicial de la pestaña de IA local."
+    },
+    "localAiStatusChecking": {
+        "message": "Preguntando a Chrome por el modelo local…",
+        "description": "Estado de la IA local mientras se consulta al navegador."
+    },
+    "localAiStatusAvailable": {
+        "message": "Instalada y lista",
+        "description": "Estado de la IA local: el modelo ya está descargado."
+    },
+    "localAiStatusDownloading": {
+        "message": "Chrome está descargando el modelo",
+        "description": "Estado de la IA local: descarga en curso."
+    },
+    "localAiStatusDownloadable": {
+        "message": "Todavía no está instalada",
+        "description": "Estado de la IA local: el modelo se puede descargar."
+    },
+    "localAiStatusUnavailable": {
+        "message": "Este equipo no cumple los requisitos",
+        "description": "Estado de la IA local: la API existe pero el equipo no cumple."
+    },
+    "localAiStatusUnsupported": {
+        "message": "Esta versión de Chrome no incluye IA local",
+        "description": "Estado de la IA local: el navegador no trae IA integrada."
+    },
+    "localAiUnsupportedHelp": {
+        "message": "La IA integrada de Chrome llegó con Chrome 138. Actualiza Chrome y vuelve a abrir esta pestaña.",
+        "description": "Explicación cuando el navegador no trae IA integrada."
+    },
+    "localAiUnavailableHelp": {
+        "message": "Chrome pide al menos 22 GB libres en la unidad donde está tu perfil, una gráfica con más de 4 GB de memoria de vídeo o bien 16 GB de RAM con 4 núcleos, y una conexión sin límite de datos. Además vuelve a borrar el modelo si el espacio libre se queda corto.",
+        "description": "Explicación cuando el equipo no cumple los requisitos."
+    },
+    "localAiCapabilities": {
+        "message": "Qué admite el modelo local",
+        "description": "Título de la lista de capacidades de la IA local."
+    },
+    "localAiImagesYes": {
+        "message": "Imágenes y archivos: admitidos",
+        "description": "Capacidad de la IA local: acepta imágenes."
+    },
+    "localAiImagesNo": {
+        "message": "Imágenes y archivos: no admitidos",
+        "description": "Capacidad de la IA local: no acepta imágenes."
+    },
+    "localAiAgentsNo": {
+        "message": "Modo agente: no admitido",
+        "description": "Capacidad de la IA local: sin llamadas a herramientas, así que sin agente."
+    },
+    "localAiLimitsNote": {
+        "message": "Cada botón sigue a lo que admita el modelo instalado: el de archivos se apaga si este Chrome no acepta imágenes, y el de agente si el modelo no sabe usar herramientas.",
+        "description": "Aviso sobre los botones que se deshabilitan con la IA local."
+    },
+    "localAiSizeTitle": {
+        "message": "Cuánto ocupa",
+        "description": "Título de la sección del tamaño de la descarga."
+    },
+    "localAiSizeDescription": {
+        "message": "El modelo se descarga una sola vez y lo comparte todo el navegador: ocupa unos 4 GB en disco, y Chrome pide al menos 22 GB libres en la unidad del perfil para empezar.",
+        "description": "Explicación de cuánto espacio ocupa el modelo local."
+    },
+    "localAiInstallingBtn": {
+        "message": "Descargando",
+        "description": "Texto del botón de instalar mientras se descarga el modelo."
+    },
+    "localAiInstallError": {
+        "message": "Chrome no ha podido descargar el modelo. Revisa el espacio de la unidad del perfil y la conexión, e inténtalo de nuevo.",
+        "description": "Error cuando falla la descarga."
+    },
+    "localAiDisabledByLocal": {
+        "message": "No disponible con la IA local de Chrome",
+        "description": "Tooltip de los botones de agente y archivos mientras responde el modelo local."
+    },
+    "localAiAnsweringNotice": {
+        "message": "Todas las claves API se han quedado sin cuota, así que ha respondido la IA local de Chrome.",
+        "description": "Aviso cuando la respuesta viene del modelo local."
+    },
     "geminiApiKeyTitle": {
         "message": "Clave API de Gemini",
         "description": "Título del modal que solicita la clave API de Gemini."
@@ -3387,6 +3610,18 @@
     "feature_readerView": {
         "message": "Modo de lectura sin distracciones para artículos y páginas web."
     },
+    "feature_readerReadAloud": {
+        "message": "Lector de páginas en voz alta con síntesis de voz (TTS), panel flotante y atajos de teclado."
+    },
+    "feature_readerWordTracking": {
+        "message": "Seguimiento palabra por palabra y resaltado sincronizado de párrafos durante la lectura."
+    },
+    "feature_readerCustomOpacity": {
+        "message": "Personalización de transparencia para el resaltado de párrafos y marcas de lectura adaptadas al tema."
+    },
+    "feature_readerVoiceSettings": {
+        "message": "Configuración avanzada de voz de síntesis: selección por idioma, velocidad, tono y volumen."
+    },
     "feature_fileDownloader": {
         "message": "Herramienta integrada para encontrar y descargar archivos de cualquier página."
     },
@@ -3413,6 +3648,9 @@
     },
     "feature_v100_readerView": {
         "message": "Modo Lectura: Disfruta de una experiencia de lectura limpia y sin anuncios para artículos."
+    },
+    "feature_v100_pageReader": {
+        "message": "Lector Web en Voz Alta: Lee artículos automáticamente con síntesis de voz, resaltado de texto en tiempo real, panel flotante y atajos rápidos."
     },
     "feature_v099_listGroupView": {
         "message": "Nueva Vista de Lista de Grupos: Una interfaz dedicada para gestionar todos tus grupos."
@@ -4533,11 +4771,17 @@
     "hintDesc_p": {
         "message": "Enfocar panel lateral"
     },
-    "hintDesc_pp": {
-        "message": "Enfocar panel lateral"
-    },
     "hintDesc_pt": {
         "message": "Abrir el panel lateral con temas guardados"
+    },
+    "hintDesc_pk": {
+        "message": "Abrir el panel lateral con las notas"
+    },
+    "hintDesc_ps": {
+        "message": "Abrir el panel lateral con la galería"
+    },
+    "hintDesc_pw": {
+        "message": "Abrir el panel lateral con la actividad web"
     },
     "hintDesc_pl": {
         "message": "Abrir el panel lateral con la lista de grupos"
@@ -4559,6 +4803,9 @@
     },
     "hintDesc_o": {
         "message": "Abrir omnibar para buscar pestañas/historial"
+    },
+    "hintDesc_ph": {
+        "message": "Abrir el panel principal de Intelligent Workspace"
     },
     "hintDesc_gy": {
         "message": "Abrir YouTube"
@@ -6350,7 +6597,7 @@
         "message": "1 Bucle"
     },
     "pipLoopSequence": {
-        "message": "Secuencia"
+        "message": "Ciclo"
     },
     "pipLoopSequenceDesc": {
         "message": "Reproduce todos los bucles de forma consecutiva según las repeticiones de cada bucle el número de ciclos configurado (o de forma infinita)."
@@ -6359,7 +6606,7 @@
         "message": "Modo de bucle individual"
     },
     "pipLoopModeSequence": {
-        "message": "Reproducir todos los bucles en secuencia"
+        "message": "Reproducir todos los bucles en ciclo"
     },
     "pipLoopNumber": {
         "message": "Bucle $NUM$",
@@ -6370,7 +6617,7 @@
         }
     },
     "pipLoopSequenceStatus": {
-        "message": "Sec: Bucle $CURRENT$ de $TOTAL$",
+        "message": "Ciclo: Bucle $CURRENT$ de $TOTAL$",
         "placeholders": {
             "current": {
                 "content": "$1"
@@ -6381,7 +6628,7 @@
         }
     },
     "pipLoopSequenceRep": {
-        "message": "Sec: Bucle $CURRENT$/$TOTAL$ (rep $REP$/$MAX$)",
+        "message": "Ciclo: Bucle $CURRENT$/$TOTAL$ (rep $REP$/$MAX$)",
         "placeholders": {
             "current": {
                 "content": "$1"
@@ -6398,7 +6645,7 @@
         }
     },
     "pipLoopSequenceInf": {
-        "message": "Sec: Bucle $CURRENT$/$TOTAL$ (∞)",
+        "message": "Ciclo: Bucle $CURRENT$/$TOTAL$ (∞)",
         "placeholders": {
             "current": {
                 "content": "$1"
@@ -6409,13 +6656,13 @@
         }
     },
     "pipLoopSequenceRepeatCount": {
-        "message": "Repeticiones de la secuencia"
+        "message": "Repeticiones del ciclo"
     },
     "pipLoopSequenceDisabledHelp": {
-        "message": "Deshabilitado: el bucle de secuencia requiere más de 1 bucle"
+        "message": "Deshabilitado: el modo ciclo requiere más de 1 bucle"
     },
     "pipLoopSequenceCycleRep": {
-        "message": "Sec ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+        "message": "Ciclo ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
         "placeholders": {
             "cycle": {
                 "content": "$1"
@@ -6438,7 +6685,7 @@
         }
     },
     "pipLoopSequenceCycleInf": {
-        "message": "Sec ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ (∞)",
+        "message": "Ciclo ($CYCLE$/$MAXCYCLE$): Bucle $CURRENT$/$TOTAL$ (∞)",
         "placeholders": {
             "cycle": {
                 "content": "$1"
@@ -6455,7 +6702,7 @@
         }
     },
     "pipLoopSequenceInfRep": {
-        "message": "Sec (∞): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
+        "message": "Ciclo (∞): Bucle $CURRENT$/$TOTAL$ ($REP$/$MAX$)",
         "placeholders": {
             "current": {
                 "content": "$1"
@@ -10045,7 +10292,15 @@
         "message": "Calendario de actividad"
     },
     "webActivityHeatmapHint": {
-        "message": "Medio año de un vistazo: cuanto más oscuro el cuadro, más tiempo ese día"
+        "message": "Un año de un vistazo: cuanto más oscuro el cuadro, más tiempo ese día"
+    },
+    "webActivityHeatmapCardTitle": {
+        "message": "Mapa de calor de tiempo",
+        "description": "Una celda por día del último año. El color va de gris (sin actividad) al color principal (el día con más tiempo navegando)."
+    },
+    "webActivityHeatmapMeta": {
+        "message": "máx. $1 en un día",
+        "description": "Tiempo navegando del día más cargado del último año."
     },
     "webActivityTrendsTitle": {
         "message": "Tiempo y categorías"
@@ -10188,6 +10443,10 @@
     "webActivityColLimit": {
         "message": "Límite"
     },
+    "webActivityColDaily": {
+        "message": "Diario",
+        "description": "Cuánto tiempo al día tiene permitido este sitio."
+    },
     "webActivityColActions": {
         "message": "Acciones"
     },
@@ -10239,6 +10498,9 @@
         "message": "Cinco minutos más",
         "description": "Levanta el bloqueo un rato. Queda registrado como aplazamiento, no como quitar el límite."
     },
+    "webActivitySnoozeWithTime": {
+        "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite."
+    },
     "webActivitySnoozed": {
         "message": "Bloqueo aplazado"
     },
@@ -10269,6 +10531,18 @@
     "webActivityFieldSite": {
         "message": "Sitio",
         "description": "Solo el dominio, sin https:// — puedes pegar la dirección entera, se queda solo el host"
+    },
+    "webActivitySiteRequired": {
+        "message": "Escribe una dirección web"
+    },
+    "webActivitySiteInvalid": {
+        "message": "Eso no parece una dirección web"
+    },
+    "webActivitySiteNoDot": {
+        "message": "Falta el dominio: prueba con «ejemplo.com»"
+    },
+    "webActivitySiteNoTld": {
+        "message": "La terminación no parece válida: prueba con «ejemplo.com»"
     },
     "webActivityFieldDailyLimit": {
         "message": "Cuota diaria"
@@ -10427,6 +10701,9 @@
         "message": "Horario",
         "description": "Solo dentro de esta franja se puede abrir el sitio"
     },
+    "webActivityNoLimitSet": {
+        "message": "Sin configurar"
+    },
     "webActivityColState": {
         "message": "Estado"
     },
@@ -10579,6 +10856,18 @@
     "webActivityDomainRestored": {
         "message": "Dominio reincorporado al registro de actividad"
     },
+    "webActivityBtnAll": {
+        "message": "Todos"
+    },
+    "webActivityAllSitesPlaceholder": {
+        "message": "Todos los sitios web"
+    },
+    "webActivityApplyToAllSitesHint": {
+        "message": "Aplicar esta configuración a todos los sitios web"
+    },
+    "webActivityLimitsAppliedToAll": {
+        "message": "Configuración aplicada a todos los sitios web"
+    },
     "webActivityRemoveLimit": {
         "message": "Quitar esta cuota"
     },
@@ -10718,6 +11007,74 @@
     "webActivitySettingsRulesHint": {
         "message": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no.",
         "description": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no"
+    },
+    "webActivitySettingsPassword": {
+        "message": "Contraseña de bloqueo",
+        "description": "Una pausa entre querer levantar un bloqueo y levantarlo. No cifra nada: cualquiera con acceso al perfil del navegador puede saltársela."
+    },
+    "webActivitySettingsPasswordHint": {
+        "message": "Pide una contraseña antes de desactivar, editar o borrar una regla"
+    },
+    "webActivityBlockPasswordOffNote": {
+        "message": "Sin contraseña: cualquiera que abra este panel puede quitar un bloqueo. Al ponerla, se pedirá antes de desactivar, editar o borrar una regla. Poner una regla nueva o hacerla más estricta nunca la pide."
+    },
+    "webActivityBlockPasswordOnNote": {
+        "message": "Se pedirá antes de desactivar, editar o borrar una regla. Poner una regla nueva o hacerla más estricta no la pide. No es cifrado: es el momento de pararse a pensar."
+    },
+    "webActivityBlockPasswordSet": {
+        "message": "Contraseña",
+        "description": "La contraseña que se pedirá al levantar un bloqueo."
+    },
+    "webActivityBlockPasswordNew": {
+        "message": "Contraseña nueva",
+        "description": "La contraseña que la sustituye."
+    },
+    "webActivityBlockPasswordNewHint": {
+        "message": "Se guarda cifrada con SHA-256 y sal; la contraseña en claro no se guarda en ningún sitio."
+    },
+    "webActivityBlockPasswordRepeat": {
+        "message": "Repetir",
+        "description": "Otra vez, para descartar una errata."
+    },
+    "webActivityBlockPasswordRepeatHint": {
+        "message": "Las dos tienen que coincidir."
+    },
+    "webActivityBlockPasswordCurrent": {
+        "message": "Contraseña actual",
+        "description": "La que hay ahora. Hace falta para cambiarla o quitarla."
+    },
+    "webActivityBlockPasswordCurrentHint": {
+        "message": "Hace falta para cambiarla o quitarla."
+    },
+    "webActivityBlockPasswordSave": {
+        "message": "Guardar contraseña"
+    },
+    "webActivityBlockPasswordChange": {
+        "message": "Cambiar contraseña"
+    },
+    "webActivityBlockPasswordRemove": {
+        "message": "Quitar contraseña",
+        "description": "Deja de pedirla. Hace falta la contraseña actual."
+    },
+    "webActivityBlockPasswordMismatch": {
+        "message": "Las dos contraseñas no coinciden"
+    },
+    "webActivityBlockPasswordWrong": {
+        "message": "Contraseña incorrecta"
+    },
+    "webActivityBlockPasswordPrompt": {
+        "message": "Contraseña de bloqueo",
+        "description": "Esta regla está protegida con contraseña."
+    },
+    "webActivityBlockPasswordLabel": {
+        "message": "Escribe la contraseña para continuar",
+        "description": "Sin ella la regla se queda como está."
+    },
+    "webActivityBlockPasswordSaved": {
+        "message": "Contraseña guardada"
+    },
+    "webActivityBlockPasswordRemoved": {
+        "message": "Contraseña quitada"
     },
     "webActivitySettingsCategories": {
         "message": "Categorías",
@@ -10859,6 +11216,16 @@
         "message": "Cuánto tiempo aparta el bloqueo el botón de aplazar. Cero quita el botón.",
         "description": "Cuánto aguanta el aplazamiento de la pantalla de bloqueo"
     },
+    "webActivitySnoozePasswordAfter": {
+        "message": "Pedir contraseña en el tiempo de gracia a partir de",
+        "description": "A partir de qué uso del botón «cinco minutos más» del día se pide la contraseña de bloqueo. Con 2, el primero del día es gratis y el segundo ya no. 0 no la pide nunca, y nada de esto hace nada si no hay contraseña puesta."
+    },
+    "webActivitySnoozePasswordAfterHint": {
+        "message": "Con 2, el primer «cinco minutos más» del día no la pide y el segundo sí. 0 no la pide nunca."
+    },
+    "webActivitySnoozeUsesShort": {
+        "message": "usos"
+    },
     "webActivityRetentionDays": {
         "message": "Conservar el historial",
         "description": "Días de historial que se guardan antes de descartar los más antiguos"
@@ -10866,6 +11233,13 @@
     "webActivityRetentionDaysHint": {
         "message": "Los días más antiguos que esto se borran al cambiar el día.",
         "description": "Días de historial que se guardan antes de descartar los más antiguos"
+    },
+    "webActivitySyncEnabled": {
+        "message": "Sincronizar entre navegadores",
+        "description": "Comparte el registro, las reglas y estos ajustes con la misma extensión instalada en otro navegador donde hayas iniciado la misma sesión. Viaja por la sincronización del propio navegador. Desactivado de fábrica."
+    },
+    "webActivitySyncEnabledHint": {
+        "message": "Los datos aparecen también en las extensiones instaladas en otros navegadores. Desactivado por defecto."
     },
     "webActivitySecondsShort": {
         "message": "s",
@@ -11018,6 +11392,30 @@
     "webActivityNoBlocksSub": {
         "message": "Todos los sitios con regla están dentro de su cuota y de su horario.",
         "description": "Todos los sitios con regla están dentro de su cuota y de su horario"
+    },
+    "webActivityGracePeriodTitle": {
+        "message": "Tiempo de gracia",
+        "description": "Sección con sitios en tiempo de gracia"
+    },
+    "webActivityGracePeriodHint": {
+        "message": "Sitios con el bloqueo temporalmente aplazado y el tiempo restante de acceso",
+        "description": "Explicación de la sección de tiempo de gracia"
+    },
+    "webActivityNoGracePeriod": {
+        "message": "No hay sitios en tiempo de gracia",
+        "description": "Mensaje cuando ningún sitio está en tiempo de gracia"
+    },
+    "webActivityNoGracePeriodSub": {
+        "message": "Ningún bloqueo ha sido aplazado temporalmente.",
+        "description": "Subtítulo cuando no hay sitios en tiempo de gracia"
+    },
+    "webActivityGraceRemaining": {
+        "message": "Tiempo restante: $1",
+        "description": "Tiempo restante de gracia"
+    },
+    "webActivityGraceUntil": {
+        "message": "Hasta las $1",
+        "description": "Hora en la que termina el tiempo de gracia"
     },
     "webActivityMeterDaily": {
         "message": "Hoy",
@@ -11198,5 +11596,337 @@
     "webActivityPageUnpinned": {
         "message": "Panel de actividad no fijado",
         "description": "Panel de actividad no fijado"
+    },
+    "captureGroupTabs": {
+        "message": "Capturar las pestañas del grupo",
+        "description": "Botón de cámara de un grupo"
+    },
+    "captureGroupTabsVisible": {
+        "message": "Capturar cada pestaña",
+        "description": "Capturar el área visible de cada pestaña del grupo"
+    },
+    "captureGroupTabsFullPage": {
+        "message": "Capturar cada pestaña (página completa)",
+        "description": "Capturar cada pestaña del grupo con desplazamiento"
+    },
+    "capturingGroupTabs": {
+        "message": "Capturando pestañas… ($1/$2)",
+        "description": "Progreso mientras se captura el grupo",
+        "placeholders": {
+            "done": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "groupTabsCaptured": {
+        "message": "$1 capturas guardadas del grupo",
+        "description": "Resultado de capturar un grupo entero",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "noTabsToCapture": {
+        "message": "Este grupo no tiene pestañas que se puedan capturar",
+        "description": "No hay pestañas capturables en el grupo"
+    },
+    "captureVisibleArea": {
+        "message": "Capturar el área visible",
+        "description": "Capturar solo lo que se ve en pantalla"
+    },
+    "captureFullPageScroll": {
+        "message": "Capturar la página completa",
+        "description": "Capturar toda la página recorriéndola"
+    },
+    "capturingFullPage": {
+        "message": "Capturando la página completa…",
+        "description": "Se muestra mientras se recorre y captura la página"
+    },
+    "errorCapturingFullPage": {
+        "message": "No se ha podido capturar la página completa",
+        "description": "Falló la captura de página completa"
+    },
+    "fullPageBadge": {
+        "message": "Página completa",
+        "description": "Marca una imagen de la galería capturada con desplazamiento"
+    },
+    "generatingPdf": {
+        "message": "Creando el PDF…",
+        "description": "Se muestra mientras se escribe el PDF"
+    },
+    "pdfDownloaded": {
+        "message": "PDF descargado",
+        "description": "El PDF llegó a la carpeta de descargas"
+    },
+    "errorGeneratingPdf": {
+        "message": "No se ha podido crear el PDF",
+        "description": "Falló la generación del PDF"
+    },
+    "readPageAloud": {
+        "message": "Leer la página en voz alta",
+        "description": "Inicia el lector de la página"
+    },
+    "stopReadingPage": {
+        "message": "Dejar de leer la página",
+        "description": "Detiene el lector de la página"
+    },
+    "readAloudStarting": {
+        "message": "Leyendo la página…",
+        "description": "El lector está arrancando"
+    },
+    "readAloudNoContent": {
+        "message": "No se ha encontrado texto legible en esta página",
+        "description": "El lector no encontró nada que decir"
+    },
+    "readAloudUnsupportedPage": {
+        "message": "Esta página no se puede leer en voz alta",
+        "description": "Las páginas de Chrome rechazan la inyección"
+    },
+    "readAloudPlay": {
+        "message": "Reproducir",
+        "description": "Control del lector"
+    },
+    "readAloudPause": {
+        "message": "Pausar",
+        "description": "Control del lector"
+    },
+    "readAloudPrevious": {
+        "message": "Párrafo anterior",
+        "description": "Control del lector"
+    },
+    "readAloudNext": {
+        "message": "Párrafo siguiente",
+        "description": "Control del lector"
+    },
+    "readAloudClose": {
+        "message": "Cerrar el lector",
+        "description": "Control del lector"
+    },
+    "readAloudSpeed": {
+        "message": "Velocidad de lectura",
+        "description": "Control del lector"
+    },
+    "readAloudProgress": {
+        "message": "$1/$2",
+        "description": "Contador de párrafos del lector",
+        "placeholders": {
+            "current": {
+                "content": "$1"
+            },
+            "total": {
+                "content": "$2"
+            }
+        }
+    },
+    "readAloudTitle": {
+        "message": "Lector de la página",
+        "description": "Título de la barra flotante del lector"
+    },
+    "speechSectionTitle": {
+        "message": "Voz de lectura",
+        "description": "Sección de ajustes de voz"
+    },
+    "speechSectionDesc": {
+        "message": "La voz que usan el lector de páginas, las notas y el asistente IA. En automático, el navegador elige la voz predeterminada del idioma de su propia interfaz.",
+        "description": "Descripción de los ajustes de voz"
+    },
+    "speechVoiceLabel": {
+        "message": "Voz",
+        "description": "Etiqueta del selector de voz"
+    },
+    "speechVoiceAuto": {
+        "message": "Automática (idioma del navegador)",
+        "description": "Opción de voz predeterminada"
+    },
+    "speechRateLabel": {
+        "message": "Velocidad",
+        "description": "Etiqueta del control de velocidad"
+    },
+    "speechPitchLabel": {
+        "message": "Tono",
+        "description": "Etiqueta del control de tono"
+    },
+    "speechVolumeLabel": {
+        "message": "Volumen",
+        "description": "Etiqueta del control de volumen"
+    },
+    "speechTestVoice": {
+        "message": "Probar la voz",
+        "description": "Botón que lee una frase de ejemplo"
+    },
+    "speechTestPhrase": {
+        "message": "Así lee la voz elegida.",
+        "description": "Frase de ejemplo que lee el botón de prueba"
+    },
+    "speechVoicesUnavailable": {
+        "message": "Este navegador no informa de ninguna voz instalada.",
+        "description": "getVoices() devolvió una lista vacía"
+    },
+    "speechResetDefaults": {
+        "message": "Restablecer la voz",
+        "description": "Botón que borra los ajustes de voz"
+    },
+    "speechSettingsSaved": {
+        "message": "Ajustes de voz guardados",
+        "description": "Confirmación"
+    },
+    "hintDesc_readAloud": {
+        "message": "Leer la página en voz alta",
+        "description": "Comando de teclado que inicia el lector"
+    },
+    "prefixReadAloud": {
+        "message": "Leer una pestaña en voz alta",
+        "description": "Descripción del prefijo del omnibar"
+    },
+    "omnibarPrefixReadAloudTitle": {
+        "message": "Leer en voz alta",
+        "description": "Título del prefijo del omnibar"
+    },
+    "omnibarPrefixReadAloudDesc": {
+        "message": "Elige una pestaña para que se lea su texto en voz alta",
+        "description": "Descripción del prefijo del omnibar"
+    },
+    "readAloudNoVoice": {
+        "message": "No hay ninguna voz instalada en este sistema",
+        "description": "El sintetizador rechaz\u00f3 todos los p\u00e1rrafos"
+    },
+    "readAloudHidePanel": {
+        "message": "Ocultar el lector",
+        "description": "Repliega el panel del lector"
+    },
+    "readAloudShowPanel": {
+        "message": "Mostrar el lector",
+        "description": "Devuelve el panel del lector"
+    },
+    "readAloudSwitchedTab": {
+        "message": "Se ha cambiado a la pesta\u00f1a para leerla",
+        "description": "El lector tuvo que traer la pesta\u00f1a al frente"
+    },
+    "downloadFormatTitle": {
+        "message": "Formato de descarga",
+        "description": "T\u00edtulo del di\u00e1logo que pregunta PNG o PDF"
+    },
+    "downloadFormatPngDesc": {
+        "message": "La imagen tal y como se captur\u00f3",
+        "description": "Qu\u00e9 significa elegir PNG"
+    },
+    "downloadFormatPdfDesc": {
+        "message": "Un documento en hojas A4",
+        "description": "Qu\u00e9 significa elegir PDF"
+    },
+    "downloadAsPng": {
+        "message": "Imagen PNG",
+        "description": "Bot\u00f3n de formato"
+    },
+    "downloadAsPdf": {
+        "message": "Documento PDF",
+        "description": "Bot\u00f3n de formato"
+    },
+    "captureFullPageSplit": {
+        "message": "Capturar la p\u00e1gina completa por partes",
+        "description": "Una imagen por pantalla en vez de una imagen larga"
+    },
+    "fullPagePartTitle": {
+        "message": "$1 (parte $2 de $3)",
+        "description": "T\u00edtulo de una parte de una captura completa por partes",
+        "placeholders": {
+            "title": {
+                "content": "$1"
+            },
+            "part": {
+                "content": "$2"
+            },
+            "total": {
+                "content": "$3"
+            }
+        }
+    },
+    "categoryReadAloudControls": {
+        "message": "Lector de p\u00e1ginas (mientras est\u00e1 abierto)",
+        "description": "T\u00edtulo de la secci\u00f3n de controles del lector"
+    },
+    "categoryReadAloudMarks": {
+        "message": "Marcas sobre el texto que se lee (dos teclas)",
+        "description": "T\u00edtulo de la secci\u00f3n de las marcas"
+    },
+    "hintDesc_readerPlay": {
+        "message": "Reproducir o pausar la lectura (tambi\u00e9n la barra espaciadora)",
+        "description": "Comando del lector"
+    },
+    "hintDesc_readerNext": {
+        "message": "P\u00e1rrafo siguiente (tambi\u00e9n la flecha derecha)",
+        "description": "Comando del lector"
+    },
+    "hintDesc_readerPrev": {
+        "message": "P\u00e1rrafo anterior (tambi\u00e9n la flecha izquierda)",
+        "description": "Comando del lector"
+    },
+    "hintDesc_readerPanel": {
+        "message": "Ocultar o mostrar el panel del lector",
+        "description": "Comando del lector"
+    },
+    "hintDesc_readerClose": {
+        "message": "Cerrar el lector (tambi\u00e9n Esc)",
+        "description": "Comando del lector"
+    },
+    "hintDesc_readerMarkWord": {
+        "message": "Activar o desactivar la marca sobre la palabra que se dice",
+        "description": "Comando de selecci\u00f3n"
+    },
+    "hintDesc_readerMarkBlock": {
+        "message": "Activar o desactivar el resaltado del texto que se lee",
+        "description": "Comando de selecci\u00f3n"
+    },
+    "readerSectionTitle": {
+        "message": "Lector de p\u00e1ginas",
+        "description": "Secci\u00f3n de ajustes del lector"
+    },
+    "readerSectionDesc": {
+        "message": "Lo que el lector pinta sobre la p\u00e1gina mientras lee, y con cu\u00e1nta fuerza. Las teclas que lo manejan est\u00e1n listadas debajo.",
+        "description": "Descripci\u00f3n de la secci\u00f3n de ajustes"
+    },
+    "readerShowPanelLabel": {
+        "message": "Mostrar el panel del lector",
+        "description": "Etiqueta del interruptor"
+    },
+    "readerShowPanelDesc": {
+        "message": "Los controles flotantes del borde derecho de la p\u00e1gina.",
+        "description": "Descripci\u00f3n del interruptor"
+    },
+    "readerShowWordLabel": {
+        "message": "Marcar la palabra que se dice",
+        "description": "Etiqueta del interruptor"
+    },
+    "readerShowWordDesc": {
+        "message": "Sigue la lectura palabra por palabra.",
+        "description": "Descripci\u00f3n del interruptor"
+    },
+    "readerShowBlockLabel": {
+        "message": "Resaltar el texto que se lee",
+        "description": "Etiqueta del interruptor"
+    },
+    "readerShowBlockDesc": {
+        "message": "Ti\u00f1e el p\u00e1rrafo por el que va el lector.",
+        "description": "Descripci\u00f3n del interruptor"
+    },
+    "readAloudOpenSettings": {
+        "message": "Ajustes del lector",
+        "description": "Bot\u00f3n del panel del lector"
+    },
+    "downloadFormatHint": {
+        "message": "Elige uno o los dos.",
+        "description": "Nota bajo la elecci\u00f3n de formato"
+    },
+    "readerBlockOpacityLabel": {
+        "message": "Transparencia del resaltado del texto",
+        "description": "Etiqueta del control de opacidad"
+    },
+    "readerWordOpacityLabel": {
+        "message": "Transparencia de la marca de palabra",
+        "description": "Etiqueta del control de opacidad"
     }
 }

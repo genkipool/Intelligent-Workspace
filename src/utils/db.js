@@ -61,6 +61,39 @@ export async function getScreenshotFromDb(id) {
     });
 }
 
+/**
+ * Several screenshots in one transaction, handed over as each arrives.
+ *
+ * The gallery used to ask for them one at a time, which is one transaction per card:
+ * with fifty captures that is fifty round trips through IndexedDB before the last
+ * picture is on screen. Here the requests are queued on a single transaction, so they
+ * are served back to back, and `onEach` is called as each one lands rather than at the
+ * end — the first picture appears as early as it did before and the rest follow
+ * immediately behind it.
+ *
+ * @param {Array<string>} ids
+ * @param {(id: string, screenshot: object|undefined) => void} [onEach]
+ * @returns {Promise<Map<string, object>>}
+ */
+export async function getScreenshotsFromDb(ids, onEach) {
+    if (!ids.length) return new Map();
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const found = new Map();
+        for (const id of ids) {
+            const request = store.get(id);
+            request.onsuccess = () => {
+                if (request.result) found.set(id, request.result);
+                onEach?.(id, request.result);
+            };
+        }
+        transaction.oncomplete = () => resolve(found);
+        transaction.onerror = () => reject(transaction.error);
+    });
+}
+
 export async function deleteScreenshotFromDb(id) {
     if (id === undefined || id === null) {
         return Promise.resolve();

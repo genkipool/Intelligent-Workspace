@@ -1,7 +1,9 @@
 <script>
+    import ModalHeader from '../../../components/common/ModalHeader.svelte';
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
     import { pickScreenColor } from '../../../services/colorPickerService.js';
     import { showNotification } from '../../../../utils/i18n.js';
+    import { t } from '../../../stores/i18nStore.js';
 
     let {
         show = false,
@@ -48,15 +50,12 @@
 {#if show}
     <div id="theme-editor-modal" class="modal-overlay" style="display: flex;" use:dismissOnBackdrop={onClose}>
         <div class="modal-content">
+            <ModalHeader
+                titleId="theme-editor-title"
+                title={$t(editorState.mode === 'edit' ? 'editThemeTitle' : 'createThemeTitle')}
+                {onClose}
+            />
             <section class="section" style="border-bottom: none; padding-bottom: 0;">
-                <div class="section-title">
-                    <span
-                        id="theme-editor-title"
-                        class="createThemeTitle"
-                        data-i18n={editorState.mode === 'edit' ? 'editThemeTitle' : 'createThemeTitle'}
-                    ></span>
-                    <button id="close-theme-editor-btn" class="close-button" type="button" onclick={onClose}>x</button>
-                </div>
                 <div class="color-options">
                     {#each [{ id: 'bg-color', k: 'bgColor', l: 'bgColor' }, { id: 'bg-panel-color', k: 'bgPanelColor', l: 'bgPanelColor' }, { id: 'text-color', k: 'textColor', l: 'textColor' }, { id: 'text-on-color', k: 'textOnColor', l: 'textOnColor' }, { id: 'action-color', k: 'actionColor', l: 'actionColor' }, { id: 'interactive-color', k: 'interactiveColor', l: 'interactiveColor' }, { id: 'border-color', k: 'borderColor', l: 'borderColor' }, { id: 'error-color', k: 'errorColor', l: 'errorColor' }, { id: 'header-color', k: 'headerColor', l: 'headerColor' }] as colorInput (colorInput.id)}
                         <div class="color-option">

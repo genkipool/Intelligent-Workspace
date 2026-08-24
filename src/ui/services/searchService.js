@@ -70,10 +70,23 @@ export function initSearchEvents() {
 
         const searchContainer = _searchInput.closest('.search-container');
         if (searchContainer) {
+            /**
+             * The bar drops its three toggles when there is no room for them.
+             *
+             * A width of zero is not "no room": it is what an element that is not being
+             * displayed measures, and the bar is hidden for a frame whenever a view is
+             * opened over the group list. Reading that as narrow latched the compact
+             * class, and the bar painted stripped-down for a frame after it came back —
+             * which is precisely the flicker people saw on the way into the notes and
+             * the gallery. An element that is not rendered has no width worth having an
+             * opinion about, so this one waits until it does.
+             */
             const updateSearchBtnVisibility = () => {
                 requestAnimationFrame(() => {
-                    if (!searchContainer) return;
-                    const compact = searchContainer.offsetWidth <= 110;
+                    if (!searchContainer || !searchContainer.isConnected) return;
+                    const width = searchContainer.offsetWidth;
+                    if (width === 0) return;
+                    const compact = width <= 110;
                     if (searchContainer.classList.contains('search-container--compact') !== compact) {
                         searchContainer.classList.toggle('search-container--compact', compact);
                     }

@@ -361,8 +361,12 @@ button:focus-visible {
     padding: 3px;
 }
 
+/* The same buttons as the rules page's URL rows, hidden the same way and with the same
+   consequence: `display: none` kept them out of the focus order, so a keyboard could
+   never reach them, and the fade written just below never had anything to fade from.
+   Laid out and faded out instead — see the note on `.icons-container` in rules.css. */
 .saved-theme-item .icons-container {
-    display: none;
+    display: flex;
     position: absolute;
     top: 2px;
     background-color: rgba(0, 0, 0, 0.3);
@@ -371,18 +375,30 @@ button:focus-visible {
     gap: 1px;
     z-index: 10;
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s ease;
 }
 
 .saved-theme-item:hover .icons-container,
-.saved-theme-item:focus-within .icons-container {
-    display: flex;
+.saved-theme-item:focus-within .icons-container,
+.saved-theme-item .icons-container:focus-within {
     opacity: 1;
+    pointer-events: auto;
 }
 
+/* Renaming, or about to: the buttons get out of the way of the label — but they stay
+   in the focus order, so Tab still walks through them. */
 .saved-theme-item:has(.theme-label[contenteditable='true']) .icons-container,
 .saved-theme-item:has(.theme-label:hover) .icons-container {
-    display: none;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Except the one actually being used: a button focused by the keyboard is visible
+   whatever the pointer is doing. */
+.saved-theme-item:has(.theme-label:hover) .icons-container:focus-within {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .theme-actions {

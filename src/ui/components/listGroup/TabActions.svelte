@@ -1,6 +1,6 @@
 <script>
     import { tt } from '../../stores/i18nStore.js';
-    import { createPageModePopup } from '../../services/groupsService.js';
+    import { createHoverActionPopup, createPageModePopup } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
 
@@ -12,9 +12,13 @@
         onSplitScreen = () => {},
         onOpenInPanel = () => {},
         onGeminiSummary = () => {},
+        onReadAloud = () => {},
         onShowQr = () => {},
         onEditCookies = () => {},
         onTakeScreenshot = () => {},
+        onCaptureFullPage = () => {},
+        onCaptureFullPageParts = () => {},
+        onCaptureArea = () => {},
         onAddToBookmarks = () => {},
         onShowDownloads = () => {},
         onCopyUrl = () => {},
@@ -27,12 +31,35 @@
 
     let actionVisibility = $derived($actionVisibilitySettings);
     let pageModeContainer = $state(null);
+    let summaryContainer = $state(null);
+    let captureContainer = $state(null);
     let tabActionsEl = $state(null);
 
     $effect(() => {
         if (pageModeContainer && tabEl) {
             createPageModePopup(pageModeContainer, tabEl, pageModes);
         }
+    });
+
+    // The assistant button and the camera each stand for more than one thing, so
+    // both wear the hover menu the page-mode button has always had. What they offer
+    // is exactly what the overflow menu lists when the button itself is hidden.
+    $effect(() => {
+        if (!summaryContainer) return;
+        createHoverActionPopup(summaryContainer, () => [
+            { i18n: 'summarizeWithGemini', onSelect: () => onGeminiSummary(new MouseEvent('click')) },
+            { i18n: 'readPageAloud', onSelect: onReadAloud },
+        ]);
+    });
+
+    $effect(() => {
+        if (!captureContainer) return;
+        createHoverActionPopup(captureContainer, () => [
+            { i18n: 'captureVisibleArea', onSelect: () => onTakeScreenshot(new MouseEvent('click')) },
+            { i18n: 'captureFullPageScroll', onSelect: onCaptureFullPage },
+            { i18n: 'captureFullPageSplit', onSelect: onCaptureFullPageParts },
+            { i18n: 'captureWebpageArea', onSelect: onCaptureArea },
+        ]);
     });
 
     $effect(() => {
@@ -66,14 +93,16 @@
     >
         <svg width="14" height="14"><use href="#icon-open-panel"></use></svg>
     </div>
-    <div
-        class="gemini-summary-btn action-btn"
-        role="button"
-        tabindex="0"
-        title={$tt('summarizeWithGemini')}
-        onclick={onGeminiSummary}
-    >
-        <svg width="14" height="14"><use href="#icon-summary"></use></svg>
+    <div class="summary-actions-container action-popup-container" bind:this={summaryContainer}>
+        <div
+            class="gemini-summary-btn action-btn"
+            role="button"
+            tabindex="0"
+            title={$tt('summarizeWithGemini')}
+            onclick={onGeminiSummary}
+        >
+            <svg width="14" height="14"><use href="#icon-summary"></use></svg>
+        </div>
     </div>
     <div class="page-mode-container" bind:this={pageModeContainer}>
         <div class="page-mode-btn action-btn" role="button" tabindex="0" title={$tt('changePageMode')}>
@@ -92,14 +121,16 @@
     >
         <svg width="14" height="14"><use href="#icon-cookie"></use></svg>
     </div>
-    <div
-        class="screenshot-btn action-btn"
-        role="button"
-        tabindex="0"
-        title={$tt('captureWebpage')}
-        onclick={onTakeScreenshot}
-    >
-        <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
+    <div class="capture-actions-container action-popup-container" bind:this={captureContainer}>
+        <div
+            class="screenshot-btn action-btn"
+            role="button"
+            tabindex="0"
+            title={$tt('captureWebpage')}
+            onclick={onTakeScreenshot}
+        >
+            <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
+        </div>
     </div>
     <div
         class="bookmark-btn action-btn"

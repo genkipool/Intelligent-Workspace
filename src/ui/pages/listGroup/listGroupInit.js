@@ -98,6 +98,8 @@ import {
     isUrlViewActive,
     isNotesViewActive,
     isGalleryViewActive,
+    overlayViewOpening,
+    standaloneOverlayView,
     isStandaloneGemini,
     currentMainView,
     currentNotesContext,
@@ -113,15 +115,138 @@ import {
 
 import { geminiStore, conversationHistory } from '../../stores/geminiStore.js';
 
+/** Whether the strip of view buttons is on screen. */
+const isViewStripOpen = () => !document.getElementById('view-toggle-panel')?.classList.contains('hidden');
+
 /**
- * Views the page can be opened straight into with `?view=`, that are not one of the
- * main views switchMainView knows about. The popup's quick access uses these, and so
- * would any other entry point: add the view here rather than special-casing the boot.
+ * [AI INSTRUCTION]
+ * THE VIEWS OF THIS PAGE A SHORTCUT CAN ASK FOR, AND HOW TO TELL YOU ARE THERE.
+ *
+ * The worker maps a keyboard command to a page and a view (`SIDE_PANEL_TARGETS`); this
+ * is the other half — what "show me the gallery" means once the page is already open.
+ * `is` is what makes the command a toggle rather than a no-op: asking for the view you
+ * are already looking at closes the panel, and only the page can answer that.
+ *
+ * Every view of this page belongs here. The assistant, the gallery and the notes are
+ * not main views — they are painted over the group list — which is exactly why the
+ * worker cannot work any of this out from a URL.
  */
-const STANDALONE_VIEW_OPENERS = {
-    notes: () => showNotesView({ type: 'orphan' }),
-    gallery: () => showScreenshotGallery('orphan', null, null),
+const PANEL_VIEWS = {
+    groups: {
+        is: () => get(currentMainView) === 'groups' && !isSpecialViewActive() && !isViewStripOpen(),
+        show: async () => {
+            await switchMainView('groups', false);
+            document.getElementById('view-toggle-panel')?.classList.add('hidden');
+        },
+    },
+    views: {
+        is: () => get(currentMainView) === 'groups' && !isSpecialViewActive() && isViewStripOpen(),
+        show: async () => {
+            await switchMainView('groups', false);
+            document.getElementById('view-toggle-panel')?.classList.remove('hidden');
+        },
+    },
+    gemini: {
+        is: () => get(isGeminiViewActive),
+        show: (options) =>
+            openOverlayView(
+                'gemini',
+                async () => {
+                    isStandaloneGemini.set(true);
+                    geminiStore.switchToView();
+                    // The other two openers repaint the header themselves; the
+                    // assistant's does not, so it is asked for here.
+                    updateHeaderButtonsVisibility();
+                },
+                options,
+            ),
+    },
+    notes: {
+        is: () => get(isNotesViewActive),
+        // The 'orphan' context is the one the section under the groups uses: with no
+        // list given it resolves the collection itself, honouring the user's
+        // "always / only on delete" preference.
+        show: (options) => openOverlayView('notes', () => showNotesView({ type: 'orphan' }), options),
+    },
+    gallery: {
+        is: () => get(isGalleryViewActive),
+        show: (options) => openOverlayView('gallery', () => showScreenshotGallery('orphan', null, null), options),
+    },
 };
+
+/**
+ * Opens one of the views that are painted over the group list.
+ *
+ * Two steps that have to look like one: put the page in the state the view sits on,
+ * then open the view. `overlayViewOpening` is what makes the header name the right
+ * thing for the whole of it — without it the title read "Listar Grupos" between the
+ * two, which is the last of the flash people were seeing when they opened the notes
+ * or the gallery from the popup.
+ *
+ * `skipReveal` keeps `switchMainView` from putting the group list on screen and from
+ * naming it, for the same reason.
+ */
+/**
+ * @param {() => Promise<void>} open Opens the view *and* repaints the header. Each
+ *   opener does the second part itself because only it knows what to say: the gallery
+ *   passes `updateHeaderButtonsVisibility` whether there are any screenshots, and a
+ *   bare call from here would answer "no" on its behalf — which is how the gallery lost
+ *   its download button.
+ */
+async function openOverlayView(name, open, { standalone = false } = {}) {
+    overlayViewOpening.set(name);
+    /**
+     * The group chrome goes now, in the same breath as the request.
+     *
+     * `body.groups-view-active` is what the stylesheet hangs the pomodoro panel, the
+     * music panel and the hidden search bar off, and `switchMainView` cannot be trusted
+     * to take it off here: asked for the view it is already on it returns at the first
+     * line and never reaches its own class handling. That is why switching to the notes
+     * *from* the group list left the pomodoro panel sitting under them.
+     */
+    document.body.classList.remove('groups-view-active', 'bookmarks-view-active');
+    try {
+        /**
+         * `skipHeaderButtons` for all three, which is what the assistant has always
+         * done and the other two did not.
+         *
+         * These views sit *on top of* the group list, so `currentMainView` is still
+         * 'groups' while one is open. Letting `switchMainView` paint the header at this
+         * point therefore paints the group list's toolbar — regroup, the backups, the
+         * view buttons — because the view being opened has not raised its flag yet. The
+         * opener raises it a few milliseconds later and the header is repainted
+         * correctly, and those few milliseconds are the flash.
+         */
+        await switchMainView('groups', false, { skipReveal: true, skipHeaderButtons: true });
+        // After `switchMainView`, which clears it: this page was opened *into* this
+        // view, so back means the page it came from and not the group list underneath.
+        standaloneOverlayView.set(standalone ? name : null);
+        await open();
+    } finally {
+        overlayViewOpening.set(null);
+    }
+}
+
+/** Whether anything is painted over the main view right now. */
+const isSpecialViewActive = () =>
+    get(isGeminiViewActive) || get(isNotesViewActive) || get(isGalleryViewActive) || get(isUrlViewActive);
+
+/**
+ * Leaves a view the page was opened straight into, by going back where it came from.
+ *
+ * Only when nothing has been navigated since: once there is history, back means the
+ * previous view and this page is where "back where it came from" already led.
+ *
+ * @param {'notes'|'gallery'|'gemini'} name
+ * @returns {Promise<boolean>} Whether it handled the press.
+ */
+async function leaveStandaloneOverlay(name) {
+    if (get(standaloneOverlayView) !== name || get(navigationHistory).length > 0) return false;
+    const { navSource } = await chrome.storage.local.get('navSource');
+    if (!navSource) return false;
+    window.location.href = navSource;
+    return true;
+}
 
 /**
  * What the main back button does. It was 65 lines inline inside
@@ -152,22 +277,18 @@ async function handleMainBackClick() {
     }
 
     if (get(isNotesViewActive)) {
+        if (await leaveStandaloneOverlay('notes')) return;
         closeNotesView();
         return;
     }
     if (get(isGalleryViewActive)) {
+        if (await leaveStandaloneOverlay('gallery')) return;
         closeScreenshotGallery();
         return;
     }
 
     if (get(isGeminiViewActive)) {
-        if (get(isStandaloneGemini) && get(navigationHistory).length === 0) {
-            const { navSource } = await chrome.storage.local.get('navSource');
-            if (navSource) {
-                window.location.href = navSource;
-                return;
-            }
-        }
+        if (await leaveStandaloneOverlay('gemini')) return;
         geminiStore.closeView(true);
         isGeminiViewActive.set(false);
         await restoreMainView();
@@ -274,6 +395,34 @@ function initDeleteAllContextButton() {
  */
 function initRuntimeMessageListener() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        /**
+         * A keyboard command asked for one of this page's views while the page is
+         * already open. Switching here rather than reloading the panel is the whole
+         * point: `pa` then `pl` used to close the panel instead of going back to the
+         * group list, because from the worker's side both are `listGroup.html`.
+         */
+        if (message.action === 'panelShowView') {
+            const view = PANEL_VIEWS[message.view];
+            if (!view) {
+                sendResponse({ switched: false });
+                return false;
+            }
+            // Already there: the worker turns that into the toggle the shortcut has
+            // always been and closes the panel.
+            if (view.is()) {
+                sendResponse({ switched: false });
+                return false;
+            }
+            // Answered now, not when the view has finished painting. All the worker is
+            // waiting to hear is whether this page took the request — the gallery and
+            // the notes read a database and can take seconds, and a worker holding a
+            // message channel open for that is a worker that eventually gives up and
+            // opens a second panel on top of the one that was already switching.
+            sendResponse({ switched: true });
+            view.show();
+            return false;
+        }
+
         if (message.action === 'refreshUI') {
             if (window.isBulkOpening || get(isBookmarksViewActive)) return;
             if (get(isProgrammaticActivation)) {
@@ -413,24 +562,20 @@ export async function initializeAllEvents() {
     const requestedView = urlParams.get('view') || 'groups';
     // Set to null to force switchMainView to always run (even for default 'groups' view)
     currentMainView.set(null);
-    if (requestedView === 'gemini') {
-        const { geminiStore: gs } = await import('../../stores/geminiStore.js');
-        await switchMainView('groups', false, { skipHeaderButtons: true });
-        isStandaloneGemini.set(true);
-        gs.switchToView();
-    } else if (requestedView === 'url') {
+    if (requestedView === 'url') {
         const targetUrl = urlParams.get('url');
         await switchMainView('groups', false);
         if (targetUrl) {
             await openUrlInPanel(decodeURIComponent(targetUrl));
         }
-    } else if (STANDALONE_VIEW_OPENERS[requestedView]) {
-        // Notes and gallery are not main views: they sit on top of the group list, and
-        // the 'orphan' context is the one the section under the groups opens — with no
-        // list passed in it resolves the collection itself, honouring the user's
+    } else if (PANEL_VIEWS[requestedView]) {
+        // Opened straight into it, so `standalone`: see `standaloneOverlayView`.
+        // The same table a running page uses, so opening straight into the gallery and
+        // switching to it later cannot end up meaning two different things. The 'orphan'
+        // context the openers pass is the one the section under the groups uses: with no
+        // list given it resolves the collection itself, honouring the user's
         // "always / only on delete" preference.
-        await switchMainView('groups', false);
-        await STANDALONE_VIEW_OPENERS[requestedView]();
+        await PANEL_VIEWS[requestedView].show({ standalone: true });
     } else {
         await switchMainView(requestedView, false);
     }
@@ -562,10 +707,13 @@ export async function initializeAllEvents() {
             if (e.altKey || isAltHeld || (altSequenceBuffer && (e.key === 'Enter' || e.code === 'Enter'))) {
                 if (e.key === 'Enter' || e.code === 'Enter') {
                     if (altSequenceBuffer) {
-                        const match = altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d+)$/);
+                        // The digits are optional: the letters alone name the group and
+                        // land on its first tab, and `0` is the shorthand for its last
+                        // one — the two tabs anybody reaches for without counting.
+                        const match = altSequenceBuffer.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d*)$/);
                         if (match) {
                             const groupPrefix = match[1].trim();
-                            const tabIndex = parseInt(match[2], 10);
+                            const tabIndex = match[2] === '' ? 1 : parseInt(match[2], 10);
                             chrome.runtime.sendMessage({
                                 action: 'navigateToGroupTab',
                                 groupPrefix,

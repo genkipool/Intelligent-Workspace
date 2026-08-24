@@ -26,6 +26,7 @@ import { applyTranslations, showNotification, showPersistentProgressNotification
 import {
     saveScreenshotToDb,
     getScreenshotFromDb,
+    getScreenshotsFromDb,
     deleteScreenshotFromDb,
     getAllScreenshotIdsFromDb,
     getAllNoteIdsFromDb,
@@ -33,6 +34,8 @@ import {
 } from '../../utils/db.js';
 
 import { STORAGE_KEYS, screenshotConfig } from './constants.js';
+import { imagesToPdfBlob, toPdfFileName } from '../../utils/pdf.js';
+import { openModal, showDownloadFormatModal } from '../stores/modalStore.js';
 import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob } from './utils.js';
 
 import {
@@ -69,37 +72,7 @@ export async function handleHeaderScreenshot(e) {
     const tabToCapture = tabs[0];
 
     if (e.ctrlKey || e.metaKey) {
-        let areaDataUrl = null;
-        await withTabActivation(tabToCapture, () => {
-            return new Promise((resolve) => {
-                const listener = (message) => {
-                    if (message.action === 'areaScreenshotProcessFinished') {
-                        chrome.runtime.onMessage.removeListener(listener);
-                        if (message.success) {
-                            areaDataUrl = message.dataUrl || null;
-                            renderGroups();
-                        } else {
-                            showNotification('errorTakingScreenshot', true);
-                        }
-                        resolve();
-                    }
-                };
-                chrome.runtime.onMessage.addListener(listener);
-
-                chrome.runtime.sendMessage({ action: 'injectAreaSelector', tabId: tabToCapture.id });
-            });
-        });
-
-        if (areaDataUrl) {
-            try {
-                const blob = await dataUrlToBlob(areaDataUrl);
-                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                showNotification('screenshotCopied');
-            } catch (e) {
-                console.error('Clipboard copy failed:', e);
-                showNotification('screenshotSavedNoCopy', true);
-            }
-        }
+        await captureTabArea(tabToCapture);
     } else {
         const window = await chrome.windows.get(tabToCapture.windowId);
         const originalState = {
@@ -189,23 +162,22 @@ export async function handleDownloadAllScreenshots() {
         return;
     }
 
-    const screenshotPromises = screenshotIds.map((sid) => getScreenshotFromDb(sid));
-    const screenshots = (await Promise.all(screenshotPromises)).filter(Boolean);
-
-    if (screenshots.length === 0) {
-        showNotification('noScreenshotsToDownload', true);
-        return;
-    }
-
-    screenshots.forEach((screenshot, index) => {
-        setTimeout(() => {
-            downloadScreenshot(screenshot.dataUrl, screenshot.title);
-        }, index * 300);
-    });
-    showNotification('allScreenshotsDownloading', false, [screenshots.length]);
+    const screenshots = (await Promise.all(screenshotIds.map((sid) => getScreenshotFromDb(sid)))).filter(Boolean);
+    askDownloadFormat(screenshots);
 }
 
-export async function withTabActivation(tab, actionCallback) {
+/**
+ * Brings a tab forward, runs something on it, and puts the browser back as it was.
+ *
+ * @param {chrome.tabs.Tab} tab
+ * @param {() => Promise<any>} actionCallback
+ * @param {{keepFocus?: boolean}} [options] `keepFocus` leaves the browser looking at
+ *   whatever it ended on. A batch of captures sets it: without it every single tab
+ *   bounced back to the tab the user was on before the next one was brought forward,
+ *   which is a whole group's worth of flicker for no reason. The caller that sets it
+ *   owns putting the focus back, once, at the end.
+ */
+export async function withTabActivation(tab, actionCallback, options = {}) {
     if (!tab || !tab.id) {
         console.error('withTabActivation: A valid tab object is required.');
         showNotification('errorTakingScreenshot', true);
@@ -291,136 +263,208 @@ export async function withTabActivation(tab, actionCallback) {
             }
         }
 
-        if (originalActiveTab && (originalActiveTab.id !== tab.id || originalActiveTab.windowId !== tab.windowId)) {
-            try {
-                await chrome.windows.update(originalActiveTab.windowId, {
-                    focused: true,
-                });
-                await chrome.tabs.update(originalActiveTab.id, {
-                    active: true,
-                });
-            } catch (restoreError) {
-                console.warn('Could not restore the original active tab:', restoreError.message);
-            }
-        }
-        if (originalTargetWindowState === 'minimized') {
-            try {
-                await chrome.windows.update(tab.windowId, {
-                    state: 'minimized',
-                });
-            } catch (restoreError) {
-                console.warn('Could not restore the target window state:', restoreError.message);
-            }
-        }
-        try {
-            await chrome.windows.update(originalSidePanelWindowId, {
-                focused: true,
-            });
-        } catch (focusError) {
-            console.warn('Could not refocus the side panel window:', focusError.message);
+        // Never `return` from here: a return inside a finally throws away whatever the
+        // try block was returning, which in this case is the capture itself.
+        if (!options.keepFocus) {
+            await restoreFocusAfterCapture(
+                originalActiveTab,
+                tab,
+                originalTargetWindowState,
+                originalSidePanelWindowId,
+            );
         }
     }
 }
 
-export async function handleScreenshotRequest(tab, context) {
+/** Puts back the tab, the window state and the focus a capture borrowed. */
+async function restoreFocusAfterCapture(originalActiveTab, tab, originalTargetWindowState, sidePanelWindowId) {
+    if (originalActiveTab && (!tab || originalActiveTab.id !== tab.id || originalActiveTab.windowId !== tab.windowId)) {
+        try {
+            await chrome.windows.update(originalActiveTab.windowId, { focused: true });
+            await chrome.tabs.update(originalActiveTab.id, { active: true });
+        } catch (restoreError) {
+            console.warn('Could not restore the original active tab:', restoreError.message);
+        }
+    }
+    if (originalTargetWindowState === 'minimized' && tab) {
+        try {
+            await chrome.windows.update(tab.windowId, { state: 'minimized' });
+        } catch (restoreError) {
+            console.warn('Could not restore the target window state:', restoreError.message);
+        }
+    }
+    try {
+        await chrome.windows.update(sidePanelWindowId ?? chrome.windows.WINDOW_ID_CURRENT, { focused: true });
+    } catch (focusError) {
+        console.warn('Could not refocus the side panel window:', focusError.message);
+    }
+}
+
+/**
+ * Where a capture of this tab belongs, in both the stable index and the session one.
+ *
+ * Pulled out of the capture itself because a full page taken in parts files several
+ * images under the very same keys, and working them out once per image was both
+ * wasteful and a chance for two parts to disagree.
+ *
+ * @returns {Promise<{contextKey: string, sessionGroupKey: string, sessionSubgroupKey: string|null}|null>}
+ */
+async function resolveScreenshotKeys(tab, context) {
+    const { type, id, secondaryId } = context;
+    const isUngroupedContext = (type === 'group' && id === -100) || (type === 'subgroup' && secondaryId === -100);
+
+    if (isUngroupedContext) {
+        if (type === 'group') {
+            return { contextKey: 'g_ungrouped', sessionGroupKey: 'g_ungrouped', sessionSubgroupKey: null };
+        }
+        return {
+            contextKey: `s_ungrouped_${id}`,
+            sessionGroupKey: 'g_ungrouped',
+            sessionSubgroupKey: `s_ungrouped_${id}`,
+        };
+    }
+
+    const groupInfoMap = await getGroupInfoMap();
+    const groupId = type === 'group' ? id : secondaryId;
+    const groupInfo = groupInfoMap.get(groupId);
+
+    if (!groupInfo || !groupInfo.key) {
+        console.warn(`Could not find a stable key for the group of tab ${tab.id}.`);
+        showNotification('errorNoGroupForScreenshot', true);
+        return null;
+    }
+
+    if (type === 'group') {
+        return { contextKey: `g_${groupInfo.key}`, sessionGroupKey: `g_${groupId}`, sessionSubgroupKey: null };
+    }
+    return {
+        contextKey: `s_${groupInfo.key}_${id}`,
+        sessionGroupKey: `g_${groupId}`,
+        sessionSubgroupKey: `s_${groupId}_${id}`,
+    };
+}
+
+/** Writes one image to the database and files its id under both session keys. */
+async function storeScreenshot(record, keys) {
+    await saveScreenshotToDb(record);
+
+    const { [STORAGE_KEYS.SCREENSHOTS]: indexes = {} } = await chrome.storage.session.get(STORAGE_KEYS.SCREENSHOTS);
+    (indexes[keys.sessionGroupKey] ||= []).push(record.id);
+    if (keys.sessionSubgroupKey) (indexes[keys.sessionSubgroupKey] ||= []).push(record.id);
+    await chrome.storage.session.set({ [STORAGE_KEYS.SCREENSHOTS]: indexes });
+
+    const countKey = keys.sessionSubgroupKey || keys.sessionGroupKey;
+    return indexes[countKey]?.length || 0;
+}
+
+/**
+ * Takes the picture, or pictures, of one tab.
+ *
+ * The three modes are the three things "capture" can mean, and the worker does the
+ * walking for the two that need it: it is the only side that can scroll a tab and
+ * capture it in the same turn.
+ *
+ * @returns {Promise<string[]>} One data URL per image the mode produces.
+ */
+async function captureImagesFor(tab, mode) {
+    if (mode === 'visible') {
+        const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+        return dataUrl ? [dataUrl] : [];
+    }
+
+    const response = await chrome.runtime.sendMessage({
+        action: 'captureFullPage',
+        tabId: tab.id,
+        mode: mode === 'fullPageParts' ? 'parts' : 'stitched',
+    });
+    if (!response?.success) throw new Error(response?.error || 'Full page capture failed');
+    return mode === 'fullPageParts' ? response.dataUrls || [] : [response.dataUrl];
+}
+
+/**
+ * Captures one tab and files it under a gallery context.
+ *
+ * @param {chrome.tabs.Tab} tab
+ * @param {{type: string, id: number|string, secondaryId?: number|string}} context
+ * @param {{mode?: 'visible'|'fullPage'|'fullPageParts', silent?: boolean, keepFocus?: boolean}} [options]
+ *   `silent` skips the clipboard copy and the per-capture notification, which is what
+ *   a batch of tabs wants; `keepFocus` leaves the browser on the tab it ended on, for
+ *   a caller that is about to capture another one.
+ * @returns {Promise<number>} How many images were saved.
+ */
+export async function handleScreenshotRequest(tab, context, options = {}) {
+    const { mode = 'visible', silent = false, keepFocus = false } = options;
     const totalCount = await getTotalScreenshotCount();
     const MAX_SCREENSHOTS = 100;
 
     if (totalCount >= MAX_SCREENSHOTS) {
         showNotification('screenshotLimitReached', true);
-        return;
+        return 0;
+    }
+
+    if (!context) {
+        console.warn('Screenshot context is undefined, using fallback.');
+        context = { type: 'group', id: tab.groupId || -100 };
     }
 
     isPerformingProgrammaticUpdate.set(true);
     try {
-        const dataUrl = await withTabActivation(tab, async () => {
-            return await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-        });
+        const keys = await resolveScreenshotKeys(tab, context);
+        if (!keys) return 0;
 
-        if (!dataUrl) {
-            return;
+        const images = await withTabActivation(tab, () => captureImagesFor(tab, mode), { keepFocus });
+        if (!images || images.length === 0) return 0;
+
+        // The limit counts images, not captures: a long page taken in parts must not
+        // be the thing that overruns it.
+        const room = Math.max(0, MAX_SCREENSHOTS - totalCount);
+        const kept = images.slice(0, room);
+        if (kept.length < images.length) showNotification('screenshotLimitReached', true);
+
+        let newCount = 0;
+        for (const [position, dataUrl] of kept.entries()) {
+            const title =
+                kept.length > 1
+                    ? chrome.i18n.getMessage('fullPagePartTitle', [
+                          tab.title || '',
+                          String(position + 1),
+                          String(kept.length),
+                      ]) || `${tab.title} (${position + 1}/${kept.length})`
+                    : tab.title;
+
+            newCount = await storeScreenshot(
+                {
+                    id: Date.now() + Math.random(),
+                    dataUrl,
+                    title,
+                    url: tab.url,
+                    contextKey: keys.contextKey,
+                    isPersistent: false,
+                    // What tells the gallery to badge this one: a whole page is a
+                    // different kind of thing from a screenful of it.
+                    isFullPage: mode !== 'visible',
+                },
+                keys,
+            );
         }
 
-        const screenshotId = Date.now() + Math.random();
-
-        if (!context) {
-            console.warn('Screenshot context is undefined, using fallback.');
-            context = { type: 'group', id: tab.groupId || -100 };
-        }
-
-        const { type, id, secondaryId } = context;
-        let screenshotContextKey;
-        let sessionGroupKey;
-        let sessionSubgroupKey = null;
-
-        const isUngroupedContext = (type === 'group' && id === -100) || (type === 'subgroup' && secondaryId === -100);
-
-        if (isUngroupedContext) {
-            sessionGroupKey = 'g_ungrouped';
-            if (type === 'group') {
-                screenshotContextKey = 'g_ungrouped';
-            } else {
-                screenshotContextKey = `s_ungrouped_${id}`;
-                sessionSubgroupKey = screenshotContextKey;
+        // Only a single image goes to the clipboard; a handful of them would leave
+        // whichever happened to be last, which is not what anybody asked for.
+        if (!silent && kept.length === 1) {
+            try {
+                const blob = await dataUrlToBlob(kept[0]);
+                await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                showNotification('screenshotSavedAndCopied');
+            } catch (clipboardError) {
+                console.error('Error copying screenshot to clipboard:', clipboardError);
+                showNotification('screenshotSavedNoCopy', true);
             }
-        } else {
-            const groupInfoMap = await getGroupInfoMap();
-            const groupId = type === 'group' ? id : secondaryId;
-            const groupInfo = groupInfoMap.get(groupId);
-
-            if (!groupInfo || !groupInfo.key) {
-                console.warn(`Could not find a stable key for the group of tab ${tab.id}.`);
-                showNotification('errorNoGroupForScreenshot', true);
-                return;
-            }
-            const stableGroupKey = groupInfo.key;
-
-            sessionGroupKey = `g_${groupId}`;
-            if (type === 'group') {
-                screenshotContextKey = `g_${stableGroupKey}`;
-            } else {
-                screenshotContextKey = `s_${stableGroupKey}_${id}`;
-                sessionSubgroupKey = `s_${groupId}_${id}`;
-            }
-        }
-
-        const newScreenshot = {
-            id: screenshotId,
-            dataUrl: dataUrl,
-            title: tab.title,
-            url: tab.url,
-            contextKey: screenshotContextKey,
-            isPersistent: false,
-        };
-
-        await saveScreenshotToDb(newScreenshot);
-
-        const { [STORAGE_KEYS.SCREENSHOTS]: storedScreenshotIndexes = {} } = await chrome.storage.session.get(
-            STORAGE_KEYS.SCREENSHOTS,
-        );
-
-        if (!storedScreenshotIndexes[sessionGroupKey]) storedScreenshotIndexes[sessionGroupKey] = [];
-        storedScreenshotIndexes[sessionGroupKey].push(newScreenshot.id);
-
-        if (sessionSubgroupKey) {
-            if (!storedScreenshotIndexes[sessionSubgroupKey]) storedScreenshotIndexes[sessionSubgroupKey] = [];
-            storedScreenshotIndexes[sessionSubgroupKey].push(newScreenshot.id);
-        }
-
-        await chrome.storage.session.set({ [STORAGE_KEYS.SCREENSHOTS]: storedScreenshotIndexes });
-
-        try {
-            const blob = await dataUrlToBlob(dataUrl);
-            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        } else if (!silent) {
             showNotification('screenshotSavedAndCopied');
-        } catch (clipboardError) {
-            console.error('Error copying screenshot to clipboard:', clipboardError);
-            showNotification('screenshotSavedNoCopy', true);
         }
 
-        const keyForCount = sessionSubgroupKey || sessionGroupKey;
-        const newCount = storedScreenshotIndexes[keyForCount]?.length || 0;
         updateScreenshotCountBadge(context, newCount);
+        return kept.length;
     } catch (error) {
         console.error('Error processing screenshot:', error);
         if (
@@ -430,11 +474,118 @@ export async function handleScreenshotRequest(tab, context) {
         ) {
             showNotification('screenshotStorageFull', true);
         } else {
-            showNotification('errorTakingScreenshot', true);
+            showNotification(mode === 'visible' ? 'errorTakingScreenshot' : 'errorCapturingFullPage', true);
         }
+        return 0;
     } finally {
         isPerformingProgrammaticUpdate.set(false);
     }
+}
+
+/**
+ * The area picker over one tab.
+ *
+ * The selector is injected into the tab and the cropped image comes back as a
+ * broadcast rather than as a response, because the selection happens long after the
+ * request returns — which is why this waits on a one-off listener. The header button,
+ * the tab card and the overflow menu all used to carry their own copy of this dance.
+ *
+ * @param {chrome.tabs.Tab} tab
+ */
+export async function captureTabArea(tab) {
+    if (!tab?.id) return;
+
+    let areaDataUrl = null;
+    await withTabActivation(
+        tab,
+        () =>
+            new Promise((resolve) => {
+                const listener = (message) => {
+                    if (message.action !== 'areaScreenshotProcessFinished') return;
+                    chrome.runtime.onMessage.removeListener(listener);
+                    if (message.success) areaDataUrl = message.dataUrl || null;
+                    else showNotification('errorTakingScreenshot', true);
+                    resolve();
+                };
+                chrome.runtime.onMessage.addListener(listener);
+                chrome.runtime.sendMessage({ action: 'injectAreaSelector', tabId: tab.id });
+            }),
+    );
+
+    // The badge on the card counts what the gallery holds, and it just changed.
+    await renderGroups();
+
+    if (!areaDataUrl) return;
+    try {
+        const blob = await dataUrlToBlob(areaDataUrl);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showNotification('screenshotCopied');
+    } catch (error) {
+        console.error('Clipboard copy failed:', error);
+        showNotification('screenshotSavedNoCopy', true);
+    }
+}
+
+/** Pages a capture can actually be taken from; Chrome refuses its own and the store. */
+export function isCapturableUrl(url) {
+    return typeof url === 'string' && /^(https?|file):/i.test(url);
+}
+
+/**
+ * Captures every tab of a group, one after another.
+ *
+ * They cannot go in parallel: each capture brings its tab to the front, and Chrome
+ * only ever captures the tab that is actually visible. What they must not do either
+ * is bounce back to where the user was between each one — that is why every capture
+ * is asked to keep the focus, and the browser is put back once, here, at the end.
+ *
+ * @param {chrome.tabs.Tab[]} tabs
+ * @param {{type: string, id: number|string, secondaryId?: number|string}} context
+ * @param {{mode?: 'visible'|'fullPage'|'fullPageParts'}} [options]
+ */
+export async function captureGroupTabs(tabs, context, options = {}) {
+    const capturable = (tabs || []).filter((tab) => tab && isCapturableUrl(tab.url));
+    if (capturable.length === 0) {
+        showNotification('noTabsToCapture', true);
+        return;
+    }
+
+    // Where the browser was looking before the walk started, so it can be put back.
+    const [originalActiveTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+
+    const progress = await showPersistentProgressNotification('capturingGroupTabs', [0, capturable.length]);
+    let saved = 0;
+    let lastTab = null;
+    try {
+        for (const [position, tab] of capturable.entries()) {
+            await progress.updateProgress([position + 1, capturable.length]);
+            // A tab closed while the batch was running is skipped, not fatal.
+            const stillOpen = await chrome.tabs.get(tab.id).catch(() => null);
+            if (!stillOpen) continue;
+            lastTab = stillOpen;
+            saved += await handleScreenshotRequest(stillOpen, context, { ...options, silent: true, keepFocus: true });
+        }
+    } finally {
+        progress.close();
+        await restoreFocusAfterCapture(originalActiveTab, lastTab, null, chrome.windows.WINDOW_ID_CURRENT);
+    }
+
+    await renderGroups();
+    if (saved > 0) showNotification('groupTabsCaptured', false, [saved]);
+}
+
+/**
+ * Captures a group the caller only knows by its id — the overflow menu holds a card,
+ * not the tab list the group card itself already has.
+ *
+ * @param {number|string} groupId
+ * @param {{mode?: 'visible'|'fullPage'|'fullPageParts'}} [options]
+ */
+export async function captureGroupTabsById(groupId, options = {}) {
+    const numericId = Number(groupId);
+    if (!Number.isFinite(numericId)) return;
+    const tabs = await chrome.tabs.query({ groupId: numericId });
+    await captureGroupTabs(tabs, { type: 'group', id: numericId }, options);
 }
 
 /**
@@ -450,19 +601,34 @@ export async function resolveScreenshotIdsForContext(type, id, secondaryId, orph
         if (orphanScreenshots) {
             return orphanScreenshots.map((s) => s.id);
         }
-        const { [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' } = await chrome.storage.sync.get(
-            STORAGE_KEYS.ORPHAN_SECTION_DISPLAY,
-        );
+        // Which list to show comes from synced storage, the list itself from IndexedDB,
+        // and neither answer depends on the other. Asked one after the other, the wait
+        // for a sync read — which is the slow one, and slower still on a profile that
+        // is actually syncing — sat in front of the gallery for no reason.
+        const [{ [STORAGE_KEYS.ORPHAN_SECTION_DISPLAY]: displayMode = 'always' }, allIds] = await Promise.all([
+            chrome.storage.sync.get(STORAGE_KEYS.ORPHAN_SECTION_DISPLAY),
+            getAllScreenshotIdsFromDb(),
+        ]);
         if (displayMode === 'always') {
-            return await getAllScreenshotIdsFromDb();
+            return allIds;
         }
         const orphans = await getOrphanScreenshots();
         return orphans.map((s) => s.id);
     }
 
-    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
-        STORAGE_KEYS.SCREENSHOTS,
-    );
+    // Three reads that know nothing about each other: the session's index of what was
+    // captured this run, the archived list, and the map from live group ids to the
+    // stable keys the archive files things under. They are started together and the
+    // group map — a tab-group query, cheap beside two storage round trips — is only
+    // waited for if there is anything archived to match against it.
+    const sessionPromise = chrome.storage.session.get(STORAGE_KEYS.SCREENSHOTS);
+    const persistentPromise = chrome.storage.local.get(STORAGE_KEYS.PERSISTENT_SCREENSHOTS);
+    // Started before anyone knows whether it will be needed, so it carries its own
+    // failure: an unwatched promise that rejects is an unhandled rejection, and there
+    // is nothing to do about a group map that cannot be read but treat it as empty.
+    const groupInfoPromise = getGroupInfoMap().catch(() => new Map());
+
+    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await sessionPromise;
     const sessionScreenshotIds = [];
     if (type === 'group') {
         const groupKey = id === -100 ? 'g_ungrouped' : `g_${id}`;
@@ -483,20 +649,19 @@ export async function resolveScreenshotIdsForContext(type, id, secondaryId, orph
     }
     const finalScreenshotIds = new Set(sessionScreenshotIds);
 
-    const { [STORAGE_KEYS.PERSISTENT_SCREENSHOTS]: persistentIdsArray = [] } = await chrome.storage.local.get(
-        STORAGE_KEYS.PERSISTENT_SCREENSHOTS,
-    );
+    const { [STORAGE_KEYS.PERSISTENT_SCREENSHOTS]: persistentIdsArray = [] } = await persistentPromise;
 
     if (persistentIdsArray.length > 0) {
-        const groupInfoMap = await getGroupInfoMap();
+        const groupInfoMap = await groupInfoPromise;
         const groupId = type === 'group' ? id : secondaryId;
         const groupInfo = groupInfoMap.get(groupId);
 
         if (groupInfo && groupInfo.key) {
             const stableGroupKey = groupInfo.key;
 
-            const persistentPromises = persistentIdsArray.map((pid) => getScreenshotFromDb(pid));
-            const allPersistentScreenshots = (await Promise.all(persistentPromises)).filter(Boolean);
+            // One transaction rather than one per archived image: only the context key
+            // of each is wanted here, and there can be a great many of them.
+            const allPersistentScreenshots = [...(await getScreenshotsFromDb(persistentIdsArray)).values()];
 
             allPersistentScreenshots.forEach((screenshot) => {
                 if (!screenshot.contextKey) return;
@@ -528,7 +693,13 @@ export async function resolveScreenshotIdsForContext(type, id, secondaryId, orph
 export async function showScreenshotGallery(type, id, secondaryId, orphanScreenshots = null) {
     closeUrlInPanel(true);
     isGalleryViewActive.set(true);
-    currentGalleryContext.set({ type, id, secondaryId });
+    // A gallery opened with a list of its own — the orphan section hands one over —
+    // is remembered as that list and not only as its context. Without it a redraw
+    // after a delete had to guess what the gallery had been showing, and it guessed
+    // by asking what counts as orphaned now, which is a different question and a
+    // different set of images.
+    const explicitIds = orphanScreenshots ? orphanScreenshots.map((item) => item.id) : null;
+    currentGalleryContext.set({ type, id, secondaryId, explicitIds });
 
     const groupListContainer = document.getElementById('groups-list');
     const hiddenGroupsContainer = document.getElementById('hidden-groups-container');
@@ -550,12 +721,16 @@ export async function showScreenshotGallery(type, id, secondaryId, orphanScreens
 
     listGroupStore.updateState({
         isGalleryViewActive: true,
-        currentGalleryContext: { type, id, secondaryId },
+        currentGalleryContext: { type, id, secondaryId, explicitIds },
     });
+
+    // Before the grid, not after it: whether there is anything to download is already
+    // known here, and making the button wait for every picture to be read out of the
+    // database is what made it turn up late — long after the header it belongs to.
+    updateHeaderButtonsVisibility({ screenshotsExistInGallery: screenshotIds.length > 0 });
 
     await renderGalleryGrid(screenshotIds);
 
-    updateHeaderButtonsVisibility({ screenshotsExistInGallery: screenshotIds.length > 0 });
     updateDuplicateCountBadge();
     updateScrollButtons();
 }
@@ -580,55 +755,74 @@ async function renderGalleryGrid(screenshotIds) {
     const itemTemplate = document.getElementById('gallery-item-template');
     if (!itemTemplate) return;
 
+    // Every card is put on the page first, empty, and then filled. The grid therefore
+    // has its final shape before a single picture has been read, so nothing jumps
+    // around as they arrive.
+    const cards = new Map();
     for (const screenshotId of screenshotIds) {
         const galleryItem = itemTemplate.content.cloneNode(true).firstElementChild;
-        const img = galleryItem.querySelector('.gallery-image');
-        const pinBtn = galleryItem.querySelector('.gallery-pin-btn');
         grid.appendChild(galleryItem);
+        cards.set(screenshotId, galleryItem);
+    }
 
-        getScreenshotFromDb(screenshotId).then((fullScreenshot) => {
-            if (!fullScreenshot) {
-                galleryItem.remove();
-                return;
-            }
-            img.src = fullScreenshot.dataUrl;
-            img.alt = `Screenshot of ${fullScreenshot.title}`;
-            galleryItem.querySelector('.gallery-item-title').textContent = fullScreenshot.title;
+    // One transaction for the lot, filling each card the moment its record lands.
+    await getScreenshotsFromDb(screenshotIds, (screenshotId, fullScreenshot) => {
+        const galleryItem = cards.get(screenshotId);
+        if (!galleryItem) return;
+        if (!fullScreenshot) {
+            galleryItem.remove();
+            return;
+        }
+        fillGalleryItem(galleryItem, fullScreenshot);
+    });
+}
 
-            galleryItem.addEventListener('click', () => chrome.tabs.create({ url: 'https://excalidraw.com/' }));
-            galleryItem.querySelector('.copy-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                copyScreenshot(fullScreenshot.dataUrl);
-            });
-            galleryItem.querySelector('.download-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                downloadScreenshot(fullScreenshot.dataUrl, fullScreenshot.title);
-            });
-            galleryItem.querySelector('.delete-btn').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                await deleteScreenshot(fullScreenshot.id);
-            });
+/** Puts one screenshot into one card and wires the five things that can be done to it. */
+function fillGalleryItem(galleryItem, fullScreenshot) {
+    const img = galleryItem.querySelector('.gallery-image');
+    const pinBtn = galleryItem.querySelector('.gallery-pin-btn');
 
-            if (pinBtn) {
-                const isPersistent = fullScreenshot.isPersistent || false;
-                pinBtn.classList.toggle('active', isPersistent);
-                pinBtn.setAttribute('data-i18n-title', isPersistent ? 'unpinScreenshot' : 'pinScreenshot');
-                pinBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleScreenshotPersistence(fullScreenshot, pinBtn);
-                });
-            }
+    img.src = fullScreenshot.dataUrl;
+    img.alt = `Screenshot of ${fullScreenshot.title}`;
+    galleryItem.querySelector('.gallery-item-title').textContent = fullScreenshot.title;
 
-            const ocrBtn = galleryItem.querySelector('.gallery-ocr-btn');
-            if (ocrBtn) {
-                ocrBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleOcrScreenshot(fullScreenshot.dataUrl, ocrBtn);
-                });
-            }
-            applyTranslations(galleryItem);
+    galleryItem.addEventListener('click', () => chrome.tabs.create({ url: 'https://excalidraw.com/' }));
+    galleryItem.querySelector('.copy-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyScreenshot(fullScreenshot.dataUrl);
+    });
+    // One download button, and it asks what shape the image should leave in.
+    galleryItem.querySelector('.download-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        askDownloadFormat([fullScreenshot]);
+    });
+
+    // A capture of a whole page says so, now that it no longer has a button of its
+    // own to set it apart from a capture of one screenful.
+    galleryItem.classList.toggle('is-full-page', Boolean(fullScreenshot.isFullPage));
+    galleryItem.querySelector('.delete-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await deleteScreenshot(fullScreenshot.id);
+    });
+
+    if (pinBtn) {
+        const isPersistent = fullScreenshot.isPersistent || false;
+        pinBtn.classList.toggle('active', isPersistent);
+        pinBtn.setAttribute('data-i18n-title', isPersistent ? 'unpinScreenshot' : 'pinScreenshot');
+        pinBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleScreenshotPersistence(fullScreenshot, pinBtn);
         });
     }
+
+    const ocrBtn = galleryItem.querySelector('.gallery-ocr-btn');
+    if (ocrBtn) {
+        ocrBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleOcrScreenshot(fullScreenshot.dataUrl, ocrBtn);
+        });
+    }
+    applyTranslations(galleryItem);
 }
 
 export async function clearAllContextDataUI(contextToDelete, config) {
@@ -950,6 +1144,64 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
     }
 }
 
+/**
+ * Asks which shape the images should leave in, then writes them.
+ *
+ * One dialog serves the download button of a single card and the one in the gallery
+ * header, because the question is the same either way: the picture as it was taken,
+ * or a document. Choosing PDF for several captures makes one document of them all
+ * rather than a folder full of one-page files.
+ *
+ * @param {Array<{dataUrl: string, title: string}>} screenshots
+ */
+export function askDownloadFormat(screenshots) {
+    const images = (screenshots || []).filter((item) => item?.dataUrl);
+    if (images.length === 0) {
+        showNotification('noScreenshotsToDownload', true);
+        return;
+    }
+    openModal(showDownloadFormatModal, {
+        screenshots: images,
+        onConfirm: (formats) => downloadScreenshots(images, formats),
+    });
+}
+
+/**
+ * Writes the images in whichever formats were asked for — both, if both were.
+ * @param {Array<'png'|'pdf'>} formats
+ */
+export async function downloadScreenshots(images, formats) {
+    const wanted = new Set(Array.isArray(formats) ? formats : [formats]);
+
+    if (wanted.has('png')) {
+        // Chrome drops downloads that arrive in the same tick, hence the stagger.
+        images.forEach((screenshot, position) => {
+            setTimeout(() => downloadScreenshot(screenshot.dataUrl, screenshot.title), position * 300);
+        });
+        if (images.length > 1) showNotification('allScreenshotsDownloading', false, [images.length]);
+    }
+
+    if (!wanted.has('pdf')) return;
+
+    showNotification('generatingPdf');
+    try {
+        const blob = await imagesToPdfBlob(images.map((screenshot) => screenshot.dataUrl));
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = toPdfFileName(images.length > 1 ? 'gallery' : images[0].title);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        // Revoked on a later turn: doing it straight away can beat the download.
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        showNotification('pdfDownloaded');
+    } catch (error) {
+        console.error('Error building the PDF:', error);
+        showNotification('errorGeneratingPdf', true);
+    }
+}
+
 export function downloadScreenshot(dataUrl, title) {
     const link = document.createElement('a');
     link.href = dataUrl;
@@ -1003,15 +1255,25 @@ export async function deleteScreenshot(screenshotId) {
     // having removed it from there left the gallery showing a card that no longer
     // exists.
     if (get(isGalleryViewActive) && get(currentGalleryContext)) {
-        const { type, id, secondaryId } = get(currentGalleryContext);
+        const { type, id, secondaryId, explicitIds } = get(currentGalleryContext);
         // Only an empty gallery goes back to the group list; while images are left the
-        // view stays where it is, redrawn without the one that just went.
-        const remaining = await resolveScreenshotIdsForContext(type, id, secondaryId);
+        // view stays where it is, redrawn without the one that just went. A gallery
+        // showing a list of its own is redrawn from that same list minus the deleted
+        // image: re-deriving it emptied a gallery of every capture there is down to
+        // the handful that happen to be orphaned.
+        const remaining = explicitIds
+            ? explicitIds.filter((existingId) => existingId !== screenshotId)
+            : await resolveScreenshotIdsForContext(type, id, secondaryId);
 
         if (remaining.length === 0) {
             await closeScreenshotGallery();
-        } else if (type === 'orphan') {
-            await showScreenshotGallery(type, id, secondaryId, await getOrphanScreenshots());
+        } else if (explicitIds) {
+            await showScreenshotGallery(
+                type,
+                id,
+                secondaryId,
+                remaining.map((remainingId) => ({ id: remainingId })),
+            );
         } else {
             await showScreenshotGallery(type, id, secondaryId);
         }

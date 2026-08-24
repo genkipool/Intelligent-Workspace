@@ -12,6 +12,7 @@
     import AddToBookmarkModal from './AddToBookmarkModal.svelte';
     import DeleteHistoryConfirmModal from './DeleteHistoryConfirmModal.svelte';
     import RadioStationsModal from './RadioStationsModal.svelte';
+    import DownloadFormatModal from '../screenshots/DownloadFormatModal.svelte';
     import { t } from '../../stores/i18nStore.js';
 
     import {
@@ -28,6 +29,7 @@
         showAddToBookmarkModal,
         showDeleteHistoryConfirmModal,
         showRadioStationsModal,
+        showDownloadFormatModal,
         modalData,
         openModal,
         closeModal,
@@ -211,4 +213,13 @@
 
 {#if $showRadioStationsModal}
     <RadioStationsModal show={$showRadioStationsModal} onClose={() => closeModal(showRadioStationsModal)} />
+{/if}
+
+{#if $showDownloadFormatModal}
+    <DownloadFormatModal
+        show={$showDownloadFormatModal}
+        count={$modalData?.screenshots?.length || 1}
+        onConfirm={(format) => $modalData?.onConfirm?.(format)}
+        onClose={() => closeModal(showDownloadFormatModal)}
+    />
 {/if}

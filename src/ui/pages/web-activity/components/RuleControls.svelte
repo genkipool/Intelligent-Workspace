@@ -14,6 +14,9 @@
      */
     import { t, tt } from '../../../stores/i18nStore.js';
 
+    /** The one size the three glyphs are drawn at. */
+    const ICON = 13;
+
     let {
         /** Whether this half of the rule has anything to act on. */
         isSet = false,
@@ -37,9 +40,15 @@
     const toggleTitle = $derived(!isSet ? $tt('webActivityNothingToToggle') : $tt(enabled ? disableKey : enableKey));
 </script>
 
+<!--
+    One size for all three glyphs. They sit in a row of identical 22px boxes and are
+    read as one control with three parts, so a pencil a pixel bigger than the cross
+    beside it is the sort of thing nobody can name and everybody sees. `ICON` is the
+    single number; changing it changes all three.
+-->
 <span class="wa-rule-controls">
     <button class="wa-icon-btn wa-edit-btn" type="button" title={editTitle} aria-label={editTitle} onclick={onEdit}>
-        <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-edit"></use></svg>
+        <svg width={ICON} height={ICON} aria-hidden="true" focusable="false"><use href="#wa-edit"></use></svg>
     </button>
     <button
         class="wa-icon-btn wa-power-btn"
@@ -51,7 +60,7 @@
         aria-pressed={isSet && enabled}
         onclick={() => onToggle(!enabled)}
     >
-        <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-power"></use></svg>
+        <svg width={ICON} height={ICON} aria-hidden="true" focusable="false"><use href="#wa-power"></use></svg>
     </button>
     <button
         class="wa-icon-btn wa-icon-btn-danger"
@@ -61,6 +70,6 @@
         aria-label={$t(clearKey)}
         onclick={onClear}
     >
-        <svg width="11" height="11" aria-hidden="true" focusable="false"><use href="#wa-close"></use></svg>
+        <svg width={ICON} height={ICON} aria-hidden="true" focusable="false"><use href="#wa-close"></use></svg>
     </button>
 </span>

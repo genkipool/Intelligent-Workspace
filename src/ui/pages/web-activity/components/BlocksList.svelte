@@ -15,10 +15,30 @@
     import { fmtDur } from '../../../services/dashboard/format.js';
     import { getThemeScoreColor } from '../../../services/dashboard/chartTheme.js';
 
-    let { rows = [], onEditLimit, onEditSchedule, onSnooze } = $props();
+    let { rows = [], snoozeMinutes = 5, onEditLimit, onSnooze } = $props();
 
     const faviconFor = (domain) =>
         `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent('https://' + domain)}&size=16`;
+
+    function blockedTab(row) {
+        const reason = row?.verdict?.reason;
+        if (reason === 'weekly') return 'weekly';
+        if (reason === 'schedule' || reason === 'always') return 'schedule';
+        if (reason === 'daily') return 'daily';
+        if (
+            row?.limit?.weeklyLimitSeconds > 0 &&
+            (row?.verdict?.weekUsedSeconds ?? 0) >= row.limit.weeklyLimitSeconds
+        ) {
+            return 'weekly';
+        }
+        if (row?.limit?.dailyLimitSeconds > 0 && (row?.verdict?.usedSeconds ?? 0) >= row.limit.dailyLimitSeconds) {
+            return 'daily';
+        }
+        if (row?.limit?.blockAlways || (row?.limit?.schedules?.length ?? 0) > 0) {
+            return 'schedule';
+        }
+        return 'daily';
+    }
 
     /** `22:00`, for the minute of day the next allowed window opens at. */
     function unblocksAt(verdict) {
@@ -58,93 +78,88 @@
             <div class="wa-block-row">
                 <span class="wa-block-mark" aria-hidden="true"></span>
 
-                <img class="si-favicon wa-block-favicon" src={faviconFor(row.domain)} alt="" loading="lazy" />
-
-                <div class="wa-block-main">
-                    <div class="wa-block-line">
-                        <span class="wa-block-name" title={row.domain}>{row.domain}</span>
-                        <span
-                            class="wa-badge wa-badge-blocked"
-                            title={$tt('webActivityBlockedReason_' + row.verdict.reason)}
-                        >
-                            {$t('webActivityStateBlocked_' + row.verdict.reason)}
-                        </span>
-                        {#if row.verdict.snoozed}
-                            <span class="tl-chip">{$t('webActivitySnoozed')}</span>
-                        {/if}
+                <div class="wa-block-content">
+                    <div class="wa-block-header">
+                        <img class="si-favicon wa-block-favicon" src={faviconFor(row.domain)} alt="" loading="lazy" />
+                        <div class="wa-block-line">
+                            <span class="wa-block-name" title={row.domain}>{row.domain}</span>
+                            <span
+                                class="wa-badge wa-badge-blocked"
+                                title={$tt('webActivityBlockedReason_' + row.verdict.reason)}
+                            >
+                                {$t('webActivityStateBlocked_' + row.verdict.reason)}
+                            </span>
+                            {#if row.verdict.snoozed}
+                                <span class="tl-chip">{$t('webActivitySnoozed')}</span>
+                            {/if}
+                        </div>
                     </div>
-                    <div class="wa-block-why">{$t('webActivityBlockedReason_' + row.verdict.reason)}</div>
 
-                    {#if row.verdict.limitSeconds > 0}
-                        <div class="wa-block-meter" title={$tt('webActivityMeterDaily')}>
-                            <span class="wa-block-meter-label">{$t('webActivityMeterDaily')}</span>
-                            <div class="eff-bar">
-                                <div
-                                    class="eff-bar-fill"
-                                    style="width:{row.verdict.percent}%;background:{getThemeScoreColor(
-                                        100 - row.verdict.percent,
-                                    )}"
-                                ></div>
+                    <div class="wa-block-body">
+                        <div class="wa-block-why">{$t('webActivityBlockedReason_' + row.verdict.reason)}</div>
+
+                        {#if row.verdict.limitSeconds > 0}
+                            <div class="wa-block-meter" title={$tt('webActivityMeterDaily')}>
+                                <span class="wa-block-meter-label">{$t('webActivityMeterDaily')}</span>
+                                <div class="eff-bar">
+                                    <div
+                                        class="eff-bar-fill"
+                                        style="width:{row.verdict.percent}%;background:{getThemeScoreColor(
+                                            100 - row.verdict.percent,
+                                        )}"
+                                    ></div>
+                                </div>
+                                <span class="wa-block-meter-val"
+                                    >{fmtDur(row.verdict.usedSeconds)} / {fmtDur(row.verdict.limitSeconds)}</span
+                                >
                             </div>
-                            <span class="wa-block-meter-val"
-                                >{fmtDur(row.verdict.usedSeconds)} / {fmtDur(row.verdict.limitSeconds)}</span
-                            >
-                        </div>
-                    {/if}
-                    {#if row.verdict.weekLimitSeconds > 0}
-                        <div class="wa-block-meter" title={$tt('webActivityMeterWeekly')}>
-                            <span class="wa-block-meter-label">{$t('webActivityMeterWeekly')}</span>
-                            <div class="eff-bar">
-                                <div
-                                    class="eff-bar-fill"
-                                    style="width:{row.verdict.weekPercent}%;background:{getThemeScoreColor(
-                                        100 - row.verdict.weekPercent,
-                                    )}"
-                                ></div>
+                        {/if}
+                        {#if row.verdict.weekLimitSeconds > 0}
+                            <div class="wa-block-meter" title={$tt('webActivityMeterWeekly')}>
+                                <span class="wa-block-meter-label">{$t('webActivityMeterWeekly')}</span>
+                                <div class="eff-bar">
+                                    <div
+                                        class="eff-bar-fill"
+                                        style="width:{row.verdict.weekPercent}%;background:{getThemeScoreColor(
+                                            100 - row.verdict.weekPercent,
+                                        )}"
+                                    ></div>
+                                </div>
+                                <span class="wa-block-meter-val"
+                                    >{fmtDur(row.verdict.weekUsedSeconds)} / {fmtDur(
+                                        row.verdict.weekLimitSeconds,
+                                    )}</span
+                                >
                             </div>
-                            <span class="wa-block-meter-val"
-                                >{fmtDur(row.verdict.weekUsedSeconds)} / {fmtDur(row.verdict.weekLimitSeconds)}</span
+                        {/if}
+
+                        {#if lifts}<div class="wa-block-lifts">{lifts}</div>{/if}
+                    </div>
+
+                    <div class="wa-row-actions wa-block-actions-col">
+                        <button
+                            class="wa-icon-btn"
+                            type="button"
+                            title={$t('webActivitySnoozeWithTime', [String(snoozeMinutes)])}
+                            aria-label={$t('webActivityBlockedSnooze', [String(snoozeMinutes)])}
+                            onclick={() => onSnooze(row.domain)}
+                        >
+                            <svg width="14" height="14" aria-hidden="true" focusable="false"
+                                ><use href="#wa-snooze"></use></svg
                             >
-                        </div>
-                    {/if}
-
-                    {#if lifts}<div class="wa-block-lifts">{lifts}</div>{/if}
-                </div>
-
-                <div class="wa-row-actions wa-block-actions-col">
-                    <button
-                        class="wa-icon-btn"
-                        type="button"
-                        title={$tt('webActivitySnooze')}
-                        aria-label={$t('webActivitySnooze')}
-                        onclick={() => onSnooze(row.domain)}
-                    >
-                        <svg width="14" height="14" aria-hidden="true" focusable="false"
-                            ><use href="#wa-snooze"></use></svg
+                        </button>
+                        <button
+                            class="wa-icon-btn"
+                            type="button"
+                            title={$tt('webActivityConfigureLimit')}
+                            aria-label={$t('webActivityConfigureLimit')}
+                            onclick={() => onEditLimit(row.domain, blockedTab(row))}
                         >
-                    </button>
-                    <button
-                        class="wa-icon-btn"
-                        type="button"
-                        title={$tt('webActivityConfigureLimit')}
-                        aria-label={$t('webActivityConfigureLimit')}
-                        onclick={() => onEditLimit(row.domain)}
-                    >
-                        <svg width="14" height="14" aria-hidden="true" focusable="false"
-                            ><use href="#wa-gauge"></use></svg
-                        >
-                    </button>
-                    <button
-                        class="wa-icon-btn"
-                        type="button"
-                        title={$tt('webActivityConfigureSchedule')}
-                        aria-label={$t('webActivityConfigureSchedule')}
-                        onclick={() => onEditSchedule(row.domain)}
-                    >
-                        <svg width="14" height="14" aria-hidden="true" focusable="false"
-                            ><use href="#wa-clock"></use></svg
-                        >
-                    </button>
+                            <svg width="14" height="14" aria-hidden="true" focusable="false"
+                                ><use href="#wa-gauge"></use></svg
+                            >
+                        </button>
+                    </div>
                 </div>
             </div>
         {/each}

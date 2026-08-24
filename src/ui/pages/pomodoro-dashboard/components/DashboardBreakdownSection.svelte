@@ -2,15 +2,33 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 </script>
 
-<section id="bottom-row" style="display: none">
+<section id="bottom-row" data-sort-id="bottom-row" style="display: none">
     <div class="section-title" title={$tt('titleBreakdownSection')}>
-        {$t('dashboardSessionBreakdown') || 'Session breakdown'}
+        <span
+            class="sort-grip"
+            data-sort-handle
+            role="button"
+            tabindex="-1"
+            aria-hidden="true"
+            title={$tt('dashboardDragSection')}
+            aria-label={$t('dashboardDragSection')}
+        ></span>
+        <span class="section-title-text">{$t('dashboardSessionBreakdown') || 'Session breakdown'}</span>
     </div>
     <div class="chart-grid-2">
-        <div class="chart-card animate-in delay-4">
+        <div class="chart-card animate-in delay-4" data-sort-id="project-table">
             <div class="chart-card-header">
                 <div class="chart-card-title" title={$tt('titleProjectTable')}>
-                    {$t('dashboardProjectSummary') || 'Project summary'}
+                    <span
+                        class="sort-grip"
+                        data-sort-handle
+                        role="button"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        title={$tt('dashboardDragPanel')}
+                        aria-label={$t('dashboardDragPanel')}
+                    ></span>
+                    <span>{$t('dashboardProjectSummary') || 'Project summary'}</span>
                 </div>
                 <div class="chart-card-meta" id="project-count"></div>
             </div>
@@ -34,10 +52,19 @@
             </div>
         </div>
 
-        <div class="chart-card animate-in delay-4">
+        <div class="chart-card animate-in delay-4" data-sort-id="timeline">
             <div class="chart-card-header">
                 <div class="chart-card-title" title={$tt('titleTimeline')}>
-                    {$t('dashboardRecentSessions') || 'Recent sessions'}
+                    <span
+                        class="sort-grip"
+                        data-sort-handle
+                        role="button"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        title={$tt('dashboardDragPanel')}
+                        aria-label={$t('dashboardDragPanel')}
+                    ></span>
+                    <span>{$t('dashboardRecentSessions') || 'Recent sessions'}</span>
                 </div>
                 <div class="chart-card-meta" id="sessions-count"></div>
             </div>

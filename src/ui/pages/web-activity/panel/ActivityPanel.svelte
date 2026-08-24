@@ -16,6 +16,7 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { showNotification } from '../../../../utils/i18n.js';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
+    import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
     import PanelSite from './PanelSite.svelte';
 
     let {
@@ -30,6 +31,7 @@
         onClearLimit,
         onClearSchedule,
         onOpenInTab,
+        onOpenSettings,
         /** The site of the tab in front, scrolled to when it changes. */
         activeDomain = null,
     } = $props();
@@ -129,26 +131,34 @@
         }
         goHome();
     }
-    /** The boxes the user has folded. Open is the default, so this holds the exceptions. */
-    const collapsed = new SvelteSet();
+    /**
+     * The boxes the user has unfolded.
+     *
+     * Folded is the default now, so this holds the exceptions. A panel is glanced at:
+     * what it is asked is "what has today gone on", and eight sites' worth of figures,
+     * allowances and controls is a page to be scrolled rather than a column to be read.
+     * The figures are still one hover away — see the tooltip on each box's clock — and
+     * one click away, which is where they belong.
+     */
+    const expanded = new SvelteSet();
 
     const shown = $derived.by(() => {
         const needle = query.trim().toLowerCase();
         return needle ? sites.filter((site) => site.domain.includes(needle)) : sites;
     });
 
-    const allCollapsed = $derived(shown.length > 0 && shown.every((site) => collapsed.has(site.domain)));
+    const allCollapsed = $derived(shown.length > 0 && shown.every((site) => !expanded.has(site.domain)));
 
     const share = (seconds) => (totalSeconds > 0 ? Math.round((seconds / totalSeconds) * 100) : 0);
 
     function toggleAll() {
-        if (allCollapsed) collapsed.clear();
-        else for (const site of shown) collapsed.add(site.domain);
+        if (allCollapsed) for (const site of shown) expanded.add(site.domain);
+        else expanded.clear();
     }
 
     function toggle(domain) {
-        if (collapsed.has(domain)) collapsed.delete(domain);
-        else collapsed.add(domain);
+        if (expanded.has(domain)) expanded.delete(domain);
+        else expanded.add(domain);
     }
 
     /**
@@ -183,22 +193,25 @@
     -->
     <SidePanelHeader title={$t('webActivityPanelTitleBar')} actions={headerActions} />
 
-    <div class="search-and-controls">
-        <div class="search-container search-container--compact">
-            <label for="search-input" class="visually-hidden">{$t('webActivitySearchPanel')}</label>
-            <input
-                type="search"
-                id="search-input"
-                class="search-input"
-                autocomplete="off"
-                spellcheck="false"
-                translate="no"
-                bind:value={query}
-                placeholder={$t('webActivitySearchPanel')}
-                title={$tt('webActivitySearchPanel')}
-            />
-        </div>
-        <div class="controls-container">
+    <SearchAndControls>
+        {#snippet search()}
+            <div class="search-container search-container--compact">
+                <label for="search-input" class="visually-hidden">{$t('webActivitySearchPanel')}</label>
+                <input
+                    type="search"
+                    id="search-input"
+                    class="search-input"
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
+                    bind:value={query}
+                    placeholder={$t('webActivitySearchPanel')}
+                    title={$tt('webActivitySearchPanel')}
+                />
+            </div>
+        {/snippet}
+
+        {#snippet controls()}
             <button
                 id="resizeButton"
                 type="button"
@@ -230,8 +243,22 @@
                     <use href={allCollapsed ? '#wa-expand-all' : '#wa-collapse-all'}></use>
                 </svg>
             </button>
-        </div>
-    </div>
+            <!-- Everything the dashboard's settings page holds, in a dialog: a column
+                 this narrow has no main view to give over to it. -->
+            <button
+                id="panel-settings-btn"
+                type="button"
+                class="control-btn"
+                title={$tt('webActivitySettings')}
+                aria-label={$t('webActivitySettings')}
+                onclick={onOpenSettings}
+            >
+                <svg width="24" height="24" style="color: var(--text-color);" aria-hidden="true" focusable="false">
+                    <use href="#wa-settings"></use>
+                </svg>
+            </button>
+        {/snippet}
+    </SearchAndControls>
 
     <div class="wa-panel-list" bind:this={listEl}>
         {#each shown as site (site.domain)}
@@ -241,13 +268,13 @@
                 limit={limitOf(site.domain)}
                 verdict={verdicts[site.domain]}
                 share={share(site.seconds)}
-                open={!collapsed.has(site.domain)}
+                open={expanded.has(site.domain)}
                 onToggle={() => toggle(site.domain)}
-                onEditLimit={() => onEditLimit(site.domain)}
+                onEditLimit={(tab) => onEditLimit(site.domain, tab)}
                 onEditSchedule={() => onEditSchedule(site.domain)}
-                onToggleLimit={(next) => onToggleLimit(site.domain, next)}
+                onToggleLimit={(which, next) => onToggleLimit(site.domain, which, next)}
                 onToggleSchedule={(next) => onToggleSchedule(site.domain, next)}
-                onClearLimit={() => onClearLimit(site.domain)}
+                onClearLimit={(which) => onClearLimit(site.domain, which)}
                 onClearSchedule={() => onClearSchedule(site.domain)}
             />
         {/each}

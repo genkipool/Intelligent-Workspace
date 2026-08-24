@@ -112,7 +112,7 @@ var OmniBar = class OmniBar {
         input.type = 'text';
         input.placeholder =
             getOmniMsg('omnibarPlaceholder') ||
-            'Search tabs or use prefixes (@, we:, wp:, wv:, b:, h:, c:, dg:, dt:, f:, qai:, qaia:, lai:, laiq:, limg:, lnt:, bg:, ccr:)...';
+            'Search tabs or use prefixes (@, we:, wp:, wv:, ar:, b:, h:, c:, dg:, dt:, f:, qai:, qaia:, lai:, laiq:, limg:, lnt:, bg:, ccr:)...';
         input.autocomplete = 'off';
         const counter = document.createElement('span');
         counter.id = 'hint-omni-counter';
@@ -277,6 +277,11 @@ var OmniBar = class OmniBar {
                     prefix: this._getPrefixVal('wv:', 'omnibarPrefixVideoPipDesc'),
                     title: getOmniMsg('omnibarPrefixVideoPipTitle') || 'Open Video PiP',
                     desc: getOmniMsg('omnibarPrefixVideoPipDesc') || 'Select a tab to open as Video Picture-in-Picture',
+                },
+                {
+                    prefix: this._getPrefixVal('ar:', 'prefixReadAloud'),
+                    title: getOmniMsg('omnibarPrefixReadAloudTitle') || 'Read Aloud',
+                    desc: getOmniMsg('omnibarPrefixReadAloudDesc') || 'Pick a tab and have its text read out loud',
                 },
                 {
                     prefix: this._getPrefixVal('b:', 'prefixSearchBookmarks'),
@@ -495,6 +500,15 @@ var OmniBar = class OmniBar {
             const q = query.substring(prefixUsed.length).trim();
             const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
             this._renderResults(filtered, isPopup ? 'popup-tab' : isVideoPip ? 'video-pip-tab' : 'pip-tab');
+            return;
+        }
+
+        // -- rd: Read a tab out loud -------------------------------
+        const pReadAloud = this._getPrefixVal('ar:', 'prefixReadAloud');
+        if (lower.startsWith(pReadAloud)) {
+            const q = query.substring(pReadAloud.length).trim();
+            const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
+            this._renderResults(filtered, 'read-aloud-tab');
             return;
         }
 
@@ -3870,7 +3884,9 @@ IMPORTANT RULES:
                         );
                     }
                 }
-            } else if (['tab', 'popup-tab', 'pip-tab', 'video-pip-tab', 'ae-tab', 'dt', 'ts'].includes(type)) {
+            } else if (
+                ['tab', 'popup-tab', 'pip-tab', 'video-pip-tab', 'read-aloud-tab', 'ae-tab', 'dt', 'ts'].includes(type)
+            ) {
                 title = data.title || getOmniMsg('omnibarUntitledTab') || 'Untitled';
                 li.dataset.tabId = data.id;
                 li.dataset.windowId = data.windowId;
@@ -4476,6 +4492,15 @@ IMPORTANT RULES:
                     } else {
                         await openVideoPip(url);
                     }
+                    this.close();
+                } else if (type === 'read-aloud-tab') {
+                    // The worker injects the reader; `notify` is what reports the
+                    // outcome, since the omnibar is gone by the time it is known.
+                    chrome.runtime.sendMessage({
+                        action: 'startReadAloud',
+                        tabId: parseInt(li.dataset.tabId),
+                        notify: true,
+                    });
                     this.close();
                 } else if (type === 'prefix') {
                     const input = this.shadow.getElementById('hint-omni-input');

@@ -11,26 +11,32 @@
      * panel already looks like.
      *
      * The header is what stays when the box is collapsed: the site, and its time. The
-     * three rows inside are the figures, the allowance and the hours, each with the
-     * controls that act on it.
+     * rows inside are the figures and then one row per part of the rule — the daily
+     * allowance, the weekly one and the hours — each with the controls that act on it.
+     * The three are drawn by one snippet, so a row that gains a state gains it in all
+     * three and they cannot drift apart.
      */
     import { t, tt } from '../../../stores/i18nStore.js';
     import { fmtDur, fmtHm } from '../../../services/dashboard/format.js';
     import RuleControls from '../components/RuleControls.svelte';
+    import { siteTooltip } from './panelTooltip.js';
 
     let {
         site,
         limit,
         verdict = null,
-        share = 0,
+        /** This site's share of the day, as a whole number. */
+        share: sharePercent = 0,
         open = true,
         /** The site of the tab in front, marked so the eye finds it after a scroll. */
         isActive = false,
         onToggle,
+        /** @param {'daily'|'weekly'} tab Which allowance the dialog opens on. */
         onEditLimit,
         onEditSchedule,
         onToggleLimit,
         onToggleSchedule,
+        /** @param {'daily'|'weekly'} which Which allowance to empty. */
         onClearLimit,
         onClearSchedule,
     } = $props();
@@ -59,9 +65,83 @@
         return $t('webActivityWindowCount', [String(windows.length)]);
     });
 
-    /** The share of whichever allowance is set, which is what the row is about. */
-    const percent = $derived(Math.max(verdict?.percent || 0, verdict?.weekPercent || 0));
+    const tooltipData = $derived({
+        domain: site.domain,
+        favicon: faviconFor(site.domain),
+        seconds: site.seconds,
+        visits: site.visits,
+        perVisit: site.perVisit,
+        sharePercent,
+        dailyLimitSeconds: limit.dailyLimitSeconds,
+        dailyLimitEnabled: limit.dailyLimitEnabled,
+        dailyPercent: verdict?.percent ?? 0,
+        weeklyLimitSeconds: limit.weeklyLimitSeconds,
+        weeklyLimitEnabled: limit.weeklyLimitEnabled,
+        weeklyPercent: verdict?.weekPercent ?? 0,
+        hasSchedule,
+        scheduleText,
+        scheduleEnabled: limit.scheduleEnabled,
+        blocked: verdict?.blocked,
+        blockedReason: verdict?.reason,
+        limitEnabled: limit.limitEnabled,
+        enabled: limit.enabled,
+        onEditLimit: (tab) => onEditLimit(tab),
+        onEditSchedule: () => onEditSchedule(),
+    });
 </script>
+
+<!--
+    A row of the rule: what it is called, what it says, how much of it is spent, and
+    the three things that can be done to it. `percent` is null for a row that has
+    nothing to be a percentage of — the hours — and the cell keeps its width anyway, so
+    the four columns line up straight down the box whichever row is being read.
+-->
+{#snippet ruleRow(label, text, isSet, enabled, percent, editTitle, keys, onEdit, onToggleRow, onClear)}
+    <div class="wa-panel-row">
+        <span class="wa-panel-row-label">{label}</span>
+        <!-- `percent === null` is the hours row, and the hours are the one value here
+             that is centred: it is the widest thing in the column and it has no share
+             beside it, so it reads as the middle of the row rather than as a figure in
+             a column of figures. The two allowances stay where they are.
+             That row therefore has no share cell at all: the value takes both tracks,
+             which is what puts it in the middle of the row. Centred inside the value
+             track alone it sat a good twenty pixels to the left of where the eye
+             expects the middle, because the empty share track was still holding
+             46 pixels open on its right. -->
+        <span
+            class="wa-panel-row-val"
+            class:wa-panel-row-val-center={percent === null}
+            class:wa-muted={!isSet}
+            class:is-paused={isSet && !enabled}
+            title={text}
+        >
+            {isSet ? text : '—'}
+        </span>
+        <!-- The share of this allowance and nothing else. What is blocked, and why, is
+             on the header where it belongs to the site rather than to one part of its
+             rule. -->
+        {#if percent !== null}
+            <span class="wa-panel-row-pct">
+                {#if isSet}
+                    <span class="eff-pct">{percent}%</span>
+                {:else}
+                    <span class="wa-muted">--</span>
+                {/if}
+            </span>
+        {/if}
+        <RuleControls
+            {isSet}
+            {enabled}
+            {editTitle}
+            enableKey={keys.enable}
+            disableKey={keys.disable}
+            clearKey={keys.clear}
+            {onEdit}
+            onToggle={onToggleRow}
+            {onClear}
+        />
+    </div>
+{/snippet}
 
 <div
     class="wa-panel-box"
@@ -80,7 +160,8 @@
                 {$t('webActivityStateBlocked_' + verdict.reason)}
             </span>
         {/if}
-        <span class="wa-panel-time" title={$tt('webActivityColTimeDesc')}>{fmtHm(site.seconds)}</span>
+        <!-- The whole card, with live stats and rules breakdown. -->
+        <span class="wa-panel-time" use:siteTooltip={() => tooltipData}>{fmtHm(site.seconds)}</span>
     </button>
 
     {#if open}
@@ -96,54 +177,48 @@
                 </span>
                 <span class="wa-panel-figure" title={$tt('webActivityColShareDesc')}>
                     <span class="wa-panel-figure-label">{$t('webActivityColShare')}</span>
-                    <span class="wa-panel-figure-val">{share}%</span>
+                    <span class="wa-panel-figure-val">{sharePercent}%</span>
                 </span>
             </div>
 
-            <div class="wa-panel-row">
-                <span class="wa-panel-row-label">{$t('webActivityColLimit')}</span>
-                <span class="wa-panel-row-val" class:wa-muted={!limit.dailyLimitSeconds}>
-                    {limit.dailyLimitSeconds > 0 ? fmtHm(limit.dailyLimitSeconds) : '—'}
-                </span>
-                <!-- The percentage and nothing else. What is blocked, and why, is on
-                     the header where it belongs to the site rather than to one of its
-                     two halves. -->
-                <span class="wa-panel-row-pct">
-                    {#if verdict?.limitSeconds > 0 || verdict?.weekLimitSeconds > 0}
-                        <span class="eff-pct">{percent}%</span>
-                    {:else}
-                        <span class="wa-muted">--</span>
-                    {/if}
-                </span>
-                <RuleControls
-                    isSet={limit.dailyLimitSeconds > 0 || limit.weeklyLimitSeconds > 0}
-                    enabled={limit.limitEnabled}
-                    editTitle={$tt('webActivityConfigureLimit')}
-                    enableKey={LIMIT_KEYS.enable}
-                    disableKey={LIMIT_KEYS.disable}
-                    clearKey={LIMIT_KEYS.clear}
-                    onEdit={onEditLimit}
-                    onToggle={onToggleLimit}
-                    onClear={onClearLimit}
-                />
-            </div>
+            {@render ruleRow(
+                $t('webActivityColDaily'),
+                fmtHm(limit.dailyLimitSeconds),
+                limit.dailyLimitSeconds > 0,
+                limit.dailyLimitEnabled,
+                verdict?.percent ?? 0,
+                $tt('webActivityConfigureLimit'),
+                LIMIT_KEYS,
+                () => onEditLimit('daily'),
+                (next) => onToggleLimit('daily', next),
+                () => onClearLimit('daily'),
+            )}
 
-            <div class="wa-panel-row">
-                <span class="wa-panel-row-label">{$t('webActivityColSchedule')}</span>
-                <span class="wa-panel-row-val" class:wa-muted={!hasSchedule}>{scheduleText}</span>
-                <span class="wa-panel-row-pct"></span>
-                <RuleControls
-                    isSet={hasSchedule}
-                    enabled={limit.scheduleEnabled}
-                    editTitle={$tt('webActivityConfigureSchedule')}
-                    enableKey={SCHEDULE_KEYS.enable}
-                    disableKey={SCHEDULE_KEYS.disable}
-                    clearKey={SCHEDULE_KEYS.clear}
-                    onEdit={onEditSchedule}
-                    onToggle={onToggleSchedule}
-                    onClear={onClearSchedule}
-                />
-            </div>
+            {@render ruleRow(
+                $t('webActivityColWeekly'),
+                fmtHm(limit.weeklyLimitSeconds),
+                limit.weeklyLimitSeconds > 0,
+                limit.weeklyLimitEnabled,
+                verdict?.weekPercent ?? 0,
+                $tt('webActivityConfigureLimit'),
+                LIMIT_KEYS,
+                () => onEditLimit('weekly'),
+                (next) => onToggleLimit('weekly', next),
+                () => onClearLimit('weekly'),
+            )}
+
+            {@render ruleRow(
+                $t('webActivityColSchedule'),
+                scheduleText,
+                hasSchedule,
+                limit.scheduleEnabled,
+                null,
+                $tt('webActivityConfigureSchedule'),
+                SCHEDULE_KEYS,
+                onEditSchedule,
+                onToggleSchedule,
+                onClearSchedule,
+            )}
         </div>
     {/if}
 </div>

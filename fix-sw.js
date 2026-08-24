@@ -31,6 +31,14 @@ try {
         "run_at": "document_idle"
       },
       {
+        // Every frame, because the one it is there for is the web page framed inside
+        // the side panel; it stops at its first line everywhere else.
+        "matches": ["<all_urls>"],
+        "js": ["src/utils/panelScrollbar.js"],
+        "all_frames": true,
+        "run_at": "document_start"
+      },
+      {
         // Main world, so it can replace HTMLVideoElement.prototype.requestPictureInPicture
         // and hand a site's own picture-in-picture button to our floating player.
         "matches": ["<all_urls>"],

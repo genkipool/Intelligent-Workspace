@@ -15,12 +15,15 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 
     import RulesSection from './RulesSection.svelte';
+    import PasswordSection from './PasswordSection.svelte';
     import CategoriesSection from './CategoriesSection.svelte';
     import TrackingSection from './TrackingSection.svelte';
     import IgnoredSection from './IgnoredSection.svelte';
     import DataSection from './DataSection.svelte';
 
     let {
+        /** Inside a dialog the header already names the page, so the hero goes. */
+        compact = false,
         rules = [],
         settings = {},
         customCategories = [],
@@ -35,6 +38,7 @@
         onRenameCategory,
         onDeleteCategory,
         onChangeSettings,
+        onChangeBlockPassword,
         onIgnoreAdd,
         onIgnoreRemove,
         onExport,
@@ -44,17 +48,26 @@
     } = $props();
 </script>
 
-<div class="wa-settings">
-    <header class="wa-set-hero">
-        <div>
-            <h1 class="wa-set-title">{$t('webActivitySettings')}</h1>
-            <p class="wa-set-subtitle">{$t('webActivitySettingsSubtitle')}</p>
-        </div>
-    </header>
+<div class="wa-settings" class:wa-settings-compact={compact}>
+    {#if !compact}
+        <header class="wa-set-hero">
+            <div>
+                <h1 class="wa-set-title">{$t('webActivitySettings')}</h1>
+                <p class="wa-set-subtitle">{$t('webActivitySettingsSubtitle')}</p>
+            </div>
+        </header>
+    {/if}
 
     <h2 class="wa-set-head" title={$tt('webActivitySettingsRulesHint')}>{$t('webActivitySettingsRules')}</h2>
     <section class="wa-set-section" id="wa-set-rules">
-        <RulesSection rows={rules} {onEditLimit} {onEditSchedule} {onSaveLimit} onAdd={onAddRule} />
+        <RulesSection {compact} rows={rules} {onEditLimit} {onEditSchedule} {onSaveLimit} onAdd={onAddRule} />
+    </section>
+
+    <!-- Under the rules because it is about the rules: what it guards is weakening
+         one. -->
+    <h2 class="wa-set-head" title={$tt('webActivitySettingsPassword')}>{$t('webActivitySettingsPassword')}</h2>
+    <section class="wa-set-section" id="wa-set-password">
+        <PasswordSection lock={settings.blockPassword} onChange={onChangeBlockPassword} />
     </section>
 
     <h2 class="wa-set-head" title={$tt('webActivitySettingsCategoriesHint')}>
@@ -77,7 +90,12 @@
 
     <h2 class="wa-set-head" title={$tt('webActivitySettingsIgnoredHint')}>{$t('webActivitySettingsIgnored')}</h2>
     <section class="wa-set-section" id="wa-set-ignored">
-        <IgnoredSection domains={settings.ignoredDomains || []} onAdd={onIgnoreAdd} onRemove={onIgnoreRemove} />
+        <IgnoredSection
+            domains={settings.ignoredDomains || []}
+            columns={compact ? 2 : 3}
+            onAdd={onIgnoreAdd}
+            onRemove={onIgnoreRemove}
+        />
     </section>
 
     <h2 class="wa-set-head" title={$tt('webActivitySettingsDataHint')}>{$t('webActivitySettingsData')}</h2>

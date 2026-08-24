@@ -59,6 +59,20 @@ export const STORAGE_KEYS = {
 
 export const MAX_GEMINI_SCHEDULES = 7;
 
+/**
+ * The reading modes a tab can be put into.
+ *
+ * The hover menu of the page-mode button, the overflow menu and the context menu all
+ * offer the same four, and each of them used to read them back out of a hidden
+ * `<template>`. This is the list; the markup no longer carries it.
+ */
+export const PAGE_MODES = [
+    { mode: 'black', i18n: 'modeBlack' },
+    { mode: 'light', i18n: 'modeLight' },
+    { mode: 'sepia', i18n: 'modeSepia' },
+    { mode: 'paper', i18n: 'modePaper' },
+];
+
 export const ACTION_GROUPS = {
     backup: { classes: ['backup-btn'], tooltip: 'backupGroup' },
     restore: { classes: ['restore-btn'], tooltip: 'restoreGroup' },
@@ -77,7 +91,10 @@ export const ACTION_GROUPS = {
     'video-pip': { classes: ['video-pip-btn'], tooltip: 'omnibarPrefixVideoPipTitle' },
     popup: { classes: ['popup-btn'], tooltip: 'openAsPopupTitle' },
     summary: { classes: ['gemini-summary-btn'], tooltip: 'summarizeWithGemini' },
-    capture: { classes: ['screenshot-btn', 'view-screenshots-btn'], tooltip: 'captureFullPage' },
+    capture: {
+        classes: ['screenshot-btn', 'view-screenshots-btn', 'capture-group-btn'],
+        tooltip: 'captureFullPage',
+    },
     qrcode: { classes: ['qr-code-btn'], tooltip: 'showQrCode' },
     cookies: { classes: ['edit-cookies-btn'], tooltip: 'editCookies' },
     download: { classes: ['download-files-btn'], tooltip: 'showDownloads' },

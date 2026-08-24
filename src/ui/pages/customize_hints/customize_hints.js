@@ -15,6 +15,21 @@ let HintCommon;
 let STORAGE_KEYS;
 let COMMON_COMMANDS;
 
+/**
+ * Command categories that are rendered somewhere other than the built-in list, by the
+ * id of the element they belong in. The reader's keys live under the reader's own
+ * settings; if that section is not on the page they fall back to the main list.
+ */
+const READER_COMMAND_CONTAINERS = {
+    categoryReadAloudControls: 'read-aloud-commands',
+};
+
+const READER_SWITCH_COMMANDS = {
+    hintDesc_readerPanel: { containerId: 'reader-cmd-panel', defaultKey: 'zv', category: 'readaloud' },
+    hintDesc_readerMarkWord: { containerId: 'reader-cmd-word', defaultKey: 'zm', category: 'readaloud' },
+    hintDesc_readerMarkBlock: { containerId: 'reader-cmd-block', defaultKey: 'zs', category: 'readaloud' },
+};
+
 export async function initCustomizeHints() {
     HintCommon = window.HintCommon;
     if (!HintCommon) {
@@ -229,6 +244,14 @@ export async function initCustomizeHints() {
                 if (currentKey === k && currentKey !== ex) {
                     return getI18nText(descKey, defKey);
                 }
+            }
+        }
+
+        // 1.5 Check reader switch commands
+        for (const [descKey, info] of Object.entries(READER_SWITCH_COMMANDS)) {
+            const currentKey = (customShortcutsOverrides[descKey] || info.defaultKey).toLowerCase();
+            if (currentKey === k && currentKey !== ex) {
+                return getI18nText(descKey, info.defaultKey);
             }
         }
 
@@ -1376,6 +1399,13 @@ export async function initCustomizeHints() {
         };
 
         for (const categoryKey in COMMON_COMMANDS) {
+            // The reader's own keys are rendered where the reader is configured, not
+            // among the global commands: they only mean anything while it is open, and
+            // reading about them next to the switches they drive is the point.
+            const ownContainer = READER_COMMAND_CONTAINERS[categoryKey]
+                ? document.getElementById(READER_COMMAND_CONTAINERS[categoryKey])
+                : null;
+
             if (categoryKey === 'categoryOmnibarPrefixes' && omniList) {
                 Array.from(omniList.children).forEach((el) => (el.dataset.updated = 'false'));
                 Object.entries(COMMON_COMMANDS[categoryKey]).forEach(([keys, descKey]) => {
@@ -1393,9 +1423,8 @@ export async function initCustomizeHints() {
                 continue;
             }
 
-            let categoryContainer = builtInContainer.querySelector(
-                `.category-container[data-category="${categoryKey}"]`,
-            );
+            const host = ownContainer || builtInContainer;
+            let categoryContainer = host.querySelector(`.category-container[data-category="${categoryKey}"]`);
             let categoryList;
 
             if (!categoryContainer) {
@@ -1410,7 +1439,7 @@ export async function initCustomizeHints() {
                 categoryList = document.createElement('ul');
                 categoryList.className = 'commands-list';
                 categoryContainer.appendChild(categoryList);
-                builtInContainer.appendChild(categoryContainer);
+                host.appendChild(categoryContainer);
             } else {
                 categoryList = categoryContainer.querySelector('.commands-list');
                 const title = categoryContainer.querySelector('.category-title');
@@ -1449,7 +1478,33 @@ export async function initCustomizeHints() {
                 else delete el.dataset.updated;
             });
         }
+
+        // Render reader switch commands underneath each switch
+        Object.entries(READER_SWITCH_COMMANDS).forEach(([descKey, info]) => {
+            const host = document.getElementById(info.containerId);
+            if (!host) return;
+            let list = host.querySelector('.commands-list');
+            if (!list) {
+                list = document.createElement('ul');
+                list.className = 'commands-list reader-inline-commands-list';
+                host.appendChild(list);
+            }
+            Array.from(list.children).forEach((el) => (el.dataset.updated = 'false'));
+            const description = getI18nText(descKey, descKey);
+            updateOrAppendItem(
+                list,
+                { keys: info.defaultKey, description },
+                { originalKey: info.defaultKey, originalDesc: descKey, category: info.category },
+            );
+            Array.from(list.children).forEach((el) => {
+                if (el.dataset.updated === 'false') el.remove();
+                else delete el.dataset.updated;
+            });
+        });
+
         applyTranslations(builtInContainer);
+        const readerSettingsHost = document.getElementById('read-aloud-settings');
+        if (readerSettingsHost) applyTranslations(readerSettingsHost);
     };
 
     const renderAll = async () => {

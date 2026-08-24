@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { geminiStore, selectedModel, availableModels } from '../../stores/geminiStore.js';
+    import { LOCAL_AI_MODEL_ID } from '../../services/localAiService.js';
     import { t, tt } from '../../stores/i18nStore.js';
 
     let { onrefetchmodels, onmodelselected, onmodelcycled } = $props();
@@ -9,7 +10,13 @@
     let dropdownVisible = $state(false);
     let searchInput = $state(null);
 
-    let filteredModels = $derived($availableModels.filter((m) => m.toLowerCase().includes(searchTerm.toLowerCase())));
+    /* Chrome's model is stored under an id, not a Gemini name, so the list would show
+       `chrome-local-ai` where every other line is a product name. */
+    const label = $derived((model) => (model === LOCAL_AI_MODEL_ID ? $t('localAiModelLabel') : model));
+
+    let filteredModels = $derived(
+        $availableModels.filter((m) => label(m).toLowerCase().includes(searchTerm.toLowerCase())),
+    );
 
     function toggleDropdown() {
         if ($availableModels.length <= 1) {
@@ -72,7 +79,7 @@
         title={$tt('geminiChangeModelTooltip')}
         onclick={toggleDropdown}
     >
-        {$selectedModel}
+        {label($selectedModel)}
     </button>
     <button
         id="cycle-next-model-btn"
@@ -117,7 +124,7 @@
                     aria-selected={model === $selectedModel}
                 >
                     <button type="button" data-model={model} onclick={() => selectModel(model)}>
-                        {model}
+                        {label(model)}
                     </button>
                 </li>
             {/each}

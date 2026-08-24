@@ -1120,6 +1120,9 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         checkGeminiSchedules(),
         waSync(),
         waPruneOldDays(),
+        // A no-op unless the user asked for a synced copy, and even then only every
+        // ten minutes — see waSyncPushDue.
+        waSyncPushDue(),
     ]);
 });
 chrome.runtime.onStartup.addListener(initializeExtensionStates);

@@ -49,6 +49,7 @@ importScripts('/background/handlers/downloads.js');
 importScripts('/background/handlers/pip.js');
 importScripts('/background/handlers/ui.js');
 importScripts('/background/handlers/screenshots.js');
+importScripts('/background/handlers/read-aloud.js');
 importScripts('/background/handlers/dnr.js');
 importScripts('/background/handlers/pomodoro-handlers.js');
 importScripts('/background/handlers/web-activity.js');

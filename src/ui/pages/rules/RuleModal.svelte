@@ -1,4 +1,5 @@
 <script>
+    import ModalHeader from '../../components/common/ModalHeader.svelte';
     import { onMount } from 'svelte';
     import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../stores/i18nStore.js';
@@ -401,20 +402,11 @@
 
 <dialog id="rule-modal" bind:this={dialogEl} closedby="any">
     <div class="modal-content">
-        <div class="modal-header">
-            <h2 class="title-modal" id="modal-title">
-                {mode === 'add' ? $t('addRule') || 'Add Rule' : $t('editRule') || 'Edit Rule'}
-            </h2>
-            <span
-                class="close"
-                tabindex="0"
-                role="button"
-                translate="no"
-                aria-label={$t('closeModal') || 'Close'}
-                onclick={close}
-                onkeydown={(e) => e.key === 'Enter' && close()}>x</span
-            >
-        </div>
+        <ModalHeader
+            titleId="modal-title"
+            title={mode === 'add' ? $t('addRule') || 'Add Rule' : $t('editRule') || 'Edit Rule'}
+            onClose={close}
+        />
         <form
             class="form-rule"
             id="rule-form"

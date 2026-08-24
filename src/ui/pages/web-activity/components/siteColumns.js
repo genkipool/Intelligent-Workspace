@@ -22,6 +22,10 @@
  * total, the category select's chevron and the three controls in a rule cell were all
  * missed in turn, and something was cut short after every adjustment.
  *
+ * The set was re-balanced when the weekly allowance joined the row: three rule cells
+ * of a value plus three buttons need about 125px each, and every other column gave up
+ * a few pixels rather than one of them being squeezed to the point of showing "1…".
+ *
  * They come to slightly more than the table has, and the shortfall is taken out of
  * the site column on purpose: a domain ends in an ellipsis with the whole of it in
  * the tooltip, which is a far better thing to lose than a figure or a category.
@@ -43,7 +47,7 @@ export const SITE_COLUMNS = [
         pinned: true,
         defaultVisible: true,
         align: 'left',
-        weight: 134,
+        weight: 130,
         sortValue: (row) => row.domain,
     },
     {
@@ -53,7 +57,11 @@ export const SITE_COLUMNS = [
         defaultVisible: true,
         align: 'left',
         editable: true,
-        weight: 141,
+        // Narrower than it measures. It is a picker, not a figure: its longest name
+        // ellipsises and the whole of it is one click away, which is a far cheaper
+        // thing to give up than the room the weekly allowance needed to join the row
+        // without pushing the table off the side of the window.
+        weight: 100,
         sortValue: (row) => row.category,
     },
     {
@@ -61,7 +69,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColVisits',
         descKey: 'webActivityColVisitsDesc',
         defaultVisible: true,
-        weight: 74,
+        weight: 80,
         sortValue: (row) => row.visits,
     },
     {
@@ -69,7 +77,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColTime',
         descKey: 'webActivityColTimeDesc',
         defaultVisible: true,
-        weight: 116,
+        weight: 110,
         sortValue: (row) => row.seconds,
     },
     {
@@ -77,7 +85,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColShare',
         descKey: 'webActivityColShareDesc',
         defaultVisible: true,
-        weight: 64,
+        weight: 60,
         sortValue: (row) => row.seconds,
     },
     {
@@ -85,7 +93,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColPerVisit',
         descKey: 'webActivityColPerVisitDesc',
         defaultVisible: true,
-        weight: 96,
+        weight: 82,
         sortValue: (row) => row.perVisit,
     },
     {
@@ -93,7 +101,7 @@ export const SITE_COLUMNS = [
         labelKey: 'webActivityColSessions',
         descKey: 'webActivityColSessionsDesc',
         defaultVisible: true,
-        weight: 81,
+        weight: 88,
         sortValue: (row) => row.sessions,
     },
     {
@@ -120,21 +128,25 @@ export const SITE_COLUMNS = [
         weight: 100,
         sortValue: (row) => row.lastDay || '',
     },
+    // The two allowances and the hours, in the order a rule is read: how long a day,
+    // how long a week, and when at all. "Límite" named the first of the three as if
+    // the other two were something else, so it is "Diario" now and the column set
+    // says what it holds.
     {
         id: 'limit',
-        labelKey: 'webActivityColLimit',
+        labelKey: 'webActivityColDaily',
         descKey: 'webActivityColLimitDesc',
         defaultVisible: true,
         editable: true,
-        weight: 107,
+        weight: 125,
     },
     {
         id: 'weekly',
         labelKey: 'webActivityColWeekly',
         descKey: 'webActivityColWeeklyDesc',
-        defaultVisible: false,
+        defaultVisible: true,
         editable: true,
-        weight: 107,
+        weight: 125,
     },
     {
         id: 'schedule',
@@ -142,14 +154,14 @@ export const SITE_COLUMNS = [
         descKey: 'webActivityColScheduleDesc',
         defaultVisible: true,
         editable: true,
-        weight: 178,
+        weight: 174,
     },
     {
         id: 'state',
         labelKey: 'webActivityColState',
         descKey: 'webActivityColStateDesc',
         defaultVisible: true,
-        weight: 129,
+        weight: 126,
     },
     {
         id: 'record',
@@ -157,7 +169,7 @@ export const SITE_COLUMNS = [
         descKey: 'webActivityColRecordDesc',
         pinned: true,
         defaultVisible: true,
-        weight: 79,
+        weight: 85,
     },
 ];
 

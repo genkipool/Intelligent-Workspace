@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
@@ -194,6 +194,37 @@
                 toggleExpandAll();
             }
         });
+
+        window.addEventListener('scroll', updateScrollButtons, { passive: true });
+        window.addEventListener('resize', updateScrollButtons, { passive: true });
+        document.addEventListener('scroll', updateScrollButtons, { capture: true, passive: true });
+
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => {
+                updateScrollButtons();
+            });
+            resizeObserver.observe(document.body);
+        }
+
+        setTimeout(updateScrollButtons, 100);
+        setTimeout(updateScrollButtons, 300);
+    });
+
+    onDestroy(() => {
+        window.removeEventListener('scroll', updateScrollButtons);
+        window.removeEventListener('resize', updateScrollButtons);
+        document.removeEventListener('scroll', updateScrollButtons, { capture: true });
+        if (resizeObserver) resizeObserver.disconnect();
+        if (scrollButtonsRaf) cancelAnimationFrame(scrollButtonsRaf);
+    });
+
+    $effect(() => {
+        // Re-evaluate scroll buttons whenever rules, search query, tutorial, or screen mode changes
+        $rulesStore;
+        $searchQueryStore;
+        showTutorial;
+        isSmallScreen;
+        updateScrollButtons();
     });
 
     // A plain click on the storage icon forces a sync; the configuration popup is
@@ -697,10 +728,29 @@
     let showDragDropPanel = $state(false);
     let importMode = $state('add'); // 'add' or 'overwrite'
 
+    function triggerFileInput() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.style.display = 'none';
+        input.onchange = (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+                processImportedFile(file);
+            }
+        };
+        input.click();
+    }
+
     function handleImport(detail) {
         importMode = detail.mode;
         showImportPopup = false;
-        showDragDropPanel = true;
+        if (isSmallScreen) {
+            showDragDropPanel = true;
+        } else {
+            showDragDropPanel = false;
+            triggerFileInput();
+        }
     }
 
     function handleCancelDragDrop() {
@@ -729,11 +779,16 @@
         }
 
         const result = validateImportedRules(importedData, $rulesStore, importMode);
-        if (!result.valid) {
-            // Queued, so a file failing several checks reports them one after another
-            // instead of the last one replacing the rest.
+
+        if (result.errors && result.errors.length > 0) {
             for (const error of result.errors) {
                 showNotification(error.message, true, error.params, true);
+            }
+        }
+
+        if (!result.valid || !result.rules || result.rules.length === 0) {
+            if (importMode === 'add' && (!result.errors || result.errors.length === 0)) {
+                showNotification('noNewRulesAdded', true, [], true);
             }
             return;
         }
@@ -741,9 +796,12 @@
         const currentRules = importMode === 'overwrite' ? result.rules : [...$rulesStore, ...result.rules];
         await saveRulesToStorage(currentRules);
         showDragDropPanel = false;
-        showNotification(importMode === 'overwrite' ? 'rulesImported' : 'rulesAdded', false, [
-            result.rules.map((r) => r.name).join(', '),
-        ]);
+        showNotification(
+            importMode === 'overwrite' ? 'rulesImported' : 'rulesAdded',
+            false,
+            importMode === 'overwrite' ? [] : [result.rules.map((r) => r.name).join(', ')],
+            true,
+        );
     }
 
     function resetClusterDefaults() {
@@ -884,12 +942,64 @@
         }
     }
 
+    let scrollButtonsRaf = null;
+    let resizeObserver = null;
+
+    function getActiveScrollableInfo() {
+        const rulesList = document.getElementById('rules-list');
+        if (isSmallScreen && rulesList && rulesList.scrollHeight > rulesList.clientHeight) {
+            return {
+                target: rulesList,
+                scrollTop: rulesList.scrollTop,
+                scrollHeight: rulesList.scrollHeight,
+                clientHeight: rulesList.clientHeight,
+            };
+        }
+        return {
+            target: window,
+            scrollTop: window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0,
+            scrollHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+            clientHeight: window.innerHeight || document.documentElement.clientHeight,
+        };
+    }
+
+    function updateScrollButtons() {
+        if (scrollButtonsRaf) cancelAnimationFrame(scrollButtonsRaf);
+        scrollButtonsRaf = requestAnimationFrame(() => {
+            const scrollButtons = document.getElementById('scroll-buttons');
+            const scrollUpBtn = document.getElementById('scroll-up');
+            const scrollDownBtn = document.getElementById('scroll-down');
+            if (!scrollButtons || !scrollUpBtn || !scrollDownBtn) return;
+
+            const info = getActiveScrollableInfo();
+            const scrollableDistance = info.scrollHeight - info.clientHeight;
+
+            if (scrollableDistance > 20) {
+                scrollButtons.classList.add('visible');
+                scrollUpBtn.style.display = info.scrollTop < 15 ? 'none' : 'flex';
+                scrollDownBtn.style.display = info.scrollTop >= scrollableDistance - 15 ? 'none' : 'flex';
+            } else {
+                scrollButtons.classList.remove('visible');
+            }
+        });
+    }
+
     function scrollToTop() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const info = getActiveScrollableInfo();
+        if (info.target === window) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            info.target.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     }
 
     function scrollToBottom() {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        const info = getActiveScrollableInfo();
+        if (info.target === window) {
+            window.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
+        } else {
+            info.target.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
+        }
     }
 
     function openFooterLink() {
@@ -1113,15 +1223,8 @@
             onclick={scrollToTop}
             aria-label={$t('scrollToTop') || 'Scroll to top'}
         >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#icon-chevron-up"></use>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M6 15L12 9L18 15" stroke="var(--text-color)" stroke-linecap="square" />
             </svg>
         </button>
         <button
@@ -1131,15 +1234,8 @@
             onclick={scrollToBottom}
             aria-label={$t('scrollToBottom') || 'Scroll to bottom'}
         >
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                style="color: var(--text-color);"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <use href="#icon-chevron-down"></use>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                <path d="M6 9L12 15L18 9" stroke="var(--text-color)" stroke-linecap="square" />
             </svg>
         </button>
     </div>
@@ -1154,9 +1250,9 @@
         dropTextKey="dragDropRules"
         dropIcon="📄"
         selectFileKey="selectRulesFile"
-        fileInputId="theme-file-input"
+        fileInputId="rules-file-input"
         cancelButtonId="cancel-import-drop"
-        cancelTitleKey="cancelThemeImport"
+        cancelTitleKey="cancelImport"
         onback={handleCancelDragDrop}
         onfile={processImportedFile}
     />

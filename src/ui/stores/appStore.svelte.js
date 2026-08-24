@@ -8,6 +8,37 @@ export const isBookmarksViewActive = writable(false);
 export const isUrlViewActive = writable(false);
 export const isNotesViewActive = writable(false);
 export const isGalleryViewActive = writable(false);
+/**
+ * [AI INSTRUCTION]
+ * WHICH VIEW IS CLAIMING THE HEADER WHILE IT OPENS: 'notes' | 'gallery' | 'gemini' | null.
+ *
+ * The notes, the gallery and the assistant are painted *over* the group list, and
+ * opening one is two steps: `switchMainView('groups')` puts the page in the state they
+ * sit on, and then the view itself opens. Between those two the header had nothing to
+ * go on but `currentMainView`, so it read "Listar Grupos" for about thirty
+ * milliseconds — long enough to see, short enough to look like a glitch, and the whole
+ * of what was left of the flash once the group list itself stopped appearing.
+ *
+ * Set before the first step and cleared once the view's own flag is up. The header
+ * reads it first, so the handover is stated rather than left to how fast two awaits
+ * happen to resolve.
+ */
+export const overlayViewOpening = writable(null);
+/**
+ * [AI INSTRUCTION]
+ * WHETHER THE VIEW ON SCREEN IS THE ONE THE PAGE WAS OPENED INTO.
+ *
+ * The notes, the gallery and the assistant can all be reached two ways: by switching to
+ * one while the page is already open, or by opening the page straight into it from the
+ * popup or a keyboard command. Back means two different things in those two cases —
+ * "the view I came from" and "the page I came from" — and taking the first for the
+ * second is why opening the notes and pressing back landed on the group list, which
+ * nobody had asked for.
+ *
+ * `isStandaloneGemini` is the assistant's own copy of this, kept because its store's
+ * state carries it; this is the general one the back button reads.
+ */
+export const standaloneOverlayView = writable(null);
 export const isStandaloneGemini = writable(false);
 export const currentGalleryContext = writable(null);
 export const currentNotesContext = writable(null);

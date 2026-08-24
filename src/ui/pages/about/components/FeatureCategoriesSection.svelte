@@ -149,6 +149,10 @@
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="chrome_reader_mode" textKey="feature_reading_list_access" />
         <FeatureItem isMaterial={false} svgId="icon-reader" textKey="feature_readerView" />
+        <FeatureItem isMaterial={true} iconName="record_voice_over" textKey="feature_readerReadAloud" />
+        <FeatureItem isMaterial={true} iconName="highlight" textKey="feature_readerWordTracking" />
+        <FeatureItem isMaterial={true} iconName="opacity" textKey="feature_readerCustomOpacity" />
+        <FeatureItem isMaterial={true} iconName="tune" textKey="feature_readerVoiceSettings" />
         <FeatureItem isMaterial={true} iconName="auto_stories" textKey="feature_changePageMode" />
         <FeatureItem isMaterial={true} iconName="smart_display" textKey="feature_youtubeIntegration" />
     </div>

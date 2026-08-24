@@ -2,14 +2,34 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 </script>
 
-<section id="streak-section" style="display: none">
+<section id="streak-section" data-sort-id="streak-section" style="display: none">
     <div class="section-title" title={$tt('titleStreaksSection')}>
-        {$t('dashboardStreaksSection') || 'Streaks and patterns'}
+        <span
+            class="sort-grip"
+            data-sort-handle
+            role="button"
+            tabindex="-1"
+            aria-hidden="true"
+            title={$tt('dashboardDragSection')}
+            aria-label={$t('dashboardDragSection')}
+        ></span>
+        <span class="section-title-text">{$t('dashboardStreaksSection') || 'Streaks and patterns'}</span>
     </div>
     <div class="chart-grid-2">
-        <div class="chart-card animate-in delay-1">
+        <div class="chart-card animate-in delay-1" data-sort-id="streaks">
             <div class="chart-card-header">
-                <div class="chart-card-title">{$t('dashboardStreakActivity') || 'Activity streak'}</div>
+                <div class="chart-card-title">
+                    <span
+                        class="sort-grip"
+                        data-sort-handle
+                        role="button"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        title={$tt('dashboardDragPanel')}
+                        aria-label={$t('dashboardDragPanel')}
+                    ></span>
+                    <span>{$t('dashboardStreakActivity') || 'Activity streak'}</span>
+                </div>
                 <div class="chart-card-meta">{$t('dashboardConsecutiveDays') || 'consecutive days'}</div>
             </div>
             <div class="streak-grid">
@@ -38,10 +58,19 @@
             </div>
         </div>
 
-        <div class="chart-card animate-in delay-1">
+        <div class="chart-card animate-in delay-1" data-sort-id="hours">
             <div class="chart-card-header">
                 <div class="chart-card-title" title={$tt('titleHourDistrib')}>
-                    {$t('dashboardHourDistrib') || 'Hourly distribution'}
+                    <span
+                        class="sort-grip"
+                        data-sort-handle
+                        role="button"
+                        tabindex="-1"
+                        aria-hidden="true"
+                        title={$tt('dashboardDragPanel')}
+                        aria-label={$t('dashboardDragPanel')}
+                    ></span>
+                    <span>{$t('dashboardHourDistrib') || 'Hourly distribution'}</span>
                 </div>
                 <div class="chart-card-meta">{$t('dashboardAccFocus') || 'accumulated total focus'}</div>
             </div>

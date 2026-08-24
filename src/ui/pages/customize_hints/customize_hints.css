@@ -1969,8 +1969,9 @@ input.itg-input-error {
     line-height: 1.5;
 }
 
-/* Link preview switch, next to the blacklist heading. Same shape as the switches in
-   the popup so the two pages read as one product. */
+/* Switches. Same shape as the switches in
+   the popup so the pages read as one product. */
+.switch,
 .switch.preview-toggle {
     position: relative;
     display: inline-block;
@@ -1979,12 +1980,14 @@ input.itg-input-error {
     flex: none;
 }
 
+.switch input,
 .switch.preview-toggle input {
     opacity: 0;
     width: 0;
     height: 0;
 }
 
+.switch .slider,
 .switch.preview-toggle .slider {
     position: absolute;
     cursor: pointer;
@@ -1996,6 +1999,7 @@ input.itg-input-error {
     transition: background-color 0.3s ease;
 }
 
+.switch .slider::before,
 .switch.preview-toggle .slider::before {
     position: absolute;
     content: '';
@@ -2008,14 +2012,17 @@ input.itg-input-error {
     transition: transform 0.3s ease;
 }
 
+.switch input:checked + .slider,
 .switch.preview-toggle input:checked + .slider {
     background-color: var(--action-color);
 }
 
+.switch input:checked + .slider::before,
 .switch.preview-toggle input:checked + .slider::before {
     transform: translateX(14px);
 }
 
+.switch input:focus-visible + .slider,
 .switch.preview-toggle input:focus-visible + .slider {
     box-shadow: 0 0 0 2px var(--interactive-color);
 }

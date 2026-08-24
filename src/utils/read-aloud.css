@@ -1,0 +1,252 @@
+/*
+ * The floating panel of the page reader.
+ *
+ * These rules live inside the reader's shadow root — readAloud.js fetches this file
+ * and puts it there, next to `src/styles/select.css` — so the plain class names
+ * cannot collide with the page's, and the page's rules cannot reach them. The colours
+ * come from the theme variables the host element carries, and the host is repainted
+ * whenever the theme changes, so the panel follows the extension live.
+ *
+ * It sits against the right edge, vertically centred: a page is read top to bottom,
+ * and a bar across the bottom covers the last paragraph just as it is being read.
+ */
+
+.panel {
+    position: fixed;
+    right: 14px;
+    top: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 7px 4px;
+    box-sizing: border-box;
+    /* Fifty pixels: a column of controls and nothing else, so it takes as little of
+       the page as a set of controls possibly can. */
+    width: 50px;
+    border-radius: 14px;
+    background-color: var(--bg-panel-color, #2c2c2c);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    color: var(--text-color, #e6e6e6);
+    font-family: var(--sans, 'Roboto Flex', system-ui, sans-serif);
+    font-size: 12px;
+    line-height: 1;
+    pointer-events: auto;
+    /* Fades and slides in rather than snapping: the panel arrives over a page that is
+       already there. `translateY` carries the centring, so every transform below has
+       to restate it. */
+    opacity: 0;
+    transform: translateY(-50%) translateX(12px);
+    transition:
+        opacity 0.18s ease,
+        transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel.visible {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Turned off in the navigation settings: gone altogether, handle and all, because
+   somebody who switched the panel off is driving the reader from the keyboard. */
+.panel.is-hidden-by-setting,
+.panel.is-hidden-by-setting.visible {
+    display: none;
+}
+
+/* Hidden by sliding off its own edge, so it is obvious where it went — and where the
+   handle will bring it back from. */
+.panel.is-collapsed {
+    opacity: 0;
+    transform: translateY(-50%) translateX(120%);
+    pointer-events: none;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    flex: none;
+    transition:
+        background-color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+    background-color: var(--bg-color, rgba(255, 255, 255, 0.1));
+    color: var(--text-on-color, inherit);
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--interactive-color, #5f6368);
+    outline-offset: 1px;
+}
+
+.btn:disabled {
+    opacity: 0.32;
+    cursor: default;
+}
+
+.btn svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Play is a solid triangle; pause and the rest are drawn with strokes. */
+.btn.is-play svg {
+    fill: currentColor;
+    stroke: none;
+}
+
+/* The one control that is bigger than the rest, and always in the middle. */
+.btn.toggle {
+    width: 36px;
+    height: 36px;
+    background-color: color-mix(in srgb, var(--interactive-color, #5f6368) 22%, transparent);
+}
+
+.btn.toggle svg {
+    width: 19px;
+    height: 19px;
+}
+
+.btn.close:hover:not(:disabled) {
+    color: var(--error-color, #e74c3c);
+}
+
+.progress {
+    padding: 1px 0;
+    font-size: 9.5px;
+    letter-spacing: -0.2px;
+    opacity: 0.75;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.status {
+    display: none;
+    text-align: center;
+    font-size: 9px;
+    line-height: 1.25;
+    hyphens: auto;
+    color: var(--error-color, #e74c3c);
+}
+
+.panel.has-status .status {
+    display: block;
+}
+
+.panel.has-status .progress {
+    display: none;
+}
+
+.separator {
+    width: 60%;
+    height: 1px;
+    margin: 2px 0;
+    background-color: var(--border-color, rgba(255, 255, 255, 0.16));
+}
+
+/* --- The speed picker ------------------------------------------------------
+   `src/styles/select.css` gives it the extension's dress; these three lines only
+   tell it what size it is inside a 78px column. */
+.speed-select {
+    width: 100%;
+    height: 22px;
+    font-size: 10px;
+    border-radius: 6px;
+}
+
+.speed-select button {
+    padding: 0 3px;
+    gap: 1px;
+}
+
+.speed-select .picker-icon {
+    display: inline-flex;
+    width: 9px;
+    height: 9px;
+}
+
+.speed-select .picker-icon svg {
+    width: 100%;
+    height: 100%;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.speed-select option {
+    padding: 5px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+}
+
+/* The drop-down is in the top layer, so it is not bound by the 50px column. */
+.speed-select::picker(select) {
+    min-width: 78px;
+}
+
+/* --- The handle that brings the panel back --------------------------------- */
+.handle {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    width: 26px;
+    height: 44px;
+    border-radius: 10px 0 0 10px;
+    background-color: var(--bg-panel-color, #2c2c2c);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    border-right: none;
+    box-shadow: -4px 0 14px rgba(0, 0, 0, 0.28);
+    color: var(--text-color, #e6e6e6);
+    opacity: 0;
+    transform: translateY(-50%) translateX(100%);
+    pointer-events: none;
+    transition:
+        opacity 0.18s ease,
+        transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.handle.is-visible {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+    pointer-events: auto;
+}
+
+.handle:hover {
+    background-color: var(--bg-color, #1e1e1e);
+}
+
+/* A window too short for the column drops the wording and keeps the controls. */
+@media (max-height: 460px) {
+    .progress,
+    .speed-select {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel,
+    .handle {
+        transition: none;
+    }
+}

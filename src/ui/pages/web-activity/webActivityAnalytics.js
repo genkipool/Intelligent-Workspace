@@ -175,9 +175,14 @@ function focusSplit(sites) {
 
 /**
  * The heatmap cells for the last `weeks` weeks, in the column-major order the grid
- * expects (each column is a week, Sunday at the top).
+ * expects (each column is a week, **Monday** at the top).
+ *
+ * Monday rather than Sunday, and a year rather than half of one, because the pomodoro
+ * dashboard's calendar is drawn that way and the two sit under the same day labels.
+ * A grid whose rows mean different days on two pages of the same extension is a grid
+ * nobody can read twice.
  */
-export function heatmapCells(days, weeks = 26, now = Date.now()) {
+export function heatmapCells(days, weeks = 52, now = Date.now()) {
     const totals = {};
     for (const [day, record] of Object.entries(days)) {
         totals[day] = Object.values(record.domains || {}).reduce((sum, entry) => sum + (entry.t || 0), 0);
@@ -185,9 +190,16 @@ export function heatmapCells(days, weeks = 26, now = Date.now()) {
     const max = Math.max(...Object.values(totals), 0);
 
     const today = new Date(dayKeyToTime(dayKey(now)));
-    // Start on the Sunday of the week that is `weeks` back, so every column is full.
+    /**
+     * The Monday `weeks - 1` weeks before the Monday of *this* week, so the last
+     * column is the week in progress and today is in it.
+     *
+     * Counting back `weeks * 7 - 1` days from today and then snapping to Monday put
+     * the last cell on this week's Monday instead: every day since Tuesday was off the
+     * end of the grid, which is why the calendar never showed today.
+     */
     const start = new Date(today);
-    start.setDate(start.getDate() - (weeks * 7 - 1) - today.getDay());
+    start.setDate(start.getDate() - ((today.getDay() + 6) % 7) - (weeks - 1) * 7);
 
     const cells = [];
     const monthPositions = [];

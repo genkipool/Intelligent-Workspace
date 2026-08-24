@@ -72,6 +72,29 @@
     const limitOf = (domain) => WA.normalizeLimit(limits[domain] || {});
     const scheduleOf = (domain) => limitOf(domain).schedules?.filter((s) => s.start && s.end) || [];
 
+    /**
+     * What the cell's tooltip says once there is something to say.
+     *
+     * A cell this narrow shows one figure — the daily allowance, or the first of three
+     * windows — so hovering it has to give back the rest. Until now it repeated the
+     * pencil's "configure this", which the pencil already says and which is not what
+     * anybody hovers a value to find out.
+     */
+    const limitTitle = (limit) => {
+        const parts = [];
+        if (limit.dailyLimitSeconds > 0) parts.push(`${$t('webActivityColDaily')}: ${fmtHm(limit.dailyLimitSeconds)}`);
+        if (limit.weeklyLimitSeconds > 0)
+            parts.push(`${$t('webActivityColWeekly')}: ${fmtHm(limit.weeklyLimitSeconds)}`);
+        return parts.join(' · ');
+    };
+
+    const scheduleTitle = (limit) => {
+        if (limit.blockAlways) return `${$t('webActivityColSchedule')}: ${$t('webActivityLimitAlways')}`;
+        const windows = (limit.schedules || []).filter((entry) => entry.start && entry.end);
+        if (!windows.length) return '';
+        return `${$t('webActivityColSchedule')}: ${windows.map((w) => `${w.start}-${w.end}`).join(', ')}`;
+    };
+
     const categoryChoices = $derived(
         categoryOptions({
             custom: customCategories,
@@ -95,9 +118,9 @@
     design, and a sentence that ends in an ellipsis looks like a value that was cut
     off rather than one that was never there. The words are in the tooltip.
 -->
-{#snippet ruleCell(label, isSet, enabled, editTitle, keys, onOpen, onToggle, onClear)}
+{#snippet ruleCell(label, isSet, enabled, editTitle, valueTitle, keys, onOpen, onToggle, onClear)}
     <div class="wa-cell-with-action">
-        <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={editTitle}>
+        <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={valueTitle}>
             {isSet ? label : '—'}
         </span>
         <RuleControls
@@ -160,11 +183,12 @@
         {@render ruleCell(
             fmtHm(lim.dailyLimitSeconds),
             lim.dailyLimitSeconds > 0,
-            lim.limitEnabled,
+            lim.dailyLimitEnabled,
             $tt('webActivityConfigureLimit'),
+            limitTitle(lim) || $tt('webActivityConfigureLimit'),
             LIMIT_KEYS,
-            () => onOpenLimitEditor(row.domain),
-            (next) => onSaveLimit(row.domain, { ...lim, limitEnabled: next }),
+            () => onOpenLimitEditor(row.domain, 'daily'),
+            (next) => onSaveLimit(row.domain, { ...lim, dailyLimitEnabled: next }),
             () => onSaveLimit(row.domain, { ...lim, dailyLimitSeconds: 0 }),
         )}
     {:else if column.id === 'weekly'}
@@ -172,11 +196,12 @@
         {@render ruleCell(
             fmtHm(lim.weeklyLimitSeconds),
             lim.weeklyLimitSeconds > 0,
-            lim.limitEnabled,
+            lim.weeklyLimitEnabled,
             $tt('webActivityConfigureLimit'),
+            limitTitle(lim) || $tt('webActivityConfigureLimit'),
             LIMIT_KEYS,
-            () => onOpenLimitEditor(row.domain),
-            (next) => onSaveLimit(row.domain, { ...lim, limitEnabled: next }),
+            () => onOpenLimitEditor(row.domain, 'weekly'),
+            (next) => onSaveLimit(row.domain, { ...lim, weeklyLimitEnabled: next }),
             () => onSaveLimit(row.domain, { ...lim, weeklyLimitSeconds: 0 }),
         )}
     {:else if column.id === 'schedule'}
@@ -191,6 +216,7 @@
             lim.blockAlways || windows.length > 0,
             lim.scheduleEnabled,
             $tt('webActivityConfigureSchedule'),
+            scheduleTitle(lim) || $tt('webActivityConfigureSchedule'),
             SCHEDULE_KEYS,
             () => onOpenScheduleEditor(row.domain),
             (next) => onSaveLimit(row.domain, { ...lim, scheduleEnabled: next }),

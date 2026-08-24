@@ -223,6 +223,16 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._send('captureAreaFromShortcut'),
                 description: 'hintDesc_ca',
             },
+            ar: {
+                // The worker owns the injection, and it is the same call the panel
+                // button and the omnibar prefix make — so this is a toggle too.
+                action: () =>
+                    chrome.runtime.sendMessage({
+                        action: 'startReadAloud',
+                        notify: true,
+                    }),
+                description: 'hintDesc_readAloud',
+            },
             wp: {
                 action: async () => {
                     try {
@@ -405,9 +415,14 @@ var CommandRegistry = class CommandRegistry {
                 },
                 description: 'hintDesc_esc',
             },
-            pp: {
-                action: () => this._send('focusSidePanel'),
-                description: 'hintDesc_pp',
+            /**
+             * The side panels, all under `p`, and all through one message: the worker
+             * owns the map from a name to a page and a view (`SIDE_PANEL_TARGETS`), so
+             * a new panel is one entry there and one here rather than a new action.
+             */
+            ph: {
+                action: () => this._send('openSidePanel', { type: 'main' }),
+                description: 'hintDesc_ph',
             },
             pt: {
                 action: () =>
@@ -423,12 +438,33 @@ var CommandRegistry = class CommandRegistry {
                     }),
                 description: 'hintDesc_pl',
             },
+            pk: {
+                action: () =>
+                    this._send('openSidePanel', {
+                        type: 'listgroup-notes',
+                    }),
+                description: 'hintDesc_pk',
+            },
+            ps: {
+                action: () =>
+                    this._send('openSidePanel', {
+                        type: 'listgroup-gallery',
+                    }),
+                description: 'hintDesc_ps',
+            },
             pa: {
                 action: () =>
                     this._send('openSidePanel', {
                         type: 'listgroup-ia',
                     }),
                 description: 'hintDesc_pa',
+            },
+            pw: {
+                action: () =>
+                    this._send('openSidePanel', {
+                        type: 'web-activity',
+                    }),
+                description: 'hintDesc_pw',
             },
             pg: {
                 action: () =>

@@ -2,9 +2,18 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 </script>
 
-<section id="activity-row" style="display: none">
+<section id="activity-row" data-sort-id="activity-row" style="display: none">
     <div class="section-title" title={$tt('titleActivity52')}>
-        {$t('dashboardActivity52') || 'Daily activity - last 52 weeks'}
+        <span
+            class="sort-grip"
+            data-sort-handle
+            role="button"
+            tabindex="-1"
+            aria-hidden="true"
+            title={$tt('dashboardDragSection')}
+            aria-label={$t('dashboardDragSection')}
+        ></span>
+        <span class="section-title-text">{$t('dashboardActivity52') || 'Daily activity - last 52 weeks'}</span>
     </div>
     <div class="chart-card animate-in delay-1">
         <div class="chart-card-header">

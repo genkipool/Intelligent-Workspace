@@ -61,7 +61,9 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
 
     if (keysList.length === 0) {
         console.warn(`${logPrefix} API Key not found.`);
-        return { success: false, error: 'NO_API_KEY' };
+        // Flagged, not merely reported: the caller may have a local model to fall back
+        // on, and "no key" and "no quota left" are the same situation to it.
+        return { success: false, error: 'NO_API_KEY', allKeysExhausted: true };
     }
 
     let defaultModel = isAgent ? 'gemini-2.0-flash' : 'gemini-2.5-flash';
@@ -261,7 +263,11 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
     }
 
     console.error(`${logPrefix} All available API keys have exhausted their quota.`);
-    return { success: false, error: lastError || 'All API keys have exhausted their quota.' };
+    return {
+        success: false,
+        error: lastError || 'All API keys have exhausted their quota.',
+        allKeysExhausted: true,
+    };
 }
 
 /**

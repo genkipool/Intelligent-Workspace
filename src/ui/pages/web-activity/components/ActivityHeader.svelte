@@ -7,6 +7,7 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { PERIODS } from '../webActivityAnalytics.js';
     import SelectField from '../../../components/common/SelectField.svelte';
+    import DashboardBrandSwitcher from '../../../components/dashboard/DashboardBrandSwitcher.svelte';
     import { categoryOptions } from '../categories.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
@@ -53,15 +54,15 @@
 </script>
 
 <header class="app-header">
-    <div class="header-brand">
-        <div class="brand-icon">
-            <svg width="18" height="18" aria-hidden="true" focusable="false"><use href="#wa-activity"></use></svg>
-        </div>
-        <div>
-            <div class="brand-title">{$t('webActivityTitle')}</div>
-            <div class="brand-sub">{$t('dashboardDashboard')}</div>
-        </div>
-    </div>
+    <DashboardBrandSwitcher
+        current="webActivity"
+        pages={[
+            { id: 'webActivity', title: $t('webActivityTitle'), sub: $t('dashboardDashboard') },
+            { id: 'pomodoro', title: $t('pomodoroTitle'), sub: $t('dashboardDashboard') },
+        ]}
+        title={$tt('dashboardSwitchDashboard')}
+        switchLabel={$t('dashboardSwitchDashboard')}
+    />
 
     <div class="header-filters">
         <span class="filter-label">{$t('dashboardPeriod')}</span>

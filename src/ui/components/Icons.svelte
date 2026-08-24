@@ -406,28 +406,9 @@
                 fill="currentColor"
             />
         </symbol>
-        <symbol id="icon-video-pip" viewBox="0 0 24 24">
-            <polygon
-                points="23 7 16 12 23 17 23 7"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            ></polygon>
-            <rect
-                x="1"
-                y="5"
-                width="15"
-                height="14"
-                rx="2"
-                ry="2"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-            ></rect>
+        <symbol id="icon-video-pip" viewBox="0 0 24 24" fill="none">
+            <rect x="2" y="4" width="20" height="16" rx="2.5" stroke="currentColor" stroke-width="2"></rect>
+            <rect x="12" y="12" width="8" height="6" rx="1" fill="currentColor"></rect>
         </symbol>
         <symbol id="icon-add-checklist" viewBox="0 0 24 24">
             <path
@@ -623,6 +604,36 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 fill="none"
+            />
+        </symbol>
+        <!-- A badge rather than a document with the word inside it: these buttons are
+             drawn at 18px, and at that size lettering only reads if it fills the box. -->
+        <symbol id="icon-pdf" viewBox="0 0 24 24">
+            <rect x="1.5" y="4.5" width="21" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="2" />
+            <text
+                x="12"
+                y="15.6"
+                text-anchor="middle"
+                font-family="Roboto Mono, ui-monospace, monospace"
+                font-size="9"
+                font-weight="700"
+                letter-spacing="-0.4"
+                fill="currentColor">PDF</text
+            >
+        </symbol>
+        <!-- Lines of text with a speaker sounding off them: the two halves of "read
+             this out loud", each simple enough to survive being drawn at 14px. -->
+        <symbol id="icon-read-aloud" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h9M3 11h9M3 16h6" />
+            </g>
+            <path d="M15 9.6h1.9L20 6.9v10.2l-3.1-2.7H15a1 1 0 0 1-1-1v-2.8a1 1 0 0 1 1-1" fill="currentColor" />
+            <path
+                d="M21.9 9.4a4.2 4.2 0 0 1 0 5.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
             />
         </symbol>
         <symbol id="icon-reader" viewBox="0 0 24 24">

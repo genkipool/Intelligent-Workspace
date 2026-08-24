@@ -527,21 +527,48 @@ function handleShowOmnibarNotification(message, sender, sendResponse) {
     });
 }
 
+/**
+ * [AI INSTRUCTION]
+ * EVERY SIDE PANEL THE KEYBOARD CAN REACH, IN ONE PLACE.
+ *
+ * A target is a page and, for the pages that hold more than one thing, which of those
+ * things to show. Several of them are the same page — the group list is also the
+ * assistant, the gallery and the views strip — which is exactly why the view has to be
+ * part of the target rather than smuggled into the path: `openOrToggleSidePanel`
+ * compared base paths, so asking for the group list while the assistant was open
+ * looked like asking for what was already there, and the panel closed instead of
+ * switching. Adding a panel is one entry here plus one command in
+ * `utils/hint/registry.js`.
+ *
+ * `view` is handed to the open page (see `panelShowView` in `listGroupInit.js`), which
+ * switches in place — a reload to change view is a reload the user did not ask for.
+ */
+const SIDE_PANEL_TARGETS = {
+    main: { path: 'src/ui/pages/popup/popup.html' },
+    themes: { path: 'src/ui/pages/savedThemes/savedThemes.html' },
+    rules: { path: 'src/ui/pages/rules/rules.html' },
+    'customize-hint': { path: 'src/ui/pages/customize_hints/customize_hints.html' },
+    // The same page, opened looking at the reader's own settings — which is where
+    // the button in the reader panel sends whoever presses it.
+    'customize-hint-reader': {
+        path: 'src/ui/pages/customize_hints/customize_hints.html',
+        query: 'section=read-aloud',
+    },
+    listgroup: { path: 'src/ui/pages/listGroup/listGroup.html', view: 'groups' },
+    'listgroup-ia': { path: 'src/ui/pages/listGroup/listGroup.html', view: 'gemini' },
+    'listgroup-notes': { path: 'src/ui/pages/listGroup/listGroup.html', view: 'notes' },
+    'listgroup-gallery': { path: 'src/ui/pages/listGroup/listGroup.html', view: 'gallery' },
+    'web-activity': { path: 'src/ui/pages/web-activity/web-activity.html', query: 'context=sidepanel' },
+};
+
 function handleOpenSidePanel(message, sender, sendResponse) {
-    const validPaths = {
-        themes: 'src/ui/pages/savedThemes/savedThemes.html',
-        listgroup: 'src/ui/pages/listGroup/listGroup.html',
-        'listgroup-ia': 'src/ui/pages/listGroup/listGroup.html?view=gemini',
-        rules: 'src/ui/pages/rules/rules.html',
-        'customize-hint': 'src/ui/pages/customize_hints/customize_hints.html',
-    };
-    const targetPath = validPaths[message.type];
-    if (targetPath) {
-        openOrToggleSidePanel(targetPath, sendResponse);
-    } else {
+    const target = SIDE_PANEL_TARGETS[message.type];
+    if (!target) {
         sendResponse({
             success: false,
             error: 'Invalid side panel type',
         });
+        return;
     }
+    openSidePanelTarget(target, sendResponse);
 }

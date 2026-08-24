@@ -78,6 +78,13 @@
         cursor: not-allowed;
     }
 
+    .modal-btn-save.is-danger:disabled {
+        background-color: var(--error-color);
+        color: #fff;
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
     .modal-btn-save:focus-visible {
         outline: 2px solid var(--interactive-color);
         outline-offset: 2px;

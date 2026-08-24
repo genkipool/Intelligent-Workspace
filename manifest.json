@@ -65,6 +65,16 @@
         "<all_urls>"
       ],
       "js": [
+        "src/utils/panelScrollbar.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
         "src/utils/hint/videoPipHook.js"
       ],
       "all_frames": false,
@@ -143,6 +153,9 @@
         "src/utils/area-selector.css",
         "src/utils/screen-color-picker.js",
         "src/utils/screen-color-picker.css",
+        "src/utils/readAloud.js",
+        "src/utils/read-aloud.css",
+        "src/styles/select.css",
         "src/styles/hint_content.css",
         "src/styles/prevent_flash.css",
         "src/utils/hint_common.js",

@@ -570,15 +570,6 @@
     </svg>
 </template>
 
-<template id="page-mode-popup-template">
-    <div class="page-mode-popup">
-        <div class="page-mode-item" data-mode="black" data-i18n="modeBlack"></div>
-        <div class="page-mode-item" data-mode="light" data-i18n="modeLight"></div>
-        <div class="page-mode-item" data-mode="sepia" data-i18n="modeSepia"></div>
-        <div class="page-mode-item" data-mode="paper" data-i18n="modePaper"></div>
-    </div>
-</template>
-
 <template id="overflow-actions-template">
     <div class="overflow-actions-container">
         <div class="overflow-btn action-btn" role="button" tabindex="0" data-i18n-title="showHiddenActions">
@@ -673,6 +664,9 @@
         <div class="add-to-rule-btn action-btn">
             <svg width="14" height="14"><use href="#icon-add-to-rule"></use></svg>
         </div>
+        <div class="capture-group-btn action-btn">
+            <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
+        </div>
         <div class="copy-group-urls-btn action-btn">
             <svg width="14" height="14"><use href="#icon-copy"></use></svg>
         </div>
@@ -702,11 +696,17 @@
         <div class="gemini-summary-btn action-btn">
             <svg width="14" height="14"><use href="#icon-summary"></use></svg>
         </div>
+        <div class="read-page-btn action-btn">
+            <svg width="14" height="14"><use href="#icon-read-aloud"></use></svg>
+        </div>
         <div class="bookmark-btn action-btn"><svg width="14" height="14"><use href="#icon-bookmark"></use></svg></div>
         <div class="download-files-btn action-btn">
             <svg width="14" height="14"><use href="#icon-download"></use></svg>
         </div>
         <div class="pip-btn action-btn"><svg width="14" height="14"><use href="#icon-pip"></use></svg></div>
+        <div class="video-pip-btn action-btn">
+            <svg width="14" height="14"><use href="#icon-video-pip"></use></svg>
+        </div>
         <div class="popup-btn action-btn"><svg width="14" height="14"><use href="#icon-popup"></use></svg></div>
         <div class="split-screen-btn action-btn">
             <svg width="14" height="14"><use href="#icon-split-screen"></use></svg>
@@ -744,6 +744,7 @@
 <template id="gallery-item-template">
     <div class="gallery-item">
         <img src="" alt="Screenshot" loading="lazy" class="gallery-image" />
+        <span class="gallery-full-page-badge" data-i18n="fullPageBadge"></span>
         <div class="gallery-item-info">
             <p class="gallery-item-title"></p>
         </div>

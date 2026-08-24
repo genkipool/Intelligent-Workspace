@@ -34,29 +34,22 @@
         isSidePanel = urlParams.get('context') === 'sidepanel';
 
         if (!isSidePanel) {
+            /**
+             * THIS PAGE NO LONGER BOUNCES TO THE PINNED VIEW.
+             *
+             * It used to: if anything was pinned and a side panel was open, it replaced
+             * itself with the pinned page. That is already the toolbar button's job —
+             * `chrome.action.onClicked` opens the pinned path directly and never loads
+             * this page — so the only thing left that could reach it was somebody
+             * asking for the main panel on purpose: the `ph` shortcut, the home button,
+             * a `navSource` hand-back. All three showed the panel for a frame and then
+             * threw it away for the pinned one, which is exactly the "it goes there and
+             * comes straight back" nobody could explain.
+             */
             contextsCache =
                 typeof chrome.runtime.getContexts === 'function'
                     ? await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] })
                     : [];
-            if (contextsCache.length > 0) {
-                const { isPinned, isListGroupPinned, isGeminiPinned } = await chrome.storage.local.get([
-                    'isPinned',
-                    'isListGroupPinned',
-                    'isGeminiPinned',
-                ]);
-                if (isGeminiPinned) {
-                    window.location.replace('../listGroup/listGroup.html?view=gemini');
-                    return;
-                }
-                if (isPinned) {
-                    window.location.replace('../rules/rules.html');
-                    return;
-                }
-                if (isListGroupPinned) {
-                    window.location.replace('../listGroup/listGroup.html');
-                    return;
-                }
-            }
         }
 
         port = chrome.runtime.connect({ name: isSidePanel ? 'sidepanel-connection' : 'popup-connection' });

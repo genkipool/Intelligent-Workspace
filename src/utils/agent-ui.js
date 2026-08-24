@@ -359,6 +359,35 @@ export function getToolLabel(tool, params) {
     }
 }
 
+/**
+ * Asks for the next step of the agent, from whichever engine is answering.
+ *
+ * The local model reasons in the page, where the Prompt API lives; Gemini reasons in the
+ * worker, which holds the keys. Both come back in the same shape, so the loop below does
+ * not know or care which one it is talking to.
+ */
+async function requestAgentStep(contents) {
+    const { isLocalAiEngine, promptLocalAiAgentStep } = await import('../ui/services/localAiService.js');
+
+    if (await isLocalAiEngine()) {
+        return await promptLocalAiAgentStep(AGENT_SYSTEM_PROMPT, contents);
+    }
+
+    return await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+            {
+                action: 'geminiAgentStep',
+                systemPrompt: AGENT_SYSTEM_PROMPT,
+                contents,
+            },
+            (response) =>
+                resolve(
+                    chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : response,
+                ),
+        );
+    });
+}
+
 export async function handleAgentQuery(userQuery, attachments = []) {
     if (!userQuery) return;
 
@@ -530,21 +559,7 @@ export async function handleAgentQuery(userQuery, attachments = []) {
                 break;
             }
 
-            const geminiResult = await new Promise((resolve) => {
-                chrome.runtime.sendMessage(
-                    {
-                        action: 'geminiAgentStep',
-                        systemPrompt: AGENT_SYSTEM_PROMPT,
-                        contents,
-                    },
-                    (response) =>
-                        resolve(
-                            chrome.runtime.lastError
-                                ? { success: false, error: chrome.runtime.lastError.message }
-                                : response,
-                        ),
-                );
-            });
+            const geminiResult = await requestAgentStep(contents);
 
             hideThinking();
 

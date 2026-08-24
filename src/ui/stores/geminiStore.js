@@ -3,6 +3,7 @@ import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb
 import { showNotification, getCurrentLang, loadMessages } from '../../utils/i18n.js';
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
 import { parseMarkdown } from '../content-renderer/content-renderer.js';
+import { LOCAL_AI_MODEL_ID } from '../services/localAiService.js';
 import {
     isGeminiViewActive as appIsGeminiViewActive,
     currentlySpeakingEntryId as noteSpeakingEntryId,
@@ -160,6 +161,17 @@ function createGeminiStore() {
         }
 
         if (errorMsg) {
+            // The API is out: either every key is spent or there is no key at all. If
+            // the user installed Chrome's local model for exactly this, the question is
+            // answered by it instead of being thrown away with a red message.
+            const localAnswer = await answerWithLocalAi(current, entryId, response);
+            if (localAnswer) {
+                response = localAnswer;
+                errorMsg = '';
+            }
+        }
+
+        if (errorMsg) {
             if (fallback) {
                 const restored = { ...fallback, isLoading: false };
                 update((st) => ({
@@ -189,6 +201,46 @@ function createGeminiStore() {
         }));
         await saveGeminiEntryToDb(answered);
         chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
+    }
+
+    /**
+     * Chrome's local model, when the API has nothing left to give.
+     *
+     * Only the two failures the local engine is a genuine answer to are caught here —
+     * quota gone and no key — so a blocked answer or a broken network still says so
+     * rather than being quietly replaced by a smaller model's guess.
+     *
+     * @returns {Promise<object|null>} A response in the API client's shape, or null.
+     */
+    async function answerWithLocalAi(entry, entryId, response) {
+        if (!entry?.query) return null;
+        const exhausted = response?.allKeysExhausted || response?.error === 'NO_API_KEY';
+        if (!exhausted) return null;
+
+        const { shouldFallbackToLocalAi, promptLocalAi } = await import('../services/localAiService.js');
+        if (!(await shouldFallbackToLocalAi())) return null;
+
+        const result = await promptLocalAi(entry.query, buildGeminiHistoryContents(entryId));
+        if (!result.success) return null;
+
+        // The selector says who is answering. Falling back without moving it left the
+        // panel claiming a Gemini model wrote what the local one did.
+        await chrome.storage.local.set({ selectedGeminiModel: LOCAL_AI_MODEL_ID });
+        update((st) => ({ ...st, selectedModel: LOCAL_AI_MODEL_ID }));
+        return result;
+    }
+
+    /**
+     * The local engine as a choice rather than as a rescue: the model selector lists it
+     * whenever it is installed, and picking it sends the question straight there.
+     *
+     * @returns {Promise<object|null>} A response in the API client's shape, or null when
+     *          the selected model is a remote one.
+     */
+    async function answerWithSelectedLocalAi(query, entryId) {
+        if (get(state).selectedModel !== LOCAL_AI_MODEL_ID) return null;
+        const { promptLocalAi } = await import('../services/localAiService.js');
+        return await promptLocalAi(query, buildGeminiHistoryContents(entryId));
     }
 
     function buildGeminiHistoryContents(targetEntryId) {
@@ -347,24 +399,39 @@ function createGeminiStore() {
 
         initializeModelSelector: async () => {
             const data = await chrome.storage.local.get('selectedGeminiModel');
-            const selectedModel = data.selectedGeminiModel || 'gemini-2.5-flash';
+            let selectedModel = data.selectedGeminiModel || 'gemini-2.5-flash';
 
-            let availableModels;
+            const { checkAvailability, LOCAL_AI_STATUS } = await import('../services/localAiService.js');
+            const localInstalled = (await checkAvailability()) === LOCAL_AI_STATUS.AVAILABLE;
+
+            let remoteModels = null;
             try {
                 const response = await chrome.runtime.sendMessage({ action: 'getAvailableGeminiModels' });
                 if (response && response.success) {
-                    availableModels = response.models
+                    remoteModels = response.models
                         .filter((m) => m.includes('gemini'))
                         .sort((a, b) => b.localeCompare(a));
-                    if (!availableModels.includes(selectedModel)) {
-                        await chrome.storage.local.set({ selectedGeminiModel: 'gemini-2.5-flash' });
-                        update((st) => ({ ...st, selectedModel: 'gemini-2.5-flash' }));
-                    }
-                } else {
-                    availableModels = [selectedModel];
                 }
             } catch {
-                availableModels = [selectedModel];
+                remoteModels = null;
+            }
+
+            // The local model is one more line in the list, at the end: it is the one
+            // that answers when the others cannot, and that is where the eye ends up.
+            const availableModels = [...(remoteModels || []), ...(localInstalled ? [LOCAL_AI_MODEL_ID] : [])];
+
+            if (availableModels.length === 0) {
+                // Nothing was reachable — a key that failed, no key at all. Keep whatever
+                // was chosen rather than pretending the list is empty.
+                update((st) => ({ ...st, selectedModel, availableModels: [selectedModel] }));
+                return;
+            }
+
+            if (!availableModels.includes(selectedModel)) {
+                // With no Gemini model on offer and the local one installed, the local one
+                // is not a fallback any more: it is the only thing that can answer.
+                selectedModel = remoteModels?.length ? 'gemini-2.5-flash' : LOCAL_AI_MODEL_ID;
+                await chrome.storage.local.set({ selectedGeminiModel: selectedModel });
             }
 
             update((st) => ({ ...st, selectedModel, availableModels }));
@@ -523,6 +590,12 @@ function createGeminiStore() {
             update((st) => ({ ...st, pendingAttachments: [] }));
 
             try {
+                const localResponse = await answerWithSelectedLocalAi(query, newEntry.id);
+                if (localResponse) {
+                    await applyGeminiAnswer(newEntry.id, localResponse);
+                    return;
+                }
+
                 chrome.runtime.sendMessage(
                     {
                         action: 'searchGemini',

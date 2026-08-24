@@ -21,7 +21,7 @@ import {
 
 import { saveBackupToDb, deleteBackupFromDb } from '../../utils/db.js';
 
-import { colors, noteConfig, screenshotConfig } from './constants.js';
+import { colors, noteConfig, screenshotConfig, PAGE_MODES } from './constants.js';
 import { getGroupInfoMap, animateAndRemove, linkedGroupIds } from './utils.js';
 import { exportCookies, processCookieFile } from '../../utils/importExport.js';
 
@@ -75,77 +75,106 @@ export const pinnedAtLastPositionId = writable(null);
 
 // ─── Exported Functions ───
 
-export function createPageModePopup(container, tabEl, pageModes) {
+/**
+ * The hover menu an action button can carry.
+ *
+ * The page-mode button has always had one; the summary and the camera now need the
+ * same thing, so the mechanics live here once. The caller only says what the rows
+ * are: the mounting, the show/hide timing and the teardown are the same either way.
+ *
+ * The rows are built on every hover rather than once, because what they should say
+ * depends on state that moves — which page mode is in force, whether the reader is
+ * already talking.
+ *
+ * @param {HTMLElement} container The positioned wrapper the popup is appended to.
+ * @param {() => Array<{label?: string, i18n?: string, active?: boolean, onSelect: () => void}>} buildItems
+ */
+export function createHoverActionPopup(container, buildItems) {
+    if (!container || container.dataset.hoverPopupBound === 'true') return;
+    container.dataset.hoverPopupBound = 'true';
+
     let popupEl = null;
     let hideTimeout;
 
     const removePopup = () => {
-        if (popupEl) {
-            popupEl.classList.remove('visible');
-            setTimeout(() => {
-                if (popupEl) {
-                    popupEl.remove();
-                    popupEl = null;
-                }
-            }, 200);
-        }
+        if (!popupEl) return;
+        const leaving = popupEl;
+        popupEl = null;
+        leaving.classList.remove('visible');
+        setTimeout(() => leaving.remove(), 200);
     };
 
     const showPopup = () => {
         clearTimeout(hideTimeout);
         if (popupEl) return;
 
-        const popupTemplate = document.getElementById('page-mode-popup-template');
-        popupEl = popupTemplate.content.cloneNode(true).firstElementChild;
+        const items = buildItems() || [];
+        if (items.length === 0) return;
 
-        const tabId = parseInt(tabEl.dataset.tabId, 10);
-        const tabMode = pageModes.tabModes[tabId];
-        const globalMode = pageModes.globalMode;
-        const effectiveMode = tabMode !== undefined ? tabMode : globalMode;
+        popupEl = document.createElement('div');
+        // The look is the page-mode menu's; `action-popup` is what the two share.
+        popupEl.className = 'page-mode-popup action-popup';
 
-        popupEl.querySelectorAll('.page-mode-item').forEach((item) => {
-            if (item.dataset.mode === effectiveMode) {
-                item.classList.add('active');
-            }
-
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const mode = item.dataset.mode;
-
-                if (!isNaN(tabId)) {
-                    chrome.runtime.sendMessage(
-                        {
-                            action: 'setPageMode',
-                            mode: mode,
-                            scope: 'tab',
-                            tabId: tabId,
-                        },
-                        (response) => {
-                            if (chrome.runtime.lastError) {
-                                console.error('Error sending setPageMode message:', chrome.runtime.lastError.message);
-                                showNotification('errorApplyingMode', true);
-                            } else if (response && response.success) {
-                                showNotification('modeAppliedSuccessfully', false, [item.textContent]);
-                                renderGroups();
-                            }
-                        },
-                    );
-                }
+        items.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'page-mode-item action-popup-item';
+            row.setAttribute('role', 'button');
+            row.tabIndex = 0;
+            if (item.i18n) row.setAttribute('data-i18n', item.i18n);
+            if (item.label) row.textContent = item.label;
+            if (item.active) row.classList.add('active');
+            row.addEventListener('click', (event) => {
+                event.stopPropagation();
+                event.preventDefault();
                 removePopup();
+                item.onSelect();
             });
+            popupEl.appendChild(row);
         });
 
         container.appendChild(popupEl);
-
-        requestAnimationFrame(() => {
-            popupEl.classList.add('visible');
-        });
+        requestAnimationFrame(() => popupEl?.classList.add('visible'));
         applyTranslations(popupEl);
     };
 
     container.addEventListener('mouseenter', showPopup);
     container.addEventListener('mouseleave', () => {
         hideTimeout = setTimeout(removePopup, 200);
+    });
+}
+
+/**
+ * The reading modes of one tab, as the hover menu of its page-mode button.
+ *
+ * Kept as its own function because the mode that is in force has to be worked out
+ * per tab, and because two other places (the overflow menu and the context menu)
+ * send the very same message.
+ */
+export function createPageModePopup(container, tabEl, pageModes) {
+    createHoverActionPopup(container, () => {
+        const tabId = parseInt(tabEl.dataset.tabId, 10);
+        const tabMode = pageModes.tabModes?.[tabId];
+        const effectiveMode = tabMode !== undefined ? tabMode : pageModes.globalMode;
+
+        return PAGE_MODES.map(({ mode, i18n }) => ({
+            i18n,
+            active: mode === effectiveMode,
+            onSelect: () => applyPageMode(tabId, mode, i18n),
+        }));
+    });
+}
+
+/** Sends one page mode to one tab and reports back the way every caller expects. */
+export function applyPageMode(tabId, mode, i18nKey) {
+    if (isNaN(tabId)) return;
+    chrome.runtime.sendMessage({ action: 'setPageMode', mode, scope: 'tab', tabId }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.error('Error sending setPageMode message:', chrome.runtime.lastError.message);
+            showNotification('errorApplyingMode', true);
+        } else if (response && response.success) {
+            showNotification('modeAppliedSuccessfully', false, [chrome.i18n.getMessage(i18nKey) || mode]);
+            renderGroups();
+        }
     });
 }
 

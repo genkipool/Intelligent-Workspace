@@ -128,6 +128,24 @@ function getThemeSeriesColors() {
     ];
 }
 
+/**
+ * One colour at graded strength, strongest first.
+ *
+ * A ranking is not a set of categories: twelve unrelated hues down a "who took the
+ * most time" chart invite the reader to look for meaning in the colours, and the
+ * categorical palette's fifth entry is a red, which on a chart about time spent reads
+ * as a warning that was never intended. A single accent fading out says the one thing
+ * the chart is actually saying — more at the top, less at the bottom.
+ *
+ * @param {number} count How many bars there are.
+ * @returns {string[]} `count` colours, index 0 the most intense.
+ */
+export function accentRamp(count, { min = 0.3, max = 1, varName = '--interactive-color' } = {}) {
+    const base = cssVar(varName) || '#3498db';
+    if (count <= 1) return [colorMix(base, max)];
+    return Array.from({ length: count }, (_, index) => colorMix(base, max - ((max - min) * index) / (count - 1)));
+}
+
 /** The nth series colour, wrapping around the palette. */
 export function getSeriesColor(idx) {
     const palette = getThemeSeriesColors();

@@ -1,9 +1,17 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import { isCtrlHeld } from '../../../stores/modifierKeysStore.js';
-    import { searchToggles, currentMainView } from '../../../stores/appStore.svelte.js';
+    import {
+        searchToggles,
+        currentMainView,
+        overlayViewOpening,
+        isNotesViewActive,
+        isGalleryViewActive,
+        isGeminiViewActive,
+    } from '../../../stores/appStore.svelte.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
+    import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
 
     let {
         initialTitleKey = 'listTabGroups',
@@ -28,7 +36,33 @@
         gemini: 'geminiViewTitle',
     };
 
-    let titleKey = $derived(VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
+    /**
+     * The header's name for what is on screen.
+     *
+     * The views painted over the group list come first: while one of them is opening
+     * `currentMainView` is 'groups', and taking its word for it made the header say
+     * "Listar Grupos" for a frame in the middle of opening the notes. `overlayViewOpening`
+     * is set before that switch and the flags stay up for as long as the view does, so
+     * between them there is no moment when nobody is claiming the header.
+     */
+    const OVERLAY_TITLE_MAP = {
+        notes: 'notesViewTitle',
+        gallery: 'screenshotGalleryTitle',
+        gemini: 'geminiViewTitle',
+    };
+
+    let overlayTitleKey = $derived(
+        OVERLAY_TITLE_MAP[$overlayViewOpening] ||
+            ($isNotesViewActive
+                ? 'notesViewTitle'
+                : $isGalleryViewActive
+                  ? 'screenshotGalleryTitle'
+                  : $isGeminiViewActive
+                    ? 'geminiViewTitle'
+                    : null),
+    );
+
+    let titleKey = $derived(overlayTitleKey || VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
 
     /**
      * The header's buttons. No handlers: this page attaches them by id from plain JS,
@@ -89,50 +123,53 @@
     actionsClass="header-actions"
     actions={headerActions}
 />
-<div class="search-and-controls">
-    <div class="search-container">
-        <label for="search-input" class="visually-hidden">{$t('searchGroupPlaceholder')}</label>
-        <input
-            type="search"
-            id="search-input"
-            class="search-input"
-            autocomplete="off"
-            spellcheck="false"
-            translate="no"
-            title={$tt('searchBarHelpTooltip')}
-        />
-        <button
-            id="gemini-toggle-btn"
-            type="button"
-            aria-pressed={$searchToggles.gemini}
-            title={$tt('enableGeminiSearch')}
-        >
-            <svg width="24" height="24" aria-hidden="true" focusable="false">
-                <use href="#icon-gemini"></use>
-            </svg>
-        </button>
-        <button
-            id="web-search-toggle-btn"
-            type="button"
-            aria-pressed={$searchToggles.web}
-            title={$tt('enableWebSearch')}
-        >
-            <svg width="24" height="24" aria-hidden="true" focusable="false">
-                <use href="#icon-web-search"></use>
-            </svg>
-        </button>
-        <button
-            id="regex-toggle-btn"
-            type="button"
-            aria-pressed={$searchToggles.regex}
-            title={$tt('enableRegexSearch')}
-        >
-            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                <use href="#icon-regex"></use>
-            </svg>
-        </button>
-    </div>
-    <div class="controls-container">
+<SearchAndControls>
+    {#snippet search()}
+        <div class="search-container">
+            <label for="search-input" class="visually-hidden">{$t('searchGroupPlaceholder')}</label>
+            <input
+                type="search"
+                id="search-input"
+                class="search-input"
+                autocomplete="off"
+                spellcheck="false"
+                translate="no"
+                title={$tt('searchBarHelpTooltip')}
+            />
+            <button
+                id="gemini-toggle-btn"
+                type="button"
+                aria-pressed={$searchToggles.gemini}
+                title={$tt('enableGeminiSearch')}
+            >
+                <svg width="24" height="24" aria-hidden="true" focusable="false">
+                    <use href="#icon-gemini"></use>
+                </svg>
+            </button>
+            <button
+                id="web-search-toggle-btn"
+                type="button"
+                aria-pressed={$searchToggles.web}
+                title={$tt('enableWebSearch')}
+            >
+                <svg width="24" height="24" aria-hidden="true" focusable="false">
+                    <use href="#icon-web-search"></use>
+                </svg>
+            </button>
+            <button
+                id="regex-toggle-btn"
+                type="button"
+                aria-pressed={$searchToggles.regex}
+                title={$tt('enableRegexSearch')}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href="#icon-regex"></use>
+                </svg>
+            </button>
+        </div>
+    {/snippet}
+
+    {#snippet controls()}
         <button
             id="search-toggle-btn"
             type="button"
@@ -240,7 +277,15 @@
             </svg>
             <span id="duplicate-badge" class="duplicate-badge hidden"></span>
         </button>
-        <button id="add-note-view-btn" type="button" class="control-btn hidden" title={$tt('addNewNote')}>
+        <!-- From the same table as every other control, so opening straight into the
+                 notes paints this button on the first frame instead of a moment later. -->
+        <button
+            id="add-note-view-btn"
+            type="button"
+            class="control-btn"
+            class:hidden={startsHidden('add-note-view-btn')}
+            title={$tt('addNewNote')}
+        >
             <svg width="24" height="24" aria-hidden="true" focusable="false">
                 <use href="#icon-add-note"></use>
             </svg>
@@ -346,5 +391,5 @@
                 <use href="#icon-more-vertical"></use>
             </svg>
         </button>
-    </div>
-</div>
+    {/snippet}
+</SearchAndControls>

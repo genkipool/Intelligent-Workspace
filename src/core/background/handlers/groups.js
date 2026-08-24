@@ -337,7 +337,9 @@ function isSubsequence(needle, haystack) {
 async function handleNavigateToGroupTab(message, sender, sendResponse) {
     try {
         const { groupPrefix, tabIndex } = message;
-        if (!groupPrefix || typeof tabIndex !== 'number' || tabIndex < 1) {
+        // Zero is not "no tab": it is the last one. Only a negative or a non-number is
+        // nothing to act on.
+        if (!groupPrefix || typeof tabIndex !== 'number' || !Number.isFinite(tabIndex) || tabIndex < 0) {
             if (sendResponse) sendResponse({ success: false, error: 'Invalid parameters' });
             return;
         }
@@ -418,8 +420,9 @@ async function handleNavigateToGroupTab(message, sender, sendResponse) {
             return;
         }
 
-        // 1-based index clamped to available tab count
-        const clampedIndex = Math.min(Math.max(tabIndex, 1), tabs.length) - 1;
+        // 1-based index clamped to the available tab count, with 0 meaning the last
+        // tab — counting to the end of a group is exactly what nobody wants to do.
+        const clampedIndex = tabIndex === 0 ? tabs.length - 1 : Math.min(Math.max(tabIndex, 1), tabs.length) - 1;
         const targetTab = tabs[clampedIndex];
 
         if (targetGroup.collapsed) {

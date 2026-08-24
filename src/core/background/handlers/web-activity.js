@@ -69,6 +69,7 @@ async function waGetLimits() {
 async function waSaveLimits(limits) {
     await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.LIMITS]: limits });
     await waRebuildBlockRules();
+    await waSyncPush({ days: false });
 }
 
 async function waGetDay(dayKey) {
@@ -152,13 +153,32 @@ async function waUsedThisWeek(domain, now = Date.now()) {
     );
 }
 
+/**
+ * Which pomodoro phase was running, as a key of `entry.p`, or null if the timer was
+ * not going.
+ *
+ * Read straight from the timer's stored state rather than passed in: the tracker is
+ * driven by browser events and the timer by an alarm, so there is no moment where one
+ * could hand the other anything. A paused timer counts as no phase — the point of the
+ * figure is time spent browsing *during* a focus block, and a paused block is not one.
+ */
+async function waPomodoroPhaseField() {
+    try {
+        const { pomodoroState: state } = await chrome.storage.local.get('pomodoroState');
+        if (!state?.isRunning) return null;
+        return ITG_WEB_ACTIVITY.POMODORO_PHASE_FIELD[state.mode] || null;
+    } catch {
+        return null;
+    }
+}
+
 // ---------------------------------------------------------------- writing counters
 
 /**
  * Banks a stretch of time against a site, spread over the days and hours it really
  * covers, and returns the site's new total for today.
  */
-async function waAddTime(domain, startMs, endMs) {
+async function waAddTime(domain, startMs, endMs, phaseField = null) {
     const seconds = (endMs - startMs) / 1000;
     if (!domain || !(seconds > 0.5)) return waUsedToday(domain, endMs);
 
@@ -179,9 +199,13 @@ async function waAddTime(domain, startMs, endMs) {
         const record = await waGetDay(dayKey);
         record.domains ||= {};
         const entry = (record.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay());
+        // A record written before the phase split has no `p`, and a day is read back
+        // as it was stored rather than through `emptyDomainDay`.
+        entry.p ||= { w: 0, s: 0, l: 0 };
         for (const bucket of dayBuckets) {
             entry.t = Math.round((entry.t + bucket.seconds) * 100) / 100;
             entry.h[bucket.hour] = Math.round(((entry.h[bucket.hour] || 0) + bucket.seconds) * 100) / 100;
+            if (phaseField) entry.p[phaseField] = Math.round((entry.p[phaseField] + bucket.seconds) * 100) / 100;
         }
         writes[ITG_WEB_ACTIVITY.dayStorageKey(dayKey)] = record;
         if (dayKey === todayKey) todayTotal = entry.t;
@@ -311,7 +335,7 @@ async function waSyncNow({ idleSince = null } = {}) {
     let usedToday = null;
     if (open) {
         const closedAt = idleSince && idleSince > open.startedAt ? idleSince : now;
-        usedToday = await waAddTime(open.domain, open.startedAt, closedAt);
+        usedToday = await waAddTime(open.domain, open.startedAt, closedAt, await waPomodoroPhaseField());
     }
 
     if (next) {
@@ -429,6 +453,7 @@ async function waEnforce(domain, usedToday, settings, now = Date.now()) {
         !(await waAlreadyWarned(stamp))
     ) {
         await waMarkWarned(stamp);
+        await loadI18nMessages();
         chrome.notifications.create(`wa-limit-${stamp}`, {
             type: 'basic',
             iconUrl: chrome.runtime.getURL('assets/icons/icon48.png'),
@@ -489,6 +514,239 @@ async function waReadDays(limitDays = 0) {
     return days;
 }
 
+/**
+ * Adds one stored day entry into another, field by field.
+ *
+ * Three places had grown their own copy of this loop — the importer, the sync reader
+ * and the sync merge — and the phase split (`p`) was added to two of them, which is
+ * exactly the kind of drift that makes a figure disagree with itself depending on
+ * which route the data took.
+ */
+function waAddEntry(target, incoming) {
+    target.t += incoming.t || 0;
+    target.v += incoming.v || 0;
+    target.s += incoming.s || 0;
+    for (const [hour, seconds] of Object.entries(incoming.h || {})) {
+        target.h[hour] = (target.h[hour] || 0) + seconds;
+    }
+    target.p ||= { w: 0, s: 0, l: 0 };
+    for (const field of ['w', 's', 'l']) {
+        target.p[field] = (target.p[field] || 0) + (incoming.p?.[field] || 0);
+    }
+    return target;
+}
+
+// ---------------------------------------------------------------- profile sync
+
+/**
+ * [AI INSTRUCTION]
+ * THE SHARED COPY, WHEN THE USER ASKS FOR ONE.
+ *
+ * `chrome.storage.sync` rides along with the browser profile, so writing there is how
+ * the same extension in another browser ends up with the same figures. It is off by
+ * default and everything below is a no-op until `settings.syncEnabled` is true.
+ *
+ * THREE THINGS ARE SHARED, AND THEY ARE SHARED DIFFERENTLY.
+ *
+ * - The preferences and the rules are one decision the user made once, so they are
+ *   one item each and the most recent write wins. Each carries an `at` stamp so a
+ *   browser that has been shut for a week cannot push its stale copy over a newer one
+ *   the moment it wakes up.
+ * - The day records are not a decision, they are a measurement, and two browsers
+ *   measure different halves of the same Tuesday. Each writes its own days under its
+ *   own device key and the reader adds them up. Overwriting one item with the other's
+ *   copy would throw away whichever browser was opened first.
+ *
+ * WHAT IS NOT SHARED. Blocking is still decided on the local record: the blocker runs
+ * on every navigation and cannot afford a round trip to the sync area, and a shared
+ * area that is minutes stale is not something to hold a door shut with. The rules
+ * travel; the enforcement stays where the browsing is.
+ *
+ * The local record is never written from the sync area either. It stays this
+ * browser's own count — merging on read is what keeps the two from adding the same
+ * seconds twice on the next push.
+ */
+
+/** Chrome's own ceiling. An item over it is rejected, so it is not offered. */
+const WA_SYNC_ITEM_BYTES = 8000;
+
+/** This browser's id inside the shared record, minted once and kept. */
+async function waSyncDeviceId() {
+    const key = ITG_WEB_ACTIVITY.KEYS.SYNC_DEVICE;
+    const { [key]: stored } = await chrome.storage.local.get(key);
+    if (stored) return stored;
+    const id = 'd' + Math.random().toString(36).slice(2, 10);
+    await chrome.storage.local.set({ [key]: id });
+    return id;
+}
+
+const waSyncDayKey = (device, day) => `${ITG_WEB_ACTIVITY.SYNC.DAY_PREFIX}${device}:${day}`;
+
+/** Everything of ours in the shared area, so it can be read or swept in one go. */
+async function waSyncReadAll() {
+    try {
+        const all = await chrome.storage.sync.get(null);
+        return Object.fromEntries(Object.entries(all).filter(([key]) => key.startsWith(ITG_WEB_ACTIVITY.SYNC.PREFIX)));
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Publishes this browser's copy.
+ *
+ * Days that do not fit the per-item ceiling are skipped rather than failing the whole
+ * push: one enormous Tuesday must not stop the other twenty days from travelling.
+ *
+ * @param {{ days?: boolean }} [options] The record is twenty-one items and the shared
+ *   area only takes a hundred and twenty writes a minute, so editing a rule publishes
+ *   the rules alone. The record goes out on the tick (see `waSyncPushDue`).
+ */
+async function waSyncPush({ days: includeDays = true } = {}) {
+    const settings = await waGetSettings();
+    if (!settings.syncEnabled) return;
+
+    const limits = await waGetLimits();
+    const now = Date.now();
+    const writes = {
+        [ITG_WEB_ACTIVITY.SYNC.SETTINGS]: { at: now, settings },
+        [ITG_WEB_ACTIVITY.SYNC.LIMITS]: { at: now, limits },
+    };
+
+    let device = null;
+    if (includeDays) {
+        device = await waSyncDeviceId();
+        for (const [day, record] of Object.entries(await waReadDays(ITG_WEB_ACTIVITY.SYNC.DAYS))) {
+            const item = { at: now, record };
+            if (JSON.stringify(item).length > WA_SYNC_ITEM_BYTES) continue;
+            writes[waSyncDayKey(device, day)] = item;
+        }
+    }
+
+    try {
+        await chrome.storage.sync.set(writes);
+    } catch (error) {
+        logMessage('[webActivity] Could not publish the synced copy: ' + error.message);
+        return;
+    }
+    if (!includeDays) return;
+
+    // Days that have rolled out of the window are this browser's to withdraw.
+    const stale = Object.keys(await waSyncReadAll()).filter(
+        (key) => key.startsWith(`${ITG_WEB_ACTIVITY.SYNC.DAY_PREFIX}${device}:`) && !writes[key],
+    );
+    if (stale.length) await chrome.storage.sync.remove(stale).catch(() => {});
+}
+
+/** How often the record itself is republished. */
+const WA_SYNC_PUSH_EVERY_MS = 10 * 60 * 1000;
+const WA_SYNC_PUSHED_KEY = 'wa:syncPushedAt';
+
+/**
+ * The minute tick's share of the work: republish the record, but only every so often.
+ *
+ * The stamp lives in session storage because the worker is shut down between events —
+ * a variable would reset to "never pushed" every time anything at all happened, and
+ * the tick would publish twenty-one items a minute for as long as the browser was
+ * open.
+ */
+async function waSyncPushDue() {
+    const settings = await waGetSettings();
+    if (!settings.syncEnabled) return;
+    const { [WA_SYNC_PUSHED_KEY]: last = 0 } = await chrome.storage.session.get(WA_SYNC_PUSHED_KEY);
+    if (Date.now() - last < WA_SYNC_PUSH_EVERY_MS) return;
+    await chrome.storage.session.set({ [WA_SYNC_PUSHED_KEY]: Date.now() });
+    await waSyncPush();
+}
+
+/**
+ * The day records the *other* browsers have published, `{ [day]: { domains } }`.
+ *
+ * This browser's own slice is left out on purpose: it is already in the local record,
+ * and adding it to itself would double every figure on the page.
+ */
+async function waSyncRemoteDays() {
+    const settings = await waGetSettings();
+    if (!settings.syncEnabled) return {};
+    const device = await waSyncDeviceId();
+    const all = await waSyncReadAll();
+    const days = {};
+    for (const [key, item] of Object.entries(all)) {
+        if (!key.startsWith(ITG_WEB_ACTIVITY.SYNC.DAY_PREFIX)) continue;
+        const [itemDevice, day] = key.slice(ITG_WEB_ACTIVITY.SYNC.DAY_PREFIX.length).split(':');
+        if (!day || itemDevice === device) continue;
+        days[day] ||= { domains: {} };
+        for (const [domain, incoming] of Object.entries(item?.record?.domains || {})) {
+            waAddEntry((days[day].domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay()), incoming);
+        }
+    }
+    return days;
+}
+
+/** Local plus everyone else's, added domain by domain and hour by hour. */
+function waMergeDays(local, remote) {
+    if (!Object.keys(remote).length) return local;
+    const merged = {};
+    for (const day of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+        const record = { domains: {} };
+        for (const source of [local[day], remote[day]]) {
+            for (const [domain, incoming] of Object.entries(source?.domains || {})) {
+                waAddEntry((record.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay()), incoming);
+            }
+        }
+        merged[day] = record;
+    }
+    return merged;
+}
+
+/**
+ * Takes the preferences and the rules another browser published, if they are newer
+ * than what is here. The record is not pulled: it is merged when it is read.
+ */
+async function waSyncPull() {
+    const settings = await waGetSettings();
+    if (!settings.syncEnabled) return;
+    try {
+        const { [ITG_WEB_ACTIVITY.SYNC.SETTINGS]: remoteSettings, [ITG_WEB_ACTIVITY.SYNC.LIMITS]: remoteLimits } =
+            await chrome.storage.sync.get([ITG_WEB_ACTIVITY.SYNC.SETTINGS, ITG_WEB_ACTIVITY.SYNC.LIMITS]);
+
+        if (remoteSettings?.settings) {
+            // Whether *this* browser syncs is this browser's business, so the incoming
+            // copy never gets to switch it off — that would be a one-way door nobody
+            // could reopen from here.
+            await chrome.storage.local.set({
+                [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: {
+                    ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS,
+                    ...remoteSettings.settings,
+                    syncEnabled: true,
+                },
+            });
+        }
+        if (remoteLimits?.limits) {
+            await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.LIMITS]: remoteLimits.limits });
+            await waRebuildBlockRules();
+        }
+    } catch (error) {
+        logMessage('[webActivity] Could not read the synced copy: ' + error.message);
+    }
+}
+
+/** Everything this extension ever wrote to the shared area, gone. */
+async function waSyncWipe() {
+    const keys = Object.keys(await waSyncReadAll());
+    if (keys.length) await chrome.storage.sync.remove(keys).catch(() => {});
+}
+
+/**
+ * Another browser wrote something. Only the shared config is worth reacting to; a day
+ * record landing there changes nothing until the dashboard asks for the days again.
+ */
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync') return;
+    if (!changes[ITG_WEB_ACTIVITY.SYNC.SETTINGS] && !changes[ITG_WEB_ACTIVITY.SYNC.LIMITS]) return;
+    waSerial(() => waSyncPull());
+});
+
 // ---------------------------------------------------------------- message handlers
 
 /** Everything the dashboard paints, in one round trip. */
@@ -505,12 +763,13 @@ function handleWebActivityGetData(message, sendResponse) {
             ]);
             sendResponse({
                 success: true,
-                days,
+                days: waMergeDays(days, await waSyncRemoteDays()),
                 limits,
                 settings,
                 openSegment,
                 recent: recentStore[ITG_WEB_ACTIVITY.KEYS.RECENT] || [],
                 blocked: await waBlockedDomains(),
+                snoozeUses: await waSnoozeUses(),
             });
         } catch (error) {
             console.error('[webActivity] getData failed:', error);
@@ -531,6 +790,7 @@ function handleWebActivityGetStatus(message, sendResponse) {
             success: true,
             verdict: ITG_WEB_ACTIVITY.evaluate(message.domain, limits, used, new Date(now), usedWeek),
             settings: await waGetSettings(),
+            snoozeUses: await waSnoozeUses(now),
         });
     })();
 }
@@ -538,14 +798,49 @@ function handleWebActivityGetStatus(message, sendResponse) {
 function handleWebActivitySaveLimit(message, sendResponse) {
     waSerial(async () => {
         const limits = await waGetLimits();
-        if (message.limit === null) delete limits[message.domain];
-        else limits[message.domain] = ITG_WEB_ACTIVITY.normalizeLimit(message.limit);
+        if (Array.isArray(message.domains)) {
+            for (const d of message.domains) {
+                if (message.limit === null) {
+                    delete limits[d];
+                } else {
+                    limits[d] = ITG_WEB_ACTIVITY.normalizeLimit({
+                        ...(limits[d] || {}),
+                        ...message.limit,
+                        category: limits[d]?.category || null,
+                    });
+                }
+            }
+        } else if (message.limit === null) {
+            delete limits[message.domain];
+        } else {
+            limits[message.domain] = ITG_WEB_ACTIVITY.normalizeLimit(message.limit);
+        }
         await waSaveLimits(limits);
         sendResponse({ success: true, limits });
     });
 }
 
 /** Lifts the block for a few minutes, which is the honest version of "not now". */
+/**
+ * How many times the grace button has been used today.
+ *
+ * The count rolls over with the day, like the allowances it is buying time against:
+ * yesterday's "one more go" is not something to hold against this morning.
+ */
+async function waSnoozeUses(now = Date.now()) {
+    const key = ITG_WEB_ACTIVITY.KEYS.SNOOZE_USES;
+    const { [key]: stored } = await chrome.storage.local.get(key);
+    const today = ITG_WEB_ACTIVITY.dayKey(now);
+    return stored?.day === today ? Number(stored.count) || 0 : 0;
+}
+
+async function waBumpSnoozeUses(now = Date.now()) {
+    const key = ITG_WEB_ACTIVITY.KEYS.SNOOZE_USES;
+    const count = (await waSnoozeUses(now)) + 1;
+    await chrome.storage.local.set({ [key]: { day: ITG_WEB_ACTIVITY.dayKey(now), count } });
+    return count;
+}
+
 function handleWebActivitySnooze(message, sendResponse) {
     waSerial(async () => {
         const settings = await waGetSettings();
@@ -560,7 +855,10 @@ function handleWebActivitySnooze(message, sendResponse) {
             snoozeUntil: Date.now() + minutes * 60000,
         });
         await waSaveLimits(limits);
-        sendResponse({ success: true, until: limits[message.domain].snoozeUntil });
+        // Counted here rather than in the page that asked: the block screen uses this
+        // button too, and two pages each keeping their own tally is no tally at all.
+        const uses = await waBumpSnoozeUses();
+        sendResponse({ success: true, until: limits[message.domain].snoozeUntil, snoozeUses: uses });
     });
 }
 
@@ -574,14 +872,20 @@ function handleWebActivitySnooze(message, sendResponse) {
  */
 function handleWebActivitySaveSettings(message, sendResponse) {
     waSerial(async () => {
+        const previous = await waGetSettings();
         const settings = { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...(message.settings || {}) };
         await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: settings });
+        // Turning the switch off has to take the copy with it. Leaving the records in
+        // the shared area would keep them travelling to every other browser on the
+        // profile long after the user said to stop.
+        if (previous.syncEnabled && !settings.syncEnabled) await waSyncWipe();
         try {
             await chrome.idle.setDetectionInterval(Math.max(15, settings.idleSeconds));
         } catch (error) {
             logMessage('[webActivity] Could not apply the idle threshold: ' + error.message);
         }
         await waSyncNow();
+        if (settings.syncEnabled) await waSyncPush();
         sendResponse({ success: true, settings });
     });
 }
@@ -625,13 +929,7 @@ function handleWebActivityImport(message, sendResponse) {
             for (const [day, record] of Object.entries(payload.days || {})) {
                 const existing = await waGetDay(day);
                 for (const [domain, incoming] of Object.entries(record.domains || {})) {
-                    const entry = (existing.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay());
-                    entry.t += incoming.t || 0;
-                    entry.v += incoming.v || 0;
-                    entry.s += incoming.s || 0;
-                    for (const [hour, seconds] of Object.entries(incoming.h || {})) {
-                        entry.h[hour] = (entry.h[hour] || 0) + seconds;
-                    }
+                    waAddEntry((existing.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay()), incoming);
                 }
                 writes[ITG_WEB_ACTIVITY.dayStorageKey(day)] = existing;
                 await waIndexDay(day);
@@ -703,6 +1001,10 @@ async function initWebActivity() {
         await chrome.idle.setDetectionInterval(Math.max(15, settings.idleSeconds));
         await waPruneOldDays();
         await waSync();
+        if (settings.syncEnabled) {
+            await waSyncPull();
+            await waSyncPush();
+        }
     } catch (error) {
         console.error('[webActivity] Could not start the tracker:', error);
     }

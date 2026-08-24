@@ -221,11 +221,15 @@ function extractRuleList(importedData) {
 }
 
 /**
- * Validates a whole import file before a single rule reaches storage.
+ * Validates a whole import file before rules reach storage.
  *
- * A file is taken as a unit: if anything in it is wrong, nothing from it is imported.
- * Half-importing would leave the user with a set of rules matching neither the file
- * nor what they had, and no way to tell which half landed.
+ * In 'add' mode, rules that pass validation and do not clash with existing rules are
+ * added; rules with errors (e.g. duplicate name, invalid URL, or URL collision) are
+ * skipped and reported as notifications so the valid ones are still imported.
+ *
+ * In 'overwrite' mode, the entire file replaces existing rules only if the file
+ * itself is internally valid (no duplicate names, no URL collisions between rules in
+ * the file, and all rules valid).
  *
  * @param {unknown} importedData Already parsed JSON.
  * @param {Array} existingRules Rules currently stored.
@@ -251,56 +255,76 @@ export function validateImportedRules(importedData, existingRules, mode) {
             .map((u) => String(u).trim())
             .filter((u) => u)
             .map(withDefaultScheme),
-        active: r.active,
+        active: r.active ?? true,
         isStarred: r.isStarred ?? false,
     }));
 
     const errors = [];
 
-    // Duplicate names inside the file itself. Checked before anything else because
-    // the per-rule pass below builds on names being unique.
-    const seenNames = new Set();
-    const duplicateNames = new Set();
+    if (mode === 'overwrite') {
+        // Duplicate names inside the file itself.
+        const seenNames = new Set();
+        const duplicateNames = new Set();
+        for (const rule of cleanedRules) {
+            const key = rule.name.trim().toLowerCase();
+            if (seenNames.has(key)) duplicateNames.add(rule.name);
+            seenNames.add(key);
+        }
+        if (duplicateNames.size > 0) {
+            errors.push({ message: 'duplicateRuleNameInFile', params: [[...duplicateNames].join(', ')] });
+        }
+
+        // Spaces in a name are refused on import
+        const spacedNames = cleanedRules.map((r) => r.name).filter((name) => /\s/.test(name));
+        if (spacedNames.length > 0) {
+            errors.push({ message: 'ruleNameNoSpacesError', params: [spacedNames.join(', ')] });
+        }
+
+        const accepted = [];
+        for (const rule of cleanedRules) {
+            const result = validateRule(rule.name, rule.color, rule.urls, accepted, undefined);
+            if (!result.valid) {
+                if (result.message === 'duplicateRuleName') {
+                    errors.push({ message: 'duplicateRuleNameInFile', params: [rule.name] });
+                } else {
+                    errors.push({ message: result.message, params: result.params || [] });
+                }
+            } else {
+                accepted.push(rule);
+            }
+        }
+
+        if (errors.length > 0) return { valid: false, errors };
+        return { valid: true, rules: cleanedRules, errors: [] };
+    }
+
+    // mode === 'add'
+    const accepted = [...(existingRules || [])];
+    const rulesToAdd = [];
+
     for (const rule of cleanedRules) {
-        const key = rule.name.trim().toLowerCase();
-        if (seenNames.has(key)) duplicateNames.add(rule.name);
-        seenNames.add(key);
-    }
-    if (duplicateNames.size > 0) {
-        errors.push({ message: 'duplicateRuleNameInFile', params: [[...duplicateNames].join(', ')] });
-    }
+        if (/\s/.test(rule.name)) {
+            errors.push({ message: 'ruleNameNoSpacesError', params: [rule.name] });
+            continue;
+        }
 
-    // Spaces in a name are refused on import only. Typing one by hand is allowed —
-    // the original draws the line here, not in the modal, and this keeps a file from
-    // introducing names the group titles cannot round-trip.
-    const spacedNames = cleanedRules.map((r) => r.name).filter((name) => /\s/.test(name));
-    if (spacedNames.length > 0) {
-        errors.push({ message: 'ruleNameNoSpacesError', params: [spacedNames.join(', ')] });
-    }
-
-    // In 'add' mode the file's rules join the stored ones, so both sets have to be
-    // free of clashes; overwriting replaces them, so only the file matters.
-    const baseRules = mode === 'overwrite' ? [] : existingRules;
-
-    // Each rule is checked against the ones already accepted, so two rules in the
-    // same file cannot claim the same URL.
-    const accepted = [...baseRules];
-    for (const rule of cleanedRules) {
         const result = validateRule(rule.name, rule.color, rule.urls, accepted, undefined);
         if (!result.valid) {
-            // 'duplicateRuleName' carries no parameter, so on import — where the user
-            // cannot see which entry tripped it — it is reported through the message
-            // that names the rule instead.
             if (result.message === 'duplicateRuleName') {
                 errors.push({ message: 'duplicateRuleNameInFile', params: [rule.name] });
             } else {
                 errors.push({ message: result.message, params: result.params || [] });
             }
-        } else {
-            accepted.push(rule);
+            continue;
         }
+
+        accepted.push(rule);
+        rulesToAdd.push(rule);
     }
 
-    if (errors.length > 0) return { valid: false, errors };
-    return { valid: true, rules: cleanedRules };
+    if (rulesToAdd.length === 0) {
+        return { valid: false, rules: [], errors };
+    }
+
+    return { valid: true, rules: rulesToAdd, errors };
 }

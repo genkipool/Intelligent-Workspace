@@ -15,6 +15,7 @@
                 'feature_v100_fileDownloader',
                 'feature_v100_openInPanel',
                 'feature_v100_readerView',
+                'feature_v100_pageReader',
                 'feature_v100_compact_mode',
                 'feature_v100_core_rule_management',
                 'feature_v100_auto_tab_grouping',

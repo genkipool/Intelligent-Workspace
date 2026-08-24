@@ -1,6 +1,6 @@
 <script>
     import { tt } from '../../stores/i18nStore.js';
-    import { renderNotesButton, renderScreenshotButton } from '../../services/groupsService.js';
+    import { createHoverActionPopup, renderNotesButton, renderScreenshotButton } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
 
@@ -20,9 +20,22 @@
         onhide = () => {},
         oncopyurls = () => {},
         ondelete = () => {},
+        oncapture = () => {},
     } = $props();
 
     let groupActionsEl = $state(null);
+    let captureContainer = $state(null);
+
+    // The camera walks the group tab by tab, so it is worth saying which walk: the
+    // visible area of each, or the whole document of each.
+    $effect(() => {
+        if (!captureContainer) return;
+        createHoverActionPopup(captureContainer, () => [
+            { i18n: 'captureGroupTabsVisible', onSelect: () => oncapture({ mode: 'visible' }) },
+            { i18n: 'captureGroupTabsFullPage', onSelect: () => oncapture({ mode: 'fullPage' }) },
+            { i18n: 'captureFullPageSplit', onSelect: () => oncapture({ mode: 'fullPageParts' }) },
+        ]);
+    });
 
     $effect(() => {
         if (!groupActionsEl) return;
@@ -111,6 +124,28 @@
         <svg width="14" height="14"><use href="#icon-add-to-rule"></use></svg>
     </div>
 
+    <div
+        class="capture-group-actions-container action-popup-container"
+        class:hidden={isBackup || isUngrouped}
+        bind:this={captureContainer}
+    >
+        <!-- The wrapper is what the layout hides, but the overflow and context menus
+             read the button itself, so the flag has to be on both. -->
+        <div
+            class="capture-group-btn action-btn"
+            class:hidden={isBackup || isUngrouped}
+            role="button"
+            tabindex="0"
+            title={$tt('captureGroupTabs')}
+            onclick={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                oncapture({ mode: 'visible' });
+            }}
+        >
+            <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
+        </div>
+    </div>
     <div
         class="copy-group-urls-btn action-btn"
         role="button"

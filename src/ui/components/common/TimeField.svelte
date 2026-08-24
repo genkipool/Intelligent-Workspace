@@ -1,5 +1,6 @@
 <script>
     import { tick } from 'svelte';
+    import { portal } from '../../actions/portal.js';
 
     /**
      * Time field with the extension's own hour/minute popup.
@@ -126,7 +127,14 @@
 </div>
 
 {#if open}
-    <div class="custom-time-picker" bind:this={popupEl} style={popupStyle}>
+    <!--
+        Out at the body (see `actions/portal.js`). Declared here, it lived inside
+        whatever dialog opened it and wore that dialog's input rules: the same picker
+        was 24px green digits on the themes page and 12px grey ones inside the web
+        activity dialog. It is `position: fixed` and placed by hand, so where it sits
+        in the tree was never doing anything for it anyway.
+    -->
+    <div class="custom-time-picker" use:portal bind:this={popupEl} style={popupStyle}>
         <div class="time-picker-main-row">
             <div class="time-arrows">
                 <button class="time-arrow-btn" type="button" onclick={(e) => (e.stopPropagation(), step('hour', 1))}
@@ -237,16 +245,31 @@
         border: 1px solid var(--border-color);
     }
 
+    /* Everything is stated, including the things an unstyled input would already do:
+       a page's own `input` rules are what this popup is being kept away from, and the
+       ones that still reach it (a bare `input { }`, a `:focus-visible` ring) must not
+       be able to change what it looks like. */
     .time-input-container input {
-        width: 35px;
+        width: 42px;
+        height: auto;
+        box-sizing: content-box;
         background: transparent;
         border: none;
+        border-radius: 0;
         color: var(--text-on-color);
         font-family: 'Roboto Mono', monospace;
         font-size: 1.5rem;
+        font-weight: 400;
+        line-height: 1.15;
         text-align: center;
         outline: none;
         padding: 0;
+    }
+
+    .time-input-container input:focus,
+    .time-input-container input:focus-visible {
+        outline: none;
+        border: none;
     }
 
     .time-input-container span {

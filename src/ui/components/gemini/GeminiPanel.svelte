@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { geminiStore, isGeminiViewActive, agentModeEnabled } from '../../stores/geminiStore.js';
+    import { geminiStore, isGeminiViewActive, agentModeEnabled, selectedModel } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { applyTranslations } from '../../../utils/i18n.js';
     import { cancelAgentQuery } from '../../../utils/agent-ui.js';
@@ -16,6 +16,13 @@
     import { switchToGeminiView } from '../../services/geminiService.js';
     import { updateSubButtonVisibility } from '../../services/settingsService.js';
     import { toggleVoiceInput, isListening } from '../../services/voiceInputService.js';
+    import {
+        localAiActive,
+        localAiSupportsImages,
+        localAiSupportsTools,
+        watchLocalAiState,
+        LOCAL_AI_MODEL_ID,
+    } from '../../services/localAiService.js';
 
     const STORAGE_KEYS = {
         API_KEY: 'geminiApiKey',
@@ -39,6 +46,25 @@
         if ($isGeminiViewActive) anticipateBoot = false;
     });
     let agentMode = $derived($agentModeEnabled);
+
+    /**
+     * What the local model can be asked for is not a fixed list: whether it takes images,
+     * and whether it can hold a tool protocol well enough to run the agent, are answered
+     * by the browser and by a test the modal takes once. Rather than let a question be
+     * sent and quietly come back as something less, each control the current model cannot
+     * honour is disabled while it is the engine.
+     */
+    // Chosen in the selector, or reached because the quota ran out: either way it is
+    // the local model that will answer, and it can do less than the API.
+    let localAi = $derived($localAiActive || $selectedModel === LOCAL_AI_MODEL_ID);
+    let agentDisabled = $derived(localAi && !$localAiSupportsTools);
+    let attachDisabled = $derived(localAi && !$localAiSupportsImages);
+
+    $effect(() => {
+        // A mode left on from before the quota ran out would send the next question
+        // down the agent path, which the local model cannot answer at all.
+        if (agentDisabled && $agentModeEnabled) geminiStore.toggleAgentMode();
+    });
 
     let previousActive = false;
 
@@ -95,6 +121,7 @@
 
     onMount(async () => {
         await geminiStore.init();
+        watchLocalAiState();
         checkApiKey();
     });
 
@@ -112,7 +139,9 @@
         if (!query) return;
 
         const data = await chrome.storage.local.get(STORAGE_KEYS.API_KEY);
-        if (!data[STORAGE_KEYS.API_KEY]) {
+        // With the local model installed and turned on there is something to answer
+        // with, so asking for a key would be asking for what is no longer needed.
+        if (!data[STORAGE_KEYS.API_KEY] && !localAi) {
             openModal(showApiKeyModal);
             return;
         }
@@ -187,7 +216,8 @@
             id="gemini-attach-file-btn"
             class="agent-mode-btn"
             type="button"
-            title={$tt('geminiAttachFileTooltip')}
+            disabled={attachDisabled}
+            title={attachDisabled ? $t('localAiDisabledByLocal') : $tt('geminiAttachFileTooltip')}
             onclick={() => fileInput?.click()}
         >
             <svg width="18" height="18"><use href="#icon-upload"></use></svg>
@@ -197,7 +227,12 @@
             class="agent-mode-btn"
             type="button"
             aria-pressed={String(agentMode)}
-            title={agentMode ? $t('agentModeTitleDisable') : $t('agentModeTitleEnable')}
+            disabled={agentDisabled}
+            title={agentDisabled
+                ? $t('localAiDisabledByLocal')
+                : agentMode
+                  ? $t('agentModeTitleDisable')
+                  : $t('agentModeTitleEnable')}
             onclick={handleAgentModeToggle}
         >
             <svg width="18" height="18"><use href="#icon-agent"></use></svg>
@@ -211,5 +246,11 @@
 
     <GeminiConversationView bind:this={conversationView} visible={isLaidOut} onopenapikey={openApiKeyModal} />
 
-    <GeminiInput bind:this={geminiInput} visible={isLaidOut} {hasApiKey} onsend={handleSend} />
+    <GeminiInput
+        bind:this={geminiInput}
+        visible={isLaidOut}
+        {hasApiKey}
+        attachmentsDisabled={attachDisabled}
+        onsend={handleSend}
+    />
 </div>

@@ -47,6 +47,27 @@ export function correctFaviconUrl(faviconUrl) {
     return faviconUrl;
 }
 
+/**
+ * Whether a tab's own favicon can be drawn on one of our pages.
+ *
+ * A tab belonging to another extension reports a favicon inside that extension
+ * (`chrome-extension://<id>/icons/icon32.png`), and Chrome refuses to serve it to anyone
+ * outside unless that extension published it in `web_accessible_resources`, which almost
+ * none do. The image then fails and the refusal is written to the console of whoever
+ * asked. Asking the favicon service instead costs nothing and says nothing.
+ *
+ * `chrome://` and `about:` pages have no favicon to give in the first place.
+ */
+export function isLoadableFavicon(faviconUrl) {
+    if (!faviconUrl || typeof faviconUrl !== 'string') return false;
+    if (faviconUrl.startsWith('chrome://') || faviconUrl.startsWith('chrome-untrusted://')) return false;
+    if (faviconUrl.startsWith('about:')) return false;
+    if (faviconUrl.startsWith('chrome-extension://')) {
+        return faviconUrl.startsWith(`chrome-extension://${chrome.runtime.id}/`);
+    }
+    return true;
+}
+
 export function animateAndRemove(element, isGroup = false) {
     if (!element) return;
 

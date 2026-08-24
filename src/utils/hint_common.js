@@ -139,6 +139,7 @@ var HintCommon = {
             we: 'hintDesc_we',
             as: 'hintDesc_as',
             ah: 'hintDesc_ah',
+            ar: 'hintDesc_readAloud',
         },
         categoryTabs: {
             t: 'hintDesc_t',
@@ -149,14 +150,20 @@ var HintCommon = {
             i: 'hintDesc_i',
             esc: 'hintDesc_esc',
             'Alt+<grupo><n>+Enter': 'hintDesc_group_tab_nav',
-            pp: 'hintDesc_pp',
             o: 'hintDesc_o',
             dg: 'hintDesc_dg',
             so: 'hintDesc_so',
             st: 'hintDesc_st',
+            // The side panels, all under `p`. `ph` is the home one — it was `pp`,
+            // which read as a typo for `p` and said "focus the panel" rather than
+            // which panel it opened.
+            ph: 'hintDesc_ph',
             pt: 'hintDesc_pt',
             pl: 'hintDesc_pl',
+            pk: 'hintDesc_pk',
+            ps: 'hintDesc_ps',
             pa: 'hintDesc_pa',
+            pw: 'hintDesc_pw',
             pg: 'hintDesc_pg',
             pn: 'hintDesc_pn',
         },
@@ -186,6 +193,15 @@ var HintCommon = {
             me: 'hintDesc_me',
             mE: 'hintDesc_mE',
         },
+        // The reader's own keys. They are read by `src/utils/readAloud.js` rather than
+        // by the command registry, because they only mean anything while the reader is
+        // on a page — everywhere else they belong to the site.
+        categoryReadAloudControls: {
+            zp: 'hintDesc_readerPlay',
+            zn: 'hintDesc_readerNext',
+            zb: 'hintDesc_readerPrev',
+            zq: 'hintDesc_readerClose',
+        },
         categoryOmnibarPrefixes: {
             '@': 'prefixSelector',
             'f:': 'prefixSearchText',
@@ -213,6 +229,7 @@ var HintCommon = {
             'lai:': 'prefixListConversations',
             'limg:': 'prefixListImages',
             'lnt:': 'prefixListNotes',
+            'ar:': 'prefixReadAloud',
             'atcr:': 'omnibarPrefixAddToExistingRule',
             'atr:': 'omnibarPrefixAddToRule',
             'rl:': 'omnibarPrefixRulesSearch',
@@ -227,6 +244,8 @@ var HintCommon = {
 
     // Character limits for each command category
     LIMITS: {
+        readaloudcontrols: 2,
+        readaloudmarks: 2,
         navigation: 1,
         page: 2,
         hints: 2,

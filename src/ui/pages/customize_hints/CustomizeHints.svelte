@@ -17,6 +17,8 @@
     import VideoPipSection from './components/VideoPipSection.svelte';
     import YoutubeLoopSection from './components/YoutubeLoopSection.svelte';
     import AllowRightClickSection from './components/AllowRightClickSection.svelte';
+    import ReaderSection from './components/ReaderSection.svelte';
+    import VoiceSection from './components/VoiceSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
     import Notification from '../../components/common/Notification.svelte';
 
@@ -52,9 +54,25 @@
         }
     }
 
+    /**
+     * `?section=` brings the page up already looking at what the caller cares about —
+     * the reader's own settings button opens it that way. It waits a beat because the
+     * command list below is built by `initCustomizeHints()` and until it is there the
+     * page has no height to scroll through.
+     */
+    function scrollToRequestedSection() {
+        const wanted = new URLSearchParams(location.search).get('section');
+        if (!wanted) return;
+        setTimeout(() => {
+            const target = document.getElementById(`${wanted}-settings`);
+            target?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }, 400);
+    }
+
     onMount(() => {
         initNumberSpinnerArrows();
         initCustomizeHints();
+        scrollToRequestedSection();
 
         chrome.storage.local.get(['linkPreviewEnabled'], (data) => {
             linkPreviewEnabled = data.linkPreviewEnabled !== false;
@@ -166,6 +184,12 @@
 
         <!-- Right-click and copying -->
         <AllowRightClickSection />
+
+        <!-- Page reader -->
+        <ReaderSection />
+
+        <!-- Reading voice -->
+        <VoiceSection />
 
         <div class="itg-scroll-buttons-float">
             <button id="itg-scroll-up" type="button" data-i18n-aria-label="scrollToTop">

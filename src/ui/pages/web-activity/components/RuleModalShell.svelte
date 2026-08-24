@@ -14,9 +14,9 @@
      * makes the confirming action harder to find. That leaves one button, which
      * fills the row.
      */
-    import { tt } from '../../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
     import ModalSaveButton from '../../../components/common/ModalSaveButton.svelte';
+    import ModalHeader from '../../../components/common/ModalHeader.svelte';
 
     let {
         titleId,
@@ -43,18 +43,15 @@
     onkeydown={(e) => e.key === 'Escape' && onClose()}
 >
     <div class="modal-content wa-modal {variant}" role="none" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h2 id={titleId}>{title}</h2>
-            <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
-        </div>
+        <ModalHeader {titleId} {title} {onClose} />
 
         <div class="modal-body wa-modal-body">
             {@render children()}
         </div>
 
         <div class="modal-actions wa-modal-actions">
-            {#if errorMessage}
-                <p class="wa-modal-warning" aria-live="polite">{errorMessage}</p>
+            {#if variant !== 'wa-password-modal'}
+                <p class="wa-modal-warning" aria-live="polite">{errorMessage || ''}</p>
             {/if}
             <ModalSaveButton
                 label={applyLabel}

@@ -1,7 +1,7 @@
 <script>
     import { geminiStore, pendingAttachments } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    let { visible = false, onsend } = $props();
+    let { visible = false, attachmentsDisabled = false, onsend } = $props();
 
     let textarea = $state(null);
     let textareaValue = $state('');
@@ -31,6 +31,9 @@
     }
 
     function handlePaste(e) {
+        // The button is not the only way in: pasting and dropping attach files too, so
+        // the engine that cannot read them has to be turned away here as well.
+        if (attachmentsDisabled) return;
         const files = e.clipboardData?.files;
         if (files?.length) {
             const validTypes = [
@@ -62,6 +65,7 @@
     }
 
     function handleDrop(e) {
+        if (attachmentsDisabled) return;
         const files = e.dataTransfer?.files;
         if (files?.length) {
             const validTypes = [

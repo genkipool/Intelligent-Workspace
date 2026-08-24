@@ -276,15 +276,15 @@ body.ctrl-pressed .rules-title-button {
     stroke: var(--text-color);
 }
 
+/* The row itself — how it is laid out, where its two halves sit and the line they
+   share — belongs to SearchAndControls.svelte, which every page that has this row now
+   renders. What is left here is what is this page's: the rule under it and the colour
+   behind it. Putting the layout back would not show up as a conflict; it would show up
+   months later as this page's buttons sitting three pixels off the panel's. */
 .search-and-controls {
-    display: flex;
-    align-items: start;
-    justify-content: flex-start;
-    /* Anchor to the left */
     padding: var(--spacing-sm) var(--spacing-md);
     border-bottom: 1px solid var(--border-color);
     background-color: var(--bg-color);
-    width: 100%;
 }
 
 .search-container {
@@ -435,15 +435,9 @@ body.ctrl-pressed .rules-title-button {
     z-index: 10;
 }
 
+/* Likewise: the component places this box. Only what the buttons inside it do is
+   still described here. */
 .controls-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    margin-left: var(--spacing-md);
-    /* Replaces the gap on the parent */
-    flex-grow: 0;
-    flex-shrink: 0;
-    /* CRITICAL: Prevent search bar from overlapping buttons */
     transition:
         opacity 0.2s ease,
         max-width 0.25s ease,
@@ -2034,11 +2028,16 @@ body.show-domain-headers .subgroup-tab-list {
 /* --- Unified styles for Gemini and Notes modals --- */
 
 /* Modal header */
+/* Kept in step with `components/common/ModalHeader.svelte`, which is the same bar for
+   the dialogs on the pages that do not load this stylesheet. The height is stated in
+   both so they cannot drift apart by a pixel or two, which is exactly how far apart
+   they had got. */
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
+    min-height: 48px;
+    padding: 10px 16px;
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
     background-color: var(--bg-panel-color);
@@ -4743,9 +4742,16 @@ body.show-domain-headers .domain-header {
     background-color: transparent;
 }
 
-.page-mode-container {
+.page-mode-container,
+.action-popup-container {
     position: relative;
     opacity: 0.8;
+}
+
+/* The wrapper must not add a row of its own: it only exists to position the menu. */
+.action-popup-container {
+    display: inline-flex;
+    align-items: center;
 }
 
 .page-mode-btn.active-mode {
@@ -4780,13 +4786,26 @@ body.show-domain-headers .domain-header {
 }
 
 /* Shows the menu when hovering over the button */
-.page-mode-container:hover .page-mode-popup {
+.page-mode-container:hover .page-mode-popup,
+.action-popup-container:hover .action-popup,
+.action-popup.visible {
     display: flex;
     opacity: 1;
+    transform: translateY(0);
     pointer-events: auto;
 }
 
-.tab-list-container:has(.page-mode-container:hover) {
+.action-popup-container:hover {
+    opacity: 1;
+}
+
+/* Without this the menu is cut off by whatever the button is sitting inside. */
+.tab-list-container:has(.page-mode-container:hover),
+.tab-list-container:has(.action-popup-container:hover),
+.group-header:has(.action-popup-container:hover),
+.tab-actions:has(.action-popup-container:hover),
+.group-actions:has(.action-popup-container:hover),
+.subgroup-actions:has(.action-popup-container:hover) {
     overflow: visible;
 }
 
@@ -6351,6 +6370,10 @@ body[data-hide-action-video-pip='true'] .video-pip-btn,
 body[data-hide-action-popup='true'] .popup-btn,
 body[data-hide-action-summary='true'] .gemini-summary-btn,
 body[data-hide-action-capture='true'] .screenshot-btn,
+body[data-hide-action-capture='true'] .capture-group-btn,
+body[data-hide-action-capture='true'] .capture-group-actions-container,
+body[data-hide-action-capture='true'] .capture-actions-container,
+body[data-hide-action-summary='true'] .summary-actions-container,
 body[data-hide-action-qrcode='true'] .qr-code-btn,
 body[data-hide-action-cookies='true'] .edit-cookies-btn,
 body[data-hide-action-bookmark='true'] .bookmark-btn,
@@ -9302,8 +9325,22 @@ input.pomo-project-edit::placeholder {
 .bookmark-item:focus-visible,
 .bookmark-folder-title:focus-visible,
 .overflow-popup-item:focus-visible,
-.folder-actions .action-btn:focus-visible {
+.folder-actions .action-btn:focus-visible,
+/* The pomodoro project fields already answer focus by turning their own border the
+   accent colour, so the generic ring landed two pixels outside a border that had just
+   changed for the same reason: two frames for one event. */
+.pomo-text-input:focus-visible,
+/* The stepper's border belongs to the box around it, not to the field inside; the
+   ring was being drawn *within* that box, which read as a second frame nested in the
+   first. `.pomo-num-wrap:focus-within` below puts it back where it belongs. */
+.pomo-num-input:focus-visible {
     outline: none;
+}
+
+/* The whole stepper — the two buttons and the number between them — is one control,
+   so it is the one that lights up. */
+.pomo-num-wrap:focus-within {
+    border-color: var(--interactive-color);
 }
 
 /* The switch inputs are visually hidden; their ring belongs on the slider. */

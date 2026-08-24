@@ -33,12 +33,37 @@
         options.map((entry) => (Array.isArray(entry?.options) ? entry : { label: null, options: [entry], flat: true })),
     );
 
+    /**
+     * The selection is driven by hand rather than with `value={value}` on the element.
+     *
+     * A `value` on a `<select>` makes Svelte watch the whole subtree with a
+     * MutationObserver and put the selection back whenever anything inside changes
+     * (`init_select`). That is fine for a native drop-down, but this one is a
+     * customizable select: picking an option makes Chrome rewrite the contents of
+     * `<selectedcontent>`, which *is* a subtree change — so Svelte reverted the pick
+     * in the microtask between `input` and `change`, and the `change` handler was
+     * handed the old value. The filter simply never moved.
+     */
+    let selectEl = $state(null);
+    /** Bumped on every pick so the sync below runs again even when the value did not. */
+    let pickTick = $state(0);
+
+    $effect(() => {
+        pickTick;
+        options;
+        const next = value ?? '';
+        if (selectEl && selectEl.value !== next) selectEl.value = next;
+    });
+
     function handleChange(event) {
-        onchange?.(event.currentTarget.value);
+        const next = event.currentTarget.value;
+        pickTick += 1;
+        onchange?.(next);
     }
 </script>
 
 <select
+    bind:this={selectEl}
     class="itg-select"
     class:itg-select-compact={compact}
     class:itg-select-wide={wide}
@@ -46,7 +71,6 @@
     {title}
     {disabled}
     aria-label={ariaLabel}
-    {value}
     onchange={handleChange}
 >
     <button type="button">
@@ -68,12 +92,12 @@
     {#each groups as group, index (group.label ?? index)}
         {#if group.flat}
             {#each group.options as option (option.value)}
-                <option value={option.value} selected={option.value === value}>{option.label}</option>
+                <option value={option.value}>{option.label}</option>
             {/each}
         {:else}
             <optgroup label={group.label}>
                 {#each group.options as option (option.value)}
-                    <option value={option.value} selected={option.value === value}>{option.label}</option>
+                    <option value={option.value}>{option.label}</option>
                 {/each}
             </optgroup>
         {/if}

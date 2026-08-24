@@ -10,7 +10,12 @@
      *
      * `Chart` is the global defined by `lib/chart.local.js`, which the page imports.
      */
-    let { config, height = 260, ariaLabel = '' } = $props();
+    /**
+     * `grow` turns `height` into a floor and lets the chart take whatever the card has
+     * left. Two cards side by side are the same height whether they like it or not, so
+     * a fixed 260px next to a taller neighbour leaves a band of nothing under the axis.
+     */
+    let { config, height = 260, ariaLabel = '', grow = false } = $props();
 
     let canvas = $state(null);
 
@@ -23,6 +28,6 @@
     });
 </script>
 
-<div class="chart-wrap" style="height:{height}px">
+<div class="chart-wrap" style={grow ? `flex:1 1 auto;min-height:${height}px` : `height:${height}px`}>
     <canvas bind:this={canvas} role="img" aria-label={ariaLabel}></canvas>
 </div>

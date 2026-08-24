@@ -13,6 +13,7 @@ import { extractYouTubeVideoId, createYouTubeEmbed } from '../../utils/youtubeEm
 import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
 import { linkifyHtml } from './utils.js';
+import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
 import { prefetchUrl, prefetchData } from './prefetchService.js';
 import { openModal, showDeleteHistoryConfirmModal } from '../stores/modalStore.js';
 
@@ -490,6 +491,31 @@ const viewConfig = {
         'toggle-view-panel-btn',
         'expand-all-btn',
     ],
+    /**
+     * [AI INSTRUCTION]
+     * THE THREE VIEWS PAINTED OVER THE GROUP LIST GET AN ENTRY TOO.
+     *
+     * They are not main views — `currentMainView` stays 'groups' while one is open —
+     * but the page can be opened straight into any of them, and the toolbar has to be
+     * right on the very first frame. Without an entry here the list fell back to the
+     * group list's, so opening the notes from the popup painted the group toolbar and
+     * swapped it for the notes' own a few frames later. That is the flash; the
+     * assistant never had it because it had a hand-written list of its own, and this is
+     * that list, generalised.
+     *
+     * These must agree with what `updateHeaderButtonsVisibility` settles on a moment
+     * later, or the difference between the two *is* the flash. Which is why the notes
+     * and the gallery do not list `search-toggle-btn`: `updateMainPanelButtons` takes
+     * it away from both of them by name.
+     *
+     * Buttons that depend on data rather than on the view — whether there are any
+     * screenshots to download, how many duplicates there are — belong in
+     * `DATA_DRIVEN_CONTROLS`, not here: showing one and taking it back is the same
+     * flash by another route.
+     */
+    notes: ['add-note-view-btn', 'delete-all-context-btn', 'expand-all-btn'],
+    gallery: ['delete-all-context-btn'],
+    gemini: ['search-toggle-btn', 'expand-all-btn', 'pin-toggle', 'add-api-key-btn', 'schedule-gemini-btn'],
 };
 
 const allButtonIds = [
@@ -529,11 +555,40 @@ const allButtonIds = [
  * @returns {Set<string>}
  */
 export function hiddenControlsForView(view) {
-    const visible = new Set(viewConfig[view] || viewConfig.groups);
+    const visible = visibleControlsForView(view);
     return new Set(allButtonIds.filter((id) => !visible.has(id)));
 }
 
-export async function switchMainView(viewName, addToHistory = true, { skipHeaderButtons = false } = {}) {
+/**
+ * The controls a view shows, as a set.
+ *
+ * The complement of `hiddenControlsForView`, and the one to ask when the question is
+ * about a control that is not in `allButtonIds` — the note button, the assistant's key
+ * button. Those are hidden by default in the markup and revealed by name, so "is it in
+ * this view's list" is the only thing that can answer for them.
+ */
+export function visibleControlsForView(view) {
+    return new Set(viewConfig[view] || viewConfig.groups);
+}
+
+/**
+ * @param {object} [options]
+ * @param {boolean} [options.skipHeaderButtons] The caller is going to paint the header
+ *   itself, so it is not worth doing twice.
+ * @param {boolean} [options.skipReveal] Do the stores and the header, but neither put
+ *   the view on screen nor name it. For the views that are painted *over* the group
+ *   list — the notes, the gallery, the assistant: revealing the groups first and
+ *   covering them a frame later is exactly the flash their callers are trying to
+ *   avoid, and **the title is part of that**. Naming this "Listar Grupos" and letting
+ *   the caller rename it a frame later is what was left of the flash once the list
+ *   itself stopped appearing: the header read the wrong view for about 30ms, which is
+ *   short enough to look like a glitch and long enough to see.
+ */
+export async function switchMainView(
+    viewName,
+    addToHistory = true,
+    { skipHeaderButtons = false, skipReveal = false } = {},
+) {
     const _mainHeaderTitle = document.getElementById('main-header-title');
     const _groupListContainer = document.getElementById('groups-list');
     const _visibilityControlsPanel = document.getElementById('visibility-controls-panel');
@@ -549,7 +604,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
 
     isStandaloneGemini.set(false);
 
-    if (_mainHeaderTitle) {
+    if (_mainHeaderTitle && !skipReveal) {
         const titles = {
             groups: 'listTabGroups',
             bookmarks: 'bookmarksViewTitle',
@@ -605,7 +660,7 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
         }
     });
 
-    if (views[viewName]) views[viewName].style.display = 'flex';
+    if (views[viewName] && !skipReveal) views[viewName].style.display = 'flex';
 
     if (buttons[viewName]) {
         buttons[viewName].classList.add('active');
@@ -613,8 +668,27 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
 
     isBookmarksViewActive.set(viewName === 'bookmarks');
 
-    document.body.classList.toggle('groups-view-active', viewName === 'groups');
-    document.body.classList.toggle('bookmarks-view-active', viewName === 'bookmarks');
+    /**
+     * Not under `skipReveal`: the caller is about to paint one of the views that sit
+     * *over* the group list, and claiming the group list here — for the one frame
+     * before that view raises its own flag — is enough to do visible damage.
+     * `body.groups-view-active` hides the search bar (see `listGroup.css`), so the bar
+     * vanished and came back, and the `ResizeObserver` watching its width latched
+     * "narrow" on the way through and painted the compact bar for another frame.
+     *
+     * `main.js` already sets this class from the URL before the first paint, so leaving
+     * it alone here keeps what it got right.
+     */
+    if (skipReveal) {
+        // Taken off rather than left alone: switching to the notes *from* the group
+        // list would otherwise keep the class, and with it the group chrome the
+        // stylesheet hangs off it — the pomodoro and music panels among other things,
+        // which would sit there under the notes.
+        document.body.classList.remove('groups-view-active', 'bookmarks-view-active');
+    } else {
+        document.body.classList.toggle('groups-view-active', viewName === 'groups');
+        document.body.classList.toggle('bookmarks-view-active', viewName === 'bookmarks');
+    }
 
     if (_visibilityControlsPanel) _visibilityControlsPanel.classList.add('hidden');
     if (_actionVisibilityControlsPanel) _actionVisibilityControlsPanel.classList.add('hidden');
@@ -625,7 +699,13 @@ export async function switchMainView(viewName, addToHistory = true, { skipHeader
     if (!skipHeaderButtons) updateHeaderButtonsVisibility();
 
     (async () => {
-        if (get(isGeminiViewActive) || get(isNotesViewActive) || get(isGalleryViewActive) || get(isUrlViewActive)) {
+        if (
+            skipReveal ||
+            get(isGeminiViewActive) ||
+            get(isNotesViewActive) ||
+            get(isGalleryViewActive) ||
+            get(isUrlViewActive)
+        ) {
             return;
         }
 
@@ -1186,6 +1266,7 @@ export async function openUrlInPanel(url, context = null) {
         iframe.style.border = 'none';
         iframe.src = url;
 
+        attachFrameScrollbar(iframe);
         container.appendChild(iframe);
         isUrlViewActive.set(true);
 
@@ -1234,6 +1315,9 @@ export async function openUrlInPanel(url, context = null) {
             iframe.referrerPolicy = 'no-referrer';
             iframe.src = url;
 
+            // Before the frame is in the document, so the palette is already on offer
+            // when the framed page announces itself.
+            attachFrameScrollbar(iframe);
             container.appendChild(iframe);
             isUrlViewActive.set(true);
 
@@ -1458,6 +1542,7 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     isUrlViewActive.set(false);
     currentPanelUrl.set(null);
     previousIframeUrl.set(null);
+    detachFrameScrollbar();
 
     chrome.runtime.sendMessage(
         {
@@ -1900,6 +1985,19 @@ export function toggleExpandAll() {
     updateScrollButtons();
 }
 
+/**
+ * Whether the gallery on screen has anything in it.
+ *
+ * Only `showScreenshotGallery` can answer that — the list comes out of IndexedDB — and
+ * it does, once, when it opens. Every other caller of the function below arrives with
+ * no data at all: a view switch, a store subscription, the assistant's history landing.
+ * Reading `contextualData` straight meant each of those answered "no" on the gallery's
+ * behalf, and the download button appeared and then vanished a moment later. So the
+ * answer is kept here for as long as the gallery is the view, and only the gallery ever
+ * writes it.
+ */
+let _galleryHasScreenshots = false;
+
 export function updateHeaderButtonsVisibility(contextualData = {}) {
     const _visibilityControlsPanel = document.getElementById('visibility-controls-panel');
     const _copyGeminiBtn = document.getElementById('copy-gemini-btn');
@@ -1981,6 +2079,8 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
 
     document.body.classList.toggle('notes-view-active', get(isNotesViewActive));
     document.body.classList.toggle('gallery-view-active', get(isGalleryViewActive));
+    // Left the gallery: the next one that opens says for itself what it holds.
+    if (!get(isGalleryViewActive)) _galleryHasScreenshots = false;
 
     if (get(isNotesViewActive)) {
         // The orphan list is a notes view like any other, so it keeps the button that
@@ -1993,8 +2093,10 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
         }
         if (_expandAllBtn) _expandAllBtn.classList.remove('hidden');
     } else if (get(isGalleryViewActive)) {
-        const screenshotsExist = !!contextualData.screenshotsExistInGallery;
-        if (_downloadAllScreenshotsBtn) _downloadAllScreenshotsBtn.classList.toggle('hidden', !screenshotsExist);
+        if (contextualData.screenshotsExistInGallery !== undefined) {
+            _galleryHasScreenshots = !!contextualData.screenshotsExistInGallery;
+        }
+        if (_downloadAllScreenshotsBtn) _downloadAllScreenshotsBtn.classList.toggle('hidden', !_galleryHasScreenshots);
         if (_deleteAllContextBtn) {
             _deleteAllContextBtn.classList.remove('hidden');
             _deleteAllContextBtn.setAttribute('data-i18n-title', 'deleteAllScreenshots');

@@ -65,6 +65,26 @@
             <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" />
             <path d="M12 6v6l4 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>
+        <symbol id="wa-lock" viewBox="0 0 24 24">
+            <rect
+                x="4"
+                y="10"
+                width="16"
+                height="10"
+                rx="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linejoin="round"
+            />
+            <path
+                d="M8 10V7a4 4 0 0 1 8 0v3"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+            />
+        </symbol>
         <symbol id="wa-shield" viewBox="0 0 24 24">
             <path
                 d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"

@@ -25,6 +25,16 @@
     import DashboardTimeEfficiencySection from './components/DashboardTimeEfficiencySection.svelte';
     import DashboardProjectAnalysisSection from './components/DashboardProjectAnalysisSection.svelte';
     import DashboardBreakdownSection from './components/DashboardBreakdownSection.svelte';
+    import DashboardWebPhasesSection from './components/DashboardWebPhasesSection.svelte';
+    import WebPhaseCards from './components/WebPhaseCards.svelte';
+    import { fetchActivity } from '../../services/webActivityService.js';
+    import { sortable } from '../../actions/sortable.js';
+    import {
+        applyOrderToDom,
+        loadLayout,
+        savePanelOrder,
+        saveSectionOrder,
+    } from '../../services/dashboard/dashboardLayout.js';
     import {
         applyChartDefaults,
         blendColors,
@@ -49,6 +59,7 @@
         donutStats: null,
         projectTable: null,
         timeline: null,
+        webPhases: null,
     };
 
     // --- i18n ---------------------------------------------------------
@@ -89,6 +100,15 @@
             msg = msg.replace(`$${i + 1}`, p);
         });
         return msg;
+    }
+
+    /**
+     * The richer explanation a key carries in its `description`, for tooltips. The
+     * same thing `applyDomI18n` does for `data-i18n-title`, for the places that set a
+     * title from script rather than from an attribute.
+     */
+    function i18nTitle(key) {
+        return _msgs[key]?.description || i18n(key);
     }
 
     /** Applies data-i18n / data-i18n-placeholder to the DOM */
@@ -228,6 +248,12 @@
     let activeTag = '';
     let sidebarQuery = '';
     let charts = {};
+    /**
+     * The web activity record, or null when the tracker has nothing to say. Fetched
+     * once per reload alongside the pomodoro stats: the three phase cards are the only
+     * thing on this page that needs it, and they are redrawn on every filter change.
+     */
+    let waDays = null;
 
     applyChartDefaults(Chart);
 
@@ -1098,10 +1124,16 @@
         applyFilters();
         const has = filteredData.length > 0;
         document.getElementById('empty-state').style.display = has ? 'none' : 'flex';
+        // `wa-phases-row` is revealed by `renderWebPhases` itself, which is the only
+        // thing that knows whether the tracker has anything for this period.
         ['kpi-section', 'streak-section', 'activity-row', 'charts-row2', 'charts-row3', 'bottom-row'].forEach((id) => {
             const el = document.getElementById(id);
             if (el) el.style.display = has ? '' : 'none';
         });
+        if (!has) {
+            const waRow = document.getElementById('wa-phases-row');
+            if (waRow) waRow.style.display = 'none';
+        }
         if (!has) return;
         renderKPIs();
         renderStreak();
@@ -1115,6 +1147,141 @@
         renderCyclesChart();
         renderTable();
         renderTimeline();
+        renderWebPhases();
+    }
+
+    // --- LAYOUT -------------------------------------------------------
+    /**
+     * [AI INSTRUCTION]
+     * THE ORDER OF THE PAGE, WHICH THE READER OWNS.
+     *
+     * Unlike the web activity dashboard, this page's markup *is* its state: the
+     * sections are real elements that nothing re-creates, so a reorder is a run of
+     * `appendChild` rather than a list to re-render. `applyOrderToDom` is safe to call
+     * again after every repaint, which matters for the one grid whose cards are
+     * remounted from scratch each time (`#wa-phase-cards`).
+     *
+     * A panel never leaves its section, because the grid it sits in is the sortable
+     * container and there is nowhere else to drop it.
+     */
+    let layout = { sections: [], panels: {} };
+    /** The `sortable` handles, so they can be torn down; nothing reads it reactively. */
+    const sortableGrids = new SvelteMap();
+
+    /** Every grid on the page that holds more than one card, by its section's id. */
+    function panelGrids() {
+        const grids = new SvelteMap();
+        document.querySelectorAll('main.main-content > section[data-sort-id]').forEach((section) => {
+            const grid = section.querySelector('.chart-grid-2, .chart-grid-3, .chart-grid-3-even');
+            if (grid && grid.querySelectorAll(':scope > [data-sort-id]').length > 1) {
+                grids.set(section.dataset.sortId, grid);
+            }
+        });
+        return grids;
+    }
+
+    function applyStoredLayout() {
+        applyOrderToDom(document.querySelector('main.main-content'), layout.sections, 'section[data-sort-id]');
+        for (const [sectionId, grid] of panelGrids()) {
+            applyOrderToDom(grid, layout.panels?.[sectionId] || []);
+            if (sortableGrids.has(grid)) continue;
+            sortableGrids.set(
+                grid,
+                sortable(grid, {
+                    onReorder: (ids) => {
+                        layout = { ...layout, panels: { ...layout.panels, [sectionId]: ids } };
+                        applyOrderToDom(grid, ids);
+                        savePanelOrder('pomodoro', sectionId, ids);
+                    },
+                }),
+            );
+        }
+    }
+
+    function reorderSections(ids) {
+        layout = { ...layout, sections: ids };
+        applyOrderToDom(document.querySelector('main.main-content'), ids, 'section[data-sort-id]');
+        saveSectionOrder('pomodoro', ids);
+    }
+
+    // --- BROWSING DURING THE TIMER ------------------------------------
+    /** How many sites each card lists. Six fits the card without a scrollbar. */
+    const WA_PHASE_ROWS = 6;
+
+    /**
+     * The three cards: focus, short break, long break.
+     *
+     * The period comes from the same filter the rest of the page uses, so a card can
+     * never be showing a different fortnight from the chart beside it. The project and
+     * tag filters do not apply: a browsing record has no project on it, and quietly
+     * leaving the cards unfiltered while the sidebar says "work" would be a lie.
+     */
+    function renderWebPhases() {
+        const host = document.getElementById('wa-phase-cards');
+        const section = document.getElementById('wa-phases-row');
+        if (!host || !section) return;
+
+        // The record can arrive after the stats have already said there is nothing to
+        // show, and one lone section under a "no data yet" screen is worse than none.
+        if (!filteredData.length) {
+            section.style.display = 'none';
+            return;
+        }
+
+        const phases = [
+            { key: 'w', title: i18n('dashboardWebPhaseFocus'), hint: i18nTitle('dashboardWebPhaseFocus') },
+            { key: 's', title: i18n('dashboardWebPhaseShort'), hint: i18nTitle('dashboardWebPhaseShort') },
+            { key: 'l', title: i18n('dashboardWebPhaseLong'), hint: i18nTitle('dashboardWebPhaseLong') },
+        ];
+
+        // Seconds per site per phase, over the days the period covers.
+        const totals = { w: new Map(), s: new Map(), l: new Map() };
+        const cutoff = activePeriod > 0 ? dayKey(Date.now() - (activePeriod - 1) * 86400000) : null;
+        for (const [day, record] of Object.entries(waDays || {})) {
+            if (cutoff && day < cutoff) continue;
+            for (const [domain, entry] of Object.entries(record?.domains || {})) {
+                for (const phase of phases) {
+                    const seconds = entry?.p?.[phase.key] || 0;
+                    if (seconds > 0) totals[phase.key].set(domain, (totals[phase.key].get(domain) || 0) + seconds);
+                }
+            }
+        }
+
+        const cards = phases.map((phase) => {
+            const rows = [...totals[phase.key].entries()]
+                .map(([domain, seconds]) => ({ domain, seconds }))
+                .sort((a, b) => b.seconds - a.seconds);
+            const total = rows.reduce((sum, row) => sum + row.seconds, 0);
+            // Bars are scaled against the busiest site in *this* card, not against the
+            // card's total: with one site at 90% every other bar would be a stub.
+            const top = rows.length ? rows[0].seconds : 1;
+            return {
+                key: phase.key,
+                title: phase.title,
+                hint: phase.hint,
+                totalLabel: total > 0 ? fmtDur(total) : '--',
+                rows: rows.slice(0, WA_PHASE_ROWS).map((row) => ({
+                    ...row,
+                    label: fmtDur(row.seconds),
+                    pct: Math.max(3, Math.round((row.seconds / top) * 100)),
+                })),
+            };
+        });
+
+        // A browser that has never had the tracker on has nothing to compare, and three
+        // empty cards would only be three ways of saying so.
+        const hasAny = cards.some((card) => card.rows.length);
+        section.style.display = hasAny ? '' : 'none';
+        if (!hasAny) return;
+
+        host.replaceChildren();
+        apps.webPhases = mount(WebPhaseCards, {
+            target: host,
+            props: { cards, emptyLabel: i18n('dashboardWebPhaseEmpty') },
+        });
+        // These three are built again from scratch on every repaint, so whatever order
+        // the reader left them in has to be put back each time.
+        applyStoredLayout();
     }
 
     // --- LOAD DATA ----------------------------------------------------
@@ -1122,6 +1289,16 @@
         const btn = document.getElementById('refresh-btn');
         btn.classList.add('spinning');
         try {
+            // The browsing record is a nice-to-have on this page: if the tracker is off
+            // or the worker is asleep the three phase cards simply do not appear, and
+            // the rest of the dashboard is unaffected.
+            fetchActivity(0)
+                .then((response) => {
+                    if (!response?.success) return;
+                    waDays = response.days || {};
+                    renderWebPhases();
+                })
+                .catch(() => {});
             allData = await getAllStats();
             // Deduplicate cumulative entries from the same session (legacy or autosave snapshots)
             const sessionMap = new SvelteMap();
@@ -1156,12 +1333,18 @@
             es.style.display = 'flex';
             es.querySelector('.empty-title').textContent = i18n('dashboardErrorLoad');
             es.querySelector('.empty-sub').textContent = err.message || String(err);
-            ['kpi-section', 'streak-section', 'activity-row', 'charts-row2', 'charts-row3', 'bottom-row'].forEach(
-                (id) => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = 'none';
-                },
-            );
+            [
+                'kpi-section',
+                'streak-section',
+                'activity-row',
+                'charts-row2',
+                'charts-row3',
+                'bottom-row',
+                'wa-phases-row',
+            ].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
         } finally {
             const ld = document.getElementById('loading');
             ld.classList.add('hidden');
@@ -1268,7 +1451,17 @@
         await _loadI18n();
         initTheme();
         initSync();
+        // Before the first paint of the data: the sections are already in the DOM, so
+        // putting them in the reader's order now means they are never seen in the
+        // page's own.
+        layout = await loadLayout('pomodoro');
+        applyStoredLayout();
         loadData();
+    });
+
+    onDestroy(() => {
+        for (const handle of sortableGrids.values()) handle.destroy?.();
+        sortableGrids.clear();
     });
 
     onDestroy(() => {
@@ -1343,7 +1536,9 @@
     </aside>
 
     <!-- -- Main content ----------------------------------------------- -->
-    <main class="main-content">
+    <!-- Sections can be dragged into another order; the panels inside a section can be
+         rearranged among themselves. See `actions/sortable.js`. -->
+    <main class="main-content" use:sortable={{ items: 'section[data-sort-id]', onReorder: reorderSections }}>
         <!-- Empty / error state -->
         <!-- These sections start hidden and renderAll() reveals them once it knows
              there is data: rendering them first meant painting the whole dashboard and
@@ -1375,6 +1570,9 @@
 
         <!-- -- KPIs ----------------------------------------------------- -->
         <DashboardKpiSection />
+
+        <!-- -- Browsing during focus and the two breaks ------------------ -->
+        <DashboardWebPhasesSection />
 
         <!-- -- Streaks & time of day ------------------------------------ -->
         <DashboardStreaksSection />

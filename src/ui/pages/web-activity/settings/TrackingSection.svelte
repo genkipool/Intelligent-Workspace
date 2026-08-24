@@ -3,8 +3,8 @@
      * [AI INSTRUCTION]
      * HOW THE CLOCK BEHAVES.
      *
-     * Six settings, and every one of them changes a number the dashboard shows, which
-     * is the test for whether a setting belongs on this page at all. They are written
+     * Every setting here changes a number the dashboard shows, which is the test for
+     * whether a setting belongs on this page at all. They are written
      * through the service worker rather than straight to storage: the idle threshold
      * is a browser-level setting and turning the tracking off has to stop the clock
      * now, not at the next tab switch.
@@ -121,6 +121,42 @@
                     onchange={(next) => set({ snoozeMinutes: next })}
                 />
                 <span class="wa-unit">{$t('webActivityMinutesShort')}</span>
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivitySnoozePasswordAfter')}</span>
+                <span class="wa-set-row-note">{$t('webActivitySnoozePasswordAfterHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <NumberField
+                    wide
+                    value={valueOf('snoozePasswordAfter')}
+                    min={0}
+                    max={20}
+                    step={1}
+                    digits={2}
+                    ariaLabel={$t('webActivitySnoozePasswordAfter')}
+                    onchange={(next) => set({ snoozePasswordAfter: next })}
+                />
+                <span class="wa-unit">{$t('webActivitySnoozeUsesShort')}</span>
+            </span>
+        </div>
+
+        <div class="wa-set-row">
+            <span class="wa-set-row-text">
+                <span class="wa-set-row-name">{$t('webActivitySyncEnabled')}</span>
+                <span class="wa-set-row-note">{$t('webActivitySyncEnabledHint')}</span>
+            </span>
+            <span class="wa-set-row-control">
+                <ToggleButton
+                    variant="rounded"
+                    pressed={settings.syncEnabled === true}
+                    label={$t(settings.syncEnabled === true ? 'webActivityOn' : 'webActivityOff')}
+                    title={$tt('webActivitySyncEnabled')}
+                    onchange={(next) => set({ syncEnabled: next })}
+                />
             </span>
         </div>
 

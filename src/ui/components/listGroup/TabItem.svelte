@@ -16,10 +16,11 @@
     import { openUrlInPanel, openUrlInPip, openUrlInPopup } from '../../services/viewsService.js';
     import { showDownloadPopup, handleGeminiSummaryRequest } from '../../services/downloadsService.js';
     import { openAddToBookmarkModal } from '../../services/bookmarksService.js';
-    import { handleScreenshotRequest, withTabActivation } from '../../services/screenshotsService.js';
+    import { captureTabArea, handleScreenshotRequest } from '../../services/screenshotsService.js';
+    import { startReadAloud } from '../../services/readAloudService.js';
     import { loadSplitScreenState } from '../../services/settingsService.js';
     import { prefetchUrl } from '../../services/prefetchService.js';
-    import { dataUrlToBlob, animateAndRemove, correctFaviconUrl } from '../../services/utils.js';
+    import { animateAndRemove, correctFaviconUrl, isLoadableFavicon } from '../../services/utils.js';
     import TabActions from './TabActions.svelte';
 
     let { tab, isBackup = false, groupContext = {}, renderContext = {}, subgroupContext = null } = $props();
@@ -38,9 +39,9 @@
     let tabEl = $state(null);
 
     let faviconUrl = $derived(
-        !tab.favIconUrl || tab.favIconUrl.startsWith('chrome://') || tab.favIconUrl.startsWith('about:')
-            ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=16`
-            : correctFaviconUrl(tab.favIconUrl),
+        isLoadableFavicon(tab.favIconUrl)
+            ? correctFaviconUrl(tab.favIconUrl)
+            : `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(tab.url)}&size=16`,
     );
 
     let displayTitle = $derived.by(() => {
@@ -69,7 +70,7 @@
     function activateTab(e) {
         if (
             e.target.closest(
-                '.delete-tab-btn, .copy-tab-url-btn, .download-files-btn, .split-screen-btn, .gemini-summary-btn, .open-in-panel-btn, .pip-btn, .video-pip-btn, .popup-btn, .audible-indicator, .page-mode-container, .qr-code-btn, .edit-cookies-btn, .screenshot-btn, .bookmark-btn',
+                '.delete-tab-btn, .copy-tab-url-btn, .download-files-btn, .split-screen-btn, .gemini-summary-btn, .open-in-panel-btn, .pip-btn, .video-pip-btn, .popup-btn, .audible-indicator, .page-mode-container, .action-popup-container, .qr-code-btn, .edit-cookies-btn, .screenshot-btn, .bookmark-btn',
             )
         ) {
             return;
@@ -137,15 +138,26 @@
     // Tab Actions
     let isMuted = $derived(!!(tab.mutedInfo && tab.mutedInfo.muted));
 
-    function toggleMute(e) {
+    /**
+     * Mute and unmute, decided from the tab rather than from the card.
+     *
+     * `isMuted` comes from the rendered snapshot, and a listener in groupsService
+     * writes the `muted` class straight onto this node whenever Chrome reports a
+     * change — so between a render and the next one the two could disagree. When they
+     * did, the click computed the state it wanted from the stale half and asked Chrome
+     * for the value the tab already had, which is exactly nothing happening. Asking
+     * the tab first makes the click always a flip of what is really true.
+     */
+    async function toggleMute(e) {
         e.stopPropagation();
-        const willMute = !isMuted;
-        chrome.tabs.update(tab.id, { muted: willMute }, () => {
-            if (chrome.runtime.lastError) {
-                console.error('Error toggling mute:', chrome.runtime.lastError);
-            }
-            if (typeof updateMuteButtonState === 'function') updateMuteButtonState();
-        });
+        try {
+            const live = await chrome.tabs.get(tab.id);
+            await chrome.tabs.update(tab.id, { muted: !live.mutedInfo?.muted });
+        } catch (error) {
+            console.error('Error toggling mute:', error);
+            return;
+        }
+        if (typeof updateMuteButtonState === 'function') updateMuteButtonState();
     }
 
     function deleteTab(e) {
@@ -248,39 +260,26 @@
         e.stopPropagation();
         e.preventDefault();
 
-        if (e.ctrlKey || e.metaKey) {
-            let areaDataUrl = null;
-            await withTabActivation(tab, () => {
-                return new Promise((resolve) => {
-                    const listener = (message) => {
-                        if (message.action === 'areaScreenshotProcessFinished') {
-                            chrome.runtime.onMessage.removeListener(listener);
-                            if (message.success) {
-                                areaDataUrl = message.dataUrl || null;
-                            } else {
-                                showNotification('errorTakingScreenshot', true);
-                            }
-                            resolve();
-                        }
-                    };
-                    chrome.runtime.onMessage.addListener(listener);
-                    chrome.runtime.sendMessage({ action: 'injectAreaSelector', tabId: tab.id });
-                });
-            });
+        // Ctrl+click has always meant "let me choose the area"; the hover menu now
+        // says so out loud, and both land here.
+        if (e.ctrlKey || e.metaKey) await captureTabArea(tab);
+        else await handleScreenshotRequest(tab, context);
+    }
 
-            if (areaDataUrl) {
-                try {
-                    const blob = await dataUrlToBlob(areaDataUrl);
-                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-                    showNotification('screenshotCopied');
-                } catch (err) {
-                    console.error('Clipboard copy failed:', err);
-                    showNotification('screenshotSavedNoCopy', true);
-                }
-            }
-        } else {
-            handleScreenshotRequest(tab, context);
-        }
+    function captureArea() {
+        return captureTabArea(tab);
+    }
+
+    function captureFullPage() {
+        return handleScreenshotRequest(tab, context, { mode: 'fullPage' });
+    }
+
+    function captureFullPageParts() {
+        return handleScreenshotRequest(tab, context, { mode: 'fullPageParts' });
+    }
+
+    function readAloud() {
+        return startReadAloud({ tabId: tab.id, url: tab.url });
     }
 
     function addToBookmarks(e) {
@@ -417,9 +416,13 @@
             onSplitScreen={handleSplitScreen}
             onOpenInPanel={openInPanel}
             onGeminiSummary={geminiSummary}
+            onReadAloud={readAloud}
             onShowQr={showQr}
             onEditCookies={editCookies}
             onTakeScreenshot={takeScreenshot}
+            onCaptureFullPage={captureFullPage}
+            onCaptureFullPageParts={captureFullPageParts}
+            onCaptureArea={captureArea}
             onAddToBookmarks={addToBookmarks}
             onShowDownloads={showDownloads}
             onCopyUrl={copyUrl}

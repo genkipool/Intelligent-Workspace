@@ -11,6 +11,7 @@
         toggleColorPopup,
         makeGroupTitleEditable,
     } from '../../services/groupsService.js';
+    import { captureGroupTabs } from '../../services/screenshotsService.js';
     import { backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
     import GroupActions from './GroupActions.svelte';
 
@@ -328,6 +329,11 @@
     // built from the group title's base name.
     let noteContext = $derived({ type: 'group', id: group.id, title: displayTitle });
 
+    /** The camera: every tab of this group, one after another, into its gallery. */
+    function captureTabs(options) {
+        return captureGroupTabs(tabs, { type: 'group', id: group.id }, options);
+    }
+
     let groupEl = $state(null);
 
     async function colorIndicatorClick(e) {
@@ -394,6 +400,7 @@
             onhide={handleHide}
             oncopyurls={copyUrls}
             ondelete={deleteGroupAction}
+            oncapture={captureTabs}
         />
     </summary>
 

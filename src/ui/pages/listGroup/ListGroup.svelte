@@ -1,5 +1,5 @@
 <script>
-    import { hiddenControlsForView } from '../../services/viewsService.js';
+    import { visibleControlsForView } from '../../services/viewsService.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import HiddenGroupsBar from '../../components/listGroup/HiddenGroupsBar.svelte';
@@ -28,6 +28,7 @@
 
     import ModalHost from '../../components/listGroup/ModalHost.svelte';
     import ListGroupToolbar from './components/ListGroupToolbar.svelte';
+    import { overlayViewOpening } from '../../stores/appStore.svelte.js';
     import {
         showApiKeyModal,
         showSaveConversationModal,
@@ -61,9 +62,13 @@
         notes: 'notesViewTitle',
         gallery: 'screenshotGalleryTitle',
     };
-    // Notes and gallery are painted over the group list rather than replacing it, so
-    // they name the header but leave the layout and the controls as the group ones.
-    const OVERLAY_VIEWS = new Set(['notes', 'gallery']);
+    /**
+     * The views painted *over* the group list rather than replacing it. They still get
+     * their own header, their own controls and their own initial layout — everything
+     * the assistant has always had — which is what stops the page showing the group
+     * list's chrome for a moment on the way in.
+     */
+    const OVERLAY_VIEWS = new Set(['notes', 'gallery', 'gemini']);
     const requestedView = new URLSearchParams(window.location.search).get('view');
     const initialTitleKey = VIEW_TITLE_KEYS[requestedView] || 'listTabGroups';
 
@@ -71,32 +76,57 @@
     // so opening another view showed the group shell for a few frames before the boot
     // swapped it. The initial layout now comes from the same per-view configuration
     // the boot itself uses, so there is nothing to swap.
-    const initialView = VIEW_TITLE_KEYS[requestedView] && !OVERLAY_VIEWS.has(requestedView) ? requestedView : 'groups';
-    const initiallyHidden = hiddenControlsForView(initialView);
+    const initialView = VIEW_TITLE_KEYS[requestedView] ? requestedView : 'groups';
+    /**
+     * Whether the group list is on screen at the first paint.
+     *
+     * An overlay view keeps the group *controls* — that is what `initialView` decides —
+     * but not the groups themselves showing underneath while it loads. Opening the
+     * notes or the gallery from the popup used to paint the whole group list and cover
+     * it a few frames later, which read as the panel flashing. The assistant never did,
+     * because it is a view of its own and `initialView` already hid the list for it.
+     */
+    const groupsVisibleAtBoot = initialView === 'groups';
+
+    /**
+     * Claim the header before the first paint.
+     *
+     * `currentMainView` starts as 'groups', so the toolbar's own title would read
+     * "Listar Grupos" from the very first frame however the page was opened — the boot
+     * only gets to say otherwise a hundred milliseconds later, and that gap is the
+     * flash. The views painted over the group list say so here instead, and
+     * `openOverlayView` clears it once the view's own flag is up.
+     */
+    if (OVERLAY_VIEWS.has(requestedView)) overlayViewOpening.set(requestedView);
+    const initiallyVisible = visibleControlsForView(initialView);
     const wantsAssistantView = initialView === 'gemini';
 
-    // Controls that only ever apply to the assistant, which is not one of the main
-    // views and so does not appear in the per-view configuration.
-    const ASSISTANT_CONTROLS = ['add-api-key-btn', 'schedule-gemini-btn'];
-    // Whether these two apply is decided by the tabs — the duplicate count and whether
-    // anything is playing audio — so they start hidden and the routine that knows the
-    // answer reveals them.
-    const DATA_DRIVEN_CONTROLS = ['remove-duplicates-btn', 'mute-all-tabs-btn'];
+    /**
+     * Controls whose visibility is decided by data rather than by the view: how many
+     * duplicate tabs there are, whether anything is playing audio, whether the gallery
+     * has anything to download. They start hidden and the routine that knows the answer
+     * reveals them — showing one and taking it straight back is the flash this whole
+     * arrangement exists to avoid.
+     */
+    const DATA_DRIVEN_CONTROLS = ['remove-duplicates-btn', 'mute-all-tabs-btn', 'download-all-screenshots-btn'];
 
+    /**
+     * Whether a control is hidden at the very first paint.
+     *
+     * One table and two exceptions. The table is `viewConfig`, the same one
+     * `updateHeaderButtonsVisibility` settles the toolbar with a few frames later, so
+     * the first frame and the settled one agree — which is the whole trick. The
+     * assistant used to have its list written out here instead, which is why it was the
+     * only view that did not flash; now every view has one.
+     */
     function startsHidden(id) {
+        // Not a question about the view: how many duplicates there are, whether
+        // anything is playing, whether there are screenshots to download. Hidden until
+        // the answer arrives.
         if (DATA_DRIVEN_CONTROLS.includes(id)) return true;
-        if (wantsAssistantView) {
-            return ![
-                'search-toggle-btn',
-                'expand-all-btn',
-                'list-groups-btn',
-                'pin-toggle',
-                ...ASSISTANT_CONTROLS,
-            ].includes(id);
-        }
-        if (ASSISTANT_CONTROLS.includes(id)) return true;
+        // The way back to the groups, pointless only when you are already on them.
         if (id === 'list-groups-btn') return initialView === 'groups';
-        return initiallyHidden.has(id);
+        return !initiallyVisible.has(id);
     }
 
     let hiddenGroupIds = $derived($listGroupState.hiddenGroupIds ?? new Set());
@@ -772,12 +802,7 @@
         <PersistentConversationControls {currentConversationTitle} />
     </div>
 
-    <section
-        id="groups-list"
-        class="groups-list"
-        tabindex="-1"
-        style:display={initialView === 'groups' ? null : 'none'}
-    >
+    <section id="groups-list" class="groups-list" tabindex="-1" style:display={groupsVisibleAtBoot ? null : 'none'}>
         <!-- Waits for the render context: a card rendered without it shows the group's
              full name and then swaps to the prefix-stripped one. -->
         {#if $renderContextReady}
