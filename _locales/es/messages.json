@@ -7155,6 +7155,9 @@
     "sectionListReading": {
         "message": "Listar lectura"
     },
+    "sectionWebReadingPlayer": {
+        "message": "Reproductor de lectura web"
+    },
     "sectionListDownloads": {
         "message": "Gestor de descargas"
     },
@@ -11854,32 +11857,25 @@
         "description": "T\u00edtulo de la secci\u00f3n de las marcas"
     },
     "hintDesc_readerPlay": {
-        "message": "Reproducir o pausar la lectura (tambi\u00e9n la barra espaciadora)",
-        "description": "Comando del lector"
+        "message": "Reproducir o pausar la lectura (también la barra espaciadora)"
     },
     "hintDesc_readerNext": {
-        "message": "P\u00e1rrafo siguiente (tambi\u00e9n la flecha derecha)",
-        "description": "Comando del lector"
+        "message": "Párrafo siguiente (también la flecha derecha)"
     },
     "hintDesc_readerPrev": {
-        "message": "P\u00e1rrafo anterior (tambi\u00e9n la flecha izquierda)",
-        "description": "Comando del lector"
+        "message": "Párrafo anterior (también la flecha izquierda)"
     },
     "hintDesc_readerPanel": {
-        "message": "Ocultar o mostrar el panel del lector",
-        "description": "Comando del lector"
+        "message": "Ocultar o mostrar el panel del lector"
     },
     "hintDesc_readerClose": {
-        "message": "Cerrar el lector (tambi\u00e9n Esc)",
-        "description": "Comando del lector"
+        "message": "Cerrar el lector (también Esc)"
     },
     "hintDesc_readerMarkWord": {
-        "message": "Activar o desactivar la marca sobre la palabra que se dice",
-        "description": "Comando de selecci\u00f3n"
+        "message": "Activar o desactivar la marca sobre la palabra que se dice"
     },
     "hintDesc_readerMarkBlock": {
-        "message": "Activar o desactivar el resaltado del texto que se lee",
-        "description": "Comando de selecci\u00f3n"
+        "message": "Activar o desactivar el resaltado del texto que se lee"
     },
     "readerSectionTitle": {
         "message": "Lector de p\u00e1ginas",

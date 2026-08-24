@@ -7097,6 +7097,9 @@
   "sectionListReading": {
     "message": "Reading list"
   },
+  "sectionWebReadingPlayer": {
+    "message": "Web Reading Player"
+  },
   "sectionListDownloads": {
     "message": "Downloads Manager"
   },
@@ -11874,32 +11877,25 @@
     "description": "Section title for the highlight toggles"
   },
   "hintDesc_readerPlay": {
-    "message": "Play or pause the reading (also the space bar)",
-    "description": "Reader command"
+    "message": "Play or pause the reading (also the space bar)"
   },
   "hintDesc_readerNext": {
-    "message": "Next paragraph (also the right arrow)",
-    "description": "Reader command"
+    "message": "Next paragraph (also the right arrow)"
   },
   "hintDesc_readerPrev": {
-    "message": "Previous paragraph (also the left arrow)",
-    "description": "Reader command"
+    "message": "Previous paragraph (also the left arrow)"
   },
   "hintDesc_readerPanel": {
-    "message": "Hide or show the reader panel",
-    "description": "Reader command"
+    "message": "Hide or show the reader panel"
   },
   "hintDesc_readerClose": {
-    "message": "Close the reader (also Escape)",
-    "description": "Reader command"
+    "message": "Close the reader (also Escape)"
   },
   "hintDesc_readerMarkWord": {
-    "message": "Turn the mark on the word being said on or off",
-    "description": "Selection command"
+    "message": "Turn the mark on the word being said on or off"
   },
   "hintDesc_readerMarkBlock": {
-    "message": "Turn the highlight over the text being read on or off",
-    "description": "Selection command"
+    "message": "Turn the highlight over the text being read on or off"
   },
   "readerSectionTitle": {
     "message": "Page reader",
