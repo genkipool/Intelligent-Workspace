@@ -29,27 +29,19 @@
     let ready = $state(false);
 
     /**
-     * Voices grouped by language, because a machine can easily report sixty of them
-     * and a flat list of sixty is not a list anybody reads.
+     * Voices as a clean flat list of options without optgroups.
      */
     let voiceOptions = $derived.by(() => {
         const auto = { value: '', label: chrome.i18n.getMessage('speechVoiceAuto') || 'Automatic' };
         if (voices.length === 0) return [auto];
 
-        const byLanguage = {};
-        voices.forEach((voice) => {
-            (byLanguage[voice.lang] ||= []).push({
-                value: voice.voiceURI,
-                // The star marks the one the system would have used on its own.
-                label: voice.default ? `${voice.name} ★` : voice.name,
-            });
-        });
+        const list = voices.map((voice) => ({
+            value: voice.voiceURI,
+            // The star marks the one the system would have used on its own.
+            label: voice.default ? `${voice.name} ★` : voice.name,
+        }));
 
-        const groups = Object.keys(byLanguage)
-            .sort((a, b) => a.localeCompare(b))
-            .map((lang) => ({ label: lang, options: byLanguage[lang] }));
-
-        return [auto, ...groups];
+        return [auto, ...list];
     });
 
     /** The chosen voice may have been uninstalled since it was picked. */
