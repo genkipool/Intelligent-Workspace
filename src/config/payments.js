@@ -22,13 +22,18 @@
  * The origin serving the payment page. Origin comparisons are made against exactly this
  * string, so it carries no trailing slash and no path.
  *
- * The page itself lives in a separate repository (`genkipool-site`), deployed to Vercel.
- * Swap the two lines below to point the extension at a local `vercel dev`; put the
- * production one back before committing, because a build aimed at localhost is a build
- * where donations silently go nowhere.
+ * The page lives in a separate repository (`Intelligent-Workspace-Web`) on Vercel.
+ *
+ * PRODUCTION IS THE DEFAULT, and that is deliberate. This used to be a pair of lines
+ * with the local one uncommented, which meant a release could ship pointing at
+ * `localhost` — a build where every donation silently goes nowhere, with nothing in the
+ * UI to say so. Now the only way to get a local origin is to set it in `.env.local`,
+ * which git ignores, so it cannot be committed by accident.
+ *
+ *     # .env.local
+ *     VITE_PAYMENT_ORIGIN=http://localhost:3000
  */
-export const PAYMENT_ORIGIN = 'http://localhost:3000';
-// export const PAYMENT_ORIGIN = 'https://genkipool.com';
+export const PAYMENT_ORIGIN = import.meta.env.VITE_PAYMENT_ORIGIN || 'https://genkipool.com';
 
 /**
  * `/pay` is a route of the marketing site, not a subdomain of its own, and the site

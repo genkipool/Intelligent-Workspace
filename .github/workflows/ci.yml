@@ -4,7 +4,9 @@
 # on a developer's machine.
 #
 # There is no unit test suite yet; when one arrives, add its script as a step below
-# and it will gate merges the same way.
+# and it will gate merges the same way. `scripts/check-release.mjs` is not a test suite —
+# it asserts the two things that break silently between "it builds" and "a user can use
+# it", and it runs before the build so a bad locale fails fast.
 name: CI
 
 on:
@@ -47,6 +49,13 @@ jobs:
 
             - name: Format
               run: pnpm run format
+
+            # The two failures that lint and the build cannot see: a payment origin
+            # that points somewhere local, and a locale file Chrome will refuse. Both
+            # are silent — the extension loads, the panel opens, and either donations
+            # never arrive or Chrome declines to install it at all.
+            - name: Release guards
+              run: node scripts/check-release.mjs
 
             - name: Build
               run: pnpm run build

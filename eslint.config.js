@@ -171,6 +171,12 @@ export default [
         files: ['src/utils/snippet-panel.js'],
         languageOptions: { globals: { HintCommon: 'readonly' } },
     },
+    {
+        // Build-time scripts. They run on Node, not in a page or the worker, so they
+        // get Node's globals rather than the browser ones the base block hands out.
+        files: ['scripts/**/*.mjs'],
+        languageOptions: { globals: { ...globals.node } },
+    },
     /**
      * The plugin's recommended preset ends with a block that carries rules but no
      * `files`, so its 37 svelte/* rules were being applied to every file in the
