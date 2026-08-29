@@ -30,8 +30,20 @@
 export const PAYMENT_ORIGIN = 'http://localhost:3000';
 // export const PAYMENT_ORIGIN = 'https://genkipool.com';
 
-/** `/pay` is a route of the marketing site, not a subdomain of its own. */
-export const PAYMENT_PAGE_URL = `${PAYMENT_ORIGIN}/pay`;
+/**
+ * `/pay` is a route of the marketing site, not a subdomain of its own, and the site
+ * pre-renders one page per language: `/pay` in English, `/es/pay` in Spanish.
+ *
+ * Asking for the right one here rather than passing `?locale=` means the panel gets a
+ * page whose copy is already correct in the HTML, with no flash of English while a
+ * script swaps it. Any language the site does not build falls back to English, which is
+ * what the site itself does for an unknown prefix.
+ */
+const LOCALISED_PAYMENT_PATHS = { en: '/pay', es: '/es/pay' };
+
+export function paymentPagePath(locale) {
+    return LOCALISED_PAYMENT_PATHS[locale] || LOCALISED_PAYMENT_PATHS.en;
+}
 
 /**
  * The preset amounts, in whole euros. The page offers these as chips plus a free

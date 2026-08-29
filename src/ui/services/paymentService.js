@@ -22,7 +22,7 @@
 
 import {
     PAYMENT_ORIGIN,
-    PAYMENT_PAGE_URL,
+    paymentPagePath,
     PAYMENT_MESSAGE_TYPES,
     PAYMENT_THEME_TOKENS,
     DONATION_CURRENCY,
@@ -61,11 +61,11 @@ export function mintPaymentNonce() {
  *   has no bridge to authenticate.
  */
 export function buildPaymentUrl(provider, { nonce = null, amount = DONATION_DEFAULT_AMOUNT } = {}) {
-    const url = new URL(PAYMENT_PAGE_URL);
+    const locale = (chrome.i18n?.getUILanguage?.() || navigator.language || 'en').slice(0, 2);
+    const url = new URL(paymentPagePath(locale), PAYMENT_ORIGIN);
     url.searchParams.set('method', provider.method);
     url.searchParams.set('amount', String(amount));
     url.searchParams.set('currency', DONATION_CURRENCY);
-    url.searchParams.set('locale', (chrome.i18n?.getUILanguage?.() || navigator.language || 'en').slice(0, 2));
     if (nonce) {
         url.searchParams.set('nonce', nonce);
         // Only the framed flow needs the palette; a tab renders on the page's own.
