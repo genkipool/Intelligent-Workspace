@@ -70,7 +70,12 @@ export const PAYMENT_THEME_TOKENS = [
     '--bg-color',
     '--bg-panel-color',
     '--text-color',
+    '--text-on-color',
     '--interactive-color',
+    // The colour a focused field's border takes on the rules page. Without it the
+    // payment form focused in the extension's blue while every other input in the
+    // extension focused in the action colour.
+    '--action-color',
     '--border-color',
     '--error-color',
 ];
