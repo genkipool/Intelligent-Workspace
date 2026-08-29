@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Ethereum">
+  <title>Ethereum</title>
+  <!-- The Ethereum diamond, in the Ethereum Foundation's own proportions and palette.
+       Their brand assets are published for free use, so this is the mark as issued
+       rather than an interpretation of it. -->
+  <rect width="512" height="512" rx="96" fill="#F4F4F8"/>
+  <g transform="translate(256 78)">
+    <path fill="#8A92B2" d="M0 0 -119 197.5 0 267.8z"/>
+    <path fill="#62688F" d="M0 0 119 197.5 0 267.8z"/>
+    <path fill="#62688F" d="M0 291.4 -119 220.9 0 356z"/>
+    <path fill="#454A75" d="M0 291.4 119 220.9 0 356z"/>
+    <path fill="#454A75" d="M0 267.8 -119 197.5 0 130.6z"/>
+    <path fill="#2F3350" d="M0 267.8 119 197.5 0 130.6z"/>
+  </g>
+</svg>

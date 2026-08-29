@@ -496,6 +496,22 @@
     "message": "PayPal",
     "description": "PayPal donation label"
   },
+  "stripe": {
+    "message": "Card",
+    "description": "Stripe donation label"
+  },
+  "googlePay": {
+    "message": "Google Pay",
+    "description": "Google Pay donation label"
+  },
+  "applePay": {
+    "message": "Apple Pay",
+    "description": "Apple Pay donation label"
+  },
+  "ethereum": {
+    "message": "Ethereum",
+    "description": "Ethereum donation label"
+  },
   "developedBy": {
     "message": "Development: Luisrb85, Design & Testing: Flor Chávez.",
     "description": "Developer credit"
@@ -970,6 +986,59 @@
   "donateWithPaypal": {
     "message": "Donate with PayPal",
     "description": "Open the PayPal page to make a donation"
+  },
+  "donateWithStripe": {
+    "message": "Donate by card",
+    "description": "Open the donation form to pay by card"
+  },
+  "donateWithGooglePay": {
+    "message": "Donate with Google Pay",
+    "description": "Open the donation form and pay with Google Pay"
+  },
+  "openStripeDonation": {
+    "message": "Open card donation form",
+    "description": "ARIA label for donation button"
+  },
+  "openGooglePayDonation": {
+    "message": "Open Google Pay donation form",
+    "description": "ARIA label for donation button"
+  },
+  "donateWithApplePay": {
+    "message": "Donate with Apple Pay",
+    "description": "Open the donation form and pay with Apple Pay"
+  },
+  "openApplePayDonation": {
+    "message": "Open Apple Pay donation form",
+    "description": "ARIA label for donation button"
+  },
+  "donateWithEthereum": {
+    "message": "Donate with Ethereum",
+    "description": "Copy the Ethereum address"
+  },
+  "copyEthereumAddress": {
+    "message": "Copy Ethereum donation address",
+    "description": "ARIA label for donation button"
+  },
+  "openPaypalDonation": {
+    "message": "Open PayPal donation form",
+    "description": "ARIA label for donation button"
+  },
+  "donationThanks": {
+    "message": "Thank you for your support!",
+    "description": "Shown after a donation succeeds"
+  },
+  "donationThanksAmount": {
+    "message": "Thank you for your \u20ac$1 donation!",
+    "description": "Shown after a donation succeeds, with the amount",
+    "placeholders": { "amount": { "content": "$1" } }
+  },
+  "donationFailed": {
+    "message": "The payment could not be completed.",
+    "description": "Shown when a donation fails"
+  },
+  "donationLoading": {
+    "message": "Loading the secure payment form…",
+    "description": "Shown while the payment page loads"
   },
   "enableSortGroups": {
     "message": "Enable alphabetical sorting of groups",

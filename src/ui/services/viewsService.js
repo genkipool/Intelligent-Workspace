@@ -14,6 +14,7 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
+import { mintPaymentNonce, buildPaymentUrl, attachPaymentBridge } from './paymentService.js';
 import { prefetchUrl, prefetchData } from './prefetchService.js';
 import { openModal, showDeleteHistoryConfirmModal } from '../stores/modalStore.js';
 
@@ -80,6 +81,13 @@ function ext(key) {
 // out of the DOM leaves its store thinking the view is still open, which is how the
 // notes list disappeared for good after deleting a single note.
 const COMPONENT_OWNED_VIEWS = ':not(#notes-view):not(#screenshot-gallery-view)';
+
+/**
+ * Removes the payment frame's message listener. Held here rather than inside the
+ * opener because `closeUrlInPanel` is what actually takes the frame off screen, and a
+ * listener left behind would keep answering for a frame that no longer exists.
+ */
+let detachPaymentBridge = null;
 
 function getTransientActiveView(container) {
     return container?.querySelector(`.active-view${COMPONENT_OWNED_VIEWS}`) || null;
@@ -1221,7 +1229,74 @@ export function openUrlInPopup(url, defaultWidth = 450, defaultHeight = 600) {
     });
 }
 
-export async function openUrlInPanel(url, context = null) {
+/**
+ * Everything on this page that has to go away when a frame takes the panel over.
+ */
+const VIEWS_HIDDEN_BY_A_FRAME =
+    '#hidden-groups-container, #hidden-context-container, #groups-list, #drag-announcer, #gemini-conversation-view, #notes-view, #screenshot-gallery-view, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container, #downloads-view-container';
+
+/**
+ * A framed site behaves like a real tab only if it is allowed to do what a tab does:
+ * open windows, download, show modals, ask for storage access. Trimming this list is
+ * what leaves x.com or WhatsApp Web stuck on a blank shell.
+ */
+const WEB_VIEW_SANDBOX =
+    'allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals allow-storage-access-by-user-activation allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation';
+
+const WEB_VIEW_ALLOW = [
+    'fullscreen',
+    'clipboard-read',
+    'clipboard-write',
+    'encrypted-media',
+    'autoplay',
+    'picture-in-picture',
+    'camera',
+    'microphone',
+    'display-capture',
+    'geolocation',
+]
+    .map((feature) => `${feature} *`)
+    .join('; ');
+
+/**
+ * [AI NOTE] The payment frame gets a deliberately shorter list than the web view.
+ *
+ * No downloads, no modals, no top-level navigation, no camera — a donation form needs
+ * none of them, and every one of them is something a payment page should not be able
+ * to do to the panel. `allow-popups` stays because PayPal cannot complete a login in
+ * a frame and has to open its own window; `allow-same-origin` stays because without it
+ * the frame is an opaque origin and Stripe.js will not start.
+ *
+ * `payment` with no origin list is the shorthand for `payment 'src'`: the permission is
+ * granted to the frame's own origin and is dropped the moment it navigates elsewhere.
+ */
+const PAYMENT_VIEW_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox';
+
+const PAYMENT_VIEW_ALLOW = 'payment; publickey-credentials-get';
+
+/**
+ * The panel's framed viewer. Written out three times before this existed, which is how
+ * the file view ended up without the styling the other two had.
+ */
+function createPanelIframe({ src, sandbox = null, allow = null, referrerPolicy = null }) {
+    const iframe = document.createElement('iframe');
+    iframe.id = 'side-panel-iframe-viewer';
+    iframe.className = 'active-view';
+    iframe.style.height = 'calc(100% - 55px)';
+    iframe.style.width = '100%';
+    iframe.style.border = 'none';
+    if (sandbox) iframe.sandbox = sandbox;
+    if (allow) iframe.allow = allow;
+    if (referrerPolicy) iframe.referrerPolicy = referrerPolicy;
+    iframe.src = src;
+    return iframe;
+}
+
+/**
+ * Puts the panel into the state a framed view sits on: every other view closed, the
+ * group chrome hidden, the header renamed. Returns the container to append into.
+ */
+function enterFramedView(titleKey, context = null) {
     isUrlViewActive.set(true);
     currentPanelContext.set(context);
     geminiStore.closeView(true);
@@ -1234,46 +1309,41 @@ export async function openUrlInPanel(url, context = null) {
         });
     }
     closeScreenshotGallery();
-
     closeUrlInPanel(true);
-    currentPanelUrl.set(url);
     currentPanelContext.set(context);
 
+    const mainHeaderTitle = document.getElementById('main-header-title');
+    if (mainHeaderTitle) mainHeaderTitle.setAttribute('data-i18n', titleKey);
+
+    const container = document.querySelector('.container');
+    container.querySelectorAll(VIEWS_HIDDEN_BY_A_FRAME).forEach((el) => {
+        if (el) el.style.display = 'none';
+    });
+
+    return { container, mainHeaderTitle };
+}
+
+/** Repaints the header chrome once the frame is on screen. */
+function settleFramedView(mainHeaderTitle) {
+    isUrlViewActive.set(true);
+    updateHeaderButtonsVisibility();
+    updateScrollButtons();
+    updateBackButtonTooltip();
+    applyTranslations(mainHeaderTitle);
+}
+
+export async function openUrlInPanel(url, context = null) {
     const isFileView =
         url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('file:') || (context && context.fromNotes);
 
-    const _mainHeaderTitle = document.getElementById('main-header-title');
-    if (_mainHeaderTitle) {
-        const titleKey = isFileView ? 'viewFilesTitle' : 'webViewTitle';
-        _mainHeaderTitle.setAttribute('data-i18n', titleKey);
-    }
+    const { container, mainHeaderTitle } = enterFramedView(isFileView ? 'viewFilesTitle' : 'webViewTitle', context);
+    currentPanelUrl.set(url);
 
-    const container = document.querySelector('.container');
-    container
-        .querySelectorAll(
-            '#hidden-groups-container, #hidden-context-container, #groups-list, #drag-announcer, #gemini-conversation-view, #notes-view, #screenshot-gallery-view, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container, #downloads-view-container',
-        )
-        .forEach((el) => {
-            if (el) el.style.display = 'none';
-        });
-
-    if (url.startsWith('data:application/pdf') || url.startsWith('data:') || url.startsWith('blob:')) {
-        const iframe = document.createElement('iframe');
-        iframe.id = 'side-panel-iframe-viewer';
-        iframe.className = 'active-view';
-        iframe.style.height = 'calc(100% - 55px)';
-        iframe.style.width = '100%';
-        iframe.style.border = 'none';
-        iframe.src = url;
-
+    if (url.startsWith('data:') || url.startsWith('blob:')) {
+        const iframe = createPanelIframe({ src: url });
         attachFrameScrollbar(iframe);
         container.appendChild(iframe);
-        isUrlViewActive.set(true);
-
-        updateHeaderButtonsVisibility();
-        updateScrollButtons();
-        updateBackButtonTooltip();
-        applyTranslations(_mainHeaderTitle);
+        settleFramedView(mainHeaderTitle);
         return;
     }
 
@@ -1284,53 +1354,71 @@ export async function openUrlInPanel(url, context = null) {
         });
 
         if (response && response.success) {
-            const iframe = document.createElement('iframe');
-            iframe.id = 'side-panel-iframe-viewer';
-            iframe.className = 'active-view';
-            iframe.style.height = 'calc(100% - 55px)';
-            iframe.style.width = '100%';
-            iframe.style.border = 'none';
-            /**
-             * A framed site behaves like a real tab only if it is allowed to do
-             * what a tab does: open windows, download, show modals, ask for
-             * storage access. Trimming this list is what leaves x.com or
-             * WhatsApp Web stuck on a blank shell.
-             */
-            iframe.sandbox =
-                'allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals allow-storage-access-by-user-activation allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation';
-            iframe.allow = [
-                'fullscreen',
-                'clipboard-read',
-                'clipboard-write',
-                'encrypted-media',
-                'autoplay',
-                'picture-in-picture',
-                'camera',
-                'microphone',
-                'display-capture',
-                'geolocation',
-            ]
-                .map((feature) => `${feature} *`)
-                .join('; ');
-            iframe.referrerPolicy = 'no-referrer';
-            iframe.src = url;
-
+            const iframe = createPanelIframe({
+                src: url,
+                sandbox: WEB_VIEW_SANDBOX,
+                allow: WEB_VIEW_ALLOW,
+                referrerPolicy: 'no-referrer',
+            });
             // Before the frame is in the document, so the palette is already on offer
             // when the framed page announces itself.
             attachFrameScrollbar(iframe);
             container.appendChild(iframe);
-            isUrlViewActive.set(true);
-
-            updateHeaderButtonsVisibility();
-            updateScrollButtons();
-            updateBackButtonTooltip();
-            applyTranslations(_mainHeaderTitle);
+            settleFramedView(mainHeaderTitle);
         } else {
             fetchContentForReaderView(url);
         }
     } catch {
         fetchContentForReaderView(url);
     }
+}
+
+/**
+ * [AI INSTRUCTION]
+ * OPENS THE DONATION FORM IN THE PANEL.
+ *
+ * DO NOT route this through `prepareUrlForSidePanel`. That handler strips
+ * X-Frame-Options and CSP so a hostile-to-framing site can be read in the panel; doing
+ * it to a payment page is clickjacking and breaks the SCA redirect. The hosted page
+ * grants us framing rights itself with `frame-ancestors`, and `handlers/dnr.js`
+ * refuses payment hosts by name so this cannot be undone by accident.
+ */
+export async function openPaymentInPanel(provider) {
+    const { container, mainHeaderTitle } = enterFramedView('donation');
+
+    const nonce = mintPaymentNonce();
+    const src = buildPaymentUrl(provider, { nonce });
+    currentPanelUrl.set(src);
+
+    const iframe = createPanelIframe({
+        src,
+        sandbox: PAYMENT_VIEW_SANDBOX,
+        allow: PAYMENT_VIEW_ALLOW,
+        referrerPolicy: 'no-referrer',
+    });
+
+    /**
+     * `showNotification` and not `notificationStore`: this page never mounts the
+     * `<Notification />` component — it paints its own node into the document — so a
+     * store write here would have gone nowhere. The popup and the about page are the
+     * ones that use the store.
+     */
+    detachPaymentBridge = attachPaymentBridge(iframe, nonce, {
+        onSuccess: ({ amount }) => {
+            if (amount) showNotification('donationThanksAmount', false, [String(amount)]);
+            else showNotification('donationThanks');
+            closeUrlInPanel();
+        },
+        onError: (message) => {
+            // The frame's own wording when it gave one; ours when it did not.
+            if (message) showNotification(message, true);
+            else showNotification('donationFailed', true);
+        },
+        onClose: () => closeUrlInPanel(),
+    });
+
+    container.appendChild(iframe);
+    settleFramedView(mainHeaderTitle);
 }
 
 export async function fetchContentForReaderView(url) {
@@ -1543,6 +1631,8 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     currentPanelUrl.set(null);
     previousIframeUrl.set(null);
     detachFrameScrollbar();
+    detachPaymentBridge?.();
+    detachPaymentBridge = null;
 
     chrome.runtime.sendMessage(
         {

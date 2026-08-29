@@ -500,6 +500,22 @@
         "message": "PayPal",
         "description": "Etiqueta de donación PayPal"
     },
+    "stripe": {
+        "message": "Tarjeta",
+        "description": "Etiqueta de donación con tarjeta"
+    },
+    "googlePay": {
+        "message": "Google Pay",
+        "description": "Etiqueta de donación Google Pay"
+    },
+    "applePay": {
+        "message": "Apple Pay",
+        "description": "Etiqueta de donación Apple Pay"
+    },
+    "ethereum": {
+        "message": "Ethereum",
+        "description": "Etiqueta de donación Ethereum"
+    },
     "developedBy": {
         "message": "Desarrollo: Luisrb85, Diseño & Testing: Flor Chávez.",
         "description": "Crédito del desarrollador"
@@ -990,6 +1006,59 @@
     "donateWithPaypal": {
         "message": "Donar con PayPal",
         "description": "Abrir la página de PayPal para donar"
+    },
+    "donateWithStripe": {
+        "message": "Donar con tarjeta",
+        "description": "Abrir el formulario de donación para pagar con tarjeta"
+    },
+    "donateWithGooglePay": {
+        "message": "Donar con Google Pay",
+        "description": "Abrir el formulario de donación y pagar con Google Pay"
+    },
+    "openStripeDonation": {
+        "message": "Abrir formulario de donación con tarjeta",
+        "description": "Etiqueta ARIA para botón de donación"
+    },
+    "openGooglePayDonation": {
+        "message": "Abrir formulario de donación con Google Pay",
+        "description": "Etiqueta ARIA para botón de donación"
+    },
+    "donateWithApplePay": {
+        "message": "Donar con Apple Pay",
+        "description": "Abrir el formulario de donación y pagar con Apple Pay"
+    },
+    "openApplePayDonation": {
+        "message": "Abrir formulario de donación con Apple Pay",
+        "description": "Etiqueta ARIA para botón de donación"
+    },
+    "donateWithEthereum": {
+        "message": "Donar con Ethereum",
+        "description": "Copiar la dirección de Ethereum"
+    },
+    "copyEthereumAddress": {
+        "message": "Copiar dirección de donación Ethereum",
+        "description": "Etiqueta ARIA para botón de donación"
+    },
+    "openPaypalDonation": {
+        "message": "Abrir formulario de donación con PayPal",
+        "description": "Etiqueta ARIA para botón de donación"
+    },
+    "donationThanks": {
+        "message": "¡Gracias por tu apoyo!",
+        "description": "Se muestra cuando la donación se completa"
+    },
+    "donationThanksAmount": {
+        "message": "¡Gracias por tu donación de $1 €!",
+        "description": "Se muestra cuando la donación se completa, con el importe",
+        "placeholders": { "amount": { "content": "$1" } }
+    },
+    "donationFailed": {
+        "message": "No se ha podido completar el pago.",
+        "description": "Se muestra cuando la donación falla"
+    },
+    "donationLoading": {
+        "message": "Cargando el formulario de pago seguro…",
+        "description": "Se muestra mientras carga la página de pago"
     },
     "enableSortGroups": {
         "message": "Activar orden alfabético de grupos",

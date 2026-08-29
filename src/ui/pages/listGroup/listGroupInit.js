@@ -10,6 +10,7 @@ import { initAgentUI } from '../../../utils/agent-ui.js';
 import { exportBookmarkFolder } from '../../../utils/importExport.js';
 import '../../../lib/marked.js';
 import { initializeBookmarksView } from '../../bookmarks/bookmarks.js';
+import { getProvider } from '../../../config/donationProviders.js';
 import { saveGeminiEntryToDb, getNoteFromDb } from '../../../utils/db.js';
 
 import {
@@ -30,6 +31,7 @@ import {
     initCustomCalendar,
     handleIframeMessage,
     openUrlInPanel,
+    openPaymentInPanel,
     closeUrlInPanel,
     hideYoutubeView,
     getActiveScrollableElement,
@@ -171,6 +173,28 @@ const PANEL_VIEWS = {
     gallery: {
         is: () => get(isGalleryViewActive),
         show: (options) => openOverlayView('gallery', () => showScreenshotGallery('orphan', null, null), options),
+    },
+    /**
+     * The donation form. It rides on the same framed-view machinery the web view uses
+     * — `isUrlViewActive`, the same header, the same back button — because it is the
+     * same thing: an iframe filling the panel. What it does NOT share is the DNR
+     * header stripping; see `openPaymentInPanel`.
+     *
+     * Which gateway to show comes from the query string, the way `?view=url` already
+     * passes its target. An unknown or missing provider falls through to the group
+     * list rather than opening an empty frame.
+     */
+    payment: {
+        is: () => get(isUrlViewActive),
+        show: async () => {
+            const provider = getProvider(new URLSearchParams(window.location.search).get('provider'));
+            if (!provider || provider.kind !== 'payment') {
+                await switchMainView('groups', false);
+                return;
+            }
+            await switchMainView('groups', false);
+            await openPaymentInPanel(provider);
+        },
     },
 };
 

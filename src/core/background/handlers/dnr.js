@@ -242,6 +242,45 @@ async function getSidePanelRuleTabIds() {
 }
 
 /**
+ * [AI INSTRUCTION]
+ * HOSTS THIS HANDLER MUST NEVER TOUCH.
+ *
+ * Everything above exists to make a site that refuses to be framed show up in the
+ * panel anyway: X-Frame-Options and CSP come off, the request is dressed up as a
+ * top-level navigation, cookies are copied into our partition. For a newspaper that is
+ * the feature. For a payment page it is clickjacking — it is precisely the attack
+ * `frame-ancestors` exists to stop — and it breaks the SCA/3DS redirect besides.
+ *
+ * The donation form does not need any of it: `pay.genkipool.com` grants this extension
+ * framing rights itself, and `openPaymentInPanel` frames it directly without ever
+ * calling this handler. This list is the belt to that pair of braces, so a later change
+ * that routes a payment URL through the web view fails loudly instead of quietly
+ * stripping a gateway's defences.
+ *
+ * DO NOT add an exception here to "make a checkout work in the panel". If a gateway
+ * will not be framed, that is the gateway telling you not to.
+ */
+const NEVER_STRIP_FRAMING_HOSTS = [
+    // The whole marketing site, not just /pay: DNR matches hosts, not paths, and the
+    // site has no business being framed by the web view either.
+    'genkipool.com',
+    // Covers js., checkout., api. and m.stripe.com through the suffix match below.
+    'stripe.com',
+    'stripe.network',
+    'paypal.com',
+    'paypalobjects.com',
+    // Google Pay only. NOT google.com: opening Google in the panel's web view is a
+    // feature, and listing the parent domain here would silently kill it.
+    'pay.google.com',
+    'payments.google.com',
+];
+
+function isPaymentHost(hostname) {
+    const host = (hostname || '').toLowerCase();
+    return NEVER_STRIP_FRAMING_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
+}
+
+/**
  * Prepares a URL for embedding inside the extension's side panel by removing
  * framing-restriction headers, faking a top-level navigation and setting the
  * User-Agent the target host expects.
@@ -249,6 +288,13 @@ async function getSidePanelRuleTabIds() {
 function handlePrepareUrlForSidePanel(message, sendResponse) {
     (async () => {
         const urlObj = new URL(message.url);
+
+        if (isPaymentHost(urlObj.hostname)) {
+            logMessage(`[DNR] Refusing to strip framing headers for payment host: ${urlObj.hostname}`);
+            sendResponse({ success: false, error: 'Framing headers are never stripped for payment hosts' });
+            return;
+        }
+
         const userAgent = pickSidePanelUserAgent(urlObj.hostname);
         const isMobileUserAgent = userAgent === SIDEPANEL_MOBILE_UA;
         const responseHeaders = buildFramingResponseHeaders();

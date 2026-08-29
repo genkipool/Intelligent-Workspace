@@ -814,19 +814,33 @@ ul {
     margin-bottom: var(--spacing-sm);
 }
 
+/* Four per row, so the eight providers fall into the two rows the page wants: the
+   gateways above, the coins below. A grid rather than a wrapping flex row because
+   flex-wrap breaks wherever the icons happen to run out of room, which put PayPal on
+   the second row as soon as the labels got longer in Spanish.
+
+   The narrow steps stay on even numbers — 4, then 2, then 1 — so the split never lands
+   mid-row and leaves a gateway stranded among the coins. */
 .donation-links-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-items: center;
+    align-items: start;
     gap: var(--spacing-md);
     margin-top: var(--spacing-md);
-    flex-wrap: wrap;
+    @media (max-width: 600px) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @media (max-width: 380px) {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .donation-link {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: var(--spacing-xs);
     text-decoration: none;
     color: var(--text-color);
@@ -859,6 +873,8 @@ ul {
     width: var(--donation-icon-size);
     height: var(--donation-icon-size);
     object-fit: contain;
+    display: block;
+    margin: 0 auto;
     @media (max-width: 768px) {
         width: 80px;
         height: 80px;
@@ -871,6 +887,11 @@ ul {
         width: 40px;
         height: 40px;
     }
+}
+
+.donation-label {
+    text-align: center;
+    width: 100%;
 }
 .feature-icon-img {
     width: var(--feature-icon-width);

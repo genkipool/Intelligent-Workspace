@@ -438,17 +438,23 @@ button:active {
     margin-bottom: 12px;
 }
 
+/* Equal columns rather than `flex: 1` on a space-between row: the four labels are
+   different lengths in every language, and with flex the widest one — "Google Pay" —
+   stole width from its neighbours and pushed Bitcoin's icon off centre. */
 .donation-options {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
 }
 
 .donation-option {
-    flex: 1;
+    min-width: 0;
     cursor: pointer;
     text-align: center;
     transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .donation-option:focus-visible {
@@ -456,6 +462,7 @@ button:active {
 }
 
 .donation-icon-container {
+    width: 48px;
     height: 48px;
     border-radius: 6px;
     margin-bottom: 4px;
@@ -472,6 +479,8 @@ button:active {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: center;
+    width: 100%;
 }
 
 .donation-option:hover .donation-icon-container,
@@ -483,7 +492,10 @@ button:active {
 .donation-icon-container img {
     max-width: 48px;
     max-height: 48px;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    display: block;
     transition: transform 0.2s ease;
 }
 
