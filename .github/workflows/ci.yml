@@ -31,16 +31,18 @@ jobs:
             - uses: actions/checkout@v5
 
             # The repository is on a pnpm lockfile, so pnpm is what must install it —
-            # npm would resolve different versions and check a different tree.
+            # npm would resolve different versions and check a different tree. The
+            # version comes from `packageManager` in package.json, so CI cannot drift
+            # from what a developer runs locally.
             - uses: pnpm/action-setup@v6
-              with:
-                  version: 11
 
             - uses: actions/setup-node@v5
               with:
                   node-version: 22
                   cache: pnpm
 
+            # --frozen-lockfile makes an install that would change the lockfile a
+            # failure rather than a silent resolution to different versions.
             - name: Install
               run: pnpm install --frozen-lockfile
 

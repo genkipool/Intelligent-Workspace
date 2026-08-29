@@ -2,6 +2,7 @@
     "name": "intelligent-tab-group",
     "version": "1.0.0",
     "type": "module",
+    "packageManager": "pnpm@11.5.0",
     "scripts": {
         "dev": "vite",
         "build": "vite build && node fix-sw.js",
@@ -10,10 +11,10 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --check .",
         "format:fix": "prettier --write .",
-        "check": "npm run lint && npm run format",
+        "check": "pnpm run lint && pnpm run format",
         "prepare": "husky",
         "check:release": "node scripts/check-release.mjs",
-        "verify": "npm run lint && npm run format && npm run check:release && npm run build"
+        "verify": "pnpm run lint && pnpm run format && pnpm run check:release && pnpm run build"
     },
     "devDependencies": {
         "@crxjs/vite-plugin": "^2.4.0",
