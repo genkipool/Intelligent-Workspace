@@ -16,6 +16,7 @@
     import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import '../../../core/services/webActivitySchema.js';
     import { saveSettings } from '../../services/webActivityService.js';
+    import { navigateToPanel, primePanelContexts } from '../../services/panelNavigation.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
@@ -46,10 +47,13 @@
              * threw it away for the pinned one, which is exactly the "it goes there and
              * comes straight back" nobody could explain.
              */
+            // Resolved here during boot and handed over, so the first click does not
+            // pay for a second round-trip to the worker.
             contextsCache =
                 typeof chrome.runtime.getContexts === 'function'
                     ? await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] })
                     : [];
+            primePanelContexts(contextsCache);
         }
 
         port = chrome.runtime.connect({ name: isSidePanel ? 'sidepanel-connection' : 'popup-connection' });
@@ -76,41 +80,12 @@
         );
     }
 
-    async function handleNavigation(event, popupUrl, sidePanelUrl, sourcePath) {
-        if (event) event.preventDefault();
-        if (contextsCache === null) {
-            contextsCache =
-                typeof chrome.runtime.getContexts === 'function'
-                    ? await chrome.runtime.getContexts({ contextTypes: ['SIDE_PANEL'] })
-                    : [];
-        }
-        const hasSidePanel = contextsCache.length > 0;
-        const joinCharPopup = popupUrl.includes('?') ? '&' : '?';
-        const joinCharSide = sidePanelUrl.includes('?') ? '&' : '?';
-
-        await chrome.storage.local.set({
-            navSource: `${sourcePath}${sourcePath.includes('?') ? '&' : '?'}context=sidepanel`,
-        });
-        const currentWin = await chrome.windows.getCurrent();
-        const isPopupWindow = currentWin.type === 'popup';
-
-        if (isSidePanel || hasSidePanel || isPopupWindow || (event && event.ctrlKey)) {
-            window.location.href = `${popupUrl}${joinCharPopup}context=sidepanel`;
-            if (isSidePanel) {
-                chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: popupUrl });
-            }
-        } else {
-            chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
-                if (tab) {
-                    chrome.sidePanel.setOptions({
-                        path: `${sidePanelUrl}${joinCharSide}context=sidepanel`,
-                        enabled: true,
-                    });
-                    chrome.sidePanel.open({ windowId: tab.windowId });
-                    window.close();
-                }
-            });
-        }
+    /**
+     * The decision itself lives in `services/panelNavigation.js`, because the donation
+     * icons need exactly the same one and used to carry their own copy of it.
+     */
+    function handleNavigation(event, popupUrl, sidePanelUrl, sourcePath) {
+        return navigateToPanel({ event, popupUrl, sidePanelUrl, sourcePath });
     }
 
     function openRules(e) {
