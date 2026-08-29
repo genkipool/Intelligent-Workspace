@@ -28,6 +28,11 @@ yarn.lock
 # AI Agents
 .antigravitycli
 .agents
+skills-lock.json
+
+# Deploy state never belongs in the repo. The payment page itself lives in the
+# separate `genkipool-site` repository.
+.vercel
 
 # OpenCode
 .opencode
