@@ -41,6 +41,12 @@ export default defineConfig({
                     rename: { stripBase: true },
                 },
                 {
+                    // The glob above only takes the files directly under src/utils.
+                    src: 'src/utils/hint/*',
+                    dest: 'src/utils/hint',
+                    rename: { stripBase: true },
+                },
+                {
                     src: 'src/styles/*',
                     dest: 'src/styles',
                     rename: { stripBase: true },

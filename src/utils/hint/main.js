@@ -1211,6 +1211,8 @@ var Main = class Main {
     _injectYoutubeInlineVolumeControl() {
         if (itgIsInsidePipWindow()) return;
         if (!window.location.hostname.includes('youtube.com')) return;
+        if (this._ytInlineVolumeBound) return;
+        this._ytInlineVolumeBound = true;
 
         if (!document.getElementById('itg-yt-inline-volume-styles')) {
             const styleEl = document.createElement('style');
@@ -1219,92 +1221,139 @@ var Main = class Main {
             (document.head || document.documentElement).appendChild(styleEl);
         }
 
-        const isWatchOrShortsPage = () => {
-            const p = window.location.pathname || '';
-            return p.startsWith('/watch') || p.startsWith('/shorts');
+        // YouTube keeps a single hover preview (`ytd-video-preview`) parked at the root of
+        // `ytd-app` and moves it over whichever card the pointer is on. It never lives inside
+        // the card, so the only trustworthy way to know whether the preview belongs to a Short
+        // is to look at the card under the pointer, not at the player.
+        const SHORT_CARD =
+            'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, ytd-reel-item-renderer, ytd-rich-grid-slim-media';
+        const ANY_CARD =
+            SHORT_CARD +
+            ', ytd-rich-item-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-playlist-video-renderer, ytd-rich-grid-media';
+        // Everything YouTube paints on top of the hovered card: while the pointer is in there
+        // it is still hovering the same card.
+        const PREVIEW_OVERLAY =
+            'ytd-video-preview, ytd-video-preview-loader, .ytdVideoPreviewLoaderVideoPreviewContainer, #inline-preview-player, .itg-yt-short-volume-btn';
+
+        const isFeedPage = () => {
+            const path = window.location.pathname || '';
+            return !path.startsWith('/watch') && !path.startsWith('/shorts');
         };
 
-        const isShortsPlayer = (player) => {
-            if (!player || !(player instanceof HTMLElement)) return false;
-            if (isWatchOrShortsPage()) return false;
+        const isShortCard = (card) =>
+            !!card &&
+            (card.matches(SHORT_CARD) ||
+                !!card.querySelector(SHORT_CARD + ', a[href^="/shorts/"], a.reel-item-endpoint'));
 
-            // Explicitly exclude main watch player and full theater container
-            if (
-                player.id === 'movie_player' ||
-                player.closest(
-                    '#movie_player, ytd-watch-flexy, #player-theater-container, #player-full-bleed-container',
-                )
-            ) {
-                return false;
-            }
+        // The hover preview player, and nothing else: never `movie_player`, never the real
+        // Shorts player, never a channel trailer.
+        const getPreviewPlayer = () => document.querySelector('ytd-video-preview #inline-preview-player');
 
-            // Inclusions for Shorts view models and containers
-            if (
-                player.closest(
-                    'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, [class*="shortsLockupViewModel"], ytd-rich-grid-slim-media, ytd-reel-shelf-renderer, ytd-reel-item-renderer, ytd-rich-shelf-renderer[is-shorts], ytd-rich-item-renderer[is-slim-media], ytd-shorts, [is-shorts], [is-slim-media]',
-                )
-            ) {
-                return true;
-            }
-
-            // Check parent card for Shorts indicators or endpoints
-            const parentCard = player.closest(
-                'ytd-rich-item-renderer, ytd-rich-grid-row, ytd-grid-video-renderer, ytd-video-renderer, ytd-video-preview, #video-preview-container, ytd-rich-shelf-renderer',
-            );
-            if (parentCard) {
-                if (
-                    parentCard.closest('ytd-rich-shelf-renderer[is-shorts], [is-shorts]') ||
-                    parentCard.querySelector(
-                        'ytm-shorts-lockup-view-model-v2, ytm-shorts-lockup-view-model, .shortsLockupViewModelHost, a[href*="/shorts/"], a.reel-item-endpoint',
-                    )
-                ) {
-                    return true;
-                }
-            }
-
-            if (
-                player.classList.contains('ytp-fit-cover-video') ||
-                player.classList.contains('ytp-xsmall-width-mode') ||
-                player.classList.contains('ytp-tiny-mode')
-            ) {
-                return true;
-            }
-
-            const video = player.querySelector('video');
-            if (video) {
-                const h = video.videoHeight || video.offsetHeight || 0;
-                const w = video.videoWidth || video.offsetWidth || 0;
-                if (h > 0 && w > 0 && h > w) {
-                    return true;
-                }
-            }
-
-            // Exclude regular horizontal 16:9 previews if none of the above matched
-            if (player.closest('#video-preview-container, ytd-video-preview')) {
-                return false;
-            }
-
-            return false;
+        // YouTube fades the preview in only once it really starts, and fades it back out when it
+        // stops. Hanging the button there outside that window left an invisible control on top
+        // of the thumbnail that ate the click instead of opening the Short.
+        let lastOnScreen = 0;
+        const isPreviewOnScreen = () => {
+            const preview = document.querySelector('ytd-video-preview');
+            if (!preview) return false;
+            const rect = preview.getBoundingClientRect();
+            if (rect.width < 40 || rect.height < 40) return false;
+            if (parseFloat(getComputedStyle(preview).opacity || '0') <= 0.5) return false;
+            lastOnScreen = Date.now();
+            return true;
         };
 
-        const removeAllNonShortsVolumeButtons = () => {
-            // Remove any legacy buttons attached to static cards so they don't block YouTube hover preview
-            const staticButtons = document.querySelectorAll(
-                'ytm-shorts-lockup-view-model-v2 .itg-yt-short-volume-btn, .shortsLockupViewModelHostThumbnailParentContainer > .itg-yt-short-volume-btn, a > .itg-yt-short-volume-btn',
-            );
-            for (const el of staticButtons) {
-                if (!el.closest('#inline-preview-player, .html5-video-player')) {
-                    el.remove();
-                }
+        // The volume the user actually chose on YouTube. Forcing 100 made every Short shout
+        // over whatever was playing.
+        const getUserVolume = () => {
+            const mainPlayer = document.getElementById('movie_player');
+            if (mainPlayer && typeof mainPlayer.getVolume === 'function') {
+                try {
+                    const volume = mainPlayer.getVolume();
+                    if (typeof volume === 'number' && volume > 0) return volume;
+                } catch {}
             }
+            try {
+                const entry = JSON.parse(localStorage.getItem('yt-player-volume') || 'null');
+                const data = entry && entry.data ? JSON.parse(entry.data) : null;
+                if (data && typeof data.volume === 'number' && data.volume > 0) return data.volume;
+            } catch {}
+            return 100;
+        };
 
-            const existing = document.querySelectorAll('.itg-yt-short-volume-btn, [data-itg-short-volume="true"]');
-            for (const el of existing) {
-                const p = el.closest('.html5-video-player, #inline-preview-player');
-                if (!p || !isShortsPlayer(p) || isWatchOrShortsPage()) {
-                    el.remove();
-                }
+        // What the user asked for. It survives moving from one Short to the next, but it is
+        // only ever applied to the preview of a Short.
+        let soundOn = false;
+        let hoveredCard = null;
+
+        const hasSound = () => {
+            const player = getPreviewPlayer();
+            const video = player && player.querySelector('video');
+            if (!video) return soundOn;
+            return !video.muted && video.volume > 0;
+        };
+
+        // The button is on screen exactly while the preview belongs to a hovered Short, so its
+        // presence is the condition for touching the audio at all: no button, no sound.
+        const wantsSound = () => soundOn && !!document.querySelector('.itg-yt-short-volume-btn');
+
+        // The preview's mute state belongs to YouTube's player, whose API is a page property
+        // on the element and therefore invisible from here (see youtubePreviewAudioHook.js).
+        // The hook in the page's own context does the actual call; writing `video.muted` from
+        // this side only wins the first round, because the player still believes the preview
+        // is muted and puts that back. Nothing is muted that this control did not unmute
+        // itself, so every other preview is left exactly as YouTube wants it.
+        let weUnmuted = false;
+        let hookAnswered = false;
+
+        window.addEventListener('message', (event) => {
+            if (event.source === window && event.data && event.data.__itgYtPreviewAudio === 'applied') {
+                hookAnswered = true;
             }
+        });
+
+        const applySound = () => {
+            const player = getPreviewPlayer();
+            if (!player) return;
+            const wantSound = wantsSound();
+            if (!wantSound && !weUnmuted) return;
+
+            window.postMessage(
+                {
+                    __itgYtPreviewAudio: 'apply',
+                    sound: wantSound,
+                    volume: wantSound ? getUserVolume() : null,
+                },
+                '*',
+            );
+            weUnmuted = wantSound;
+
+            // If the page-side hook never answers, do what this control used to do rather than
+            // leave the button dead.
+            setTimeout(() => {
+                if (hookAnswered) return;
+                const video = getPreviewPlayer()?.querySelector('video');
+                if (video && video.muted === wantSound) video.muted = !wantSound;
+            }, 300);
+        };
+
+        // YouTube re-applies its "previews are muted" rule whenever the Short loops, stalls or
+        // the player changes state, and it does it several times in a row. Answering each of
+        // those events turns into a write-for-write fight, so the choice is re-stated on a slow
+        // beat instead, and only while the pointer is still on the Short.
+        let holdTimer = 0;
+        const holdSound = () => {
+            clearInterval(holdTimer);
+            holdTimer = setInterval(() => {
+                if (!soundOn || !hoveredCard) {
+                    clearInterval(holdTimer);
+                    holdTimer = 0;
+                    return;
+                }
+                const player = getPreviewPlayer();
+                const video = player && player.querySelector('video');
+                if (video && video.muted && wantsSound()) applySound();
+            }, 300);
         };
 
         const getMsg = (key, fallback) => {
@@ -1314,266 +1363,186 @@ var Main = class Main {
                 fallback
             );
         };
-        const SVG_MUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Activar sonido"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.214 7.577a1 1 0 011.414 0l1.379 1.379 1.379-1.379a1 1 0 111.414 1.414l-1.379 1.379 1.379 1.379a1 1 0 01-1.414 1.414l-1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379-1.379a1 1 0 010-1.414Z"></path></svg></div></span></span>`;
-        const SVG_UNMUTED = `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="Silenciar"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.043 4.92a1 1 0 000 1.414 5.001 5.001 0 010 7.072 1 1 0 101.414 1.414 6.999 6.999 0 000-9.9 1 1 0 00-1.414 0Z"></path></svg></div></span></span>`;
+        const iconMarkup = (label, path) =>
+            `<span class="ytIconWrapperHost ytdVolumeControlsMuteIcon" role="img" aria-label="${label}"><span class="yt-icon-shape ytSpecIconShapeHost"><div class="itg-yt-spec-icon-wrapper" style="width: 100%; height: 100%; display: block; fill: currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events: none; display: inherit; width: 100%; height: 100%;"><path d="${path}"></path></svg></div></span></span>`;
+        const PATH_MUTED =
+            'M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.214 7.577a1 1 0 011.414 0l1.379 1.379 1.379-1.379a1 1 0 111.414 1.414l-1.379 1.379 1.379 1.379a1 1 0 01-1.414 1.414l-1.379-1.379-1.379 1.379a1 1 0 01-1.414-1.414l1.379-1.379-1.379-1.379a1 1 0 010-1.414Z';
+        const PATH_UNMUTED =
+            'M12.493 2.13a1 1 0 00-1.008.013L3.913 6.686A6 6 0 001 11.83v.338a6 6 0 002.913 5.145l7.573 4.544A1 1 0 0013 21V3a1 1 0 00-.507-.87Zm3.043 4.92a1 1 0 000 1.414 5.001 5.001 0 010 7.072 1 1 0 101.414 1.414 6.999 6.999 0 000-9.9 1 1 0 00-1.414 0Z';
 
-        let isPreviewUnmuted = false;
-
-        const applyShortAudioState = (targetPlayer, muted) => {
-            if (isWatchOrShortsPage()) return;
-            const isUnmuted = !muted;
-            const p = targetPlayer || document.querySelector('#inline-preview-player');
-            if (!p || p.id === 'movie_player') return;
-
-            const vid = p.querySelector('video');
-            if (vid) {
-                try {
-                    if (vid.muted !== !isUnmuted) {
-                        vid.muted = !isUnmuted;
-                        vid.defaultMuted = !isUnmuted;
-                    }
-                    if (isUnmuted && vid.volume < 1.0) {
-                        vid.volume = 1.0;
-                    }
-                    if (vid.playbackRate !== 1.0) {
-                        vid.playbackRate = 1.0;
-                        vid.defaultPlaybackRate = 1.0;
-                    }
-                } catch {}
-            }
-
-            try {
-                if (isUnmuted) {
-                    if (typeof p.unMute === 'function') p.unMute();
-                    if (typeof p.setVolume === 'function') p.setVolume(100);
-                } else {
-                    if (typeof p.mute === 'function') p.mute();
-                }
-            } catch {}
+        const updateButton = (button) => {
+            const sound = hasSound();
+            const state = sound ? 'on' : 'off';
+            const title = sound ? getMsg('pipMute', 'Silenciar') : getMsg('pipUnmute', 'Activar sonido');
+            button.setAttribute('title', title);
+            button.setAttribute('aria-label', title);
+            button.setAttribute('aria-pressed', sound ? 'true' : 'false');
+            if (button.dataset.itgSoundState === state) return;
+            button.dataset.itgSoundState = state;
+            button.innerHTML = sound ? iconMarkup(title, PATH_UNMUTED) : iconMarkup(title, PATH_MUTED);
         };
 
-        const attachShortsVolumeButton = (player) => {
-            if (!player || !(player instanceof HTMLElement)) return;
-            if (isWatchOrShortsPage()) return;
-            if (!isShortsPlayer(player)) return;
+        const createButton = () => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'ytdVolumeControlsMuteIconButton itg-yt-short-volume-btn';
+            button.setAttribute('data-itg-short-volume', 'true');
 
-            if (player.querySelector(':scope > .itg-yt-short-volume-btn')) {
-                return;
-            }
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'ytdVolumeControlsMuteIconButton itg-yt-short-volume-btn';
-            btn.setAttribute('data-itg-short-volume', 'true');
-
-            const isCurrentlyMuted = () => {
-                if (!isPreviewUnmuted) return true;
-                if (typeof player.isMuted === 'function') {
-                    try {
-                        return player.isMuted();
-                    } catch {}
-                }
-                const vid = player.querySelector('video') || document.querySelector('#inline-preview-player video');
-                if (vid) {
-                    return vid.muted || vid.volume === 0;
-                }
-                return false;
+            // The preview sits inside YouTube's own link to the video, so every pointer event
+            // has to die on the button or the click opens the Short.
+            const swallow = (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                event.stopImmediatePropagation();
             };
-
-            const updateUI = () => {
-                const muted = isCurrentlyMuted();
-                if (muted) {
-                    const title = getMsg('pipUnmute', 'Activar sonido');
-                    btn.setAttribute('title', title);
-                    btn.setAttribute('aria-label', title);
-                    btn.innerHTML = SVG_MUTED;
-                } else {
-                    const title = getMsg('pipMute', 'Silenciar');
-                    btn.setAttribute('title', title);
-                    btn.setAttribute('aria-label', title);
-                    btn.innerHTML = SVG_UNMUTED;
-                }
-            };
-
-            let lastToggleTime = 0;
-            const toggleMute = () => {
-                const now = Date.now();
-                if (now - lastToggleTime < 150) return;
-                lastToggleTime = now;
-
-                const muted = isCurrentlyMuted();
-                const newMuted = !muted;
-                isPreviewUnmuted = !newMuted;
-
-                applyShortAudioState(player, newMuted);
-
-                const allButtons = document.querySelectorAll('.itg-yt-short-volume-btn');
-                for (const b of allButtons) {
-                    if (typeof b._itgUpdateUI === 'function') {
-                        b._itgUpdateUI();
-                    }
-                }
-            };
-
-            btn._itgToggleMute = toggleMute;
-            btn._itgUpdateUI = updateUI;
-
-            const stopAndPrevent = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-            };
-
-            const trapEvents = [
+            for (const type of [
                 'pointerdown',
                 'mousedown',
                 'mouseup',
                 'pointerup',
-                'click',
                 'dblclick',
                 'auxclick',
                 'contextmenu',
                 'dragstart',
-            ];
-            for (const evt of trapEvents) {
-                btn.addEventListener(evt, stopAndPrevent, true);
-                btn.addEventListener(evt, stopAndPrevent, false);
+            ]) {
+                button.addEventListener(type, swallow, true);
             }
-
-            btn.addEventListener(
+            button.addEventListener(
                 'click',
-                (e) => {
-                    stopAndPrevent(e);
-                    toggleMute();
+                (event) => {
+                    swallow(event);
+                    soundOn = !hasSound();
+                    applySound();
+                    if (soundOn) holdSound();
+                    updateButton(button);
                 },
                 true,
             );
-
-            btn.addEventListener(
-                'touchstart',
-                (e) => {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                },
-                { passive: true },
-            );
-            btn.addEventListener(
-                'touchend',
-                (e) => {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                },
-                { passive: true },
-            );
-
-            const onVolumeChange = () => {
-                updateUI();
-            };
-
-            player.addEventListener('volumechange', onVolumeChange, true);
-
-            updateUI();
-            player.appendChild(btn);
+            return button;
         };
 
-        const scanAndAttach = () => {
-            if (isWatchOrShortsPage()) {
-                removeAllNonShortsVolumeButtons();
-                return;
-            }
-            removeAllNonShortsVolumeButtons();
+        // Where the button belongs, in one place. It waits for the preview to be painted the
+        // first time (otherwise it would be an invisible control on top of the thumbnail), and
+        // then stays put while the same Short is hovered, so a loop restart does not make it
+        // blink. Anything found anywhere else is a leftover -- an older preview, or the real
+        // Shorts player the SPA keeps alive -- and is removed.
+        let attachedHost = null;
 
-            // Attach volume button directly to active preview players (without polluting static card DOM)
-            const players = document.querySelectorAll('#inline-preview-player, .html5-video-player:not(#movie_player)');
-            for (const p of players) {
-                if (isShortsPlayer(p)) {
-                    attachShortsVolumeButton(p);
-                }
+        const desiredHost = () => {
+            if (!isFeedPage() || !hoveredCard) return null;
+            const player = getPreviewPlayer();
+            const host = player ? player.closest('ytd-video-preview') : null;
+            if (!host) return null;
+            if (isPreviewOnScreen()) return host;
+            // A short gap while the preview repositions or the Short loops should not make the
+            // button blink, but a preview that is really gone has to take the button with it.
+            return host === attachedHost && Date.now() - lastOnScreen < 700 ? host : null;
+        };
+
+        const sync = () => {
+            const host = desiredHost();
+            attachedHost = host;
+
+            for (const stale of document.querySelectorAll('.itg-yt-short-volume-btn, [data-itg-short-volume="true"]')) {
+                if (stale.parentElement !== host) stale.remove();
+            }
+            if (host && !host.querySelector(':scope > .itg-yt-short-volume-btn')) {
+                if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
+                host.appendChild(createButton());
+            }
+            const button = host ? host.querySelector(':scope > .itg-yt-short-volume-btn') : null;
+            if (button) updateButton(button);
+            if (isFeedPage()) applySound();
+        };
+
+        // The preview shows up (and moves, and restarts) without any event of its own, so while
+        // a Short is hovered keep checking where the button belongs. It stops as soon as the
+        // pointer leaves the card.
+        let watchToken = 0;
+        const watchForPreview = () => {
+            const token = ++watchToken;
+            const tick = () => {
+                if (token !== watchToken || !hoveredCard) return;
+                const button = document.querySelector('.itg-yt-short-volume-btn');
+                if ((button ? button.parentElement : null) !== desiredHost()) sync();
+                setTimeout(tick, 200);
+            };
+            tick();
+        };
+
+        const setHoveredCard = (card) => {
+            if (card === hoveredCard) return;
+            hoveredCard = card;
+            // Each new card has to earn the button again: the preview has to be painted over
+            // it before the control appears.
+            attachedHost = null;
+            sync();
+            if (hoveredCard) {
+                watchForPreview();
+                if (soundOn) holdSound();
+            } else {
+                watchToken++;
             }
         };
 
-        // Global capture-phase trap on window and document: ONLY traps our extension's button, NEVER native YouTube controls
-        if (!this._ytInlineVolumeTrapBound) {
-            this._ytInlineVolumeTrapBound = true;
-            const isShortVolumeTarget = (target) => {
-                if (!target || !(target instanceof Element)) return null;
-                return target.closest('.itg-yt-short-volume-btn, [data-itg-short-volume="true"]');
-            };
-
-            const trapHandler = (e) => {
-                if (isWatchOrShortsPage()) return;
-                const volBtn = isShortVolumeTarget(e.target);
-                if (!volBtn) return;
-
-                e.preventDefault();
-                e.stopPropagation();
-                e.stopImmediatePropagation();
-
-                if (e.type === 'click') {
-                    if (typeof volBtn._itgToggleMute === 'function') {
-                        volBtn._itgToggleMute();
-                    }
-                }
-            };
-
-            const eventsToTrap = [
-                'pointerdown',
-                'mousedown',
-                'mouseup',
-                'pointerup',
-                'click',
-                'dblclick',
-                'auxclick',
-                'contextmenu',
-                'dragstart',
-            ];
-
-            for (const evt of eventsToTrap) {
-                window.addEventListener(evt, trapHandler, true);
-                document.addEventListener(evt, trapHandler, true);
+        // The preview is painted on top of the card, so `event.target` is the preview as soon
+        // as it shows up. The card has to be looked up underneath it, or moving from one Short
+        // to the next goes unnoticed.
+        const cardUnderPointer = (x, y) => {
+            for (const element of document.elementsFromPoint(x, y)) {
+                if (element.closest && element.closest(PREVIEW_OVERLAY)) continue;
+                const card = element.closest && element.closest(ANY_CARD);
+                if (card) return card;
             }
-        }
+            return null;
+        };
 
-        if (!this._ytShortPlayListenerBound) {
-            this._ytShortPlayListenerBound = true;
-            document.addEventListener(
-                'play',
-                (e) => {
-                    if (isWatchOrShortsPage()) return;
-                    const video = e.target;
-                    if (video && video instanceof HTMLVideoElement) {
-                        const player = video.closest('.html5-video-player, #inline-preview-player');
-                        if (player && isShortsPlayer(player)) {
-                            // By default, new video previews start in MUTE
-                            if (!isPreviewUnmuted) {
-                                applyShortAudioState(player, true);
-                            } else {
-                                applyShortAudioState(player, false);
-                            }
-                            const allButtons = document.querySelectorAll('.itg-yt-short-volume-btn');
-                            for (const b of allButtons) {
-                                if (typeof b._itgUpdateUI === 'function') {
-                                    b._itgUpdateUI();
-                                }
-                            }
-                        }
-                    }
-                },
-                true,
-            );
-        }
+        document.addEventListener(
+            'pointerover',
+            (event) => {
+                if (!(event.target instanceof Element)) return;
+                if (!isFeedPage()) {
+                    setHoveredCard(null);
+                    return;
+                }
+                const card = cardUnderPointer(event.clientX, event.clientY);
+                setHoveredCard(isShortCard(card) ? card : null);
+            },
+            true,
+        );
 
-        window.addEventListener('yt-navigate-finish', scanAndAttach);
-        window.addEventListener('popstate', scanAndAttach);
+        document.documentElement.addEventListener('pointerleave', () => setHoveredCard(null));
 
-        scanAndAttach();
-        this._ytInlineVolObserver = new MutationObserver(() => {
-            scanAndAttach();
-        });
-        this._ytInlineVolObserver.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
+        // Shorts previews loop, and YouTube re-applies its own muted state on every restart.
+        document.addEventListener(
+            'play',
+            (event) => {
+                if (!hoveredCard || !isFeedPage()) return;
+                const player = getPreviewPlayer();
+                if (!player || !(event.target instanceof HTMLVideoElement) || !player.contains(event.target)) return;
+                applySound();
+                sync();
+            },
+            true,
+        );
+
+        document.addEventListener(
+            'volumechange',
+            (event) => {
+                const player = getPreviewPlayer();
+                if (!player || !(event.target instanceof HTMLVideoElement) || !player.contains(event.target)) return;
+                const button = document.querySelector('.itg-yt-short-volume-btn');
+                if (button) updateButton(button);
+            },
+            true,
+        );
+
+        const onNavigate = () => setHoveredCard(null);
+        window.addEventListener('yt-navigate-start', onNavigate);
+        window.addEventListener('yt-navigate-finish', onNavigate);
+        window.addEventListener('popstate', onNavigate);
+
+        sync();
     }
 
     _injectTiktokPipButton() {
