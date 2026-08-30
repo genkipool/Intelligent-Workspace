@@ -115,6 +115,13 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   captura; vuelve una sola vez, cuando termina la última.
 - El altavoz de una pestaña ya no se traga un clic. Decidía qué hacer mirando la
   tarjeta en vez de la pestaña, y las dos podían no coincidir.
+- El altavoz de la vista previa de un Short de YouTube funciona en todos. En unos
+  activaba el sonido y en otros no: YouTube mantiene esas vistas previas silenciadas y
+  les devuelve el silencio, así que que el sonido aguantara era cuestión de suerte.
+  Ahora además suena al volumen que tengas puesto en YouTube en vez de a tope, y deja
+  de salir en las vistas previas de los vídeos normales, que llevan el altavoz del
+  propio YouTube. Cuando la vista previa aún no ha arrancado, o ya ha terminado, ya no
+  queda un altavoz invisible sobre la miniatura comiéndose el clic que abre el Short.
 
 - El contador `visto/total` que va junto al nombre del grupo ya no se salta el clic
   que despierta al proceso en segundo plano; antes esa pestaña no volvía a contar en
@@ -140,7 +147,7 @@ Novedades
 • Reproductor de música: elige una carpeta y escucha tu música mientras trabajas, con búsqueda, lista de pistas y controles completos.
 • El asistente ya admite varias horas para una misma consulta programada.
 • Los temas programados por días de la semana admiten "todo el día".
-• Correcciones al renombrar grupos, al contador de pestañas vistas y al agrupado de pestañas nuevas.
+• Correcciones al renombrar grupos, al contador de pestañas vistas, al agrupado de pestañas nuevas y al altavoz de las vistas previas de los Shorts de YouTube.
 ```
 
 ---
