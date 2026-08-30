@@ -1754,20 +1754,13 @@ var ITG_LOOP_POPUP_STYLES = `
 `;
 
 var ITG_INLINE_VOLUME_STYLES = `
-.shortsLockupViewModelHostThumbnailParentContainer,
-.shortsLockupViewModelHost,
-ytm-shorts-lockup-view-model-v2,
-ytm-shorts-lockup-view-model,
-.ytThumbnailViewModelHost,
-ytd-rich-item-renderer,
-ytd-rich-grid-slim-media,
-ytd-reel-item-renderer {
-    position: relative !important;
-}
+/* The button lives inside YouTube's hover preview (ytd-video-preview), which is only in the
+   page while the preview is on screen, so it needs no hover rule of its own: the card loses
+   :hover as soon as the preview is painted on top of it. */
 .itg-yt-short-volume-btn {
     position: absolute !important;
-    right: 12px !important;
-    bottom: 12px !important;
+    right: 22px !important;
+    bottom: 22px !important;
     left: auto !important;
     top: auto !important;
     z-index: 2147483647 !important;
@@ -1787,31 +1780,17 @@ ytd-reel-item-renderer {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5) !important;
     color: #ffffff !important;
     cursor: pointer !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    user-select: none !important;
-    box-sizing: border-box !important;
-    transition: opacity 0.2s ease, visibility 0.2s ease, background-color 0.2s ease, transform 0.15s ease !important;
-}
-ytm-shorts-lockup-view-model-v2:hover .itg-yt-short-volume-btn,
-ytm-shorts-lockup-view-model:hover .itg-yt-short-volume-btn,
-.shortsLockupViewModelHost:hover .itg-yt-short-volume-btn,
-.shortsLockupViewModelHostThumbnailParentContainer:hover .itg-yt-short-volume-btn,
-ytd-rich-item-renderer:hover .itg-yt-short-volume-btn,
-ytd-rich-grid-slim-media:hover .itg-yt-short-volume-btn,
-ytd-reel-item-renderer:hover .itg-yt-short-volume-btn,
-.html5-video-player:hover .itg-yt-short-volume-btn,
-#inline-preview-player:hover .itg-yt-short-volume-btn,
-ytd-video-preview:hover .itg-yt-short-volume-btn,
-#video-preview-container:hover .itg-yt-short-volume-btn,
-#player-container:hover .itg-yt-short-volume-btn,
-ytd-player:hover .itg-yt-short-volume-btn,
-.itg-yt-short-volume-btn:hover,
-.itg-yt-short-volume-btn:focus-within {
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    transition: background-color 0.2s ease, transform 0.15s ease !important;
+    animation: itg-yt-short-volume-in 0.18s ease-out !important;
+}
+@keyframes itg-yt-short-volume-in {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: none; }
 }
 .itg-yt-short-volume-btn:hover {
     background-color: rgba(0, 0, 0, 0.9) !important;

@@ -26,6 +26,10 @@
  * dropped, and those applications keep working exactly as before instead of
  * getting the browser menu on top of their own.
  *
+ * Paste is the exception, and it has its own section at the end of the file: an
+ * application's paste is page-wide too, so its cancel is honoured and the paste
+ * is restored afterwards only if the page turned out to be blocking.
+ *
  * The switch lives in the isolated world, which mirrors it onto <html> as
  * `data-itg-allow-right-click`. It is read on every call rather than once at
  * install time, so turning the feature off takes effect without a reload.
@@ -35,7 +39,7 @@
     window.__itgAllowRightClickHook = true;
 
     const FLAG = 'data-itg-allow-right-click';
-    const CANCELLED_TYPES = new Set(['contextmenu', 'copy', 'cut', 'paste', 'selectstart', 'dragstart']);
+    const CANCELLED_TYPES = new Set(['contextmenu', 'copy', 'cut', 'selectstart', 'dragstart']);
     const ON_PROPS = {
         oncontextmenu: 'contextmenu',
         oncopy: 'copy',
@@ -122,7 +126,14 @@
                 }
                 const wrapped = function (event) {
                     const result = handler.apply(this, arguments);
-                    if (result === false && event?.type === type && isPageWide(this) && isEnabled()) return undefined;
+                    if (
+                        result === false &&
+                        event?.type === type &&
+                        CANCELLED_TYPES.has(type) &&
+                        isPageWide(this) &&
+                        isEnabled()
+                    )
+                        return undefined;
                     return result;
                 };
                 wrapped.__itgOriginal = handler;
@@ -268,5 +279,110 @@
         }
     } catch (e) {
         console.warn('[ITG] allow right-click: selection', e);
+    }
+    /**
+     * PASTE
+     *
+     * Paste is the one cancel that must not be dropped. An application that builds
+     * its own paste cancels the event and inserts the clipboard itself, and it does
+     * so page-wide by design: Telegram listens on `document` for every
+     * contenteditable in the app, and a framework that delegates its events —
+     * Telegram Web A does — routes every onPaste through `document` as well. Ignore
+     * that cancel and both insertions happen, so the text lands twice. No test on
+     * where the handler sits can tell those apart, because they really are on the
+     * document.
+     *
+     * The cancel is therefore left alone, and the paste is put back afterwards
+     * instead. Once the event is over, a paste that was cancelled by a page that
+     * never once looked at the clipboard, into a field still holding exactly what it
+     * held before, was a block and nothing else — and only then is the text typed in
+     * here. Anything that pastes for itself has to read the clipboard to do it, and
+     * reading it is what marks the event as handled.
+     *
+     * What comes back is the plain text, not the formatting: a page that blocks
+     * pasting is asking for a string in a field, and inserting it as typed input is
+     * also what leaves the page's own oninput validation with something to react to.
+     */
+    try {
+        const HANDLED = Symbol('itgClipboardRead');
+        /** Set while this file is the one reading, so our own read marks nothing. */
+        let internal = false;
+        /** The cancelled paste still waiting to be judged, if any. */
+        let pending = null;
+
+        const markHandled = (event) => {
+            if (!internal && event) event[HANDLED] = true;
+        };
+
+        // Reading `event.clipboardData` is the page saying it will do the paste.
+        const descriptor = Object.getOwnPropertyDescriptor(ClipboardEvent.prototype, 'clipboardData');
+        if (descriptor?.get) {
+            Object.defineProperty(ClipboardEvent.prototype, 'clipboardData', {
+                configurable: true,
+                enumerable: descriptor.enumerable,
+                get() {
+                    markHandled(this);
+                    return descriptor.get.call(this);
+                },
+            });
+        }
+
+        // The asynchronous way of reading it counts the same, as long as it is asked
+        // for while a cancelled paste is still being judged.
+        for (const name of ['read', 'readText']) {
+            const native = typeof Clipboard !== 'undefined' && Clipboard.prototype[name];
+            if (typeof native !== 'function') continue;
+            Object.defineProperty(Clipboard.prototype, name, {
+                value: function () {
+                    markHandled(pending);
+                    return native.apply(this, arguments);
+                },
+                writable: true,
+                configurable: true,
+                enumerable: false,
+            });
+        }
+
+        /** The field the paste was aimed at, or null if it cannot receive text. */
+        const editableTarget = (event) => {
+            const node = event.target?.nodeType === Node.ELEMENT_NODE ? event.target : document.activeElement;
+            const element = node?.closest?.('input, textarea, [contenteditable]');
+            if (!element) return null;
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                return element.readOnly || element.disabled ? null : element;
+            }
+            return element.isContentEditable ? element : null;
+        };
+
+        /** Enough of the field to tell whether anything was inserted after all. */
+        const contentOf = (element) =>
+            element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' ? element.value : element.innerHTML;
+
+        window.addEventListener(
+            'paste',
+            (event) => {
+                if (!isEnabled()) return;
+                const target = editableTarget(event);
+                if (!target) return;
+
+                // The clipboard is only alive while the event is being dispatched.
+                internal = true;
+                const text = event.clipboardData?.getData('text/plain') ?? '';
+                internal = false;
+                if (!text) return;
+
+                const before = contentOf(target);
+                pending = event;
+                setTimeout(() => {
+                    pending = null;
+                    if (!event.defaultPrevented || event[HANDLED]) return;
+                    if (document.activeElement !== target || contentOf(target) !== before) return;
+                    document.execCommand('insertText', false, text);
+                });
+            },
+            true,
+        );
+    } catch (e) {
+        console.warn('[ITG] allow right-click: paste', e);
     }
 })();

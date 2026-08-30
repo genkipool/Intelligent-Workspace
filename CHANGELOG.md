@@ -100,6 +100,12 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- Pasting into Telegram no longer pastes the text twice. Unblocking the right click
+  also dropped a page's attempt to cancel a paste, and Telegram cancels every paste to
+  insert the clipboard itself, so the text went in once from the app and once from the
+  browser. A cancelled paste is now honoured, and the paste is put back afterwards only
+  when the page cancelled it without ever reading the clipboard — a block and nothing
+  else.
 - Pausing the reader and playing again carries on from the word that is marked. It
   used to hand the reading back to the browser, which on some systems restarted it
   somewhere else or never restarted it at all.
@@ -112,6 +118,13 @@ Each version holds two different things, and they are worth keeping apart:
   capture; it goes back once, when the last one is done.
 - The speaker on a tab card no longer ignores a click. It used to work out what to do
   from the card rather than from the tab, and the two could disagree.
+- The speaker on the preview of a YouTube Short works on every Short. It turned the
+  sound on for some and not for others: YouTube holds those previews muted and puts
+  the mute straight back, so whether the sound survived was luck. It now plays at the
+  volume set in YouTube rather than at full blast, and stops appearing on the previews
+  of ordinary videos, which have YouTube's own speaker. Where the preview has not
+  started yet, or is already over, there is no longer an invisible speaker over the
+  thumbnail swallowing the click that opens the Short.
 
 - The `seen/total` counter next to the group name no longer misses the click that
   wakes the background worker; that tab used to go uncounted for the rest of the
@@ -137,7 +150,7 @@ What's new
 • Music player: pick a folder and listen to your music while you work, with search, track list and full controls.
 • Scheduled assistant queries can now run at several times of day.
 • Themes scheduled by weekday now support "all day".
-• Fixes to group renaming, the seen-tabs counter and grouping of new tabs.
+• Fixes to group renaming, the seen-tabs counter, grouping of new tabs and the speaker on YouTube Shorts previews.
 ```
 
 ---

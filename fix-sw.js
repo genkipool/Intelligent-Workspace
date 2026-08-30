@@ -48,6 +48,15 @@ try {
         "world": "MAIN"
       },
       {
+        // Main world as well: YouTube's hover-preview player exposes mute/unMute/setVolume
+        // as page properties on the element, which the isolated world cannot see.
+        "matches": ["*://*.youtube.com/*"],
+        "js": ["src/utils/hint/youtubePreviewAudioHook.js"],
+        "all_frames": false,
+        "run_at": "document_start",
+        "world": "MAIN"
+      },
+      {
         // Main world too: the right-click unblocker has to reach preventDefault,
         // the on* handler properties and Selection from the page's own context.
         "matches": ["<all_urls>"],
