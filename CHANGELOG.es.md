@@ -103,6 +103,12 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- Pegar en Telegram ya no pega el texto dos veces. El desbloqueo del clic derecho
+  también anulaba el intento de la página de cancelar un pegado, y Telegram cancela
+  todos los pegados para insertar él mismo el portapapeles, así que el texto entraba
+  una vez por la aplicación y otra por el navegador. Ahora un pegado cancelado se
+  respeta, y solo se repone cuando la página lo canceló sin llegar a leer el
+  portapapeles: un bloqueo y nada más.
 - Pausar el lector y volver a darle continúa por la palabra que está marcada. Antes
   devolvía la lectura al navegador, que en algunos sistemas la reanudaba en otro sitio
   o no la reanudaba nunca.

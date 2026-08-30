@@ -100,6 +100,12 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- Pasting into Telegram no longer pastes the text twice. Unblocking the right click
+  also dropped a page's attempt to cancel a paste, and Telegram cancels every paste to
+  insert the clipboard itself, so the text went in once from the app and once from the
+  browser. A cancelled paste is now honoured, and the paste is put back afterwards only
+  when the page cancelled it without ever reading the clipboard — a block and nothing
+  else.
 - Pausing the reader and playing again carries on from the word that is marked. It
   used to hand the reading back to the browser, which on some systems restarted it
   somewhere else or never restarted it at all.
