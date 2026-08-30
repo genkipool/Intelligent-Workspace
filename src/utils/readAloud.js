@@ -1,4 +1,4 @@
-/* global HintCommon, Utils */
+/* global HintCommon */
 // readAloud.js
 //
 // The page reader: it says the text of the page out loud, lights up the paragraph and
@@ -512,6 +512,42 @@
      * Paints the host with the extension's active theme, the way every overlay does,
      * and repaints the highlights to match.
      */
+    const THEME_PRESETS = {
+        light: {
+            actionColor: '#3498db',
+            textColor: '#000000',
+            textOnColor: '#3498db',
+            bgColor: '#f5f5f5',
+            bgPanelColor: '#ffffff',
+            borderColor: '#dddddd',
+            interactiveColor: '#3498db',
+            errorColor: '#e74c3c',
+            headerColor: '#0658aa',
+        },
+        dark: {
+            actionColor: '#5f6368',
+            textColor: '#a8a8a8',
+            textOnColor: '#d3d1d1',
+            bgColor: '#000000',
+            bgPanelColor: '#2c2c2c',
+            borderColor: '#1a1818',
+            interactiveColor: '#5f6368',
+            errorColor: '#dbee0c',
+            headerColor: '#424242',
+        },
+        viridian: {
+            actionColor: '#16a085',
+            textColor: '#f5f5f5',
+            textOnColor: '#16a085',
+            bgColor: '#1b2631',
+            bgPanelColor: '#233240',
+            borderColor: '#34495e',
+            interactiveColor: '#16a085',
+            errorColor: '#e74c3c',
+            headerColor: '#0e6655',
+        },
+    };
+
     async function applyTheme() {
         try {
             const next = await chrome.runtime.sendMessage({ action: 'getActiveTheme' });
@@ -522,14 +558,20 @@
             paintHighlights();
             if (!host) return;
 
-            if (typeof Utils !== 'undefined' && Utils.applyThemeToHost) {
-                Utils.applyThemeToHost(host, theme);
-            } else {
-                host.setAttribute('data-theme', theme.name || 'dark');
-                Object.entries(theme.colors || {}).forEach(([key, value]) => {
-                    host.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, value);
-                });
-            }
+            const themeName = typeof theme === 'string' ? theme : theme.name || 'dark';
+            host.setAttribute('data-theme', themeName);
+            if (panel) panel.setAttribute('data-theme', themeName);
+            if (handle) handle.setAttribute('data-theme', themeName);
+
+            const preset = THEME_PRESETS[themeName] || THEME_PRESETS.dark;
+            const colors = theme && typeof theme === 'object' && theme.colors ? { ...preset, ...theme.colors } : preset;
+
+            Object.entries(colors).forEach(([key, value]) => {
+                const prop = `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`;
+                host.style.setProperty(prop, value);
+                if (panel) panel.style.setProperty(prop, value);
+                if (handle) handle.style.setProperty(prop, value);
+            });
         } catch {
             /* the worker may be asleep; the stylesheet's own fallbacks stand in */
         }
@@ -973,7 +1015,7 @@
      */
     function makeSpeedSelect() {
         const select = document.createElement('select');
-        select.className = 'itg-select speed-select';
+        select.className = 'speed-select';
         select.title = t('readAloudSpeed', 'Reading speed');
         select.setAttribute('aria-label', select.title);
 
@@ -1119,7 +1161,7 @@
      * even under a hostile page CSP; the worker is only asked if that fails.
      */
     async function readStylesheets() {
-        const paths = ['src/styles/select.css', 'src/utils/read-aloud.css'];
+        const paths = ['src/styles/themes.css', 'src/styles/select.css', 'src/utils/read-aloud.css'];
         const sheets = await Promise.all(paths.map(readStylesheet));
         return sheets.join('\n');
     }
