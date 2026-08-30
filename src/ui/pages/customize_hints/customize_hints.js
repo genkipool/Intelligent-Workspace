@@ -8,6 +8,7 @@ import {
     resolveMessage,
 } from '../../../utils/i18n.js';
 import { exportHintsConfig, importHintsConfig } from '../../../utils/importExport.js';
+import { updateScrollButtons } from '../../components/common/ScrollButtons.svelte';
 
 // Resolved when the page initialises: `hint_common.js` publishes window.HintCommon
 // as a side effect, so reading it at module scope would depend on import order.
@@ -2081,14 +2082,8 @@ export async function initCustomizeHints() {
             },
         });
 
-        // Update scroll buttons visibility after filter
-        if (scrollButtonsContainer) {
-            const scrollableEl = document.querySelector('.content-scroll');
-            if (scrollableEl) {
-                const scrollableDistance = scrollableEl.scrollHeight - scrollableEl.clientHeight;
-                scrollButtonsContainer.classList.toggle('visible', scrollableDistance > 0);
-            }
-        }
+        // Filtering changes how much there is to scroll.
+        updateScrollButtons();
     };
 
     searchInput.addEventListener('input', () => {
@@ -2153,71 +2148,6 @@ export async function initCustomizeHints() {
     // Focus search input on load
     if (searchInput) searchInput.focus();
 
-    // Floating scroll buttons
-    const scrollUpBtn = document.getElementById('itg-scroll-up');
-    const scrollDownBtn = document.getElementById('itg-scroll-down');
-    const scrollButtonsContainer = document.querySelector('.itg-scroll-buttons-float');
-    const scrollableElement = document.querySelector('.content-scroll');
-    const scrollEventTarget = scrollableElement || window;
-    const scrollActionTarget = scrollableElement || window;
-
-    if (scrollUpBtn && scrollDownBtn && scrollButtonsContainer) {
-        const updateScrollButtons = () => {
-            let scrollTop, scrollHeight, clientHeight;
-            if (scrollableElement) {
-                scrollTop = scrollableElement.scrollTop;
-                scrollHeight = scrollableElement.scrollHeight;
-                clientHeight = scrollableElement.clientHeight;
-            } else {
-                scrollTop = window.scrollY || document.documentElement.scrollTop;
-                scrollHeight = document.documentElement.scrollHeight;
-                clientHeight = window.innerHeight;
-            }
-
-            const scrollableDistance = scrollHeight - clientHeight;
-
-            if (scrollableDistance > 0) {
-                scrollButtonsContainer.classList.add('visible');
-                if (scrollTop < 10) {
-                    scrollUpBtn.classList.add('itg-display-none');
-                    scrollUpBtn.classList.remove('itg-display-flex');
-                } else {
-                    scrollUpBtn.classList.remove('itg-display-none');
-                    scrollUpBtn.classList.add('itg-display-flex');
-                }
-                if (scrollTop >= scrollableDistance - 10) {
-                    scrollDownBtn.classList.add('itg-display-none');
-                    scrollDownBtn.classList.remove('itg-display-flex');
-                } else {
-                    scrollDownBtn.classList.remove('itg-display-none');
-                    scrollDownBtn.classList.add('itg-display-flex');
-                }
-            } else {
-                scrollButtonsContainer.classList.remove('visible');
-            }
-        };
-
-        scrollUpBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            scrollActionTarget.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-
-        scrollDownBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const targetHeight = scrollableElement
-                ? scrollableElement.scrollHeight
-                : document.documentElement.scrollHeight;
-            scrollActionTarget.scrollTo({ top: targetHeight, behavior: 'smooth' });
-        });
-
-        scrollEventTarget.addEventListener('scroll', updateScrollButtons);
-        window.addEventListener('resize', updateScrollButtons);
-
-        setTimeout(updateScrollButtons, 100);
-        requestAnimationFrame(updateScrollButtons);
-    }
     // --- SNIPPET HELP MODAL ---
     const snippetHelpBtn = document.getElementById('snippet-help-btn');
     const snippetHelpModal = document.getElementById('snippet-help-modal');

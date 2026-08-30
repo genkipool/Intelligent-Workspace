@@ -8,6 +8,7 @@
      */
     import { onMount } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
+    import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import { initCustomizeHints } from './customize_hints.js';
     import { getCurrentLang, loadMessages, resolveMessage } from '../../../utils/i18n.js';
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
@@ -191,18 +192,7 @@
         <!-- Reading voice -->
         <VoiceSection />
 
-        <div class="itg-scroll-buttons-float">
-            <button id="itg-scroll-up" type="button" data-i18n-aria-label="scrollToTop">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path d="M6 15L12 9L18 15" stroke="var(--text-color)" stroke-linecap="square"></path>
-                </svg>
-            </button>
-            <button id="itg-scroll-down" type="button" data-i18n-aria-label="scrollToBottom">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                    <path d="M6 9L12 15L18 9" stroke="var(--text-color)" stroke-linecap="square"></path>
-                </svg>
-            </button>
-        </div>
+        <ScrollButtons class="itg-scroll-buttons-float" target=".content-scroll" minScroll={0} edge={10} />
 
         <!-- Snippet Help Modal -->
         <SnippetHelpModal />

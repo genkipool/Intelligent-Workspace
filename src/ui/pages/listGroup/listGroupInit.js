@@ -34,7 +34,6 @@ import {
     openPaymentInPanel,
     closeUrlInPanel,
     hideYoutubeView,
-    getActiveScrollableElement,
     updateScrollButtons,
     updateExpandAllButtonState,
     updateHeaderButtonsVisibility,
@@ -797,35 +796,10 @@ export async function initializeAllEvents() {
         true,
     );
 
-    window.addEventListener('resize', updateScrollButtons);
-
-    const groupsList = document.getElementById('groups-list');
-    if (groupsList) groupsList.addEventListener('scroll', updateScrollButtons);
-    const geminiConvView = document.getElementById('gemini-conversation-view');
-    if (geminiConvView) geminiConvView.addEventListener('scroll', updateScrollButtons);
-
-    [
-        'bookmarks-view-container',
-        'history-view-container',
-        'recent-view-container',
-        'reading-list-view-container',
-        'downloads-view-container',
-    ].forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('scroll', updateScrollButtons);
-    });
-
+    // The buttons listen for the scroll and the resize themselves; every view's
+    // container is heard through the capturing listener they keep on the document.
     const bookmarksViewContainer = document.getElementById('bookmarks-view-container');
     if (bookmarksViewContainer) bookmarksViewContainer.addEventListener('click', handleRuleActionClick);
-
-    document.getElementById('scroll-up').addEventListener('click', () => {
-        const el = getActiveScrollableElement();
-        if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-    document.getElementById('scroll-down').addEventListener('click', () => {
-        const el = getActiveScrollableElement();
-        if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    });
 
     window.addEventListener('message', handleIframeMessage);
 

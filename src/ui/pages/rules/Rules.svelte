@@ -21,6 +21,7 @@
     import RulesToolbar from './RulesToolbar.svelte';
     import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import RulesPopupHost from './popups/RulesPopupHost.svelte';
+    import ScrollButtons, { updateScrollButtons } from '../../components/common/ScrollButtons.svelte';
     import ImportPopup from './popups/ImportPopup.svelte';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import RulesFooter from './RulesFooter.svelte';
@@ -195,27 +196,16 @@
             }
         });
 
-        window.addEventListener('scroll', updateScrollButtons, { passive: true });
-        window.addEventListener('resize', updateScrollButtons, { passive: true });
-        document.addEventListener('scroll', updateScrollButtons, { capture: true, passive: true });
-
         if (typeof ResizeObserver !== 'undefined') {
             resizeObserver = new ResizeObserver(() => {
                 updateScrollButtons();
             });
             resizeObserver.observe(document.body);
         }
-
-        setTimeout(updateScrollButtons, 100);
-        setTimeout(updateScrollButtons, 300);
     });
 
     onDestroy(() => {
-        window.removeEventListener('scroll', updateScrollButtons);
-        window.removeEventListener('resize', updateScrollButtons);
-        document.removeEventListener('scroll', updateScrollButtons, { capture: true });
         if (resizeObserver) resizeObserver.disconnect();
-        if (scrollButtonsRaf) cancelAnimationFrame(scrollButtonsRaf);
     });
 
     $effect(() => {
@@ -942,64 +932,16 @@
         }
     }
 
-    let scrollButtonsRaf = null;
     let resizeObserver = null;
 
-    function getActiveScrollableInfo() {
+    /**
+     * What scrolls: the list itself once the layout stacks and it has grown past its
+     * box, and the window otherwise.
+     */
+    function activeScrollTarget() {
         const rulesList = document.getElementById('rules-list');
-        if (isSmallScreen && rulesList && rulesList.scrollHeight > rulesList.clientHeight) {
-            return {
-                target: rulesList,
-                scrollTop: rulesList.scrollTop,
-                scrollHeight: rulesList.scrollHeight,
-                clientHeight: rulesList.clientHeight,
-            };
-        }
-        return {
-            target: window,
-            scrollTop: window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0,
-            scrollHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
-            clientHeight: window.innerHeight || document.documentElement.clientHeight,
-        };
-    }
-
-    function updateScrollButtons() {
-        if (scrollButtonsRaf) cancelAnimationFrame(scrollButtonsRaf);
-        scrollButtonsRaf = requestAnimationFrame(() => {
-            const scrollButtons = document.getElementById('scroll-buttons');
-            const scrollUpBtn = document.getElementById('scroll-up');
-            const scrollDownBtn = document.getElementById('scroll-down');
-            if (!scrollButtons || !scrollUpBtn || !scrollDownBtn) return;
-
-            const info = getActiveScrollableInfo();
-            const scrollableDistance = info.scrollHeight - info.clientHeight;
-
-            if (scrollableDistance > 20) {
-                scrollButtons.classList.add('visible');
-                scrollUpBtn.style.display = info.scrollTop < 15 ? 'none' : 'flex';
-                scrollDownBtn.style.display = info.scrollTop >= scrollableDistance - 15 ? 'none' : 'flex';
-            } else {
-                scrollButtons.classList.remove('visible');
-            }
-        });
-    }
-
-    function scrollToTop() {
-        const info = getActiveScrollableInfo();
-        if (info.target === window) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            info.target.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
-
-    function scrollToBottom() {
-        const info = getActiveScrollableInfo();
-        if (info.target === window) {
-            window.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
-        } else {
-            info.target.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
-        }
+        if (isSmallScreen && rulesList && rulesList.scrollHeight > rulesList.clientHeight) return rulesList;
+        return window;
     }
 
     function openFooterLink() {
@@ -1215,30 +1157,7 @@
         </section>
     {/if}
 
-    <div id="scroll-buttons" class="scroll-buttons">
-        <button
-            id="scroll-up"
-            type="button"
-            translate="no"
-            onclick={scrollToTop}
-            aria-label={$t('scrollToTop') || 'Scroll to top'}
-        >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path d="M6 15L12 9L18 15" stroke="var(--text-color)" stroke-linecap="square" />
-            </svg>
-        </button>
-        <button
-            id="scroll-down"
-            type="button"
-            translate="no"
-            onclick={scrollToBottom}
-            aria-label={$t('scrollToBottom') || 'Scroll to bottom'}
-        >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-                <path d="M6 9L12 15L18 9" stroke="var(--text-color)" stroke-linecap="square" />
-            </svg>
-        </button>
-    </div>
+    <ScrollButtons target={activeScrollTarget} />
 
     <ImportPopup isOpen={showImportPopup} onclose={() => (showImportPopup = false)} onimport={handleImport} />
 

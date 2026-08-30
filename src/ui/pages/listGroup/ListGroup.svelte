@@ -1,5 +1,10 @@
 <script>
-    import { visibleControlsForView } from '../../services/viewsService.js';
+    import {
+        visibleControlsForView,
+        getActiveScrollableElement,
+        adjustScrollButtonsForGeminiView,
+    } from '../../services/viewsService.js';
+    import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import HiddenGroupsBar from '../../components/listGroup/HiddenGroupsBar.svelte';
@@ -852,18 +857,13 @@
     <ScreenshotGalleryView />
 
     <div id="drag-announcer" aria-live="assertive" class="visually-hidden"></div>
-    <div id="scroll-buttons" class="scroll-buttons">
-        <button type="button" id="scroll-up" aria-label={$t('scrollToTop')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M6 15L12 9L18 15" stroke="var(--text-color)" stroke-linecap="square" />
-            </svg>
-        </button>
-        <button type="button" id="scroll-down" aria-label={$t('scrollToBottom')}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9L12 15L18 9" stroke="var(--text-color)" stroke-linecap="square" />
-            </svg>
-        </button>
-    </div>
+    <!-- Every view scrolls in its own container, so which one is asked each time. -->
+    <ScrollButtons
+        target={getActiveScrollableElement}
+        minScroll={10}
+        edge={5}
+        onupdate={adjustScrollButtonsForGeminiView}
+    />
 </div>
 <dialog id="import-bookmarks-popup" class="import-modal" closedby="any">
     <div class="modal-content-import">

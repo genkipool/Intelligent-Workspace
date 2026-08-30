@@ -1,27 +1,74 @@
+<script module>
+    /**
+     * THE PAIR OF SCROLL BUTTONS
+     *
+     * The round "up" and "down" buttons that float over a long page. Four copies of
+     * this used to live in the tree — the rules page, the side panel, the hints page
+     * and the about page — each with its own listeners, its own rAF and its own way
+     * of hiding an arrow that points nowhere. What differed between them was never
+     * the behaviour: it was which element scrolls, how much slack counts as
+     * scrollable, and the look. Those are the props.
+     *
+     * The look is deliberately not here. Each page already dresses `.scroll-buttons`
+     * in its own stylesheet — centred at the bottom on the rules page, in the corner
+     * on the about page — and a scoped style block would outrank all of it. The
+     * wrapper takes the class the page asks for and the page's CSS stands.
+     *
+     * Page code outside Svelte asks for a refresh through the module-level
+     * `updateScrollButtons()` below, which is what `viewsService` re-exports to its
+     * two dozen callers.
+     */
+    const instances = [];
+
+    /** Makes every mounted pair look at its target again. */
+    export function updateScrollButtons() {
+        for (const update of instances) update();
+    }
+</script>
+
 <script>
     import { onMount } from 'svelte';
     import { t } from '../../stores/i18nStore.js';
 
-    let { target = null, targetId = null } = $props();
+    let {
+        /**
+         * What scrolls: an element, a CSS selector, or a function returning either —
+         * a function when the answer changes as the page does, as it does in the side
+         * panel, where every view scrolls in its own container. Left out, the window
+         * scrolls. Named but missing means there is nothing to scroll, and the
+         * buttons stay hidden.
+         */
+        target = null,
+        class: className = 'scroll-buttons',
+        /** Slack below which the page is not worth a button at all. */
+        minScroll = 20,
+        /** How close to an end counts as being at it, so its arrow can go. */
+        edge = 15,
+        /** Run after each update, for a page that has to place the buttons itself. */
+        onupdate = null,
+    } = $props();
 
-    let scrollButtonsEl = $state(null);
-    let scrollUpBtn = $state(null);
-    let scrollDownBtn = $state(null);
-    let rafId = null;
+    let container = $state(null);
+    let upButton = $state(null);
+    let downButton = $state(null);
+    let frame = null;
 
-    function getInfo() {
-        let el = target;
-        if (!el && targetId) {
-            el = document.getElementById(targetId);
-        }
-        if (el && el !== window) {
+    /** The scrollable thing and its measurements, or null when there is none. */
+    function measure() {
+        const asked = typeof target === 'function' ? target() : target;
+        const element = typeof asked === 'string' ? document.querySelector(asked) : asked;
+
+        if (element && element !== window) {
             return {
-                target: el,
-                scrollTop: el.scrollTop,
-                scrollHeight: el.scrollHeight,
-                clientHeight: el.clientHeight,
+                target: element,
+                scrollTop: element.scrollTop,
+                scrollHeight: element.scrollHeight,
+                clientHeight: element.clientHeight,
             };
         }
+        // A page that named its container and has not got it has nothing to scroll.
+        if (!element && target !== null && target !== undefined) return null;
+
         const doc = document.documentElement;
         const body = document.body;
         return {
@@ -32,68 +79,61 @@
         };
     }
 
-    export function updateScrollButtons() {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = requestAnimationFrame(() => {
-            if (!scrollButtonsEl || !scrollUpBtn || !scrollDownBtn) return;
-            const info = getInfo();
-            const scrollableDistance = info.scrollHeight - info.clientHeight;
-            if (scrollableDistance > 20) {
-                scrollButtonsEl.classList.add('visible');
-                scrollUpBtn.style.display = info.scrollTop < 15 ? 'none' : 'flex';
-                scrollDownBtn.style.display = info.scrollTop >= scrollableDistance - 15 ? 'none' : 'flex';
+    function update() {
+        if (frame) cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+            if (!container || !upButton || !downButton) return;
+
+            const info = measure();
+            const distance = info ? info.scrollHeight - info.clientHeight : 0;
+
+            if (distance > minScroll) {
+                container.classList.add('visible');
+                upButton.style.display = info.scrollTop < edge ? 'none' : 'flex';
+                downButton.style.display = info.scrollTop >= distance - edge ? 'none' : 'flex';
             } else {
-                scrollButtonsEl.classList.remove('visible');
+                container.classList.remove('visible');
             }
+
+            onupdate?.();
         });
     }
 
-    function scrollToTop() {
-        const info = getInfo();
-        if (info.target === window) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            info.target.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
-
-    function scrollToBottom() {
-        const info = getInfo();
-        if (info.target === window) {
-            window.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
-        } else {
-            info.target.scrollTo({ top: info.scrollHeight, behavior: 'smooth' });
-        }
+    function scrollTo(top) {
+        const info = measure();
+        info?.target.scrollTo({ top, behavior: 'smooth' });
     }
 
     onMount(() => {
-        const handler = () => updateScrollButtons();
+        instances.push(update);
+        const handler = () => update();
         window.addEventListener('scroll', handler, { passive: true });
         window.addEventListener('resize', handler, { passive: true });
+        // Scroll does not bubble, so a container of its own is only heard down here.
         document.addEventListener('scroll', handler, { capture: true, passive: true });
 
-        updateScrollButtons();
-        const t1 = setTimeout(updateScrollButtons, 100);
-        const t2 = setTimeout(updateScrollButtons, 300);
+        update();
+        // The page is still settling: what is scrollable now may not be in a moment.
+        const settling = [setTimeout(update, 100), setTimeout(update, 300)];
 
         return () => {
+            instances.splice(instances.indexOf(update), 1);
             window.removeEventListener('scroll', handler);
             window.removeEventListener('resize', handler);
             document.removeEventListener('scroll', handler, { capture: true });
-            if (rafId) cancelAnimationFrame(rafId);
-            clearTimeout(t1);
-            clearTimeout(t2);
+            if (frame) cancelAnimationFrame(frame);
+            for (const timer of settling) clearTimeout(timer);
         };
     });
 </script>
 
-<div bind:this={scrollButtonsEl} id="scroll-buttons" class="scroll-buttons">
+<div bind:this={container} id="scroll-buttons" class={className}>
     <button
-        bind:this={scrollUpBtn}
+        bind:this={upButton}
         id="scroll-up"
         type="button"
         translate="no"
-        onclick={scrollToTop}
+        onclick={() => scrollTo(0)}
         aria-label={$t('scrollToTop') || 'Scroll to top'}
     >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
@@ -101,11 +141,11 @@
         </svg>
     </button>
     <button
-        bind:this={scrollDownBtn}
+        bind:this={downButton}
         id="scroll-down"
         type="button"
         translate="no"
-        onclick={scrollToBottom}
+        onclick={() => scrollTo(measure()?.scrollHeight ?? 0)}
         aria-label={$t('scrollToBottom') || 'Scroll to bottom'}
     >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
@@ -113,55 +153,3 @@
         </svg>
     </button>
 </div>
-
-<style>
-    .scroll-buttons {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        transition:
-            opacity 0.3s ease,
-            visibility 0.3s ease;
-    }
-
-    :global(.scroll-buttons.visible) {
-        opacity: 1;
-        visibility: visible;
-    }
-
-    .scroll-buttons button {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--bg-panel-color);
-        border: 1px solid var(--border-color);
-        cursor: pointer;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        transition:
-            background-color 0.2s ease,
-            transform 0.2s ease;
-    }
-
-    .scroll-buttons button:hover {
-        background-color: var(--interactive-color);
-        transform: scale(1.1);
-    }
-
-    .scroll-buttons button svg {
-        width: 24px;
-        height: 24px;
-    }
-
-    .scroll-buttons button svg path {
-        stroke: var(--text-color);
-    }
-</style>

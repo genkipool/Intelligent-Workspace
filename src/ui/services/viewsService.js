@@ -5,6 +5,7 @@
  */
 
 import { get } from 'svelte/store';
+import { updateScrollButtons } from '../components/common/ScrollButtons.svelte';
 
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
 
@@ -1832,40 +1833,12 @@ export function getActiveScrollableElement() {
     }
 }
 
-let scrollButtonsRaf = null;
-
-export function updateScrollButtons() {
-    const _scrollButtons = document.getElementById('scroll-buttons');
-    const _scrollUpBtn = document.getElementById('scroll-up');
-    const _scrollDownBtn = document.getElementById('scroll-down');
-
-    if (scrollButtonsRaf) cancelAnimationFrame(scrollButtonsRaf);
-    scrollButtonsRaf = requestAnimationFrame(() => {
-        const scrollableElement = getActiveScrollableElement();
-
-        if (!_scrollButtons || !_scrollUpBtn || !_scrollDownBtn || !scrollableElement) {
-            if (_scrollButtons) {
-                _scrollButtons.classList.remove('visible');
-            }
-            return;
-        }
-
-        const scrollableHeight = scrollableElement.scrollHeight - scrollableElement.clientHeight;
-        const scrollTop = scrollableElement.scrollTop;
-
-        if (scrollableHeight <= 10) {
-            _scrollButtons.classList.remove('visible');
-            return;
-        }
-
-        _scrollButtons.classList.add('visible');
-
-        _scrollUpBtn.style.display = scrollTop < 5 ? 'none' : 'flex';
-        _scrollDownBtn.style.display = scrollTop >= scrollableHeight - 5 ? 'none' : 'flex';
-
-        adjustScrollButtonsForGeminiView();
-    });
-}
+/**
+ * The scroll buttons drive themselves from `ScrollButtons.svelte`, which the side
+ * panel mounts with `getActiveScrollableElement` as its target. This is re-exported
+ * so the callers all over the panel keep asking the same way.
+ */
+export { updateScrollButtons };
 
 export async function updateBackButtonTooltip() {
     const _container = document.querySelector('.container');
