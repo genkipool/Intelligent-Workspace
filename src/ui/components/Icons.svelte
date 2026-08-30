@@ -622,19 +622,38 @@
             >
         </symbol>
         <!-- Lines of text with a speaker sounding off them: the two halves of "read
-             this out loud", each simple enough to survive being drawn at 14px. -->
+             this out loud", each simple enough to survive being drawn at 14px.
+
+             The geometry is measured rather than eyeballed, because at 14px every
+             unit of this 24-unit box is half a pixel. An arc drawn from (x,y) to
+             (x,y+c) with radius r bulges out by r - sqrt(r² - (c/2)²), and the
+             stroke adds another unit on top: the waves are placed so that sum stays
+             under 24, and so the outer one clears the inner one. A wave whose radius
+             is large next to its chord barely bulges at all and reads as a stray
+             dash welded to the cone, so the radii are kept close to the chords.
+
+             The text is shorter than the speaker is wide on purpose: the two halves
+             need a gap between them to stay legible as two things, and at this size
+             the speaker is what carries the meaning. What the glyph actually covers
+             is x 1.0 to 23.2, which is centred in the box rather than merely inside
+             it: a drawing that hugs the right edge sits off-centre in its button and
+             breaks the rhythm of the row it lives in. -->
         <symbol id="icon-read-aloud" viewBox="0 0 24 24">
-            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h9M3 11h9M3 16h6" />
-            </g>
-            <path d="M15 9.6h1.9L20 6.9v10.2l-3.1-2.7H15a1 1 0 0 1-1-1v-2.8a1 1 0 0 1 1-1" fill="currentColor" />
             <path
-                d="M21.9 9.4a4.2 4.2 0 0 1 0 5.2"
+                d="M2 6h4.6M2 12h4.6M2 18h3"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
             />
+            <path
+                d="M9.6 9h1.6L15.4 5v14l-4.2-3.8H9.6A1.2 1.2 0 0 1 8.4 14v-3.8A1.2 1.2 0 0 1 9.6 9z"
+                fill="currentColor"
+            />
+            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M17.1 10.2a2.3 2.3 0 0 1 0 3.6" />
+                <path d="M20.8 7.8a7 7 0 0 1 0 8.4" />
+            </g>
         </symbol>
         <symbol id="icon-reader" viewBox="0 0 24 24">
             <path

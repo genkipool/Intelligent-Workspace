@@ -137,6 +137,13 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 - La consola ya no avisa de que una petición a la IA local no declaró idioma de salida.
   Las sesiones ya lo declaraban; `availability()` — que el panel pregunta en cada
   arranque — no, y es una petición como cualquier otra.
+- El botón de leer en voz alta de una pestaña enseña un altavoz con sonido saliendo de
+  él. Su única onda estaba dibujada con un radio tan grande para lo que medía que
+  apenas se curvaba, así que se leía como un guion pegado al altavoz y no como sonido,
+  y además se salía por el borde derecho de la caja del icono y quedaba cortada en
+  plano. Ahora son dos ondas de verdad, el dibujo va centrado en su caja en vez de
+  pegado a un lado, y todo está medido para no salirse —que es lo que lo hace legible a
+  los 14 píxeles a los que se dibuja de verdad—.
 - Pegar en Telegram ya no pega el texto dos veces. El desbloqueo del clic derecho
   también anulaba el intento de la página de cancelar un pegado, y Telegram cancela
   todos los pegados para insertar él mismo el portapapeles, así que el texto entraba

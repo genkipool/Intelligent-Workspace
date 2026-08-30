@@ -131,6 +131,13 @@ Each version holds two different things, and they are worth keeping apart:
 - The console no longer complains that a local AI request named no output language.
   Every session already declared one; `availability()` — which the panel asks on every
   boot — did not, and it is a LanguageModel request like any other.
+- The read-out-loud button on a tab card shows a speaker with sound coming out of it.
+  Its one sound wave was drawn with a radius so large next to its own height that it
+  barely curved, so it read as a dash fused to the speaker rather than as sound, and it
+  ran past the right edge of the icon's box and was clipped flat. There are two proper
+  waves now, the drawing is centred in its box instead of hugging one side, and the
+  whole thing is measured to stay inside it — which is what makes it legible at the
+  14 pixels it is actually drawn at.
 - Pasting into Telegram no longer pastes the text twice. Unblocking the right click
   also dropped a page's attempt to cancel a paste, and Telegram cancels every paste to
   insert the clipboard itself, so the text went in once from the app and once from the
