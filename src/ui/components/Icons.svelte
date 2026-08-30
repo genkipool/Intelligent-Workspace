@@ -621,39 +621,26 @@
                 fill="currentColor">PDF</text
             >
         </symbol>
-        <!-- Lines of text with a speaker sounding off them: the two halves of "read
-             this out loud", each simple enough to survive being drawn at 14px.
+        <!-- A voice: five bars rising and falling, the shape a waveform makes while
+             somebody is speaking. Adapted from MingCute's `voice_line` (Apache-2.0).
 
-             The geometry is measured rather than eyeballed, because at 14px every
-             unit of this 24-unit box is half a pixel. An arc drawn from (x,y) to
-             (x,y+c) with radius r bulges out by r - sqrt(r² - (c/2)²), and the
-             stroke adds another unit on top: the waves are placed so that sum stays
-             under 24, and so the outer one clears the inner one. A wave whose radius
-             is large next to its chord barely bulges at all and reads as a stray
-             dash welded to the cone, so the radii are kept close to the chords.
-
-             The text is shorter than the speaker is wide on purpose: the two halves
-             need a gap between them to stay legible as two things, and at this size
-             the speaker is what carries the meaning. What the glyph actually covers
-             is x 1.0 to 23.2, which is centred in the box rather than merely inside
-             it: a drawing that hugs the right edge sits off-centre in its button and
-             breaks the rhythm of the row it lives in. -->
+             What arrived was five rounded rectangles drawn as filled outlines, wrapped
+             in three empty groups and a pair of translates that cancel each other out,
+             carrying a full-bleed 24×24 path — an invisible background that would eat
+             the button's clicks — and a hardcoded navy that would have ignored the
+             theme. A round-capped stroke of width 2 draws the very same five bars: a
+             line from (12,4) to (12,20) covers exactly the rectangle from y 3 to 21,
+             because each cap is the half-circle that rectangle's corners already
+             described. So this is the same drawing, in the house's own idiom — the one
+             every icon beside it in the row is written in. -->
         <symbol id="icon-read-aloud" viewBox="0 0 24 24">
             <path
-                d="M2 6h4.6M2 12h4.6M2 18h3"
+                d="M12 4v16M8 7v10M16 7v10M4 10v4M20 10v4"
                 fill="none"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
             />
-            <path
-                d="M9.6 9h1.6L15.4 5v14l-4.2-3.8H9.6A1.2 1.2 0 0 1 8.4 14v-3.8A1.2 1.2 0 0 1 9.6 9z"
-                fill="currentColor"
-            />
-            <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                <path d="M17.1 10.2a2.3 2.3 0 0 1 0 3.6" />
-                <path d="M20.8 7.8a7 7 0 0 1 0 8.4" />
-            </g>
         </symbol>
         <symbol id="icon-reader" viewBox="0 0 24 24">
             <path
