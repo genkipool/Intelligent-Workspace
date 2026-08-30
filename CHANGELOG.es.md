@@ -45,11 +45,19 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   controles van en una columna estrecha pegada al borde derecho, que se puede replegar
   y volver a sacar, y responde a la barra espaciadora y a las flechas además de a sus
   propias letras, todas listadas y modificables en los ajustes de navegación. Se llega
-  a una página por tres sitios, y en los tres es un interruptor: pasando el ratón por
-  el botón del asistente de una pestaña, con el comando `ar` y con el prefijo `ar:` del
-  omnibar, que lista todas las pestañas y lee la que se elija, trayéndola al frente si
-  estaba dormida. Si el botón del asistente está oculto, el lector se va al menú de
-  desbordamiento de esa fila junto al resumen.
+  a una página por cuatro sitios, y en los cuatro es un interruptor: pasando el ratón
+  por el botón del asistente de una pestaña, desde el menú del clic derecho del
+  navegador, con el comando `ar` y con el prefijo `ar:` del omnibar, que lista todas las
+  pestañas y lee la que se elija, trayéndola al frente si estaba dormida. Si el botón
+  del asistente está oculto, el lector se va al menú de desbordamiento de esa fila junto
+  al resumen.
+- **El lector está en el menú del clic derecho.** Al pulsar con el botón derecho sobre
+  una página se ofrece leerla en voz alta, y sobre un texto seleccionado se ofrece leer
+  la selección —que es lo que el lector hace con una selección de todos modos, así que
+  las dos entradas son la misma orden con el título que corresponde a lo que se pulsó—.
+  Un segundo clic detiene la lectura, y como el menú se cierra al pulsar, un aviso dice
+  cuál de las dos cosas acaba de pasar. Ese aviso dice ya «leyendo la selección» se
+  arranque el lector desde donde se arranque, en vez de decir que lee la página.
 - **El lector sigue la palabra que dice, en cualquier sistema.** La marca dependía de
   que el navegador fuese informando de cada palabra, cosa que muchas voces —casi todas
   las de Linux— no hacen nunca, así que en esas máquinas no se movía. Ahora la mueve un

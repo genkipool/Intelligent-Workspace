@@ -11770,6 +11770,10 @@
     "message": "Read the page out loud",
     "description": "Starts the page reader"
   },
+  "readSelectionAloud": {
+    "message": "Read the selection out loud",
+    "description": "Starts the page reader on the selected text"
+  },
   "stopReadingPage": {
     "message": "Stop reading the page",
     "description": "Stops the page reader"
@@ -11777,6 +11781,10 @@
   "readAloudStarting": {
     "message": "Reading the page…",
     "description": "The reader is starting"
+  },
+  "readAloudStartingSelection": {
+    "message": "Reading the selection…",
+    "description": "The reader is starting on the selected text"
   },
   "readAloudNoContent": {
     "message": "No readable text was found on this page",

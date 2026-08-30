@@ -45,9 +45,12 @@ export async function startReadAloud(target = {}) {
         return;
     }
     // 'stopped' means the click landed on a tab that was already reading; `switched`
-    // means the tab was asleep and had to be brought to the front to be read at all.
+    // means the tab was asleep and had to be brought to the front to be read at all;
+    // `selection` means the page had text selected, which the reader takes as an
+    // explicit "read this" and reads instead of the page.
     if (response.state === 'stopped') showNotification('stopReadingPage');
-    else showNotification(response.switched ? 'readAloudSwitchedTab' : 'readAloudStarting');
+    else if (response.switched) showNotification('readAloudSwitchedTab');
+    else showNotification(response.selection ? 'readAloudStartingSelection' : 'readAloudStarting');
 }
 
 /** The tab a `.tab-item` card stands for, in the shape `startReadAloud` wants. */

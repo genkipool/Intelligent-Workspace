@@ -473,6 +473,27 @@ const setupContextMenus = async () => {
             contexts: ['page'],
         });
 
+        // The page reader, one click from anywhere on the page. It is the same toggle
+        // as the panel button, the `ar` command and the `ar:` omnibar prefix — a second
+        // click stops the reading — so the entry keeps a single title and lets the
+        // notification say which of the two just happened.
+        //
+        // There are two of them because the reader takes a selection as an explicit
+        // "read this" and reads only that, so an entry opened over selected text would
+        // be lying if it said "the page". Both do the very same thing; only the title
+        // differs, and Chrome shows whichever matches the context the menu was opened
+        // in.
+        chrome.contextMenus.create({
+            id: 'read-page-aloud',
+            title: getI18nMsg('readPageAloud'),
+            contexts: ['page', 'image', 'link'],
+        });
+        chrome.contextMenus.create({
+            id: 'read-selection-aloud',
+            title: getI18nMsg('readSelectionAloud'),
+            contexts: ['selection'],
+        });
+
         // --- GROUP 3: Open Extension ---
         chrome.contextMenus.create({
             id: 'open-extension-parent',

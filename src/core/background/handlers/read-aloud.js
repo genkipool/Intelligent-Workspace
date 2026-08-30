@@ -5,8 +5,8 @@
  * The reader itself is src/utils/readAloud.js, injected on demand rather than
  * declared as a content script: it only ever runs on the tab somebody asked for, and
  * a second injection stops the reading instead of starting a second one. That toggle
- * is what makes the button, the `ar` keyboard command and the `ar:` omnibar prefix
- * all behave the same way.
+ * is what makes the button, the `ar` keyboard command, the `ar:` omnibar prefix and
+ * the browser's own context menu all behave the same way.
  *
  * Dependencies: canInjectIntoPage() (from handlers/screenshots.js),
  *               getI18nMsg() (from utils.js)
@@ -65,7 +65,9 @@ async function injectReader(tabId) {
             files: ['src/utils/readAloud.js'],
             world: 'ISOLATED',
         });
-        return injection?.result?.state || null;
+        // The whole answer, not just its state: the reader also says whether it took a
+        // selection instead of the page, which is what the callers put in their message.
+        return injection?.result?.state ? injection.result : null;
     } catch (error) {
         // A page the extension is not allowed into is an answer, not a crash: the
         // caller decides whether to wake the tab up and try again, or to say so.
@@ -74,11 +76,19 @@ async function injectReader(tabId) {
     }
 }
 
+/** What to tell the user the reader just did, as `notifyReader` arguments. */
+function readerStartedMessage(state, selection) {
+    if (state === 'stopped') return ['stopReadingPage', 'Stop reading the page'];
+    if (selection) return ['readAloudStartingSelection', 'Reading the selection…'];
+    return ['readAloudStarting', 'Reading the page…'];
+}
+
 /**
  * Starts the reader on a tab, or stops it if that tab is already reading.
  *
  * `notify` is set by the callers that have nowhere to show a message of their own —
- * the keyboard command and the omnibar — so the page itself reports the outcome.
+ * the keyboard command, the omnibar and the context menu, which closes on the click —
+ * so a browser notification reports the outcome instead.
  */
 async function handleStartReadAloud(message, sender, sendResponse) {
     try {
@@ -93,21 +103,23 @@ async function handleStartReadAloud(message, sender, sendResponse) {
         // it is brought to the front first — which is also where the reading is worth
         // watching, since the panel and the highlight are on that page.
         let switched = false;
-        let state = tab.discarded || tab.status !== 'complete' ? null : await injectReader(tab.id);
+        let result = tab.discarded || tab.status !== 'complete' ? null : await injectReader(tab.id);
 
-        if (!state) {
+        if (!result) {
             const ready = await focusTabForReader(tab);
             if (ready) {
                 switched = true;
-                state = await injectReader(ready.id);
+                result = await injectReader(ready.id);
             }
         }
 
-        if (!state) {
+        if (!result) {
             if (message?.notify) notifyReader('readAloudUnsupportedPage', 'This page cannot be read out loud');
             sendResponse({ success: false, reason: 'unsupportedPage' });
             return;
         }
+
+        const { state, selection = false } = result;
 
         if (state === 'empty') {
             if (message?.notify) notifyReader('readAloudNoContent', 'No readable text was found on this page');
@@ -116,12 +128,9 @@ async function handleStartReadAloud(message, sender, sendResponse) {
         }
 
         if (message?.notify) {
-            notifyReader(
-                state === 'stopped' ? 'stopReadingPage' : 'readAloudStarting',
-                state === 'stopped' ? 'Stop reading the page' : 'Reading the page…',
-            );
+            notifyReader(...readerStartedMessage(state, selection));
         }
-        sendResponse({ success: true, state, switched });
+        sendResponse({ success: true, state, selection, switched });
     } catch (error) {
         console.error('Error starting the page reader:', error);
         if (message?.notify) notifyReader('readAloudUnsupportedPage', 'This page cannot be read out loud');

@@ -164,6 +164,8 @@
     let pageStyle = null;
 
     let blocks = [];
+    /** Whether what is being read came from a selection rather than from the page. */
+    let readingSelection = false;
     let index = 0;
     let paused = false;
     let collapsed = false;
@@ -397,6 +399,7 @@
     function collectBlocks() {
         // A selection is an explicit "read this": it wins over the whole page.
         const selected = collectSelectionBlocks();
+        readingSelection = Boolean(selected);
         if (selected) {
             // The browser's own selection paint would sit on top of the reader's, and
             // two highlights on the same words read as a rendering fault.
@@ -1402,5 +1405,7 @@
     chrome.runtime.onMessage.addListener(onRuntimeMessage);
     start();
 
-    return { state: 'started', paragraphs: blocks.length };
+    // `selection` is what lets a caller with nowhere to look — the context menu, whose
+    // notification is the only feedback it has — say which of the two just started.
+    return { state: 'started', paragraphs: blocks.length, selection: readingSelection };
 })();

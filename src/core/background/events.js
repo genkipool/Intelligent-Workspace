@@ -590,6 +590,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         case 'regroup-all-tabs':
             await regroupAllTabsCommand();
             break;
+        case 'read-page-aloud':
+        case 'read-selection-aloud':
+            // The very call the `ar` command makes. The tab is named rather than left
+            // to the handler's guess because the menu was opened on a page, not
+            // necessarily the focused one, and `notify` is on because a context menu
+            // closes on the click and has nowhere left to report the outcome.
+            await new Promise((resolve) => handleStartReadAloud({ tabId: tab?.id, notify: true }, null, resolve));
+            break;
         case 'mute-all-tabs-ctx':
             const tabsToMute = await chrome.tabs.query({
                 audible: true,

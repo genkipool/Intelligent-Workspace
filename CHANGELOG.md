@@ -45,11 +45,18 @@ Each version holds two different things, and they are worth keeping apart:
   controls sit in a narrow column against the right edge, which can be tucked away and
   brought back, and it answers to the space bar and the arrow keys as well as to its
   own letters — all of them listed and changeable in Navigation settings. It reaches a
-  page three ways, and each of them is a toggle: hovering the assistant button on a tab
-  card, the `ar` keyboard command, and the `ar:` omnibar prefix, which lists every tab
-  and reads whichever is picked, bringing it to the front if it was asleep. When the
-  assistant button is hidden, the reader moves into that row's overflow menu along with
-  the summary.
+  page four ways, and each of them is a toggle: hovering the assistant button on a tab
+  card, the browser's own right-click menu, the `ar` keyboard command, and the `ar:`
+  omnibar prefix, which lists every tab and reads whichever is picked, bringing it to
+  the front if it was asleep. When the assistant button is hidden, the reader moves into
+  that row's overflow menu along with the summary.
+- **The reader is in the right-click menu.** Right-clicking a page offers to read it
+  out loud, and right-clicking selected text offers to read the selection — which is
+  what the reader does with a selection anyway, so the two entries are the same command
+  under the title that fits what was clicked. A second click stops the reading, and
+  since the menu closes on the click, a notification says which of the two just
+  happened. It also says "reading the selection" now wherever the reader was started
+  from, instead of claiming to read the page.
 - **The reader follows the word it is saying, on any system.** The mark used to
   depend on the browser reporting each word, which plenty of voices — most of the Linux
   ones — never do, so on those machines it never moved. It is now driven by a clock

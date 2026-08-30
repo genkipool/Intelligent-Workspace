@@ -11750,6 +11750,10 @@
         "message": "Leer la página en voz alta",
         "description": "Inicia el lector de la página"
     },
+    "readSelectionAloud": {
+        "message": "Leer la selección en voz alta",
+        "description": "Inicia el lector sobre el texto seleccionado"
+    },
     "stopReadingPage": {
         "message": "Dejar de leer la página",
         "description": "Detiene el lector de la página"
@@ -11757,6 +11761,10 @@
     "readAloudStarting": {
         "message": "Leyendo la página…",
         "description": "El lector está arrancando"
+    },
+    "readAloudStartingSelection": {
+        "message": "Leyendo la selección…",
+        "description": "El lector arranca sobre el texto seleccionado"
     },
     "readAloudNoContent": {
         "message": "No se ha encontrado texto legible en esta página",
