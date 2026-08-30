@@ -386,7 +386,11 @@ export async function handleOrphanScreenshotsClick(orphanScreenshots) {
 
 export function getNoteHandlers(context) {
     return {
-        onEdit: openNoteModal,
+        // The orphan list draws every card with a display context of its own
+        // ({ isOrphan: true }) so the footer can name where each note came from, and
+        // that is not a place a note can be saved to. Editing opens against the context
+        // the view itself was opened with.
+        onEdit: (_displayContext, note) => openNoteModal(context, note),
         onCopy: (note) => {
             let textToRead = '';
             if (note.type === 'checklist' && Array.isArray(note.content)) {
@@ -847,17 +851,12 @@ export async function deleteNote(noteId) {
     showNotification('noteDeleted');
 
     if (get(isNotesViewActive)) {
+        // Redrawn the way it was opened — showNotesView is what knows how to gather the
+        // notes for each kind of context, orphans included — and never closed: deleting
+        // the last note leaves an empty list, not a reason to throw the user back to
+        // the groups.
         const context = get(currentNotesContext);
-        if (context?.type === 'orphan') {
-            // Orphans are not filed under any context key, so asking for them by
-            // context returns nothing and the view emptied after deleting one note.
-            // What is left is every note whose context no longer exists.
-            const remaining = await getOrphanNotes();
-            if (remaining.length > 0) await showNotesView(context, remaining);
-            else await closeNotesView();
-        } else {
-            await showNotesView(context);
-        }
+        if (context) await showNotesView(context);
     }
 
     await updateOrphanIndicators();
@@ -994,11 +993,24 @@ export async function handleSaveNote(context, noteId = null, options = {}) {
         }
     }
 
+    const existingNote = noteId ? await getNoteFromDb(noteId) : null;
+
+    const sessionResult = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
+    const allNotesIndex = sessionResult[STORAGE_KEYS.NOTES] || {};
+
     const { type, id, secondaryId } = context;
     let contextKey;
     let sessionKey;
 
-    if (type === 'orphan') {
+    if (existingNote?.contextKey) {
+        // An edit never moves the note. The list it was opened from is not necessarily
+        // where it lives — the orphans section and the popup's notes button both gather
+        // notes from every context — so recomputing the key here would file the note
+        // under whatever list happened to be on screen and rewrite the context shown
+        // under it. Where a note belongs only changes when the user says so.
+        contextKey = existingNote.contextKey;
+        sessionKey = Object.keys(allNotesIndex).find((key) => allNotesIndex[key]?.includes(noteId)) || null;
+    } else if (type === 'orphan') {
         contextKey = 'g_general';
         sessionKey = 'g_general';
     } else if ((type === 'group' && id === -100) || (type === 'subgroup' && secondaryId === -100)) {
@@ -1041,9 +1053,12 @@ export async function handleSaveNote(context, noteId = null, options = {}) {
     }
 
     if (noteId) {
-        const existingNote = await getNoteFromDb(noteId);
         noteData.timestamp = existingNote ? existingNote.timestamp : noteData.modifiedTimestamp;
         noteData.isPersistent = existingNote ? existingNote.isPersistent : false;
+        // The modal edits a title, a body and a category; everything else the note
+        // carries is its own and survives the edit, the pomodoro session it came out of
+        // included — it is what puts the Pomodoro filter on the card.
+        if (existingNote?.pomoData) noteData.pomoData = existingNote.pomoData;
     } else {
         noteData.timestamp = noteData.modifiedTimestamp;
         noteData.isPersistent = false;
@@ -1055,14 +1070,16 @@ export async function handleSaveNote(context, noteId = null, options = {}) {
         window._onPomoNoteSaved();
     }
 
-    const sessionResult = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
-    const allNotesIndex = sessionResult[STORAGE_KEYS.NOTES] || {};
-
-    if (!allNotesIndex[sessionKey]) allNotesIndex[sessionKey] = [];
-    if (!allNotesIndex[sessionKey].includes(noteData.id)) {
-        allNotesIndex[sessionKey].push(noteData.id);
+    // No session key means an orphan: its context is gone, so there is no list of this
+    // session to file it under, and syncContentSessionKeys puts it back the moment the
+    // group it names comes home.
+    if (sessionKey) {
+        if (!allNotesIndex[sessionKey]) allNotesIndex[sessionKey] = [];
+        if (!allNotesIndex[sessionKey].includes(noteData.id)) {
+            allNotesIndex[sessionKey].push(noteData.id);
+        }
+        await chrome.storage.session.set({ [STORAGE_KEYS.NOTES]: allNotesIndex });
     }
-    await chrome.storage.session.set({ [STORAGE_KEYS.NOTES]: allNotesIndex });
 
     showNotification(noteId ? 'noteUpdated' : 'noteSaved');
     if (!options.keepOpen) {

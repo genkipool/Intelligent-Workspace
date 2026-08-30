@@ -3952,6 +3952,14 @@
     "editNote": {
         "message": "Editar Nota"
     },
+    "copyNote": {
+        "message": "Copiar nota",
+        "description": "Copiar nota"
+    },
+    "deleteNote": {
+        "message": "Eliminar nota",
+        "description": "Eliminar nota"
+    },
     "noteTitle": {
         "message": "Título"
     },

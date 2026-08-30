@@ -36,6 +36,10 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- Las notas reunidas de todos los contextos — la sección de huérfanas y el botón de
+  notas del popup — ya se pueden editar. El botón se quitaba de esas tarjetas porque
+  guardar desde una lista que no pertenece a ningún grupo no tenía dónde archivar la
+  nota; ahora editar no archiva nada, así que el botón se queda.
 - **Leer cualquier página en voz alta.** Un lector que dice el texto de la página,
   resalta el párrafo y va siguiendo la palabra que dice, y se desplaza con ellos. Sus
   controles van en una columna estrecha pegada al borde derecho, que se puede replegar
@@ -103,6 +107,28 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- Editar una nota ya no la cambia de sitio. Al guardar se reconstruía el contexto a
+  partir de la lista que hubiera en pantalla, así que editar desde la sección de
+  huérfanas o desde el botón de notas del popup reescribía el contexto de la tarjeta:
+  una nota archivada en `Genkipool` volvía como `General`. Una nota solo cambia de sitio
+  cuando la mueve el usuario; la sesión de pomodoro que hay detrás del filtro Pomodoro
+  también sobrevive a la edición.
+- Los botones de copiar y borrar de una nota dicen lo que hacen. Sus descripciones
+  apuntaban a una traducción que nunca se escribió, así que se veía la clave.
+- Borrar la última nota ya no cierra la vista de notas. Antes devolvía al listado de
+  grupos, que desde el botón de notas del popup es una pantalla que nadie había pedido;
+  ahora la lista vacía se queda donde está, con su mensaje de bienvenida.
+- El texto enriquecido que se pega en una nota se queda dentro de la nota. Lo que trae
+  el portapapeles viene medido para la página de la que se copió — anchos de tabla,
+  tamaños en píxeles, `float`, trozos posicionados — y pegado en crudo se dibujaba por
+  encima de la tarjeta. Se conserva el formato y se tira la maquetación, al pegar y otra
+  vez al pintar una nota antigua, así que una nota guardada antes de esto también queda
+  contenida. Una tabla pegada se desplaza dentro de sí misma en vez de abrir la tarjeta,
+  y las etiquetas `script`, los manejadores de eventos y los enlaces `javascript:` no
+  sobreviven al pegado.
+- La consola ya no avisa de que una petición a la IA local no declaró idioma de salida.
+  Las sesiones ya lo declaraban; `availability()` — que el panel pregunta en cada
+  arranque — no, y es una petición como cualquier otra.
 - Pegar en Telegram ya no pega el texto dos veces. El desbloqueo del clic derecho
   también anulaba el intento de la página de cancelar un pegado, y Telegram cancela
   todos los pegados para insertar él mismo el portapapeles, así que el texto entraba

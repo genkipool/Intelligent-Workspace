@@ -4,6 +4,7 @@
     import NoteTextEditor from '../notes/editors/NoteTextEditor.svelte';
     import NoteChecklistEditor from '../notes/editors/NoteChecklistEditor.svelte';
     import NoteKanbanEditor from '../notes/editors/NoteKanbanEditor.svelte';
+    import { sanitizeNoteHtml } from '../../../utils/noteHtml.js';
 
     /** @type {{ show: boolean, note: object|null, onClose: () => void, onSave: (data: object) => void }} */
     let { show, note = null, onClose, onSave } = $props();
@@ -57,7 +58,9 @@
                     checklistItems = [];
                     contentHTML = '';
                 } else {
-                    contentHTML = note.content || '';
+                    // Reopening an old note is the moment its markup gets cleaned for
+                    // good: what the editor shows is what saving writes back.
+                    contentHTML = sanitizeNoteHtml(note.content || '');
                     checklistItems = [];
                     kanbanItems = [];
                 }

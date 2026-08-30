@@ -3949,6 +3949,14 @@
   "editNote": {
     "message": "Edit Note"
   },
+  "copyNote": {
+    "message": "Copy note",
+    "description": "Copy note"
+  },
+  "deleteNote": {
+    "message": "Delete note",
+    "description": "Delete note"
+  },
   "noteTitle": {
     "message": "Title"
   },

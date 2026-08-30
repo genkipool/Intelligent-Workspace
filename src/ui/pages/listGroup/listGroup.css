@@ -2738,6 +2738,33 @@ body.popup-window {
     margin-right: auto;
 }
 
+/* The editor holds pasted markup to its own width, the same way the card does. */
+.note-content-editable * {
+    max-width: 100%;
+    /*
+     * The editor is `pre-wrap`, and a child that says otherwise — code copied out of an
+     * editor arrives as `white-space: pre` — would run past the right edge. Cleaned out
+     * of what gets pasted too; this covers what is already saved.
+     */
+    white-space: inherit !important;
+}
+
+.note-content-editable table {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 8px 0;
+}
+
+.note-content-editable th,
+.note-content-editable td {
+    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    text-align: left;
+}
+
 .note-content-editable a {
     color: var(--text-on-color);
     text-decoration: underline;

@@ -36,6 +36,10 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- Notes gathered from every context — the orphans section and the popup's notes button
+  — can be edited. The button used to be taken off those cards because saving from a
+  list that belongs to no single group had nowhere to file the note back to; an edit no
+  longer files anything, so it stays.
 - **Read any page out loud.** A reader that speaks the text of the page, lights up
   the paragraph and follows the word being said, and scrolls along with them. Its
   controls sit in a narrow column against the right edge, which can be tucked away and
@@ -100,6 +104,26 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- Editing a note no longer moves it. Saving rebuilt the note's context from whichever
+  list was on screen, so editing from the orphans section or from the popup's notes
+  button rewrote the context under the card — a note filed under `Genkipool` came back
+  as `General`. A note only changes place when the user moves it; the pomodoro session
+  behind the Pomodoro filter survives an edit too.
+- The copy and delete buttons on a note card show what they do. Their tooltips named a
+  translation that was never written, so the key itself was shown.
+- Deleting the last note keeps the notes view open. It used to close and drop the user
+  back on the group list, which from the popup's notes button meant a screen they had
+  never asked for; the empty list now stays put with its welcome message.
+- Rich text pasted into a note stays inside the note. What the clipboard carries is
+  measured for the page it was copied from — table widths, pixel sizes, floats,
+  absolutely positioned pieces — and pasted raw it laid itself out over the card. The
+  formatting is kept and the layout is dropped, on the way in and again when an older
+  note is drawn, so a note saved before this is contained too. A pasted table now
+  scrolls inside itself rather than pushing the card open, and script tags, event
+  handlers and `javascript:` links do not survive the paste at all.
+- The console no longer complains that a local AI request named no output language.
+  Every session already declared one; `availability()` — which the panel asks on every
+  boot — did not, and it is a LanguageModel request like any other.
 - Pasting into Telegram no longer pastes the text twice. Unblocking the right click
   also dropped a page's attempt to cancel a paste, and Telegram cancels every paste to
   insert the clipboard itself, so the text went in once from the app and once from the

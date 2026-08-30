@@ -1,4 +1,5 @@
 import { extractYouTubeVideoIdFromUrl, createYouTubeEmbed } from '../../utils/youtubeEmbed.js';
+import { sanitizeNoteHtml } from '../../utils/noteHtml.js';
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -406,7 +407,10 @@ export function renderNoteEntry(note, context, handlers) {
         case 'text':
         default:
             if (contentEl) {
-                contentEl.innerHTML = note.content;
+                // Cleaned on the way in as well; cleaned again here so a note saved
+                // before that — with a pasted table's widths still on it — is drawn
+                // inside its card rather than over it.
+                contentEl.innerHTML = sanitizeNoteHtml(note.content);
 
                 // Find all links within the rendered note content.
                 contentEl.querySelectorAll('a').forEach((link) => {
@@ -563,20 +567,16 @@ export function renderNoteEntry(note, context, handlers) {
             });
         }
     }
+    // An orphan used to lose its edit button, because saving from a list gathered out of
+    // every context had nowhere to file the note back to. An edit no longer re-files
+    // anything — handleSaveNote keeps the note's own context — so the button belongs on
+    // every card, wherever the list was opened from.
     const editBtn = entryEl.querySelector('.edit-entry-btn');
-
-    if (context.isOrphan) {
-        if (editBtn) {
-            editBtn.remove();
-        }
-    } else {
-        // If not orphan, add its click listener as usual.
-        if (editBtn) {
-            editBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                handlers.onEdit(context, note);
-            });
-        }
+    if (editBtn && handlers.onEdit) {
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            handlers.onEdit(context, note);
+        });
     }
     entryEl.querySelector('.copy-entry-btn').addEventListener('click', (e) => {
         e.stopPropagation();

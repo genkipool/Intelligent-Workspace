@@ -1,5 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
+    import { sanitizeNoteHtml } from '../../../../utils/noteHtml.js';
 
     let { contentHTML = $bindable(''), showValidation = false, noteType = 'text' } = $props();
 
@@ -70,11 +71,38 @@
         e.target.value = '';
     }
 
-    function handlePaste(e) {
-        const items = e.clipboardData?.items;
-        if (!items) return;
+    /**
+     * Inserts HTML where the caret is, keeping the browser's own undo stack.
+     *
+     * `execCommand` is deprecated and still the only call that edits a
+     * `contenteditable` without throwing its history away; the Range below is what
+     * answers when a browser has finally dropped it.
+     */
+    function insertHtmlAtCaret(html) {
+        if (document.execCommand('insertHTML', false, html)) return;
 
-        for (const item of items) {
+        const selection = window.getSelection();
+        if (!selection?.rangeCount) return;
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        const template = document.createElement('template');
+        template.innerHTML = html;
+        const fragment = template.content;
+        const last = fragment.lastChild;
+        range.insertNode(fragment);
+        if (last) {
+            range.setStartAfter(last);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    }
+
+    function handlePaste(e) {
+        const clipboard = e.clipboardData;
+        if (!clipboard) return;
+
+        for (const item of clipboard.items) {
             if (item.type.indexOf('image') !== -1) {
                 e.preventDefault();
                 const file = item.getAsFile();
@@ -82,12 +110,24 @@
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     const dataUrl = ev.target.result;
-                    contentHTML += `<img src="${dataUrl}" alt="{$t('pastedImageAltText')}" />\u00A0`;
+                    contentHTML += `<img src="${dataUrl}" alt="${$t('pastedImageAltText')}" />\u00A0`;
                 };
                 reader.readAsDataURL(file);
                 return;
             }
         }
+
+        // Rich text arrives measured for the page it was copied from — table widths,
+        // pixel sizes, floats — and pasted raw it lays itself out over the note card.
+        // Only the formatting is kept; see sanitizeNoteHtml.
+        const html = clipboard.getData('text/html');
+        if (!html) return;
+
+        e.preventDefault();
+        const clean = sanitizeNoteHtml(html);
+        if (clean) insertHtmlAtCaret(clean);
+        else insertHtmlAtCaret(clipboard.getData('text/plain'));
+        contentHTML = contentEditor?.innerHTML ?? contentHTML;
     }
 </script>
 

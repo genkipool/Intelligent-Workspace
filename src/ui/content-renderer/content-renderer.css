@@ -137,6 +137,8 @@
     padding-top: 12px;
     white-space: pre-wrap;
     word-break: break-word;
+    /* Last resort: whatever still measures wider than the card scrolls inside it. */
+    overflow-x: auto;
 }
 
 .entry-footer {
@@ -257,6 +259,43 @@
     border-radius: 4px;
     color: var(--text-on-color);
     overflow-wrap: break-word;
+}
+
+/*
+ * Pasted rich text is cleaned before it is stored, but what is left can still measure
+ * wider than the card: a table copied whole, a long unbroken URL, an image at its
+ * natural size. Everything is held to the card's width, and a table scrolls inside
+ * itself instead of pushing the card open.
+ */
+.entry-content * {
+    max-width: 100%;
+    /*
+     * The card wraps; a child that says `white-space: pre` — code copied out of an
+     * editor arrives that way — would not, and would run past the right edge. Taken out
+     * of pasted markup as well; this covers what was saved before that.
+     */
+    white-space: inherit !important;
+}
+
+.entry-content img,
+.entry-content video {
+    height: auto;
+}
+
+.entry-content table {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.entry-content th,
+.entry-content td {
+    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    text-align: left;
 }
 
 .entry-content pre code {

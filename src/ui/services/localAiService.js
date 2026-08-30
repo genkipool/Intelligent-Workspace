@@ -156,10 +156,15 @@ export async function checkAvailability({ inputs = [] } = {}) {
     if (!LanguageModel?.availability) return LOCAL_AI_STATUS.UNSUPPORTED;
 
     try {
+        // The output language goes with every request, not only with `create()`:
+        // `availability()` is a LanguageModel API request too, and asking without it is
+        // met with "No output language was specified in a LanguageModel API request" in
+        // the console of whichever page happened to ask.
+        const options = await outputOptions();
+        if (inputs.length) options.expectedInputs = inputs.map((type) => ({ type }));
+
         const availability = await withTimeout(
-            LanguageModel.availability(
-                inputs.length ? { expectedInputs: inputs.map((type) => ({ type })) } : undefined,
-            ),
+            LanguageModel.availability(options),
             AVAILABILITY_TIMEOUT,
             LOCAL_AI_STATUS.UNAVAILABLE,
         );
