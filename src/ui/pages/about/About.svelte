@@ -6,6 +6,7 @@
     import Notification from '../../components/common/Notification.svelte';
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
+    import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import VersionHistorySection from './components/VersionHistorySection.svelte';
     import FeatureCategoriesSection from './components/FeatureCategoriesSection.svelte';
     import PermissionsSection from './components/PermissionsSection.svelte';
@@ -147,4 +148,6 @@
         <p>(c) <span id="current-year">{$t('nameOrganitation')}</span></p>
         <p><span>{$t('appName')}</span> - <span>{$t('tagline')}</span></p>
     </footer>
+
+    <ScrollButtons />
 </div>
