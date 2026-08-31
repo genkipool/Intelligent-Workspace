@@ -22,7 +22,11 @@
  * The origin serving the payment page. Origin comparisons are made against exactly this
  * string, so it carries no trailing slash and no path.
  *
- * The page lives in a separate repository (`Intelligent-Workspace-Web`) on Vercel.
+ * The page lives in a separate repository (`Intelligent-Workspace-Web`), deployed to
+ * Vercel at `intelligentworkspace.genkipool.com`. It is a subdomain of its own and not
+ * `genkipool.com`, which serves an unrelated older site: pointing this at the parent
+ * domain frames that site instead, and every donation fails with nothing in the panel
+ * to say why.
  *
  * PRODUCTION IS THE DEFAULT, and that is deliberate. This used to be a pair of lines
  * with the local one uncommented, which meant a release could ship pointing at
@@ -31,9 +35,9 @@
  * which git ignores, so it cannot be committed by accident.
  *
  *     # .env.local
- *     VITE_PAYMENT_ORIGIN=http://localhost:3000
+ *     VITE_PAYMENT_ORIGIN=http://localhost:4321
  */
-export const PAYMENT_ORIGIN = import.meta.env.VITE_PAYMENT_ORIGIN || 'https://genkipool.com';
+export const PAYMENT_ORIGIN = import.meta.env.VITE_PAYMENT_ORIGIN || 'https://intelligentworkspace.genkipool.com';
 
 /**
  * `/pay` is a route of the marketing site, not a subdomain of its own, and the site

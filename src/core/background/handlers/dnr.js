@@ -251,7 +251,8 @@ async function getSidePanelRuleTabIds() {
  * the feature. For a payment page it is clickjacking — it is precisely the attack
  * `frame-ancestors` exists to stop — and it breaks the SCA/3DS redirect besides.
  *
- * The donation form does not need any of it: `pay.genkipool.com` grants this extension
+ * The donation form does not need any of it: `intelligentworkspace.genkipool.com` grants
+ * this extension
  * framing rights itself, and `openPaymentInPanel` frames it directly without ever
  * calling this handler. This list is the belt to that pair of braces, so a later change
  * that routes a payment URL through the web view fails loudly instead of quietly
@@ -262,7 +263,9 @@ async function getSidePanelRuleTabIds() {
  */
 const NEVER_STRIP_FRAMING_HOSTS = [
     // The whole marketing site, not just /pay: DNR matches hosts, not paths, and the
-    // site has no business being framed by the web view either.
+    // site has no business being framed by the web view either. `isPaymentHost` matches
+    // subdomains too, so this one entry covers `intelligentworkspace.genkipool.com`,
+    // which is where the page actually is.
     'genkipool.com',
     // Covers js., checkout., api. and m.stripe.com through the suffix match below.
     'stripe.com',
