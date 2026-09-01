@@ -1465,8 +1465,21 @@ export async function openPaymentInPanel(provider) {
          * place to pay from, and only one of the two would work.
          */
         onExternal: (url) => {
-            chrome.tabs.create({ url, active: true });
-            closeUrlInPanel();
+            /*
+             * A WINDOW, AND THE PANEL STAYS PUT.
+             *
+             * Revolut Pay, PayPal, Klarna and Amazon Pay authenticate on their own pages
+             * and refuse to be framed, so the authorisation has to happen somewhere else.
+             * A popup window rather than a tab: it is what a payment hand-off looks like
+             * everywhere else, it keeps the reader's tabs as they were, and closing it
+             * puts them back where they started.
+             *
+             * The panel is NOT closed. It used to be, which sent the reader to the group
+             * list the moment they chose Revolut Pay — the sheet vanished mid-payment and
+             * the panel showed something unrelated. It stays on the donation view while
+             * they pay, and the back button still returns to the popup afterwards.
+             */
+            chrome.windows.create({ url, type: 'popup', width: 480, height: 720, focused: true });
         },
     });
 
