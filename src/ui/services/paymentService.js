@@ -20,6 +20,9 @@
  *     quietly route them through it.
  */
 
+import { get } from 'svelte/store';
+import { currentLang } from '../stores/i18nStore.js';
+
 import {
     PAYMENT_ORIGIN,
     paymentPagePath,
@@ -61,7 +64,19 @@ export function mintPaymentNonce() {
  *   has no bridge to authenticate.
  */
 export function buildPaymentUrl(provider, { nonce = null, amount = DONATION_DEFAULT_AMOUNT } = {}) {
-    const locale = (chrome.i18n?.getUILanguage?.() || navigator.language || 'en').slice(0, 2);
+    /*
+     * THE LANGUAGE THE READER CHOSE, not the one the browser is in.
+     *
+     * This used to read `chrome.i18n.getUILanguage()`, which reports Chrome's own UI
+     * language and knows nothing about the extension's language switch. Someone running
+     * Chrome in English with the extension set to Spanish got an English donation sheet,
+     * and nothing in the panel explained why.
+     *
+     * `currentLang` is the store the whole interface already renders from, so the sheet
+     * now agrees with the panel around it. It also decides `locale` for Stripe.js, so the
+     * card fields and their error messages come back in the same language.
+     */
+    const locale = (get(currentLang) || 'en').slice(0, 2);
     const url = new URL(paymentPagePath(locale), PAYMENT_ORIGIN);
     url.searchParams.set('method', provider.method);
     url.searchParams.set('amount', String(amount));
