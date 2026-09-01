@@ -1416,6 +1416,16 @@ export async function openPaymentInPanel(provider) {
             else showNotification('donationFailed', true);
         },
         onClose: () => closeUrlInPanel(),
+        /*
+         * PayPal, Klarna and Amazon Pay cannot finish inside a frame, so the sheet hands
+         * back its own address and the panel opens it as a tab. The panel then closes the
+         * frame: leaving a half-finished sheet behind it would offer the reader a second
+         * place to pay from, and only one of the two would work.
+         */
+        onExternal: (url) => {
+            chrome.tabs.create({ url, active: true });
+            closeUrlInPanel();
+        },
     });
 
     container.appendChild(iframe);

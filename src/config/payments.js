@@ -89,10 +89,20 @@ export const PAYMENT_THEME_TOKENS = [
     '--error-color',
 ];
 
-/** Messages the hosted page is allowed to send. Anything else is dropped. */
+/**
+ * Messages the hosted page is allowed to send. Anything else is dropped.
+ *
+ * `EXTERNAL` is the only one that asks the panel to act rather than reporting what
+ * happened. PayPal, Klarna and Amazon Pay refuse to authenticate inside another site's
+ * frame, so the sheet cannot finish them here: it hands back the address to open as an
+ * ordinary tab. The URL is checked against `PAYMENT_ORIGIN` before it is opened — the
+ * message arrives from a frame, and a frame's word on where to send the user is not
+ * taken on trust.
+ */
 export const PAYMENT_MESSAGE_TYPES = Object.freeze({
     READY: 'pay:ready',
     SUCCESS: 'pay:success',
     ERROR: 'pay:error',
     CLOSE: 'pay:close',
+    EXTERNAL: 'pay:external',
 });

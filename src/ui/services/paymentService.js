@@ -104,6 +104,24 @@ export function attachPaymentBridge(iframe, nonce, handlers = {}) {
             case PAYMENT_MESSAGE_TYPES.CLOSE:
                 handlers.onClose?.();
                 break;
+            case PAYMENT_MESSAGE_TYPES.EXTERNAL: {
+                /*
+                 * The frame asks for a tab. The nonce and the origin have already been
+                 * checked above, but the URL is checked again on its own: this is the one
+                 * message that turns the frame's words into a navigation, and "it came
+                 * from the right origin" is not the same claim as "it points at the right
+                 * origin". A malformed or foreign address is dropped, not opened.
+                 */
+                let target = null;
+                try {
+                    target = new URL(String(data.url ?? ''));
+                } catch {
+                    break;
+                }
+                if (target.origin !== PAYMENT_ORIGIN) break;
+                handlers.onExternal?.(target.toString());
+                break;
+            }
             default:
                 break;
         }
