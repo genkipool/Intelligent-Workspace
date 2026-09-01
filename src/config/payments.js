@@ -87,6 +87,11 @@ export const PAYMENT_THEME_TOKENS = [
     '--action-color',
     '--border-color',
     '--error-color',
+    // The dim ink for labels and placeholders. Without it the page had to derive one, and
+    // the value it derived was a `color-mix` expression that means nothing inside Stripe's
+    // own iframes — so every label sat in Stripe's default grey while the rest of the
+    // sheet wore the panel's colours.
+    '--text-dim',
 ];
 
 /**
