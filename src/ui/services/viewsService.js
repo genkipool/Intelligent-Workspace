@@ -1387,6 +1387,18 @@ export async function openUrlInPanel(url, context = null) {
 export async function openPaymentInPanel(provider) {
     const { container, mainHeaderTitle } = enterFramedView('donation');
 
+    /*
+     * The search row goes, and only here.
+     *
+     * `VIEWS_HIDDEN_BY_A_FRAME` deliberately leaves it alone, because the web view uses
+     * it: typing there navigates the frame, and the tooltip says so. A donation sheet has
+     * nothing to search and nothing to navigate, so the row was two dozen controls sitting
+     * above a payment form doing nothing — the assistant toggle, the regex switch, the
+     * pomodoro, the screenshot button. `closeUrlInPanel` puts it back.
+     */
+    const searchRow = container.querySelector('.search-and-controls');
+    if (searchRow) searchRow.style.display = 'none';
+
     const nonce = mintPaymentNonce();
     const src = buildPaymentUrl(provider, { nonce });
     currentPanelUrl.set(src);
@@ -1637,6 +1649,15 @@ export function showErrorView(errorMessage, url) {
 export async function closeUrlInPanel(isSwitchingView = false) {
     const _container = document.querySelector('.container');
     const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
+
+    /*
+     * Before the early return, so that switching straight from the donation sheet into
+     * another framed view gets the row back: `enterFramedView` calls this with
+     * `isSwitchingView`, and the next view hides again whatever it needs to.
+     * `restoreMainView` does not touch this element, so nobody else would.
+     */
+    const searchRow = _container?.querySelector('.search-and-controls');
+    if (searchRow) searchRow.style.display = '';
 
     isUrlViewActive.set(false);
     currentPanelUrl.set(null);
