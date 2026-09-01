@@ -185,15 +185,27 @@ const PANEL_VIEWS = {
      */
     payment: {
         is: () => get(isUrlViewActive),
-        show: async () => {
-            const provider = getProvider(new URLSearchParams(window.location.search).get('provider'));
-            if (!provider || provider.kind !== 'payment') {
-                await switchMainView('groups', false);
-                return;
-            }
-            await switchMainView('groups', false);
-            await openPaymentInPanel(provider);
-        },
+        /**
+         * `options` is passed on, and that is the whole of the back button fix. This
+         * used to take no arguments, so the `{ standalone: true }` the boot path hands
+         * every view was dropped on the floor and `standaloneOverlayView` stayed null.
+         * Back then fell through to the web view's branch — `closeUrlInPanel` — and left
+         * the reader on the group list, which is not where they came from. They came
+         * from the popup, and `donationService` has already stored it as `navSource`.
+         */
+        show: (options) =>
+            openOverlayView(
+                'payment',
+                async () => {
+                    const provider = getProvider(new URLSearchParams(window.location.search).get('provider'));
+                    if (!provider || provider.kind !== 'payment') {
+                        await switchMainView('groups', false);
+                        return;
+                    }
+                    await openPaymentInPanel(provider);
+                },
+                options,
+            ),
     },
 };
 
@@ -284,6 +296,10 @@ async function handleMainBackClick() {
     }
 
     if (get(isUrlViewActive)) {
+        // The donation form shares this branch with the web view, but not its meaning of
+        // "back": opened straight from the popup, back is the popup.
+        if (await leaveStandaloneOverlay('payment')) return;
+
         const activeView = document.querySelector('.container')?.querySelector('.active-view');
         if (activeView?.dataset.containsYoutube === 'true') {
             hideYoutubeView(activeView);

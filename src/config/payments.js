@@ -61,7 +61,12 @@ export function paymentPagePath(locale) {
  */
 export const DONATION_AMOUNTS = [1, 5, 10];
 
-export const DONATION_DEFAULT_AMOUNT = 5;
+/**
+ * The amount the sheet opens on. `defaultDonationAmount` in the site's `src/data/site.ts`
+ * is the same number, and the two have to move together: this one only seeds the URL, and
+ * the page picks its own chip from its own constant.
+ */
+export const DONATION_DEFAULT_AMOUNT = 1;
 
 export const DONATION_CURRENCY = 'eur';
 
