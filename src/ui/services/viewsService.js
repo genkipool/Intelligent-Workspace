@@ -32,6 +32,7 @@ import {
     isUrlViewActive,
     isStandaloneGemini,
     navigationHistory,
+    standaloneOverlayView,
     currentHistoryDateFilter,
     currentPanelUrl,
     currentPanelContext,
@@ -1416,18 +1417,47 @@ export async function openPaymentInPanel(provider) {
      * store write here would have gone nowhere. The popup and the about page are the
      * ones that use the store.
      */
+    /**
+     * Where a finished donation leaves the reader.
+     *
+     * `closeUrlInPanel` alone drops them on the group list, which is not where they came
+     * from: they pressed a donation tile in the popup, and `donationService` stored that
+     * as `navSource`. The back button already returns there; finishing a payment and
+     * closing the sheet have to agree with it, or the same view has two different exits.
+     *
+     * Only when the panel was opened straight into the donation view — navigating to it
+     * from inside the panel means the panel is where they were, and the group list is the
+     * right place to land.
+     *
+     * `delay` gives the thank-you notification time to be read before the page changes
+     * under it.
+     */
+    const leaveDonation = async (delay = 0) => {
+        if (get(standaloneOverlayView) !== 'payment') {
+            closeUrlInPanel();
+            return;
+        }
+        const { navSource } = await chrome.storage.local.get('navSource');
+        if (!navSource) {
+            closeUrlInPanel();
+            return;
+        }
+        if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+        window.location.href = navSource;
+    };
+
     detachPaymentBridge = attachPaymentBridge(iframe, nonce, {
         onSuccess: ({ amount }) => {
             if (amount) showNotification('donationThanksAmount', false, [String(amount)]);
             else showNotification('donationThanks');
-            closeUrlInPanel();
+            void leaveDonation(1800);
         },
         onError: (message) => {
             // The frame's own wording when it gave one; ours when it did not.
             if (message) showNotification(message, true);
             else showNotification('donationFailed', true);
         },
-        onClose: () => closeUrlInPanel(),
+        onClose: () => void leaveDonation(),
         /*
          * PayPal, Klarna and Amazon Pay cannot finish inside a frame, so the sheet hands
          * back its own address and the panel opens it as a tab. The panel then closes the
