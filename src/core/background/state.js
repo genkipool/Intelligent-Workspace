@@ -125,6 +125,7 @@ let duplicateUrlSetCache = null;
 const SIDEPANEL_RULE_ID = 1;
 const SPLIT_SCREEN_STATE_KEY = 'splitScreenState';
 const SCREENSHOT_STORAGE_KEY = 'groupScreenshots';
+const NOTES_STORAGE_KEY = 'groupNotes';
 const INACTIVITY_THRESHOLD_INACTIVE_GROUP = 1;
 const INACTIVITY_THRESHOLD_ACTIVE_GROUP = 15;
 const MAX_RETRIES = 20;

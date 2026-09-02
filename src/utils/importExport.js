@@ -34,6 +34,7 @@ const COMMAND_LIMITS = {
     captureFullPageScroll: 2,
     captureFullPageSplit: 2,
     hintDesc_ca: 2,
+    hintDesc_cn: 2,
     hintDesc_wp: 2,
     hintDesc_wv: 2,
     hintDesc_we: 2,

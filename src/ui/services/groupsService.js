@@ -39,6 +39,7 @@ import {
     isBookmarksViewActive,
     isGeminiViewActive,
     isNotesViewActive,
+    currentNotesContext,
     isGalleryViewActive,
     isUrlViewActive,
     isPopupWindow,
@@ -2096,6 +2097,16 @@ export function initGroupsEvents() {
         if (message.action === 'groupsUpdatedFromBackground') renderGroups();
 
         if (message.action === 'pageModeChanged') renderGroups();
+
+        // A note written from a page lands straight in the database, so the panel only
+        // hears about it here: the counts on the cards and the list, if it is open.
+        if (message.action === 'noteCreatedFromPage') {
+            renderGroups();
+            if (get(isNotesViewActive) && get(currentNotesContext)) {
+                showNotesView(get(currentNotesContext));
+            }
+            return true;
+        }
 
         if (message.action === 'areaScreenshotProcessFinished' || message.action === 'fullPageScreenshotFinished') {
             if (message.success) {

@@ -143,6 +143,7 @@ var HintCommon = {
             we: 'hintDesc_we',
             as: 'hintDesc_as',
             ah: 'hintDesc_ah',
+            cn: 'hintDesc_cn',
             ar: 'hintDesc_readAloud',
         },
         categoryTabs: {

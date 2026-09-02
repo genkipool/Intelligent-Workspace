@@ -168,6 +168,65 @@ function getI18nMsg(key, params = []) {
     return message;
 }
 
+// --- Where a note or a capture taken from a page gets filed ---
+//
+// Two kinds of content are made out of a tab — a capture and a note — and both are
+// filed the same way: the record carries the group's *stable* key, which survives
+// Chrome renumbering groups between sessions, and a session index lists the id under
+// the numeric ids of this session. These three are that rule, in one place.
+
+/**
+ * The key a record of `tab` is stored under.
+ * @param {chrome.tabs.Tab} tab
+ * @returns {string} 'g_ungrouped', or 'g_' and the group's stable key.
+ */
+function getContentContextKey(tab) {
+    if (tab.groupId !== -1 && tab.groupId !== -100) {
+        const info = groupInfoMap.get(tab.groupId);
+        return info && info.key ? `g_${info.key}` : `g_${tab.groupId}`;
+    }
+    return 'g_ungrouped';
+}
+
+/**
+ * The session keys that record is listed under: the group it is in, and the domain it
+ * came from inside that group. A tab with no readable URL has no subgroup.
+ *
+ * @param {chrome.tabs.Tab} tab
+ * @returns {{group: string, subgroup: string|null}}
+ */
+function getContentSessionKeys(tab) {
+    const ungrouped = tab.groupId === -1 || tab.groupId === -100;
+    const group = ungrouped ? 'g_ungrouped' : `g_${tab.groupId}`;
+    try {
+        // `new URL` swallows `about:blank` and friends without complaint and hands back
+        // an empty hostname, which used to be filed under a key ending in nothing.
+        const domain = new URL(tab.url).hostname.replace(/^www\./, '');
+        if (!domain) return { group, subgroup: null };
+        return { group, subgroup: ungrouped ? `s_ungrouped_${domain}` : `s_${tab.groupId}_${domain}` };
+    } catch {
+        return { group, subgroup: null };
+    }
+}
+
+/**
+ * Adds one id to a session index. The SINGLE source of truth for that index; do not
+ * duplicate this pattern elsewhere.
+ *
+ * @param {string} storageKey Which index — captures and notes keep their own.
+ * @param {Array<string|null>} keys The keys to list it under; empty ones are skipped.
+ * @param {number} id
+ */
+async function addToContentSessionIndex(storageKey, keys, id) {
+    const { [storageKey]: index = {} } = await chrome.storage.session.get(storageKey);
+    for (const key of keys) {
+        if (!key) continue;
+        if (!index[key]) index[key] = [];
+        index[key].push(id);
+    }
+    await chrome.storage.session.set({ [storageKey]: index });
+}
+
 const setupContextMenus = async () => {
     if (isCreatingMenus) {
         logMessage('[ContextMenu] Creation already in progress. Skipping.');
@@ -491,6 +550,11 @@ const setupContextMenus = async () => {
         chrome.contextMenus.create({
             id: 'read-selection-aloud',
             title: getI18nMsg('readSelectionAloud'),
+            contexts: ['selection'],
+        });
+        chrome.contextMenus.create({
+            id: 'note-from-selection',
+            title: getI18nMsg('contextMenuNoteFromSelection'),
             contexts: ['selection'],
         });
 

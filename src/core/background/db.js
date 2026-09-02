@@ -295,6 +295,24 @@ async function checkGeminiSchedules() {
     }
 }
 
+/**
+ * Writes one note. The same store the panel's own editor writes to, so a note taken
+ * from a page is a note like any other and can be opened and edited there.
+ */
+async function saveNoteToDb(note) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([NOTES_STORE_NAME], 'readwrite');
+        const request = transaction.objectStore(NOTES_STORE_NAME).put(note);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => {
+            console.error('Error saving note to IndexedDB:', event.target.error);
+            reject(event.target.error);
+        };
+    });
+}
+
 async function saveScreenshotToDb(screenshot) {
     const db = await openDb();
     return new Promise((resolve, reject) => {

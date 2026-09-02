@@ -3931,6 +3931,14 @@
         "message": "Nota guardada con éxito.",
         "description": "Nota guardada con éxito."
     },
+    "noteNoSelection": {
+        "message": "Selecciona antes algún texto",
+        "description": "No había nada seleccionado al pedir la nota"
+    },
+    "noteFromSelectionFailed": {
+        "message": "No se ha podido crear la nota",
+        "description": "La nota con la selección no llegó a escribirse"
+    },
     "noteUpdated": {
         "message": "Nota actualizada correctamente.",
         "description": "Nota actualizada correctamente."
@@ -11815,6 +11823,10 @@
         "message": "Leer la selección en voz alta",
         "description": "Inicia el lector sobre el texto seleccionado"
     },
+    "contextMenuNoteFromSelection": {
+        "message": "Crear una nota con la selección",
+        "description": "Entrada del menú contextual sobre el texto seleccionado"
+    },
     "stopReadingPage": {
         "message": "Dejar de leer la página",
         "description": "Detiene el lector de la página"
@@ -11926,6 +11938,10 @@
     "hintDesc_readAloud": {
         "message": "Leer la página en voz alta",
         "description": "Comando de teclado que inicia el lector"
+    },
+    "hintDesc_cn": {
+        "message": "Crear una nota con el texto seleccionado",
+        "description": "Comando de teclado que escribe la selección en una nota"
     },
     "prefixReadAloud": {
         "message": "Leer una pestaña en voz alta",

@@ -3928,6 +3928,14 @@
     "message": "Note saved successfully.",
     "description": "Note saved successfully."
   },
+  "noteNoSelection": {
+    "message": "Select some text first",
+    "description": "Nothing was selected when a note was asked for"
+  },
+  "noteFromSelectionFailed": {
+    "message": "The note could not be created",
+    "description": "A note out of the selection did not get written"
+  },
   "noteUpdated": {
     "message": "Note updated successfully.",
     "description": "Note updated successfully."
@@ -11835,6 +11843,10 @@
     "message": "Read the selection out loud",
     "description": "Starts the page reader on the selected text"
   },
+  "contextMenuNoteFromSelection": {
+    "message": "Create a note from the selection",
+    "description": "Context menu entry over selected text"
+  },
   "stopReadingPage": {
     "message": "Stop reading the page",
     "description": "Stops the page reader"
@@ -11946,6 +11958,10 @@
   "hintDesc_readAloud": {
     "message": "Read the page out loud",
     "description": "Keyboard command that starts the reader"
+  },
+  "hintDesc_cn": {
+    "message": "Create a note from the selected text",
+    "description": "Keyboard command that writes the selection into a note"
   },
   "prefixReadAloud": {
     "message": "Read a tab out loud",

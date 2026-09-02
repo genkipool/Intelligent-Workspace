@@ -211,6 +211,12 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._send('captureAreaFromShortcut'),
                 description: 'hintDesc_ca',
             },
+            cn: {
+                // The worker reads the selection and the heading out of the page, which
+                // is what lets this key and the context menu item be the same thing.
+                action: () => this._send('createNoteFromSelection'),
+                description: 'hintDesc_cn',
+            },
             ar: {
                 // The worker owns the injection, and it is the same call the panel
                 // button and the omnibar prefix make — so this is a toggle too.

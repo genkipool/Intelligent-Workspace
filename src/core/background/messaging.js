@@ -755,6 +755,10 @@ const MESSAGE_HANDLERS = {
         handleCaptureFullPage(message, sender, sendResponse);
         return true;
     },
+    createNoteFromSelection: (message, sender, sendResponse) => {
+        handleCreateNoteFromSelection(message, sender, sendResponse);
+        return true;
+    },
     startReadAloud: (message, sender, sendResponse) => {
         handleStartReadAloud(message, sender, sendResponse);
         return true;

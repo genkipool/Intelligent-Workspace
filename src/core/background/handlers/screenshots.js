@@ -1,16 +1,15 @@
 /**
  * [AI INSTRUCTION]
- * SCREENSHOTS HANDLER — Screenshot capture and session indexing.
+ * SCREENSHOTS HANDLER — Screenshot capture.
  *
- * REUSE: Both area and full-page screenshots share session index logic via
- * `updateScreenshotSessionIndex()`. When adding new screenshot capture types,
- * use this function instead of duplicating the session storage update pattern.
+ * REUSE: where a capture is filed is not decided here. `getContentContextKey()`,
+ * `getContentSessionKeys()` and `addToContentSessionIndex()` in utils.js are that
+ * rule, shared with the notes taken from a page; use them rather than writing the
+ * session index by hand.
  *
- * Dependencies: saveScreenshotToDb() (from db.js), groupInfoMap (from state.js),
- *               SCREENSHOT_STORAGE_KEY (from state.js), getI18nMsg() (from utils.js)
+ * Dependencies: saveScreenshotToDb() (from db.js), SCREENSHOT_STORAGE_KEY (from
+ *               state.js), getI18nMsg() and the three helpers above (from utils.js)
  */
-
-// --- Shared Screenshot Infrastructure ---
 
 /**
  * Resolves the active tab from a sender, with fallback to active tab query.
@@ -24,51 +23,10 @@ async function resolveTabForScreenshot(sender) {
     return activeTabs.length > 0 ? activeTabs[0] : null;
 }
 
-/**
- * Computes the context key for storing a screenshot based on the tab's group.
- * @param {chrome.tabs.Tab} tab
- * @returns {string} Context key like 'g_ungrouped' or 'g_GroupName'
- */
-function getScreenshotContextKey(tab) {
-    if (tab.groupId !== -1 && tab.groupId !== -100) {
-        const info = groupInfoMap.get(tab.groupId);
-        if (info && info.key) {
-            return `g_${info.key}`;
-        }
-        return `g_${tab.groupId}`;
-    }
-    return 'g_ungrouped';
-}
-
-/**
- * Updates the session storage index for screenshots (group and subgroup keys).
- * This is the SINGLE source of truth for screenshot session indexing.
- * DO NOT duplicate this logic elsewhere.
- *
- * @param {chrome.tabs.Tab} tab - The tab the screenshot was taken from
- * @param {number} screenshotId - The ID of the saved screenshot
- */
+/** A capture is listed under both the group it came from and the domain inside it. */
 async function updateScreenshotSessionIndex(tab, screenshotId) {
-    const { [SCREENSHOT_STORAGE_KEY]: storedScreenshotIndexes = {} } =
-        await chrome.storage.session.get(SCREENSHOT_STORAGE_KEY);
-
-    // Group-level index
-    const groupKey = tab.groupId === -1 || tab.groupId === -100 ? 'g_ungrouped' : `g_${tab.groupId}`;
-    if (!storedScreenshotIndexes[groupKey]) storedScreenshotIndexes[groupKey] = [];
-    storedScreenshotIndexes[groupKey].push(screenshotId);
-
-    // Subgroup-level index (by domain within group)
-    try {
-        const domain = new URL(tab.url).hostname.replace(/^www\./, '');
-        const subgroupKey =
-            tab.groupId === -1 || tab.groupId === -100 ? `s_ungrouped_${domain}` : `s_${tab.groupId}_${domain}`;
-        if (!storedScreenshotIndexes[subgroupKey]) storedScreenshotIndexes[subgroupKey] = [];
-        storedScreenshotIndexes[subgroupKey].push(screenshotId);
-    } catch {
-        /* Not a valid URL */
-    }
-
-    await chrome.storage.session.set({ [SCREENSHOT_STORAGE_KEY]: storedScreenshotIndexes });
+    const { group, subgroup } = getContentSessionKeys(tab);
+    await addToContentSessionIndex(SCREENSHOT_STORAGE_KEY, [group, subgroup], screenshotId);
 }
 
 // --- Full page capture ---
@@ -342,7 +300,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
                     dataUrl: croppedDataUrl,
                     title: `${tab.title} (selection)`,
                     url: tab.url,
-                    contextKey: getScreenshotContextKey(tab),
+                    contextKey: getContentContextKey(tab),
                     isPersistent: false,
                 };
                 await saveScreenshotToDb(newScreenshot);
@@ -452,7 +410,7 @@ async function bringTabToFront(tab) {
  */
 async function captureAndFileTab(tab, mode) {
     const images = await CAPTURE_MODES[mode].capture(tab);
-    const contextKey = getScreenshotContextKey(tab);
+    const contextKey = getContentContextKey(tab);
 
     // The ceiling counts images, not captures: a long page taken in parts must not be
     // the thing that overruns it. This is the rule the panel already follows.
