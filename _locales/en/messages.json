@@ -11959,7 +11959,7 @@
     "message": "Read the page out loud",
     "description": "Keyboard command that starts the reader"
   },
-  "hintDesc_cn": {
+  "hintDesc_ao": {
     "message": "Create a note from the selected text",
     "description": "Keyboard command that writes the selection into a note"
   },

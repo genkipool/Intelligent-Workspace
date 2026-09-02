@@ -211,11 +211,17 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._send('captureAreaFromShortcut'),
                 description: 'hintDesc_ca',
             },
-            cn: {
+            ao: {
                 // The worker reads the selection and the heading out of the page, which
                 // is what lets this key and the context menu item be the same thing.
+                //
+                // Not a `c` key, though the capture ones are next door: while text is
+                // selected the arrow keys of the selection own `c d e h j k l n p u`
+                // before any command sees them, and a note is only ever asked for with
+                // text selected. Neither `a` nor `o` is one of those, and `a` is no
+                // command on its own, so pausing between the two does nothing.
                 action: () => this._send('createNoteFromSelection'),
-                description: 'hintDesc_cn',
+                description: 'hintDesc_ao',
             },
             ar: {
                 // The worker owns the injection, and it is the same call the panel
