@@ -1446,8 +1446,29 @@ export async function openPaymentInPanel(provider) {
         window.location.href = navSource;
     };
 
+    /**
+     * The hand-off window, so it can be closed when the payment it was opened for is done.
+     *
+     * The page cannot close itself: `window.close()` only works on a window a script
+     * opened, and `chrome.windows.create` is not that. So the id is kept here and the
+     * panel does it — which is also the only place that knows the payment finished, since
+     * the window reports back through the sheet.
+     */
+    let handoffWindowId = null;
+
+    const closeHandoffWindow = () => {
+        if (handoffWindowId === null) return;
+        const id = handoffWindowId;
+        handoffWindowId = null;
+        // Already gone if the reader closed it themselves; that is not an error.
+        chrome.windows.remove(id).catch(() => {});
+    };
+
     detachPaymentBridge = attachPaymentBridge(iframe, nonce, {
         onSuccess: ({ amount }) => {
+            // Before the notification: the thank-you belongs in the panel, and a paid-for
+            // window still sitting on screen behind it reads as something left undone.
+            closeHandoffWindow();
             if (amount) showNotification('donationThanksAmount', false, [String(amount)]);
             else showNotification('donationThanks');
             void leaveDonation(1800);
@@ -1479,7 +1500,12 @@ export async function openPaymentInPanel(provider) {
              * the panel showed something unrelated. It stays on the donation view while
              * they pay, and the back button still returns to the popup afterwards.
              */
-            chrome.windows.create({ url, type: 'popup', width: 480, height: 720, focused: true });
+            chrome.windows
+                .create({ url, type: 'popup', width: 480, height: 720, focused: true })
+                .then((created) => {
+                    handoffWindowId = created?.id ?? null;
+                })
+                .catch(() => {});
         },
     });
 
