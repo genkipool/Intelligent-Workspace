@@ -145,3 +145,32 @@ export function attachPaymentBridge(iframe, nonce, handlers = {}) {
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
 }
+
+/**
+ * Opens the connections the donation sheet will need, before anybody asks for it.
+ *
+ * The sheet's cost is its first load, and almost none of it is our page: `js.stripe.com`
+ * has to arrive and then stand up a controller and a metrics frame on two further
+ * origins. Paid when the panel opens the sheet, that is the reader watching "Loading the
+ * secure payment form". Paid when the panel itself opens — while they are looking at
+ * their tab groups — it costs them nothing.
+ *
+ * `preconnect` only: it does the DNS lookup and the TLS handshake and fetches nothing, so
+ * it is not subject to the extension's `script-src` (a `prefetch` with `as="script"` would
+ * be dropped by it, silently). The origin comes from `PAYMENT_ORIGIN` rather than being
+ * written out here, so a build pointed at a local site warms the local one.
+ *
+ * Safe to call more than once; the links are added once per page.
+ */
+export function warmPaymentOrigin() {
+    const origins = [PAYMENT_ORIGIN, 'https://js.stripe.com', 'https://m.stripe.network', 'https://q.stripe.com'];
+
+    for (const origin of origins) {
+        if (document.querySelector(`link[rel="preconnect"][href="${origin}"]`)) continue;
+        const link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = origin;
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+    }
+}

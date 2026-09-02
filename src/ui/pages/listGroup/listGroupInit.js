@@ -11,6 +11,7 @@ import { exportBookmarkFolder } from '../../../utils/importExport.js';
 import '../../../lib/marked.js';
 import { initializeBookmarksView } from '../../bookmarks/bookmarks.js';
 import { getProvider } from '../../../config/donationProviders.js';
+import { warmPaymentOrigin } from '../../services/paymentService.js';
 import { saveGeminiEntryToDb, getNoteFromDb } from '../../../utils/db.js';
 
 import {
@@ -544,6 +545,8 @@ function initRuntimeMessageListener() {
 }
 
 export async function initializeAllEvents() {
+    // Open the donation sheet's connections now, while nobody is waiting on them.
+    warmPaymentOrigin();
     initSearchEvents();
     initNotesEvents();
     initScreenshotEvents();

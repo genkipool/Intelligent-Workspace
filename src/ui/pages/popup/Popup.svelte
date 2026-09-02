@@ -17,6 +17,7 @@
     import '../../../core/services/webActivitySchema.js';
     import { saveSettings } from '../../services/webActivityService.js';
     import { navigateToPanel, primePanelContexts } from '../../services/panelNavigation.js';
+    import { warmPaymentOrigin } from '../../services/paymentService.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
@@ -25,6 +26,7 @@
     let contextsCache = null;
 
     onMount(async () => {
+        warmPaymentOrigin();
         await i18nStore.init();
         await themeStore.init();
         await settingsStore.init();
