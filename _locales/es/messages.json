@@ -9076,6 +9076,33 @@
     "omnibarPrefixTabsSplitDesc": {
         "message": "Buscar pestañas y abrir en pantalla dividida"
     },
+    "omnibarPrefixCaptureVisibleTitle": {
+        "message": "Capturar (área visible)"
+    },
+    "omnibarPrefixCaptureVisibleDesc": {
+        "message": "Elige pestañas y guarda lo que se ve de cada una"
+    },
+    "omnibarPrefixCaptureFullPageTitle": {
+        "message": "Capturar (página completa)"
+    },
+    "omnibarPrefixCaptureFullPageDesc": {
+        "message": "Elige pestañas y guarda cada página entera"
+    },
+    "omnibarPrefixCapturePartsTitle": {
+        "message": "Capturar (por partes)"
+    },
+    "omnibarPrefixCapturePartsDesc": {
+        "message": "Elige pestañas y guarda cada página pantalla a pantalla"
+    },
+    "omnibarPrefixCaptureAreaTitle": {
+        "message": "Capturar (área)"
+    },
+    "omnibarPrefixCaptureAreaDesc": {
+        "message": "Elige pestañas y recorta un área en cada una, por turnos"
+    },
+    "omnibarClickCaptureTab": {
+        "message": "Clic o Enter para capturar. Espacio / Ctrl+Clic para seleccionar varias."
+    },
     "omnibarClickDeleteTab": {
         "message": "Haz clic para eliminar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para rango."
     },
@@ -11740,6 +11767,10 @@
         "message": "Página completa",
         "description": "Marca una imagen de la galería capturada con desplazamiento"
     },
+    "fullPagePartBadge": {
+        "message": "Captura parte $1/$2",
+        "description": "Marca una parte de una página completa capturada por partes"
+    },
     "generatingPdf": {
         "message": "Creando el PDF…",
         "description": "Se muestra mientras se escribe el PDF"
@@ -11923,21 +11954,6 @@
     "captureFullPageSplit": {
         "message": "Capturar la p\u00e1gina completa por partes",
         "description": "Una imagen por pantalla en vez de una imagen larga"
-    },
-    "fullPagePartTitle": {
-        "message": "$1 (parte $2 de $3)",
-        "description": "T\u00edtulo de una parte de una captura completa por partes",
-        "placeholders": {
-            "title": {
-                "content": "$1"
-            },
-            "part": {
-                "content": "$2"
-            },
-            "total": {
-                "content": "$3"
-            }
-        }
     },
     "categoryReadAloudControls": {
         "message": "Lector de p\u00e1ginas (mientras est\u00e1 abierto)",

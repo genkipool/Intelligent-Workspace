@@ -360,6 +360,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
             if (tab && tab.id) {
                 chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
             }
+            startNextAreaCapture();
             if (saveToGallery) {
                 notifyCapture('screenshotSavedAndCopied');
             }
@@ -370,6 +371,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
             if (tab && tab.id) {
                 chrome.tabs.sendMessage(tab.id, finishErrMsg).catch(() => {});
             }
+            startNextAreaCapture();
             if (saveToGallery) {
                 notifyCapture('errorTakingScreenshot');
             }
@@ -377,11 +379,11 @@ async function handleCaptureAreaScreenshot(message, sender) {
     })();
 }
 
-// --- Captures asked for by a page shortcut ---
+// --- Captures asked for from a page: the keyboard shortcuts and the omnibar ---
 //
 // The panel files its own captures — it knows which group the image belongs to — but
-// a keyboard shortcut has no panel behind it, so the worker saves the image itself.
-// The three modes are the ones the panel's camera menu offers, and they differ only
+// a shortcut and the omnibar have no panel behind them, so the worker saves the image
+// itself. The modes are the ones the panel's camera menu offers, and they differ only
 // in which walker produces the images and in the notice that goes up meanwhile.
 
 /**
@@ -407,14 +409,90 @@ async function captureVisibleTabImages(tab) {
 }
 
 /**
- * The capture modes a shortcut can ask for. Adding one is adding an entry here and
- * the key that sends it — nothing else in this file knows how many there are.
+ * The capture modes a page can ask for. Adding one is adding an entry here and the
+ * key or prefix that sends it — nothing else in this file knows how many there are.
  */
-const SHORTCUT_CAPTURE_MODES = {
+const CAPTURE_MODES = {
     visible: { notice: 'capturingVisibleNotify', capture: captureVisibleTabImages },
     fullPage: { notice: 'capturingFullPageNotify', capture: async (tab) => [await captureFullPageDataUrl(tab)] },
     fullPageParts: { notice: 'capturingFullPagePartsNotify', capture: captureFullPageParts },
 };
+
+/** How long a tab needs after being brought to the front before it has painted. */
+const TAB_ACTIVATION_MS = 750;
+
+/** What the gallery holds at most; the panel refuses a capture past this too. */
+const MAX_SCREENSHOTS = 100;
+
+/** How many images the gallery is holding, counted off the session index. */
+async function countStoredScreenshots() {
+    const { [SCREENSHOT_STORAGE_KEY]: index = {} } = await chrome.storage.session.get(SCREENSHOT_STORAGE_KEY);
+    return Object.entries(index).reduce((total, [key, ids]) => (key.startsWith('g_') ? total + ids.length : total), 0);
+}
+
+/**
+ * Brings one tab to the front, because `captureVisibleTab` only ever returns the tab
+ * that is on screen.
+ */
+async function bringTabToFront(tab) {
+    const targetWindow = await chrome.windows.get(tab.windowId);
+    if (targetWindow.state === 'minimized') await chrome.windows.update(tab.windowId, { state: 'normal' });
+    await chrome.windows.update(tab.windowId, { focused: true });
+    await chrome.tabs.update(tab.id, { active: true });
+    await captureDelay(TAB_ACTIVATION_MS);
+}
+
+/**
+ * Captures one tab in one mode and files every image it produced.
+ *
+ * @param {chrome.tabs.Tab} tab
+ * @param {'visible'|'fullPage'|'fullPageParts'} mode
+ * @returns {Promise<string[]>} The images that were filed, so that a caller of a
+ *   single capture can offer it to the clipboard.
+ */
+async function captureAndFileTab(tab, mode) {
+    const images = await CAPTURE_MODES[mode].capture(tab);
+    const contextKey = getScreenshotContextKey(tab);
+
+    // The ceiling counts images, not captures: a long page taken in parts must not be
+    // the thing that overruns it. This is the rule the panel already follows.
+    const room = Math.max(0, MAX_SCREENSHOTS - (await countStoredScreenshots()));
+    const kept = images.slice(0, room);
+    if (kept.length < images.length) notifyCapture('screenshotLimitReached');
+
+    for (const [position, dataUrl] of kept.entries()) {
+        const screenshotId = Date.now() + position;
+        await saveScreenshotToDb({
+            id: screenshotId,
+            dataUrl,
+            title: tab.title,
+            url: tab.url,
+            contextKey,
+            isPersistent: false,
+            // What tells the gallery how to label this one: a whole page is a different
+            // kind of thing from a screenful of it, and a page taken in parts says which
+            // part it is. The label itself is built where it is shown, so that it
+            // follows the language the reader picked rather than the one in force when
+            // the capture was taken.
+            isFullPage: mode !== 'visible',
+            ...(kept.length > 1 ? { part: position + 1, partsTotal: kept.length } : {}),
+        });
+        await updateScreenshotSessionIndex(tab, screenshotId);
+    }
+    return kept;
+}
+
+/** Tells the panel that the gallery has something new in it. */
+function broadcastCaptureFinished(tab) {
+    const finishMsg = { action: 'fullPageScreenshotFinished', success: true };
+    chrome.runtime.sendMessage(finishMsg);
+    if (tab?.id) chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
+}
+
+/** The mode a message asked for, or the one that needs no scrolling. */
+function resolveCaptureMode(mode) {
+    return CAPTURE_MODES[mode] ? mode : 'visible';
+}
 
 /**
  * Captures the active tab from a page shortcut and files what comes back.
@@ -425,45 +503,19 @@ const SHORTCUT_CAPTURE_MODES = {
  *   caller may put on the clipboard, or none at all when the page came back in parts.
  */
 async function handleCaptureFromShortcut(message, sender, sendResponse) {
-    const mode = SHORTCUT_CAPTURE_MODES[message.mode] ? message.mode : 'visible';
-    const { notice, capture } = SHORTCUT_CAPTURE_MODES[mode];
-    notifyCapture(notice);
+    const mode = resolveCaptureMode(message.mode);
+    notifyCapture(CAPTURE_MODES[mode].notice);
 
     try {
         const tab = await resolveTabForScreenshot(sender);
         if (!tab) throw new Error('No tab found to capture');
 
-        const images = await capture(tab);
-        const contextKey = getScreenshotContextKey(tab);
-
-        for (const [position, dataUrl] of images.entries()) {
-            const screenshotId = Date.now() + position;
-            await saveScreenshotToDb({
-                id: screenshotId,
-                dataUrl,
-                title:
-                    images.length > 1
-                        ? getI18nMsg('fullPagePartTitle', [
-                              tab.title || '',
-                              String(position + 1),
-                              String(images.length),
-                          ])
-                        : tab.title,
-                url: tab.url,
-                contextKey,
-                isPersistent: false,
-                // What tells the gallery to badge this one: a whole page is a different
-                // kind of thing from a screenful of it.
-                isFullPage: mode !== 'visible',
-            });
-            await updateScreenshotSessionIndex(tab, screenshotId);
+        const images = await captureAndFileTab(tab, mode);
+        if (images.length === 0) {
+            sendResponse({ success: false, error: 'The gallery is full' });
+            return;
         }
-
-        const finishMsg = { action: 'fullPageScreenshotFinished', success: true };
-        chrome.runtime.sendMessage(finishMsg);
-        if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
-        }
+        broadcastCaptureFinished(tab);
 
         // Only a lone image is offered to the clipboard: a page taken in parts would
         // leave whichever piece happened to be last on it, which is nobody's intent.
@@ -477,33 +529,102 @@ async function handleCaptureFromShortcut(message, sender, sendResponse) {
     }
 }
 
+/**
+ * Captures the tabs the omnibar picked, one after another.
+ *
+ * They cannot go in parallel: every capture has to bring its tab to the front, and
+ * Chrome only ever captures the one that is visible. The browser is put back where it
+ * was once, at the end, rather than after each tab.
+ *
+ * @param {{mode?: string, tabIds?: number[]}} message
+ */
+async function handleCaptureTabs(message, sender, sendResponse) {
+    const tabIds = (Array.isArray(message.tabIds) ? message.tabIds : []).map(Number).filter(Number.isInteger);
+    if (tabIds.length === 0) {
+        sendResponse({ success: false, error: 'No tabs to capture' });
+        return;
+    }
+
+    // The area picker is the one mode the user has to answer, so it is not a loop but
+    // a queue: each tab's turn starts when the one before it is done.
+    if (message.mode === 'area') {
+        startAreaCaptureQueue(tabIds);
+        sendResponse({ success: true, count: tabIds.length });
+        return;
+    }
+
+    const mode = resolveCaptureMode(message.mode);
+    notifyCapture(CAPTURE_MODES[mode].notice);
+
+    const [origin] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    let saved = 0;
+    let lastTab = null;
+    let galleryFull = false;
+
+    for (const tabId of tabIds) {
+        try {
+            const tab = await chrome.tabs.get(tabId);
+            // Chrome refuses its own pages and the store, and so does the panel.
+            if (!canInjectIntoPage(tab.url)) continue;
+            await bringTabToFront(tab);
+            const kept = await captureAndFileTab(tab, mode);
+            // Nothing was filed because there is no room left: the tabs after this one
+            // would fare no better, and each of them would say so again.
+            if (kept.length === 0) {
+                galleryFull = true;
+                break;
+            }
+            saved += kept.length;
+            lastTab = tab;
+        } catch (error) {
+            console.error(`Error capturing tab ${tabId}:`, error);
+        }
+    }
+
+    if (origin?.id) {
+        await chrome.windows.update(origin.windowId, { focused: true }).catch(() => {});
+        await chrome.tabs.update(origin.id, { active: true }).catch(() => {});
+    }
+
+    if (saved > 0) {
+        broadcastCaptureFinished(lastTab);
+        notifyCapture('screenshotSaved');
+    } else if (!galleryFull) {
+        // A full gallery has already said so; anything else has not.
+        notifyCapture('errorTakingScreenshot');
+    }
+    sendResponse({ success: saved > 0, count: saved });
+}
+
+/**
+ * Puts the area selector over one tab.
+ *
+ * The flag has to be planted before the script runs: it is what tells the selector
+ * whether the crop is destined for the gallery or for whoever asked (the QR reader
+ * asks for one it does not want filed).
+ */
+async function injectAreaSelector(tabId, saveToGallery = true) {
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        func: (save) => {
+            window._areaSelectorSaveToGallery = save;
+        },
+        args: [saveToGallery],
+        world: 'ISOLATED',
+    });
+    await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['src/utils/area-selector.js'],
+        world: 'ISOLATED',
+    });
+    await chrome.scripting.insertCSS({ target: { tabId }, files: ['src/utils/area-selector.css'] });
+}
+
 function handleInjectAreaSelector(message, sender, sendResponse) {
-    const tabId = message.tabId;
-    const saveToGallery = message.saveToGallery !== false;
-    if (tabId) {
-        chrome.scripting
-            .executeScript({
-                target: { tabId },
-                func: (save) => {
-                    window._areaSelectorSaveToGallery = save;
-                },
-                args: [saveToGallery],
-                world: 'ISOLATED',
-            })
-            .then(() => {
-                chrome.scripting.executeScript({
-                    target: { tabId },
-                    files: ['src/utils/area-selector.js'],
-                    world: 'ISOLATED',
-                });
-                chrome.scripting.insertCSS({
-                    target: { tabId },
-                    files: ['src/utils/area-selector.css'],
-                });
-            })
-            .catch((err) => {
-                console.error('Error injecting area selector script:', err);
-            });
+    if (message.tabId) {
+        injectAreaSelector(message.tabId, message.saveToGallery !== false).catch((error) => {
+            console.error('Error injecting area selector script:', error);
+        });
     }
     sendResponse({ success: true });
 }
@@ -511,24 +632,50 @@ function handleInjectAreaSelector(message, sender, sendResponse) {
 function handleCaptureAreaFromShortcut(message, sender, sendResponse) {
     const tab = sender.tab;
     if (tab && tab.id) {
-        chrome.scripting.executeScript({
-            target: {
-                tabId: tab.id,
-            },
-            files: ['src/utils/area-selector.js'],
-            world: 'ISOLATED',
-        });
-        chrome.scripting.insertCSS({
-            target: {
-                tabId: tab.id,
-            },
-            files: ['src/utils/area-selector.css'],
+        injectAreaSelector(tab.id).catch((error) => {
+            console.error('Error injecting area selector script:', error);
         });
         notifyCapture('capturingAreaNotify');
     }
-    sendResponse({
-        success: true,
-    });
+    sendResponse({ success: true });
+}
+
+// --- The queue behind an area capture of several tabs ---
+//
+// Every other mode is a loop the worker runs on its own. This one cannot be: the crop
+// is drawn by hand, so a tab's turn only ends when the person has answered, and the
+// next one starts from that answer — whether it was a selection or an Escape.
+
+/** Tabs still waiting their turn with the area selector, in the order they were given. */
+let areaCaptureQueue = [];
+
+/** Starts an area capture of `tabIds`, replacing any batch still in progress. */
+function startAreaCaptureQueue(tabIds) {
+    areaCaptureQueue = [...tabIds];
+    notifyCapture('capturingAreaNotify');
+    startNextAreaCapture();
+}
+
+/** Hands the selector to the next tab of the batch, if there is one left. */
+async function startNextAreaCapture() {
+    while (areaCaptureQueue.length > 0) {
+        const tabId = areaCaptureQueue.shift();
+        try {
+            const tab = await chrome.tabs.get(tabId);
+            if (!canInjectIntoPage(tab.url)) continue;
+            await bringTabToFront(tab);
+            await injectAreaSelector(tab.id);
+            return;
+        } catch (error) {
+            console.error(`Error starting the area capture of tab ${tabId}:`, error);
+        }
+    }
+}
+
+/** The selector was closed with Escape: nothing was captured, and the batch goes on. */
+function handleAreaSelectionCancelled(message, sender, sendResponse) {
+    startNextAreaCapture();
+    sendResponse({ success: true });
 }
 
 // --- Screen colour picker ---

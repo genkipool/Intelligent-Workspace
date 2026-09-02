@@ -119,6 +119,13 @@
 
             await new Promise((resolve) => {
                 const listener = async (message) => {
+                    // Escape closes the selector without capturing anything; the scan
+                    // is simply off, and nothing went wrong worth a message.
+                    if (message.action === 'areaSelectionCancelled') {
+                        chrome.runtime.onMessage.removeListener(listener);
+                        resolve();
+                        return;
+                    }
                     if (message.action === 'areaScreenshotProcessFinished') {
                         chrome.runtime.onMessage.removeListener(listener);
                         if (message.success && message.dataUrl) {

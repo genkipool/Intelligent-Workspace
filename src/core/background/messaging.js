@@ -743,6 +743,14 @@ const MESSAGE_HANDLERS = {
         handleCaptureFromShortcut(message, sender, sendResponse);
         return true;
     },
+    captureTabs: (message, sender, sendResponse) => {
+        handleCaptureTabs(message, sender, sendResponse);
+        return true;
+    },
+    areaSelectionCancelled: (message, sender, sendResponse) => {
+        handleAreaSelectionCancelled(message, sender, sendResponse);
+        return true;
+    },
     captureFullPage: (message, sender, sendResponse) => {
         handleCaptureFullPage(message, sender, sendResponse);
         return true;

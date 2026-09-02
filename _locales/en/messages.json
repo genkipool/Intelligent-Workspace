@@ -9079,6 +9079,33 @@
   "omnibarPrefixTabsSplitDesc": {
     "message": "Search tabs and open in split screen"
   },
+  "omnibarPrefixCaptureVisibleTitle": {
+    "message": "Capture (visible area)"
+  },
+  "omnibarPrefixCaptureVisibleDesc": {
+    "message": "Pick tabs and save what is on screen in each one"
+  },
+  "omnibarPrefixCaptureFullPageTitle": {
+    "message": "Capture (full page)"
+  },
+  "omnibarPrefixCaptureFullPageDesc": {
+    "message": "Pick tabs and save each page whole"
+  },
+  "omnibarPrefixCapturePartsTitle": {
+    "message": "Capture (in parts)"
+  },
+  "omnibarPrefixCapturePartsDesc": {
+    "message": "Pick tabs and save each page one screenful at a time"
+  },
+  "omnibarPrefixCaptureAreaTitle": {
+    "message": "Capture (area)"
+  },
+  "omnibarPrefixCaptureAreaDesc": {
+    "message": "Pick tabs and crop an area on each one, in turn"
+  },
+  "omnibarClickCaptureTab": {
+    "message": "Click or Enter to capture. Space / Ctrl+Click to select several."
+  },
   "omnibarClickDeleteTab": {
     "message": "Click to delete. Space / Ctrl+Click to select, Shift+Click to select range."
   },
@@ -11760,6 +11787,10 @@
     "message": "Full page",
     "description": "Marks a gallery image captured by scrolling"
   },
+  "fullPagePartBadge": {
+    "message": "Capture part $1/$2",
+    "description": "Marks one piece of a full page captured in parts"
+  },
   "generatingPdf": {
     "message": "Building the PDF…",
     "description": "Shown while the PDF is written"
@@ -11943,21 +11974,6 @@
   "captureFullPageSplit": {
     "message": "Capture the full page in parts",
     "description": "One image per screenful instead of one tall image"
-  },
-  "fullPagePartTitle": {
-    "message": "$1 (part $2 of $3)",
-    "description": "Title given to one piece of a split full page capture",
-    "placeholders": {
-      "title": {
-        "content": "$1"
-      },
-      "part": {
-        "content": "$2"
-      },
-      "total": {
-        "content": "$3"
-      }
-    }
   },
   "categoryReadAloudControls": {
     "message": "Page reader (while open)",

@@ -102,6 +102,10 @@ const COMMAND_LIMITS = {
     prefixSearchAmazon: 4,
     prefixSearchAmazonES: 4,
     prefixReadAloud: 4,
+    omnibarPrefixCaptureVisibleDesc: 4,
+    omnibarPrefixCaptureFullPageDesc: 4,
+    omnibarPrefixCapturePartsDesc: 4,
+    omnibarPrefixCaptureAreaDesc: 4,
     omnibarPrefixChangeRuleColor: 4,
     omnibarPrefixChangeGroupColor: 4,
 };

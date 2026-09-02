@@ -9,6 +9,13 @@ var getOmniMsg = (key, params, fallback) => {
     return typeof params === 'string' ? params : fallback || key;
 };
 
+/**
+ * Row kinds that stand for one open tab and can be gathered into a batch: what the
+ * row is worth as an id is the tab it points at, whatever the batch is going to do
+ * with it. Adding an action over tabs means adding its kind here.
+ */
+var TAB_ACTION_TYPES = new Set(['dt', 'ts', 'capture']);
+
 var OmniBar = class OmniBar {
     constructor() {
         this.active = false;
@@ -313,6 +320,11 @@ var OmniBar = class OmniBar {
                     title: getOmniMsg('omnibarPrefixTabsSplitTitle') || 'Tabs (Split Screen)',
                     desc: getOmniMsg('omnibarPrefixTabsSplitDesc') || 'Search tabs and open in split screen',
                 },
+                ...this._getCapturePrefixes().map((entry) => ({
+                    prefix: entry.prefix,
+                    title: getOmniMsg(entry.titleKey) || entry.title,
+                    desc: getOmniMsg(entry.descKey) || entry.desc,
+                })),
                 {
                     prefix: this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
                     title: getOmniMsg('omnibarPrefixBackupTitle') || 'Backups',
@@ -500,6 +512,15 @@ var OmniBar = class OmniBar {
             const q = query.substring(prefixUsed.length).trim();
             const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
             this._renderResults(filtered, isPopup ? 'popup-tab' : isVideoPip ? 'video-pip-tab' : 'pip-tab');
+            return;
+        }
+
+        // -- cs: / cp: / cpp: / ca: Capture the chosen tabs ---------
+        const capture = this._getCaptureMode(lower);
+        if (capture) {
+            const q = query.substring(capture.prefix.length).trim();
+            const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
+            this._renderResults(filtered, 'capture');
             return;
         }
 
@@ -1808,13 +1829,11 @@ var OmniBar = class OmniBar {
         const pBgSpace = this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc');
         const isBg = currentLower.startsWith(pBgSpace);
         const isBgr = currentLower.startsWith(this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'));
-        const spaceNeedsNav = isDg || isCt || isTs || isRl || isDrl || isAtr || isBg || isBgr || isCcr || isCcg;
+        const isCapture = !!this._getCaptureMode(currentLower);
+        const spaceNeedsNav =
+            isDg || isCt || isTs || isCapture || isRl || isDrl || isAtr || isBg || isBgr || isCcr || isCcg;
         const spaceAllowed = (spaceNeedsNav && this.hasNavigated) || isCrlSelect;
-        if (
-            event.key === ' ' &&
-            spaceAllowed &&
-            (isDg || isCt || isTs || isRl || isDrl || isAtr || isCrlSelect || isBg || isBgr || isCcr || isCcg)
-        ) {
+        if (event.key === ' ' && spaceAllowed && (spaceNeedsNav || isCrlSelect)) {
             if (count > 0) {
                 const selectedItem = items[this.selectedIndex];
                 if (
@@ -2771,6 +2790,57 @@ var OmniBar = class OmniBar {
             title: getOmniMsg(titleKey) || site,
             desc: template.replace('$SITE$', site).replace('$1', site),
         }));
+    }
+
+    /**
+     * The capture prefixes, longest first so that a prefix which is the start of
+     * another one cannot swallow it.
+     *
+     * The modes are the panel's, and so is the wording of the rows they produce; the
+     * worker does the capturing in every case (`captureTabs`).
+     */
+    _getCapturePrefixes() {
+        const entries = [
+            {
+                fallback: 'cpp:',
+                mode: 'fullPageParts',
+                titleKey: 'omnibarPrefixCapturePartsTitle',
+                title: 'Capture (in parts)',
+                descKey: 'omnibarPrefixCapturePartsDesc',
+                desc: 'Pick tabs and save each page one screenful at a time',
+            },
+            {
+                fallback: 'cp:',
+                mode: 'fullPage',
+                titleKey: 'omnibarPrefixCaptureFullPageTitle',
+                title: 'Capture (full page)',
+                descKey: 'omnibarPrefixCaptureFullPageDesc',
+                desc: 'Pick tabs and save each page whole',
+            },
+            {
+                fallback: 'cs:',
+                mode: 'visible',
+                titleKey: 'omnibarPrefixCaptureVisibleTitle',
+                title: 'Capture (visible area)',
+                descKey: 'omnibarPrefixCaptureVisibleDesc',
+                desc: 'Pick tabs and save what is on screen in each one',
+            },
+            {
+                fallback: 'ca:',
+                mode: 'area',
+                titleKey: 'omnibarPrefixCaptureAreaTitle',
+                title: 'Capture (area)',
+                descKey: 'omnibarPrefixCaptureAreaDesc',
+                desc: 'Pick tabs and crop an area on each one, in turn',
+            },
+        ];
+        return entries.map((entry) => ({ ...entry, prefix: this._getPrefixVal(entry.fallback, entry.descKey) }));
+    }
+
+    /** Which capture the box is asking for, if it is asking for one at all. */
+    _getCaptureMode(value) {
+        const lower = (value || '').trim().toLowerCase();
+        return this._getCapturePrefixes().find((entry) => lower.startsWith(entry.prefix)) || null;
     }
 
     _getPrefixVal(defaultPrefix, descKey) {
@@ -3791,9 +3861,7 @@ IMPORTANT RULES:
             // Apply visual selection style if active
             if (!data.isSpecialAction) {
                 let isSelected = false;
-                if (type === 'dg') {
-                    isSelected = data.id && this.selectedActionItems.has(data.id);
-                } else if (type === 'dt' || type === 'ts') {
+                if (type === 'dg' || TAB_ACTION_TYPES.has(type)) {
                     isSelected = data.id && this.selectedActionItems.has(data.id);
                 } else if (type === 'bg-item') {
                     if (data.type === 'bg-group') {
@@ -3885,16 +3953,30 @@ IMPORTANT RULES:
                     }
                 }
             } else if (
-                ['tab', 'popup-tab', 'pip-tab', 'video-pip-tab', 'read-aloud-tab', 'ae-tab', 'dt', 'ts'].includes(type)
+                [
+                    'tab',
+                    'popup-tab',
+                    'pip-tab',
+                    'video-pip-tab',
+                    'read-aloud-tab',
+                    'ae-tab',
+                    'dt',
+                    'ts',
+                    'capture',
+                ].includes(type)
             ) {
                 title = data.title || getOmniMsg('omnibarUntitledTab') || 'Untitled';
                 li.dataset.tabId = data.id;
                 li.dataset.windowId = data.windowId;
                 li.dataset.url = data.url;
                 favIcon = data.favIconUrl || favIcon;
-                if (type === 'popup-tab') title = `${title}`;
-                if (type === 'pip-tab') title = `${title}`;
-                if (type === 'video-pip-tab') title = `${title}`;
+                // The row says what will happen to it, because a capture takes several
+                // tabs and the way to add one to the batch is not obvious.
+                if (type === 'capture') {
+                    url =
+                        getOmniMsg('omnibarClickCaptureTab') ||
+                        'Click or Enter to capture. Space / Ctrl+Click to select several.';
+                }
             } else if (['b', 'h', 'c'].includes(type)) {
                 title = data.title || data.url;
                 li.dataset.url = data.url;
@@ -4854,6 +4936,19 @@ IMPORTANT RULES:
                         });
                         this.close();
                     });
+                } else if (type === 'capture') {
+                    // Which capture it is stays in the box, not in the row: the four
+                    // prefixes list the same tabs and differ only in what is asked of
+                    // the worker, which is the one that files the images.
+                    const mode = this._getCaptureMode(this.shadow.getElementById('hint-omni-input').value);
+                    this._handleMultiSelectionClick(e, li, (ids) => {
+                        chrome.runtime.sendMessage({
+                            action: 'captureTabs',
+                            mode: mode ? mode.mode : 'visible',
+                            tabIds: ids,
+                        });
+                        this.close();
+                    });
                 } else if (type === 'bg-item') {
                     const currentInput = this.shadow.getElementById('hint-omni-input').value;
                     const pBgClick = this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc');
@@ -5015,20 +5110,10 @@ IMPORTANT RULES:
             if (!this.selectedActionItems) {
                 this.selectedActionItems = new Set();
             }
-            const getLiId = (item) => {
-                const itemType = item.dataset.type;
-                if (itemType === 'dg') return parseInt(item.dataset.groupId);
-                if (itemType === 'bg-item')
-                    return item.dataset.bgType === 'bg-group'
-                        ? parseInt(item.dataset.groupId)
-                        : `${item.dataset.groupId}::${item.dataset.tabUrl}`;
-                if (itemType === 'dt' || itemType === 'ts') return parseInt(item.dataset.tabId);
-                return item.dataset.actionId;
-            };
             if (this.selectedActionItems.size > 0) {
                 confirmAction(Array.from(this.selectedActionItems));
             } else {
-                const actionId = getLiId(li);
+                const actionId = this._actionItemId(li);
                 if (actionId !== undefined) {
                     this.selectedActionItems.add(actionId);
                 }
@@ -5036,26 +5121,22 @@ IMPORTANT RULES:
             }
         }
     }
+    /** What one row stands for in a batch: the thing the action will be run on. */
+    _actionItemId(item) {
+        const itemType = item.dataset.type;
+        if (itemType === 'dg') return parseInt(item.dataset.groupId);
+        if (itemType === 'bg-item') {
+            return item.dataset.bgType === 'bg-group'
+                ? parseInt(item.dataset.groupId)
+                : `${item.dataset.groupId}::${item.dataset.tabUrl}`;
+        }
+        if (TAB_ACTION_TYPES.has(itemType)) return parseInt(item.dataset.tabId);
+        return item.dataset.actionId;
+    }
     _toggleActionItemSelection(li, isShift, isCtrlOrSpace) {
         const resultsList = this.shadow.getElementById('hint-omni-results');
         const items = Array.from(resultsList.getElementsByTagName('li'));
         const idx = parseInt(li.dataset.index);
-        const getLiId = (item) => {
-            const itemType = item.dataset.type;
-            if (itemType === 'dg') {
-                return parseInt(item.dataset.groupId);
-            } else if (itemType === 'bg-item') {
-                if (item.dataset.bgType === 'bg-group') {
-                    return parseInt(item.dataset.groupId);
-                } else {
-                    return `${item.dataset.groupId}::${item.dataset.tabUrl}`;
-                }
-            } else if (itemType === 'dt' || itemType === 'ts') {
-                return parseInt(item.dataset.tabId);
-            } else {
-                return item.dataset.actionId;
-            }
-        };
         const isDeleteType = (itemType) => {
             return itemType === 'dg' || itemType === 'dt' || itemType === 'dr-item';
         };
@@ -5069,7 +5150,7 @@ IMPORTANT RULES:
                     !item.classList.contains('delete-all-filtered') &&
                     !item.classList.contains('add-all-filtered')
                 ) {
-                    const id = getLiId(item);
+                    const id = this._actionItemId(item);
                     if (id !== undefined && id !== null) {
                         this.selectedActionItems.add(id);
                         const isDelete = isDeleteType(item.dataset.type);
@@ -5078,7 +5159,7 @@ IMPORTANT RULES:
                 }
             }
         } else {
-            const id = getLiId(li);
+            const id = this._actionItemId(li);
             if (id !== undefined && id !== null) {
                 const isDelete = isDeleteType(li.dataset.type);
                 const className = isDelete ? 'action-selected' : 'action-selected-theme';

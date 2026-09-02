@@ -22,24 +22,28 @@
         startY,
         isDrawing = false;
 
-    const cleanup = () => {
+    /**
+     * Takes the overlay down.
+     *
+     * `cancelled` means nothing was captured — Escape, or a selection too small to be
+     * one. Whoever is waiting for the crop has to be told, or it waits for a message
+     * that is never coming: the panel, the QR reader, and the queue behind an area
+     * capture of several tabs all hang on that answer.
+     */
+    const cleanup = (cancelled = false) => {
         if (overlay) {
             overlay.remove();
         }
 
         document.removeEventListener('keydown', handleKeydown);
-    };
-
-    // Store dataUrl in session storage for the side panel to copy after focus restoration
-    chrome.runtime.onMessage.addListener(function onAreaFinish(msg) {
-        if (msg.action === 'areaScreenshotProcessFinished') {
-            chrome.runtime.onMessage.removeListener(onAreaFinish);
+        if (cancelled) {
+            chrome.runtime.sendMessage({ action: 'areaSelectionCancelled' });
         }
-    });
+    };
 
     const handleKeydown = (e) => {
         if (e.key === 'Escape') {
-            cleanup();
+            cleanup(true);
         }
     };
 
@@ -83,7 +87,7 @@
 
         // Do not capture if the area is too small
         if (rect.width < 10 || rect.height < 10) {
-            cleanup();
+            cleanup(true);
             return;
         }
 

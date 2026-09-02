@@ -423,26 +423,21 @@ export async function handleScreenshotRequest(tab, context, options = {}) {
 
         let newCount = 0;
         for (const [position, dataUrl] of kept.entries()) {
-            const title =
-                kept.length > 1
-                    ? chrome.i18n.getMessage('fullPagePartTitle', [
-                          tab.title || '',
-                          String(position + 1),
-                          String(kept.length),
-                      ]) || `${tab.title} (${position + 1}/${kept.length})`
-                    : tab.title;
-
             newCount = await storeScreenshot(
                 {
                     id: Date.now() + Math.random(),
                     dataUrl,
-                    title,
+                    title: tab.title,
                     url: tab.url,
                     contextKey: keys.contextKey,
                     isPersistent: false,
-                    // What tells the gallery to badge this one: a whole page is a
-                    // different kind of thing from a screenful of it.
+                    // What tells the gallery how to label this one: a whole page is a
+                    // different kind of thing from a screenful of it, and a page taken
+                    // in parts says which part it is. The label is built where it is
+                    // shown, so that it follows the language the reader picked rather
+                    // than the one in force when the capture was taken.
                     isFullPage: mode !== 'visible',
+                    ...(kept.length > 1 ? { part: position + 1, partsTotal: kept.length } : {}),
                 },
                 keys,
             );
@@ -501,6 +496,14 @@ export async function captureTabArea(tab) {
         () =>
             new Promise((resolve) => {
                 const listener = (message) => {
+                    // Escape closes the selector without capturing anything, and it
+                    // says so: without that branch this waited for a crop that was
+                    // never coming, and the listener stayed behind with it.
+                    if (message.action === 'areaSelectionCancelled') {
+                        chrome.runtime.onMessage.removeListener(listener);
+                        resolve();
+                        return;
+                    }
                     if (message.action !== 'areaScreenshotProcessFinished') return;
                     chrome.runtime.onMessage.removeListener(listener);
                     if (message.success) areaDataUrl = message.dataUrl || null;
@@ -797,8 +800,15 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
         askDownloadFormat([fullScreenshot]);
     });
 
-    // A capture of a whole page says so, now that it no longer has a button of its
-    // own to set it apart from a capture of one screenful.
+    // A capture of a whole page says so, now that it no longer has a button of its own
+    // to set it apart from a capture of one screenful — and one taken in parts says
+    // which part it is instead. `applyTranslations` resolves both at the end of this
+    // function, so the badge follows the language the reader picked.
+    const badge = galleryItem.querySelector('.gallery-full-page-badge');
+    if (badge && fullScreenshot.part && fullScreenshot.partsTotal) {
+        badge.setAttribute('data-i18n', 'fullPagePartBadge');
+        badge.dataset.params = JSON.stringify([String(fullScreenshot.part), String(fullScreenshot.partsTotal)]);
+    }
     galleryItem.classList.toggle('is-full-page', Boolean(fullScreenshot.isFullPage));
     galleryItem.querySelector('.delete-btn').addEventListener('click', async (e) => {
         e.stopPropagation();

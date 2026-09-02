@@ -234,6 +234,13 @@ var HintCommon = {
             'limg:': 'prefixListImages',
             'lnt:': 'prefixListNotes',
             'ar:': 'prefixReadAloud',
+            // The four capture modes again, this time over the tabs the omnibar lists.
+            // They carry their own description keys because an override is stored by
+            // description, and these must not move the keyboard commands with them.
+            'cs:': 'omnibarPrefixCaptureVisibleDesc',
+            'cp:': 'omnibarPrefixCaptureFullPageDesc',
+            'cpp:': 'omnibarPrefixCapturePartsDesc',
+            'ca:': 'omnibarPrefixCaptureAreaDesc',
             'atcr:': 'omnibarPrefixAddToExistingRule',
             'atr:': 'omnibarPrefixAddToRule',
             'rl:': 'omnibarPrefixRulesSearch',
