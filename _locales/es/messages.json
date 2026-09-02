@@ -8846,13 +8846,19 @@
         "message": "Crear regla para esta web"
     },
     "hintDesc_cs": {
-        "message": "Capturar página web"
+        "message": "Capturar el área visible"
     },
     "hintDesc_ca": {
         "message": "Capturar área de la página"
     },
     "capturingFullPageNotify": {
         "message": "Capturando página completa..."
+    },
+    "capturingVisibleNotify": {
+        "message": "Capturando el área visible..."
+    },
+    "capturingFullPagePartsNotify": {
+        "message": "Capturando la página completa por partes..."
     },
     "capturingAreaNotify": {
         "message": "Selecciona el área a capturar"

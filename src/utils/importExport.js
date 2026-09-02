@@ -31,6 +31,8 @@ const COMMAND_LIMITS = {
     hintDesc_br: 2,
     hintDesc_ar: 2,
     hintDesc_cs: 2,
+    captureFullPageScroll: 2,
+    captureFullPageSplit: 2,
     hintDesc_ca: 2,
     hintDesc_wp: 2,
     hintDesc_wv: 2,

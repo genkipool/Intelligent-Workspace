@@ -194,30 +194,18 @@ var CommandRegistry = class CommandRegistry {
                     }),
                 description: 'hintDesc_ae',
             },
+            // The four ways to capture, the same four the panel's camera menu offers.
             cs: {
-                action: () => {
-                    chrome.runtime.sendMessage(
-                        {
-                            action: 'captureFullPageFromShortcut',
-                        },
-                        async (response) => {
-                            if (response && response.success && response.dataUrl) {
-                                try {
-                                    const res = await fetch(response.dataUrl);
-                                    const blob = await res.blob();
-                                    await navigator.clipboard.write([
-                                        new ClipboardItem({
-                                            [blob.type]: blob,
-                                        }),
-                                    ]);
-                                } catch (err) {
-                                    console.error('Error copying full page capture to clipboard:', err);
-                                }
-                            }
-                        },
-                    );
-                },
+                action: () => this._capture('visible'),
                 description: 'hintDesc_cs',
+            },
+            cp: {
+                action: () => this._capture('fullPage'),
+                description: 'captureFullPageScroll',
+            },
+            cP: {
+                action: () => this._capture('fullPageParts'),
+                description: 'captureFullPageSplit',
             },
             ca: {
                 action: () => this._send('captureAreaFromShortcut'),
@@ -705,6 +693,26 @@ var CommandRegistry = class CommandRegistry {
     // NEW: Getter for raw access
     getRawShortcuts() {
         return this.rawCustomShortcuts;
+    }
+    /**
+     * Asks the worker for a capture and leaves it on the clipboard.
+     *
+     * The image is filed in the gallery by the worker either way; only a page that
+     * came back as a single image is answered with one to copy, because a page taken
+     * in parts would otherwise leave whichever piece happened to be last on it.
+     *
+     * @param {'visible'|'fullPage'|'fullPageParts'} mode
+     */
+    _capture(mode) {
+        chrome.runtime.sendMessage({ action: 'captureFromShortcut', mode }, async (response) => {
+            if (chrome.runtime.lastError || !response?.success || !response.dataUrl) return;
+            try {
+                const blob = await (await fetch(response.dataUrl)).blob();
+                await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            } catch (err) {
+                console.error('Error copying the capture to the clipboard:', err);
+            }
+        });
     }
     _send(action, payload = {}) {
         try {

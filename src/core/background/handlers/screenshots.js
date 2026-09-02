@@ -361,12 +361,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
                 chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
             }
             if (saveToGallery) {
-                chrome.notifications.create({
-                    type: 'basic',
-                    iconUrl: '/assets/icons/icon128.png',
-                    title: 'Intelligent Tab Group',
-                    message: getI18nMsg('screenshotSavedAndCopied', [], 'Captura guardada y copiada'),
-                });
+                notifyCapture('screenshotSavedAndCopied');
             }
         } catch (error) {
             console.error('Error capturing screen area:', error);
@@ -376,78 +371,110 @@ async function handleCaptureAreaScreenshot(message, sender) {
                 chrome.tabs.sendMessage(tab.id, finishErrMsg).catch(() => {});
             }
             if (saveToGallery) {
-                chrome.notifications.create({
-                    type: 'basic',
-                    iconUrl: '/assets/icons/icon128.png',
-                    title: 'Intelligent Tab Group',
-                    message: getI18nMsg('errorTakingScreenshot', [], 'Error al realizar la captura'),
-                });
+                notifyCapture('errorTakingScreenshot');
             }
         }
     })();
 }
 
+// --- Captures asked for by a page shortcut ---
+//
+// The panel files its own captures — it knows which group the image belongs to — but
+// a keyboard shortcut has no panel behind it, so the worker saves the image itself.
+// The three modes are the ones the panel's camera menu offers, and they differ only
+// in which walker produces the images and in the notice that goes up meanwhile.
+
 /**
- * Captures the full visible page as a screenshot.
+ * The tray notice the worker puts up on its own behalf; they all look the same.
+ *
+ * `getI18nMsg` falls back to the key itself, so there is no literal to pass here —
+ * the four copies of this block each carried one that never reached anything.
  */
-async function handleCaptureFullPageScreenshot(sender, sendResponse) {
-    try {
-        const tab = await resolveTabForScreenshot(sender);
-        if (!tab) throw new Error('No tab found to capture');
-
-        const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
-        if (!dataUrl) throw new Error('The capture returned an empty result.');
-
-        // Save to database and update session index
-        const screenshotId = Date.now();
-        const newScreenshot = {
-            id: screenshotId,
-            dataUrl: dataUrl,
-            title: tab.title,
-            url: tab.url,
-            contextKey: getScreenshotContextKey(tab),
-            isPersistent: false,
-        };
-        await saveScreenshotToDb(newScreenshot);
-        await updateScreenshotSessionIndex(tab, screenshotId);
-
-        // Broadcast finish message
-        const finishMsg = {
-            action: 'fullPageScreenshotFinished',
-            success: true,
-        };
-        chrome.runtime.sendMessage(finishMsg);
-        if (tab && tab.id) {
-            chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
-        }
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
-            message: getI18nMsg('screenshotSavedAndCopied', [], 'Captura guardada y copiada'),
-        });
-
-        sendResponse({ success: true, dataUrl });
-    } catch (error) {
-        console.error('Error capturing full page:', error);
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
-            message: getI18nMsg('errorTakingScreenshot', [], 'Error al realizar la captura'),
-        });
-        sendResponse({ success: false, error: error.message });
-    }
-}
-
-function handleCaptureFullPageFromShortcut(message, sender, sendResponse) {
+function notifyCapture(key) {
     chrome.notifications.create({
         type: 'basic',
         iconUrl: '/assets/icons/icon128.png',
         title: 'Intelligent Tab Group',
-        message: getI18nMsg('capturingFullPageNotify', [], 'Capturando página completa...'),
+        message: getI18nMsg(key),
     });
-    handleCaptureFullPageScreenshot(sender, sendResponse);
+}
+
+/** What is on screen, which is all `captureVisibleTab` ever returns. */
+async function captureVisibleTabImages(tab) {
+    const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+    if (!dataUrl) throw new Error('The capture returned an empty result.');
+    return [dataUrl];
+}
+
+/**
+ * The capture modes a shortcut can ask for. Adding one is adding an entry here and
+ * the key that sends it — nothing else in this file knows how many there are.
+ */
+const SHORTCUT_CAPTURE_MODES = {
+    visible: { notice: 'capturingVisibleNotify', capture: captureVisibleTabImages },
+    fullPage: { notice: 'capturingFullPageNotify', capture: async (tab) => [await captureFullPageDataUrl(tab)] },
+    fullPageParts: { notice: 'capturingFullPagePartsNotify', capture: captureFullPageParts },
+};
+
+/**
+ * Captures the active tab from a page shortcut and files what comes back.
+ *
+ * @param {{mode?: 'visible'|'fullPage'|'fullPageParts'}} message
+ * @param {chrome.runtime.MessageSender} sender
+ * @param {(response: object) => void} sendResponse Answers with the single image the
+ *   caller may put on the clipboard, or none at all when the page came back in parts.
+ */
+async function handleCaptureFromShortcut(message, sender, sendResponse) {
+    const mode = SHORTCUT_CAPTURE_MODES[message.mode] ? message.mode : 'visible';
+    const { notice, capture } = SHORTCUT_CAPTURE_MODES[mode];
+    notifyCapture(notice);
+
+    try {
+        const tab = await resolveTabForScreenshot(sender);
+        if (!tab) throw new Error('No tab found to capture');
+
+        const images = await capture(tab);
+        const contextKey = getScreenshotContextKey(tab);
+
+        for (const [position, dataUrl] of images.entries()) {
+            const screenshotId = Date.now() + position;
+            await saveScreenshotToDb({
+                id: screenshotId,
+                dataUrl,
+                title:
+                    images.length > 1
+                        ? getI18nMsg('fullPagePartTitle', [
+                              tab.title || '',
+                              String(position + 1),
+                              String(images.length),
+                          ])
+                        : tab.title,
+                url: tab.url,
+                contextKey,
+                isPersistent: false,
+                // What tells the gallery to badge this one: a whole page is a different
+                // kind of thing from a screenful of it.
+                isFullPage: mode !== 'visible',
+            });
+            await updateScreenshotSessionIndex(tab, screenshotId);
+        }
+
+        const finishMsg = { action: 'fullPageScreenshotFinished', success: true };
+        chrome.runtime.sendMessage(finishMsg);
+        if (tab.id) {
+            chrome.tabs.sendMessage(tab.id, finishMsg).catch(() => {});
+        }
+
+        // Only a lone image is offered to the clipboard: a page taken in parts would
+        // leave whichever piece happened to be last on it, which is nobody's intent.
+        const single = images.length === 1;
+        notifyCapture(single ? 'screenshotSavedAndCopied' : 'screenshotSaved');
+        sendResponse({ success: true, dataUrl: single ? images[0] : null, count: images.length });
+    } catch (error) {
+        console.error('Error capturing from a shortcut:', error);
+        notifyCapture('errorTakingScreenshot');
+        sendResponse({ success: false, error: error.message });
+    }
 }
 
 function handleInjectAreaSelector(message, sender, sendResponse) {
@@ -497,12 +524,7 @@ function handleCaptureAreaFromShortcut(message, sender, sendResponse) {
             },
             files: ['src/utils/area-selector.css'],
         });
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
-            message: getI18nMsg('capturingAreaNotify', [], 'Selecciona el área a capturar'),
-        });
+        notifyCapture('capturingAreaNotify');
     }
     sendResponse({
         success: true,

@@ -8849,13 +8849,19 @@
     "message": "Create rule for current URL"
   },
   "hintDesc_cs": {
-    "message": "Capture webpage"
+    "message": "Capture the visible area"
   },
   "hintDesc_ca": {
     "message": "Capture webpage area"
   },
   "capturingFullPageNotify": {
     "message": "Capturing full page..."
+  },
+  "capturingVisibleNotify": {
+    "message": "Capturing the visible area..."
+  },
+  "capturingFullPagePartsNotify": {
+    "message": "Capturing the full page in parts..."
   },
   "capturingAreaNotify": {
     "message": "Select area to capture"

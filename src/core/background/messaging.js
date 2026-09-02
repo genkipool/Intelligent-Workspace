@@ -739,8 +739,8 @@ const MESSAGE_HANDLERS = {
         handleCaptureAreaScreenshot(message, sender);
         return false;
     },
-    captureFullPageFromShortcut: (message, sender, sendResponse) => {
-        handleCaptureFullPageFromShortcut(message, sender, sendResponse);
+    captureFromShortcut: (message, sender, sendResponse) => {
+        handleCaptureFromShortcut(message, sender, sendResponse);
         return true;
     },
     captureFullPage: (message, sender, sendResponse) => {

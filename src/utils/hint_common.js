@@ -132,7 +132,11 @@ var HintCommon = {
             br: 'hintDesc_br',
             cr: 'hintDesc_ar',
             ae: 'hintDesc_ae',
+            // The four capture modes of the panel's camera menu, which is also where
+            // the last two take their wording from.
             cs: 'hintDesc_cs',
+            cp: 'captureFullPageScroll',
+            cP: 'captureFullPageSplit',
             ca: 'hintDesc_ca',
             wp: 'hintDesc_wp',
             wv: 'hintDesc_wv',
