@@ -222,7 +222,9 @@ async function addToContentSessionIndex(storageKey, keys, id) {
     for (const key of keys) {
         if (!key) continue;
         if (!index[key]) index[key] = [];
-        index[key].push(id);
+        // Adding the same id twice would show the same note or capture twice in the
+        // list it is filed under; a note that is added to arrives here again.
+        if (!index[key].includes(id)) index[key].push(id);
     }
     await chrome.storage.session.set({ [storageKey]: index });
 }

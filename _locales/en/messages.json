@@ -3932,6 +3932,10 @@
     "message": "Select some text first",
     "description": "Nothing was selected when a note was asked for"
   },
+  "noteAppended": {
+    "message": "Added to the note \"$1\"",
+    "description": "A second selection joined the note of the same heading"
+  },
   "noteFromSelectionFailed": {
     "message": "The note could not be created",
     "description": "A note out of the selection did not get written"

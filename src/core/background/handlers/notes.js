@@ -54,10 +54,18 @@ function selectionToNoteHtml(text) {
 }
 
 /**
- * Writes a note out of the selection of one tab.
+ * Writes a note out of the selection of one tab, or adds to the one already written.
  *
- * @param {{tabId?: number, notify?: boolean}} message The context menu names the tab
- *   it was opened on; a keyboard command comes from the tab itself.
+ * A second selection off the same page joins the first: the same heading in the same
+ * context is the same note, and the new lines go under what is already there. An
+ * article read in three goes leaves one note, not three.
+ *
+ * Whatever happens is said out loud in a tray notice. Neither caller has anywhere else
+ * to report it — a context menu closes on the click, and a key pressed on a page has no
+ * panel behind it.
+ *
+ * @param {{tabId?: number}} message The context menu names the tab it was opened on; a
+ *   keyboard command comes from the tab itself.
  * @param {chrome.runtime.MessageSender} sender
  * @param {(response: object) => void} sendResponse
  */
@@ -87,29 +95,36 @@ async function handleCreateNoteFromSelection(message, sender, sendResponse) {
             return;
         }
 
-        const noteId = Date.now() + Math.random();
+        // The page's own heading is what the note is called; a page without one falls
+        // back to the name the tab goes by.
+        const title = heading || tab.title || '';
+        const contextKey = getContentContextKey(tab);
         const timestamp = new Date().toISOString();
-        await saveNoteToDb({
-            id: noteId,
-            // The page's own heading is what the note is called; a page without one
-            // falls back to the name the tab goes by.
-            title: heading || tab.title || '',
-            content: selectionToNoteHtml(text),
-            category: PAGE_NOTE_CATEGORY,
-            contextKey: getContentContextKey(tab),
-            type: 'text',
-            timestamp,
-            modifiedTimestamp: timestamp,
-            isPersistent: false,
-        });
+        const existing = title ? await findNoteByTitle(title, contextKey) : null;
+
+        const note = existing
+            ? { ...existing, content: `${existing.content || ''}${selectionToNoteHtml(text)}` }
+            : {
+                  id: Date.now() + Math.random(),
+                  title,
+                  content: selectionToNoteHtml(text),
+                  category: PAGE_NOTE_CATEGORY,
+                  contextKey,
+                  type: 'text',
+                  timestamp,
+                  isPersistent: false,
+              };
+        note.modifiedTimestamp = timestamp;
+        await saveNoteToDb(note);
 
         // Only the group: it is the key the note's own `contextKey` resolves back to,
-        // and the panel files its notes the same way.
-        await addToContentSessionIndex(NOTES_STORAGE_KEY, [getContentSessionKeys(tab).group], noteId);
+        // and the panel files its notes the same way. One that was added to is listed
+        // already, and the index refuses to list it twice.
+        await addToContentSessionIndex(NOTES_STORAGE_KEY, [getContentSessionKeys(tab).group], note.id);
 
-        chrome.runtime.sendMessage({ action: 'noteCreatedFromPage', noteId });
-        if (message.notify) notifyNote('noteSaved');
-        sendResponse({ success: true, noteId });
+        chrome.runtime.sendMessage({ action: 'noteCreatedFromPage', noteId: note.id });
+        notifyNote(existing ? 'noteAppended' : 'noteSaved', existing ? [title] : []);
+        sendResponse({ success: true, noteId: note.id, appended: !!existing });
     } catch (error) {
         console.error('Error creating the note from the selection:', error);
         notifyNote('noteFromSelectionFailed');
@@ -118,11 +133,11 @@ async function handleCreateNoteFromSelection(message, sender, sendResponse) {
 }
 
 /** The tray notice this handler puts up; the shape every other one uses. */
-function notifyNote(key) {
+function notifyNote(key, params = []) {
     chrome.notifications.create({
         type: 'basic',
         iconUrl: '/assets/icons/icon128.png',
         title: 'Intelligent Tab Group',
-        message: getI18nMsg(key),
+        message: getI18nMsg(key, params),
     });
 }

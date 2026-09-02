@@ -313,6 +313,31 @@ async function saveNoteToDb(note) {
     });
 }
 
+/**
+ * The note a new selection belongs to, if there is one: same title, same context, and
+ * still a text note — appending paragraphs to a checklist would ruin it. The most
+ * recently touched one wins when a page has been read into several.
+ *
+ * @param {string} title
+ * @param {string} contextKey
+ * @returns {Promise<object|null>}
+ */
+async function findNoteByTitle(title, contextKey) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const request = db.transaction([NOTES_STORE_NAME], 'readonly').objectStore(NOTES_STORE_NAME).getAll();
+
+        request.onsuccess = () => {
+            const matches = (request.result || []).filter(
+                (note) => note && note.type === 'text' && note.title === title && note.contextKey === contextKey,
+            );
+            matches.sort((a, b) => String(b.modifiedTimestamp || '').localeCompare(String(a.modifiedTimestamp || '')));
+            resolve(matches[0] || null);
+        };
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
 async function saveScreenshotToDb(screenshot) {
     const db = await openDb();
     return new Promise((resolve, reject) => {

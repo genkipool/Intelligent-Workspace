@@ -3935,6 +3935,10 @@
         "message": "Selecciona antes algún texto",
         "description": "No había nada seleccionado al pedir la nota"
     },
+    "noteAppended": {
+        "message": "Añadido a la nota «$1»",
+        "description": "Una segunda selección se ha unido a la nota del mismo titular"
+    },
     "noteFromSelectionFailed": {
         "message": "No se ha podido crear la nota",
         "description": "La nota con la selección no llegó a escribirse"
