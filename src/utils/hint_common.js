@@ -2675,12 +2675,15 @@ var HintCommon = {
             'data-i18n-title': 'filterBySection',
             title: msg('filterBySection', 'Filter by section'),
         });
-        // Drawn rather than referenced: neither surface carries the icon sheet the
-        // group list pulls this same glyph out of. Same 14px as there, so the three
-        // buttons are one button wherever it turns up.
+        /*
+         * `#icon-more-vertical` drawn out longhand: neither surface carries the icon
+         * sheet the group list pulls it from with `<use>`. Same 14px box, same path,
+         * same `fill-rule` — and the fill is left to the stylesheet, which is where
+         * `.overflow-btn` sets it too.
+         */
         button.innerHTML =
             '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-            '<path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-3 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-4 7a1 1 0 1 1 2 0 1 1 0 0 1-2 0m1 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>' +
+            '<path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor" d="M12 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-3 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-4 7a1 1 0 1 1 2 0 1 1 0 0 1-2 0m1 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>' +
             '</svg>';
 
         const popup = create('div', { className: 'itg-section-filter-popup' });
