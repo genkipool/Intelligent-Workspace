@@ -1418,30 +1418,30 @@ export async function openPaymentInPanel(provider) {
      * ones that use the store.
      */
     /**
-     * Where a finished donation leaves the reader.
+     * [AI INSTRUCTION]
+     * WHERE A FINISHED DONATION LEAVES THE READER — AND THE GROUP LIST IS NOT AN OPTION.
      *
-     * `closeUrlInPanel` alone drops them on the group list, which is not where they came
-     * from: they pressed a donation tile in the popup, and `donationService` stored that
-     * as `navSource`. The back button already returns there; finishing a payment and
-     * closing the sheet have to agree with it, or the same view has two different exits.
+     * DO NOT ADD A `closeUrlInPanel()` FALLBACK HERE. It used to have two, and both did
+     * the same unwelcome thing: money leaves someone's account and the panel answers by
+     * throwing them onto a list of tab groups. Nothing about that says the payment
+     * worked, and it happens while the thank-you is still on screen.
      *
-     * Only when the panel was opened straight into the donation view — navigating to it
-     * from inside the panel means the panel is where they were, and the group list is the
-     * right place to land.
+     * The rule is that this function only ever moves the panel when it can put the reader
+     * back exactly where they came from — the popup, which `donationService` recorded as
+     * `navSource`. Anything else and the panel stays on the donation view, which is by
+     * then showing "thank you" and is the most informative thing it could be showing.
+     * The way out is the back button, pressed on purpose, which is the only place a
+     * decision to leave should be made.
      *
      * `delay` gives the thank-you notification time to be read before the page changes
      * under it.
      */
     const leaveDonation = async (delay = 0) => {
-        if (get(standaloneOverlayView) !== 'payment') {
-            closeUrlInPanel();
-            return;
-        }
+        if (get(standaloneOverlayView) !== 'payment') return;
+
         const { navSource } = await chrome.storage.local.get('navSource');
-        if (!navSource) {
-            closeUrlInPanel();
-            return;
-        }
+        if (!navSource) return;
+
         if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
         window.location.href = navSource;
     };
