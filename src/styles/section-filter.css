@@ -21,13 +21,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
     padding: 0;
     border: none;
     background: none;
+    border-radius: 50%;
+    line-height: 1;
     color: var(--text-color);
     cursor: pointer;
+    flex-shrink: 0;
     opacity: 0.75;
     transition:
         opacity 0.2s ease,
@@ -57,7 +58,7 @@
     border-radius: var(--border-radius, 8px);
     box-shadow: 0 0 5px var(--interactive-color);
     width: max-content;
-    max-width: 280px;
+    max-width: min(280px, calc(100vw - 24px));
     opacity: 0;
     visibility: hidden;
     transform: translateY(-5px);
@@ -76,14 +77,22 @@
     pointer-events: auto;
 }
 
-/* The invisible bridge: it is what the pointer walks over on its way down from the
-   button, and without it the menu closes in the gap between the two. */
+/*
+ * The invisible bridge: it is what the pointer walks over on its way down from the
+ * button, and without it the menu closes in the gap between the two.
+ *
+ * It reaches upwards and no further. The group list's version also spills 15px out to
+ * each side, and here that was 15px of page: the popup hangs off the right edge of a
+ * button that is itself against the right edge of a side panel, so the spill put a
+ * horizontal scrollbar under the whole settings page. The button is directly above
+ * this box, which is the only direction the pointer arrives from.
+ */
 .itg-section-filter-bridge {
     position: absolute;
     top: -15px;
-    left: -15px;
-    width: calc(100% + 30px);
-    height: calc(100% + 30px);
+    left: 0;
+    right: 0;
+    height: calc(100% + 15px);
     background: transparent;
     pointer-events: auto;
     z-index: -1;
@@ -148,6 +157,7 @@
 }
 
 .itg-section-filter-label {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
