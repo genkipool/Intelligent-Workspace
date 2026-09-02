@@ -226,10 +226,11 @@ const AGENT_TOOLS = {
             const results = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: () => {
-                    const body = document.body;
-                    const scripts = body.querySelectorAll('script, style, noscript');
+                    if (!document.body) return '';
+                    const clone = document.body.cloneNode(true);
+                    const scripts = clone.querySelectorAll('script, style, noscript');
                     scripts.forEach((s) => s.remove());
-                    return (body.innerText || body.textContent || '').trim().substring(0, 8000);
+                    return (clone.innerText || clone.textContent || '').trim().substring(0, 8000);
                 },
             });
             const text = results?.[0]?.result || '';

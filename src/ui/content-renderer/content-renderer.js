@@ -123,7 +123,7 @@ export function renderGeminiResponse(entryContainer, entry) {
     } else {
         entryContainer.classList.remove('loading');
         if (data && data.error) {
-            contentEl.innerHTML = `<div class="gemini-error">${data.error}</div>`;
+            contentEl.innerHTML = `<div class="gemini-error">${escapeHtml(data.error)}</div>`;
         } else if (data && data.answer) {
             const rawText = data.answer;
             contentEl.dataset.rawText = rawText;

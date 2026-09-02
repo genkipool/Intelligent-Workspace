@@ -296,6 +296,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                     </div>
                 `;
             const iframe = container.querySelector('.hint-preview-iframe');
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
             iframe.setAttribute('allow', 'picture-in-picture; autoplay; fullscreen; encrypted-media');
             iframe.setAttribute('fetchpriority', 'high');
             iframe.setAttribute('loading', 'eager');

@@ -710,3 +710,50 @@ function _omniCopyRich(plainText, htmlText) {
 }
 var OMNI_COPY_SVG = `<svg width="16" height="16" viewBox="-2.4 -2.4 28.80 28.80" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill-rule="evenodd" clip-rule="evenodd" fill="var(--text-color)"><path d="M6.25 5.25c0-2.747 2.187-5 4.917-5h6.666c2.73 0 4.917 2.253 4.917 5v8.5c0 2.747-2.187 5-4.917 5a.75.75 0 0 1 0-1.5c1.873 0 3.417-1.553 3.417-3.5v-8.5c0-1.947-1.544-3.5-3.417-3.5h-6.666c-1.873 0-3.417 1.553-3.417 3.5a.75.75 0 0 1-1.5 0"/><path d="M1.25 10.25c0-2.747 2.187-5 4.917-5h6.666c2.73 0 4.917 2.253 4.917 5v8.5c0 2.747-2.187 5-4.917 5H6.167c-2.73 0-4.917-2.253-4.917-5zm4.917-3.5c-1.873 0-3.417 1.553-3.417 3.5v8.5c0 1.947 1.544 3.5 3.417 3.5h6.666c1.873 0 3.417-1.553 3.417-3.5v-8.5c0-1.947-1.544-3.5-3.417-3.5z"/></g></svg>`;
 var OMNI_DB_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke="currentColor" stroke-width="1.5"><path d="M4 18V6m16 0v12" stroke-linecap="round"></path><path d="M12 10c4.418 0 8-1.79 8-4s-3.582-4-8-4-8 1.79-8 4 3.582 4 8 4Zm8 2c0 2.21-3.582 4-8 4s-8-1.79-8-4m16 6c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></g></svg>`;
+
+// -- Sanitize HTML for safe insertion in omnibar elements ---------
+function _omniSanitizeHtml(html) {
+    if (!html || typeof html !== 'string') return '';
+    try {
+        const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+        const blockedTags = new Set([
+            'script',
+            'style',
+            'noscript',
+            'iframe',
+            'object',
+            'embed',
+            'form',
+            'input',
+            'button',
+            'template',
+        ]);
+        const allowedAttrs = new Set(['href', 'title', 'src', 'alt', 'class', 'style', 'target', 'rel']);
+
+        function clean(node) {
+            for (const child of Array.from(node.children)) {
+                const tag = child.tagName.toLowerCase();
+                if (blockedTags.has(tag)) {
+                    child.remove();
+                    continue;
+                }
+                for (const attr of Array.from(child.attributes)) {
+                    const name = attr.name.toLowerCase();
+                    if (name.startsWith('on') || !allowedAttrs.has(name)) {
+                        child.removeAttribute(attr.name);
+                    } else if (name === 'href' || name === 'src') {
+                        const val = attr.value.trim().toLowerCase();
+                        if (val.startsWith('javascript:') || val.startsWith('data:text/html')) {
+                            child.removeAttribute(attr.name);
+                        }
+                    }
+                }
+                clean(child);
+            }
+        }
+        clean(doc.body);
+        return doc.body.innerHTML;
+    } catch {
+        return html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+}

@@ -3208,10 +3208,10 @@ var OmniBar = class OmniBar {
                 expandEl.appendChild(list);
             }
         } else {
-            // Text note -- render HTML as-is
+            // Text note -- sanitize and render HTML
             const content = li.dataset.noteContent || li.dataset.notePlainText || '';
             if (content.startsWith('<') || content.includes('</')) {
-                expandEl.innerHTML = content;
+                expandEl.innerHTML = _omniSanitizeHtml(content);
                 expandEl.style.userSelect = 'text';
                 expandEl.style.cursor = 'text';
             } else {

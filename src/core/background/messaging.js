@@ -1147,7 +1147,58 @@ const MESSAGE_HANDLERS = {
     },
 };
 
+/**
+ * Sensitive operations that belong strictly to internal extension UI pages
+ * (side panel, popup, settings) and must NEVER be invoked by content scripts
+ * in arbitrary webpages.
+ */
+const SENSITIVE_UI_ACTIONS = new Set([
+    'getCookiesForUrl',
+    'setCookie',
+    'removeCookie',
+    'prepareUrlForSidePanel',
+    'downloadFilesBatch',
+    'openDownload',
+    'eraseDownload',
+    'eraseAllDownloads',
+    'pauseDownload',
+    'resumeDownload',
+    'cancelDownload',
+    'openDownloadsFolder',
+    'retryDownload',
+    'showDownloadFile',
+]);
+
+function isExtensionPageSender(sender) {
+    if (!sender) return false;
+    const extensionOrigin = chrome.runtime.getURL('');
+    // Sender URL must belong to the extension
+    if (sender.url && !sender.url.startsWith(extensionOrigin)) {
+        return false;
+    }
+    // Content scripts running in web tabs have sender.tab defined pointing to a non-extension URL
+    if (sender.tab && sender.url && !sender.url.startsWith(extensionOrigin)) {
+        return false;
+    }
+    // Origin, if provided, must match our extension
+    if (sender.origin && sender.origin !== extensionOrigin.slice(0, -1)) {
+        return false;
+    }
+    return true;
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.action && SENSITIVE_UI_ACTIONS.has(message.action)) {
+        if (!isExtensionPageSender(sender)) {
+            console.warn(
+                `[Security] Blocked unauthorized content script attempt to call "${message.action}" from`,
+                sender?.url || 'unknown',
+            );
+            sendResponse({ success: false, error: 'Unauthorized sender' });
+            return false;
+        }
+    }
+
     const handler = MESSAGE_HANDLERS[message.action];
     if (handler) {
         // The channel is only held open when the handler asks for it by returning true.
