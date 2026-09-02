@@ -4690,6 +4690,12 @@
     "pipNoReplies": {
         "message": "Sin respuestas"
     },
+    "filterBySection": {
+        "message": "Filtrar por sección"
+    },
+    "sectionFilterAll": {
+        "message": "Todas las secciones"
+    },
     "searchCommandsPlaceholder": {
         "message": "Filtrar comandos por tecla o descripción...",
         "description": "Placeholder para la barra de búsqueda en la página de personalizar comandos y el modal de ayuda."
@@ -9080,28 +9086,31 @@
         "message": "Capturar (área visible)"
     },
     "omnibarPrefixCaptureVisibleDesc": {
-        "message": "Elige pestañas y guarda lo que se ve de cada una"
+        "message": "Hacer una captura del área visible de las pestañas elegidas"
     },
     "omnibarPrefixCaptureFullPageTitle": {
         "message": "Capturar (página completa)"
     },
     "omnibarPrefixCaptureFullPageDesc": {
-        "message": "Elige pestañas y guarda cada página entera"
+        "message": "Hacer una captura de la página completa de las pestañas elegidas"
     },
     "omnibarPrefixCapturePartsTitle": {
         "message": "Capturar (por partes)"
     },
     "omnibarPrefixCapturePartsDesc": {
-        "message": "Elige pestañas y guarda cada página pantalla a pantalla"
+        "message": "Hacer una captura de la página completa, una imagen por pantalla"
     },
     "omnibarPrefixCaptureAreaTitle": {
         "message": "Capturar (área)"
     },
     "omnibarPrefixCaptureAreaDesc": {
-        "message": "Elige pestañas y recorta un área en cada una, por turnos"
+        "message": "Hacer una captura del área que dibujes en cada pestaña elegida"
     },
     "omnibarClickCaptureTab": {
         "message": "Clic o Enter para capturar. Espacio / Ctrl+Clic para seleccionar varias."
+    },
+    "omnibarCaptureGroupHint": {
+        "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas."
     },
     "omnibarClickDeleteTab": {
         "message": "Haz clic para eliminar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para rango."
@@ -10343,6 +10352,12 @@
     },
     "webActivityFilterByCategory": {
         "message": "Filtrar por esta categoría"
+    },
+    "expandFolder": {
+        "message": "Desplegar"
+    },
+    "collapseFolder": {
+        "message": "Contraer"
     },
     "webActivityCategoryLabel": {
         "message": "Categoría"

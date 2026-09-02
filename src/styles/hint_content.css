@@ -798,6 +798,15 @@
 /* @ section filter dropdown for help modal */
 .help-modal-search-container {
     position: relative;
+    /* The field and the section filter share the row; the `@` dropdown under it is
+       absolute, so it stays out of the flex flow. */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.help-modal-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .at-section-dropdown {
     position: absolute;
@@ -2923,6 +2932,17 @@ input.error:focus,
 .hint-omni-result-item.action-selected-theme {
     background-color: var(--action-color-alpha, rgba(52, 152, 219, 0.15)) !important;
     box-shadow: inset 4px 0 0 var(--action-color, #3498db);
+}
+
+/* A capture list is a tree: the group first, its tabs indented under it. The indent
+   is what says the tabs belong to the row above, and the group row is set in the
+   heavier weight of a heading so the two kinds of row do not read as one list. */
+.hint-omni-result-item.itg-omni-capture-group .hint-omni-title {
+    font-weight: 700;
+}
+
+.hint-omni-result-item.itg-omni-nested {
+    padding-left: 44px;
 }
 
 /* Filter actions: normal with text-color, hover/selected with error-color */

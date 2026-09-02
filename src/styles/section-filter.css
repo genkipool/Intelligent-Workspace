@@ -1,0 +1,133 @@
+/*
+ * The three-dot section filter that sits at the right of a search box.
+ *
+ * Two surfaces wear it — the keyboard navigation settings page and the shortcut modal
+ * the `?` key opens — and one of them lives inside a shadow root, so the rules cannot
+ * live in either page's stylesheet. They are the group list's overflow menu, kept to
+ * the same geometry: a button, a popup under it, and an invisible bridge that covers
+ * the gap so the pointer can cross it without the menu closing.
+ */
+
+.itg-section-filter {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.itg-section-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 8px);
+    background-color: var(--bg-panel-color);
+    color: var(--text-color);
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.itg-section-filter-btn:hover,
+.itg-section-filter-btn:focus-visible,
+.itg-section-filter.open .itg-section-filter-btn {
+    border-color: var(--action-color);
+    color: var(--text-on-color);
+    outline: none;
+}
+
+.itg-section-filter-popup {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1010;
+    /* The gap the bridge covers is paid for here, so the popup itself still touches
+       the button as far as the pointer is concerned. */
+    padding: 11px 6px 6px;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: 0 0 5px var(--interactive-color);
+    width: max-content;
+    max-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    pointer-events: none;
+    transition:
+        opacity 0.15s ease,
+        transform 0.15s ease,
+        visibility 0.15s;
+}
+
+.itg-section-filter:hover .itg-section-filter-popup,
+.itg-section-filter.open .itg-section-filter-popup {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* The invisible bridge: it is what the pointer walks over on its way down from the
+   button, and without it the menu closes in the gap between the two. */
+.itg-section-filter-bridge {
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    width: calc(100% + 30px);
+    height: calc(100% + 30px);
+    background: transparent;
+    pointer-events: auto;
+    z-index: -1;
+}
+
+.itg-section-filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.itg-section-filter-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: background-color 0.2s ease;
+}
+
+.itg-section-filter-item:hover,
+.itg-section-filter-item:focus-visible {
+    background-color: var(--action-color);
+    color: var(--text-on-color);
+    outline: none;
+}
+
+.itg-section-filter-item.active {
+    background-color: var(--bg-hover-color, var(--bg-color));
+    font-weight: 600;
+}
+
+.itg-section-filter-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.itg-section-filter-count {
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+}

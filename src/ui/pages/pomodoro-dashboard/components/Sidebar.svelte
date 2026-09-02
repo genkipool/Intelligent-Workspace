@@ -125,61 +125,65 @@
                 <span class="folder-label" onclick={() => toggleFolder(folder, isProjectInThisFolder)}>{folder}</span>
                 <span class="folder-count" onclick={() => toggleFolder(folder, isProjectInThisFolder)}>{count}</span>
             </div>
+            <!-- The inner wrapper is what clips while the folder grows; see
+                 `.folder-children` in dashboard.css. -->
             <div class="folder-children">
-                {#each projects as p (p)}
-                    {#if matchesQuery(p) || matchesQuery(folder)}
-                        {@const cnt = projectCounts[p] || 0}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <!-- svelte-ignore a11y-no-static-element-interactions -->
-                        <div
-                            class="sidebar-item"
-                            class:active={activeProject === p}
-                            data-project={p}
-                            onclick={() => selectProject(p)}
-                        >
-                            {#if editingProject === p}
-                                <input
-                                    bind:this={editInputEl}
-                                    class="si-edit-input"
-                                    type="text"
-                                    maxlength="18"
-                                    bind:value={editingName}
-                                    onkeydown={(e) => handleEditKeydown(e, p)}
-                                    onblur={() => saveEditing(p)}
-                                    onclick={(e) => e.stopPropagation()}
-                                />
-                            {:else}
-                                <span class="si-name">{p}</span>
-                                <button
-                                    type="button"
-                                    class="si-edit-btn"
-                                    title={$tt('editProjectName') || 'Edit name'}
-                                    aria-label={$tt('editProjectName') || 'Edit name'}
-                                    onclick={(e) => {
-                                        e.stopPropagation();
-                                        startEditing(p);
-                                    }}
-                                >
-                                    <svg
-                                        width="12"
-                                        height="12"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        aria-hidden="true"
-                                        focusable="false"
+                <div class="folder-children-inner">
+                    {#each projects as p (p)}
+                        {#if matchesQuery(p) || matchesQuery(folder)}
+                            {@const cnt = projectCounts[p] || 0}
+                            <!-- svelte-ignore a11y-click-events-have-key-events -->
+                            <!-- svelte-ignore a11y-no-static-element-interactions -->
+                            <div
+                                class="sidebar-item"
+                                class:active={activeProject === p}
+                                data-project={p}
+                                onclick={() => selectProject(p)}
+                            >
+                                {#if editingProject === p}
+                                    <input
+                                        bind:this={editInputEl}
+                                        class="si-edit-input"
+                                        type="text"
+                                        maxlength="18"
+                                        bind:value={editingName}
+                                        onkeydown={(e) => handleEditKeydown(e, p)}
+                                        onblur={() => saveEditing(p)}
+                                        onclick={(e) => e.stopPropagation()}
+                                    />
+                                {:else}
+                                    <span class="si-name">{p}</span>
+                                    <button
+                                        type="button"
+                                        class="si-edit-btn"
+                                        title={$tt('editProjectName') || 'Edit name'}
+                                        aria-label={$tt('editProjectName') || 'Edit name'}
+                                        onclick={(e) => {
+                                            e.stopPropagation();
+                                            startEditing(p);
+                                        }}
                                     >
-                                        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-                                    </svg>
-                                </button>
-                                <span class="si-count">{cnt}</span>
-                            {/if}
-                        </div>
-                    {/if}
-                {/each}
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            aria-hidden="true"
+                                            focusable="false"
+                                        >
+                                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                        </svg>
+                                    </button>
+                                    <span class="si-count">{cnt}</span>
+                                {/if}
+                            </div>
+                        {/if}
+                    {/each}
+                </div>
             </div>
         </div>
     {/if}

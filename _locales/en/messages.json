@@ -4687,6 +4687,12 @@
   "pipNoReplies": {
     "message": "No replies"
   },
+  "filterBySection": {
+    "message": "Filter by section"
+  },
+  "sectionFilterAll": {
+    "message": "All sections"
+  },
   "searchCommandsPlaceholder": {
     "message": "Filter commands by keyword or description...",
     "description": "Placeholder for the search bar in customize commands page and help modal."
@@ -9083,28 +9089,31 @@
     "message": "Capture (visible area)"
   },
   "omnibarPrefixCaptureVisibleDesc": {
-    "message": "Pick tabs and save what is on screen in each one"
+    "message": "Take a screenshot of the visible area of the chosen tabs"
   },
   "omnibarPrefixCaptureFullPageTitle": {
     "message": "Capture (full page)"
   },
   "omnibarPrefixCaptureFullPageDesc": {
-    "message": "Pick tabs and save each page whole"
+    "message": "Take a screenshot of the whole page of the chosen tabs"
   },
   "omnibarPrefixCapturePartsTitle": {
     "message": "Capture (in parts)"
   },
   "omnibarPrefixCapturePartsDesc": {
-    "message": "Pick tabs and save each page one screenful at a time"
+    "message": "Take a screenshot of the whole page, one screenful per image"
   },
   "omnibarPrefixCaptureAreaTitle": {
     "message": "Capture (area)"
   },
   "omnibarPrefixCaptureAreaDesc": {
-    "message": "Pick tabs and crop an area on each one, in turn"
+    "message": "Take a screenshot of an area you draw on each chosen tab"
   },
   "omnibarClickCaptureTab": {
     "message": "Click or Enter to capture. Space / Ctrl+Click to select several."
+  },
+  "omnibarCaptureGroupHint": {
+    "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all."
   },
   "omnibarClickDeleteTab": {
     "message": "Click to delete. Space / Ctrl+Click to select, Shift+Click to select range."
@@ -10363,6 +10372,12 @@
   },
   "webActivityFilterByCategory": {
     "message": "Filter by this category"
+  },
+  "expandFolder": {
+    "message": "Expand"
+  },
+  "collapseFolder": {
+    "message": "Collapse"
   },
   "webActivityCategoryLabel": {
     "message": "Category"

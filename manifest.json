@@ -167,6 +167,7 @@
         "src/utils/read-aloud.css",
         "src/styles/select.css",
         "src/styles/hint_content.css",
+        "src/styles/section-filter.css",
         "src/styles/prevent_flash.css",
         "src/utils/hint_common.js",
         "src/utils/print.html",

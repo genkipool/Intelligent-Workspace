@@ -5,6 +5,7 @@ import CustomizeHints from './CustomizeHints.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
 import '../../../styles/select.css';
+import '../../../styles/section-filter.css';
 import './customize_hints.css';
 
 const app = mountPage(CustomizeHints, {

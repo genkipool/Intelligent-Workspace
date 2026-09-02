@@ -2643,6 +2643,118 @@ var HintCommon = {
     },
 
     /**
+     * The three-dot menu that narrows a list of commands down to one section.
+     *
+     * The settings page and the shortcut modal show the same commands under the same
+     * headings, and both already filter by section when `@name` is typed into their
+     * search box. This is that filter with a mouse on it, and it is written here
+     * because those two live in different worlds — one is a bundled page, the other is
+     * built inside a shadow root — and this file is what they share.
+     *
+     * The popup opens on hover and is held open by an invisible bridge that covers the
+     * gap down from the button, so crossing it does not close the menu.
+     *
+     * @param {object} options
+     * @param {HTMLElement} options.container Where the button is appended.
+     * @param {() => Array<{name: string, count: number}>} options.getSections Read
+     *   every time the menu opens: sections appear as the page fills in.
+     * @param {(name: string|null) => void} options.onSelect `null` means every section.
+     * @param {() => (string|null)} [options.getActive] Which one is on, for the mark.
+     * @returns {HTMLElement} The menu, already inside the container.
+     */
+    createSectionFilter({ container, getSections, onSelect, getActive = () => null }) {
+        const msg = (key, fallback) => this.i18n.getMessage(key, [], fallback);
+        const create = this.DOM.create;
+
+        const menu = create('div', { className: 'itg-section-filter' });
+        const button = create('div', {
+            className: 'itg-section-filter-btn',
+            role: 'button',
+            tabindex: '0',
+            'aria-haspopup': 'true',
+            'data-i18n-title': 'filterBySection',
+            title: msg('filterBySection', 'Filter by section'),
+        });
+        // Drawn rather than referenced: neither surface carries the icon sheet the
+        // group list pulls this same glyph out of.
+        button.innerHTML =
+            '<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-3 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-4 7a1 1 0 1 1 2 0 1 1 0 0 1-2 0m1 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>' +
+            '</svg>';
+
+        const popup = create('div', { className: 'itg-section-filter-popup' });
+        popup.appendChild(create('div', { className: 'itg-section-filter-bridge' }));
+        const list = create('div', { className: 'itg-section-filter-list' });
+        popup.appendChild(list);
+        menu.appendChild(button);
+        menu.appendChild(popup);
+        container.appendChild(menu);
+
+        const render = () => {
+            const active = getActive();
+            list.textContent = '';
+            const rows = [
+                { name: null, label: msg('sectionFilterAll', 'All sections'), count: null },
+                ...getSections().map((section) => ({
+                    name: section.name,
+                    label: section.name,
+                    count: section.count,
+                })),
+            ];
+            rows.forEach((row) => {
+                const item = create('div', {
+                    className: 'itg-section-filter-item',
+                    role: 'button',
+                    tabindex: '0',
+                });
+                const isActive = row.name
+                    ? !!active && row.name.toLowerCase() === String(active).toLowerCase()
+                    : !active;
+                if (isActive) item.classList.add('active');
+                item.appendChild(create('span', { className: 'itg-section-filter-label' }, row.label));
+                if (row.count !== null && row.count !== undefined) {
+                    item.appendChild(create('span', { className: 'itg-section-filter-count' }, String(row.count)));
+                }
+                const choose = () => {
+                    menu.classList.remove('open');
+                    onSelect(row.name);
+                };
+                item.addEventListener('click', choose);
+                item.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        choose();
+                    }
+                });
+                list.appendChild(item);
+            });
+        };
+
+        // Hover is what opens it; `open` is for the keyboard, which has no hover.
+        menu.addEventListener('mouseenter', render);
+        menu.addEventListener('mouseleave', () => menu.classList.remove('open'));
+        button.addEventListener('click', () => {
+            render();
+            menu.classList.toggle('open');
+        });
+        button.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                render();
+                menu.classList.add('open');
+                list.querySelector('.itg-section-filter-item')?.focus();
+            } else if (event.key === 'Escape') {
+                menu.classList.remove('open');
+            }
+        });
+        menu.addEventListener('focusout', (event) => {
+            if (!menu.contains(event.relatedTarget)) menu.classList.remove('open');
+        });
+
+        return menu;
+    },
+
+    /**
      * Filter DOM items by text content, hiding those that don't match the query.
      * @param {string} query - The search string
      * @param {HTMLElement|NodeList|Array} items - Elements to filter

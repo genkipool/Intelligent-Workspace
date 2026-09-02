@@ -519,8 +519,12 @@ var OmniBar = class OmniBar {
         const capture = this._getCaptureMode(lower);
         if (capture) {
             const q = query.substring(capture.prefix.length).trim();
-            const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
-            this._renderResults(filtered, 'capture');
+            const seq = ++this._inputSeq;
+            chrome.runtime.sendMessage({ action: 'getTabGroups' }, (res) => {
+                if (seq !== this._inputSeq) return;
+                const groups = res && res.success ? res.results : [];
+                this._renderResults(this._buildCaptureRows(groups, q), 'capture');
+            });
             return;
         }
 
@@ -2807,7 +2811,7 @@ var OmniBar = class OmniBar {
                 titleKey: 'omnibarPrefixCapturePartsTitle',
                 title: 'Capture (in parts)',
                 descKey: 'omnibarPrefixCapturePartsDesc',
-                desc: 'Pick tabs and save each page one screenful at a time',
+                desc: 'Take a screenshot of the whole page, one screenful per image',
             },
             {
                 fallback: 'cp:',
@@ -2815,7 +2819,7 @@ var OmniBar = class OmniBar {
                 titleKey: 'omnibarPrefixCaptureFullPageTitle',
                 title: 'Capture (full page)',
                 descKey: 'omnibarPrefixCaptureFullPageDesc',
-                desc: 'Pick tabs and save each page whole',
+                desc: 'Take a screenshot of the whole page of the chosen tabs',
             },
             {
                 fallback: 'cs:',
@@ -2823,7 +2827,7 @@ var OmniBar = class OmniBar {
                 titleKey: 'omnibarPrefixCaptureVisibleTitle',
                 title: 'Capture (visible area)',
                 descKey: 'omnibarPrefixCaptureVisibleDesc',
-                desc: 'Pick tabs and save what is on screen in each one',
+                desc: 'Take a screenshot of the visible area of the chosen tabs',
             },
             {
                 fallback: 'ca:',
@@ -2831,10 +2835,52 @@ var OmniBar = class OmniBar {
                 titleKey: 'omnibarPrefixCaptureAreaTitle',
                 title: 'Capture (area)',
                 descKey: 'omnibarPrefixCaptureAreaDesc',
-                desc: 'Pick tabs and crop an area on each one, in turn',
+                desc: 'Take a screenshot of an area you draw on each chosen tab',
             },
         ];
         return entries.map((entry) => ({ ...entry, prefix: this._getPrefixVal(entry.fallback, entry.descKey) }));
+    }
+
+    /**
+     * The rows a capture prefix lists: every group with its tabs under it, and then
+     * whatever is in no group.
+     *
+     * A group row stands for the tabs inside it rather than for itself — picking one
+     * picks them all, and any of them can be dropped again afterwards — so it carries
+     * their ids and has none of its own.
+     *
+     * @param {Array<{id: number, title: string, color: string}>} groups
+     * @param {string} query What was typed after the prefix.
+     */
+    _buildCaptureRows(groups, query) {
+        const matches = (tab) => this._itemMatchesQuery('tab', tab, query);
+        const lower = (query || '').toLowerCase();
+        const rows = [];
+        const inAGroup = new Set();
+
+        (groups || []).forEach((group) => {
+            const tabs = this.tabs.filter((tab) => tab.groupId === group.id);
+            tabs.forEach((tab) => inAGroup.add(tab.id));
+            // A group whose name is what was typed brings all of its tabs with it.
+            const nameMatches = !lower || (group.title || '').toLowerCase().includes(lower);
+            const shown = nameMatches ? tabs : tabs.filter(matches);
+            if (shown.length === 0) return;
+            rows.push({
+                captureRow: 'group',
+                id: group.id,
+                title: group.title,
+                color: group.color,
+                count: shown.length,
+                tabIds: shown.map((tab) => tab.id),
+            });
+            shown.forEach((tab) => rows.push({ ...tab, captureRow: 'tab' }));
+        });
+
+        this.tabs
+            .filter((tab) => !inAGroup.has(tab.id) && matches(tab))
+            .forEach((tab) => rows.push({ ...tab, captureRow: 'tab' }));
+
+        return rows;
     }
 
     /** Which capture the box is asking for, if it is asking for one at all. */
@@ -3861,7 +3907,10 @@ IMPORTANT RULES:
             // Apply visual selection style if active
             if (!data.isSpecialAction) {
                 let isSelected = false;
-                if (type === 'dg' || TAB_ACTION_TYPES.has(type)) {
+                if (type === 'capture') {
+                    const ids = data.captureRow === 'group' ? data.tabIds || [] : [data.id];
+                    isSelected = ids.length > 0 && ids.every((id) => this.selectedActionItems.has(id));
+                } else if (type === 'dg' || TAB_ACTION_TYPES.has(type)) {
                     isSelected = data.id && this.selectedActionItems.has(data.id);
                 } else if (type === 'bg-item') {
                     if (data.type === 'bg-group') {
@@ -3952,6 +4001,17 @@ IMPORTANT RULES:
                         );
                     }
                 }
+            } else if (type === 'capture' && data.captureRow === 'group') {
+                title = data.title || getOmniMsg('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
+                url =
+                    getOmniMsg('omnibarCaptureGroupHint', [String(data.count)]) ||
+                    `Capture the ${data.count} tabs of this group`;
+                favIcon = '';
+                li.dataset.captureRow = 'group';
+                li.dataset.groupId = data.id;
+                li.dataset.tabIds = JSON.stringify(data.tabIds || []);
+                li.classList.add('itg-omni-capture-group');
+                this._injectColorDot(li, data.color);
             } else if (
                 [
                     'tab',
@@ -3976,6 +4036,9 @@ IMPORTANT RULES:
                     url =
                         getOmniMsg('omnibarClickCaptureTab') ||
                         'Click or Enter to capture. Space / Ctrl+Click to select several.';
+                    li.dataset.captureRow = 'tab';
+                    // Indented under the group it belongs to, when it belongs to one.
+                    if (data.groupId !== undefined && data.groupId !== -1) li.classList.add('itg-omni-nested');
                 }
             } else if (['b', 'h', 'c'].includes(type)) {
                 title = data.title || data.url;
@@ -5113,14 +5176,40 @@ IMPORTANT RULES:
             if (this.selectedActionItems.size > 0) {
                 confirmAction(Array.from(this.selectedActionItems));
             } else {
-                const actionId = this._actionItemId(li);
-                if (actionId !== undefined) {
-                    this.selectedActionItems.add(actionId);
-                }
+                this._actionItemIds(li).forEach((id) => this.selectedActionItems.add(id));
                 confirmAction(Array.from(this.selectedActionItems));
             }
         }
     }
+    /**
+     * Everything one row stands for. It is a list because a capture group row stands
+     * for the tabs inside it, and picking it picks every one of them.
+     */
+    _actionItemIds(item) {
+        if (item.dataset.captureRow === 'group') {
+            try {
+                return JSON.parse(item.dataset.tabIds || '[]');
+            } catch {
+                return [];
+            }
+        }
+        const id = this._actionItemId(item);
+        return id === undefined || id === null || (typeof id === 'number' && Number.isNaN(id)) ? [] : [id];
+    }
+
+    /**
+     * Repaints which capture rows look picked. A group row and its tabs are the same
+     * choice seen twice, so a change to either has to show up on the other.
+     */
+    _refreshCaptureMarks(items) {
+        items.forEach((item) => {
+            if (item.dataset.type !== 'capture') return;
+            const ids = this._actionItemIds(item);
+            const picked = ids.length > 0 && ids.every((id) => this.selectedActionItems.has(id));
+            item.classList.toggle('action-selected-theme', picked);
+        });
+    }
+
     /** What one row stands for in a batch: the thing the action will be run on. */
     _actionItemId(item) {
         const itemType = item.dataset.type;
@@ -5150,28 +5239,31 @@ IMPORTANT RULES:
                     !item.classList.contains('delete-all-filtered') &&
                     !item.classList.contains('add-all-filtered')
                 ) {
-                    const id = this._actionItemId(item);
-                    if (id !== undefined && id !== null) {
-                        this.selectedActionItems.add(id);
+                    const ids = this._actionItemIds(item);
+                    if (ids.length > 0) {
+                        ids.forEach((id) => this.selectedActionItems.add(id));
                         const isDelete = isDeleteType(item.dataset.type);
                         item.classList.add(isDelete ? 'action-selected' : 'action-selected-theme');
                     }
                 }
             }
         } else {
-            const id = this._actionItemId(li);
-            if (id !== undefined && id !== null) {
+            const ids = this._actionItemIds(li);
+            if (ids.length > 0) {
                 const isDelete = isDeleteType(li.dataset.type);
                 const className = isDelete ? 'action-selected' : 'action-selected-theme';
-                if (this.selectedActionItems.has(id)) {
-                    this.selectedActionItems.delete(id);
+                // A row is on only when everything it stands for is: a group whose tabs
+                // were picked one by one is picked, and dropping one of them drops it.
+                if (ids.every((id) => this.selectedActionItems.has(id))) {
+                    ids.forEach((id) => this.selectedActionItems.delete(id));
                     li.classList.remove('action-selected', 'action-selected-theme');
                 } else {
-                    this.selectedActionItems.add(id);
+                    ids.forEach((id) => this.selectedActionItems.add(id));
                     li.classList.add(className);
                 }
             }
         }
+        this._refreshCaptureMarks(items);
         this.lastSelectedActionIdx = idx;
     }
     _updateSelection(items, selectInPage = true) {

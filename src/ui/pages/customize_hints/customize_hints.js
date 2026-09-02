@@ -2002,7 +2002,7 @@ export async function initCustomizeHints() {
             item.dataset.sectionName = s.name;
             item.innerHTML = `<span class="at-section-icon">@</span><span class="at-section-label">${s.name}</span><span class="at-section-count">${s.count}</span>`;
             item.addEventListener('click', () => {
-                selectAtSection(s.name);
+                applySectionFilter(s.name);
             });
             item.addEventListener('mouseenter', () => {
                 atDropdownItems?.forEach((el) => el.classList.remove('highlighted'));
@@ -2021,14 +2021,24 @@ export async function initCustomizeHints() {
         atHighlightIndex = -1;
     };
 
-    const selectAtSection = (sectionName) => {
+    /** The section the box is filtering by, if any: whatever follows the last `@`. */
+    const getActiveSection = () => {
+        const atIdx = searchInput.value.lastIndexOf('@');
+        return atIdx >= 0 ? searchInput.value.substring(atIdx + 1).trim() || null : null;
+    };
+
+    /**
+     * Narrows the page to one section, or to all of them with `null`.
+     *
+     * The filter itself is the `@name` the search box already understood, so the
+     * dropdown and the three-dot menu both come through here and neither has a
+     * filtering rule of its own.
+     */
+    const applySectionFilter = (sectionName) => {
         const current = searchInput.value;
         const atIdx = current.lastIndexOf('@');
-        if (atIdx >= 0) {
-            searchInput.value = current.substring(0, atIdx) + '@' + sectionName;
-        } else {
-            searchInput.value = (current ? current + ' ' : '') + '@' + sectionName;
-        }
+        const text = (atIdx >= 0 ? current.substring(0, atIdx) : current).trim();
+        searchInput.value = sectionName ? `${text ? `${text} ` : ''}@${sectionName}` : text;
         hideAtDropdown();
         applySearchFilter();
         searchInput.focus();
@@ -2086,6 +2096,17 @@ export async function initCustomizeHints() {
         updateScrollButtons();
     };
 
+    // The three-dot menu at the right of the box, the group list's, over the same
+    // sections the `@` dropdown lists.
+    if (searchBarContainer) {
+        HintCommon.createSectionFilter({
+            container: searchBarContainer,
+            getSections: getSectionList,
+            onSelect: applySectionFilter,
+            getActive: getActiveSection,
+        });
+    }
+
     searchInput.addEventListener('input', () => {
         const val = searchInput.value;
         const atIdx = val.lastIndexOf('@');
@@ -2123,7 +2144,7 @@ export async function initCustomizeHints() {
             if (atHighlightIndex >= 0 && atDropdownItems && atDropdownItems[atHighlightIndex]) {
                 e.preventDefault();
                 const name = atDropdownItems[atHighlightIndex].dataset.sectionName;
-                if (name) selectAtSection(name);
+                if (name) applySectionFilter(name);
             }
         } else if (e.key === 'Escape') {
             hideAtDropdown();

@@ -20,8 +20,10 @@ var ShadowUI = class ShadowUI {
         this.root = this.host.attachShadow({
             mode: 'open',
         });
-        const styleUrl = chrome.runtime.getURL('src/styles/hint_content.css');
-        Utils.loadStyle(this.root, styleUrl);
+        Utils.loadStyle(this.root, chrome.runtime.getURL('src/styles/hint_content.css'));
+        // The section filter of the shortcut modal is the settings page's, rules and
+        // all, so its stylesheet is loaded here rather than copied into ours.
+        Utils.loadStyle(this.root, chrome.runtime.getURL('src/styles/section-filter.css'));
         Utils.loadThemes(this.root);
         this.initFilterSync();
     }
@@ -948,7 +950,7 @@ var HelpModal = class HelpModal {
                     item.dataset.sectionName = s.name;
                     item.innerHTML = `<span class="at-section-icon">@</span><span class="at-section-label">${s.name}</span><span class="at-section-count">${s.count}</span>`;
                     item.addEventListener('click', () => {
-                        selectAtSection(s.name);
+                        applySectionFilter(s.name);
                     });
                     item.addEventListener('mouseenter', () => {
                         atDropdownItems?.forEach((el) => el.classList.remove('highlighted'));
@@ -965,14 +967,22 @@ var HelpModal = class HelpModal {
                 atDropdownItems = null;
                 atHighlightIndex = -1;
             };
-            const selectAtSection = (sectionName) => {
+            /** The section the box is filtering by: whatever follows the last `@`. */
+            const getActiveSection = () => {
+                const atIdx = modalSearchInput.value.lastIndexOf('@');
+                return atIdx >= 0 ? modalSearchInput.value.substring(atIdx + 1).trim() || null : null;
+            };
+            /**
+             * Narrows the modal to one section, or to all of them with `null`.
+             *
+             * The filter is the `@name` the box already understood, so the dropdown
+             * and the three-dot menu both come through here.
+             */
+            const applySectionFilter = (sectionName) => {
                 const current = modalSearchInput.value;
                 const atIdx = current.lastIndexOf('@');
-                if (atIdx >= 0) {
-                    modalSearchInput.value = current.substring(0, atIdx) + '@' + sectionName;
-                } else {
-                    modalSearchInput.value = (current ? current + ' ' : '') + '@' + sectionName;
-                }
+                const text = (atIdx >= 0 ? current.substring(0, atIdx) : current).trim();
+                modalSearchInput.value = sectionName ? `${text ? `${text} ` : ''}@${sectionName}` : text;
                 hideAtDropdown();
                 applyModalSearchFilter();
                 modalSearchInput.focus();
@@ -1047,6 +1057,17 @@ var HelpModal = class HelpModal {
                     }
                 }
             };
+            // The same three-dot menu the settings page wears, over the sections of
+            // this modal.
+            if (searchContainer) {
+                HintCommon.createSectionFilter({
+                    container: searchContainer,
+                    getSections: getSectionList,
+                    onSelect: applySectionFilter,
+                    getActive: getActiveSection,
+                });
+            }
+
             modalSearchInput.addEventListener('input', () => {
                 const val = modalSearchInput.value;
                 const atIdx = val.lastIndexOf('@');
@@ -1095,7 +1116,7 @@ var HelpModal = class HelpModal {
                     if (atHighlightIndex >= 0 && atDropdownItems && atDropdownItems[atHighlightIndex]) {
                         e.preventDefault();
                         const name = atDropdownItems[atHighlightIndex].dataset.sectionName;
-                        if (name) selectAtSection(name);
+                        if (name) applySectionFilter(name);
                     }
                 } else if (e.key === 'Escape') {
                     hideAtDropdown();

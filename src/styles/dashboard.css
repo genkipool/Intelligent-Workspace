@@ -555,14 +555,29 @@ body {
 }
 
 .folder-arrow {
-    width: 12px;
-    height: 12px;
+    width: 18px;
+    height: 18px;
+    margin-left: -3px;
+    border-radius: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.18s;
+    transition:
+        transform 0.18s,
+        background-color 0.12s,
+        color 0.12s;
     color: color-mix(in srgb, var(--text-color) 60%, transparent);
     flex-shrink: 0;
+    cursor: pointer;
+}
+
+/* It sits inside a row that is itself a button, so it has to say plainly that it is
+   the part which opens the folder rather than filtering by it. */
+.folder-arrow:hover,
+.folder-arrow:focus-visible {
+    background: color-mix(in srgb, var(--interactive-color) 18%, transparent);
+    color: var(--text-on-color);
+    outline: none;
 }
 
 .folder-block.open > .folder-row .folder-arrow {
@@ -603,15 +618,52 @@ body {
     color: var(--text-on-color);
 }
 
+/*
+ * Opening a folder used to be `display: none` to `display: block`: the rows appeared
+ * from nowhere while the arrow beside them took 0.18s to turn, and it read as two
+ * separate events. They now grow out of the row above.
+ *
+ * The height comes from `grid-template-rows: 0fr → 1fr`, which is the one way to
+ * animate to a height nobody knows in advance — a folder holds however many sites it
+ * holds. That needs the inner wrapper below to be the thing that clips, and
+ * `visibility` to keep a closed folder off the tab order without cutting the
+ * animation short: transitioned, it flips at the end of the way out and at once on
+ * the way in.
+ */
 .folder-children {
+    display: grid;
+    grid-template-rows: 0fr;
     padding-left: 8px;
-    border-left: 1px solid var(--border-color);
-    margin: 1px 0 2px 14px;
-    display: none;
+    border-left: 1px solid transparent;
+    margin: 0 0 0 14px;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        grid-template-rows 0.18s ease,
+        opacity 0.18s ease,
+        margin 0.18s ease,
+        border-color 0.18s ease,
+        visibility 0.18s;
+}
+
+.folder-children-inner {
+    overflow: hidden;
+    min-height: 0;
 }
 
 .folder-block.open > .folder-children {
-    display: block;
+    grid-template-rows: 1fr;
+    border-left-color: var(--border-color);
+    margin: 1px 0 2px 14px;
+    opacity: 1;
+    visibility: visible;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .folder-children,
+    .folder-arrow {
+        transition: none;
+    }
 }
 
 /* ================================================================

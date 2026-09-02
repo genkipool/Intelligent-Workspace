@@ -46,8 +46,14 @@
             .sort((a, b) => b.seconds - a.seconds);
     });
 
-    /** A search always opens what it found; otherwise the user's own choice stands. */
-    const isOpen = (category) => !!query.trim() || openCategories.has(category) || selectedCategory === category;
+    /**
+     * A search always opens what it found; otherwise the folder is open because the
+     * reader opened it. Selecting a category opens it too, but by adding it to that
+     * same set rather than by being read here — while it was read here the arrow had
+     * no effect at all on the category being filtered by, which is exactly the one a
+     * reader is most likely to want closed again.
+     */
+    const isOpen = (category) => !!query.trim() || openCategories.has(category);
 
     const share = (seconds) => (totalSeconds > 0 ? Math.round((seconds / totalSeconds) * 100) : 0);
 
@@ -104,18 +110,37 @@
                     tabindex="0"
                     title={$tt('webActivityFilterByCategory')}
                     onclick={() => onSelectCategory(group.category)}
-                    onkeydown={(e) => e.key === 'Enter' && onSelectCategory(group.category)}
+                    onkeydown={(e) => {
+                        if (e.key === 'Enter') {
+                            onSelectCategory(group.category);
+                            return;
+                        }
+                        // The arrow keys open and close the folder without filtering
+                        // by it, the way they do in every other tree.
+                        const open = isOpen(group.category);
+                        if (e.key === 'ArrowRight' && !open) {
+                            e.preventDefault();
+                            onToggleCategory(group.category);
+                        } else if (e.key === 'ArrowLeft' && open) {
+                            e.preventDefault();
+                            onToggleCategory(group.category);
+                        }
+                    }}
                 >
                     <span
                         class="folder-arrow"
                         role="button"
                         tabindex="0"
+                        aria-expanded={isOpen(group.category)}
+                        title={isOpen(group.category) ? $tt('collapseFolder') : $tt('expandFolder')}
+                        aria-label={isOpen(group.category) ? $tt('collapseFolder') : $tt('expandFolder')}
                         onclick={(e) => {
                             e.stopPropagation();
                             onToggleCategory(group.category);
                         }}
                         onkeydown={(e) => {
-                            if (e.key === 'Enter') {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
                                 e.stopPropagation();
                                 onToggleCategory(group.category);
                             }
@@ -130,22 +155,26 @@
                         {fmtDur(group.seconds)}
                     </span>
                 </div>
+                <!-- The inner wrapper is what clips while the folder grows; see
+                     `.folder-children` in dashboard.css. -->
                 <div class="folder-children">
-                    {#each group.sites as site (site.domain)}
-                        <div
-                            class="sidebar-item"
-                            class:active={selectedSite === site.domain}
-                            role="button"
-                            tabindex="0"
-                            title="{site.domain} — {share(site.seconds)}%"
-                            onclick={() => onSelectSite(site.domain)}
-                            onkeydown={(e) => e.key === 'Enter' && onSelectSite(site.domain)}
-                        >
-                            <img class="si-icon si-favicon" src={faviconFor(site.domain)} alt="" loading="lazy" />
-                            <span class="si-name">{site.domain}</span>
-                            <span class="si-count">{fmtDur(site.seconds)}</span>
-                        </div>
-                    {/each}
+                    <div class="folder-children-inner">
+                        {#each group.sites as site (site.domain)}
+                            <div
+                                class="sidebar-item"
+                                class:active={selectedSite === site.domain}
+                                role="button"
+                                tabindex="0"
+                                title="{site.domain} — {share(site.seconds)}%"
+                                onclick={() => onSelectSite(site.domain)}
+                                onkeydown={(e) => e.key === 'Enter' && onSelectSite(site.domain)}
+                            >
+                                <img class="si-icon si-favicon" src={faviconFor(site.domain)} alt="" loading="lazy" />
+                                <span class="si-name">{site.domain}</span>
+                                <span class="si-count">{fmtDur(site.seconds)}</span>
+                            </div>
+                        {/each}
+                    </div>
                 </div>
             </div>
         {/each}
