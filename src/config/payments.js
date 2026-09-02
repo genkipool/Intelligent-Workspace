@@ -98,11 +98,21 @@ export const PAYMENT_THEME_TOKENS = [
  * Messages the hosted page is allowed to send. Anything else is dropped.
  *
  * `EXTERNAL` is the only one that asks the panel to act rather than reporting what
- * happened. PayPal, Klarna and Amazon Pay refuse to authenticate inside another site's
- * frame, so the sheet cannot finish them here: it hands back the address to open as an
- * ordinary tab. The URL is checked against `PAYMENT_ORIGIN` before it is opened — the
- * message arrives from a frame, and a frame's word on where to send the user is not
- * taken on trust.
+ * happened. Two different things arrive on it:
+ *
+ *   - PayPal, Klarna and Amazon Pay refuse to authenticate inside another site's frame,
+ *     so the sheet cannot finish them here;
+ *   - the card form and Revolut Pay are not drawn in the frame at all. Chrome reads the
+ *     TOP-LEVEL document's scheme to decide whether a payment form is in a secure
+ *     context, and the panel's is `chrome-extension:`, so a card field framed here is
+ *     judged insecure and anyone with a card saved in Chrome is told the form "does not
+ *     use a secure connection". No header the hosted page sends can change that, so the
+ *     panel shows a button per method and the fields are collected in a window whose own
+ *     URL is https.
+ *
+ * Either way the sheet hands back an address for the panel to open. The URL is checked
+ * against `PAYMENT_ORIGIN` before it is opened — the message arrives from a frame, and a
+ * frame's word on where to send the user is not taken on trust.
  */
 export const PAYMENT_MESSAGE_TYPES = Object.freeze({
     READY: 'pay:ready',

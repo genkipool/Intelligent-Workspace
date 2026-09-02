@@ -1458,18 +1458,18 @@ export async function openPaymentInPanel(provider) {
             else showNotification('donationFailed', true);
         },
         onClose: () => void leaveDonation(),
-        /*
-         * PayPal, Klarna and Amazon Pay cannot finish inside a frame, so the sheet hands
-         * back its own address and the panel opens it as a tab. The panel then closes the
-         * frame: leaving a half-finished sheet behind it would offer the reader a second
-         * place to pay from, and only one of the two would work.
-         */
         onExternal: (url) => {
             /*
              * A WINDOW, AND THE PANEL STAYS PUT.
              *
-             * Revolut Pay, PayPal, Klarna and Amazon Pay authenticate on their own pages
-             * and refuse to be framed, so the authorisation has to happen somewhere else.
+             * Two kinds of payment come through here. PayPal, Klarna and Amazon Pay
+             * authenticate on their own pages and refuse to be framed. Card and Revolut
+             * Pay are not offered in the frame at all: Chrome judges a payment form's
+             * security by the TOP-LEVEL document's scheme, the panel's is
+             * `chrome-extension:`, and a card field framed under it is declared to be on
+             * an insecure connection — see `config/payments.js`. Both end up in a window
+             * whose own URL is https, where neither problem exists.
+             *
              * A popup window rather than a tab: it is what a payment hand-off looks like
              * everywhere else, it keeps the reader's tabs as they were, and closing it
              * puts them back where they started.
