@@ -11940,12 +11940,10 @@
         "description": "Confirmación"
     },
     "hintDesc_readAloud": {
-        "message": "Leer la página en voz alta",
-        "description": "Comando de teclado que inicia el lector"
+        "message": "Leer la página en voz alta"
     },
     "hintDesc_ao": {
-        "message": "Crear una nota con el texto seleccionado",
-        "description": "Comando de teclado que escribe la selección en una nota"
+        "message": "Crear una nota con el texto seleccionado"
     },
     "prefixReadAloud": {
         "message": "Leer una pestaña en voz alta",

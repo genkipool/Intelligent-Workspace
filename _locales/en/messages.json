@@ -11960,12 +11960,10 @@
     "description": "Confirmation"
   },
   "hintDesc_readAloud": {
-    "message": "Read the page out loud",
-    "description": "Keyboard command that starts the reader"
+    "message": "Read the page out loud"
   },
   "hintDesc_ao": {
-    "message": "Create a note from the selected text",
-    "description": "Keyboard command that writes the selection into a note"
+    "message": "Create a note from the selected text"
   },
   "prefixReadAloud": {
     "message": "Read a tab out loud",
