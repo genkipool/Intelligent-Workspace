@@ -2730,6 +2730,31 @@ var HintCommon = {
             });
         };
 
+        /*
+         * A wheel anywhere over the menu belongs to the menu.
+         *
+         * Only the list scrolls; the popup's padding and the bridge that reaches out
+         * past it are not scroll containers, so a wheel that starts over either of
+         * them was going straight through to whatever is behind — in the shortcut
+         * modal, the modal, which scrolled away under the open menu. `contain` in the
+         * stylesheet stops the chaining once the list is at its end; this is for the
+         * part of the menu that is not the list.
+         */
+        popup.addEventListener(
+            'wheel',
+            (event) => {
+                if (list.scrollHeight <= list.clientHeight) {
+                    event.preventDefault();
+                    return;
+                }
+                if (!list.contains(event.target)) {
+                    list.scrollTop += event.deltaY;
+                    event.preventDefault();
+                }
+            },
+            { passive: false },
+        );
+
         // Hover is what opens it; `open` is for the keyboard, which has no hover.
         menu.addEventListener('mouseenter', render);
         menu.addEventListener('mouseleave', () => menu.classList.remove('open'));

@@ -2941,10 +2941,6 @@ input.error:focus,
     font-weight: 700;
 }
 
-.hint-omni-result-item.itg-omni-nested {
-    padding-left: 44px;
-}
-
 /* Filter actions: normal with text-color, hover/selected with error-color */
 .hint-omni-result-item.delete-all-filtered {
     color: var(--text-color) !important;
@@ -3048,12 +3044,14 @@ input.error:focus,
 /* Indent sub-items (URLs, tabs) for better visual hierarchy */
 .hint-omni-result-item[data-rule-urls],
 .hint-omni-result-item[data-bg-type='bg-group'],
-.hint-omni-result-item[data-bg-type='bg-backup-mode'] {
+.hint-omni-result-item[data-bg-type='bg-backup-mode'],
+.hint-omni-result-item[data-capture-row='group'] {
     padding-left: 16px;
 }
 
 .hint-omni-result-item[data-tab-url],
-.hint-omni-result-item[data-bg-type='bg-tab'] {
+.hint-omni-result-item[data-bg-type='bg-tab'],
+.hint-omni-result-item[data-capture-row='tab'] {
     padding-left: 40px;
 }
 
@@ -3062,13 +3060,16 @@ input.error:focus,
 .hint-omni-result-item[data-rule-urls],
 .hint-omni-result-item[data-bg-type='bg-group'],
 .hint-omni-result-item[data-tab-url],
-.hint-omni-result-item[data-bg-type='bg-tab'] {
+.hint-omni-result-item[data-bg-type='bg-tab'],
+.hint-omni-result-item[data-capture-row='group'],
+.hint-omni-result-item[data-capture-row='tab'] {
     position: relative;
 }
 
 /* Vertical line from parent items down toward children (aligned below dot center) */
 .hint-omni-result-item[data-rule-urls]::after,
-.hint-omni-result-item[data-bg-type='bg-group']::after {
+.hint-omni-result-item[data-bg-type='bg-group']::after,
+.hint-omni-result-item[data-capture-row='group']::after {
     content: '';
     position: absolute;
     left: 26px;
@@ -3082,7 +3083,8 @@ input.error:focus,
 
 /* Horizontal branch line for child items from dot center toward content */
 .hint-omni-result-item[data-tab-url]::before,
-.hint-omni-result-item[data-bg-type='bg-tab']::before {
+.hint-omni-result-item[data-bg-type='bg-tab']::before,
+.hint-omni-result-item[data-capture-row='tab']::before {
     content: '';
     position: absolute;
     left: 26px;
@@ -3096,7 +3098,8 @@ input.error:focus,
 
 /* Vertical continuation for non-last child items */
 .hint-omni-result-item[data-tab-url]:has(+ [data-tab-url])::after,
-.hint-omni-result-item[data-bg-type='bg-tab']:has(+ [data-bg-type='bg-tab'])::after {
+.hint-omni-result-item[data-bg-type='bg-tab']:has(+ [data-bg-type='bg-tab'])::after,
+.hint-omni-result-item[data-capture-row='tab']:has(+ [data-capture-row='tab'])::after {
     content: '';
     position: absolute;
     left: 26px;
@@ -3113,6 +3116,9 @@ input.error:focus,
 .hint-omni-result-item[data-tab-url]:has(+ [data-bg-type='bg-group'])::after,
 .hint-omni-result-item[data-bg-type='bg-tab']:has(+ [data-bg-type='bg-group'])::after,
 .hint-omni-result-item[data-bg-type='bg-tab']:has(+ [data-rule-urls])::after,
+.hint-omni-result-item[data-capture-row='tab']:has(+ [data-capture-row='group'])::after,
+.hint-omni-result-item[data-capture-row='tab']:has(+ [data-capture-row='loose'])::after,
+.hint-omni-result-item[data-capture-row='tab']:last-child::after,
 .hint-omni-result-item[data-tab-url]:last-child::after,
 .hint-omni-result-item[data-bg-type='bg-tab']:last-child::after {
     content: '';

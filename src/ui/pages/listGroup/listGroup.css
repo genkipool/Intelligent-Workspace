@@ -3593,6 +3593,22 @@ body.popup-window {
     top: 32px;
     left: 0;
     background-color: rgba(0, 0, 0, 0.5);
+    border-bottom-right-radius: 0;
+    opacity: 0;
+    transition:
+        opacity 0.2s ease-in-out,
+        color 0.2s ease;
+    pointer-events: none;
+    padding: 7px 6px 5px 6px;
+    color: var(--text-color);
+}
+
+/* Under the reader, third in the column down the left edge of the card. */
+.gallery-item .gallery-edit-btn {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.5);
     border-bottom-right-radius: var(--border-radius);
     opacity: 0;
     transition:
@@ -3604,12 +3620,14 @@ body.popup-window {
 }
 
 .gallery-item:hover .gallery-pin-btn,
-.gallery-item:hover .gallery-ocr-btn {
+.gallery-item:hover .gallery-ocr-btn,
+.gallery-item:hover .gallery-edit-btn {
     opacity: 1;
     pointer-events: auto;
 }
 
-.gallery-item:hover .gallery-ocr-btn:hover {
+.gallery-item:hover .gallery-ocr-btn:hover,
+.gallery-item:hover .gallery-edit-btn:hover {
     color: var(--action-color);
 }
 

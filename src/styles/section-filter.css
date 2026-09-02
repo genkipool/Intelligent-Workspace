@@ -15,6 +15,8 @@
     flex-shrink: 0;
 }
 
+/* The glyph and nothing else: no border, no plate. Bare icon buttons are what both
+   of these pages use everywhere, and a box here read as a text field's twin. */
 .itg-section-filter-btn {
     display: inline-flex;
     align-items: center;
@@ -22,22 +24,21 @@
     width: 28px;
     height: 28px;
     padding: 0;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius, 8px);
-    background-color: var(--bg-panel-color);
+    border: none;
+    background: none;
     color: var(--text-color);
     cursor: pointer;
+    opacity: 0.75;
     transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
+        opacity 0.2s ease,
         color 0.2s ease;
 }
 
 .itg-section-filter-btn:hover,
 .itg-section-filter-btn:focus-visible,
 .itg-section-filter.open .itg-section-filter-btn {
-    border-color: var(--action-color);
     color: var(--text-on-color);
+    opacity: 1;
     outline: none;
 }
 
@@ -94,6 +95,23 @@
     gap: 4px;
     max-height: 320px;
     overflow-y: auto;
+    /* Reaching the end of the list must not hand the rest of the wheel to whatever is
+       behind it — which in the shortcut modal is the modal, and it scrolled instead. */
+    overscroll-behavior: contain;
+}
+
+/* The scrollbar every other popup of the extension wears. */
+.itg-section-filter-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.itg-section-filter-list::-webkit-scrollbar-track {
+    background: var(--bg-panel-color);
+}
+
+.itg-section-filter-list::-webkit-scrollbar-thumb {
+    background: var(--action-color);
+    border-radius: 3px;
 }
 
 .itg-section-filter-item {
@@ -110,15 +128,22 @@
     transition: background-color 0.2s ease;
 }
 
+/* The background is the page's, never the action colour: `--text-on-color` *is* the
+   action colour in more than one theme, and the label went invisible on it. This is
+   the recipe `.overflow-popup-item` has always used. */
 .itg-section-filter-item:hover,
 .itg-section-filter-item:focus-visible {
-    background-color: var(--action-color);
+    background-color: var(--bg-color);
     color: var(--text-on-color);
     outline: none;
 }
 
+.itg-section-filter-item:focus-visible {
+    box-shadow: 0 0 0 2px var(--interactive-color);
+}
+
 .itg-section-filter-item.active {
-    background-color: var(--bg-hover-color, var(--bg-color));
+    background-color: color-mix(in srgb, var(--action-color) 18%, transparent);
     font-weight: 600;
 }
 

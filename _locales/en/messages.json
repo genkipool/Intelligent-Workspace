@@ -8790,6 +8790,15 @@
   "ocrScreenshot": {
     "message": "Copy image text (OCR)"
   },
+  "editScreenshot": {
+    "message": "Edit the image in Excalidraw"
+  },
+  "openScreenshotInTab": {
+    "message": "Open the image in a new tab"
+  },
+  "errorOpeningScreenshot": {
+    "message": "The image could not be opened"
+  },
   "ocrProcessing": {
     "message": "Extracting text... ($1%)"
   },

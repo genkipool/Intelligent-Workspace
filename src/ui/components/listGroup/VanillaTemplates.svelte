@@ -737,7 +737,7 @@
 
 <template id="gallery-item-template">
     <div class="gallery-item">
-        <img src="" alt="Screenshot" loading="lazy" class="gallery-image" />
+        <img src="" alt="Screenshot" loading="lazy" class="gallery-image" data-i18n-title="openScreenshotInTab" />
         <span class="gallery-full-page-badge" data-i18n="fullPageBadge"></span>
         <div class="gallery-item-info">
             <p class="gallery-item-title"></p>
@@ -750,6 +750,11 @@
         <button type="button" class="gallery-action-btn gallery-ocr-btn" data-i18n-title="ocrScreenshot">
             <svg width="18" height="18">
                 <use href="#icon-summary"></use>
+            </svg>
+        </button>
+        <button type="button" class="gallery-action-btn gallery-edit-btn" data-i18n-title="editScreenshot">
+            <svg width="18" height="18">
+                <use href="#icon-edit"></use>
             </svg>
         </button>
         <div class="gallery-item-actions">

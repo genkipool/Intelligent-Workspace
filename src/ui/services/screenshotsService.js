@@ -780,6 +780,29 @@ async function renderGalleryGrid(screenshotIds) {
     });
 }
 
+/** The drawing board the edit button hands the capture over to. */
+const EXCALIDRAW_URL = 'https://excalidraw.com/';
+
+/**
+ * Opens one capture in a tab of its own.
+ *
+ * Chrome refuses to navigate to a `data:` URL, so the image is handed over as a blob
+ * belonging to this page — which is why the handle is only released a minute later,
+ * once the tab has certainly read it.
+ *
+ * @param {string} dataUrl
+ */
+async function openScreenshotInTab(dataUrl) {
+    try {
+        const url = URL.createObjectURL(await dataUrlToBlob(dataUrl));
+        await chrome.tabs.create({ url });
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+        console.error('Error opening the screenshot in a tab:', error);
+        showNotification('errorOpeningScreenshot', true);
+    }
+}
+
 /** Puts one screenshot into one card and wires the five things that can be done to it. */
 function fillGalleryItem(galleryItem, fullScreenshot) {
     const img = galleryItem.querySelector('.gallery-image');
@@ -789,7 +812,12 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
     img.alt = `Screenshot of ${fullScreenshot.title}`;
     galleryItem.querySelector('.gallery-item-title').textContent = fullScreenshot.title;
 
-    galleryItem.addEventListener('click', () => chrome.tabs.create({ url: 'https://excalidraw.com/' }));
+    // The card used to open a drawing board wherever it was clicked, which is not what
+    // clicking a picture means anywhere else: it opens the picture, and the board has
+    // a button of its own below the reader. The listener stays on the card because the
+    // image is the card — everything else on it is an overlay, and every one of those
+    // stops the click from getting here.
+    galleryItem.addEventListener('click', () => openScreenshotInTab(fullScreenshot.dataUrl));
     galleryItem.querySelector('.copy-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         copyScreenshot(fullScreenshot.dataUrl);
@@ -822,6 +850,14 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
         pinBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleScreenshotPersistence(fullScreenshot, pinBtn);
+        });
+    }
+
+    const editBtn = galleryItem.querySelector('.gallery-edit-btn');
+    if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            chrome.tabs.create({ url: EXCALIDRAW_URL });
         });
     }
 

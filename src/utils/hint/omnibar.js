@@ -4036,9 +4036,10 @@ IMPORTANT RULES:
                     url =
                         getOmniMsg('omnibarClickCaptureTab') ||
                         'Click or Enter to capture. Space / Ctrl+Click to select several.';
-                    li.dataset.captureRow = 'tab';
-                    // Indented under the group it belongs to, when it belongs to one.
-                    if (data.groupId !== undefined && data.groupId !== -1) li.classList.add('itg-omni-nested');
+                    // A tab of a group is a child of the row above it and is drawn as
+                    // one, with the same indent and connector the rule and backup
+                    // lists use; one in no group is not a child of anything.
+                    li.dataset.captureRow = data.groupId !== undefined && data.groupId !== -1 ? 'tab' : 'loose';
                 }
             } else if (['b', 'h', 'c'].includes(type)) {
                 title = data.title || data.url;
