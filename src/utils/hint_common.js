@@ -2677,12 +2677,12 @@ var HintCommon = {
         });
         /*
          * `#icon-more-vertical` drawn out longhand: neither surface carries the icon
-         * sheet the group list pulls it from with `<use>`. Same 14px box, same path,
-         * same `fill-rule` — and the fill is left to the stylesheet, which is where
-         * `.overflow-btn` sets it too.
+         * sheet the group list pulls it from with `<use>`. Same path, same `fill-rule`,
+         * and the same 24px the button beside the group list's own search box uses —
+         * the three-dot button of a card is a smaller one, and this is not that.
          */
         button.innerHTML =
-            '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+            '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
             '<path fill-rule="evenodd" clip-rule="evenodd" fill="currentColor" d="M12 4a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-3 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2m3 1a3 3 0 1 1-6 0 3 3 0 0 1 6 0m-4 7a1 1 0 1 1 2 0 1 1 0 0 1-2 0m1 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>' +
             '</svg>';
 

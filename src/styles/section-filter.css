@@ -16,36 +16,45 @@
 }
 
 /*
- * The group list's overflow button, declaration for declaration: `.action-btn` gives
- * it its shape and `.overflow-btn` paints the glyph, and both live in `listGroup.css`,
- * which these two pages do not load. Nothing else is added on top — an opacity of its
- * own was enough to make the same three dots read as a different, greyer icon.
+ * `.control-btn`, declaration for declaration.
+ *
+ * The group list has three buttons of three dots and they are not the same size. The
+ * one this is: `#toggle-view-panel-btn`, at the right end of the row under the header,
+ * which is the same place and the same job as this one — 24px of glyph in 6px of
+ * padding, dimmed to 0.6 until the pointer is on it. (The other two, `.overflow-btn`
+ * on a card at 14px and `.orphan-menu-btn` at 20px, belong to rows of items.)
+ *
+ * `listGroup.css` is where that rule lives and these two pages do not load it, so what
+ * is copied is the block, not the file.
  */
 .itg-section-filter-btn {
     background: none;
     border: none;
     color: var(--text-color);
     cursor: pointer;
+    padding: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    border-radius: 4px;
     flex-shrink: 0;
-    border-radius: 50%;
-    line-height: 1;
+    opacity: 0.6;
+    transition:
+        color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        opacity 0.2s ease;
 }
 
-.itg-section-filter-btn svg path {
-    fill: var(--text-color);
-}
-
-.itg-section-filter-btn:hover svg path,
-.itg-section-filter-btn:focus-visible svg path,
-.itg-section-filter.open .itg-section-filter-btn svg path {
-    fill: var(--text-on-color);
+.itg-section-filter-btn:hover,
+.itg-section-filter.open .itg-section-filter-btn {
+    opacity: 1;
 }
 
 .itg-section-filter-btn:focus-visible {
     outline: none;
+    opacity: 1;
     box-shadow: 0 0 0 2px var(--interactive-color);
 }
 
