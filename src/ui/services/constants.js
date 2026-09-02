@@ -31,6 +31,19 @@ export const darkThemeColors = {
     grey: '#DADCE0',
 };
 
+/**
+ * The palette that matches the colour scheme the browser is in.
+ *
+ * Chrome names a group's colour (`blue`, `red`, …) and every surface that paints one
+ * has to resolve that name to a hex value the same way. This is that single place;
+ * the ternary used to be copied into each of them.
+ *
+ * @returns {Record<string, string>}
+ */
+export function getThemeColors() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
+}
+
 export const colors = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
 
 export const STORAGE_KEYS = {
@@ -156,7 +169,6 @@ export const screenshotConfig = {
 };
 
 export const state = {
-    themeColors: {},
     currentColorPopup: null,
     currentDownloadModal: null,
     lastClickedIndicator: null,
@@ -175,7 +187,6 @@ export const state = {
     expandedGroupStates: new Map(),
     expandedSubgroupStates: new Map(),
     isInitialRender: true,
-    hiddenYoutubeView: null,
     splitScreenState: {},
     currentPanelUrl: null,
     currentPanelContext: null,

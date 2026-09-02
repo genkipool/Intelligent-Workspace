@@ -1,7 +1,7 @@
 /**
  * viewsService.js — Service extracted from views.js
  *
- * Functions: showWelcomeMessage, restoreMainView, closeBookmarksView, toggleViews, updateSplitButtonsUI, manageViewVisibility, switchMainView, openDeleteHistoryConfirmModal, updateMainPanelButtons, renderHistoryView, showNoHistoryMessage, renderRecentlyClosedView, renderReadingListView, initCustomCalendar, createGenericListItem, handleIframeMessage, openUrlInPip, openUrlInPopup, openUrlInPanel, fetchContentForReaderView, showReaderView, showErrorView, closeUrlInPanel, hideYoutubeView, createYoutubeIndicator, restoreYoutubeView, adjustScrollButtonsForGeminiView, getActiveScrollableElement, updateScrollButtons, updateBackButtonTooltip, updateExpandAllButtonState, toggleExpandAll, updateHeaderButtonsVisibility, initViewEvents
+ * Functions: showWelcomeMessage, restoreMainView, closeBookmarksView, toggleViews, updateSplitButtonsUI, manageViewVisibility, switchMainView, openDeleteHistoryConfirmModal, updateMainPanelButtons, renderHistoryView, showNoHistoryMessage, renderRecentlyClosedView, renderReadingListView, initCustomCalendar, createGenericListItem, handleIframeMessage, openUrlInPip, openUrlInPopup, openUrlInPanel, fetchContentForReaderView, showReaderView, showErrorView, closeUrlInPanel, hideYoutubeView, restoreYoutubeView, discardYoutubeView, adjustScrollButtonsForGeminiView, getActiveScrollableElement, updateScrollButtons, updateBackButtonTooltip, updateExpandAllButtonState, toggleExpandAll, updateHeaderButtonsVisibility, initViewEvents
  */
 
 import { get } from 'svelte/store';
@@ -1717,7 +1717,6 @@ export function showErrorView(errorMessage, url) {
 
 export async function closeUrlInPanel(isSwitchingView = false) {
     const _container = document.querySelector('.container');
-    const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
 
     /*
      * Before the early return, so that switching straight from the donation sheet into
@@ -1746,13 +1745,7 @@ export async function closeUrlInPanel(isSwitchingView = false) {
         },
     );
 
-    const hv = get(hiddenYoutubeView);
-    if (hv) {
-        hv.remove();
-        hiddenYoutubeView.set(null);
-        const indicator = _hiddenGroupsContainer.querySelector('.youtube-indicator');
-        if (indicator) indicator.remove();
-    }
+    discardYoutubeView();
 
     const activeView = getTransientActiveView(_container);
     if (activeView) activeView.remove();
@@ -1773,9 +1766,15 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     restoreMainView();
 }
 
+/**
+ * Parks the player instead of closing it: the view is taken off screen and the bar of
+ * hidden groups grows a circle that brings it back. Setting the store is all this has
+ * to do about that circle — `HiddenGroupsBar.svelte` renders it from there.
+ *
+ * @param {HTMLElement} viewToHide
+ */
 export function hideYoutubeView(viewToHide) {
     const _container = document.querySelector('.container');
-    const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
     const _mainHeaderTitle = document.getElementById('main-header-title');
 
     hiddenYoutubeView.set(viewToHide);
@@ -1794,15 +1793,9 @@ export function hideYoutubeView(viewToHide) {
         _mainHeaderTitle.setAttribute('data-i18n', 'listTabGroups');
     }
 
-    createYoutubeIndicator();
-
     applyActionVisibility();
 
     updateHeaderButtonsVisibility();
-
-    if (_hiddenGroupsContainer) {
-        _hiddenGroupsContainer.classList.toggle('hidden', _hiddenGroupsContainer.childElementCount === 0);
-    }
 
     updateScrollButtons();
     updateBackButtonTooltip();
@@ -1810,50 +1803,12 @@ export function hideYoutubeView(viewToHide) {
     applyTranslations(_mainHeaderTitle);
 }
 
-export function createYoutubeIndicator() {
-    const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
-    const _hiddenIndicatorTemplate = document.getElementById('hidden-group-indicator-template');
-
-    const existingIndicator = _hiddenGroupsContainer.querySelector('.youtube-indicator');
-    if (existingIndicator) existingIndicator.remove();
-
-    const indicatorEl = _hiddenIndicatorTemplate.content.cloneNode(true).firstElementChild;
-    indicatorEl.classList.add('youtube-indicator');
-    indicatorEl.style.backgroundColor = legacyState.themeColors.red;
-    indicatorEl.title = chrome.i18n.getMessage('showYouTubePlayer');
-    indicatorEl.addEventListener('click', restoreYoutubeView);
-
-    indicatorEl.querySelector('.hidden-group-initial').textContent = 'Y';
-
-    const deleteBtn = document.createElement('span');
-    deleteBtn.className = 'youtube-delete-btn';
-    deleteBtn.textContent = '×';
-    deleteBtn.title = chrome.i18n.getMessage('closeYouTubePlayer');
-
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const hv = get(hiddenYoutubeView);
-        if (hv) {
-            hv.remove();
-            hiddenYoutubeView.set(null);
-        }
-        indicatorEl.remove();
-        if (_hiddenGroupsContainer.childElementCount === 0) {
-            _hiddenGroupsContainer.classList.add('hidden');
-        }
-    });
-
-    indicatorEl.appendChild(deleteBtn);
-    _hiddenGroupsContainer.appendChild(indicatorEl);
-    _hiddenGroupsContainer.classList.remove('hidden');
-}
-
+/** Puts the parked player back on screen. */
 export function restoreYoutubeView() {
     const hv = get(hiddenYoutubeView);
     if (!hv) return;
 
     const _container = document.querySelector('.container');
-    const _hiddenGroupsContainer = document.getElementById('hidden-groups-container');
 
     _container
         .querySelectorAll(
@@ -1867,13 +1822,14 @@ export function restoreYoutubeView() {
     hv.classList.add('active-view');
     isUrlViewActive.set(true);
     hiddenYoutubeView.set(null);
+}
 
-    const indicator = _hiddenGroupsContainer.querySelector('.youtube-indicator');
-    if (indicator) indicator.remove();
-
-    if (_hiddenGroupsContainer.childElementCount === 0) {
-        _hiddenGroupsContainer.classList.add('hidden');
-    }
+/** Throws the parked player away: what the circle's delete badge does. */
+export function discardYoutubeView() {
+    const hv = get(hiddenYoutubeView);
+    if (!hv) return;
+    hv.remove();
+    hiddenYoutubeView.set(null);
 }
 
 export function adjustScrollButtonsForGeminiView() {

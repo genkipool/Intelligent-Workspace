@@ -728,7 +728,6 @@ body.groups-view-active:not(.notes-view-active):not(.gallery-view-active) .contr
     flex-shrink: 0;
 }
 
-.hidden-group-delete-badge,
 .delete-badge-btn {
     position: absolute;
     top: -12px;
@@ -755,24 +754,19 @@ body.groups-view-active:not(.notes-view-active):not(.gallery-view-active) .contr
         padding 0.2s ease;
 }
 
-.delete-badge-btn.show-on-hover,
-.hidden-group-delete-badge {
+.delete-badge-btn.show-on-hover {
     opacity: 0;
     pointer-events: none;
     transform: scale(0.8);
 }
 
 .hidden-group-wrapper:hover .delete-badge-btn,
-.hidden-group-wrapper:focus-within .delete-badge-btn,
-.hidden-group-wrapper:hover .hidden-group-delete-badge,
-.hidden-group-wrapper:focus-within .hidden-group-delete-badge {
+.hidden-group-wrapper:focus-within .delete-badge-btn {
     opacity: 1;
     pointer-events: auto;
     transform: scale(1);
 }
 
-.hidden-group-delete-badge:hover,
-.hidden-group-delete-badge:focus-visible,
 .delete-badge-btn:hover,
 .delete-badge-btn:focus-visible {
     transform: scale(1.5) !important;
@@ -1419,41 +1413,10 @@ body.show-domain-headers .subgroup-tab-list {
     text-decoration: underline;
 }
 
+/* The parked YouTube player sits apart from the hidden groups, at the end of the bar. */
 .youtube-indicator {
-    position: relative;
     margin-left: auto;
-    border-radius: var(--border-radius);
     z-index: 201;
-}
-
-.youtube-delete-btn {
-    position: absolute;
-    top: -15px;
-    right: -5px;
-    background-color: var(--error-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    width: 16px;
-    height: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.8);
-    transition:
-        opacity 0.2s ease,
-        transform 0.2s ease;
-}
-
-.youtube-indicator:hover .youtube-delete-btn {
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
 }
 
 .download-files-btn svg {

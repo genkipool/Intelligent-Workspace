@@ -14,13 +14,7 @@ import { getProvider } from '../../../config/donationProviders.js';
 import { warmPaymentOrigin } from '../../services/paymentService.js';
 import { saveGeminiEntryToDb, getNoteFromDb } from '../../../utils/db.js';
 
-import {
-    STORAGE_KEYS,
-    noteConfig,
-    screenshotConfig,
-    lightThemeColors,
-    darkThemeColors,
-} from '../../services/constants.js';
+import { STORAGE_KEYS, noteConfig, screenshotConfig, getThemeColors } from '../../services/constants.js';
 
 import {
     restoreMainView,
@@ -648,7 +642,7 @@ export async function initializeAllEvents() {
     await Promise.all([syncIndexedDbWithSession(), loadState(), loadConversationFromDb()]);
 
     listGroupState.update((s) => {
-        s.themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
+        s.themeColors = getThemeColors();
         return s;
     });
     initCustomCalendar();

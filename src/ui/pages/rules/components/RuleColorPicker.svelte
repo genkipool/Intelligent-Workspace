@@ -1,6 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
-    import { lightThemeColors, darkThemeColors } from '../../../services/constants.js';
+    import { getThemeColors } from '../../../services/constants.js';
 
     let {
         selectedColor = $bindable('blue'),
@@ -8,9 +8,7 @@
         onSelectColor = () => {},
     } = $props();
 
-    let themeColors = $state(
-        window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors,
-    );
+    let themeColors = $state(getThemeColors());
 
     let containerEl = $state(null);
 

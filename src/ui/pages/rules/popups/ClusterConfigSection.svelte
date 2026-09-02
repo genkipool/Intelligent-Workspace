@@ -1,6 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
-    import { lightThemeColors, darkThemeColors } from '../../../services/constants.js';
+    import { getThemeColors } from '../../../services/constants.js';
     import { blockNumericKeys } from '../../../services/numericInput.js';
     import ColorPopup from './ColorPopup.svelte';
 
@@ -17,7 +17,7 @@
      */
     let { clusterConfig = $bindable(), idPrefix = '', onchange, onreset } = $props();
 
-    const themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
+    const themeColors = getThemeColors();
 
     // Groupings without a name or a colour of their own.
     const PLAIN_ENTRIES = [

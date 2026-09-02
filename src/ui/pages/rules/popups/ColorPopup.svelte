@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
 
-    import { lightThemeColors, darkThemeColors } from '../../../services/constants.js';
+    import { getThemeColors } from '../../../services/constants.js';
     import { t, tt } from '../../../stores/i18nStore.js';
 
     /**
@@ -14,7 +14,7 @@
      */
     let { show = false, position = { x: 0, y: 0 }, absolute = false, groupKey = null, onclose, onselect } = $props();
 
-    const themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
+    const themeColors = getThemeColors();
 
     let popupEl = $state(null);
     let hiding = $state(false);

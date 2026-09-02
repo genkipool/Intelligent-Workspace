@@ -1,12 +1,6 @@
 <script>
 </script>
 
-<template id="hidden-group-indicator-template">
-    <button type="button" class="hidden-group-indicator" role="button">
-        <span class="hidden-group-initial"></span>
-    </button>
-</template>
-
 <template id="color-popup-template">
     <div class="color-popup"></div>
 </template>

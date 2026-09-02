@@ -1,5 +1,5 @@
 <script>
-    import { lightThemeColors, darkThemeColors } from '../../services/constants.js';
+    import { getThemeColors } from '../../services/constants.js';
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
@@ -32,7 +32,7 @@
     } = $props();
 
     let isStarred = $derived(rule.isStarred || false);
-    const _themeColors = window.matchMedia('(prefers-color-scheme: dark)').matches ? darkThemeColors : lightThemeColors;
+    const _themeColors = getThemeColors();
     let groupColorHex = $derived(_themeColors[rule.color] || _themeColors.blue);
 
     /**

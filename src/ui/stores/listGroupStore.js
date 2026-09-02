@@ -26,7 +26,6 @@ export const listGroupState = writable({
     expandedSubgroupStates: new Map(),
     expandedBookmarkFolderStates: new Map(),
     isInitialRender: true,
-    hiddenYoutubeView: null,
     splitScreenState: {},
     currentPanelUrl: null,
     currentPanelContext: null,
