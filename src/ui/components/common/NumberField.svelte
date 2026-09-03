@@ -1,4 +1,7 @@
 <script>
+    import { onMount } from 'svelte';
+    import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
+
     /**
      * [AI INSTRUCTION]
      * THE NUMBER INPUT THE WHOLE EXTENSION SHOULD USE.
@@ -68,6 +71,10 @@
         value = settled;
         onchange?.(settled);
     }
+
+    onMount(() => {
+        return initNumberSpinnerArrows();
+    });
 </script>
 
 <input

@@ -12103,16 +12103,20 @@
     "description": "Label of a setting switch that is off"
   },
   "pomodoroSettingsSubtitle": {
-    "message": "The timer, the cycle and the project — the same settings the side panel and the group list use.",
+    "message": "Configure timer methods, durations, and options synchronized with the side panel and the group list.",
     "description": "Subtitle of the pomodoro settings page"
   },
   "pomodoroSettingsHint": {
-    "message": "The timer, the cycle and the project",
+    "message": "Configure timer methods, durations, and options",
     "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
   },
   "pomodoroSettingsShared": {
-    "message": "Changing anything here changes it in the side panel and in the group list at the same time.",
+    "message": "Select the default method. Changes made here apply to the side panel and the group list at the same time.",
     "description": "Note explaining that the pomodoro settings are shared across every surface"
+  },
+  "editProjectName": {
+    "message": "Edit project name",
+    "description": "Tooltip and label for editing project name in sidebar"
   },
   "pomodoroMethodHint": {
     "message": "What the panel counts: the pomodoro cycle, or one of the three plain clocks.",

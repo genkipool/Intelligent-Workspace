@@ -145,6 +145,17 @@
     max-width: 62ch;
 }
 
+.pomo-settings .set-note {
+    max-width: none;
+    white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+    .pomo-settings .set-note {
+        white-space: normal;
+    }
+}
+
 .set-figure {
     margin: 0;
     font-family: var(--mono);

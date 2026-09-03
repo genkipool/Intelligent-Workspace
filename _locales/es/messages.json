@@ -12083,16 +12083,20 @@
         "description": "Label of a setting switch that is off"
     },
     "pomodoroSettingsSubtitle": {
-        "message": "El temporizador, el ciclo y el proyecto: los mismos ajustes que usan el panel lateral y el listado de grupos.",
+        "message": "Configura los métodos, tiempos y opciones del temporizador sincronizados con el panel lateral y el listado de grupos.",
         "description": "Subtitle of the pomodoro settings page"
     },
     "pomodoroSettingsHint": {
-        "message": "El temporizador, el ciclo y el proyecto",
+        "message": "Configura los métodos, tiempos y opciones del temporizador",
         "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
     },
     "pomodoroSettingsShared": {
-        "message": "Lo que cambies aquí cambia a la vez en el panel lateral y en el listado de grupos.",
+        "message": "Selecciona el método por defecto. Lo que cambies aquí cambia a la vez en el panel lateral y en el listado de grupos.",
         "description": "Note explaining that the pomodoro settings are shared across every surface"
+    },
+    "editProjectName": {
+        "message": "Editar nombre del proyecto",
+        "description": "Tooltip and label for editing project name in sidebar"
     },
     "pomodoroMethodHint": {
         "message": "Lo que cuenta el panel: el ciclo pomodoro o uno de los tres relojes simples.",

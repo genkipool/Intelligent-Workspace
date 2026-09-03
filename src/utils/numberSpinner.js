@@ -18,8 +18,11 @@ function arrowsFor(color) {
 
 /** Paints the arrows with the current theme colour. Safe to call repeatedly. */
 export function applyNumberSpinnerArrows() {
-    const color = getComputedStyle(document.documentElement).getPropertyValue('--text-on-color').trim();
-    if (!color) return false;
+    if (typeof document === 'undefined') return false;
+    const color =
+        getComputedStyle(document.documentElement).getPropertyValue('--text-on-color').trim() ||
+        getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() ||
+        '#888888';
 
     let styleTag = document.getElementById(STYLE_ID);
     if (!styleTag) {
@@ -29,12 +32,17 @@ export function applyNumberSpinnerArrows() {
     }
     styleTag.textContent = `
         input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button {
+        input[type="number"]::-webkit-outer-spin-button,
+        .number-field::-webkit-inner-spin-button,
+        .number-field::-webkit-outer-spin-button {
             background-image: ${arrowsFor(color)};
         }
     `;
     return true;
 }
+
+let activeObservers = 0;
+let sharedObserver = null;
 
 /**
  * Applies the arrows now and keeps them in step with theme changes.
@@ -42,11 +50,23 @@ export function applyNumberSpinnerArrows() {
  * @returns {() => void} Stops observing.
  */
 export function initNumberSpinnerArrows() {
+    if (typeof document === 'undefined') return () => {};
     applyNumberSpinnerArrows();
 
-    // The theme is swapped by changing `data-theme` (or the inline custom palette) on
-    // the root element, so that is what needs watching.
-    const observer = new MutationObserver(() => applyNumberSpinnerArrows());
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] });
-    return () => observer.disconnect();
+    activeObservers++;
+    if (!sharedObserver) {
+        sharedObserver = new MutationObserver(() => applyNumberSpinnerArrows());
+        sharedObserver.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme', 'style'],
+        });
+    }
+    return () => {
+        activeObservers--;
+        if (activeObservers <= 0 && sharedObserver) {
+            sharedObserver.disconnect();
+            sharedObserver = null;
+            activeObservers = 0;
+        }
+    };
 }

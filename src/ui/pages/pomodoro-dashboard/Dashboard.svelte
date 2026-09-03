@@ -5,7 +5,8 @@
     import { showNotification } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import { t, tt, i18nStore } from '../../stores/i18nStore.js';
+    import { t, i18nStore } from '../../stores/i18nStore.js';
+    import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     /* ===============================================================
    Pomodoro Dashboard -- Logic
    =============================================================== */
@@ -64,7 +65,6 @@
     let view = $state('dashboard');
 
     let apps = {
-        sidebar: null,
         tagFilter: null,
         kpiGrid: null,
         hourGrid: null,
@@ -79,8 +79,7 @@
     // Loads the active language messages and exposes the i18n(key) helper
     let _msgs = {};
     let _lang = 'en';
-    let openFolders = new SvelteSet();
-    let closedFolders = new SvelteSet();
+    const openFolders = new SvelteSet();
 
     async function _loadI18n() {
         try {
@@ -253,13 +252,13 @@
     }
 
     // --- STATE --------------------------------------------------------
-    let allData = [];
-    let filteredData = [];
-    let activePeriod = 0;
-    let activeFolder = null;
-    let activeProject = null;
-    let activeTag = '';
-    let sidebarQuery = '';
+    let allData = $state([]);
+    let filteredData = $state([]);
+    let activePeriod = $state(0);
+    let activeFolder = $state(null);
+    let activeProject = $state(null);
+    let activeTag = $state('');
+    let sidebarQuery = $state('');
     let charts = {};
     /**
      * The web activity record, or null when the tracker has nothing to say. Fetched
@@ -269,6 +268,30 @@
     let waDays = null;
 
     applyChartDefaults(Chart);
+
+    // --- SIDEBAR DATA -------------------------------------------------
+    const sidebarData = $derived.by(() => {
+        const folderMap = {};
+        const standaloneProjs = [];
+        const projectCounts = {};
+        let totalCount = 0;
+
+        for (const e of allData) {
+            const p = e.projectName || i18n('dashboardNoName');
+            const f = e.projectFolder || '';
+            projectCounts[p] = (projectCounts[p] || 0) + 1;
+            totalCount++;
+            if (f) {
+                if (!folderMap[f]) folderMap[f] = new Set();
+                folderMap[f].add(p);
+            } else {
+                if (!standaloneProjs.includes(p)) standaloneProjs.push(p);
+            }
+        }
+        standaloneProjs.sort();
+        const folderNames = Object.keys(folderMap).sort();
+        return { folderNames, folderMap, projectCounts, standaloneProjs, totalCount };
+    });
 
     // --- FILTER -------------------------------------------------------
     function applyFilters() {
@@ -285,62 +308,6 @@
                 if ((e.projectFolder || '') !== activeFolder) return false;
             }
             return true;
-        });
-    }
-
-    // --- SIDEBAR ------------------------------------------------------
-    function buildSidebar() {
-        const folderMap = {};
-        const noFolder = [];
-        const projectCounts = {};
-
-        allData.forEach((e) => {
-            const p = e.projectName || i18n('dashboardNoName');
-            const f = e.projectFolder || '';
-            projectCounts[p] = (projectCounts[p] || 0) + 1;
-            if (f) {
-                if (!folderMap[f]) folderMap[f] = new Set();
-                folderMap[f].add(p);
-            } else {
-                if (!noFolder.includes(p)) noFolder.push(p);
-            }
-        });
-
-        const scrollEl = document.getElementById('sidebar-scroll');
-        const props = {
-            folderNames: Object.keys(folderMap).sort(),
-            folderMap,
-            projectCounts,
-            activeProject,
-            activeFolder,
-            openFolders,
-            closedFolders,
-            sidebarQuery,
-            standaloneProjs: noFolder,
-        };
-
-        scrollEl.replaceChildren();
-        apps.sidebar = mount(Sidebar, {
-            target: scrollEl,
-            props: {
-                ...props,
-                ontoggleFolder: (detail) => {
-                    const { folder, isProjectInThisFolder } = detail;
-                    if (isProjectInThisFolder) {
-                        if (closedFolders.has(folder)) closedFolders.delete(folder);
-                        else closedFolders.add(folder);
-                    } else {
-                        if (openFolders.has(folder)) openFolders.delete(folder);
-                        else openFolders.add(folder);
-                        selectFolder(folder);
-                    }
-                    buildSidebar();
-                    updateAllItem();
-                    renderAll();
-                },
-                onselectProject: (detail) => selectProject(detail.project),
-                onrenameProject: (detail) => renameProject(detail.oldName, detail.newName),
-            },
         });
     }
 
@@ -386,40 +353,46 @@
         }
     }
 
-    function selectProject(name) {
-        activeProject = activeProject === name ? null : name;
-        if (activeProject) {
-            activeFolder = null;
-            // If the project is in a folder, ensure it's not manually marked as closed
-            allData.some((e) => {
-                if (e.projectName === name && e.projectFolder) {
-                    closedFolders.delete(e.projectFolder);
-                    return true;
-                }
-                return false;
-            });
-        }
-        buildSidebar();
-        updateAllItem();
+    function selectAll() {
+        view = 'dashboard';
+        activeProject = null;
+        activeFolder = null;
         renderAll();
     }
 
-    function selectFolder(name) {
-        if (activeFolder === name && !activeProject) {
+    function selectProject(name) {
+        view = 'dashboard';
+        activeProject = activeProject === name ? null : name;
+        activeFolder = null;
+        if (activeProject) {
+            for (const e of allData) {
+                if (e.projectName === activeProject && e.projectFolder) {
+                    openFolders.add(e.projectFolder);
+                    break;
+                }
+            }
+        }
+        renderAll();
+    }
+
+    function toggleFolderSelection(name) {
+        view = 'dashboard';
+        if (!name || activeFolder === name) {
             activeFolder = null;
-            activeProject = null;
         } else {
             activeFolder = name;
-            activeProject = null;
+            openFolders.add(name);
         }
-        buildSidebar();
-        updateAllItem();
+        activeProject = null;
         renderAll();
     }
 
-    function updateAllItem() {
-        const allEl = document.getElementById('sidebar-all-item');
-        if (allEl) allEl.classList.toggle('active', !activeProject && activeFolder === null);
+    function toggleFolder(folder) {
+        if (openFolders.has(folder)) {
+            openFolders.delete(folder);
+        } else {
+            openFolders.add(folder);
+        }
     }
 
     // --- TAG FILTER ---------------------------------------------------
@@ -1315,8 +1288,6 @@
             // in both, or the same session is counted a different number of times.
             allData = dedupeSessions(await getAllStats());
             populateTagFilter();
-            buildSidebar();
-            updateAllItem();
             renderAll();
             document.getElementById('last-updated').textContent =
                 i18n('dashboardUpdated') +
@@ -1379,19 +1350,6 @@
             activeTag = e.target.value;
             renderAll();
         });
-
-        document.getElementById('sidebar-search-input').addEventListener('input', (e) => {
-            sidebarQuery = e.target.value;
-            buildSidebar();
-        });
-
-        document.getElementById('sidebar-all-item').addEventListener('click', () => {
-            activeProject = null;
-            activeFolder = null;
-            buildSidebar();
-            updateAllItem();
-            renderAll();
-        });
     }
 
     // --- REAL-TIME SYNC -----------------------------------------------
@@ -1448,6 +1406,7 @@
         await i18nStore.init();
         await _loadI18n();
         initTheme();
+        initNumberSpinnerArrows();
         initSync();
         // Before the first paint of the data: the sections are already in the DOM, so
         // putting them in the reader's order now means they are never seen in the
@@ -1502,69 +1461,27 @@
 <!-- --- App body ---------------------------------------------------- -->
 <div class="app-body">
     <!-- -- Sidebar ---------------------------------------------------- -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-top-label">{$t('dashboardProjects') || 'Projects'}</div>
-            <div class="sidebar-search">
-                <svg
-                    class="search-icon"
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
-                    <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                </svg>
-                <input type="text" id="sidebar-search-input" placeholder={$t('dashboardSearch')} />
-            </div>
-        </div>
-
-        <!-- All projects item -->
-        <div class="sidebar-all">
-            <div class="sidebar-item active" id="sidebar-all-item">
-                <span class="si-name">{$t('dashboardAllProjects') || 'All projects'}</span>
-            </div>
-        </div>
-
-        <!-- Folders + projects tree -->
-        <div class="sidebar-scroll" id="sidebar-scroll"></div>
-
-        <!-- Pinned to the bottom, away from the tree it has nothing to do with: this
-             is the one row that changes what the main column *is* rather than
-             filtering it. -->
-        <div class="sidebar-footer">
-            <div
-                class="sidebar-item"
-                class:active={view === 'settings'}
-                role="button"
-                tabindex="0"
-                title={$tt('pomodoroSettingsHint')}
-                onclick={() => (view = view === 'settings' ? 'dashboard' : 'settings')}
-                onkeydown={(e) => e.key === 'Enter' && (view = view === 'settings' ? 'dashboard' : 'settings')}
-            >
-                <svg
-                    class="si-icon"
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    aria-hidden="true"
-                    focusable="false"
-                >
-                    <circle cx="12" cy="12" r="3" />
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
-                    />
-                </svg>
-                <span class="si-name">{$t('pomodoroSettingsTitle')}</span>
-            </div>
-        </div>
-    </aside>
+    <Sidebar
+        folderNames={sidebarData.folderNames}
+        folderMap={sidebarData.folderMap}
+        projectCounts={sidebarData.projectCounts}
+        standaloneProjs={sidebarData.standaloneProjs}
+        totalCount={sidebarData.totalCount}
+        {activeProject}
+        {activeFolder}
+        {openFolders}
+        query={sidebarQuery}
+        {view}
+        onQuery={(q) => {
+            sidebarQuery = q;
+        }}
+        onSelectAll={selectAll}
+        onSelectProject={selectProject}
+        onSelectFolder={toggleFolderSelection}
+        onToggleFolder={toggleFolder}
+        onRenameProject={renameProject}
+        onOpenSettings={() => (view = view === 'settings' ? 'dashboard' : 'settings')}
+    />
 
     <!-- -- Main content ----------------------------------------------- -->
     <!-- Sections can be dragged into another order; the panels inside a section can be

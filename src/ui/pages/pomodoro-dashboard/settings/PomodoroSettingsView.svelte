@@ -26,6 +26,7 @@
      */
     import { onDestroy, onMount } from 'svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
+    import { initNumberSpinnerArrows } from '../../../../utils/numberSpinner.js';
     import NumberField from '../../../components/common/NumberField.svelte';
     import ToggleButton from '../../../components/common/ToggleButton.svelte';
     import DateField from '../../../components/common/DateField.svelte';
@@ -53,6 +54,7 @@
     let unwatch = null;
 
     onMount(async () => {
+        initNumberSpinnerArrows();
         const initial = await readPomodoroSettings();
         settings = initial.settings;
         local = initial.local;
