@@ -86,6 +86,16 @@ const TITLE_RESTORE_DELAY_MS = 3000;
 let groupRenameSettlesAt = 0;
 const RENAME_SETTLE_MS = 2500;
 
+/**
+ * How long after the browser starts the groups are still considered to be arriving.
+ *
+ * Restoring a session — after a crash, or with "carry on where you left off" — puts
+ * the windows back one at a time and lets their tabs load afterwards, so for the
+ * first seconds a group can be missing, or be there with only part of its tabs.
+ * Nothing may conclude from that gap that a group is gone.
+ */
+const GROUP_RESTORE_SETTLE_MS = 20000;
+
 let getTypeGroup = false;
 let extensionSettings = {}; // Caches all user settings from storage.
 

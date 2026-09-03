@@ -1140,6 +1140,29 @@ function generateGroupIdentifier(cleanTitle, tabCount, groupId = null) {
     return identifier;
 }
 
+/**
+ * The identity key that survives a session restore.
+ *
+ * The other two keys do not. The one built from the group id dies the moment the
+ * browser hands out new ids, which it does on every restore; the one built from the
+ * number of tabs dies as soon as that number changes — a tab closed just before the
+ * crash, a restore that has not finished bringing the group's tabs back — and it
+ * also collides between two groups that share a name. When both miss, the group's
+ * type and the name the user gave it are gone, and the group has to be guessed from
+ * its pages: a renamed "Misc" then comes back as a manual group, and a renamed
+ * domain group gets the domain's name written back over the user's.
+ *
+ * The name alone is the only part of a group that Chrome does restore verbatim, so
+ * it is what the identity is filed under as a last resort.
+ */
+function generateGroupNameIdentifier(cleanTitle) {
+    // In compact mode the tab strip shows a single letter instead of the name, and a
+    // single letter is not an identity: every group starting with it would answer to
+    // the same key. Those groups keep the other two keys and go without this one.
+    if (!cleanTitle || cleanTitle.trim().length < 2) return null;
+    return `${cleanTitle}_@name`;
+}
+
 async function clearAllGroupPrefixes(windowId) {
     const groups = await chrome.tabGroups.query({ windowId });
     for (const group of groups) {

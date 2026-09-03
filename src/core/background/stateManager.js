@@ -16,6 +16,7 @@ async function saveGroupPrefixState() {
                 key: value.key,
                 isCompact: value.isCompact,
                 title: value.title,
+                userNamed: value.userNamed || false,
             };
         }
         // The following line determines whether to use chrome.storage.local or chrome.storage.sync
@@ -164,8 +165,11 @@ async function loadSessionState() {
                     persistentState = groupPrefixState.get(idBasedIdentifier);
                 } else {
                     const countBasedIdentifier = generateGroupIdentifier(currentBaseTitle, groupTabs.length);
+                    const nameBasedIdentifier = generateGroupNameIdentifier(currentBaseTitle);
                     if (groupPrefixState.has(countBasedIdentifier)) {
                         persistentState = groupPrefixState.get(countBasedIdentifier);
+                    } else if (groupPrefixState.has(nameBasedIdentifier)) {
+                        persistentState = groupPrefixState.get(nameBasedIdentifier);
                     }
                 }
                 if (persistentState) {
@@ -258,16 +262,21 @@ async function rebuildGroupInfoMap() {
             // closed. The state is written under a second identifier — the name plus
             // the number of tabs — which does not depend on the id, so it is worth
             // asking for it before falling back to guessing the group from its tabs.
+            // The name-only key is asked for last because it is the least precise —
+            // two groups called the same share it — but it is the only one a restore
+            // cannot break, so it is what stands between a restored group and having
+            // to be guessed from its pages.
             const persistentState =
                 groupPrefixState.get(identifier) ||
-                groupPrefixState.get(generateGroupIdentifier(baseUiTitle, tabsInGroup.length));
+                groupPrefixState.get(generateGroupIdentifier(baseUiTitle, tabsInGroup.length)) ||
+                groupPrefixState.get(generateGroupNameIdentifier(baseUiTitle));
             if (persistentState && persistentState.type && persistentState.key) {
                 identifiedInfo = {
                     type: persistentState.type,
                     key: persistentState.key,
                 };
             } else if (baseUiTitle !== '') {
-                identifiedInfo = inferGroupTypeFromTabs(group.id, tabsInGroup, currentUiTitle, customRules, config);
+                identifiedInfo = identifyGroupFromTitleAndTabs(group, tabsInGroup, customRules, config);
             }
             if (!identifiedInfo) {
                 const typeFromTitle = getGroupType(currentUiTitle);
@@ -285,6 +294,10 @@ async function rebuildGroupInfoMap() {
             // --- NEW TITLE DECISION LOGIC ---
             if (identifiedInfo) {
                 let definitiveBaseTitle;
+                let titleIsUserGiven = persistentState?.userNamed || false;
+                const isCompactTitle =
+                    persistentState?.isCompact ||
+                    (config.compactMode?.enabled && allGroups.length >= config.compactMode?.threshold);
 
                 // PRIORITY 1: Use the title from the persistent state if it exists and is valid.
                 // This preserves user renames.
@@ -297,17 +310,31 @@ async function rebuildGroupInfoMap() {
                 // PRIORITY 2: If the group is special, use its config name as a fallback.
                 else if (identifiedInfo.type === 'special') {
                     const specialConfig = Object.values(config.specialGroups).find((c) => c.key === identifiedInfo.key);
-                    definitiveBaseTitle = specialConfig ? specialConfig.name : identifiedInfo.key;
-                    logMessage(`[Rebuild] Group ${groupId}: Using title from special config: "${definitiveBaseTitle}"`);
+                    const configuredName = specialConfig ? specialConfig.name : identifiedInfo.key;
+                    // A special group whose name is not one of the configured ones was
+                    // named by the user, and that name is the only trace of it left
+                    // once the stored state is gone. In compact mode the name on the
+                    // tab strip is a single letter, so there is nothing to read there.
+                    const answersToAConfiguredName = Object.values(config.specialGroups).some(
+                        (c) => c.name && c.name.toLowerCase() === baseUiTitle.toLowerCase(),
+                    );
+                    if (baseUiTitle && !answersToAConfiguredName && !isCompactTitle) {
+                        definitiveBaseTitle = baseUiTitle;
+                        titleIsUserGiven = true;
+                        logMessage(`[Rebuild] Group ${groupId}: Keeping the name it carries: "${definitiveBaseTitle}"`);
+                    } else {
+                        definitiveBaseTitle = configuredName;
+                        logMessage(
+                            `[Rebuild] Group ${groupId}: Using title from special config: "${definitiveBaseTitle}"`,
+                        );
+                    }
                 }
                 // PRIORITY 3: As a last resort, use the identified key (for domains, rules, etc.)
                 else {
                     definitiveBaseTitle = identifiedInfo.key;
                     logMessage(`[Rebuild] Group ${groupId}: Using key as title: "${definitiveBaseTitle}"`);
                 }
-                const isCompact =
-                    persistentState?.isCompact ||
-                    (config.compactMode?.enabled && allGroups.length >= config.compactMode?.threshold);
+                const isCompact = isCompactTitle;
 
                 // Pass the definitive title to the format function.
                 const fullTitle = constructFullTitle(
@@ -321,6 +348,7 @@ async function rebuildGroupInfoMap() {
                     key: identifiedInfo.key,
                     title: fullTitle,
                     isCompact: isCompact,
+                    userNamed: titleIsUserGiven,
                 });
             }
         }
@@ -330,6 +358,29 @@ async function rebuildGroupInfoMap() {
         console.error('Catastrophic error in rebuildGroupInfoMap:', error);
     }
 }
+/**
+ * Whether the browser has been up long enough for its groups to be all there.
+ *
+ * Restoring a session does not put the groups back at once: the window arrives
+ * first, its tabs trickle in, and with several windows the last one can be seconds
+ * behind. Anything that decides a group "no longer exists" during that gap is
+ * wrong, and the identity store is thrown away on that basis. The clock is kept in
+ * session storage, which the browser empties on every start, so it measures the
+ * browser session and not the service worker's, which restarts all the time.
+ */
+async function groupsHaveSettledAfterStartup() {
+    try {
+        const { browserSessionStartedAt } = await chrome.storage.session.get('browserSessionStartedAt');
+        if (!browserSessionStartedAt) {
+            await chrome.storage.session.set({ browserSessionStartedAt: Date.now() });
+            return false;
+        }
+        return Date.now() - browserSessionStartedAt > GROUP_RESTORE_SETTLE_MS;
+    } catch {
+        return true;
+    }
+}
+
 async function syncWithExistingGroups() {
     try {
         const allCurrentGroups = await chrome.tabGroups.query({});
@@ -351,6 +402,11 @@ async function syncWithExistingGroups() {
             const cleanTitle = getBaseGroupName(group.title);
             validIdentifiers.add(generateGroupIdentifier(cleanTitle, null, group.id));
             validIdentifiers.add(generateGroupIdentifier(cleanTitle, tabCountByGroupId.get(group.id) || 0));
+            // The name key is what carries a group's identity across a restart, so it
+            // stays valid for as long as a group answers to that name — whatever its
+            // tab count happens to be at this instant.
+            const nameIdentifier = generateGroupNameIdentifier(cleanTitle);
+            if (nameIdentifier) validIdentifiers.add(nameIdentifier);
         }
         for (const groupId of groupIdentifierMap.keys()) {
             if (!currentGroupIds.has(groupId)) {
@@ -358,14 +414,26 @@ async function syncWithExistingGroups() {
                 groupInfoMap.delete(groupId);
             }
         }
-        const validGroupPrefixState = new Map();
-        for (const [identifier, state] of groupPrefixState) {
-            if (validIdentifiers.has(identifier)) {
-                validGroupPrefixState.set(identifier, state);
+
+        // Dropping what does not match is only safe once there is something real to
+        // match against. Run it while the browser is still restoring — or before the
+        // groups exist at all — and it wipes every group's type and name: this is the
+        // pass that used to leave a restored session with its groups turned manual.
+        const canPrune =
+            !isInitializing && !windowsRemove && allCurrentGroups.length > 0 && (await groupsHaveSettledAfterStartup());
+
+        if (canPrune) {
+            const validGroupPrefixState = new Map();
+            for (const [identifier, state] of groupPrefixState) {
+                if (validIdentifiers.has(identifier)) {
+                    validGroupPrefixState.set(identifier, state);
+                }
             }
-        }
-        if (validGroupPrefixState.size >= 0 && !windowsRemove) {
             groupPrefixState = validGroupPrefixState;
+        } else {
+            logMessage(
+                `[syncWithExistingGroups] Not pruning: groups=${allCurrentGroups.length}, initializing=${isInitializing}, windowsRemove=${windowsRemove}.`,
+            );
         }
         logMessage(
             `[syncWithExistingGroups] Sync finished. groupPrefixState size AFTER filtering: ${groupPrefixState.size}.`,

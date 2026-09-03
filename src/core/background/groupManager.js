@@ -71,7 +71,12 @@ async function updateGroupProperties(group, tabIds, newColor, clusterConfig, cur
         updatePayload.color = newColor;
     }
 
-    if (info.type === 'special' && !info.isCompact) {
+    // A special group follows the name set in the settings — unless the user has
+    // given it one of their own. This block used to write the configured name back
+    // over any special group that was not called it, so renaming "Misc" only lasted
+    // until the next grouping pass, and after a restart the group came back as
+    // "Misc" again.
+    if (info.type === 'special' && !info.isCompact && !info.userNamed) {
         const specialConfig = Object.values(clusterConfig.specialGroups).find((c) => c.key === info.key);
         if (specialConfig) {
             const newBaseName = specialConfig.name || info.key;
@@ -1525,8 +1530,11 @@ function constructFullTitle(type, key, title, config) {
     // Decision logic is now INSIDE the function, where it belongs.
     switch (type) {
         case 'special':
+            // The name given wins. This used to reach for the configured name first,
+            // which meant every rebuild wrote "Misc" back over whatever the user had
+            // called the group — a rename that undid itself on the next restore.
             const specialConfig = Object.values(config.specialGroups).find((c) => c.key === key);
-            baseNameToUse = (specialConfig ? specialConfig.name : key) || title;
+            baseNameToUse = title || (specialConfig ? specialConfig.name : key);
             return SPECIAL_PREFIX + baseNameToUse + SPECIAL_SUFFIX;
 
         case 'domain':
@@ -1605,10 +1613,9 @@ async function groupTabs() {
                             (tab) => tab.url !== '' && tab.url !== 'about:blank' && tab.url !== 'chrome://blank',
                         );
                         if (allTabsLoaded) {
-                            const inferredInfo = inferGroupTypeFromTabs(
-                                group.id,
+                            const inferredInfo = identifyGroupFromTitleAndTabs(
+                                group,
                                 tabsInGroup,
-                                group.title,
                                 customRules,
                                 localClusterConfig,
                             );
@@ -1621,11 +1628,20 @@ async function groupTabs() {
                                 localClusterConfig,
                             );
                             if (!isTitleInvalidForUpdate(fullTitle)) {
+                                // A special group answering to a name that is not the
+                                // configured one was named by its owner. Saying so here
+                                // is what keeps the next pass from writing "Misc" back
+                                // over it.
+                                const answersToAConfiguredName = Object.values(
+                                    localClusterConfig.specialGroups || {},
+                                ).some((c) => c.name && c.name.toLowerCase() === cleanTitle.toLowerCase());
                                 groupInfoMap.set(group.id, {
                                     type: inferredInfo.type,
                                     key: inferredInfo.key,
                                     title: fullTitle,
                                     isCompact: false,
+                                    userNamed:
+                                        inferredInfo.type === 'special' && !!cleanTitle && !answersToAConfiguredName,
                                 });
                             }
 

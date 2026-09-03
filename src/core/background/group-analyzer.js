@@ -35,8 +35,18 @@ function syncGroupState(group, newState, groupPrefixStateRef, groupIdentifierMap
     const oldIdentifierById = groupIdentifierMapRef.get(group.id);
     const oldState = oldIdentifierById ? groupPrefixStateRef.get(oldIdentifierById) : null;
 
-    if (oldState && oldState.title) {
-        const oldBaseTitle = getBaseGroupName(oldState.title);
+    // What the group was called before. The stored state is asked first, but it is
+    // reached through an identifier built from the group's *current* name, and
+    // rebuildGroupIdentifierMap refreshes that map from the tab strip — so the moment
+    // it runs after a rename, the lookup goes to a key that does not exist yet, the
+    // rename goes unnoticed, and the extension keeps writing its own name over the
+    // one the user typed. The group's own record is the fallback: it holds the name
+    // the extension last put there.
+    const infoForRename = groupInfoMapRef.get(group.id);
+    const previousTitle = oldState?.title || (infoForRename?.title ? getBaseGroupName(infoForRename.title) : '');
+
+    if (previousTitle) {
+        const oldBaseTitle = getBaseGroupName(previousTitle);
 
         if (oldBaseTitle !== newCleanTitle && !isCompactActive && !newState.isCompact && newCleanTitle.length >= 4) {
             logMessage(
@@ -50,17 +60,34 @@ function syncGroupState(group, newState, groupPrefixStateRef, groupIdentifierMap
             } else {
                 // Only if the title is valid, we proceed to update the state.
                 newState.title = newCleanTitle;
+                // Remembered so that nothing writes an automatic name back over it.
+                newState.userNamed = true;
 
                 const info = groupInfoMapRef.get(group.id);
                 if (info && !isCompactActive && !info.isCompact && newCleanTitle.length >= 4) {
-                    info.title = newCleanTitle;
+                    // The new name is stored with the type marker still on it. Storing
+                    // the bare name used to strip the marker off the group for good —
+                    // the title written back to the tab strip is this very string — and
+                    // that marker is what tells a restored group what it is. Without it
+                    // a renamed "Misc" comes back as a manual group.
+                    info.title = constructFullTitle(
+                        info.type,
+                        info.key,
+                        newCleanTitle,
+                        extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG,
+                    );
+                    info.userNamed = true;
                     groupInfoMapRef.set(group.id, info);
                 }
             }
 
-            const oldIdentifierByCount = generateGroupIdentifier(oldBaseTitle, oldState.tabCount);
-            groupPrefixStateRef.delete(oldIdentifierById);
-            groupPrefixStateRef.delete(oldIdentifierByCount);
+            if (oldState) {
+                groupPrefixStateRef.delete(generateGroupIdentifier(oldBaseTitle, oldState.tabCount));
+            }
+            groupPrefixStateRef.delete(generateGroupIdentifier(oldBaseTitle, newState.tabCount));
+            if (oldIdentifierById) groupPrefixStateRef.delete(oldIdentifierById);
+            groupPrefixStateRef.delete(generateGroupIdentifier(oldBaseTitle, null, group.id));
+            groupPrefixStateRef.delete(generateGroupNameIdentifier(oldBaseTitle));
         }
     }
 
@@ -70,6 +97,8 @@ function syncGroupState(group, newState, groupPrefixStateRef, groupIdentifierMap
     groupIdentifierMapRef.set(group.id, newIdentifierById);
     groupPrefixStateRef.set(newIdentifierById, newState);
     groupPrefixStateRef.set(newIdentifierByCount, newState);
+    const newIdentifierByName = generateGroupNameIdentifier(newCleanTitle);
+    if (newIdentifierByName) groupPrefixStateRef.set(newIdentifierByName, newState);
 }
 
 function inferGroupTypeFromTabs(groupId, tabsInGroup, groupTitle, customRules, config) {
@@ -205,6 +234,53 @@ function inferGroupTypeFromTabs(groupId, tabsInGroup, groupTitle, customRules, c
         type: 'manual',
         key: groupBaseTitle,
     };
+}
+
+/**
+ * What a group is, read from its pages but with the marker in its title having the
+ * last word.
+ *
+ * Reading the pages is the only way to recognise a group whose identity was lost,
+ * and it is right about a domain or a rule group. It cannot be right about a group
+ * the user renamed: "Misc" holds pages with nothing in common — that is what it is
+ * for — so the pages say "no automatic type here" and the group comes back as a
+ * manual one. The only thing that still remembers is the invisible marker the
+ * extension writes into the title, which Chrome restores along with the name.
+ */
+function identifyGroupFromTitleAndTabs(group, tabsInGroup, customRules, config) {
+    const inferred = inferGroupTypeFromTabs(group.id, tabsInGroup, group.title, customRules, config);
+    if (!inferred) return inferred;
+
+    const typeFromTitle = getGroupType(group.title);
+    if (typeFromTitle === inferred.type || typeFromTitle === 'manual') return inferred;
+
+    const baseTitle = getBaseGroupName(group.title);
+
+    if (typeFromTitle === 'special') {
+        const byName = Object.values(config.specialGroups || {}).find(
+            (c) => c.name && c.name.toLowerCase() === baseTitle.toLowerCase(),
+        );
+        // A special group whose pages share nothing is the miscellaneous one.
+        const key = byName ? byName.key : config.specialGroups?.misc?.key || 'Misc';
+        logMessage(
+            `[identifyGroupFromTitleAndTabs] Group ${group.id}: its pages read as '${inferred.type}', but its title marks it special. Keeping 'special' (key '${key}').`,
+        );
+        return { type: 'special', key };
+    }
+
+    if (typeFromTitle === 'rule') {
+        const rule = (customRules || []).find((r) => r.name === baseTitle);
+        if (rule) {
+            logMessage(
+                `[identifyGroupFromTitleAndTabs] Group ${group.id}: its pages read as '${inferred.type}', but its title marks it as rule '${rule.name}'. Keeping 'rule'.`,
+            );
+            return { type: 'rule', key: rule.name };
+        }
+    }
+
+    // A domain group is recognised from its pages whenever it still holds one domain,
+    // so when they disagree the pages are the newer truth and are left to decide.
+    return inferred;
 }
 
 async function repairEmptyGroupTitles(groupsInWindow, isEdit = false, tabsInWindow = null) {
@@ -527,6 +603,7 @@ async function updateAllGroupPrefixes(
             key: groupInfo.key,
             title: definitiveBaseName,
             isCompact: groupInfo.isCompact,
+            userNamed: groupInfo.userNamed || oldState?.userNamed || false,
         };
 
         syncGroupState(group, newState, groupPrefixState, groupIdentifierMap, groupInfoMap, isCompactActive);
