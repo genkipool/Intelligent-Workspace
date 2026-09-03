@@ -372,6 +372,7 @@ chrome.tabGroups.onRemoved.addListener(async (group) => {
 });
 chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
     logMessage(`[onRemoved] Tab ${tabId} removed.`);
+    forgetReadAloudTab(tabId);
     await ensureSessionStateLoaded();
     if (tabModes.has(tabId)) {
         tabModes.delete(tabId);

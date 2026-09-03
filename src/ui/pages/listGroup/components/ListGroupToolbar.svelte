@@ -10,6 +10,7 @@
         isGeminiViewActive,
     } from '../../../stores/appStore.svelte.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
+    import MuteAllButton from '../../../components/listGroup/MuteAllButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
 
@@ -251,20 +252,7 @@
                 <use href="#icon-pomodoro"></use>
             </svg>
         </button>
-        <button
-            id="mute-all-tabs-btn"
-            type="button"
-            class="control-btn"
-            title={$tt('muteAllTabs')}
-            class:hidden={startsHidden('mute-all-tabs-btn')}
-        >
-            <svg class="icon-speaker" width="24" height="24" aria-hidden="true" focusable="false">
-                <use href="#icon-speaker"></use>
-            </svg>
-            <svg class="icon-speaker-muted hidden" width="24" height="24" aria-hidden="true" focusable="false">
-                <use href="#icon-speaker-muted"></use>
-            </svg>
-        </button>
+        <MuteAllButton hidden={startsHidden('mute-all-tabs-btn')} />
         <button
             id="remove-duplicates-btn"
             type="button"

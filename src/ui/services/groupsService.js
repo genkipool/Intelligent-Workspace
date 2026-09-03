@@ -32,6 +32,7 @@ import { clearAllContextDataUI, showScreenshotGallery } from './screenshotsServi
 import { getStorage, loadState, saveState, whenStateLoaded } from './settingsService.js';
 import { openUrlInPanel, toggleExpandAll, updateExpandAllButtonState } from './viewsService.js';
 import { closeDownloadModal } from './downloadsService.js';
+import { getReadAloudReadings, setAllReadAloudPaused } from './readAloudService.js';
 
 // Store imports from appStore (replacing state.X)
 import {
@@ -218,8 +219,15 @@ export async function updateMuteButtonState() {
     const audibleUnmuted = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
     const explicitlyMuted = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
 
-    const hasAudibleUnmuted = audibleUnmuted.length > 0;
-    const hasMuted = explicitlyMuted.length > 0;
+    // The page reader is a voice like any other as far as this button is concerned,
+    // but Chrome knows nothing about it: speech synthesis does not go through the
+    // tab's audio, so a tab being read out loud is never `audible`. The worker keeps
+    // the list because the reader reports to it from inside the page.
+    const readings = await getReadAloudReadings();
+    const speaking = readings.filter((r) => !r.paused);
+
+    const hasAudibleUnmuted = audibleUnmuted.length > 0 || speaking.length > 0;
+    const hasMuted = explicitlyMuted.length > 0 || readings.length > speaking.length;
 
     if (!hasAudibleUnmuted && !hasMuted) {
         btn.classList.add('hidden');
@@ -228,14 +236,16 @@ export async function updateMuteButtonState() {
 
     btn.classList.remove('hidden');
 
+    // With a reading in the mix the button silences more than tabs, so it says so.
+    const hasReading = readings.length > 0;
     if (!hasAudibleUnmuted && hasMuted) {
         iconSpeaker.classList.add('hidden');
         iconMuted.classList.remove('hidden');
-        btn.title = chrome.i18n.getMessage('unmuteAllTabs');
+        btn.title = chrome.i18n.getMessage(hasReading ? 'unmuteAllSources' : 'unmuteAllTabs');
     } else {
         iconSpeaker.classList.remove('hidden');
         iconMuted.classList.add('hidden');
-        btn.title = chrome.i18n.getMessage('muteAllTabs');
+        btn.title = chrome.i18n.getMessage(hasReading ? 'muteAllSources' : 'muteAllTabs');
     }
 }
 
@@ -1968,6 +1978,9 @@ export function initGroupsEvents() {
                 const allTabs = await getValidStandardTabs();
                 const mutedTabs = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
                 for (const tab of mutedTabs) chrome.tabs.update(tab.id, { muted: false });
+                // The reading is brought back with them: it was silenced by the same
+                // click, and leaving it paused would make the button a one-way trip.
+                await setAllReadAloudPaused(false);
                 iconSpeaker.classList.remove('hidden');
                 muteAllTabsBtn.querySelector('.icon-speaker-muted').classList.add('hidden');
                 muteAllTabsBtn.title = chrome.i18n.getMessage('muteAllTabs');
@@ -1976,7 +1989,10 @@ export function initGroupsEvents() {
             } else {
                 const allTabs = await getValidStandardTabs();
                 const audibleTabs = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
-                if (audibleTabs.length === 0) {
+                // Pausing the reader counts as silencing something, so a page being
+                // read out loud is reason enough for the click to do anything at all.
+                const pausedReadings = await setAllReadAloudPaused(true);
+                if (audibleTabs.length === 0 && pausedReadings === 0) {
                     updateMuteButtonState();
                     return;
                 }
@@ -1985,6 +2001,7 @@ export function initGroupsEvents() {
                 muteAllTabsBtn.querySelector('.icon-speaker-muted').classList.remove('hidden');
                 muteAllTabsBtn.title = chrome.i18n.getMessage('unmuteAllTabs');
                 syncAllTabIndicators(true);
+                setTimeout(() => updateMuteButtonState(), 300);
             }
         });
 
@@ -2007,6 +2024,13 @@ export function initGroupsEvents() {
         });
 
         chrome.tabs.onRemoved.addListener(() => updateMuteButtonState());
+
+        // A reading starting, pausing or ending changes nothing Chrome reports about
+        // the tab, so none of the listeners above would hear it. The worker's record
+        // of which tabs are reading is the only thing that moves.
+        chrome.storage.session.onChanged?.addListener((changes) => {
+            if (changes.readAloudTabs) updateMuteButtonState();
+        });
     }
 
     const expandAllBtn = document.getElementById('expand-all-btn');

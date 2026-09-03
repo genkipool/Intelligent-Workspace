@@ -53,6 +53,46 @@ export async function startReadAloud(target = {}) {
     else showNotification(response.selection ? 'readAloudStartingSelection' : 'readAloudStarting');
 }
 
+/**
+ * The tabs that are being read out loud right now.
+ *
+ * Speech synthesis does not go through the tab's audio, so a reading tab is not
+ * `audible` and nothing in `chrome.tabs` gives it away. The worker keeps the list
+ * because the reader reports to it from inside the page.
+ *
+ * @returns {Promise<Array<{tabId:number, windowId:number, title:string, url:string,
+ *   favIconUrl:string, paused:boolean}>>}
+ */
+export async function getReadAloudReadings() {
+    try {
+        const response = await chrome.runtime.sendMessage({ action: 'getReadAloudReadings' });
+        return response?.readings || [];
+    } catch {
+        return [];
+    }
+}
+
+/**
+ * Pauses, resumes or stops one reading.
+ *
+ * @param {number} tabId
+ * @param {'pause'|'resume'|'toggle'|'stop'} command
+ */
+export async function controlReadAloud(tabId, command) {
+    try {
+        return await chrome.runtime.sendMessage({ action: 'controlReadAloud', tabId, command });
+    } catch {
+        return { success: false };
+    }
+}
+
+/** Silences — or brings back — every reading at once. */
+export async function setAllReadAloudPaused(paused) {
+    const readings = await getReadAloudReadings();
+    await Promise.all(readings.map((r) => controlReadAloud(r.tabId, paused ? 'pause' : 'resume')));
+    return readings.length;
+}
+
 /** The tab a `.tab-item` card stands for, in the shape `startReadAloud` wants. */
 export function readAloudTargetOf(tabItemEl) {
     return {

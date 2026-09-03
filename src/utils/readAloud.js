@@ -906,6 +906,7 @@
             }
             cancelSpeech();
             speakCurrent();
+            reportState();
             return;
         }
 
@@ -929,6 +930,7 @@
             /* nothing was being spoken */
         }
         updatePanel();
+        reportState();
     }
 
     function finishReading() {
@@ -941,6 +943,7 @@
         charOffset = 0;
         markedWord = -1;
         updatePanel();
+        reportState();
     }
 
     /** Nothing can be said on this machine, so the panel says so instead of pretending. */
@@ -1328,13 +1331,46 @@
         });
     }
 
-    function onRuntimeMessage(message) {
+    /** What the panel's mute control needs to know about this reading. */
+    function readerState() {
+        return { reading: !destroyed, paused: paused || failed, failed };
+    }
+
+    /**
+     * Tells the worker what the reading is doing, so the side panel's speaker button
+     * can silence it and say which tab it is coming from. There is nowhere else to
+     * learn this: the reader lives inside the page and the panel cannot see it.
+     */
+    function reportState() {
+        chrome.runtime.sendMessage({ action: 'readAloudStateChanged', ...readerState() }).catch(() => {});
+    }
+
+    function onRuntimeMessage(message, _sender, sendResponse) {
         if (message?.action === 'themeChanged') applyTheme();
+
+        if (message?.action === 'readAloudControl') {
+            const wantsPaused = message.command === 'pause' ? true : message.command === 'resume' ? false : !paused;
+            if (message.command === 'stop') {
+                destroy();
+                sendResponse({ reading: false, paused: true });
+                return true;
+            }
+            if (!failed && wantsPaused !== paused) togglePlay();
+            sendResponse(readerState());
+            reportState();
+            return true;
+        }
+
+        if (message?.action === 'readAloudQueryState') {
+            sendResponse(readerState());
+            return true;
+        }
     }
 
     function destroy() {
         if (destroyed) return;
         destroyed = true;
+        reportState();
         cancelSpeech();
         clearHighlights();
         pageStyle?.remove();
@@ -1398,12 +1434,13 @@
     blocks = collectBlocks();
     if (blocks.length === 0) return { state: 'empty' };
 
-    window.__itgReadAloud = { destroy };
+    window.__itgReadAloud = { destroy, togglePlay, getState: readerState };
     document.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('pagehide', destroy);
     chrome.storage.onChanged.addListener(onStorageChanged);
     chrome.runtime.onMessage.addListener(onRuntimeMessage);
     start();
+    reportState();
 
     // `selection` is what lets a caller with nowhere to look — the context menu, whose
     // notification is the only feedback it has — say which of the two just started.

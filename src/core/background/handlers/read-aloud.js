@@ -25,6 +25,107 @@ const READER_NOT_SCRIPTABLE = /cannot access|must request permission|cannot be s
 /** How long to wait for a tab that had to be woken up before giving up on it. */
 const READER_TAB_READY_TIMEOUT_MS = 6000;
 
+/**
+ * Which tabs are reading, and whether each one is paused.
+ *
+ * The reader lives inside the page, so nothing outside that page can tell that a
+ * voice is coming out of it — the tab is not even `audible`, because speech
+ * synthesis does not go through the tab's audio. The side panel's speaker button
+ * needs to know, so the reader reports in here and this is kept in session storage:
+ * it has to outlive the worker going to sleep, and it means nothing once the browser
+ * has been closed.
+ */
+const READ_ALOUD_TABS_KEY = 'readAloudTabs';
+
+async function getReadAloudTabs() {
+    const stored = await chrome.storage.session.get(READ_ALOUD_TABS_KEY);
+    return stored?.[READ_ALOUD_TABS_KEY] || {};
+}
+
+async function setReadAloudTab(tabId, state) {
+    const readings = await getReadAloudTabs();
+    if (state) readings[tabId] = state;
+    else delete readings[tabId];
+    await chrome.storage.session.set({ [READ_ALOUD_TABS_KEY]: readings });
+}
+
+/**
+ * The readings that are really still going.
+ *
+ * A tab can stop reading without saying so — it was closed while the worker slept,
+ * or the page navigated away — so every entry is checked against the browser and the
+ * dead ones are dropped before answering.
+ */
+async function listActiveReadings() {
+    const readings = await getReadAloudTabs();
+    const entries = await Promise.all(
+        Object.entries(readings).map(async ([id, state]) => {
+            const tab = await chrome.tabs.get(Number(id)).catch(() => null);
+            if (!tab) return null;
+            return {
+                tabId: tab.id,
+                windowId: tab.windowId,
+                title: tab.title || tab.url || '',
+                url: tab.url || '',
+                favIconUrl: tab.favIconUrl || '',
+                paused: !!state.paused,
+            };
+        }),
+    );
+    const alive = entries.filter(Boolean);
+    if (alive.length !== Object.keys(readings).length) {
+        await chrome.storage.session.set({
+            [READ_ALOUD_TABS_KEY]: Object.fromEntries(alive.map((r) => [r.tabId, { paused: r.paused }])),
+        });
+    }
+    return alive;
+}
+
+/** The reader in a page telling us it started, paused, resumed or went away. */
+async function handleReadAloudStateChanged(message, sender, sendResponse) {
+    const tabId = sender?.tab?.id;
+    if (!tabId) {
+        sendResponse({ success: false });
+        return;
+    }
+    await setReadAloudTab(tabId, message.reading ? { paused: !!message.paused } : null);
+    sendResponse({ success: true });
+}
+
+async function handleGetReadAloudReadings(_message, _sender, sendResponse) {
+    sendResponse({ readings: await listActiveReadings() });
+}
+
+/**
+ * Pauses, resumes or stops a reading from outside the page it is happening in.
+ *
+ * A tab that does not answer is a tab whose reader is gone — the page navigated, or
+ * Chrome discarded it — so it is struck off the list rather than reported as an error.
+ */
+async function handleControlReadAloud(message, _sender, sendResponse) {
+    const tabId = Number(message?.tabId);
+    if (!tabId) {
+        sendResponse({ success: false });
+        return;
+    }
+    try {
+        const state = await chrome.tabs.sendMessage(tabId, {
+            action: 'readAloudControl',
+            command: message.command,
+        });
+        await setReadAloudTab(tabId, state?.reading ? { paused: !!state.paused } : null);
+        sendResponse({ success: true, ...state });
+    } catch {
+        await setReadAloudTab(tabId, null);
+        sendResponse({ success: false, reading: false });
+    }
+}
+
+/** Forgets a tab that was reading when it closes. */
+function forgetReadAloudTab(tabId) {
+    setReadAloudTab(tabId, null).catch(() => {});
+}
+
 /** The tab a reading was asked for: the one named, the sender's, or the active one. */
 async function resolveTabForReader(message, sender) {
     if (message?.tabId) return await chrome.tabs.get(message.tabId).catch(() => null);
@@ -126,6 +227,9 @@ async function handleStartReadAloud(message, sender, sendResponse) {
             sendResponse({ success: false, reason: 'empty' });
             return;
         }
+
+        const readingTabId = switched ? (await resolveTabForReader(message, sender))?.id || tab.id : tab.id;
+        await setReadAloudTab(readingTabId, state === 'started' ? { paused: false } : null);
 
         if (message?.notify) {
             notifyReader(...readerStartedMessage(state, selection));

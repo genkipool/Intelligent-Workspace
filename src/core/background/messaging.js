@@ -763,6 +763,18 @@ const MESSAGE_HANDLERS = {
         handleStartReadAloud(message, sender, sendResponse);
         return true;
     },
+    readAloudStateChanged: (message, sender, sendResponse) => {
+        handleReadAloudStateChanged(message, sender, sendResponse);
+        return true;
+    },
+    getReadAloudReadings: (message, sender, sendResponse) => {
+        handleGetReadAloudReadings(message, sender, sendResponse);
+        return true;
+    },
+    controlReadAloud: (message, sender, sendResponse) => {
+        handleControlReadAloud(message, sender, sendResponse);
+        return true;
+    },
     injectAreaSelector: (message, sender, sendResponse) => {
         handleInjectAreaSelector(message, sender, sendResponse);
         return true;
