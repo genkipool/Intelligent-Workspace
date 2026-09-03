@@ -1050,7 +1050,11 @@
     "donationThanksAmount": {
         "message": "¡Gracias por tu donación de $1 €!",
         "description": "Se muestra cuando la donación se completa, con el importe",
-        "placeholders": { "amount": { "content": "$1" } }
+        "placeholders": {
+            "amount": {
+                "content": "$1"
+            }
+        }
     },
     "donationFailed": {
         "message": "No se ha podido completar el pago.",
@@ -10740,12 +10744,6 @@
     "webActivityMinutes": {
         "message": "Minutos"
     },
-    "webActivityHoursShort": {
-        "message": "h"
-    },
-    "webActivityMinutesShort": {
-        "message": "min"
-    },
     "webActivityClearAll": {
         "message": "Borrarlo todo",
         "description": "Elimina todos los días registrados y las visitas recientes. Los límites y los ajustes se conservan."
@@ -11035,12 +11033,6 @@
     },
     "webActivityColumnPinned": {
         "message": "Siempre visible"
-    },
-    "webActivityOn": {
-        "message": "Activado"
-    },
-    "webActivityOff": {
-        "message": "Desactivado"
     },
     "webActivityBlockedUntilDay": {
         "message": "Se vuelve a abrir el $1 a las $2."
@@ -11389,10 +11381,6 @@
     },
     "webActivitySyncEnabledHint": {
         "message": "Los datos aparecen también en las extensiones instaladas en otros navegadores. Desactivado por defecto."
-    },
-    "webActivitySecondsShort": {
-        "message": "s",
-        "description": "Segundos, abreviado"
     },
     "webActivityDaysShort": {
         "message": "días",
@@ -11959,7 +11947,7 @@
     },
     "readAloudNoVoice": {
         "message": "No hay ninguna voz instalada en este sistema",
-        "description": "El sintetizador rechaz\u00f3 todos los p\u00e1rrafos"
+        "description": "El sintetizador rechazó todos los párrafos"
     },
     "readAloudHidePanel": {
         "message": "Ocultar el lector",
@@ -11970,40 +11958,40 @@
         "description": "Devuelve el panel del lector"
     },
     "readAloudSwitchedTab": {
-        "message": "Se ha cambiado a la pesta\u00f1a para leerla",
-        "description": "El lector tuvo que traer la pesta\u00f1a al frente"
+        "message": "Se ha cambiado a la pestaña para leerla",
+        "description": "El lector tuvo que traer la pestaña al frente"
     },
     "downloadFormatTitle": {
         "message": "Formato de descarga",
-        "description": "T\u00edtulo del di\u00e1logo que pregunta PNG o PDF"
+        "description": "Título del diálogo que pregunta PNG o PDF"
     },
     "downloadFormatPngDesc": {
-        "message": "La imagen tal y como se captur\u00f3",
-        "description": "Qu\u00e9 significa elegir PNG"
+        "message": "La imagen tal y como se capturó",
+        "description": "Qué significa elegir PNG"
     },
     "downloadFormatPdfDesc": {
         "message": "Un documento en hojas A4",
-        "description": "Qu\u00e9 significa elegir PDF"
+        "description": "Qué significa elegir PDF"
     },
     "downloadAsPng": {
         "message": "Imagen PNG",
-        "description": "Bot\u00f3n de formato"
+        "description": "Botón de formato"
     },
     "downloadAsPdf": {
         "message": "Documento PDF",
-        "description": "Bot\u00f3n de formato"
+        "description": "Botón de formato"
     },
     "captureFullPageSplit": {
-        "message": "Capturar la p\u00e1gina completa por partes",
+        "message": "Capturar la página completa por partes",
         "description": "Una imagen por pantalla en vez de una imagen larga"
     },
     "categoryReadAloudControls": {
-        "message": "Lector de p\u00e1ginas (mientras est\u00e1 abierto)",
-        "description": "T\u00edtulo de la secci\u00f3n de controles del lector"
+        "message": "Lector de páginas (mientras está abierto)",
+        "description": "Título de la sección de controles del lector"
     },
     "categoryReadAloudMarks": {
         "message": "Marcas sobre el texto que se lee (dos teclas)",
-        "description": "T\u00edtulo de la secci\u00f3n de las marcas"
+        "description": "Título de la sección de las marcas"
     },
     "hintDesc_readerPlay": {
         "message": "Reproducir o pausar la lectura (también la barra espaciadora)"
@@ -12027,20 +12015,20 @@
         "message": "Activar o desactivar el resaltado del texto que se lee"
     },
     "readerSectionTitle": {
-        "message": "Lector de p\u00e1ginas",
-        "description": "Secci\u00f3n de ajustes del lector"
+        "message": "Lector de páginas",
+        "description": "Sección de ajustes del lector"
     },
     "readerSectionDesc": {
-        "message": "Lo que el lector pinta sobre la p\u00e1gina mientras lee, y con cu\u00e1nta fuerza. Las teclas que lo manejan est\u00e1n listadas debajo.",
-        "description": "Descripci\u00f3n de la secci\u00f3n de ajustes"
+        "message": "Lo que el lector pinta sobre la página mientras lee, y con cuánta fuerza. Las teclas que lo manejan están listadas debajo.",
+        "description": "Descripción de la sección de ajustes"
     },
     "readerShowPanelLabel": {
         "message": "Mostrar el panel del lector",
         "description": "Etiqueta del interruptor"
     },
     "readerShowPanelDesc": {
-        "message": "Los controles flotantes del borde derecho de la p\u00e1gina.",
-        "description": "Descripci\u00f3n del interruptor"
+        "message": "Los controles flotantes del borde derecho de la página.",
+        "description": "Descripción del interruptor"
     },
     "readerShowWordLabel": {
         "message": "Marcar la palabra que se dice",
@@ -12048,23 +12036,23 @@
     },
     "readerShowWordDesc": {
         "message": "Sigue la lectura palabra por palabra.",
-        "description": "Descripci\u00f3n del interruptor"
+        "description": "Descripción del interruptor"
     },
     "readerShowBlockLabel": {
         "message": "Resaltar el texto que se lee",
         "description": "Etiqueta del interruptor"
     },
     "readerShowBlockDesc": {
-        "message": "Ti\u00f1e el p\u00e1rrafo por el que va el lector.",
-        "description": "Descripci\u00f3n del interruptor"
+        "message": "Tiñe el párrafo por el que va el lector.",
+        "description": "Descripción del interruptor"
     },
     "readAloudOpenSettings": {
         "message": "Ajustes del lector",
-        "description": "Bot\u00f3n del panel del lector"
+        "description": "Botón del panel del lector"
     },
     "downloadFormatHint": {
         "message": "Elige uno o los dos.",
-        "description": "Nota bajo la elecci\u00f3n de formato"
+        "description": "Nota bajo la elección de formato"
     },
     "readerBlockOpacityLabel": {
         "message": "Transparencia del resaltado del texto",
@@ -12073,5 +12061,113 @@
     "readerWordOpacityLabel": {
         "message": "Transparencia de la marca de palabra",
         "description": "Etiqueta del control de opacidad"
+    },
+    "unitMinutesShort": {
+        "message": "min",
+        "description": "Abbreviation for minutes, used as the unit beside a number field"
+    },
+    "unitSecondsShort": {
+        "message": "s",
+        "description": "Abbreviation for seconds, used as the unit beside a number field"
+    },
+    "unitHoursShort": {
+        "message": "h",
+        "description": "Abbreviation for hours, used as the unit beside a number field"
+    },
+    "toggleOn": {
+        "message": "Activado",
+        "description": "Label of a setting switch that is on"
+    },
+    "toggleOff": {
+        "message": "Desactivado",
+        "description": "Label of a setting switch that is off"
+    },
+    "pomodoroSettingsSubtitle": {
+        "message": "El temporizador, el ciclo y el proyecto: los mismos ajustes que usan el panel lateral y el listado de grupos.",
+        "description": "Subtitle of the pomodoro settings page"
+    },
+    "pomodoroSettingsHint": {
+        "message": "El temporizador, el ciclo y el proyecto",
+        "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
+    },
+    "pomodoroSettingsShared": {
+        "message": "Lo que cambies aquí cambia a la vez en el panel lateral y en el listado de grupos.",
+        "description": "Note explaining that the pomodoro settings are shared across every surface"
+    },
+    "pomodoroMethodHint": {
+        "message": "Lo que cuenta el panel: el ciclo pomodoro o uno de los tres relojes simples.",
+        "description": "Hint for the pomodoro method chooser"
+    },
+    "pomodoroWorkDurationHint": {
+        "message": "Lo que dura un bloque de foco.",
+        "description": "Hint for the focus duration setting"
+    },
+    "pomodoroShortDurationHint": {
+        "message": "El descanso entre dos bloques de foco.",
+        "description": "Hint for the short break setting"
+    },
+    "pomodoroLongDurationHint": {
+        "message": "El descanso largo que cierra un ciclo.",
+        "description": "Hint for the long break setting"
+    },
+    "pomodoroSessionsBeforeLongHint": {
+        "message": "Bloques de foco que hay que pasar antes de que llegue el descanso largo.",
+        "description": "Hint for the pomodoros-before-long-break setting"
+    },
+    "pomodoroEndAfterHint": {
+        "message": "Bloques de foco que completan la sesión. La barra de progreso se llena hasta aquí.",
+        "description": "Hint for the pomodoros-to-finish setting"
+    },
+    "pomodoroProjectNameHint": {
+        "message": "El nombre con el que se guardan las sesiones y por el que las agrupa el panel.",
+        "description": "Hint for the project name field"
+    },
+    "pomodoroProjectTagHint": {
+        "message": "Para filtrar el panel por tipo de trabajo en vez de por proyecto.",
+        "description": "Hint for the project tag field"
+    },
+    "pomodoroProjectFolderHint": {
+        "message": "Agrupa varios proyectos juntos en la barra lateral.",
+        "description": "Hint for the project folder field"
+    },
+    "pomodoroSoundHint": {
+        "message": "Un aviso sonoro cuando termina un bloque de foco o un descanso.",
+        "description": "Hint for the sound setting"
+    },
+    "pomodoroAutostartHint": {
+        "message": "El siguiente bloque arranca solo en vez de esperar a que lo inicies.",
+        "description": "Hint for the autostart setting"
+    },
+    "pomodoroAutosaveHint": {
+        "message": "Cada bloque de foco terminado se guarda en las estadísticas sin pedirlo.",
+        "description": "Hint for the autosave setting"
+    },
+    "pomodoroAutofinishHint": {
+        "message": "Cierra la tarea sola en cuanto la sesión está completa.",
+        "description": "Hint for the autofinish setting"
+    },
+    "pomodoroHideProjectHint": {
+        "message": "Quita la fila del proyecto del panel para hacerlo más corto.",
+        "description": "Hint for the hide project setting"
+    },
+    "pomodoroHideProgressHint": {
+        "message": "Quita la barra de ciclos del panel para hacerlo más corto.",
+        "description": "Hint for the hide progress setting"
+    },
+    "pomodoroTimerDurationHint": {
+        "message": "El tiempo desde el que empieza la cuenta atrás.",
+        "description": "Hint for the countdown duration fields"
+    },
+    "pomodoroEndTimeHint": {
+        "message": "El momento hasta el que cuenta el reloj.",
+        "description": "Hint for the end date and time of the time method"
+    },
+    "pomodoroMethodPauseAsStopHint": {
+        "message": "Pausar termina la tarea en vez de dejarla en espera.",
+        "description": "Hint for the pause-as-stop setting"
+    },
+    "pomodoroAddSecondsToTimeHint": {
+        "message": "Enseña también los segundos, además de horas y minutos.",
+        "description": "Hint for the show-seconds setting"
     }
 }

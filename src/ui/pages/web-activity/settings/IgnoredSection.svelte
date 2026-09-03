@@ -77,12 +77,12 @@
     });
 </script>
 
-<div class="wa-set-block">
-    <p class="wa-set-note">{$t('webActivitySettingsIgnoredHint')}</p>
+<div class="set-block">
+    <p class="set-note">{$t('webActivitySettingsIgnoredHint')}</p>
 
     <div class="wa-inline-form">
         <input
-            class="wa-text-input"
+            class="set-text-input"
             type="text"
             bind:value={draft}
             placeholder="example.com"
@@ -94,7 +94,7 @@
             onkeydown={(e) => e.key === 'Enter' && submit()}
         />
         <button
-            class="wa-add-btn"
+            class="set-add-btn"
             type="button"
             disabled={!draft.trim()}
             title={$tt('webActivityIgnoredAdd')}

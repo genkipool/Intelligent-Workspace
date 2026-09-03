@@ -7,9 +7,11 @@
      * that searches and folds, and one box per site. It reads the same payload and
      * opens the same two dialogs, so nothing here has its own idea of what a limit is.
      *
-     * Today only. The panel is glanced at while browsing, and the question it answers
-     * is about the day in progress; anything longer is what the tab is for, which the
-     * resize button opens.
+     * It opens on today, because the panel is glanced at while the time is being spent
+     * and the question it usually answers is about the day in progress. The chips under
+     * the search box widen that to a week, a month or the lot without leaving the
+     * column; what is still the tab's is everything that needs a chart to mean
+     * anything, which the resize button opens.
      */
     import { onMount, tick } from 'svelte';
     import { SvelteSet } from 'svelte/reactivity';
@@ -17,7 +19,10 @@
     import { showNotification } from '../../../../utils/i18n.js';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
+    import PeriodChips from '../../../components/common/PeriodChips.svelte';
     import PanelSite from './PanelSite.svelte';
+    import { createPanelNav, panelNavActions } from '../../../services/sidePanelNav.js';
+    import { PANEL_PERIODS } from '../../../services/dashboard/periods.js';
 
     let {
         sites = [],
@@ -32,6 +37,9 @@
         onClearSchedule,
         onOpenInTab,
         onOpenSettings,
+        /** How far back the list is looking, in days. `1` is today; `0` is everything. */
+        period = 1,
+        onPeriodChange,
         /** The site of the tab in front, scrolled to when it changes. */
         activeDomain = null,
     } = $props();
@@ -63,26 +71,11 @@
 
     /** Where this page is, for whatever page it hands over to. */
     const HERE = '../web-activity/web-activity.html?context=sidepanel';
-
-    async function goToGroups() {
-        await chrome.storage.local.set({ navSource: HERE });
-        window.location.href = '../listGroup/listGroup.html?context=sidepanel';
-        chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../listGroup/listGroup.html' });
-    }
-
-    function goHome() {
-        window.location.href = '../popup/popup.html?context=sidepanel';
-        chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../popup/popup.html' });
-    }
+    const nav = createPanelNav(HERE);
 
     /**
-     * The four navigation buttons, in the order every side-panel header carries them.
-     *
-     * No `viewBox` on any of them, unlike the rules page. That page's sprite holds its
-     * icons in `<g>` elements, which carry no coordinate system of their own, so its
-     * buttons supply one. This page's sprite uses `<symbol>`, which does — and setting
-     * it again on the `<svg>` applies it twice, which is what left the house icon
-     * drawn at the wrong scale and off centre inside its button.
+     * The four navigation buttons, in the order every side-panel header carries them:
+     * this page's pin, then the three `sidePanelNav.js` builds for every panel.
      */
     const headerActions = $derived([
         {
@@ -92,45 +85,14 @@
             pressed: isPinned,
             // Matching the rules page, which makes this one focusable explicitly.
             tabindex: '0',
-            icon: '#wa-pin',
+            icon: '#panel-pin',
             ariaLabel: $t('webActivityPinPage'),
             title: $tt(isPinned ? 'webActivityUnpinPageTitle' : 'webActivityPinPageTitle'),
             onclick: togglePin,
         },
-        {
-            id: 'list-groups-btn',
-            class: 'buttom-list-group',
-            icon: '#wa-list-group',
-            ariaLabel: $t('listTabGroups'),
-            title: $tt('listTabGroups'),
-            onclick: goToGroups,
-        },
-        {
-            id: 'home-btn',
-            class: 'home-button',
-            icon: '#wa-home',
-            ariaLabel: $t('backToHome'),
-            title: $tt('backToHome'),
-            onclick: goHome,
-        },
-        {
-            class: 'back-button',
-            icon: '#wa-back',
-            ariaLabel: $t('backToMainPopup'),
-            title: $tt('backToHome'),
-            onclick: goBack,
-        },
+        ...panelNavActions({ t: $t, tt: $tt, nav }),
     ]);
 
-    async function goBack() {
-        const { navSource } = await chrome.storage.local.get('navSource');
-        await chrome.storage.local.set({ navSource: HERE });
-        if (navSource) {
-            window.location.href = navSource;
-            return;
-        }
-        goHome();
-    }
     /**
      * The boxes the user has unfolded.
      *
@@ -186,7 +148,7 @@
     });
 </script>
 
-<div class="wa-panel">
+<div class="side-panel-shell">
     <!--
         The bar every side-panel page of this extension wears, and the group list's
         search row under it with the two controls this panel needs.
@@ -226,7 +188,7 @@
                      it at 30 because its header button is that size; here it sits
                      beside the fold, and the two have to match each other. -->
                 <svg width="24" height="24" style="color: var(--text-color);" aria-hidden="true" focusable="false">
-                    <use href="#wa-resize"></use>
+                    <use href="#panel-resize"></use>
                 </svg>
             </button>
             <button
@@ -260,7 +222,20 @@
         {/snippet}
     </SearchAndControls>
 
-    <div class="wa-panel-list" bind:this={listEl}>
+    <!-- Under the controls rather than in them: the search narrows the list and the
+         fold changes how it is drawn, but the period changes what the figures *are*.
+         A control that changes the numbers belongs on its own line. -->
+    <div class="wa-panel-periods">
+        <PeriodChips
+            wrap
+            value={period}
+            periods={PANEL_PERIODS}
+            ariaLabel={$t('dashboardPeriod')}
+            onchange={onPeriodChange}
+        />
+    </div>
+
+    <div class="side-panel-body" bind:this={listEl}>
         {#each shown as site (site.domain)}
             <PanelSite
                 {site}
@@ -280,7 +255,11 @@
         {/each}
 
         {#if !shown.length}
-            <p class="no-data-msg">{$t(sites.length ? 'webActivityNoSites' : 'webActivityPanelEmpty')}</p>
+            <!-- "Nothing today" is only true of today; every other period says so in
+                 its own words. -->
+            <p class="no-data-msg">
+                {$t(sites.length || period !== 1 ? 'webActivityNoSites' : 'webActivityPanelEmpty')}
+            </p>
         {/if}
     </div>
 </div>

@@ -163,6 +163,25 @@ body {
     display: none;
 }
 
+/* The row scrolls rather than squeezes. `overflow-x: auto` above exists so a narrow
+   window can still reach the last filter, and that only works if the items keep their
+   size — otherwise the widest of them gives way instead. The chips, the labels and the
+   rule already refuse to shrink; the select did not, and below about 1500px it was
+   crushed to two pixels: a control on screen that could not be used or even read. */
+.header-filters > * {
+    flex-shrink: 0;
+}
+
+/* The select is the one item that may still give ground, because it is the one whose
+   label can be shortened without losing what it is: "Todas las etiquetas" reads well
+   enough as "Todas…" with the caret beside it. It stops at a width that still shows a
+   word and the caret; past that the row scrolls like everything else. */
+.header-filters .itg-select,
+.header-filters .tag-select {
+    flex-shrink: 1;
+    min-width: 108px;
+}
+
 .filter-chips {
     display: flex;
     gap: 5px;
@@ -406,6 +425,14 @@ body {
 .sidebar-all {
     padding: 6px 8px 2px;
     flex-shrink: 0;
+}
+
+/* The row that sits apart from the list above it: it does not filter the dashboard,
+   it replaces the column beside it. Both dashboards put their settings here. */
+.sidebar-footer {
+    flex-shrink: 0;
+    padding: 6px 8px 10px;
+    border-top: 1px solid var(--border-color);
 }
 
 .sidebar-item {
@@ -669,6 +696,15 @@ body {
 /* ================================================================
    MAIN CONTENT  --  improved design
    ================================================================ */
+
+/* `hidden` has to beat the `display: flex` below it — the attribute's own rule is
+   `display: none` at the weakest possible weight, so any class that sets `display`
+   silently wins and the "hidden" column stays on screen next to the one that replaced
+   it. That is exactly what happened when the pomodoro dashboard started hiding its
+   charts to show its settings. */
+.main-content[hidden] {
+    display: none;
+}
 
 .main-content {
     flex: 1;
@@ -1819,4 +1855,19 @@ section:hover > .section-title > .sort-grip,
 .modal-actions button:focus-visible {
     outline: 2px solid var(--interactive-color);
     outline-offset: 2px;
+}
+
+/* The chips in a side panel, where four of them are the whole line: they share the
+   width evenly and fold onto a second row rather than running off the edge. In a
+   dashboard header they keep their natural width, which is the default above. */
+.filter-chips-wrap {
+    flex-wrap: wrap;
+}
+
+.filter-chips-wrap .filter-chip {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: center;
+    font-size: 0.86rem;
+    padding: 4px 6px;
 }

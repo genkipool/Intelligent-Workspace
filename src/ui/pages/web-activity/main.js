@@ -6,6 +6,8 @@ import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
 import '../../../styles/dashboard.css';
 import '../../../styles/select.css';
+import '../../../styles/settings-page.css';
+import '../../../styles/side-panel-shell.css';
 import './webActivity.css';
 
 const app = mountPage(WebActivity, {

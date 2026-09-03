@@ -1,0 +1,398 @@
+/* ===============================================================
+   A SETTINGS PAGE.
+
+   The shape both dashboards give a screenful of preferences: a hero,
+   then sections under a hairline heading, then one row per decision —
+   what it is on the left, the control that changes it on the right.
+
+   It began as the web activity dashboard's `.wa-set-*` block. The
+   pomodoro dashboard needed exactly the same page and the same rows,
+   and describing them a second time is how two settings screens in
+   one extension become two products; the names lost their `wa-`
+   prefix on the way out and the values are unchanged.
+
+   What is NOT here is anything a particular page's settings hold —
+   rule tables, category chips, and the compact rules the web activity
+   panel needs to fold this page into a dialog. Those stay with the
+   page that owns them.
+   =============================================================== */
+
+/* --- SETTINGS PAGE ----------------------------------------------
+   Deliberately not a grid of cards. Settings are already a list of
+   small decisions; a frame around each one turns a page you can scan
+   into a wall of boxes. What separates them is space and a hairline,
+   and what carries the design is the rhythm of the rows. */
+.settings-page {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 940px;
+    margin: 0 auto;
+    gap: 18px;
+    animation: fadeUp 0.35s ease both;
+}
+
+.set-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 8px;
+    margin-left: -20px;
+}
+
+.set-title {
+    margin: 0;
+    font-size: 1.65rem;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--text-color);
+}
+
+.set-subtitle {
+    margin: 4px 0 0;
+    color: var(--text-dim);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.set-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 18px 0 4px -20px;
+    font-family: var(--mono);
+    font-size: 0.92rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+}
+
+.set-head:first-of-type {
+    margin-top: 6px;
+}
+
+.set-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--interactive-color) 45%, transparent), transparent 90%);
+}
+
+.set-section {
+    background-color: var(--bg-panel-color);
+    border: none;
+    border-radius: 8px;
+    padding: 22px 24px;
+    margin-bottom: 6px;
+}
+
+.set-block {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 0;
+}
+
+/* The "add" actions of the settings page: a word and a plus, not a boxed button.
+   They sit beside the thing they add to and are read as part of it; a bordered pill
+   next to a bordered input is two frames arguing about which one is the control. */
+.set-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 2px;
+    border: none;
+    background: none;
+    color: var(--text-on-color);
+    font-family: var(--sans);
+    font-size: 0.92rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.13s;
+}
+
+.set-add-btn:hover:not(:disabled) {
+    color: var(--interactive-color);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.set-add-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.set-add-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.set-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.set-note {
+    margin: 0;
+    color: var(--text-dim);
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 62ch;
+}
+
+.set-figure {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text-soft);
+}
+
+.set-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 6px;
+}
+
+.set-subhead {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.set-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+/* Each setting is a line: what it is on the left, the control on the right. */
+.set-rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.set-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 14px 0;
+    border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
+}
+
+.set-row:first-child {
+    border-top: none;
+}
+
+.set-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.set-row-name {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.set-row-note {
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: var(--text-dim);
+    max-width: 58ch;
+}
+
+/* Two tracks: the control, then its unit. Every row uses them, so the boxes line up
+   down the column and so do the units beside them — which sizing each box to its own
+   digit count could never do. A switch simply sits in the first track. */
+.set-row-control {
+    display: grid;
+    /* 96px because that is the state button's own minimum width, which wins over the
+       `width: 100%` below. A narrower track let the button overflow it and knocked its
+       centre four pixels off the number boxes above. */
+    grid-template-columns: 96px 40px;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    justify-items: start;
+}
+
+.set-row-control .set-unit {
+    justify-self: start;
+}
+
+/* A row whose control is a text box rather than a number spinner or a switch: it gets
+   a width you can actually type a password into instead of the 96px a stepper needs. */
+.set-row-control-text {
+    grid-template-columns: 220px;
+}
+
+/* Filling the same track the number boxes fill, so a column of controls reads down
+   one axis whether the row holds a state button or a figure. Centring it was not
+   enough: the button is wider than the track its own text asks for, and a centred
+   overflow put it two pixels off the boxes above it. */
+.set-row-control > .toggle-button {
+    width: 100%;
+    justify-self: stretch;
+}
+
+.set-unit {
+    color: var(--text-dim);
+    font-size: 11px;
+}
+
+/* --- A TEXT FIELD ------------------------------------------------
+   The one-line box of a settings row: a name, a tag, a domain. Sized
+   and coloured like the number boxes and the switches beside it, so a
+   column of mixed controls reads down one edge. */
+.set-text-input {
+    width: 100%;
+    min-width: 0;
+    height: 32px;
+    padding: 4px 10px;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    caret-color: var(--text-on-color);
+    font-family: var(--sans);
+    font-size: 12px;
+}
+
+.set-text-input::placeholder {
+    color: var(--text-dim);
+}
+
+.set-text-input:hover {
+    border-color: color-mix(in srgb, var(--text-on-color) 60%, var(--border-color));
+}
+
+.set-text-input:focus {
+    outline: none;
+    border-color: var(--text-on-color);
+}
+
+/* --- A SINGLE CHOICE ---------------------------------------------
+   One of N, all of them on screen at once: the four pomodoro methods.
+   A `<select>` would hide three of the four answers behind a click,
+   and on a settings page the whole point is being able to see what
+   the alternatives are. It wraps rather than scrolls, because a row
+   of options that runs off the edge is a row with a hidden option in
+   it — which is the thing this control exists to avoid. */
+.set-choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.set-choice-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background: var(--bg-color);
+    color: var(--text-soft);
+    font-family: var(--sans);
+    font-size: 12px;
+    cursor: pointer;
+    transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        color 0.15s;
+}
+
+.set-choice-btn:hover:not(:disabled) {
+    border-color: var(--interactive-color);
+    color: var(--text-color);
+}
+
+/* The chosen one is filled, not merely outlined: an outline that only differs by
+   colour is the first thing to disappear on a light palette. */
+.set-choice-btn.is-active {
+    background: var(--interactive-color);
+    border-color: var(--interactive-color);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.set-choice-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.set-choice-btn:focus-visible {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+}
+
+.set-choice-icon {
+    flex-shrink: 0;
+}
+
+/* --- A ROW OF FIELDS ---------------------------------------------
+   Settings that are one answer in several boxes — hours, minutes and
+   seconds; a date and a time — sit on their own line under the name
+   rather than in the row's right-hand track, which is sized for one
+   control. */
+.set-row-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+}
+
+.set-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.set-field-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-dim);
+}
+
+.set-field-control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --- A NARROW COLUMN ---------------------------------------------
+   Under about 640px there is no room for a label and its control side
+   by side, and no room to outdent the headings against a content
+   column that is now the whole width.
+
+   These two used to live at the end of the web activity stylesheet,
+   which stopped working the moment this file was shared: the bundler
+   emits a chunk used by two pages *after* the page's own sheet, so a
+   plain `.set-head` here started beating a plain `.set-head` there.
+   A rule that corrects another one has to travel with it. */
+@media (max-width: 640px) {
+    .set-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .set-hero,
+    .set-head {
+        margin-left: 0;
+    }
+}

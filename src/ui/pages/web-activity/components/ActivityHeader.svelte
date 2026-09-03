@@ -5,7 +5,7 @@
      */
     import '../../../../core/services/webActivitySchema.js';
     import { t, tt } from '../../../stores/i18nStore.js';
-    import { PERIODS } from '../webActivityAnalytics.js';
+    import PeriodChips from '../../../components/common/PeriodChips.svelte';
     import SelectField from '../../../components/common/SelectField.svelte';
     import DashboardBrandSwitcher from '../../../components/dashboard/DashboardBrandSwitcher.svelte';
     import { categoryOptions } from '../categories.js';
@@ -66,17 +66,7 @@
 
     <div class="header-filters">
         <span class="filter-label">{$t('dashboardPeriod')}</span>
-        <div class="filter-chips">
-            {#each PERIODS as option (option.days)}
-                <button
-                    class="filter-chip"
-                    class:active={period === option.days}
-                    type="button"
-                    title={$tt(option.titleKey)}
-                    onclick={() => onPeriodChange(option.days)}>{$t(option.labelKey)}</button
-                >
-            {/each}
-        </div>
+        <PeriodChips value={period} ariaLabel={$t('dashboardPeriod')} onchange={onPeriodChange} />
         <span class="filter-sep"></span>
         <span class="filter-label">{$t('webActivityCategoryLabel')}</span>
         <SelectField

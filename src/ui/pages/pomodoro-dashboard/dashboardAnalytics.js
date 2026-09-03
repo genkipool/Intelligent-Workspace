@@ -14,6 +14,66 @@ export const effColor = (pct) => {
     return 'var(--error-color)';
 };
 
+/**
+ * One row per session, newest first.
+ *
+ * Autosave writes a snapshot after every finished work block, and each one is
+ * cumulative, so a four-cycle session leaves four rows that all describe it — counted
+ * raw, an afternoon's focus is banked four times over. `sessionStarted` is what ties
+ * them together; the last one written is the whole session.
+ *
+ * Rows old enough not to carry a `sessionStarted` are kept as they are: there is
+ * nothing to fold them into, and dropping them would erase the history.
+ */
+export function dedupeSessions(entries) {
+    const bySession = new Map();
+    entries.forEach((entry, index) => {
+        const sid = entry.sessionStarted;
+        if (!sid) {
+            bySession.set(`legacy:${index}`, entry);
+            return;
+        }
+        const existing = bySession.get(sid);
+        if (!existing || entry.savedAt > existing.savedAt) bySession.set(sid, entry);
+    });
+    return [...bySession.values()].sort((a, b) => b.savedAt - a.savedAt);
+}
+
+/**
+ * Whether a session falls inside a period, in the sense the period chips mean it.
+ *
+ * `0` is everything. `1` is *today*, not the last twenty-four hours — a chip that said
+ * "Today" at nine in the morning and quietly included most of yesterday would be
+ * lying — so it is measured from midnight. Everything else is a rolling window.
+ *
+ * @param {{savedAt: number}} entry
+ * @param {number} days
+ */
+export function withinPeriod(entry, days, now = Date.now()) {
+    if (!days) return true;
+    if (days === 1) {
+        const midnight = new Date();
+        midnight.setHours(0, 0, 0, 0);
+        return entry.savedAt >= midnight.getTime();
+    }
+    return entry.savedAt >= now - days * 86400000;
+}
+
+/**
+ * The subset of `computeKpis` a caller asked for, in the order it asked for it.
+ *
+ * The dashboard shows all nineteen cards; a side panel a few hundred pixels wide can
+ * hold six. Rather than a second, shorter version of the same arithmetic — two places
+ * that would then have to agree on what "efficiency" means — each card carries an `id`
+ * and the narrow surfaces name the ones they want.
+ *
+ * @param {Array<{id: string}>} kpis What `computeKpis` returned.
+ * @param {string[]} ids The cards to keep, in display order.
+ */
+export function pickKpis(kpis, ids) {
+    return ids.map((id) => kpis.find((kpi) => kpi.id === id)).filter(Boolean);
+}
+
 export function computeKpis(d, allData, i18n, lang) {
     let totalFocus = 0,
         totalBreak = 0,
@@ -96,109 +156,133 @@ export function computeKpis(d, allData, i18n, lang) {
 
     return [
         {
+            id: 'focus',
             label: i18n('pomodoroStatsFocusTime'),
             value: fmtDur(totalFocus),
             sub: fmtH(totalFocus, hAbbrev) + ' ' + i18n('dashboardInTotal'),
             color: 'var(--interactive-color)',
         },
-        { label: i18n('pomodoroStatsSessions'), value: d.length, sub: projLabel, color: 'var(--action-color)' },
         {
+            id: 'sessions',
+            label: i18n('pomodoroStatsSessions'),
+            value: d.length,
+            sub: projLabel,
+            color: 'var(--action-color)',
+        },
+        {
+            id: 'cycles',
             label: i18n('pomodoroStatsCompletedCycles'),
             value: totalCycles,
             sub: `~${cyclesPerSess} / ${i18n('dashboardSession')}`,
             color: 'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
         },
         {
+            id: 'efficiency',
             label: i18n('dashboardAvgEfficiency'),
             value: eff + '%',
             sub: i18n('dashboardFocusDivTotal'),
             color: effColor(eff),
         },
         {
+            id: 'activeDays',
             label: i18n('dashboardActiveDays'),
             value: activeDays,
             sub: i18n('dashboardAtLeast1'),
             color: 'color-mix(in srgb, var(--action-color) 80%, var(--text-on-color))',
         },
         {
+            id: 'break',
             label: i18n('pomodoroStatsBreakTime'),
             value: fmtDur(totalBreak),
             sub: i18n('dashboardRestTime'),
             color: 'color-mix(in srgb, var(--text-color) 55%, var(--bg-color))',
         },
         {
+            id: 'interruptions',
             label: i18n('pomodoroStatsFocusInterruptions'),
             value: totalInt,
             sub: `${intPerSess} ${i18n('dashboardPerSession')}`,
             color: 'color-mix(in srgb, var(--error-color) 70%, var(--bg-color))',
         },
         {
+            id: 'interruptionTime',
             label: i18n('dashboardInterruptionTime'),
             value: fmtDur(totalIntTime),
             sub: i18n('dashboardTotalTimePaused'),
             color: 'color-mix(in srgb, var(--error-color) 70%, var(--bg-color))',
         },
         {
+            id: 'bestSession',
             label: i18n('dashboardBestSession'),
             value: (bestSession.totalFocusSeconds || 0) > 0 ? fmtDur(bestSession.totalFocusSeconds) : '--',
             sub: bestSession.projectName || '--',
             color: 'color-mix(in srgb, var(--interactive-color) 70%, var(--text-on-color))',
         },
         {
+            id: 'avgFocus',
             label: i18n('pomodoroStatsAvgFocusDuration'),
             value: avgFocus > 0 ? fmtDur(avgFocus) : '--',
             sub: i18n('dashboardAvgCycle'),
             color: 'var(--action-color)',
         },
         {
+            id: 'totalTime',
             label: i18n('pomodoroStatsTotalTime'),
             value: fmtDur(totalTime),
             sub: i18n('dashboardFocusPlusBreak'),
             color: 'var(--text-color)',
         },
         {
+            id: 'workRest',
             label: i18n('dashboardWorkRestRatio'),
             value: `1 : ${wrRatio}`,
             sub: i18n('dashboardFocusVsBreak'),
             color: 'var(--interactive-color)',
         },
         {
+            id: 'distractionRate',
             label: i18n('dashboardDistractionRate'),
             value: intRate,
             sub: i18n('dashboardIntsPerHour'),
             color: 'var(--error-color)',
         },
         {
+            id: 'bestDay',
             label: i18n('dashboardMostProductiveDay'),
             value: bestDayName,
             sub: i18n('dashboardMaxFocusDay'),
             color: 'var(--action-color)',
         },
         {
+            id: 'goldenHour',
             label: i18n('dashboardGoldenHour'),
             value: goldenHourStr,
             sub: i18n('dashboardMostFocusedSlot'),
             color: 'var(--interactive-color)',
         },
         {
+            id: 'projects',
             label: i18n('dashboardTotalProjects'),
             value: projects,
             sub: i18n('dashboardProjectVariety'),
             color: 'var(--action-color)',
         },
         {
+            id: 'avgIntDuration',
             label: i18n('dashboardAvgIntDuration'),
             value: avgIntDur > 0 ? fmtDur(avgIntDur) : '--',
             sub: i18n('dashboardPerInterruption'),
             color: 'var(--error-color)',
         },
         {
+            id: 'topProject',
             label: i18n('dashboardTopProject'),
             value: topProj,
             sub: i18n('dashboardMostTimeOn'),
             color: 'var(--action-color)',
         },
         {
+            id: 'focusIntensity',
             label: i18n('dashboardFocusIntensity'),
             value: activeDays > 0 ? (totalFocus / activeDays / 3600).toFixed(1) + 'h' : '--',
             sub: i18n('dashboardAvgFocusPerDay'),

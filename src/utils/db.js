@@ -456,7 +456,23 @@ export async function deleteBackupFromDb(groupId) {
     });
 }
 // ─── Pomodoro Stats Store ──────────────────────────────
+/** The event `notifyPomoStatsChanged` fires on the page that did the writing. */
+export const POMO_STATS_EVENT = 'pomo-stats-changed';
+
+/**
+ * Tells everyone the saved sessions have changed.
+ *
+ * Three channels, because they reach three different places and none of them reaches
+ * all three: `BroadcastChannel` for the extension's other open pages, a runtime
+ * message for the worker and anything listening through it — and a DOM event for *this*
+ * page, which neither of the other two delivers to. That last one is not belt and
+ * braces: the pomodoro panel both writes the sessions and shows the totals, so without
+ * it the cards it draws are the ones from before the session it has just saved.
+ */
 export function notifyPomoStatsChanged() {
+    try {
+        globalThis.dispatchEvent?.(new CustomEvent(POMO_STATS_EVENT));
+    } catch {}
     try {
         if (typeof BroadcastChannel !== 'undefined') {
             const bc = new BroadcastChannel('pomodoro_sync_channel');

@@ -48,32 +48,32 @@
     } = $props();
 </script>
 
-<div class="wa-settings" class:wa-settings-compact={compact}>
+<div class="settings-page" class:settings-page-compact={compact}>
     {#if !compact}
-        <header class="wa-set-hero">
+        <header class="set-hero">
             <div>
-                <h1 class="wa-set-title">{$t('webActivitySettings')}</h1>
-                <p class="wa-set-subtitle">{$t('webActivitySettingsSubtitle')}</p>
+                <h1 class="set-title">{$t('webActivitySettings')}</h1>
+                <p class="set-subtitle">{$t('webActivitySettingsSubtitle')}</p>
             </div>
         </header>
     {/if}
 
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsRulesHint')}>{$t('webActivitySettingsRules')}</h2>
-    <section class="wa-set-section" id="wa-set-rules">
+    <h2 class="set-head" title={$tt('webActivitySettingsRulesHint')}>{$t('webActivitySettingsRules')}</h2>
+    <section class="set-section" id="set-rules">
         <RulesSection {compact} rows={rules} {onEditLimit} {onEditSchedule} {onSaveLimit} onAdd={onAddRule} />
     </section>
 
     <!-- Under the rules because it is about the rules: what it guards is weakening
          one. -->
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsPassword')}>{$t('webActivitySettingsPassword')}</h2>
-    <section class="wa-set-section" id="wa-set-password">
+    <h2 class="set-head" title={$tt('webActivitySettingsPassword')}>{$t('webActivitySettingsPassword')}</h2>
+    <section class="set-section" id="set-password">
         <PasswordSection lock={settings.blockPassword} onChange={onChangeBlockPassword} />
     </section>
 
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsCategoriesHint')}>
+    <h2 class="set-head" title={$tt('webActivitySettingsCategoriesHint')}>
         {$t('webActivitySettingsCategories')}
     </h2>
-    <section class="wa-set-section" id="wa-set-categories">
+    <section class="set-section" id="set-categories">
         <CategoriesSection
             custom={customCategories}
             usage={categoryUsage}
@@ -83,13 +83,13 @@
         />
     </section>
 
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsTrackingHint')}>{$t('webActivitySettingsTracking')}</h2>
-    <section class="wa-set-section" id="wa-set-tracking">
+    <h2 class="set-head" title={$tt('webActivitySettingsTrackingHint')}>{$t('webActivitySettingsTracking')}</h2>
+    <section class="set-section" id="set-tracking">
         <TrackingSection {settings} onChange={onChangeSettings} />
     </section>
 
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsIgnoredHint')}>{$t('webActivitySettingsIgnored')}</h2>
-    <section class="wa-set-section" id="wa-set-ignored">
+    <h2 class="set-head" title={$tt('webActivitySettingsIgnoredHint')}>{$t('webActivitySettingsIgnored')}</h2>
+    <section class="set-section" id="set-ignored">
         <IgnoredSection
             domains={settings.ignoredDomains || []}
             columns={compact ? 2 : 3}
@@ -98,8 +98,8 @@
         />
     </section>
 
-    <h2 class="wa-set-head" title={$tt('webActivitySettingsDataHint')}>{$t('webActivitySettingsData')}</h2>
-    <section class="wa-set-section" id="wa-set-data">
+    <h2 class="set-head" title={$tt('webActivitySettingsDataHint')}>{$t('webActivitySettingsData')}</h2>
+    <section class="set-section" id="set-data">
         <DataSection {onExport} {onImport} {onClearAll} {onRestoreDefaults} {dayCount} {siteCount} />
     </section>
 </div>

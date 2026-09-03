@@ -62,10 +62,10 @@
     }
 </script>
 
-<div class="wa-set-block">
-    <div class="wa-set-group">
-        <h4 class="wa-set-subhead">{$t('webActivityCategoryGroupBuiltIn')}</h4>
-        <p class="wa-set-note">{$t('webActivityCategoryBuiltInHint')}</p>
+<div class="set-block">
+    <div class="set-group">
+        <h4 class="set-subhead">{$t('webActivityCategoryGroupBuiltIn')}</h4>
+        <p class="set-note">{$t('webActivityCategoryBuiltInHint')}</p>
         <div class="wa-cat-chips">
             {#each WA.CATEGORIES as id (id)}
                 <span class="tl-chip wa-cat-chip">
@@ -76,8 +76,8 @@
         </div>
     </div>
 
-    <div class="wa-set-group">
-        <h4 class="wa-set-subhead">{$t('webActivityCategoryGroupCustom')}</h4>
+    <div class="set-group">
+        <h4 class="set-subhead">{$t('webActivityCategoryGroupCustom')}</h4>
 
         {#if !custom.length}
             <p class="wa-empty-line">{$t('webActivityCategoryCustomEmpty')}</p>
@@ -87,7 +87,7 @@
                     <li class="wa-cat-row">
                         {#if editingId === entry.id}
                             <input
-                                class="wa-text-input wa-cat-input"
+                                class="set-text-input wa-cat-input"
                                 type="text"
                                 maxlength="32"
                                 bind:value={editingLabel}
@@ -133,7 +133,7 @@
 
         <div class="wa-inline-form">
             <input
-                class="wa-text-input"
+                class="set-text-input"
                 type="text"
                 maxlength="32"
                 bind:value={draft}
@@ -143,7 +143,7 @@
                 onkeydown={(e) => e.key === 'Enter' && submit()}
             />
             <button
-                class="wa-add-btn"
+                class="set-add-btn"
                 type="button"
                 disabled={!draft.trim() || isDuplicate}
                 title={$tt('webActivityCategoryNew')}

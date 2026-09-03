@@ -5,7 +5,7 @@
     import { showNotification } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
-    import { t, i18nStore } from '../../stores/i18nStore.js';
+    import { t, tt, i18nStore } from '../../stores/i18nStore.js';
     /* ===============================================================
    Pomodoro Dashboard -- Logic
    =============================================================== */
@@ -19,6 +19,7 @@
     import ProjectTable from './components/ProjectTable.svelte';
     import Timeline from './components/Timeline.svelte';
     import DashboardHeader from './components/DashboardHeader.svelte';
+    import PomodoroSettingsView from './settings/PomodoroSettingsView.svelte';
     import DashboardKpiSection from './components/DashboardKpiSection.svelte';
     import DashboardStreaksSection from './components/DashboardStreaksSection.svelte';
     import DashboardHeatmapSection from './components/DashboardHeatmapSection.svelte';
@@ -47,8 +48,20 @@
         tickDef,
         tooltipDef,
     } from '../../services/dashboard/chartTheme.js';
-    import { computeKpis, computeStreak, effColor } from './dashboardAnalytics.js';
+    import { computeKpis, computeStreak, dedupeSessions, effColor, withinPeriod } from './dashboardAnalytics.js';
     import { dayKey, fmtDateShort, fmtDur, fmtH, fmtTime } from '../../services/dashboard/format.js';
+
+    /**
+     * Which of the two things the main column is showing: 'dashboard' or 'settings'.
+     * The same shape the web activity dashboard uses, and for the same reason — the
+     * sidebar and the header stay put, so coming back is instant and nothing reloads.
+     *
+     * The dashboard column is hidden rather than unmounted. Everything in it is built
+     * imperatively — `mount()` into elements found by id, six live Chart.js canvases —
+     * so tearing it down and putting it back would mean re-running the whole render
+     * for a trip to the settings and back.
+     */
+    let view = $state('dashboard');
 
     let apps = {
         sidebar: null,
@@ -261,12 +274,10 @@
     function applyFilters() {
         const now = Date.now();
         filteredData = allData.filter((e) => {
-            if (activePeriod > 0 && e.savedAt < now - activePeriod * 86400000) return false;
-            if (activePeriod === 1) {
-                const today = new SvelteDate();
-                today.setHours(0, 0, 0, 0);
-                if (e.savedAt < today.getTime()) return false;
-            }
+            // The period is `withinPeriod`'s, shared with the pomodoro side panel:
+            // two surfaces that disagree about where "today" starts show two
+            // different numbers for the same afternoon.
+            if (!withinPeriod(e, activePeriod, now)) return false;
             if (activeTag && (e.projectTag || '') !== activeTag) return false;
             if (activeProject) {
                 if (e.projectName !== activeProject) return false;
@@ -1299,23 +1310,10 @@
                     renderWebPhases();
                 })
                 .catch(() => {});
-            allData = await getAllStats();
-            // Deduplicate cumulative entries from the same session (legacy or autosave snapshots)
-            const sessionMap = new SvelteMap();
-            allData.forEach((entry) => {
-                const sid = entry.sessionStarted;
-                if (!sid) {
-                    // Entries without sessionStarted are kept as unique (fallback for very old data)
-                    sessionMap.set(Symbol(), entry);
-                } else {
-                    const existing = sessionMap.get(sid);
-                    if (!existing || entry.savedAt > existing.savedAt) {
-                        sessionMap.set(sid, entry);
-                    }
-                }
-            });
-            allData = Array.from(sessionMap.values());
-            allData.sort((a, b) => b.savedAt - a.savedAt);
+            // Folded and sorted by `dedupeSessions`, shared with the pomodoro side
+            // panel: autosave's cumulative snapshots have to be collapsed the same way
+            // in both, or the same session is counted a different number of times.
+            allData = dedupeSessions(await getAllStats());
             populateTagFilter();
             buildSidebar();
             updateAllItem();
@@ -1533,12 +1531,49 @@
 
         <!-- Folders + projects tree -->
         <div class="sidebar-scroll" id="sidebar-scroll"></div>
+
+        <!-- Pinned to the bottom, away from the tree it has nothing to do with: this
+             is the one row that changes what the main column *is* rather than
+             filtering it. -->
+        <div class="sidebar-footer">
+            <div
+                class="sidebar-item"
+                class:active={view === 'settings'}
+                role="button"
+                tabindex="0"
+                title={$tt('pomodoroSettingsHint')}
+                onclick={() => (view = view === 'settings' ? 'dashboard' : 'settings')}
+                onkeydown={(e) => e.key === 'Enter' && (view = view === 'settings' ? 'dashboard' : 'settings')}
+            >
+                <svg
+                    class="si-icon"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                    focusable="false"
+                >
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+                    />
+                </svg>
+                <span class="si-name">{$t('pomodoroSettingsTitle')}</span>
+            </div>
+        </div>
     </aside>
 
     <!-- -- Main content ----------------------------------------------- -->
     <!-- Sections can be dragged into another order; the panels inside a section can be
          rearranged among themselves. See `actions/sortable.js`. -->
-    <main class="main-content" use:sortable={{ items: 'section[data-sort-id]', onReorder: reorderSections }}>
+    <main
+        class="main-content"
+        hidden={view === 'settings'}
+        use:sortable={{ items: 'section[data-sort-id]', onReorder: reorderSections }}
+    >
         <!-- Empty / error state -->
         <!-- These sections start hidden and renderAll() reveals them once it knows
              there is data: rendering them first meant painting the whole dashboard and
@@ -1590,6 +1625,12 @@
         <DashboardBreakdownSection />
     </main>
     <!-- /main-content -->
+
+    {#if view === 'settings'}
+        <main class="main-content">
+            <PomodoroSettingsView />
+        </main>
+    {/if}
 </div>
 <!-- /app-body -->
 

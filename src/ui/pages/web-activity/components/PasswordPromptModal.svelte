@@ -62,7 +62,7 @@
         <input
             id="wa-password-input"
             bind:this={inputEl}
-            class="wa-text-input"
+            class="set-text-input"
             class:input-error={!!error}
             type="password"
             autocomplete="current-password"

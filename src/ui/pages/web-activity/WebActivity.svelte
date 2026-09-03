@@ -37,6 +37,7 @@
     import SitesTable from './components/SitesTable.svelte';
     import VisitTimeline from './components/VisitTimeline.svelte';
     import WebActivityIcons from './components/WebActivityIcons.svelte';
+    import PanelNavIcons from '../../components/common/PanelNavIcons.svelte';
     import PasswordPromptModal from './components/PasswordPromptModal.svelte';
     import SettingsView from './settings/SettingsView.svelte';
     import SettingsDialog from '../../components/common/SettingsDialog.svelte';
@@ -119,6 +120,20 @@
     let view = $state('dashboard');
     /** The panel has no main column to give over, so its settings open in a dialog. */
     let panelSettingsOpen = $state(false);
+
+    /**
+     * How far back the *panel* is looking, which is not the same question as `period`
+     * above: that one belongs to the dashboard's header and to the charts under it.
+     * The panel opens on today, because it is read while the time is being spent, and
+     * remembers whatever it was last asked for.
+     */
+    let panelPeriod = $state(1);
+    const PANEL_PERIOD_KEY = 'webActivityPanelPeriod';
+
+    function selectPanelPeriod(days) {
+        panelPeriod = days;
+        chrome.storage.local.set({ [PANEL_PERIOD_KEY]: days });
+    }
 
     /**
      * The password prompt, while one is open: `{ resolve }`, the promise the guarded
@@ -264,14 +279,20 @@
         );
     });
 
-    /** Today's sites, longest first — what the side panel is asked about. */
-    const todaySites = $derived.by(() => {
+    /**
+     * The panel's sites, longest first, over whichever period its chips are on.
+     *
+     * The same aggregation the dashboard's table runs, with the panel's own period —
+     * two ways of counting the same days would eventually disagree, and the panel is
+     * the one that gets checked against the dashboard.
+     */
+    const panelSites = $derived.by(() => {
         minuteTick;
-        return aggregateSites(payload.days, daysInPeriod(payload.days, 1), payload.limits).filter(
+        return aggregateSites(payload.days, daysInPeriod(payload.days, panelPeriod), payload.limits).filter(
             (site) => !(payload.settings?.ignoredDomains || []).includes(site.domain),
         );
     });
-    const todayTotal = $derived(todaySites.reduce((sum, site) => sum + site.seconds, 0));
+    const panelTotal = $derived(panelSites.reduce((sum, site) => sum + site.seconds, 0));
 
     /** How many sites sit in each category, for the settings page's category list. */
     const categoryUsage = $derived.by(() => {
@@ -882,6 +903,8 @@
         // one they chose to leave open.
         if (isPanel) {
             document.body.classList.add('is-sidepanel');
+            const remembered = await chrome.storage.local.get(PANEL_PERIOD_KEY);
+            if (typeof remembered[PANEL_PERIOD_KEY] === 'number') panelPeriod = remembered[PANEL_PERIOD_KEY];
             minuteTimer = setInterval(() => {
                 minuteTick += 1;
                 load();
@@ -927,6 +950,7 @@
 </script>
 
 <WebActivityIcons />
+<PanelNavIcons />
 <div id="tooltip" bind:this={tooltipEl}></div>
 
 {#snippet settingsPanel(compact)}
@@ -972,9 +996,9 @@
         </div>
     {:else}
         <ActivityPanel
-            sites={todaySites}
+            sites={panelSites}
             {verdicts}
-            totalSeconds={todayTotal}
+            totalSeconds={panelTotal}
             limitOf={normalizedLimit}
             onEditLimit={openLimitEditor}
             onEditSchedule={openScheduleEditor}
@@ -993,6 +1017,8 @@
             onClearSchedule={(domain) =>
                 commitLimit(domain, { ...normalizedLimit(domain), schedules: [], blockAlways: false })}
             {activeDomain}
+            period={panelPeriod}
+            onPeriodChange={selectPanelPeriod}
             onOpenInTab={() => chrome.tabs.create({ url: chrome.runtime.getURL(PAGE_PATH) })}
             onOpenSettings={() => (panelSettingsOpen = true)}
         />

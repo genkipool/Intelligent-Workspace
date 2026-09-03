@@ -22,14 +22,6 @@ import {
 const WA = globalThis.ITG_WEB_ACTIVITY;
 
 /** Period filter values, in days. 0 means everything on record. */
-export const PERIODS = [
-    { days: 1, labelKey: 'dashboardToday', titleKey: 'titleFilterToday' },
-    { days: 7, labelKey: 'dashboard7Days', titleKey: 'titleFilter7Days' },
-    { days: 30, labelKey: 'dashboard30Days', titleKey: 'titleFilter30Days' },
-    { days: 90, labelKey: 'dashboard3Months', titleKey: 'titleFilter3Months' },
-    { days: 0, labelKey: 'dashboardAllTime', titleKey: 'titleFilterAll' },
-];
-
 /**
  * The day keys a period covers, oldest first, including the days with no activity —
  * a gap in a trend line means "nothing happened", and dropping it would quietly

@@ -187,7 +187,7 @@
          the one row that changes what the main column *is* rather than filtering it. -->
     <div class="sidebar-footer">
         <div
-            class="sidebar-item wa-settings-item"
+            class="sidebar-item"
             class:active={view === 'settings'}
             role="button"
             tabindex="0"

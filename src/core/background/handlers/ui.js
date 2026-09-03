@@ -559,6 +559,9 @@ const SIDE_PANEL_TARGETS = {
     'listgroup-notes': { path: 'src/ui/pages/listGroup/listGroup.html', view: 'notes' },
     'listgroup-gallery': { path: 'src/ui/pages/listGroup/listGroup.html', view: 'gallery' },
     'web-activity': { path: 'src/ui/pages/web-activity/web-activity.html', query: 'context=sidepanel' },
+    // The same page as the pomodoro dashboard, asked for as a panel: `main.js` mounts
+    // the timer instead of the charts when the context says so.
+    pomodoro: { path: 'src/ui/pages/pomodoro-dashboard/dashboard.html', query: 'context=sidepanel' },
 };
 
 function handleOpenSidePanel(message, sender, sendResponse) {

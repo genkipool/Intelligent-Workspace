@@ -9,7 +9,6 @@
     import ThemeSelector from '../../components/common/ThemeSelector.svelte';
     import SettingsSection from '../../components/common/SettingsSection.svelte';
     import ActionButtonGrid from '../../components/common/ActionButtonGrid.svelte';
-    import { openDashboard } from '../../services/dashboard/dashboardPages.js';
     import DonationSection from '../../components/common/DonationSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import Notification from '../../components/common/Notification.svelte';
@@ -212,12 +211,22 @@
         {
             id: 'quick-pomodoro-dashboard-btn',
             titleKey: 'pomodoroTitle',
-            labelKey: 'dashboardDashboard',
-            tooltipKey: 'pomodoroDashboardTitle',
+            labelKey: 'pomodoroTitle',
+            tooltipKey: 'pomodoroOpenTimer',
             icon: '#icon-pomodoro',
             viewBox: '0 0 512 512',
             svgAttrs: { fill: 'currentColor' },
-            onClick: () => openDashboard('pomodoro'),
+            // The side panel, not a tab, for the same reason as web activity below it:
+            // a timer is watched *while* working, beside the work. The panel's own
+            // first button opens the full dashboard in a tab when the question stops
+            // being "how long is left" and becomes "how has the month gone".
+            onClick: (e) =>
+                handleNavigation(
+                    e,
+                    '../pomodoro-dashboard/dashboard.html',
+                    'src/ui/pages/pomodoro-dashboard/dashboard.html',
+                    '../popup/popup.html',
+                ),
         },
         {
             id: 'quick-web-activity-btn',

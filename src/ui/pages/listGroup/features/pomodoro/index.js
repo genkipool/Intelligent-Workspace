@@ -7,8 +7,26 @@ import { openDashboard } from '../../../../services/dashboard/dashboardPages.js'
 // POMODORO FRONTEND v3 — 3-division design, fixed sound, i18n
 // ============================================================
 
-export function initPomodoro() {
-    'use strict';
+/**
+ * [AI INSTRUCTION]
+ * WIRES UP THE POMODORO PANEL, WHEREVER IT IS MOUNTED.
+ *
+ * Two pages render `PomodoroPanel.svelte` and both call this: the group list, which
+ * folds it out of its toolbar, and the pomodoro side panel, where it is the page. All
+ * the state lives in the service worker and reaches every open surface through
+ * `pomodoroStateUpdate`, so the two stay in step without knowing about each other —
+ * start the clock in one and the other is already counting.
+ *
+ * @param {object} [options]
+ * @param {boolean} [options.embedded] The panel *is* the page: there is no toolbar
+ *   button to toggle it from, so it is always open, `pomodoroPanelOpen` is none of its
+ *   business, and the close button is not rendered. Everything below that reads
+ *   `openBtn` therefore has to tolerate its absence — this is the only difference
+ *   between the two hosts.
+ */
+export function initPomodoro({ embedded = false } = {}) {
+    /** Where the pomodoro side panel is, for whatever page it hands over to. */
+    const PANEL_HERE = '../pomodoro-dashboard/dashboard.html?context=sidepanel';
 
     // ─── Helpers ───────────────────────────────────────────────
     const $ = (id) => document.getElementById(id);
@@ -132,7 +150,10 @@ export function initPomodoro() {
     const statProjectList = $('pomo-project-list');
     const statProjectSearch = $('pomo-project-search-input');
 
-    if (!openBtn || !panel) return;
+    // The group list needs both: without the toolbar button there is no way to reach
+    // the panel, and wiring a panel nobody can open is wasted work. The side panel
+    // needs only the panel — it is the page.
+    if (!panel || (!embedded && !openBtn)) return;
 
     // ─── State ─────────────────────────────────────────────────
     let localState = null;
@@ -181,6 +202,9 @@ export function initPomodoro() {
     }
 
     // Save local-only settings (timer inputs, toggles, tiempo date/time)
+    /** JSON of the last `pomoLocalSettings` this panel wrote; see below. */
+    let lastLocalWrite = null;
+
     async function saveLocalSettings() {
         const ls = {
             timerHours: parseInt(timerHoursInput?.value) || 0,
@@ -195,15 +219,24 @@ export function initPomodoro() {
             tiempoHH: tiempoSelectedHH,
             tiempoMM: tiempoSelectedMM,
         };
+        // `storage.onChanged` fires on the page that did the writing too, and the
+        // listener further down re-reads the whole set when it does. Replaying our own
+        // write would put the parsed value back into the box being typed in and send
+        // the caret to the end, so the echo is recognised and dropped.
+        lastLocalWrite = JSON.stringify(ls);
         await chrome.storage.local.set({ pomoLocalSettings: ls });
     }
 
     async function loadLocalSettings() {
         const { pomoLocalSettings: ls } = await chrome.storage.local.get('pomoLocalSettings');
         if (!ls) return;
-        if (timerHoursInput && ls.timerHours !== undefined) timerHoursInput.value = ls.timerHours;
-        if (timerMinutesInput && ls.timerMinutes !== undefined) timerMinutesInput.value = ls.timerMinutes;
-        if (timerSecondsInput && ls.timerSeconds !== undefined) timerSecondsInput.value = ls.timerSeconds;
+        // Same rule as `syncSettingsInputs`: never write into the box that has focus.
+        const setIfUnfocused = (el, value) => {
+            if (el && value !== undefined && document.activeElement !== el) el.value = value;
+        };
+        setIfUnfocused(timerHoursInput, ls.timerHours);
+        setIfUnfocused(timerMinutesInput, ls.timerMinutes);
+        setIfUnfocused(timerSecondsInput, ls.timerSeconds);
         if (cronometroStopToggle && ls.cronometroStop !== undefined) cronometroStopToggle.checked = ls.cronometroStop;
         if (temporizadorStopToggle && ls.temporizadorStop !== undefined)
             temporizadorStopToggle.checked = ls.temporizadorStop;
@@ -899,10 +932,10 @@ export function initPomodoro() {
         if (!running && startBtn) startBtn.disabled = false;
         updateModeTabsState();
         // Color: always show text-on-color when any task is running
-        openBtn.classList.toggle('pomo-task-running', running);
+        openBtn?.classList.toggle('pomo-task-running', running);
         // Blink: only when running AND panel is hidden
         const panelHidden = panel.classList.contains('hidden');
-        openBtn.classList.toggle('pomodoro-running', running && panelHidden);
+        openBtn?.classList.toggle('pomodoro-running', running && panelHidden);
     }
 
     function setAltTimerRunning(running) {
@@ -917,9 +950,9 @@ export function initPomodoro() {
             }
         }
         // Update openBtn color and blink state
-        openBtn.classList.toggle('pomo-task-running', running);
+        openBtn?.classList.toggle('pomo-task-running', running);
         const panelHidden = panel.classList.contains('hidden');
-        openBtn.classList.toggle('pomodoro-running', running && panelHidden);
+        openBtn?.classList.toggle('pomodoro-running', running && panelHidden);
     }
 
     function finishAltTask() {
@@ -930,7 +963,7 @@ export function initPomodoro() {
         if (startBtn) startBtn.disabled = false;
         updateStartPauseUI(false);
         // Remove running classes from openBtn
-        openBtn.classList.remove('pomo-task-running', 'pomodoro-running');
+        openBtn?.classList.remove('pomo-task-running', 'pomodoro-running');
         if (!localState) return;
         const projectN =
             localState.settings?.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'sin título';
@@ -1010,9 +1043,9 @@ export function initPomodoro() {
         startBtn?.classList.toggle('mode-break', isBreak(state.mode));
         panel.classList.toggle('mode-work', state.mode === 'work');
         panel.classList.toggle('mode-break', isBreak(state.mode));
-        openBtn.classList.toggle('pomo-task-running', state.isRunning);
+        openBtn?.classList.toggle('pomo-task-running', state.isRunning);
         const panelHidden = panel.classList.contains('hidden');
-        openBtn.classList.toggle('pomodoro-running', state.isRunning && panelHidden);
+        openBtn?.classList.toggle('pomodoro-running', state.isRunning && panelHidden);
 
         // ② Timer row — only update timeDisplay in pomodoro mode
         if (pomoMethod === 'pomodoro') {
@@ -1478,7 +1511,20 @@ export function initPomodoro() {
         }
     }
 
+    /**
+     * The notes live in the group list — the modal, the store and the view that lists
+     * them are all that page's — so in the side panel the two note buttons hand the
+     * panel over to it rather than doing nothing, which is what a button wired to a
+     * `window._pomoInternal` that is not there does.
+     */
+    function goToNotesView() {
+        chrome.storage.local.set({ navSource: PANEL_HERE });
+        window.location.href = '../listGroup/listGroup.html?context=sidepanel&view=notes';
+        chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../listGroup/listGroup.html' });
+    }
+
     function openPomoNoteModal() {
+        if (embedded) return goToNotesView();
         const pomoData = localState
             ? {
                   startTime: localState.stats?.sessionStarted || Date.now(),
@@ -1505,6 +1551,7 @@ export function initPomodoro() {
     }
 
     async function openPomoNotesView() {
+        if (embedded) return goToNotesView();
         const internal = window._pomoInternal;
         if (!internal) return;
 
@@ -1523,7 +1570,7 @@ export function initPomodoro() {
     }
 
     // ─── Panel open/close ───────────────────────────────────────
-    openBtn.addEventListener('click', async () => {
+    openBtn?.addEventListener('click', async () => {
         const wasHidden = panel.classList.contains('hidden');
         panel.classList.toggle('hidden', !wasHidden);
 
@@ -1537,10 +1584,10 @@ export function initPomodoro() {
         if (!wasHidden) {
             // Panel is now hidden — if task running, start blinking
             const taskRunning = isAnyTaskRunning();
-            openBtn.classList.toggle('pomodoro-running', taskRunning);
+            openBtn?.classList.toggle('pomodoro-running', taskRunning);
         } else {
             // Panel is now open — stop blinking
-            openBtn.classList.remove('pomodoro-running');
+            openBtn?.classList.remove('pomodoro-running');
         }
         await chrome.storage.local.set({ pomodoroPanelOpen: wasHidden });
         if (wasHidden) {
@@ -1552,12 +1599,12 @@ export function initPomodoro() {
             await restoreAltTimerState();
         }
     });
-    closeBtn.addEventListener('click', async () => {
+    closeBtn?.addEventListener('click', async () => {
         panel.classList.add('hidden');
         stopTiempoClock();
         // If task still running, start blinking
         const taskRunning = isAnyTaskRunning();
-        openBtn.classList.toggle('pomodoro-running', taskRunning);
+        openBtn?.classList.toggle('pomodoro-running', taskRunning);
         await chrome.storage.local.set({ pomodoroPanelOpen: false });
     });
 
@@ -2514,7 +2561,12 @@ export function initPomodoro() {
     });
 
     // ─── External updates from background ──────────────────────
-    window._pomodoroHandleUpdate = function (req) {
+    /**
+     * The worker's `pomodoroStateUpdate`, which is what keeps two open surfaces in
+     * step: the clock started in the group list is already running when the side panel
+     * is opened, and either one's pause reaches the other on the next tick.
+     */
+    const handlePomodoroUpdate = function (req) {
         const { state, event, completedMode } = req;
         if (!state) return;
 
@@ -2566,16 +2618,45 @@ export function initPomodoro() {
     };
 
     // --- External API ------------------------------------------
-    window.closePomodoroPanel = async (saveState = false) => {
-        if (!panel.classList.contains('hidden')) {
+    // Only the group list has somewhere to put the panel away to. In the side panel
+    // the panel *is* the page, so the setting that hides the toolbar button — which is
+    // what calls this — leaves this page alone.
+    if (!embedded) {
+        window.closePomodoroPanel = async (saveState = false) => {
+            if (panel.classList.contains('hidden')) return;
             panel.classList.add('hidden');
             const taskRunning = isAnyTaskRunning();
-            openBtn.classList.toggle('pomodoro-running', taskRunning);
+            openBtn?.classList.toggle('pomodoro-running', taskRunning);
             if (saveState) {
                 await chrome.storage.local.set({ pomodoroPanelOpen: false });
             }
+        };
+    }
+
+    /**
+     * The panel's own settings, changed somewhere that is not this panel.
+     *
+     * The clock's settings already come back through `pomodoroStateUpdate`, because the
+     * worker owns them. These do not: which method is showing, the countdown fields and
+     * the two switches that hide a row live in `chrome.storage.local`, so the only way
+     * to hear about an edit made in the dashboard's settings page — or in the other
+     * panel — is to listen to the store.
+     *
+     * `applyMethod` is deliberately called only when the method actually changed: it
+     * rebuilds the face and resets the clock display, and doing that on every unrelated
+     * toggle would blink the panel.
+     */
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local') return;
+        if (changes.pomoMethod) {
+            const next = changes.pomoMethod.newValue || 'pomodoro';
+            if (next !== pomoMethod && !isAnyTaskRunning()) applyMethod(next);
         }
-    };
+        if (changes.pomoLocalSettings) {
+            if (JSON.stringify(changes.pomoLocalSettings.newValue) === lastLocalWrite) return;
+            loadLocalSettings().then(() => validateAllMethods());
+        }
+    });
 
     // ─── Real-time Synchronization ─────────────────────────────
     try {
@@ -2597,6 +2678,10 @@ export function initPomodoro() {
             if (msg.action === 'pomodoroStatsChanged' || msg.action === 'pomodoroStatsUpdated') {
                 loadSavedProjects();
             }
+            // Listened for here rather than in each host page's own router: the panel
+            // is what the message is for, and the group list was the only page that
+            // ever forwarded it — which is why the side panel's clock stood still.
+            if (msg.action === 'pomodoroStateUpdate') handlePomodoroUpdate(msg);
         });
     } catch {}
 
@@ -2612,7 +2697,7 @@ export function initPomodoro() {
         // Load local settings (timer inputs, toggles, tiempo date/time) in all cases
         await loadLocalSettings();
         validateAllMethods();
-        if (pomodoroPanelOpen) {
+        if (embedded || pomodoroPanelOpen) {
             panel.classList.remove('hidden');
             await loadState();
             await loadSavedProjects();
@@ -2632,8 +2717,8 @@ export function initPomodoro() {
                     );
                 const taskRunning = resp.state.isRunning || isAltRunning;
                 if (taskRunning) {
-                    openBtn.classList.add('pomo-task-running');
-                    openBtn.classList.add('pomodoro-running'); // panel is hidden, so blink
+                    openBtn?.classList.add('pomo-task-running');
+                    openBtn?.classList.add('pomodoro-running'); // panel is hidden, so blink
                 }
             }
         }

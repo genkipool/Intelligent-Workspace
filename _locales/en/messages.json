@@ -1028,9 +1028,13 @@
     "description": "Shown after a donation succeeds"
   },
   "donationThanksAmount": {
-    "message": "Thank you for your \u20ac$1 donation!",
+    "message": "Thank you for your €$1 donation!",
     "description": "Shown after a donation succeeds, with the amount",
-    "placeholders": { "amount": { "content": "$1" } }
+    "placeholders": {
+      "amount": {
+        "content": "$1"
+      }
+    }
   },
   "donationFailed": {
     "message": "The payment could not be completed.",
@@ -10760,12 +10764,6 @@
   "webActivityMinutes": {
     "message": "Minutes"
   },
-  "webActivityHoursShort": {
-    "message": "h"
-  },
-  "webActivityMinutesShort": {
-    "message": "min"
-  },
   "webActivityClearAll": {
     "message": "Delete everything",
     "description": "Removes every day on record and the recent visits. Limits and settings are kept."
@@ -11055,12 +11053,6 @@
   },
   "webActivityColumnPinned": {
     "message": "Always shown"
-  },
-  "webActivityOn": {
-    "message": "On"
-  },
-  "webActivityOff": {
-    "message": "Off"
   },
   "webActivityBlockedUntilDay": {
     "message": "It opens again on $1 at $2."
@@ -11409,10 +11401,6 @@
   },
   "webActivitySyncEnabledHint": {
     "message": "The data also shows up in the extension installed in your other browsers. Off by default."
-  },
-  "webActivitySecondsShort": {
-    "message": "s",
-    "description": "Seconds, abbreviated"
   },
   "webActivityDaysShort": {
     "message": "days",
@@ -12093,5 +12081,113 @@
   "readerWordOpacityLabel": {
     "message": "Transparency of the word mark",
     "description": "Opacity slider label"
+  },
+  "unitMinutesShort": {
+    "message": "min",
+    "description": "Abbreviation for minutes, used as the unit beside a number field"
+  },
+  "unitSecondsShort": {
+    "message": "s",
+    "description": "Abbreviation for seconds, used as the unit beside a number field"
+  },
+  "unitHoursShort": {
+    "message": "h",
+    "description": "Abbreviation for hours, used as the unit beside a number field"
+  },
+  "toggleOn": {
+    "message": "On",
+    "description": "Label of a setting switch that is on"
+  },
+  "toggleOff": {
+    "message": "Off",
+    "description": "Label of a setting switch that is off"
+  },
+  "pomodoroSettingsSubtitle": {
+    "message": "The timer, the cycle and the project — the same settings the side panel and the group list use.",
+    "description": "Subtitle of the pomodoro settings page"
+  },
+  "pomodoroSettingsHint": {
+    "message": "The timer, the cycle and the project",
+    "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
+  },
+  "pomodoroSettingsShared": {
+    "message": "Changing anything here changes it in the side panel and in the group list at the same time.",
+    "description": "Note explaining that the pomodoro settings are shared across every surface"
+  },
+  "pomodoroMethodHint": {
+    "message": "What the panel counts: the pomodoro cycle, or one of the three plain clocks.",
+    "description": "Hint for the pomodoro method chooser"
+  },
+  "pomodoroWorkDurationHint": {
+    "message": "How long one focus block lasts.",
+    "description": "Hint for the focus duration setting"
+  },
+  "pomodoroShortDurationHint": {
+    "message": "The break between two focus blocks.",
+    "description": "Hint for the short break setting"
+  },
+  "pomodoroLongDurationHint": {
+    "message": "The longer break that closes a cycle.",
+    "description": "Hint for the long break setting"
+  },
+  "pomodoroSessionsBeforeLongHint": {
+    "message": "Focus blocks to get through before the long break arrives.",
+    "description": "Hint for the pomodoros-before-long-break setting"
+  },
+  "pomodoroEndAfterHint": {
+    "message": "Focus blocks that complete the session. The progress bar fills up to this.",
+    "description": "Hint for the pomodoros-to-finish setting"
+  },
+  "pomodoroProjectNameHint": {
+    "message": "What the saved sessions are filed under, and what the dashboard groups them by.",
+    "description": "Hint for the project name field"
+  },
+  "pomodoroProjectTagHint": {
+    "message": "For filtering the dashboard by kind of work rather than by project.",
+    "description": "Hint for the project tag field"
+  },
+  "pomodoroProjectFolderHint": {
+    "message": "Groups several projects together in the sidebar.",
+    "description": "Hint for the project folder field"
+  },
+  "pomodoroSoundHint": {
+    "message": "A chime when a focus block or a break ends.",
+    "description": "Hint for the sound setting"
+  },
+  "pomodoroAutostartHint": {
+    "message": "The next block starts on its own instead of waiting to be started.",
+    "description": "Hint for the autostart setting"
+  },
+  "pomodoroAutosaveHint": {
+    "message": "Every finished focus block is saved to the statistics without being asked.",
+    "description": "Hint for the autosave setting"
+  },
+  "pomodoroAutofinishHint": {
+    "message": "Closes the task by itself once the session is complete.",
+    "description": "Hint for the autofinish setting"
+  },
+  "pomodoroHideProjectHint": {
+    "message": "Takes the project row out of the panel to make it shorter.",
+    "description": "Hint for the hide project setting"
+  },
+  "pomodoroHideProgressHint": {
+    "message": "Takes the cycle bar out of the panel to make it shorter.",
+    "description": "Hint for the hide progress setting"
+  },
+  "pomodoroTimerDurationHint": {
+    "message": "What the countdown starts from.",
+    "description": "Hint for the countdown duration fields"
+  },
+  "pomodoroEndTimeHint": {
+    "message": "The moment the clock counts down to.",
+    "description": "Hint for the end date and time of the time method"
+  },
+  "pomodoroMethodPauseAsStopHint": {
+    "message": "Pausing finishes the task instead of holding it.",
+    "description": "Hint for the pause-as-stop setting"
+  },
+  "pomodoroAddSecondsToTimeHint": {
+    "message": "Shows the seconds as well as the hours and minutes.",
+    "description": "Hint for the show-seconds setting"
   }
 }

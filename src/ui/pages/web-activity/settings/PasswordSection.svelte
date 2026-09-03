@@ -73,19 +73,19 @@
     }
 </script>
 
-<div class="wa-set-block">
-    <p class="wa-set-note">{$t(isSet ? 'webActivityBlockPasswordOnNote' : 'webActivityBlockPasswordOffNote')}</p>
+<div class="set-block">
+    <p class="set-note">{$t(isSet ? 'webActivityBlockPasswordOnNote' : 'webActivityBlockPasswordOffNote')}</p>
 
-    <div class="wa-set-rows">
+    <div class="set-rows">
         {#if isSet}
-            <div class="wa-set-row">
-                <span class="wa-set-row-text">
-                    <span class="wa-set-row-name">{$t('webActivityBlockPasswordCurrent')}</span>
-                    <span class="wa-set-row-note">{$t('webActivityBlockPasswordCurrentHint')}</span>
+            <div class="set-row">
+                <span class="set-row-text">
+                    <span class="set-row-name">{$t('webActivityBlockPasswordCurrent')}</span>
+                    <span class="set-row-note">{$t('webActivityBlockPasswordCurrentHint')}</span>
                 </span>
-                <span class="wa-set-row-control wa-set-row-control-text">
+                <span class="set-row-control set-row-control-text">
                     <input
-                        class="wa-text-input"
+                        class="set-text-input"
                         type="password"
                         autocomplete="current-password"
                         spellcheck="false"
@@ -98,16 +98,16 @@
             </div>
         {/if}
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">
                     {$t(isSet ? 'webActivityBlockPasswordNew' : 'webActivityBlockPasswordSet')}
                 </span>
-                <span class="wa-set-row-note">{$t('webActivityBlockPasswordNewHint')}</span>
+                <span class="set-row-note">{$t('webActivityBlockPasswordNewHint')}</span>
             </span>
-            <span class="wa-set-row-control wa-set-row-control-text">
+            <span class="set-row-control set-row-control-text">
                 <input
-                    class="wa-text-input"
+                    class="set-text-input"
                     type="password"
                     autocomplete="new-password"
                     spellcheck="false"
@@ -119,14 +119,14 @@
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityBlockPasswordRepeat')}</span>
-                <span class="wa-set-row-note">{$t('webActivityBlockPasswordRepeatHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityBlockPasswordRepeat')}</span>
+                <span class="set-row-note">{$t('webActivityBlockPasswordRepeatHint')}</span>
             </span>
-            <span class="wa-set-row-control wa-set-row-control-text">
+            <span class="set-row-control set-row-control-text">
                 <input
-                    class="wa-text-input"
+                    class="set-text-input"
                     class:input-error={!!error}
                     type="password"
                     autocomplete="new-password"
@@ -143,7 +143,7 @@
 
     <p class="wa-field-warning" aria-live="polite">{error}</p>
 
-    <div class="wa-set-actions">
+    <div class="set-actions">
         <button class="btn" type="button" disabled={!canSave} title={$tt('save')} onclick={save}>
             <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-lock"></use></svg>
             <span>{$t(isSet ? 'webActivityBlockPasswordChange' : 'webActivityBlockPasswordSave')}</span>

@@ -20,10 +20,10 @@
     }
 </script>
 
-<div class="wa-set-block">
-    <p class="wa-set-figure">{$t('webActivityDataFigures', [String(dayCount), String(siteCount)])}</p>
+<div class="set-block">
+    <p class="set-figure">{$t('webActivityDataFigures', [String(dayCount), String(siteCount)])}</p>
 
-    <div class="wa-set-actions">
+    <div class="set-actions">
         <button class="btn" type="button" title={$tt('webActivityExport')} onclick={onExport}>
             <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-export"></use></svg>
             <span>{$t('pomodoroExport')}</span>

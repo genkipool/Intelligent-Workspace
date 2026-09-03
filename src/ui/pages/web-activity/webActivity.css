@@ -68,18 +68,6 @@
     cursor: pointer;
 }
 
-/* The settings row sits apart from the list of sites: it does not filter the
-   dashboard, it replaces it. */
-.sidebar-footer {
-    flex-shrink: 0;
-    padding: 6px 8px 10px;
-    border-top: 1px solid var(--border-color);
-}
-
-.wa-settings-item .si-name {
-    font-weight: 500;
-}
-
 /* --- VISIT LOG --------------------------------------------------
    The first thing on the page: every site and its numbers.
 
@@ -628,24 +616,24 @@ td[data-col='state'] > * {
    the rule table drops to what a panel can hold, and the controls stop being pinned
    to a right-hand edge that is no longer there. */
 /* No page hero and no top margin: the drawer's own header already named it. */
-.wa-settings-compact .wa-set-head:first-of-type {
+.settings-page-compact .set-head:first-of-type {
     margin-top: 4px;
 }
 
 @media (max-width: 620px) {
     /* Label above control. Side by side, a 220px password box and a sentence of
        explanation each get half of nothing. */
-    .wa-settings-compact .wa-set-row {
+    .settings-page-compact .set-row {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
     }
 
-    .wa-settings-compact .wa-set-row-control {
+    .settings-page-compact .set-row-control {
         justify-items: start;
     }
 
-    .wa-settings-compact .wa-set-row-control-text {
+    .settings-page-compact .set-row-control-text {
         grid-template-columns: minmax(0, 1fr);
     }
 
@@ -656,64 +644,64 @@ td[data-col='state'] > * {
        site on top, then one line per part of the rule with its name on the left. Same
        markup, same components, same behaviour; only the shape changes, and nothing is
        hidden. */
-    .wa-settings-compact .wa-rules-frame {
+    .settings-page-compact .wa-rules-frame {
         border: none;
         background: none;
     }
 
-    .wa-settings-compact .wa-rules-frame table,
-    .wa-settings-compact .wa-rules-frame tbody,
-    .wa-settings-compact .wa-rules-frame tr,
-    .wa-settings-compact .wa-rules-frame td {
+    .settings-page-compact .wa-rules-frame table,
+    .settings-page-compact .wa-rules-frame tbody,
+    .settings-page-compact .wa-rules-frame tr,
+    .settings-page-compact .wa-rules-frame td {
         display: block;
         width: auto;
     }
 
-    .wa-settings-compact .wa-rules-frame thead,
-    .wa-settings-compact .wa-rules-frame colgroup {
+    .settings-page-compact .wa-rules-frame thead,
+    .settings-page-compact .wa-rules-frame colgroup {
         display: none;
     }
 
     /* Louder than the width rules above, which take these two away on a narrow page —
        a card has room for them. */
-    .wa-settings-compact .wa-rules-frame td[data-col='weekly'],
-    .wa-settings-compact .wa-rules-frame td[data-col='state'] {
+    .settings-page-compact .wa-rules-frame td[data-col='weekly'],
+    .settings-page-compact .wa-rules-frame td[data-col='state'] {
         display: grid;
     }
 
-    .wa-settings-compact .wa-rules-frame tr {
+    .settings-page-compact .wa-rules-frame tr {
         border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
         border-radius: 10px;
         background: var(--bg-panel-color);
         padding: 4px 10px 8px;
     }
 
-    .wa-settings-compact .wa-rules-frame tr + tr {
+    .settings-page-compact .wa-rules-frame tr + tr {
         margin-top: 8px;
     }
 
-    .wa-settings-compact .wa-rules-frame td {
+    .settings-page-compact .wa-rules-frame td {
         border: none;
         padding: 6px 0;
         text-align: left;
     }
 
-    .wa-settings-compact .wa-rules-frame td + td {
+    .settings-page-compact .wa-rules-frame td + td {
         border-top: 1px solid color-mix(in srgb, var(--border-color) 45%, transparent);
     }
 
     /* The site is the card's heading. */
-    .wa-settings-compact .wa-rules-frame td[data-col='site'] {
+    .settings-page-compact .wa-rules-frame td[data-col='site'] {
         padding-bottom: 8px;
         font-weight: 600;
     }
 
     /* Every other cell is "what it is" on the left and the control on the right, which
        is the shape every other row in this dialog already has. */
-    .wa-settings-compact .wa-rules-frame td[data-col='limit'],
-    .wa-settings-compact .wa-rules-frame td[data-col='weekly'],
-    .wa-settings-compact .wa-rules-frame td[data-col='schedule'],
-    .wa-settings-compact .wa-rules-frame td[data-col='state'] {
+    .settings-page-compact .wa-rules-frame td[data-col='limit'],
+    .settings-page-compact .wa-rules-frame td[data-col='weekly'],
+    .settings-page-compact .wa-rules-frame td[data-col='schedule'],
+    .settings-page-compact .wa-rules-frame td[data-col='state'] {
         /* `display` is restated because the blanket `td { display: block }` above is
            the same weight and comes first; without it two of the four cells laid their
            label out on a line of its own. */
@@ -723,7 +711,7 @@ td[data-col='state'] > * {
         gap: 10px;
     }
 
-    .wa-settings-compact .wa-rules-frame td[data-label]::before {
+    .settings-page-compact .wa-rules-frame td[data-label]::before {
         content: attr(data-label);
         font-family: var(--mono);
         font-size: 9px;
@@ -733,14 +721,14 @@ td[data-col='state'] > * {
         white-space: nowrap;
     }
 
-    .wa-settings-compact .wa-rules-frame td[data-col='state'] > * {
+    .settings-page-compact .wa-rules-frame td[data-col='state'] > * {
         margin-inline: 0;
         justify-self: end;
     }
 
     /* The rules section is one button in the panel, so it sits in the middle rather
        than hanging off a right edge with nothing under it. */
-    .wa-settings-compact .wa-set-block-head-center {
+    .settings-page-compact .set-block-head-center {
         justify-content: center;
     }
 
@@ -749,20 +737,20 @@ td[data-col='state'] > * {
        came out as a ragged column one and a half chips wide. Two even columns read as a
        list, which is what they are. The same for the user's own, so both halves of the
        section line up down the same two edges. */
-    .wa-settings-compact .wa-cat-chips {
+    .settings-page-compact .wa-cat-chips {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
     }
 
-    .wa-settings-compact .wa-cat-chip {
+    .settings-page-compact .wa-cat-chip {
         justify-content: space-between;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .wa-settings-compact .wa-cat-list {
+    .settings-page-compact .wa-cat-list {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 4px;
@@ -771,19 +759,19 @@ td[data-col='state'] > * {
     /* The field takes the row and the button ends it, on the right. Left to wrap they
        stacked, and an "add" button the width of the dialog reads as the thing the
        section is for rather than as the end of one field. */
-    .wa-settings-compact .wa-inline-form {
+    .settings-page-compact .wa-inline-form {
         display: flex;
         flex-wrap: nowrap;
         align-items: center;
         gap: 8px;
     }
 
-    .wa-settings-compact .wa-inline-form .wa-text-input {
+    .settings-page-compact .wa-inline-form .set-text-input {
         flex: 1 1 auto;
         min-width: 0;
     }
 
-    .wa-settings-compact .wa-inline-form .wa-add-btn {
+    .settings-page-compact .wa-inline-form .set-add-btn {
         flex: 0 0 auto;
         margin-left: auto;
     }
@@ -791,33 +779,33 @@ td[data-col='state'] > * {
     /* REGISTRO: the controls take the width they have.
        Stacked under their labels, a 96px number box and a 96px switch sat in the middle
        of an empty line looking like they had been dropped there. */
-    .wa-settings-compact .wa-set-row-control {
+    .settings-page-compact .set-row-control {
         grid-template-columns: minmax(0, 1fr) auto;
         width: 100%;
     }
 
-    .wa-settings-compact .wa-set-row-control-text {
+    .settings-page-compact .set-row-control-text {
         grid-template-columns: minmax(0, 1fr);
     }
 
     /* Beats the components' own scoped widths, which are written for a page. */
-    .wa-settings-compact .wa-set-row-control .toggle-button,
-    .wa-settings-compact .wa-set-row-control .number-field,
-    .wa-settings-compact .wa-set-row-control .wa-text-input {
+    .settings-page-compact .set-row-control .toggle-button,
+    .settings-page-compact .set-row-control .number-field,
+    .settings-page-compact .set-row-control .set-text-input {
         width: 100%;
         min-width: 0;
     }
 
-    .wa-settings-compact .wa-set-actions {
+    .settings-page-compact .set-actions {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .wa-settings-compact .wa-set-actions .btn {
+    .settings-page-compact .set-actions .btn {
         justify-content: center;
     }
 
-    .wa-settings-compact .wa-inline-form {
+    .settings-page-compact .wa-inline-form {
         flex-wrap: wrap;
     }
 }
@@ -909,34 +897,6 @@ td[data-col='state'] > * {
    recording. It went out with a rewrite of the dialogs, which is how both of those
    ended up as unstyled boxes. Same metrics as the number field and the time trigger:
    they are one control in three flavours. */
-.wa-text-input {
-    width: 100%;
-    min-width: 0;
-    height: 32px;
-    padding: 4px 10px;
-    box-sizing: border-box;
-    border: 1px solid var(--border-color);
-    border-radius: 7px;
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    caret-color: var(--text-on-color);
-    font-family: var(--sans);
-    font-size: 12px;
-}
-
-.wa-text-input::placeholder {
-    color: var(--text-dim);
-}
-
-.wa-text-input:hover {
-    border-color: color-mix(in srgb, var(--text-on-color) 60%, var(--border-color));
-}
-
-.wa-text-input:focus {
-    outline: none;
-    border-color: var(--text-on-color);
-}
-
 .wa-modal input[type='text'] {
     width: 100%;
     height: 32px;
@@ -1196,11 +1156,6 @@ td[data-col='state'] > * {
     color: var(--error-color);
 }
 
-.wa-unit {
-    color: var(--text-dim);
-    font-size: 11px;
-}
-
 /* --- A WINDOW ----------------------------------------------------
    Its hours and the days it runs on, together, because they are one
    answer. Adding a window gives you both again. */
@@ -1268,232 +1223,11 @@ td[data-col='state'] > * {
 }
 
 /* --- SETTINGS PAGE ----------------------------------------------
-   Deliberately not a grid of cards. Settings are already a list of
-   small decisions; a frame around each one turns a page you can scan
-   into a wall of boxes. What separates them is space and a hairline,
-   and what carries the design is the rhythm of the rows. */
-.wa-settings {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    max-width: 940px;
-    margin: 0 auto;
-    gap: 18px;
-    animation: fadeUp 0.35s ease both;
-}
-
-.wa-set-hero {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding-bottom: 8px;
-    margin-left: -20px;
-}
-
-.wa-set-title {
-    margin: 0;
-    font-size: 1.65rem;
-    font-weight: 600;
-    letter-spacing: -0.015em;
-    color: var(--text-color);
-}
-
-.wa-set-subtitle {
-    margin: 4px 0 0;
-    color: var(--text-dim);
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.wa-set-head {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 18px 0 4px -20px;
-    font-family: var(--mono);
-    font-size: 0.92rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-soft);
-}
-
-.wa-set-head:first-of-type {
-    margin-top: 6px;
-}
-
-.wa-set-head::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, color-mix(in srgb, var(--interactive-color) 45%, transparent), transparent 90%);
-}
-
-.wa-set-section {
-    background-color: var(--bg-panel-color);
-    border: none;
-    border-radius: 8px;
-    padding: 22px 24px;
-    margin-bottom: 6px;
-}
-
-.wa-set-block {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding-top: 0;
-}
-
-/* The "add" actions of the settings page: a word and a plus, not a boxed button.
-   They sit beside the thing they add to and are read as part of it; a bordered pill
-   next to a bordered input is two frames arguing about which one is the control. */
-.wa-add-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 2px;
-    border: none;
-    background: none;
-    color: var(--text-on-color);
-    font-family: var(--sans);
-    font-size: 0.92rem;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: color 0.13s;
-}
-
-.wa-add-btn:hover:not(:disabled) {
-    color: var(--interactive-color);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.wa-add-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-}
-
-.wa-add-btn:focus-visible {
-    outline: 2px solid var(--interactive-color);
-    outline-offset: 2px;
-    border-radius: 4px;
-}
-
-.wa-set-block-head {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.wa-set-note {
-    margin: 0;
-    color: var(--text-dim);
-    font-size: 12px;
-    line-height: 1.55;
-    max-width: 62ch;
-}
-
-.wa-set-figure {
-    margin: 0;
-    font-family: var(--mono);
-    font-size: 11.5px;
-    color: var(--text-soft);
-}
-
-.wa-set-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding-top: 6px;
-}
-
-.wa-set-subhead {
-    margin: 0;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-color);
-}
-
-.wa-set-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-}
-
-/* Each setting is a line: what it is on the left, the control on the right. */
-.wa-set-rows {
-    display: flex;
-    flex-direction: column;
-}
-
-.wa-set-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 22px;
-    padding: 14px 0;
-    border-top: 1px solid color-mix(in srgb, var(--border-color) 40%, transparent);
-}
-
-.wa-set-row:first-child {
-    border-top: none;
-}
-
-.wa-set-row-text {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 0;
-}
-
-.wa-set-row-name {
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.wa-set-row-note {
-    font-size: 11.5px;
-    line-height: 1.45;
-    color: var(--text-dim);
-    max-width: 58ch;
-}
-
-/* Two tracks: the control, then its unit. Every row uses them, so the boxes line up
-   down the column and so do the units beside them — which sizing each box to its own
-   digit count could never do. A switch simply sits in the first track. */
-.wa-set-row-control {
-    display: grid;
-    /* 96px because that is the state button's own minimum width, which wins over the
-       `width: 100%` below. A narrower track let the button overflow it and knocked its
-       centre four pixels off the number boxes above. */
-    grid-template-columns: 96px 40px;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-    justify-items: start;
-}
-
-.wa-set-row-control .wa-unit {
-    justify-self: start;
-}
-
-/* A row whose control is a text box rather than a number spinner or a switch: it gets
-   a width you can actually type a password into instead of the 96px a stepper needs. */
-.wa-set-row-control-text {
-    grid-template-columns: 220px;
-}
-
-/* Filling the same track the number boxes fill, so a column of controls reads down
-   one axis whether the row holds a state button or a figure. Centring it was not
-   enough: the button is wider than the track its own text asks for, and a centred
-   overflow put it two pixels off the boxes above it. */
-.wa-set-row-control > .toggle-button {
-    width: 100%;
-    justify-self: stretch;
-}
+   The page itself — hero, headings, sections, rows and controls — is
+   `src/styles/settings-page.css`, loaded next to this file: the
+   pomodoro dashboard wears the very same one. Only what is this page's
+   own is below, plus the compact rules further up that fold it into
+   the panel's dialog. */
 
 /* --- SETTINGS: RULES --------------------------------------------
    The same table as the log, so the shared rules do the work. Only
@@ -1602,7 +1336,7 @@ td[data-col='state'] > * {
     padding-top: 4px;
 }
 
-.wa-inline-form .wa-text-input {
+.wa-inline-form .set-text-input {
     width: auto;
     flex: 1 1 220px;
     max-width: 320px;
@@ -1650,7 +1384,7 @@ td[data-col='state'] > * {
     white-space: nowrap;
 }
 
-.wa-text-input.input-error {
+.set-text-input.input-error {
     border-color: var(--error-color);
 }
 
@@ -1788,310 +1522,18 @@ td[data-col='state'] > * {
     .wa-table-frame {
         max-height: none;
     }
-
-    .wa-set-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-    .wa-set-hero,
-    .wa-set-head {
-        margin-left: 0;
-    }
 }
 
 /* --- THE SIDE PANEL ---------------------------------------------
    A column a few hundred pixels wide, so: a toolbar, then one box per
    site. The box is the group list's own — panel surface, one border,
    a header with a rule under it — because a list in a side panel
-   already looks like that everywhere else in the extension. */
-/* The group list's own shell: a full-height flex column whose head does not shrink
-   and whose list takes the rest and scrolls. */
-.wa-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
-    background: var(--bg-color);
-}
+   already looks like that everywhere else in the extension.
 
-/* --- THE PANEL'S HEADER -----------------------------------------
-   `header-main-menu`, the bar every side-panel page of this extension
-   wears. The rules page's rules are written out with the values its
-   clamps take below 600px, which is the branch a side panel is always
-   in. */
-.wa-panel .header-main-menu {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-shrink: 0;
-    gap: 8px;
-    padding: 6px 12px 6px 16px;
-    width: 100%;
-    box-sizing: border-box;
-    background-color: var(--header-color);
-    color: var(--text-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.wa-panel .header-main-title {
-    flex-grow: 1;
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    text-align: left;
-    color: var(--text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.wa-panel .header-main-menu button {
-    display: flex;
-    flex-shrink: 0;
-    margin: 0;
-    padding: 6px;
-    border: none;
-    outline: none;
-    background-color: transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.wa-panel .header-main-menu button:hover,
-.wa-panel .header-main-menu button:focus-visible {
-    color: var(--text-on-color);
-    outline: none;
-    box-shadow: 0 0 0 2px var(--interactive-color);
-    border-radius: 4px;
-}
-
-/* `.back-button, .home-button` carry a colour on the rules page and `.pin-button,
-   .buttom-list-group` do not — the icons inside all four set their own inline. Split
-   the same way, so the two headers compute the same values. */
-.wa-panel .home-button,
-.wa-panel .back-button {
-    color: var(--text-color);
-}
-
-.wa-panel .home-button:hover,
-.wa-panel .home-button:focus-visible,
-.wa-panel .back-button:hover,
-.wa-panel .back-button:focus-visible {
-    color: var(--text-on-color);
-}
-
-/* Pinned reads as a filled disc, the same as on the rules page. */
-.wa-panel .pin-button.pinned {
-    background-color: var(--action-color);
-    border-radius: 50%;
-}
-
-/* --- THE SEARCH ROW ----------------------------------------------
-   The group list's `search-and-controls`, not the rules page's: this
-   is the row that page puts under its header, and the panel is a list
-   like that one. Its variables resolve to fixed values there, so they
-   are written out. */
-/*
- * The screen-reader-only label. The group list defines this and the panel's search row
- * is copied from there, so without it the label is simply a paragraph: "Buscar sitios"
- * sits next to the box, wraps onto two lines and pushes the row out of shape. A class
- * that exists on the page a snippet came from and not on the page it was copied to is
- * the whole failure mode — and this is the second time it has been lost to a rewrite
- * of the block above it.
- */
-.wa-panel .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* The layout of this row is SearchAndControls.svelte's, the same component the group
-   list renders, which is the point: the two rows drifted apart precisely because each
-   page described the row again. Only the panel's own trim stays here. */
-.wa-panel .search-and-controls {
-    padding: 4px 6px;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--bg-color);
-}
-
-.wa-panel .search-container {
-    min-width: 150px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    flex: 1;
-    margin: 6px 0;
-}
-
-.wa-panel .search-input {
-    width: 100%;
-    padding: 6px 70px 6px 30px;
-    background-color: var(--bg-panel-color);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    color: var(--text-color);
-    font-family: var(--sans);
-    font-size: 0.9rem;
-    outline: none;
-    transition:
-        border-color 0.3s ease,
-        box-shadow 0.3s ease;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: 8px center;
-    background-size: 16px;
-    caret-color: var(--text-on-color);
-    box-sizing: border-box;
-}
-
-/* The group list reserves 70px on the right for the three buttons it puts inside the
-   box, and takes it back when they are hidden. This panel has none of them, so it is
-   always in that state. */
-.wa-panel .search-container--compact .search-input {
-    padding-right: 8px;
-}
-
-.wa-panel .search-input:focus {
-    border-color: var(--action-color);
-    box-shadow: 0 0 0 2px var(--action-color);
-}
-
-.wa-panel .search-input::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    height: 14px;
-    width: 14px;
-    display: inline-block;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='red'><path d='M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z'/></svg>");
-    cursor: pointer;
-}
-
-/* The row itself is aligned to `start`, exactly as the group list has it; only this
-   block is centred inside it, so the two buttons sit on the same line as the middle
-   of the search box rather than a few pixels above it. */
-.wa-panel .controls-container {
-    gap: 2px;
-    overflow: visible;
-}
-
-/* The resize button sits among the group list's controls, so it wears their clothes.
-   Without a rule of its own a bare <button> falls back to Chrome's default chrome — a
-   light grey block — which is what it had become. */
-.wa-panel .resize-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    padding: 6px;
-    border: none;
-    outline: none;
-    border-radius: 4px;
-    background: none;
-    color: var(--text-color);
-    cursor: pointer;
-    opacity: 0.6;
-    transition:
-        color 0.2s ease,
-        opacity 0.2s ease,
-        background-color 0.2s ease;
-}
-
-.wa-panel .resize-button:hover {
-    opacity: 1;
-}
-
-.wa-panel .resize-button:focus-visible {
-    outline: 2px solid var(--interactive-color);
-    outline-offset: 1px;
-}
-
-.wa-panel .control-btn {
-    background: none;
-    border: none;
-    color: var(--text-color);
-    cursor: pointer;
-    padding: 6px;
-    transition:
-        color 0.2s ease,
-        box-shadow 0.2s ease,
-        background-color 0.2s ease,
-        opacity 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    border-radius: 4px;
-    opacity: 0.6;
-}
-
-.wa-panel .control-btn:hover:not(:disabled) {
-    opacity: 1;
-}
-
-.wa-panel .control-btn:disabled {
-    opacity: 0.25;
-    cursor: not-allowed;
-}
-
-.wa-panel .control-btn:focus-visible {
-    outline: 2px solid var(--interactive-color);
-    outline-offset: 1px;
-}
-
-.wa-panel-list {
-    flex: 1;
-    /* Without this a flex item will not shrink below its content, and the list would
-       push the panel taller than the window instead of scrolling inside it. */
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    /* The extra room at the foot is not decoration: the last box's controls sat
-       against the edge of the panel, which is the hardest place on screen to aim at. */
-    padding: 10px 10px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    /* The bar itself is described once for the whole panel, below. `scrollbar-width`
-       used to be set here, and that is not a detail: the moment a scroller asks for
-       the standard scrollbar Chrome stops honouring `::-webkit-scrollbar` on it, so
-       the two ways of styling one cannot be mixed. */
-}
-
-/* --- THE PANEL'S SCROLLBAR --------------------------------------
-   The same bar the group list has, because a side panel is a side panel whichever
-   page is in it: a track the colour of the background, a thumb outlined in the border
-   colour that fills in when the pointer is on it. This panel had the browser's own
-   thin scrollbar instead, which made it look like a different product from the list it
-   sits beside. Scoped to `.wa-panel` on purpose — the dashboard is a full page and
-   keeps the page scrollbar it was designed with. */
-.wa-panel ::-webkit-scrollbar {
-    /* `--small-spacing` on the pages that have it, and it resolves to this below
-       600px, which is the only width a panel is. */
-    width: 6px;
-}
-
-.wa-panel ::-webkit-scrollbar-track {
-    background: var(--bg-color);
-    border-radius: 10px;
-}
-
-.wa-panel ::-webkit-scrollbar-thumb {
-    background-color: var(--bg-color);
-    border-radius: 10px;
-    border: 2px solid var(--border-color);
-}
-
-.wa-panel ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--interactive-color);
-    cursor: default;
-}
+   The column itself — the header bar, the search row, the scrolling
+   region and its scrollbar — is `src/styles/side-panel-shell.css`,
+   loaded next to this file: every side-panel page of the extension
+   wears it. Only the site boxes are below. */
 
 .wa-panel-box {
     background-color: var(--bg-panel-color);
@@ -2865,4 +2307,16 @@ td[data-col='state'] > * {
     font-weight: 700;
     min-width: 32px;
     text-align: right;
+}
+
+/* --- THE PANEL'S PERIOD ------------------------------------------
+   Its own line under the search row, because it is the one control in
+   the panel that changes what the figures are rather than which of
+   them are shown. The chips are `PeriodChips` in its wrapping variant;
+   only the strip around them is here. */
+.wa-panel-periods {
+    flex-shrink: 0;
+    padding: 6px 10px 8px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-color);
 }

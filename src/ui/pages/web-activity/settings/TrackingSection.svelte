@@ -30,30 +30,30 @@
     const isOn = (key) => (settings[key] ?? WA.DEFAULT_SETTINGS[key]) !== false;
 </script>
 
-<div class="wa-set-block">
-    <div class="wa-set-rows">
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityTrackingEnabled')}</span>
-                <span class="wa-set-row-note">{$t('webActivityTrackingEnabledHint')}</span>
+<div class="set-block">
+    <div class="set-rows">
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityTrackingEnabled')}</span>
+                <span class="set-row-note">{$t('webActivityTrackingEnabledHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <ToggleButton
                     variant="rounded"
                     pressed={isOn('enabled')}
-                    label={$t(isOn('enabled') ? 'webActivityOn' : 'webActivityOff')}
+                    label={$t(isOn('enabled') ? 'toggleOn' : 'toggleOff')}
                     title={$tt('webActivityTrackingEnabled')}
                     onchange={(next) => set({ enabled: next })}
                 />
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityIdleSeconds')}</span>
-                <span class="wa-set-row-note">{$t('webActivityIdleSecondsHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityIdleSeconds')}</span>
+                <span class="set-row-note">{$t('webActivityIdleSecondsHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <NumberField
                     wide
                     value={valueOf('idleSeconds')}
@@ -64,32 +64,32 @@
                     ariaLabel={$t('webActivityIdleSeconds')}
                     onchange={(next) => set({ idleSeconds: next })}
                 />
-                <span class="wa-unit">{$t('webActivitySecondsShort')}</span>
+                <span class="set-unit">{$t('unitSecondsShort')}</span>
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityCountAudible')}</span>
-                <span class="wa-set-row-note">{$t('webActivityCountAudibleHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityCountAudible')}</span>
+                <span class="set-row-note">{$t('webActivityCountAudibleHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <ToggleButton
                     variant="rounded"
                     pressed={isOn('countAudible')}
-                    label={$t(isOn('countAudible') ? 'webActivityOn' : 'webActivityOff')}
+                    label={$t(isOn('countAudible') ? 'toggleOn' : 'toggleOff')}
                     title={$tt('webActivityCountAudible')}
                     onchange={(next) => set({ countAudible: next })}
                 />
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityNotifyAtDefault')}</span>
-                <span class="wa-set-row-note">{$t('webActivityNotifyAtDefaultHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityNotifyAtDefault')}</span>
+                <span class="set-row-note">{$t('webActivityNotifyAtDefaultHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <NumberField
                     wide
                     value={valueOf('notifyAtPercent')}
@@ -100,16 +100,16 @@
                     ariaLabel={$t('webActivityNotifyAtDefault')}
                     onchange={(next) => set({ notifyAtPercent: next })}
                 />
-                <span class="wa-unit">%</span>
+                <span class="set-unit">%</span>
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivitySnoozeMinutes')}</span>
-                <span class="wa-set-row-note">{$t('webActivitySnoozeMinutesHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivitySnoozeMinutes')}</span>
+                <span class="set-row-note">{$t('webActivitySnoozeMinutesHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <NumberField
                     wide
                     value={valueOf('snoozeMinutes')}
@@ -120,16 +120,16 @@
                     ariaLabel={$t('webActivitySnoozeMinutes')}
                     onchange={(next) => set({ snoozeMinutes: next })}
                 />
-                <span class="wa-unit">{$t('webActivityMinutesShort')}</span>
+                <span class="set-unit">{$t('unitMinutesShort')}</span>
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivitySnoozePasswordAfter')}</span>
-                <span class="wa-set-row-note">{$t('webActivitySnoozePasswordAfterHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivitySnoozePasswordAfter')}</span>
+                <span class="set-row-note">{$t('webActivitySnoozePasswordAfterHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <NumberField
                     wide
                     value={valueOf('snoozePasswordAfter')}
@@ -140,32 +140,32 @@
                     ariaLabel={$t('webActivitySnoozePasswordAfter')}
                     onchange={(next) => set({ snoozePasswordAfter: next })}
                 />
-                <span class="wa-unit">{$t('webActivitySnoozeUsesShort')}</span>
+                <span class="set-unit">{$t('webActivitySnoozeUsesShort')}</span>
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivitySyncEnabled')}</span>
-                <span class="wa-set-row-note">{$t('webActivitySyncEnabledHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivitySyncEnabled')}</span>
+                <span class="set-row-note">{$t('webActivitySyncEnabledHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <ToggleButton
                     variant="rounded"
                     pressed={settings.syncEnabled === true}
-                    label={$t(settings.syncEnabled === true ? 'webActivityOn' : 'webActivityOff')}
+                    label={$t(settings.syncEnabled === true ? 'toggleOn' : 'toggleOff')}
                     title={$tt('webActivitySyncEnabled')}
                     onchange={(next) => set({ syncEnabled: next })}
                 />
             </span>
         </div>
 
-        <div class="wa-set-row">
-            <span class="wa-set-row-text">
-                <span class="wa-set-row-name">{$t('webActivityRetentionDays')}</span>
-                <span class="wa-set-row-note">{$t('webActivityRetentionDaysHint')}</span>
+        <div class="set-row">
+            <span class="set-row-text">
+                <span class="set-row-name">{$t('webActivityRetentionDays')}</span>
+                <span class="set-row-note">{$t('webActivityRetentionDaysHint')}</span>
             </span>
-            <span class="wa-set-row-control">
+            <span class="set-row-control">
                 <NumberField
                     wide
                     value={valueOf('retentionDays')}
@@ -176,7 +176,7 @@
                     ariaLabel={$t('webActivityRetentionDays')}
                     onchange={(next) => set({ retentionDays: next })}
                 />
-                <span class="wa-unit">{$t('webActivityDaysShort')}</span>
+                <span class="set-unit">{$t('webActivityDaysShort')}</span>
             </span>
         </div>
     </div>

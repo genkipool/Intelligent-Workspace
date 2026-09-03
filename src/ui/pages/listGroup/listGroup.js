@@ -17,9 +17,6 @@ chrome.runtime.onMessage.addListener((request) => {
             await initializeTranslations();
         })();
     }
-    if (request.action === 'pomodoroStateUpdate') {
-        if (window._pomodoroHandleUpdate) window._pomodoroHandleUpdate(request);
-    }
     if (request.action === 'open-add-to-rule-modal-shortcut') {
         showAddToRuleModal(request.url, request.title || '');
     }

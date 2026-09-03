@@ -1,11 +1,25 @@
 <script>
+    /**
+     * [AI INSTRUCTION]
+     * THE POMODORO PANEL'S MARKUP — ONE COPY, TWO HOSTS.
+     *
+     * The group list folds it out of its toolbar; the pomodoro side panel *is* it.
+     * Every control is driven from `features/pomodoro/index.js` by `id`, so the ids
+     * below are the contract between the two files and none of them may change.
+     *
+     * `embedded` is the only thing that differs between the hosts: a panel that is the
+     * whole page starts open and has no close button, because there is nothing behind
+     * it to close it back to.
+     */
     import { t, tt } from '../../stores/i18nStore.js';
+
+    let { embedded = false } = $props();
 </script>
 
 <!-- ═══════════════════════════════════════════════
      POMODORO PANEL — 3 Divisions
      ═══════════════════════════════════════════════ -->
-<section id="pomodoro-panel" class="pomodoro-panel hidden">
+<section id="pomodoro-panel" class="pomodoro-panel" class:hidden={!embedded} class:pomo-embedded={embedded}>
     <!-- ① CONTROLS ROW: mode tabs + all action buttons -->
     <div class="pomo-row pomo-row-controls">
         <div class="pomo-mode-tabs">
@@ -106,16 +120,18 @@
                     <use href="#icon-settings"></use>
                 </svg>
             </button>
-            <button
-                type="button"
-                id="pomodoro-close-btn"
-                class="pomo-action-btn pomo-icon-only"
-                title={$tt('pomodoroClose')}
-            >
-                <svg width="18" height="18" aria-hidden="true" focusable="false">
-                    <use href="#icon-close-stroke"></use>
-                </svg>
-            </button>
+            {#if !embedded}
+                <button
+                    type="button"
+                    id="pomodoro-close-btn"
+                    class="pomo-action-btn pomo-icon-only"
+                    title={$tt('pomodoroClose')}
+                >
+                    <svg width="18" height="18" aria-hidden="true" focusable="false">
+                        <use href="#icon-close-stroke"></use>
+                    </svg>
+                </button>
+            {/if}
         </div>
     </div>
 

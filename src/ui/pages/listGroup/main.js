@@ -3,6 +3,7 @@ import ListGroup from './ListGroup.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
 import './listGroup.css';
+import '../../../styles/pomodoro-panel.css';
 import '../../content-renderer/content-renderer.css';
 import '../../../styles/hint_content.css';
 import '../../../utils/hint_common.js';

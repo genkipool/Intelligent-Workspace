@@ -127,9 +127,9 @@
     </div>
 {/snippet}
 
-<div class="wa-set-block">
-    <div class="wa-set-block-head" class:wa-set-block-head-center={compact}>
-        <button class="wa-add-btn" type="button" title={$tt('webActivityAddRule')} onclick={onAdd}>
+<div class="set-block">
+    <div class="set-block-head" class:set-block-head-center={compact}>
+        <button class="set-add-btn" type="button" title={$tt('webActivityAddRule')} onclick={onAdd}>
             <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-plus"></use></svg>
             <span>{$t('webActivityAddRule')}</span>
         </button>
