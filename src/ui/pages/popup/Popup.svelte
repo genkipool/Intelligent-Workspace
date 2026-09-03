@@ -16,7 +16,7 @@
     import '../../../core/services/webActivitySchema.js';
     import { saveSettings } from '../../services/webActivityService.js';
     import { navigateToPanel, primePanelContexts } from '../../services/panelNavigation.js';
-    import { warmPaymentOrigin } from '../../services/paymentService.js';
+    import { warmPaymentOrigin, warmPaymentSheet } from '../../services/paymentService.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
@@ -26,6 +26,9 @@
 
     onMount(async () => {
         warmPaymentOrigin();
+        // And the sheet itself, off screen, once the popup has drawn itself. See
+        // `warmPaymentSheet` for what it costs and why the trade was made.
+        warmPaymentSheet();
         await i18nStore.init();
         await themeStore.init();
         await settingsStore.init();

@@ -15,7 +15,13 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
-import { mintPaymentNonce, buildPaymentUrl, attachPaymentBridge } from './paymentService.js';
+import {
+    mintPaymentNonce,
+    buildPaymentUrl,
+    attachPaymentBridge,
+    PAYMENT_VIEW_SANDBOX,
+    PAYMENT_VIEW_ALLOW,
+} from './paymentService.js';
 import { prefetchUrl, prefetchData } from './prefetchService.js';
 import { openModal, showDeleteHistoryConfirmModal } from '../stores/modalStore.js';
 
@@ -1272,10 +1278,6 @@ const WEB_VIEW_ALLOW = [
  * `payment` with no origin list is the shorthand for `payment 'src'`: the permission is
  * granted to the frame's own origin and is dropped the moment it navigates elsewhere.
  */
-const PAYMENT_VIEW_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox';
-
-const PAYMENT_VIEW_ALLOW = 'payment; publickey-credentials-get';
-
 /**
  * The panel's framed viewer. Written out three times before this existed, which is how
  * the file view ended up without the styling the other two had.
@@ -1377,6 +1379,44 @@ export async function openUrlInPanel(url, context = null) {
 
 /**
  * [AI INSTRUCTION]
+ * WHAT THE PANEL SHOWS WHILE THE SHEET IS STILL ON ITS WAY.
+ *
+ * The frame is requested about 100 ms after the click and its markup lands about 300 ms
+ * later; until then the panel was a rectangle of background colour with a title over it,
+ * which reads as a page that failed rather than one that is loading. On a slow
+ * connection it is much longer than that.
+ *
+ * So the panel draws the sheet's own shape first — a heading, the three amount chips,
+ * the "other amount" field and the two buttons — in the panel's colours, and swaps it
+ * for the real thing the moment the frame reports in. It is deliberately the same
+ * layout: a skeleton that does not match what replaces it is a second layout shift, and
+ * shifting the layout is the thing this is here to stop.
+ *
+ * The shimmer is `background-position`, which the compositor can run on its own, and it
+ * is switched off under `prefers-reduced-motion` in the stylesheet.
+ */
+function createPaymentSkeleton() {
+    const skeleton = document.createElement('div');
+    skeleton.className = 'pay-skeleton';
+    skeleton.setAttribute('role', 'status');
+    skeleton.setAttribute('aria-label', chrome.i18n.getMessage('donationLoading') || 'Loading');
+    skeleton.innerHTML = `
+        <div class="pay-sk-line pay-sk-title"></div>
+        <div class="pay-sk-line pay-sk-label"></div>
+        <div class="pay-sk-chips">
+            <div class="pay-sk-block"></div><div class="pay-sk-block"></div><div class="pay-sk-block"></div>
+        </div>
+        <div class="pay-sk-line pay-sk-label"></div>
+        <div class="pay-sk-block pay-sk-field"></div>
+        <div class="pay-sk-chips">
+            <div class="pay-sk-block pay-sk-tall"></div><div class="pay-sk-block pay-sk-tall"></div>
+        </div>
+        <div class="pay-sk-line pay-sk-note"></div>`;
+    return skeleton;
+}
+
+/**
+ * [AI INSTRUCTION]
  * OPENS THE DONATION FORM IN THE PANEL.
  *
  * DO NOT route this through `prepareUrlForSidePanel`. That handler strips
@@ -1410,6 +1450,34 @@ export async function openPaymentInPanel(provider) {
         allow: PAYMENT_VIEW_ALLOW,
         referrerPolicy: 'no-referrer',
     });
+
+    /*
+     * The frame starts transparent and the skeleton sits under it, so there is no moment
+     * where a half-painted sheet and a skeleton are both on screen. Two things take the
+     * skeleton down, and whichever comes first wins:
+     *
+     *   - `pay:ready`, which is the sheet saying its elements are up. That is the honest
+     *     signal and the one `attachPaymentBridge` was built to carry, but the hosted
+     *     page does not send it on every route, so it cannot be the only one.
+     *   - the frame's `load` event, which is the document having parsed — the point at
+     *     which the sheet's own markup (heading, amounts, buttons) is on screen.
+     *
+     * And a deadline, because a skeleton that never goes away is worse than no skeleton:
+     * if neither arrives the frame is revealed anyway, showing whatever it does have.
+     */
+    const skeleton = createPaymentSkeleton();
+    iframe.classList.add('is-loading');
+
+    let revealed = false;
+    const reveal = () => {
+        if (revealed) return;
+        revealed = true;
+        clearTimeout(revealTimer);
+        iframe.classList.remove('is-loading');
+        skeleton.remove();
+    };
+    const revealTimer = setTimeout(reveal, 8000);
+    iframe.addEventListener('load', reveal, { once: true });
 
     /**
      * `showNotification` and not `notificationStore`: this page never mounts the
@@ -1465,6 +1533,7 @@ export async function openPaymentInPanel(provider) {
     };
 
     detachPaymentBridge = attachPaymentBridge(iframe, nonce, {
+        onReady: reveal,
         onSuccess: ({ amount }) => {
             // Before the notification: the thank-you belongs in the panel, and a paid-for
             // window still sitting on screen behind it reads as something left undone.
@@ -1509,6 +1578,8 @@ export async function openPaymentInPanel(provider) {
         },
     });
 
+    // The skeleton first, so it is already painted when the frame lands on top of it.
+    container.appendChild(skeleton);
     container.appendChild(iframe);
     settleFramedView(mainHeaderTitle);
 }
@@ -1733,6 +1804,9 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     detachFrameScrollbar();
     detachPaymentBridge?.();
     detachPaymentBridge = null;
+    // Not an `.active-view`, so `getTransientActiveView` below does not take it with the
+    // frame. Left behind, it sits under whatever the panel shows next.
+    _container?.querySelector('.pay-skeleton')?.remove();
 
     chrome.runtime.sendMessage(
         {
