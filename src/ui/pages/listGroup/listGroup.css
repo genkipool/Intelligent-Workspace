@@ -8775,109 +8775,51 @@ body:not(.groups-view-active) .music-panel,
     width: 54px;
 }
 
-/* ─── What is playing: the speaker button's hover list ─────────────── */
+/* ─── The speaker button's hover menu ──────────────────────────────── */
 .audio-sources-popup {
     position: fixed;
     z-index: 1100;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    min-width: 220px;
-    max-width: 340px;
-    background-color: var(--bg-panel-color);
+    gap: 2px;
+    /* Two short labels and no more, so it stays out of the way of the toolbar. */
+    width: max-content;
+    max-width: 200px;
+    /* The page background rather than the panel's, so the menu reads as sitting on
+       top of the toolbar instead of blending into it. */
+    background-color: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius, 6px);
     box-shadow: 0 0 5px var(--interactive-color);
-    padding: 6px;
+    padding: 4px;
 }
 
-.audio-sources-title {
-    margin: 0;
-    padding: 0 2px 2px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted-color, var(--text-color));
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-}
-
-.audio-sources-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    /* Plenty of tabs can be playing at once; the list scrolls rather than the page. */
-    max-height: 260px;
-    overflow-y: auto;
-}
-
-.audio-source-row {
+.audio-sources-item {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 3px 4px;
-    border-radius: var(--small-border-radius, 4px);
-}
-
-.audio-source-row:hover {
-    background-color: var(--action-color);
-}
-
-.audio-source-row.is-silent {
-    opacity: 0.65;
-}
-
-.audio-source-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    border-radius: 2px;
-}
-
-.audio-source-text {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    flex: 1;
-}
-
-.audio-source-name {
-    font-size: 0.8rem;
-    color: var(--text-color);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.audio-source-status {
-    font-size: 0.68rem;
-    color: var(--text-muted-color, var(--text-color));
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.audio-source-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+    gap: 7px;
+    width: 100%;
     background: none;
     border: 1px solid transparent;
     border-radius: var(--small-border-radius, 4px);
     color: var(--text-color);
     cursor: pointer;
-    padding: 4px;
+    font-size: 0.8rem;
+    padding: 5px 8px 5px 6px;
+    text-align: left;
+    white-space: nowrap;
     transition:
         background-color 0.15s,
         border-color 0.15s;
 }
 
-.audio-source-btn:hover,
-.audio-source-btn:focus-visible {
-    background-color: var(--bg-color);
+.audio-sources-item svg {
+    flex-shrink: 0;
+}
+
+.audio-sources-item:hover,
+.audio-sources-item:focus-visible {
+    background-color: var(--action-color);
     border-color: var(--border-color);
     outline: none;
 }

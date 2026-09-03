@@ -12174,41 +12174,17 @@
         "message": "Enseña también los segundos, además de horas y minutos.",
         "description": "Hint for the show-seconds setting"
     },
-    "audioSourcesTitle": {
-        "message": "Qué está sonando",
-        "description": "Todo lo que está sonando ahora mismo"
-    },
     "audioSourceGoToTab": {
-        "message": "Ir a esta pestaña",
-        "description": "Traer esta pestaña al frente"
+        "message": "Ir a la pestaña",
+        "description": "Traer al frente la pestaña de la que sale el sonido"
     },
     "audioSourceMute": {
         "message": "Silenciar",
-        "description": "Silenciar esta pestaña"
+        "description": "Silenciar todas las pestañas y pausar el lector"
     },
     "audioSourceUnmute": {
         "message": "Activar sonido",
-        "description": "Devolver el sonido a esta pestaña"
-    },
-    "audioSourceReading": {
-        "message": "Leyendo en voz alta",
-        "description": "El lector está leyendo esta pestaña en voz alta"
-    },
-    "audioSourceReadingPaused": {
-        "message": "Lectura en pausa",
-        "description": "La lectura está en espera"
-    },
-    "audioSourceResumeReading": {
-        "message": "Reanudar la lectura",
-        "description": "Seguir leyendo esta página en voz alta"
-    },
-    "audioSourcePauseReading": {
-        "message": "Pausar la lectura",
-        "description": "Dejar la lectura donde está"
-    },
-    "audioSourceStopReading": {
-        "message": "Detener la lectura",
-        "description": "Cerrar el lector de esta página"
+        "description": "Devolver el sonido y seguir leyendo"
     },
     "muteAllSources": {
         "message": "Silenciarlo todo",
@@ -12217,9 +12193,5 @@
     "unmuteAllSources": {
         "message": "Devolver el sonido",
         "description": "Activar el sonido de todas las pestañas y seguir leyendo"
-    },
-    "audioSourceMuted": {
-        "message": "Silenciada",
-        "description": "Esta pestaña está silenciada"
     }
 }

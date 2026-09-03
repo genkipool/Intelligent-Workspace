@@ -1,12 +1,11 @@
 <script>
     /**
-     * The toolbar's speaker button and the list of what is making noise.
+     * The toolbar's speaker button and the two things it can do.
      *
      * The button itself is still driven from groupsService by hand — it decides when
-     * to show it, which of the two icons to use and what a click does — because the
-     * rest of the panel's audio bookkeeping lives there. This component adds the
-     * hover popup, which names every source of sound and lets each one be silenced
-     * or jumped to on its own.
+     * to show it and which of the two icons to use — because the rest of the panel's
+     * audio bookkeeping lives there. This component adds the hover menu: silence
+     * everything (or bring it back), and jump to the tab the sound is coming from.
      *
      * Two things can be making noise, and they are silenced in different ways: a tab
      * playing audio, which Chrome can mute, and the page reader, whose voice does
@@ -15,75 +14,51 @@
      */
     import { t, tt } from '../../stores/i18nStore.js';
     import { isProgrammaticActivation } from '../../stores/appStore.svelte.js';
-    import { getValidStandardTabs } from '../../services/groupsService.js';
-    import { getReadAloudReadings, controlReadAloud } from '../../services/readAloudService.js';
+    import { getValidStandardTabs, toggleMuteAllSources, isEverythingSilenced } from '../../services/groupsService.js';
+    import { getReadAloudReadings } from '../../services/readAloudService.js';
 
     let { hidden = false } = $props();
 
-    /** Long enough that crossing the toolbar does not flash the popup open. */
+    /** Long enough that crossing the toolbar does not flash the menu open. */
     const OPEN_DELAY_MS = 220;
     const CLOSE_DELAY_MS = 160;
     const GAP = 6;
-    /** While the popup is open the list is kept honest; a video can end under it. */
-    const REFRESH_MS = 1500;
 
     let buttonEl = $state(null);
     let popupEl = $state(null);
     let isPopupOpen = $state(false);
     let popupPosition = $state({ top: 0, left: 0 });
-    let sources = $state([]);
+    let silenced = $state(false);
+    /** The tab the sound is coming from, which is where "go to it" leads. */
+    let soundingTab = $state(null);
     let openTimer = null;
     let closeTimer = null;
-    let refreshTimer = null;
-    // Where the pointer is, so pressing a control inside the popup — which blurs the
+    // Where the pointer is, so pressing a control inside the menu — which blurs the
     // toolbar button — does not read as leaving it.
     let pointerOnButton = false;
     let pointerOnPopup = false;
 
     /**
-     * Everything that is making noise, or has been silenced and could make it again.
+     * The tab worth jumping to.
      *
-     * A muted tab stays on the list on purpose: the popup is also how the sound is
-     * brought back, and a tab that has been silenced stops being `audible`, so
-     * dropping it would make the control that silenced it disappear with it.
+     * A reading comes first: it is the one sound the tab strip gives no sign of, so
+     * it is the one somebody is most likely hunting for. Otherwise it is whichever
+     * tab is playing, and failing that one that has been silenced — which is still
+     * the tab the button is talking about.
      */
-    async function collectSources() {
+    async function findSoundingTab() {
         const [tabs, readings] = await Promise.all([getValidStandardTabs(), getReadAloudReadings()]);
-
-        const fromTabs = tabs
-            .filter((tab) => tab.audible || tab.mutedInfo?.muted)
-            .map((tab) => ({
-                kind: 'tab',
-                tabId: tab.id,
-                windowId: tab.windowId,
-                title: tab.title || tab.url || '',
-                favIconUrl: tab.favIconUrl || '',
-                muted: !!tab.mutedInfo?.muted,
-            }));
-
-        const fromReadings = readings.map((reading) => ({
-            kind: 'reading',
-            tabId: reading.tabId,
-            windowId: reading.windowId,
-            title: reading.title,
-            favIconUrl: reading.favIconUrl,
-            paused: reading.paused,
-        }));
-
-        // A tab that is both playing something and being read out loud gets a row for
-        // each: they are two separate sounds, silenced in two different ways.
-        return [...fromReadings, ...fromTabs];
-    }
-
-    async function refreshSources() {
-        sources = await collectSources();
-        // Nothing left to control, or the panel moved to a view this button does not
-        // belong to and groupsService has hidden it out from under the popup.
-        if (sources.length === 0 || buttonEl?.classList.contains('hidden')) isPopupOpen = false;
+        if (readings.length > 0) {
+            return { tabId: readings[0].tabId, windowId: readings[0].windowId };
+        }
+        const audible = tabs.find((tab) => tab.audible && !tab.mutedInfo?.muted) || tabs.find((tab) => tab.audible);
+        const muted = tabs.find((tab) => tab.mutedInfo?.muted);
+        const tab = audible || muted;
+        return tab ? { tabId: tab.id, windowId: tab.windowId } : null;
     }
 
     /**
-     * Puts the popup under the button, flipping it above and pulling it back inside
+     * Puts the menu under the button, flipping it above and pulling it back inside
      * the window when there is no room, the way the other toolbar popups behave.
      */
     function positionPopup() {
@@ -102,9 +77,11 @@
     function scheduleOpen() {
         clearTimeout(closeTimer);
         openTimer = setTimeout(async () => {
-            await refreshSources();
             // Nothing is making noise, so there is nothing to offer.
-            if (sources.length > 0) isPopupOpen = true;
+            if (buttonEl?.classList.contains('hidden')) return;
+            silenced = isEverythingSilenced();
+            soundingTab = await findSoundingTab();
+            if (soundingTab) isPopupOpen = true;
         }, OPEN_DELAY_MS);
     }
 
@@ -137,7 +114,7 @@
         scheduleClose();
     }
 
-    /** Keyboard users get the popup too; it closes once focus leaves it for good. */
+    /** Keyboard users get the menu too; it closes once focus leaves it for good. */
     function handleFocusOut(event) {
         if (popupEl?.contains(event.relatedTarget) || buttonEl?.contains(event.relatedTarget)) return;
         scheduleClose();
@@ -145,65 +122,42 @@
 
     /**
      * The click on the button itself belongs to groupsService, which silences every
-     * tab and every reading at once. All this does is get the popup out of the way.
+     * tab and every reading at once. All this does is get the menu out of the way.
      */
     function handleButtonClick() {
         clearTimeout(openTimer);
         isPopupOpen = false;
     }
 
-    async function toggleTab(source) {
-        await chrome.tabs.update(source.tabId, { muted: !source.muted });
-        await refreshSources();
+    async function handleMute() {
+        isPopupOpen = false;
+        await toggleMuteAllSources();
     }
 
-    async function toggleReading(source) {
-        await controlReadAloud(source.tabId, source.paused ? 'resume' : 'pause');
-        await refreshSources();
-    }
-
-    async function stopReading(source) {
-        await controlReadAloud(source.tabId, 'stop');
-        await refreshSources();
-    }
-
-    /** Brings the tab a sound is coming from to the front, window and all. */
-    async function goToTab(source) {
+    /** Brings the tab the sound is coming from to the front, window and all. */
+    async function handleGoToTab() {
+        isPopupOpen = false;
+        if (!soundingTab) return;
         isProgrammaticActivation.set(true);
         setTimeout(() => isProgrammaticActivation.set(false), 1000);
-        await chrome.tabs.update(source.tabId, { active: true }).catch(() => {});
-        if (Number.isFinite(source.windowId)) {
-            await chrome.windows.update(source.windowId, { focused: true }).catch(() => {});
+        await chrome.tabs.update(soundingTab.tabId, { active: true }).catch(() => {});
+        if (Number.isFinite(soundingTab.windowId)) {
+            await chrome.windows.update(soundingTab.windowId, { focused: true }).catch(() => {});
         }
-        isPopupOpen = false;
     }
 
-    function sourceStatus(source) {
-        if (source.kind === 'reading') {
-            return source.paused ? $t('audioSourceReadingPaused') : $t('audioSourceReading');
-        }
-        return source.muted ? $t('audioSourceMuted') : '';
-    }
-
-    // Measured only once it exists, and again whenever its contents could have
-    // changed height.
+    // Measured only once it exists, and again whenever its label could have changed
+    // width.
     $effect(() => {
         if (isPopupOpen && popupEl) {
-            void sources.length;
+            void silenced;
             positionPopup();
         }
-    });
-
-    $effect(() => {
-        clearInterval(refreshTimer);
-        if (isPopupOpen) refreshTimer = setInterval(refreshSources, REFRESH_MS);
-        return () => clearInterval(refreshTimer);
     });
 
     $effect(() => () => {
         clearTimeout(openTimer);
         clearTimeout(closeTimer);
-        clearInterval(refreshTimer);
     });
 </script>
 
@@ -237,87 +191,36 @@
     <div
         bind:this={popupEl}
         class="audio-sources-popup"
-        role="group"
-        aria-label={$t('audioSourcesTitle')}
+        role="menu"
         style:top={`${popupPosition.top}px`}
         style:left={`${popupPosition.left}px`}
         onmouseenter={handlePopupEnter}
         onmouseleave={handlePopupLeave}
         onfocusout={handleFocusOut}
     >
-        <p class="audio-sources-title">{$t('audioSourcesTitle')}</p>
-        <ul class="audio-sources-list">
-            {#each sources as source (`${source.kind}-${source.tabId}`)}
-                <li class="audio-source-row" class:is-silent={source.muted || source.paused}>
-                    {#if source.kind === 'reading'}
-                        <svg class="audio-source-icon" width="16" height="16" aria-hidden="true" focusable="false">
-                            <use href="#icon-read-aloud"></use>
-                        </svg>
-                    {:else if source.favIconUrl}
-                        <img class="audio-source-icon" src={source.favIconUrl} alt="" />
-                    {:else}
-                        <svg class="audio-source-icon" width="16" height="16" aria-hidden="true" focusable="false">
-                            <use href="#icon-speaker"></use>
-                        </svg>
-                    {/if}
-
-                    <span class="audio-source-text">
-                        <span class="audio-source-name" title={source.title}>{source.title}</span>
-                        {#if sourceStatus(source)}
-                            <span class="audio-source-status">{sourceStatus(source)}</span>
-                        {/if}
-                    </span>
-
-                    {#if source.kind === 'reading'}
-                        <button
-                            type="button"
-                            class="audio-source-btn"
-                            title={source.paused ? $tt('audioSourceResumeReading') : $tt('audioSourcePauseReading')}
-                            aria-label={source.paused ? $t('audioSourceResumeReading') : $t('audioSourcePauseReading')}
-                            onclick={() => toggleReading(source)}
-                        >
-                            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                                <use href={source.paused ? '#icon-play-solid' : '#icon-pause-solid'}></use>
-                            </svg>
-                        </button>
-                        <button
-                            type="button"
-                            class="audio-source-btn"
-                            title={$tt('audioSourceStopReading')}
-                            aria-label={$t('audioSourceStopReading')}
-                            onclick={() => stopReading(source)}
-                        >
-                            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                                <use href="#icon-stop-solid"></use>
-                            </svg>
-                        </button>
-                    {:else}
-                        <button
-                            type="button"
-                            class="audio-source-btn"
-                            title={source.muted ? $tt('audioSourceUnmute') : $tt('audioSourceMute')}
-                            aria-label={source.muted ? $t('audioSourceUnmute') : $t('audioSourceMute')}
-                            onclick={() => toggleTab(source)}
-                        >
-                            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                                <use href={source.muted ? '#icon-speaker-muted' : '#icon-speaker'}></use>
-                            </svg>
-                        </button>
-                    {/if}
-
-                    <button
-                        type="button"
-                        class="audio-source-btn"
-                        title={$tt('audioSourceGoToTab')}
-                        aria-label={$t('audioSourceGoToTab')}
-                        onclick={() => goToTab(source)}
-                    >
-                        <svg width="14" height="14" aria-hidden="true" focusable="false">
-                            <use href="#icon-external"></use>
-                        </svg>
-                    </button>
-                </li>
-            {/each}
-        </ul>
+        <button
+            type="button"
+            role="menuitem"
+            class="audio-sources-item"
+            title={silenced ? $tt('audioSourceUnmute') : $tt('audioSourceMute')}
+            onclick={handleMute}
+        >
+            <svg width="14" height="14" aria-hidden="true" focusable="false">
+                <use href={silenced ? '#icon-speaker' : '#icon-speaker-muted'}></use>
+            </svg>
+            <span>{silenced ? $t('audioSourceUnmute') : $t('audioSourceMute')}</span>
+        </button>
+        <button
+            type="button"
+            role="menuitem"
+            class="audio-sources-item"
+            title={$tt('audioSourceGoToTab')}
+            onclick={handleGoToTab}
+        >
+            <svg width="14" height="14" aria-hidden="true" focusable="false">
+                <use href="#icon-external"></use>
+            </svg>
+            <span>{$t('audioSourceGoToTab')}</span>
+        </button>
     </div>
 {/if}

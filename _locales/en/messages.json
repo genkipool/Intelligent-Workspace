@@ -12194,41 +12194,17 @@
     "message": "Shows the seconds as well as the hours and minutes.",
     "description": "Hint for the show-seconds setting"
   },
-  "audioSourcesTitle": {
-    "message": "What is playing",
-    "description": "Everything that is making a sound right now"
-  },
   "audioSourceGoToTab": {
-    "message": "Go to this tab",
-    "description": "Bring this tab to the front"
+    "message": "Go to the tab",
+    "description": "Bring the tab the sound is coming from to the front"
   },
   "audioSourceMute": {
     "message": "Mute",
-    "description": "Silence this tab"
+    "description": "Silence every tab and pause the page reader"
   },
   "audioSourceUnmute": {
     "message": "Unmute",
-    "description": "Bring this tab’s sound back"
-  },
-  "audioSourceReading": {
-    "message": "Reading out loud",
-    "description": "The page reader is speaking this tab"
-  },
-  "audioSourceReadingPaused": {
-    "message": "Reading paused",
-    "description": "The reading is on hold"
-  },
-  "audioSourceResumeReading": {
-    "message": "Resume the reading",
-    "description": "Carry on reading this page out loud"
-  },
-  "audioSourcePauseReading": {
-    "message": "Pause the reading",
-    "description": "Hold the reading where it is"
-  },
-  "audioSourceStopReading": {
-    "message": "Stop the reading",
-    "description": "Close the reader on this page"
+    "description": "Bring the sound back and carry on reading"
   },
   "muteAllSources": {
     "message": "Silence everything",
@@ -12237,9 +12213,5 @@
   "unmuteAllSources": {
     "message": "Bring the sound back",
     "description": "Unmute every tab and carry on reading"
-  },
-  "audioSourceMuted": {
-    "message": "Muted",
-    "description": "This tab has been silenced"
   }
 }

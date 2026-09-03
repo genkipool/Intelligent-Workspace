@@ -194,6 +194,53 @@ export async function getValidStandardTabs() {
     return validWindows.flatMap((win) => win.tabs || []);
 }
 
+/** Whether the speaker button is currently offering to bring the sound back. */
+export function isEverythingSilenced() {
+    const btn = document.getElementById('mute-all-tabs-btn');
+    return !!btn?.querySelector('.icon-speaker')?.classList.contains('hidden');
+}
+
+/**
+ * Silences everything the browser is playing, or brings it all back.
+ *
+ * Both halves are needed on each pass: the tabs Chrome can mute, and the page
+ * reader, whose voice never goes through a tab and has to be paused inside the page
+ * it is reading. Leaving the reading out of the way back would make the button a
+ * one-way trip — silence it once and it could never be resumed from here.
+ */
+export async function toggleMuteAllSources() {
+    const btn = document.getElementById('mute-all-tabs-btn');
+    if (!btn) return;
+    const iconSpeaker = btn.querySelector('.icon-speaker');
+    const iconMuted = btn.querySelector('.icon-speaker-muted');
+    const allTabs = await getValidStandardTabs();
+
+    if (isEverythingSilenced()) {
+        const mutedTabs = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
+        for (const tab of mutedTabs) chrome.tabs.update(tab.id, { muted: false });
+        await setAllReadAloudPaused(false);
+        iconSpeaker.classList.remove('hidden');
+        iconMuted.classList.add('hidden');
+        btn.title = chrome.i18n.getMessage('muteAllTabs');
+        syncAllTabIndicators(false);
+    } else {
+        const audibleTabs = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
+        // Pausing the reader counts as silencing something, so a page being read out
+        // loud is reason enough for the click to do anything at all.
+        const pausedReadings = await setAllReadAloudPaused(true);
+        if (audibleTabs.length === 0 && pausedReadings === 0) {
+            updateMuteButtonState();
+            return;
+        }
+        for (const tab of audibleTabs) chrome.tabs.update(tab.id, { muted: true });
+        iconSpeaker.classList.add('hidden');
+        iconMuted.classList.remove('hidden');
+        btn.title = chrome.i18n.getMessage('unmuteAllTabs');
+        syncAllTabIndicators(true);
+    }
+    setTimeout(() => updateMuteButtonState(), 300);
+}
+
 export async function updateMuteButtonState() {
     const btn = document.getElementById('mute-all-tabs-btn');
     if (!btn) return;
@@ -1971,39 +2018,7 @@ export function initGroupsEvents() {
 
     const muteAllTabsBtn = document.getElementById('mute-all-tabs-btn');
     if (muteAllTabsBtn) {
-        muteAllTabsBtn.addEventListener('click', async () => {
-            const iconSpeaker = muteAllTabsBtn.querySelector('.icon-speaker');
-            const isMutedState = iconSpeaker.classList.contains('hidden');
-            if (isMutedState) {
-                const allTabs = await getValidStandardTabs();
-                const mutedTabs = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
-                for (const tab of mutedTabs) chrome.tabs.update(tab.id, { muted: false });
-                // The reading is brought back with them: it was silenced by the same
-                // click, and leaving it paused would make the button a one-way trip.
-                await setAllReadAloudPaused(false);
-                iconSpeaker.classList.remove('hidden');
-                muteAllTabsBtn.querySelector('.icon-speaker-muted').classList.add('hidden');
-                muteAllTabsBtn.title = chrome.i18n.getMessage('muteAllTabs');
-                syncAllTabIndicators(false);
-                setTimeout(() => updateMuteButtonState(), 300);
-            } else {
-                const allTabs = await getValidStandardTabs();
-                const audibleTabs = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
-                // Pausing the reader counts as silencing something, so a page being
-                // read out loud is reason enough for the click to do anything at all.
-                const pausedReadings = await setAllReadAloudPaused(true);
-                if (audibleTabs.length === 0 && pausedReadings === 0) {
-                    updateMuteButtonState();
-                    return;
-                }
-                for (const tab of audibleTabs) chrome.tabs.update(tab.id, { muted: true });
-                iconSpeaker.classList.add('hidden');
-                muteAllTabsBtn.querySelector('.icon-speaker-muted').classList.remove('hidden');
-                muteAllTabsBtn.title = chrome.i18n.getMessage('unmuteAllTabs');
-                syncAllTabIndicators(true);
-                setTimeout(() => updateMuteButtonState(), 300);
-            }
-        });
+        muteAllTabsBtn.addEventListener('click', () => toggleMuteAllSources());
 
         chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
             if (changeInfo.audible !== undefined || changeInfo.mutedInfo !== undefined) {
