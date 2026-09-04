@@ -59,9 +59,11 @@ KEY CAPABILITIES
 
 PRIVACY & DATA PROTECTION
 Intelligent Workspace is built privacy-first:
-• All tab groupings, notes, and metrics are stored locally on your device using Chrome's native storage.
-• No browsing history or personal data is collected, sold, or shared with third parties.
-• Optional AI features communicate exclusively and securely with the official Google Gemini API using your own configuration.
+• Your notes, screenshots, session backups, time records and Pomodoro history stay on this device, in the browser's own storage. There is no account, and no server of ours to send them to.
+• Your settings — grouping rules, snippets and keyboard shortcuts — live in Chrome's synced storage, so a second computer signed into the same Chrome profile behaves the same way. That area belongs to Chrome: with Chrome sync switched off, none of it leaves the machine.
+• The record of time spent per site is deliberately kept out of that. Syncing it is a switch of its own, off until you turn it on.
+• No browsing history or personal data is collected, sold, or shared with third parties. No analytics, no tracking, no advertising.
+• Optional AI features talk directly to the official Google Gemini API with your own API key, or to Chrome's built-in on-device model, which needs no key and no connection.
 
 SUPPORT & COMMUNITY
 • Support & Documentation: https://intelligentworkspace.genkipool.com
@@ -91,9 +93,11 @@ CARACTERÍSTICAS PRINCIPALES
 
 PRIVACIDAD Y SEGURIDAD
 Intelligent Workspace prioriza tu privacidad:
-• Todas las agrupaciones, notas y métricas se procesan y almacenan de forma estrictamente local en tu dispositivo.
-• No recopilamos, no vendemos ni compartimos tu historial de navegación ni tus datos personales.
-• Las funciones opcionales de IA se comunican exclusivamente con la API oficial de Google Gemini bajo tu propia configuración.
+• Tus notas, capturas, copias de sesión, registros de tiempo e historial del Pomodoro se quedan en este dispositivo, en el almacenamiento del propio navegador. No hay cuenta ni servidor nuestro al que mandarlos.
+• Tus ajustes —reglas de agrupación, snippets y atajos de teclado— viven en el área sincronizada de Chrome, para que un segundo ordenador con el mismo perfil se comporte igual. Esa área es de Chrome: con la sincronización desactivada, nada de eso sale de la máquina.
+• El registro de tiempo por sitio se queda fuera a propósito. Sincronizarlo es un interruptor aparte, apagado hasta que tú lo enciendas.
+• No recopilamos, no vendemos ni compartimos tu historial de navegación ni tus datos personales. Sin analíticas, sin seguimiento y sin publicidad.
+• Las funciones opcionales de IA hablan directamente con la API oficial de Google Gemini usando tu propia clave, o con el modelo local integrado en Chrome, que no necesita ni clave ni conexión.
 
 SOPORTE Y CONTACTO
 • Sitio web y documentación: https://intelligentworkspace.genkipool.com
