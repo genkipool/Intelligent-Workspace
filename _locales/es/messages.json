@@ -2634,8 +2634,8 @@
         "description": "El nombre de la extensión."
     },
     "extDescription": {
-        "message": "Convierte Chrome en una estación de trabajo. Este espacio de trabajo inteligente organiza tu navegación automáticamente. Incluye: asistente de IA (Gemini) para resúmenes, pantalla dividida para multitarea, notas integradas, temas personalizables con modo oscuro, atajos de teclado para navegación sin ratón, editor de cookies, captura de pantalla y muchas más funciones. La herramienta definitiva para la máxima productividad.",
-        "description": "La descripción de la extensión."
+        "message": "Estación de trabajo inteligente: organización automática de pestañas, panel lateral de notas y herramientas de productividad.",
+        "description": "Descripción corta de la extensión para Chrome Web Store (máximo 132 caracteres)."
     },
     "contextMenuRemoveDuplicateTabs": {
         "message": "Eliminar Todas Las URLs Repetidas",
@@ -12147,7 +12147,7 @@
         "description": "Título del diálogo que pregunta PNG o PDF"
     },
     "downloadFormatPngDesc": {
-        "message": "La imagen tal y como se capturó",
+        "message": "Sin pérdida, y el archivo más grande",
         "description": "Qué significa elegir PNG"
     },
     "downloadFormatPdfDesc": {
@@ -12161,6 +12161,22 @@
     "downloadAsPdf": {
         "message": "Documento PDF",
         "description": "Botón de formato"
+    },
+    "downloadAsWebp": {
+        "message": "Imagen WebP",
+        "description": "Botón de formato"
+    },
+    "downloadAsAvif": {
+        "message": "Imagen AVIF",
+        "description": "Botón de formato"
+    },
+    "downloadFormatWebpDesc": {
+        "message": "Mucho más pequeña y sigue nítida",
+        "description": "Qué significa elegir WebP"
+    },
+    "downloadFormatAvifDesc": {
+        "message": "La más pequeña de las tres",
+        "description": "Qué significa elegir AVIF"
     },
     "captureFullPageSplit": {
         "message": "Capturar la página completa por partes",
@@ -12232,7 +12248,7 @@
         "description": "Botón del panel del lector"
     },
     "downloadFormatHint": {
-        "message": "Elige uno o los dos.",
+        "message": "Elige uno o varios.",
         "description": "Nota bajo la elección de formato"
     },
     "readerBlockOpacityLabel": {
@@ -12382,5 +12398,45 @@
     "unmuteAllSources": {
         "message": "Devolver el sonido",
         "description": "Activar el sonido de todas las pestañas y seguir leyendo"
+    },
+    "uploadImagesTooltip": {
+        "message": "Subir imágenes: varios archivos o una carpeta entera",
+        "description": "Subir imágenes: varios archivos o una carpeta entera"
+    },
+    "uploadImagesFilesOption": {
+        "message": "Imágenes…",
+        "description": "Entrada del menú de subida: elegir uno o varios archivos"
+    },
+    "uploadImagesFolderOption": {
+        "message": "Carpeta…",
+        "description": "Entrada del menú de subida: elegir una carpeta y coger sus imágenes"
+    },
+    "uploadingImages": {
+        "message": "Añadiendo imágenes… ($1/$2)",
+        "description": "Progreso mientras se leen las imágenes elegidas"
+    },
+    "imagesUploaded": {
+        "message": "$1 imagen(es) añadidas a la galería.",
+        "description": "Se han subido imágenes"
+    },
+    "errorUploadingImages": {
+        "message": "No se pudieron leer $1 imagen(es).",
+        "description": "Fallaron algunos de los archivos elegidos"
+    },
+    "noImagesInSelection": {
+        "message": "No hay imágenes en lo que has elegido.",
+        "description": "Los archivos o la carpeta elegidos no tenían ninguna imagen"
+    },
+    "convertingImages": {
+        "message": "Convirtiendo a $3… ($1/$2)",
+        "description": "Progreso mientras se reconvierten las imágenes"
+    },
+    "imageTooLargeForFormat": {
+        "message": "$1 imagen(es) son demasiado grandes para $2.",
+        "description": "El formato no admite una imagen tan grande"
+    },
+    "errorConvertingImages": {
+        "message": "No se pudieron convertir $1 imagen(es) a $2.",
+        "description": "Falló la conversión"
     }
 }

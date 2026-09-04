@@ -205,7 +205,7 @@
         </symbol>
         <symbol id="icon-download" viewBox="0 0 24 24">
             <path
-                d="m16 11-4 4m0 0-4-4m4 4V3m9 12v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"
+                d="m16 12-4 4m0 0-4-4m4 4V4m9 12v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
@@ -372,7 +372,7 @@
         </symbol>
         <symbol id="icon-download-all" viewBox="0 0 24 24">
             <path
-                d="m16 11-4 4m0 0-4-4m4 4V3m9 12v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"
+                d="m16 12-4 4m0 0-4-4m4 4V4m9 12v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"
@@ -448,9 +448,19 @@
                 fill="none"
             />
         </symbol>
+        <!-- The same drawing as `icon-download-all` — same tray, same shaft, same
+             arrowhead — with the arrow the other way up. They sit next to each other in
+             the gallery header, where any other difference between them reads as a
+             difference in what they do.
+
+             Both drawings, and `icon-download` with them, run from y=3 to y=21 once the
+             stroke is counted, which is where every other icon in the header sits. They
+             used to be written a unit higher, and next to the bin — which does go down
+             to 21 — that unit was plainly visible as one icon hanging lower than the
+             other. -->
         <symbol id="icon-upload" viewBox="0 0 24 24">
             <path
-                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 15V5"
+                d="m16 8-4-4m0 0-4 4m4-4v12m9 0v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2"
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linecap="round"

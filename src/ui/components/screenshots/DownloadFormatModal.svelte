@@ -4,15 +4,17 @@
      *
      * The download button used to have a PDF twin beside it, which meant two buttons
      * doing one job and a second icon to learn. Now there is one download button and
-     * this asks the only question it ever had: the image as it is, or a document.
+     * this asks the only question it ever had: the image, in which format, or a
+     * document.
      *
-     * The two formats are `.format-option` buttons — the pattern the rules page uses
-     * for a small exclusive choice — and the dialog confirms with the single
-     * full-width button every other dialog here ends with, with the cross as the only
-     * way out. The styles are scoped rather than borrowed from a page stylesheet, so
-     * the dialog looks the same wherever it is opened.
+     * The formats are `.format-option` buttons — the pattern the rules page uses for a
+     * small exclusive choice — and the dialog confirms with the single full-width
+     * button every other dialog here ends with, with the cross as the only way out.
+     * The styles are scoped rather than borrowed from a page stylesheet, so the dialog
+     * looks the same wherever it is opened.
      */
     import { t } from '../../stores/i18nStore.js';
+    import { canEncodeAvif } from '../../../utils/imageFormats.js';
     import ModalHeader from '../common/ModalHeader.svelte';
     import ModalSaveButton from '../common/ModalSaveButton.svelte';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
@@ -26,31 +28,47 @@
     } = $props();
 
     /**
-     * Both formats can be on at once — the same capture as a picture and as a
+     * Any number of formats can be on at once — the same capture as a picture and as a
      * document — so this is a set of checks rather than a set of radios. One of them
      * always has to stay on: a download of nothing is not a download.
      */
-    let chosen = $state({ png: true, pdf: false });
+    const NONE_CHOSEN = { png: false, webp: false, avif: false, pdf: false };
+    let chosen = $state({ ...NONE_CHOSEN, png: true });
     let working = $state(false);
+
+    /**
+     * Whether this browser can write an AVIF at all.
+     *
+     * It is offered only where it can be produced, rather than offered everywhere and
+     * failing afterwards. The cheap synchronous half of the answer is used as the
+     * opening guess so the option does not appear a frame late on the browsers that
+     * do have it.
+     */
+    let avifAvailable = $state(typeof VideoEncoder !== 'undefined');
 
     // A previous choice must not survive into the next opening: the button that opens
     // this is the same one for a single capture and for the whole gallery.
     $effect(() => {
         if (show) {
-            chosen = { png: true, pdf: false };
+            chosen = { ...NONE_CHOSEN, png: true };
             working = false;
+            canEncodeAvif().then((can) => (avifAvailable = can));
         }
     });
 
     const FORMATS = [
         { value: 'png', labelKey: 'downloadAsPng', descKey: 'downloadFormatPngDesc' },
+        { value: 'webp', labelKey: 'downloadAsWebp', descKey: 'downloadFormatWebpDesc' },
+        { value: 'avif', labelKey: 'downloadAsAvif', descKey: 'downloadFormatAvifDesc' },
         { value: 'pdf', labelKey: 'downloadAsPdf', descKey: 'downloadFormatPdfDesc' },
     ];
+
+    let availableFormats = $derived(FORMATS.filter((option) => option.value !== 'avif' || avifAvailable));
 
     function toggle(value) {
         const next = { ...chosen, [value]: !chosen[value] };
         // The last one on stays on: a download of nothing is not a download.
-        if (!next.png && !next.pdf) return;
+        if (!Object.values(next).some(Boolean)) return;
         chosen = next;
     }
 
@@ -86,7 +104,7 @@
 
             <div class="download-format-body">
                 <div class="format-options" role="group" aria-labelledby="download-format-title">
-                    {#each FORMATS as option (option.value)}
+                    {#each availableFormats as option (option.value)}
                         <button
                             type="button"
                             class="format-option"
@@ -124,10 +142,10 @@
         padding: 16px;
     }
 
-    /* Side by side while there is room, stacked in a 350px side panel. */
+    /* Two abreast, which still holds in a 350px side panel. */
     .format-options {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(122px, 1fr));
         gap: 10px;
     }
 

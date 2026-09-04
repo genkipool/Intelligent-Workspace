@@ -553,7 +553,10 @@ const viewConfig = {
      * flash by another route.
      */
     notes: ['add-note-view-btn', 'delete-all-context-btn', 'expand-all-btn'],
-    gallery: ['delete-all-context-btn'],
+    // The upload button belongs to the view rather than to the data: pictures can be
+    // added to an empty gallery, which is the one case the download button beside it
+    // has to wait for an answer before it can appear.
+    gallery: ['upload-images-btn', 'delete-all-context-btn'],
     gemini: ['search-toggle-btn', 'expand-all-btn', 'pin-toggle', 'add-api-key-btn', 'schedule-gemini-btn'],
 };
 
@@ -2219,6 +2222,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
     const _copyGeminiBtn = document.getElementById('copy-gemini-btn');
     const _readerViewBtn = document.getElementById('reader-view-btn');
     const _downloadAllScreenshotsBtn = document.getElementById('download-all-screenshots-btn');
+    const _uploadImagesBtn = document.getElementById('upload-images-btn');
     const _headerScreenshotBtn = document.getElementById('header-screenshot-btn');
     const _scheduleGeminiBtn = document.getElementById('schedule-gemini-btn');
     const _addNoteViewBtn = document.getElementById('add-note-view-btn');
@@ -2272,6 +2276,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
         _copyGeminiBtn,
         _readerViewBtn,
         _downloadAllScreenshotsBtn,
+        _uploadImagesBtn,
         _headerScreenshotBtn,
         _scheduleGeminiBtn,
         _addNoteViewBtn,
@@ -2313,6 +2318,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
             _galleryHasScreenshots = !!contextualData.screenshotsExistInGallery;
         }
         if (_downloadAllScreenshotsBtn) _downloadAllScreenshotsBtn.classList.toggle('hidden', !_galleryHasScreenshots);
+        if (_uploadImagesBtn) _uploadImagesBtn.classList.remove('hidden');
         if (_deleteAllContextBtn) {
             _deleteAllContextBtn.classList.remove('hidden');
             _deleteAllContextBtn.setAttribute('data-i18n-title', 'deleteAllScreenshots');

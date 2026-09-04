@@ -2658,8 +2658,8 @@
     "description": "The name of the extension."
   },
   "extDescription": {
-    "message": "Transform Chrome into a workstation. This intelligent workspace organizes your navigation automatically. Includes: AI assistant (Gemini) for summarizing, split screen for multitasking, integrated notes, customizable themes with dark mode, keyboard shortcuts for mouse-free navigation, cookie editor, screenshot capture, and many more features. The ultimate tool for maximum productivity.",
-    "description": "The description of the extension."
+    "message": "Intelligent productivity workspace: automated tab organization, smart side panel, integrated notes, and workflow focus tools.",
+    "description": "Short description for Chrome Web Store (maximum 132 characters)."
   },
   "contextMenuRemoveDuplicateTabs": {
     "message": "Remove All Duplicate URLs",
@@ -12167,7 +12167,7 @@
     "description": "Title of the dialog that asks PNG or PDF"
   },
   "downloadFormatPngDesc": {
-    "message": "The image as it was captured",
+    "message": "Lossless, and the largest file",
     "description": "What choosing PNG means"
   },
   "downloadFormatPdfDesc": {
@@ -12181,6 +12181,22 @@
   "downloadAsPdf": {
     "message": "PDF document",
     "description": "Format button"
+  },
+  "downloadAsWebp": {
+    "message": "WebP image",
+    "description": "Format button"
+  },
+  "downloadAsAvif": {
+    "message": "AVIF image",
+    "description": "Format button"
+  },
+  "downloadFormatWebpDesc": {
+    "message": "Much smaller, still sharp",
+    "description": "What choosing WebP means"
+  },
+  "downloadFormatAvifDesc": {
+    "message": "The smallest of the three",
+    "description": "What choosing AVIF means"
   },
   "captureFullPageSplit": {
     "message": "Capture the full page in parts",
@@ -12252,7 +12268,7 @@
     "description": "Button in the reader panel"
   },
   "downloadFormatHint": {
-    "message": "Pick one or both.",
+    "message": "Pick one or more.",
     "description": "Note under the format choice"
   },
   "readerBlockOpacityLabel": {
@@ -12402,5 +12418,45 @@
   "unmuteAllSources": {
     "message": "Bring the sound back",
     "description": "Unmute every tab and carry on reading"
+  },
+  "uploadImagesTooltip": {
+    "message": "Upload images: pick several files or a whole folder",
+    "description": "Upload images: pick several files or a whole folder"
+  },
+  "uploadImagesFilesOption": {
+    "message": "Images…",
+    "description": "Upload menu entry: choose one or more image files"
+  },
+  "uploadImagesFolderOption": {
+    "message": "Folder…",
+    "description": "Upload menu entry: choose a folder and take the images in it"
+  },
+  "uploadingImages": {
+    "message": "Adding images… ($1/$2)",
+    "description": "Progress while the chosen images are read"
+  },
+  "imagesUploaded": {
+    "message": "$1 image(s) added to the gallery.",
+    "description": "Images were uploaded"
+  },
+  "errorUploadingImages": {
+    "message": "$1 image(s) could not be read.",
+    "description": "Some of the chosen files failed"
+  },
+  "noImagesInSelection": {
+    "message": "There are no images in what you chose.",
+    "description": "The chosen files or folder held no image"
+  },
+  "convertingImages": {
+    "message": "Converting to $3… ($1/$2)",
+    "description": "Progress while the images are re-encoded"
+  },
+  "imageTooLargeForFormat": {
+    "message": "$1 image(s) are too large for $2.",
+    "description": "The format cannot hold an image that big"
+  },
+  "errorConvertingImages": {
+    "message": "$1 image(s) could not be converted to $2.",
+    "description": "Conversion failed"
   }
 }

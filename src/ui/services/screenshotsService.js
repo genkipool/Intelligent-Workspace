@@ -35,6 +35,7 @@ import {
 
 import { STORAGE_KEYS, screenshotConfig } from './constants.js';
 import { imagesToPdfBlob, toPdfFileName } from '../../utils/pdf.js';
+import { encodeImage, toImageFileName, ImageTooLargeError } from '../../utils/imageFormats.js';
 import { openModal, showDownloadFormatModal } from '../stores/modalStore.js';
 import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob } from './utils.js';
 
@@ -164,6 +165,218 @@ export async function handleDownloadAllScreenshots() {
 
     const screenshots = (await Promise.all(screenshotIds.map((sid) => getScreenshotFromDb(sid)))).filter(Boolean);
     askDownloadFormat(screenshots);
+}
+
+/** How many images the gallery holds in total, captured and uploaded together. */
+const MAX_SCREENSHOTS = 100;
+
+/* ------------------------------------------------------------ pictures from disk */
+
+/**
+ * Where an upload is filed when the gallery on screen belongs to no group.
+ *
+ * The orphan gallery is the one place with no group behind it, and every context key
+ * a group produces starts `g_` or `s_`. This one starts with neither, so an image
+ * filed under it can never be mistaken for a group's and stays where it was put.
+ */
+const UPLOAD_ORPHAN_CONTEXT_KEY = 'uploads';
+
+/** How deep into a chosen folder to look, and how many pictures to take from it. */
+const UPLOAD_MAX_DEPTH = 4;
+const UPLOAD_MAX_FILES = 200;
+
+/** The formats a browser can be relied on to decode. */
+const UPLOAD_ACCEPT = ['.png', '.jpg', '.jpeg', '.webp', '.avif', '.gif', '.bmp', '.svg', '.ico'];
+
+function isImageFile(file) {
+    if (file?.type?.startsWith('image/')) return true;
+    // A folder handed over by the file input can carry files with no type at all,
+    // and the extension is then the only thing left to go on.
+    return !file?.type && UPLOAD_ACCEPT.some((extension) => file?.name?.toLowerCase().endsWith(extension));
+}
+
+/**
+ * Asks for pictures and adds them to the gallery on screen.
+ *
+ * The File System Access pickers are the way in wherever they exist, because the
+ * `<input type=file webkitdirectory>` behind them makes Chrome ask "upload N files to
+ * this site?" — the wrong question for something that never leaves the browser. The
+ * inputs stay in the toolbar as the fallback, and as what the picker falls back to
+ * when it is refused.
+ */
+export async function pickImageFiles() {
+    if (typeof window.showOpenFilePicker === 'function') {
+        try {
+            const handles = await window.showOpenFilePicker({
+                id: 'itg-gallery-images',
+                multiple: true,
+                startIn: 'pictures',
+                types: [{ description: 'Images', accept: { 'image/*': UPLOAD_ACCEPT } }],
+            });
+            const files = await Promise.all(handles.map((handle) => handle.getFile()));
+            await uploadImagesToGallery(files);
+            return;
+        } catch (error) {
+            // Closing the picker is an answer, not a failure.
+            if (error?.name === 'AbortError') return;
+        }
+    }
+    document.getElementById('gallery-upload-files-input')?.click();
+}
+
+/** The same, for a whole folder: every picture in it, subfolders included. */
+export async function pickImageFolder() {
+    if (typeof window.showDirectoryPicker === 'function') {
+        try {
+            const handle = await window.showDirectoryPicker({
+                id: 'itg-gallery-folder',
+                mode: 'read',
+                startIn: 'pictures',
+            });
+            const files = [];
+            await collectImages(handle, files, 0);
+            await uploadImagesToGallery(files);
+            return;
+        } catch (error) {
+            if (error?.name === 'AbortError') return;
+        }
+    }
+    document.getElementById('gallery-upload-folder-input')?.click();
+}
+
+/** Walks a chosen folder, keeping only what is a picture. */
+async function collectImages(directory, files, depth) {
+    for await (const entry of directory.values()) {
+        if (files.length >= UPLOAD_MAX_FILES) return;
+        if (entry.kind === 'directory') {
+            if (depth < UPLOAD_MAX_DEPTH) await collectImages(entry, files, depth + 1);
+            continue;
+        }
+        const file = await entry.getFile();
+        if (isImageFile(file)) files.push(file);
+    }
+}
+
+/** The keys an upload is filed under, given the gallery it is being added to. */
+async function resolveUploadKeys(context) {
+    if (context.type === 'orphan') {
+        return { contextKey: UPLOAD_ORPHAN_CONTEXT_KEY, sessionGroupKey: null, sessionSubgroupKey: null };
+    }
+    // The tab is only ever read for the warning this may log, and an upload has none.
+    return resolveScreenshotKeys({ id: 'upload' }, context);
+}
+
+/**
+ * Reads the chosen pictures into the gallery that is open.
+ *
+ * They are stored exactly as captures are — same table, same session index, same
+ * limit — so everything the gallery already does to a capture works on them too: the
+ * pin, the reader, the download in any of the four formats. The one difference is
+ * that the bytes are whatever was on disk rather than a PNG, which is why the
+ * download dialog re-encodes rather than renaming.
+ *
+ * @param {File[]} files
+ */
+export async function uploadImagesToGallery(files) {
+    const context = get(currentGalleryContext);
+    if (!context) return;
+
+    const images = Array.from(files || []).filter(isImageFile);
+    if (images.length === 0) {
+        if (files?.length) showNotification('noImagesInSelection', true);
+        return;
+    }
+
+    const totalCount = await getTotalScreenshotCount();
+    const room = Math.max(0, MAX_SCREENSHOTS - totalCount);
+    if (room === 0) {
+        showNotification('screenshotLimitReached', true);
+        return;
+    }
+    const kept = images.slice(0, room);
+
+    const keys = await resolveUploadKeys(context);
+    if (!keys) return;
+
+    const progress =
+        kept.length > 1 ? await showPersistentProgressNotification('uploadingImages', [0, kept.length]) : null;
+
+    const addedIds = [];
+    let failed = 0;
+    try {
+        for (const [position, file] of kept.entries()) {
+            try {
+                const record = {
+                    id: Date.now() + Math.random(),
+                    dataUrl: await readFileAsDataUrl(file),
+                    // The extension is noise in a caption and wrong in a file name the
+                    // download is about to give an extension of its own.
+                    title: file.name.replace(/\.[^.]+$/, '') || file.name,
+                    url: '',
+                    contextKey: keys.contextKey,
+                    isPersistent: false,
+                    isFullPage: false,
+                };
+                await saveScreenshotToDb(record);
+                addedIds.push(record.id);
+            } catch (error) {
+                failed++;
+                console.error(`Error reading ${file?.name}:`, error);
+            }
+            await progress?.updateProgress([position + 1, kept.length]);
+        }
+    } finally {
+        progress?.close();
+    }
+
+    if (addedIds.length > 0 && keys.sessionGroupKey) {
+        const { [STORAGE_KEYS.SCREENSHOTS]: indexes = {} } = await chrome.storage.session.get(STORAGE_KEYS.SCREENSHOTS);
+        (indexes[keys.sessionGroupKey] ||= []).push(...addedIds);
+        if (keys.sessionSubgroupKey) (indexes[keys.sessionSubgroupKey] ||= []).push(...addedIds);
+        await chrome.storage.session.set({ [STORAGE_KEYS.SCREENSHOTS]: indexes });
+    }
+
+    if (failed > 0) showNotification('errorUploadingImages', true, [failed]);
+    if (kept.length < images.length) showNotification('screenshotLimitReached', true);
+    if (addedIds.length === 0) return;
+
+    showNotification('imagesUploaded', false, [addedIds.length]);
+    await refreshGalleryAfterUpload(context, addedIds);
+    await updateOrphanIndicators();
+    await renderGroups();
+}
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('The file could not be read'));
+        reader.readAsDataURL(file);
+    });
+}
+
+/**
+ * Puts the new pictures on screen.
+ *
+ * A gallery opened with a list of its own — the orphan section hands one over — is
+ * redrawn from that list plus what was just added, for the same reason deleting from
+ * one is: re-deriving the list asks a different question and gets a different set.
+ */
+async function refreshGalleryAfterUpload(context, addedIds) {
+    if (!get(isGalleryViewActive)) return;
+    const { type, id, secondaryId, explicitIds } = context;
+    if (explicitIds) {
+        const combined = [...explicitIds, ...addedIds];
+        currentGalleryContext.set({ type, id, secondaryId, explicitIds: combined });
+        await showScreenshotGallery(
+            type,
+            id,
+            secondaryId,
+            combined.map((galleryId) => ({ id: galleryId })),
+        );
+        return;
+    }
+    await showScreenshotGallery(type, id, secondaryId);
 }
 
 /**
@@ -395,7 +608,6 @@ async function captureImagesFor(tab, mode) {
 export async function handleScreenshotRequest(tab, context, options = {}) {
     const { mode = 'visible', silent = false, keepFocus = false } = options;
     const totalCount = await getTotalScreenshotCount();
-    const MAX_SCREENSHOTS = 100;
 
     if (totalCount >= MAX_SCREENSHOTS) {
         showNotification('screenshotLimitReached', true);
@@ -1212,35 +1424,36 @@ export function askDownloadFormat(screenshots) {
     });
 }
 
+/** Chrome drops downloads that arrive in the same tick, hence the stagger. */
+const DOWNLOAD_STAGGER_MS = 300;
+
 /**
- * Writes the images in whichever formats were asked for — both, if both were.
- * @param {Array<'png'|'pdf'>} formats
+ * Writes the images in whichever formats were asked for — all of them, if all were.
+ *
+ * The three picture formats go through the same loop because only the encoder differs:
+ * a PNG capture asked for as a PNG is handed over untouched, and everything else is
+ * re-encoded one image at a time. One at a time on purpose — a gallery's worth of AV1
+ * keyframes started at once would take the page with it.
+ *
+ * @param {Array<'png'|'webp'|'avif'|'pdf'>} formats
  */
 export async function downloadScreenshots(images, formats) {
     const wanted = new Set(Array.isArray(formats) ? formats : [formats]);
 
-    if (wanted.has('png')) {
-        // Chrome drops downloads that arrive in the same tick, hence the stagger.
-        images.forEach((screenshot, position) => {
-            setTimeout(() => downloadScreenshot(screenshot.dataUrl, screenshot.title), position * 300);
-        });
-        if (images.length > 1) showNotification('allScreenshotsDownloading', false, [images.length]);
+    let written = 0;
+    for (const format of ['png', 'webp', 'avif']) {
+        if (wanted.has(format)) written += await downloadImagesAs(images, format);
     }
+    // One count at the end rather than one per format: three formats of three
+    // pictures is nine files, and saying "3" three times says none of that.
+    if (written > 1) showNotification('allScreenshotsDownloading', false, [written]);
 
     if (!wanted.has('pdf')) return;
 
     showNotification('generatingPdf');
     try {
         const blob = await imagesToPdfBlob(images.map((screenshot) => screenshot.dataUrl));
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = toPdfFileName(images.length > 1 ? 'gallery' : images[0].title);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        // Revoked on a later turn: doing it straight away can beat the download.
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        saveBlob(blob, toPdfFileName(images.length > 1 ? 'gallery' : images[0].title));
         showNotification('pdfDownloaded');
     } catch (error) {
         console.error('Error building the PDF:', error);
@@ -1248,14 +1461,58 @@ export async function downloadScreenshots(images, formats) {
     }
 }
 
-export function downloadScreenshot(dataUrl, title) {
+/** Hands one already-encoded file to the browser under a name of our choosing. */
+function saveBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.href = dataUrl;
-    const safeTitle = (title || 'screenshot').replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    link.download = `${safeTitle}_${Date.now()}.png`;
+    link.href = url;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
+    link.remove();
+    // Revoked on a later turn: doing it straight away can beat the download.
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+/**
+ * Every image in one picture format, in order.
+ *
+ * A whole gallery re-encoded to AVIF is slow enough to look like nothing is happening,
+ * so anything longer than a single image says how far along it is. An image the format
+ * cannot hold — a full-page capture is taller than WebP can count to — is counted and
+ * reported at the end rather than stopping the rest.
+ *
+ * @returns {Promise<number>} How many files were actually written.
+ */
+async function downloadImagesAs(images, format) {
+    const progress =
+        images.length > 1
+            ? await showPersistentProgressNotification('convertingImages', [0, images.length, format.toUpperCase()])
+            : null;
+
+    let tooLarge = 0;
+    let failed = 0;
+    try {
+        for (const [position, image] of images.entries()) {
+            try {
+                saveBlob(await encodeImage(image.dataUrl, format), toImageFileName(image.title, format));
+            } catch (error) {
+                if (error instanceof ImageTooLargeError) tooLarge++;
+                else failed++;
+                console.error(`Error converting a screenshot to ${format}:`, error);
+            }
+            await progress?.updateProgress([position + 1, images.length, format.toUpperCase()]);
+            if (position < images.length - 1) {
+                await new Promise((resolve) => setTimeout(resolve, DOWNLOAD_STAGGER_MS));
+            }
+        }
+    } finally {
+        progress?.close();
+    }
+
+    if (tooLarge > 0) showNotification('imageTooLargeForFormat', true, [tooLarge, format.toUpperCase()]);
+    if (failed > 0) showNotification('errorConvertingImages', true, [failed, format.toUpperCase()]);
+    return images.length - tooLarge - failed;
 }
 
 export async function deleteScreenshot(screenshotId) {
@@ -1402,5 +1659,17 @@ export function initScreenshotEvents() {
     const downloadAllScreenshotsBtn = document.getElementById('download-all-screenshots-btn');
     if (downloadAllScreenshotsBtn) {
         downloadAllScreenshotsBtn.addEventListener('click', handleDownloadAllScreenshots);
+    }
+    // The two inputs behind the upload menu, used only where the File System Access
+    // pickers are missing or refused. Cleared after each pick so that choosing the
+    // same folder twice in a row still counts as a change.
+    for (const inputId of ['gallery-upload-files-input', 'gallery-upload-folder-input']) {
+        const input = document.getElementById(inputId);
+        if (!input) continue;
+        input.addEventListener('change', async (event) => {
+            const files = Array.from(event.currentTarget.files || []);
+            event.currentTarget.value = '';
+            await uploadImagesToGallery(files);
+        });
     }
 }

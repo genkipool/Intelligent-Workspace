@@ -9,6 +9,7 @@
         isGalleryViewActive,
         isGeminiViewActive,
     } from '../../../stores/appStore.svelte.js';
+    import { pickImageFiles, pickImageFolder } from '../../../services/screenshotsService.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
     import MuteAllButton from '../../../components/listGroup/MuteAllButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
@@ -64,6 +65,57 @@
     );
 
     let titleKey = $derived(overlayTitleKey || VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
+
+    /**
+     * The two ways of adding pictures to the gallery.
+     *
+     * "Some images" and "a whole folder" are two different native dialogs, so the one
+     * button in the header has to ask which before it opens either. The menu is placed
+     * from the button's own rectangle and fixed to the viewport: the toolbar is a
+     * tight row of icons with several boxes around it, and anchoring to any of them
+     * risks the menu being clipped by one.
+     */
+    let isUploadMenuOpen = $state(false);
+    let uploadMenuPosition = $state({ top: 0, right: 0 });
+    let uploadBtnEl = $state(null);
+    let uploadMenuEl = $state(null);
+
+    function toggleUploadMenu() {
+        if (isUploadMenuOpen) {
+            isUploadMenuOpen = false;
+            return;
+        }
+        const rect = uploadBtnEl?.getBoundingClientRect();
+        if (rect) {
+            uploadMenuPosition = {
+                top: rect.bottom + 6,
+                right: Math.max(6, window.innerWidth - rect.right),
+            };
+        }
+        isUploadMenuOpen = true;
+    }
+
+    function chooseImages() {
+        isUploadMenuOpen = false;
+        pickImageFiles();
+    }
+
+    function chooseFolder() {
+        isUploadMenuOpen = false;
+        pickImageFolder();
+    }
+
+    // Leaving the gallery takes the button away with it, and a menu hanging off a
+    // button that is no longer there is just a floating box.
+    $effect(() => {
+        if (!$isGalleryViewActive) isUploadMenuOpen = false;
+    });
+
+    function handleDocumentPointerDown(event) {
+        if (!isUploadMenuOpen) return;
+        if (uploadMenuEl?.contains(event.target) || uploadBtnEl?.contains(event.target)) return;
+        isUploadMenuOpen = false;
+    }
 
     /**
      * The header's buttons. No handlers: this page attaches them by id from plain JS,
@@ -332,6 +384,24 @@
                 <use href="#icon-screenshot"></use>
             </svg>
         </button>
+        <!-- Pictures from disk, beside the button that takes them out again. One
+             button for two pickers, because "some images" and "a folder" are two
+             different native dialogs and no input can offer both. -->
+        <button
+            bind:this={uploadBtnEl}
+            id="upload-images-btn"
+            type="button"
+            class="control-btn gallery-header-btn"
+            class:hidden={startsHidden('upload-images-btn')}
+            title={$tt('uploadImagesTooltip')}
+            aria-haspopup="menu"
+            aria-expanded={isUploadMenuOpen}
+            onclick={toggleUploadMenu}
+        >
+            <svg width="24" height="24" aria-hidden="true" focusable="false">
+                <use href="#icon-upload"></use>
+            </svg>
+        </button>
         <button
             id="download-all-screenshots-btn"
             type="button"
@@ -381,3 +451,94 @@
         </button>
     {/snippet}
 </SearchAndControls>
+
+<svelte:window
+    onpointerdown={handleDocumentPointerDown}
+    onkeydown={(e) => e.key === 'Escape' && (isUploadMenuOpen = false)}
+    onresize={() => (isUploadMenuOpen = false)}
+/>
+
+<!-- The upload menu is placed against the viewport rather than against the button,
+     so that no ancestor of the crowded toolbar can clip it. -->
+{#if isUploadMenuOpen}
+    <div
+        bind:this={uploadMenuEl}
+        class="upload-dropdown-menu"
+        role="menu"
+        style:top="{uploadMenuPosition.top}px"
+        style:right="{uploadMenuPosition.right}px"
+    >
+        <button type="button" class="upload-dropdown-item" role="menuitem" onclick={chooseImages}>
+            <svg width="15" height="15" aria-hidden="true" focusable="false">
+                <use href="#icon-screenshot"></use>
+            </svg>
+            <span>{$t('uploadImagesFilesOption')}</span>
+        </button>
+        <button type="button" class="upload-dropdown-item" role="menuitem" onclick={chooseFolder}>
+            <svg width="15" height="15" aria-hidden="true" focusable="false">
+                <use href="#icon-folder-open"></use>
+            </svg>
+            <span>{$t('uploadImagesFolderOption')}</span>
+        </button>
+    </div>
+{/if}
+
+<!-- The fallback behind the two pickers above, and what a test can fill in. -->
+<input
+    id="gallery-upload-files-input"
+    type="file"
+    class="hidden"
+    accept="image/*"
+    multiple
+    aria-hidden="true"
+    tabindex="-1"
+/>
+<input
+    id="gallery-upload-folder-input"
+    type="file"
+    class="hidden"
+    accept="image/*"
+    multiple
+    webkitdirectory
+    aria-hidden="true"
+    tabindex="-1"
+/>
+
+<style>
+    .upload-dropdown-menu {
+        position: fixed;
+        z-index: 1200;
+        display: flex;
+        flex-direction: column;
+        min-width: 190px;
+        padding: 4px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background-color: var(--bg-panel-color);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    .upload-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: none;
+        border-radius: 6px;
+        background: none;
+        color: var(--text-color);
+        font-size: 0.82rem;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .upload-dropdown-item:hover {
+        background-color: var(--bg-color);
+        color: var(--action-color);
+    }
+
+    .upload-dropdown-item:focus-visible {
+        outline: 2px solid var(--interactive-color);
+        outline-offset: -2px;
+    }
+</style>
