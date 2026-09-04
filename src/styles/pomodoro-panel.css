@@ -21,7 +21,8 @@
     border-bottom: 1px solid var(--border-color);
 }
 
-.pomodoro-panel.hidden {
+.pomodoro-panel.hidden,
+.pomo-timer-body.hidden {
     display: none !important;
 }
 
@@ -121,6 +122,14 @@
     border: 1px solid var(--border-color);
     color: var(--text-on-color);
     opacity: 1;
+}
+
+.pomo-toggle-timer-icon {
+    transition: transform 0.2s ease;
+}
+
+.pomo-toggle-timer-icon.collapsed {
+    transform: rotate(180deg);
 }
 
 /* ─── ROW 2 · Timer ────────────────────────── */

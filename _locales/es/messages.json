@@ -2337,7 +2337,19 @@
     },
     "contextMenuRegroupAll": {
         "message": "Reagrupar Todas Las Pestañas",
-        "description": "Reagrupar Todas Las Pestañas"
+        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
+    },
+    "pomodoroShowTimer": {
+        "message": "Mostrar interfaz del temporizador (clic para desplegar)",
+        "description": "Mostrar interfaz del temporizador (clic para desplegar)"
+    },
+    "pomodoroHideTimer": {
+        "message": "Ocultar interfaz del temporizador (clic para colapsar)",
+        "description": "Ocultar interfaz del temporizador (clic para colapsar)"
+    },
+    "regroupBtnTooltip": {
+        "message": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar.",
+        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
     },
     "contextMenuCreateRuleForPage": {
         "message": "Crear Regla para esta Web"

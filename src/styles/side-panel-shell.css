@@ -63,6 +63,8 @@
 
 .side-panel-shell .header-main-menu button {
     display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     margin: 0;
     padding: 6px;
@@ -71,6 +73,10 @@
     background-color: transparent;
     cursor: pointer;
     transition: all 0.2s ease;
+}
+
+.side-panel-shell .header-main-menu button svg {
+    display: block;
 }
 
 .side-panel-shell .header-main-menu button:hover,

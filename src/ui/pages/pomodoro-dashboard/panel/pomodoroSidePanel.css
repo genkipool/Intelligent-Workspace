@@ -42,6 +42,10 @@
     border-bottom: none;
 }
 
+.pomo-panel-body .pomodoro-panel.pomo-timer-collapsed .pomo-row-controls {
+    border-bottom: none;
+}
+
 /* --- THE SUMMARY ------------------------------------------------
    The dashboard's own section: the same rule above it, the same
    chips and the same cards. Only the measurements change. */

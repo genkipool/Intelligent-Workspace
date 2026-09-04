@@ -2363,8 +2363,20 @@
     "description": "Tooltip for rule name"
   },
   "contextMenuRegroupAll": {
-    "message": "Regroup All Tabs",
-    "description": "Context menu option to remove all existing groups and recreate them from scratch."
+      "message": "Regroup All Tabs",
+      "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
+  },
+  "pomodoroShowTimer": {
+      "message": "Show timer interface (click to expand)",
+      "description": "Show timer interface (click to expand)"
+  },
+  "pomodoroHideTimer": {
+      "message": "Hide timer interface (click to collapse)",
+      "description": "Hide timer interface (click to collapse)"
+  },
+  "regroupBtnTooltip": {
+      "message": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore.",
+      "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
   },
   "contextMenuCreateRuleForPage": {
     "message": "Create Rule for this Website"

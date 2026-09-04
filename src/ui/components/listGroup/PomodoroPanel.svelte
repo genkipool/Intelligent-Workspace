@@ -11,15 +11,33 @@
      * whole page starts open and has no close button, because there is nothing behind
      * it to close it back to.
      */
+    import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
 
     let { embedded = false } = $props();
+
+    let isTimerHidden = $state(false);
+
+    onMount(() => {
+        // Clean up any stale storage key so the timer starts expanded by default
+        chrome.storage?.local?.remove?.('pomodoroTimerHidden');
+    });
+
+    function toggleTimerInterface() {
+        isTimerHidden = !isTimerHidden;
+    }
 </script>
 
 <!-- ═══════════════════════════════════════════════
      POMODORO PANEL — 3 Divisions
      ═══════════════════════════════════════════════ -->
-<section id="pomodoro-panel" class="pomodoro-panel" class:hidden={!embedded} class:pomo-embedded={embedded}>
+<section
+    id="pomodoro-panel"
+    class="pomodoro-panel"
+    class:hidden={!embedded}
+    class:pomo-embedded={embedded}
+    class:pomo-timer-collapsed={embedded && isTimerHidden}
+>
     <!-- ① CONTROLS ROW: mode tabs + all action buttons -->
     <div class="pomo-row pomo-row-controls">
         <div class="pomo-mode-tabs">
@@ -131,89 +149,115 @@
                         <use href="#icon-close-stroke"></use>
                     </svg>
                 </button>
+            {:else}
+                <button
+                    type="button"
+                    id="pomodoro-toggle-timer-btn"
+                    class="pomo-action-btn pomo-icon-only"
+                    class:active-panel={isTimerHidden}
+                    title={$tt(isTimerHidden ? 'pomodoroShowTimer' : 'pomodoroHideTimer')}
+                    aria-label={$t(isTimerHidden ? 'pomodoroShowTimer' : 'pomodoroHideTimer')}
+                    aria-expanded={!isTimerHidden}
+                    aria-controls="pomodoro-timer-body"
+                    onclick={toggleTimerInterface}
+                >
+                    <svg
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        focusable="false"
+                        class="pomo-toggle-timer-icon"
+                        class:collapsed={isTimerHidden}
+                    >
+                        <use href="#icon-chevron-down"></use>
+                    </svg>
+                </button>
             {/if}
         </div>
     </div>
 
-    <!-- ② PROJECT ROW: project name display -->
-    <div class="pomo-row pomo-row-project" id="pomo-row-project">
-        <input
-            id="pomo-project-inline"
-            class="pomo-project-inline-input"
-            type="text"
-            maxlength="18"
-            autocomplete="off"
-            placeholder={$t('pomodoroProjectName')}
-        />
-    </div>
-
-    <!-- ③ TIMER ROW: big time + project name -->
-    <div class="pomo-row pomo-row-timer">
-        <!-- Top-left: Reset task (zero out stats) -->
-        <button
-            type="button"
-            id="pomo-task-reset-btn"
-            class="pomo-corner-btn pomo-corner-tl"
-            title={$tt('pomodoroTaskReset')}
-        >
-            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                <use href="#icon-rotate-ccw"></use>
-            </svg>
-        </button>
-        <!-- Top-right: Note button with counter -->
-        <button
-            type="button"
-            id="pomo-note-corner-btn"
-            class="pomo-corner-btn pomo-corner-tr"
-            title={$tt('pomodoroCreateNote')}
-        >
-            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                <use href="#icon-add-note"></use>
-            </svg>
-            <span id="pomo-note-counter" class="pomo-note-counter hidden">0</span>
-        </button>
-        <!-- Center content -->
-        <input
-            id="pomo-project-display"
-            class="pomo-project-name pomo-project-edit"
-            type="text"
-            placeholder=""
-            maxlength="100"
-            autocomplete="off"
-        />
-        <span id="pomodoro-time" class="pomo-time">25:00</span>
-        <!-- Bottom-left: Finish task -->
-        <button
-            type="button"
-            id="pomo-task-finish-btn"
-            class="pomo-corner-btn pomo-corner-bl"
-            title={$tt('pomodoroTaskFinish')}
-        >
-            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                <use href="#icon-check"></use>
-            </svg>
-        </button>
-        <!-- Bottom-right: Save stats (archive icon) -->
-        <button
-            type="button"
-            id="pomo-save-stats-btn"
-            class="pomo-corner-btn pomo-corner-br"
-            title={$tt('pomodoroSaveStats')}
-        >
-            <svg width="14" height="14" aria-hidden="true" focusable="false">
-                <use href="#icon-archive-note"></use>
-            </svg>
-        </button>
-    </div>
-
-    <!-- ③ PROGRESS ROW: cycles bar -->
-    <div class="pomo-row pomo-row-progress">
-        <span class="pomo-cycles-current" id="pomo-cycles-current">0</span>
-        <div class="pomo-cycles-track" id="pomo-cycles-track">
-            <div class="pomo-cycles-fill" id="pomo-cycles-fill"></div>
-            <span class="pomo-cycles-pct" id="pomo-cycles-pct">0%</span>
+    <!-- The timer display body: collapsible in embedded mode -->
+    <div id="pomodoro-timer-body" class="pomo-timer-body" class:hidden={embedded && isTimerHidden}>
+        <!-- ② PROJECT ROW: project name display -->
+        <div class="pomo-row pomo-row-project" id="pomo-row-project">
+            <input
+                id="pomo-project-inline"
+                class="pomo-project-inline-input"
+                type="text"
+                maxlength="18"
+                autocomplete="off"
+                placeholder={$t('pomodoroProjectName')}
+            />
         </div>
-        <span class="pomo-cycles-total" id="pomo-cycles-total">8</span>
+
+        <!-- ③ TIMER ROW: big time + project name -->
+        <div class="pomo-row pomo-row-timer">
+            <!-- Top-left: Reset task (zero out stats) -->
+            <button
+                type="button"
+                id="pomo-task-reset-btn"
+                class="pomo-corner-btn pomo-corner-tl"
+                title={$tt('pomodoroTaskReset')}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href="#icon-rotate-ccw"></use>
+                </svg>
+            </button>
+            <!-- Top-right: Note button with counter -->
+            <button
+                type="button"
+                id="pomo-note-corner-btn"
+                class="pomo-corner-btn pomo-corner-tr"
+                title={$tt('pomodoroCreateNote')}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href="#icon-add-note"></use>
+                </svg>
+                <span id="pomo-note-counter" class="pomo-note-counter hidden">0</span>
+            </button>
+            <!-- Center content -->
+            <input
+                id="pomo-project-display"
+                class="pomo-project-name pomo-project-edit"
+                type="text"
+                placeholder=""
+                maxlength="100"
+                autocomplete="off"
+            />
+            <span id="pomodoro-time" class="pomo-time">25:00</span>
+            <!-- Bottom-left: Finish task -->
+            <button
+                type="button"
+                id="pomo-task-finish-btn"
+                class="pomo-corner-btn pomo-corner-bl"
+                title={$tt('pomodoroTaskFinish')}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href="#icon-check"></use>
+                </svg>
+            </button>
+            <!-- Bottom-right: Save stats (archive icon) -->
+            <button
+                type="button"
+                id="pomo-save-stats-btn"
+                class="pomo-corner-btn pomo-corner-br"
+                title={$tt('pomodoroSaveStats')}
+            >
+                <svg width="14" height="14" aria-hidden="true" focusable="false">
+                    <use href="#icon-archive-note"></use>
+                </svg>
+            </button>
+        </div>
+
+        <!-- ③ PROGRESS ROW: cycles bar -->
+        <div class="pomo-row pomo-row-progress">
+            <span class="pomo-cycles-current" id="pomo-cycles-current">0</span>
+            <div class="pomo-cycles-track" id="pomo-cycles-track">
+                <div class="pomo-cycles-fill" id="pomo-cycles-fill"></div>
+                <span class="pomo-cycles-pct" id="pomo-cycles-pct">0%</span>
+            </div>
+            <span class="pomo-cycles-total" id="pomo-cycles-total">8</span>
+        </div>
     </div>
 
     <!-- ④ SETTINGS PANEL (expandable below) -->

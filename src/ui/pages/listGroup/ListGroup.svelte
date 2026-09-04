@@ -634,7 +634,8 @@
                 type="button"
                 id="regroup-btn"
                 class="control-btn"
-                title={$tt('contextMenuRegroupAll')}
+                title={$tt('regroupBtnTooltip')}
+                aria-label={$t('regroupBtnTooltip')}
                 class:hidden={startsHidden('regroup-btn')}
             >
                 <svg width="24" height="24" aria-hidden="true" focusable="false">
