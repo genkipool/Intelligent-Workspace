@@ -3664,6 +3664,15 @@ body.popup-window {
     stroke: var(--text-on-color);
 }
 
+/* An active pin is the only button on a card whose icon is already coloured, and in
+   the light and viridian themes `--text-on-color` and `--action-color` are the same
+   colour. Letting the shared hover rule paint the action colour behind it therefore
+   drew the icon on top of itself and it disappeared. It keeps the dark chip it wears
+   at rest and deepens that instead, which reads as hover under every theme. */
+.gallery-item .gallery-pin-btn.active:hover {
+    background-color: rgba(0, 0, 0, 0.75);
+}
+
 .entry-domain.is-orphan {
     font-style: italic;
     opacity: 0.7;

@@ -178,6 +178,13 @@ const MAX_SCREENSHOTS = 100;
  * The orphan gallery is the one place with no group behind it, and every context key
  * a group produces starts `g_` or `s_`. This one starts with neither, so an image
  * filed under it can never be mistaken for a group's and stays where it was put.
+ *
+ * It is used as the session key as well, and it has to be: `syncIndexedDbWithSession`
+ * deletes every stored image that no session key mentions and no pin protects, so an
+ * upload that was only ever written to the database was thrown away by the next page
+ * to open. Nothing reads this key back — the orphan gallery derives its own list, and
+ * the group cards only count keys beginning `g_` or `s_` — its only job is to say
+ * "this one is still wanted, until the browser closes".
  */
 const UPLOAD_ORPHAN_CONTEXT_KEY = 'uploads';
 
@@ -260,7 +267,11 @@ async function collectImages(directory, files, depth) {
 /** The keys an upload is filed under, given the gallery it is being added to. */
 async function resolveUploadKeys(context) {
     if (context.type === 'orphan') {
-        return { contextKey: UPLOAD_ORPHAN_CONTEXT_KEY, sessionGroupKey: null, sessionSubgroupKey: null };
+        return {
+            contextKey: UPLOAD_ORPHAN_CONTEXT_KEY,
+            sessionGroupKey: UPLOAD_ORPHAN_CONTEXT_KEY,
+            sessionSubgroupKey: null,
+        };
     }
     // The tab is only ever read for the warning this may log, and an upload has none.
     return resolveScreenshotKeys({ id: 'upload' }, context);
