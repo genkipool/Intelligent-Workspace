@@ -137,6 +137,13 @@ Each version holds two different things, and they are worth keeping apart:
   card offers — the visible area of every tab, the whole page of every tab, and the
   whole page of every tab in parts — each have a command of their own, listed and
   changeable in Navigation settings like the rest.
+- **The licence is on the About page**, in the reader's own language: the copyright,
+  what the licence allows — reading the code, compiling it for yourself, forking it to
+  send a Pull Request back — and what it does not, with a link to the full bilingual
+  text in the repository.
+- **The speaker on a YouTube Short's hover preview** is listed among the features it
+  belongs with; it turns the sound on at the volume already set in YouTube and stays on
+  from one Short to the next.
 - **Open anything in the side panel from the omnibar.** A prefix of its own lists the
   open tabs and takes an address or a search as well, and Ctrl+Enter does the same to
   whichever result is highlighted — a tab, a bookmark, a history entry, a recently

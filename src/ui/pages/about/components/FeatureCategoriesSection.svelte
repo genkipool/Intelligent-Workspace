@@ -173,6 +173,7 @@
         <FeatureItem isMaterial={false} svgId="icon-reader" textKey="feature_readerView" />
         <FeatureItem isMaterial={true} iconName="auto_stories" textKey="feature_changePageMode" />
         <FeatureItem isMaterial={true} iconName="smart_display" textKey="feature_youtubeIntegration" />
+        <FeatureItem isMaterial={true} iconName="volume_up" textKey="feature_youtubeShortsPreviewAudio" />
     </div>
 </section>
 

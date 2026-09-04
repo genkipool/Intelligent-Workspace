@@ -7369,6 +7369,58 @@
         "message": "Toma una nota con el texto seleccionado, desde el teclado o desde el menú del clic derecho: se archiva en el grupo al que pertenece la página y se titula con el encabezado más cercano por encima de la selección, así que una página larga deja una nota por sección en vez de una sola para todo.",
         "description": "Navigation shortcuts feature"
     },
+    "feature_youtubeShortsPreviewAudio": {
+        "message": "Escucha un Short de YouTube mientras pasas el ratón por encima: un altavoz sobre la vista previa enciende el sonido al volumen que ya usas en YouTube, y sigue encendido al pasar de un Short al siguiente.",
+        "description": "Feature: sound on YouTube Shorts hover previews"
+    },
+    "licenseTitle": {
+        "message": "Licencia",
+        "description": "About page: section title"
+    },
+    "licenseCopyright": {
+        "message": "Copyright (c) 2026 GENKI Organización. Todos los derechos reservados.",
+        "description": "License section: copyright line"
+    },
+    "licenseIntro": {
+        "message": "Este es un software propietario. Su código fuente se publica en GitHub por un solo motivo: para que cualquiera pueda leerlo, auditarlo en busca de fallos de seguridad, aprender de él y proponer mejoras.",
+        "description": "License section: what the licence is"
+    },
+    "licenseAllowedTitle": {
+        "message": "Lo que puedes hacer",
+        "description": "License section: heading"
+    },
+    "licenseAllowed1": {
+        "message": "Descargar, inspeccionar y compilar el código en tu propia máquina, para uso personal y privado.",
+        "description": "License section: granted permission"
+    },
+    "licenseAllowed2": {
+        "message": "Bifurcar el repositorio en GitHub con el único fin de proponer mejoras o corregir errores mediante un Pull Request de vuelta al repositorio original.",
+        "description": "License section: granted permission"
+    },
+    "licenseForbiddenTitle": {
+        "message": "Lo que no está permitido",
+        "description": "License section: heading"
+    },
+    "licenseForbidden1": {
+        "message": "Copiar, clonar, bifurcar para un proyecto aparte o reproducir este código para crear un producto derivado.",
+        "description": "License section: prohibition"
+    },
+    "licenseForbidden2": {
+        "message": "Compilar, empaquetar o publicar este código, en su totalidad o en parte, en la Chrome Web Store, Edge Add-ons, Firefox Add-ons o cualquier otra plataforma de distribución.",
+        "description": "License section: prohibition"
+    },
+    "licenseForbidden3": {
+        "message": "Utilizar este código o cualquiera de sus componentes con fines comerciales.",
+        "description": "License section: prohibition"
+    },
+    "licenseFullTextLink": {
+        "message": "Leer la licencia completa, en inglés y español",
+        "description": "License section: link to the LICENSE file"
+    },
+    "licenseFullTextTitle": {
+        "message": "Abre el fichero LICENSE del repositorio en GitHub",
+        "description": "License section: link tooltip"
+    },
     "sectionListDownloads": {
         "message": "Gestor de descargas"
     },

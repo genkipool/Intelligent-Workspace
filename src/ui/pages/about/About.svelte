@@ -10,6 +10,7 @@
     import VersionHistorySection from './components/VersionHistorySection.svelte';
     import FeatureCategoriesSection from './components/FeatureCategoriesSection.svelte';
     import PermissionsSection from './components/PermissionsSection.svelte';
+    import LicenseSection from './components/LicenseSection.svelte';
 
     import icon128 from '../../../../assets/icons/icon128.png';
     import teamImg from '../../../../assets/images/about/team.png';
@@ -142,6 +143,8 @@
                 </div>
             </section>
         </div>
+
+        <LicenseSection />
     </main>
 
     <footer class="page-footer">

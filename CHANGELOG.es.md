@@ -143,6 +143,13 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   cámara de una tarjeta de grupo —el área visible de cada pestaña, la página completa
   de cada pestaña y la página completa de cada pestaña por partes— tienen cada uno su
   propio comando, listado y cambiable en los ajustes de navegación como los demás.
+- **La licencia está en la página «Acerca de»**, en el idioma de quien lee: el
+  copyright, lo que la licencia permite —leer el código, compilarlo para uno mismo,
+  bifurcarlo para mandar un Pull Request de vuelta— y lo que no, con un enlace al texto
+  completo bilingüe del repositorio.
+- **El altavoz de la vista previa de un Short de YouTube** aparece ya entre las
+  funcionalidades a las que pertenece; enciende el sonido al volumen que ya se usa en
+  YouTube y sigue encendido de un Short al siguiente.
 - **Abrir lo que sea en el panel lateral desde la omnibar.** Un prefijo propio lista
   las pestañas abiertas y acepta también una dirección o una búsqueda, y Ctrl+Enter
   hace lo mismo con el resultado que esté seleccionado: una pestaña, un marcador, una

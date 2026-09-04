@@ -7311,6 +7311,58 @@
       "message": "Take a note from the selected text, from the keyboard or the right-click menu: it is filed under the group the page belongs to and titled with the nearest heading above the selection, so a long page leaves one note per section instead of one note for the lot.",
       "description": "Navigation shortcuts feature"
   },
+  "feature_youtubeShortsPreviewAudio": {
+      "message": "Hear a YouTube Short while you hover over it: a speaker on the preview turns the sound on at the volume you already use on YouTube, and it stays on as you move from one Short to the next.",
+      "description": "Feature: sound on YouTube Shorts hover previews"
+  },
+  "licenseTitle": {
+      "message": "License",
+      "description": "About page: section title"
+  },
+  "licenseCopyright": {
+      "message": "Copyright (c) 2026 GENKI Organization. All rights reserved.",
+      "description": "License section: copyright line"
+  },
+  "licenseIntro": {
+      "message": "This is proprietary software. Its source code is published on GitHub for one reason only: so that anyone can read it, audit it for security, learn from it, and propose improvements.",
+      "description": "License section: what the licence is"
+  },
+  "licenseAllowedTitle": {
+      "message": "What you may do",
+      "description": "License section: heading"
+  },
+  "licenseAllowed1": {
+      "message": "Download, inspect and compile the code on your own machine, for personal and private use.",
+      "description": "License section: granted permission"
+  },
+  "licenseAllowed2": {
+      "message": "Fork the repository on GitHub for the sole purpose of proposing improvements or fixing bugs through a Pull Request back to the original repository.",
+      "description": "License section: granted permission"
+  },
+  "licenseForbiddenTitle": {
+      "message": "What is not allowed",
+      "description": "License section: heading"
+  },
+  "licenseForbidden1": {
+      "message": "Copying, cloning, forking for a separate project, or reproducing this code to build a derivative product.",
+      "description": "License section: prohibition"
+  },
+  "licenseForbidden2": {
+      "message": "Compiling, packaging or publishing this code, in whole or in part, on the Chrome Web Store, Edge Add-ons, Firefox Add-ons or any other distribution platform.",
+      "description": "License section: prohibition"
+  },
+  "licenseForbidden3": {
+      "message": "Using this code or any of its components for commercial purposes.",
+      "description": "License section: prohibition"
+  },
+  "licenseFullTextLink": {
+      "message": "Read the full licence, in English and Spanish",
+      "description": "License section: link to the LICENSE file"
+  },
+  "licenseFullTextTitle": {
+      "message": "Opens the LICENSE file of the repository on GitHub",
+      "description": "License section: link tooltip"
+  },
   "sectionListDownloads": {
     "message": "Downloads Manager"
   },
