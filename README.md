@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Production-success.svg)
 ![License](https://img.shields.io/badge/License-Proprietary-red.svg)
 
-**Intelligent Workspace** is much more than a tab manager. It is a "Super App" integrated directly into your browser that combines advanced window management, autonomous artificial intelligence, productivity metrics (Pomodoro), and keyboard navigation to take your workflow to the next level.
+**Intelligent Workspace** is an integrated productivity workstation built directly into Google Chrome's side panel. It unifies intelligent tab and window organization, workspace research notes, deep-work focus tracking (Pomodoro), and keyboard-driven navigation into a single cohesive, distraction-free environment.
 
 ---
 
@@ -30,22 +30,42 @@
 - **Hints System:** Navigate, click, copy links, and scroll through any web page using exclusively the keyboard.
 - **Dynamic Snippets:** Create rich-text shortcuts with custom variables (`$1`, `$2`) that automatically expand in any text input field across the web.
 
-### 🛠️ Integrated Tools (The Swiss Army Knife)
+### 🛠️ Productivity & Workspace Utilities
 - **Split Screen:** View two tabs side-by-side in parallel within the same browser window.
 - **Reading Modes & Themes:** Dark mode, sepia, paper, and a custom theme creator with color palettes injected directly into the browser interface.
-- **Extra Utilities:** Advanced Cookie editor, bookmark manager, full-page/area screenshot capture tool with local gallery, and QR code generator.
+- **Research Capture:** Full-page and area screenshot capture tool with local gallery, bookmark manager, and quick notes.
 
 ---
 
-## 🚀 Installation (Developer Mode)
+## 🚀 Installation & Build (Developer Mode)
 
-Currently, the extension is in its release deployment phase. To install it manually from the source code:
+To build and install the extension locally from source code:
 
-1. Clone or download this repository to your computer.
-2. Open Google Chrome and navigate to `chrome://extensions/`.
-3. Enable **"Developer mode"** (toggle in the top right corner).
-4. Click on **"Load unpacked"** and select the extension's root folder.
-5. *(Optional)* Pin the extension to your toolbar for quick access.
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or higher recommended)
+- [pnpm](https://pnpm.io/) (installed via `npm install -g pnpm` or Corepack)
+
+### Build Instructions
+```bash
+# 1. Clone the repository
+git clone https://github.com/luisrb85/intelligent-tab-group.git
+cd intelligent-tab-group
+
+# 2. Install project dependencies
+pnpm install
+
+# 3. Build the extension for production
+pnpm run build
+```
+
+*(For live development with hot reload, run `pnpm run dev` instead).*
+
+### Load into Chrome
+1. Open Google Chrome and navigate to `chrome://extensions/`.
+2. Enable **"Developer mode"** (toggle in the top right corner).
+3. Click on **"Load unpacked"** (*Cargar descomprimida*).
+4. Select the **`dist/`** folder generated inside the project directory (NOT the root folder).
+5. Pin **Intelligent Workspace** to your toolbar for quick access.
 
 ---
 

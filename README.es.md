@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Estado-Producción-success.svg)
 ![License](https://img.shields.io/badge/Licencia-Propietaria-red.svg)
 
-**Intelligent Workspace** es mucho más que un gestor de pestañas. Es una "Super App" integrada directamente en tu navegador que combina gestión avanzada de ventanas, inteligencia artificial autónoma, métricas de productividad (Pomodoro) y navegación por teclado para llevar tu flujo de trabajo al siguiente nivel.
+**Intelligent Workspace** es una estación de trabajo de productividad integrada directamente en el panel lateral de Google Chrome. Unifica la gestión inteligente de pestañas y ventanas, notas de investigación, seguimiento de sesiones de concentración (Pomodoro) y navegación por teclado en un único entorno fluido y libre de distracciones.
 
 ---
 
@@ -30,22 +30,42 @@
 - **Sistema de Hints:** Navega, haz clic, copia enlaces y desplázate por cualquier página web usando exclusivamente el teclado.
 - **Snippets Dinámicos:** Crea atajos de texto con formato enriquecido y variables personalizadas (`$1`, `$2`) que se expanden automáticamente en cualquier campo de texto.
 
-### 🛠️ Herramientas Integradas (La Navaja Suiza)
-- **Pantalla Dividida (Split Screen):** Visualiza dos pestañas en paralelo en la misma ventana.
+### 🛠️ Utilidades de Productividad y Espacio de Trabajo
+- **Pantalla Dividida (Split Screen):** Visualiza dos pestañas en paralelo en la misma ventana del navegador.
 - **Modo Lectura y Temas:** Modo oscuro, sepia, papel y creador de temas personalizados con colores inyectados en la interfaz del navegador.
-- **Utilidades Extra:** Editor avanzado de Cookies, gestor de marcadores, herramienta de capturas de pantalla (con galería local) y generador de códigos QR.
+- **Captura para Investigación:** Herramienta de capturas de pantalla completa y por áreas con galería local, gestor de marcadores y notas rápidas.
 
 ---
 
-## 🚀 Instalación (Modo Desarrollador)
+## 🚀 Instalación y Compilación (Modo Desarrollador)
 
-Actualmente, la extensión está en fase de despliegue. Para instalarla manualmente desde el código fuente:
+Para compilar e instalar la extensión localmente desde el código fuente:
 
-1. Clona o descarga este repositorio en tu ordenador.
-2. Abre Google Chrome y ve a `chrome://extensions/`.
-3. Activa el **"Modo de desarrollador"** (interruptor en la esquina superior derecha).
-4. Haz clic en **"Cargar descomprimida"** y selecciona la carpeta raíz de la extensión.
-5. *(Opcional)* Fija la extensión en la barra de tareas para un acceso rápido.
+### Requisitos previos
+- [Node.js](https://nodejs.org/) (versión 18 o superior recomendada)
+- [pnpm](https://pnpm.io/) (instalable con `npm install -g pnpm` o mediante Corepack)
+
+### Instrucciones de compilación
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/luisrb85/intelligent-tab-group.git
+cd intelligent-tab-group
+
+# 2. Instalar las dependencias del proyecto
+pnpm install
+
+# 3. Compilar la extensión para producción
+pnpm run build
+```
+
+*(Para desarrollo con recarga en vivo en caliente, ejecuta `pnpm run dev`).*
+
+### Cargar la extensión en Google Chrome
+1. Abre Google Chrome y navega a `chrome://extensions/`.
+2. Activa el **"Modo de desarrollador"** (interruptor en la esquina superior derecha).
+3. Haz clic en el botón **"Cargar descomprimida"**.
+4. Selecciona la carpeta **`dist/`** generada tras el paso de compilación (NO la carpeta raíz).
+5. Fija **Intelligent Workspace** en la barra de herramientas para un acceso ágil.
 
 ---
 

@@ -1,5 +1,6 @@
 {
-    "name": "intelligent-tab-group",
+    "name": "intelligent-workspace",
+    "description": "Intelligent productivity workspace with automated tab grouping, side panel management, and workflow focus tools.",
     "version": "1.0.0",
     "type": "module",
     "packageManager": "pnpm@11.5.0",
