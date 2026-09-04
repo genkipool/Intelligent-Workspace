@@ -2339,18 +2339,6 @@
         "message": "Reagrupar Todas Las Pestañas",
         "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
     },
-    "pomodoroShowTimer": {
-        "message": "Mostrar interfaz del temporizador (clic para desplegar)",
-        "description": "Mostrar interfaz del temporizador (clic para desplegar)"
-    },
-    "pomodoroHideTimer": {
-        "message": "Ocultar interfaz del temporizador (clic para colapsar)",
-        "description": "Ocultar interfaz del temporizador (clic para colapsar)"
-    },
-    "regroupBtnTooltip": {
-        "message": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar.",
-        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
-    },
     "contextMenuCreateRuleForPage": {
         "message": "Crear Regla para esta Web"
     },
@@ -2844,7 +2832,7 @@
         "message": "Buscar por grupo, dominio o título de pestaña..."
     },
     "searchBarHelpTooltip": {
-        "message": "🔍 Barra de búsqueda inteligente\n\n• Filtra los grupos, subgrupos y pestañas que coincidan con el nombre del grupo, la URL o el título de la página.\n\n• Si hay coincidencias, al pulsar Enter o Ctrl+Enter se recorren una a una.\n\n• Si no hay coincidencias, al pulsar Enter se navega en la ventana principal del navegador.\n\n• Si no hay coincidencias, al pulsar Ctrl+Enter se navega en el panel lateral.\n\n• Si ya estás navegando por el panel lateral, simplemente pulsa Enter para seguir navegando dentro de él."
+        "message": "🔍 Barra de búsqueda inteligente\n\n• Filtra los grupos, subgrupos y pestañas que coincidan con el nombre del grupo, la URL o el título de la página.\n\n• Si hay coincidencias, al pulsar Enter o Ctrl+Enter se recorren una a una.\n\n• Si no hay coincidencias, al pulsar Enter se navega en el panel lateral.\n\n• Si no hay coincidencias, al pulsar Ctrl+Enter se navega en la ventana principal del navegador.\n\n• Si ya estás navegando por el panel lateral, simplemente pulsa Enter para seguir navegando dentro de él."
     },
     "enableRegexSearch": {
         "message": "Habilitar búsqueda con expresiones regulares"
@@ -6580,6 +6568,30 @@
     "omnibarPrefixPipDesc": {
         "message": "Selecciona una pestaña para abrirla en modo Picture-in-Picture"
     },
+    "omnibarPrefixSidePanelTitle": {
+        "message": "Abrir en el panel lateral",
+        "description": "Title of the sp: prefix row"
+    },
+    "omnibarPrefixSidePanelDesc": {
+        "message": "Abre una pestaña, una dirección o una búsqueda en el panel lateral",
+        "description": "What the sp: prefix does"
+    },
+    "omnibarSidePanelOpenUrl": {
+        "message": "Abrir esta dirección en el panel lateral",
+        "description": "Row for a typed address"
+    },
+    "omnibarSidePanelSearch": {
+        "message": "Buscar esto en el panel lateral",
+        "description": "Row for typed search terms"
+    },
+    "omnibarTutorialSidePanelTitle": {
+        "message": "Pulsa Ctrl + Enter sobre una página",
+        "description": "Tutorial row"
+    },
+    "omnibarTutorialSidePanelDesc": {
+        "message": "Sobre una pestaña, un marcador, una entrada del historial o una búsqueda, Ctrl+Enter la abre en el panel lateral.",
+        "description": "Tutorial row"
+    },
     "omnibarPrefixVideoPipTitle": {
         "message": "Abrir en picture video"
     },
@@ -7269,6 +7281,94 @@
     "sectionWebReadingPlayer": {
         "message": "Reproductor de lectura web"
     },
+    "sectionWebActivity": {
+        "message": "Actividad web",
+        "description": "About page: section title"
+    },
+    "feature_webActivity_tracking": {
+        "message": "El tiempo en cada sitio, contado solo mientras estás de verdad: el reloj se para cuando te ausentas o el navegador pierde el foco.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_dashboard": {
+        "message": "Un panel de control con los totales, los sitios que más tiempo se llevan y las cifras del periodo que elijas.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_categories": {
+        "message": "Cada sitio clasificado por categoría, las que reconoce solo y las que añades tú.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_limits": {
+        "message": "Tiempo permitido al día y a la semana por sitio, con un aviso antes de que se agote.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_schedules": {
+        "message": "Horas permitidas por sitio: fuera de las franjas que fijes, el sitio no se abre.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_blocking": {
+        "message": "Una pantalla de bloqueo que dice por qué lo está y cuándo se levanta, con cinco minutos más si te hacen falta.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_password": {
+        "message": "Una contraseña que protege las reglas, para que quitar un límite no esté a un clic.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_patterns": {
+        "message": "Cuándo navegas: un año en un mapa de calor, las horas del día y los días de la semana.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_log": {
+        "message": "Un registro de cada sitio con búsqueda, ordenación y las columnas que elijas.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_ignored": {
+        "message": "Sitios que nunca se registran, y un tiempo de conservación tras el cual el historial antiguo se borra solo.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_panel": {
+        "message": "La actividad en el panel lateral, que se puede fijar, con lo que se está cronometrando ahora mismo.",
+        "description": "Web activity feature"
+    },
+    "feature_webActivity_data": {
+        "message": "Todo guardado en este dispositivo, con importación, exportación y sincronización opcional entre tus navegadores.",
+        "description": "Web activity feature"
+    },
+    "feature_captureFullPage": {
+        "message": "Captura la página entera recorriéndola, sin que las cabeceras fijas y los avisos de cookies se estampen en cada franja.",
+        "description": "List groups feature"
+    },
+    "feature_captureParts": {
+        "message": "Captura una página completa por partes, una imagen por pantalla, para una página que se lee mejor por pantallas que como una imagen altísima.",
+        "description": "List groups feature"
+    },
+    "feature_captureGroupTabs": {
+        "message": "Captura de una vez todas las pestañas de un grupo, con la cuenta de por dónde va.",
+        "description": "List groups feature"
+    },
+    "feature_captureDownloadFormats": {
+        "message": "Descarga una captura, o una galería entera, como imágenes PNG o como un único PDF repartido en tantas hojas como haga falta.",
+        "description": "List groups feature"
+    },
+    "feature_theme_color_picker": {
+        "message": "Cuentagotas: coge cualquier color de la pantalla con una lupa, una rejilla de píxeles y el valor hexadecimal bajo el cursor, en todos los sistemas.",
+        "description": "Themes feature"
+    },
+    "feature_omnibar_read_aloud": {
+        "message": "Lee una pestaña en voz alta desde la omnibar: las lista todas y lee la que elijas, despertándola si estaba dormida.",
+        "description": "Omnibar feature"
+    },
+    "feature_omnibar_side_panel": {
+        "message": "Abre una pestaña, una dirección o una búsqueda en el panel lateral, desde su propio prefijo o con Ctrl+Enter sobre cualquier resultado.",
+        "description": "Omnibar feature"
+    },
+    "feature_shortcuts_group_capture": {
+        "message": "Captura todas las pestañas de un grupo desde el teclado: el área visible de cada una, la página completa de cada una, o la página completa por partes.",
+        "description": "Navigation shortcuts feature"
+    },
+    "feature_noteFromSelection": {
+        "message": "Toma una nota con el texto seleccionado, desde el teclado o desde el menú del clic derecho: se archiva en el grupo al que pertenece la página y se titula con el encabezado más cercano por encima de la selección, así que una página larga deja una nota por sección en vez de una sola para todo.",
+        "description": "Navigation shortcuts feature"
+    },
     "sectionListDownloads": {
         "message": "Gestor de descargas"
     },
@@ -7504,6 +7604,10 @@
     "deleteAllBookmarksTooltip": {
         "message": "Eliminar todos los marcadores",
         "description": "Eliminar todos los marcadores"
+    },
+    "regroupBtnTooltip": {
+        "message": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar.",
+        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
     },
     "backToGroups": {
         "message": "Volver a la sección de listar grupos",
@@ -11758,6 +11862,14 @@
         "message": "Capturar cada pestaña (página completa)",
         "description": "Capturar cada pestaña del grupo con desplazamiento"
     },
+    "captureGroupTabsFullPageParts": {
+        "message": "Capturar cada pestaña (página completa por partes)",
+        "description": "Capturar cada pestaña del grupo, una imagen por pantalla"
+    },
+    "noGroupToCapture": {
+        "message": "La pestaña actual no está en ningún grupo",
+        "description": "Se usó el comando de captura de grupo fuera de un grupo"
+    },
     "capturingGroupTabs": {
         "message": "Capturando pestañas… ($1/$2)",
         "description": "Progreso mientras se captura el grupo",
@@ -12109,6 +12221,14 @@
     "editProjectName": {
         "message": "Editar nombre del proyecto",
         "description": "Tooltip and label for editing project name in sidebar"
+    },
+    "pomodoroHideTimer": {
+        "message": "Ocultar interfaz del temporizador (clic para colapsar)",
+        "description": "Ocultar interfaz del temporizador (clic para colapsar)"
+    },
+    "pomodoroShowTimer": {
+        "message": "Mostrar interfaz del temporizador (clic para desplegar)",
+        "description": "Mostrar interfaz del temporizador (clic para desplegar)"
     },
     "pomodoroMethodHint": {
         "message": "Lo que cuenta el panel: el ciclo pomodoro o uno de los tres relojes simples.",

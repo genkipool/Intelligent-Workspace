@@ -555,6 +555,36 @@ async function handleCaptureTabs(message, sender, sendResponse) {
 }
 
 /**
+ * Captures every tab of the group the calling page belongs to.
+ *
+ * A keyboard command has no panel behind it, so there is no group card to read the
+ * tabs off: the sender's tab names the group and the walk from there is the one the
+ * omnibar already asks for, modes, focus restoring and gallery limit included.
+ *
+ * @param {{mode?: 'visible'|'fullPage'|'fullPageParts'}} message
+ */
+async function handleCaptureGroupFromShortcut(message, sender, sendResponse) {
+    try {
+        const tab = await resolveTabForScreenshot(sender);
+        if (!tab || tab.groupId === undefined || tab.groupId === chrome.tabGroups.TAB_GROUP_ID_NONE) {
+            notifyCapture('noGroupToCapture');
+            sendResponse({ success: false, error: 'The tab is not in a group' });
+            return;
+        }
+        const tabs = await chrome.tabs.query({ groupId: tab.groupId });
+        await handleCaptureTabs(
+            { mode: message.mode, tabIds: tabs.map((groupTab) => groupTab.id) },
+            sender,
+            sendResponse,
+        );
+    } catch (error) {
+        console.error('Error capturing the group from a shortcut:', error);
+        notifyCapture('errorTakingScreenshot');
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
+/**
  * Puts the area selector over one tab.
  *
  * The flag has to be planted before the script runs: it is what tells the selector

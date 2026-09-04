@@ -33,7 +33,7 @@
         createHoverActionPopup(captureContainer, () => [
             { i18n: 'captureGroupTabsVisible', onSelect: () => oncapture({ mode: 'visible' }) },
             { i18n: 'captureGroupTabsFullPage', onSelect: () => oncapture({ mode: 'fullPage' }) },
-            { i18n: 'captureFullPageSplit', onSelect: () => oncapture({ mode: 'fullPageParts' }) },
+            { i18n: 'captureGroupTabsFullPageParts', onSelect: () => oncapture({ mode: 'fullPageParts' }) },
         ]);
     });
 

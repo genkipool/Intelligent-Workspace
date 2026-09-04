@@ -314,7 +314,7 @@ export async function showContextMenu(event, contextElement) {
                     list,
                     itemTemplate,
                     iconHtml: iconHtml,
-                    i18nKey: 'captureFullPageSplit',
+                    i18nKey: 'captureGroupTabsFullPageParts',
                     text: '',
                     count: null,
                     onClick: () => captureGroupFromCard(contextElement, { mode: 'fullPageParts' }),
@@ -591,7 +591,7 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
                     addRow({ i18n: 'captureGroupTabsFullPage' }, () =>
                         captureGroupFromCard(contextElement, { mode: 'fullPage' }),
                     );
-                    addRow({ i18n: 'captureFullPageSplit' }, () =>
+                    addRow({ i18n: 'captureGroupTabsFullPageParts' }, () =>
                         captureGroupFromCard(contextElement, { mode: 'fullPageParts' }),
                     );
                 } else if (actionKey === 'summary') {

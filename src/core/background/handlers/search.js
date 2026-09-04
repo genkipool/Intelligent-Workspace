@@ -36,15 +36,30 @@ function handleSearchAction(message) {
             baseUrl = 'https://x.com/search?q=';
             break;
     }
-    if (baseUrl && query) {
-        openSearchUrl(baseUrl, query);
+    if (!baseUrl || !query) return;
+    // The omnibar's `sp:` prefix and its Ctrl+Enter ask for the same search in the side
+    // panel instead of a tab. The address is built the same way either way; only where
+    // it is shown differs, so the branch belongs here and not in a second table of
+    // search engines.
+    if (message.inSidePanel) {
+        openUrlInSidePanel(baseUrl + encodeURIComponent(query));
+        return;
     }
+    openSearchUrl(baseUrl, query);
 }
 
 function handleSearchGoogle(message, sendResponse) {
     (async () => {
         const query = message.query;
         const searchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(query);
+        // Asked for in the side panel there is no tab to reuse: the panel is the
+        // destination, and steering an existing Google tab would put the answer where
+        // nobody is looking.
+        if (message.inSidePanel) {
+            openUrlInSidePanel(searchUrl);
+            sendResponse({ status: 'ok' });
+            return;
+        }
         try {
             const tabs = await chrome.tabs.query({
                 url: 'https://www.google.com/search*',

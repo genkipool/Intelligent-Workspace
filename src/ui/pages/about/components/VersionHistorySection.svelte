@@ -172,9 +172,22 @@
         if (currentPage < totalPages) currentPage++;
     }
 
-    let expandedVersions = $state({});
-    function toggleVersion(index) {
-        expandedVersions[index] = !expandedVersions[index];
+    /**
+     * Which versions are open, by version number.
+     *
+     * The newest one starts open because it is the one people came to read — but as a
+     * starting value, not as a rule. It used to be OR-ed into the class on every
+     * render (`(currentPage === 1 && idx === 0) || …`), so the top row of the first
+     * page was always expanded whatever the click had just set: it was the one entry
+     * in the list that could neither be collapsed nor, once collapsed, reopened.
+     *
+     * Keyed by the version and not by its position on the page, which was the second
+     * half of the same bug: page two drew different versions in the same positions and
+     * inherited whatever page one had left open there.
+     */
+    let expandedVersions = $state({ [versionData[0].version]: true });
+    function toggleVersion(version) {
+        expandedVersions[version] = !expandedVersions[version];
     }
 </script>
 
@@ -204,14 +217,14 @@
         </div>
     </div>
     <div class="version-list">
-        {#each versionsToDisplay as version, idx (version.version)}
+        {#each versionsToDisplay as version (version.version)}
             <div class="version-item">
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
                     class="version-header"
-                    class:expanded={(currentPage === 1 && idx === 0) || expandedVersions[idx]}
-                    onclick={() => toggleVersion(idx)}
+                    class:expanded={expandedVersions[version.version]}
+                    onclick={() => toggleVersion(version.version)}
                 >
                     <h4>Version {version.version}</h4>
                     <span class="version-date">{$t(version.dateKey)}</span>
@@ -219,7 +232,7 @@
                         <span class="material-icons-sharp">chevron_right</span>
                     </button>
                 </div>
-                <div class="version-details" class:expanded={(currentPage === 1 && idx === 0) || expandedVersions[idx]}>
+                <div class="version-details" class:expanded={expandedVersions[version.version]}>
                     <div class="features-list-items">
                         {#each version.features as feature (feature)}
                             <div class="feature-list-item">

@@ -23,15 +23,59 @@ const PAGE_NOTE_CATEGORY = 'Research';
  * It runs in the tab rather than in whoever asked, which is what lets the keyboard
  * command and the context menu share it — the menu never sees the page's heading, and
  * `info.selectionText` collapses the line breaks this keeps.
+ *
+ * THE HEADING IS THE NEAREST ONE, not the page's. It used to be the first `h1` in the
+ * document, which on a long page — a wiki article, a manual, a thread — named every
+ * note after the page and left them all as one note growing without end. The heading
+ * that governs a passage is the closest one above it, so that is the one taken: the
+ * last `h1`, `h2` or `h3` that starts before the selection does. Text selected above
+ * every heading has none above it, and falls back to the first one below.
  */
 function itgReadSelectionForNote() {
-    const heading = document.querySelector('h1');
+    const selection = window.getSelection();
+
+    const readHeading = () => {
+        // Document order, which is what lets the walk below stop at the first heading
+        // that starts after the selection instead of measuring all of them. An empty
+        // heading is no title, so it is not a candidate at all.
+        const headings = Array.from(document.querySelectorAll('h1, h2, h3')).filter((node) =>
+            (node.textContent || '').trim(),
+        );
+        if (headings.length === 0) return null;
+        if (!selection || selection.rangeCount === 0) return headings[0];
+
+        const range = selection.getRangeAt(0);
+        let nearest = null;
+        for (const node of headings) {
+            const nodeRange = document.createRange();
+            nodeRange.selectNode(node);
+            // Ranges in two different trees cannot be compared at all — a selection
+            // inside a shadow root against a heading in the document throws — and a
+            // page that mixes them is not one this can measure. The first heading is
+            // the answer it had before this walk existed.
+            if (nodeRange.compareBoundaryPoints(Range.START_TO_START, range) > 0) break;
+            nearest = node;
+        }
+        // Nothing starts before the selection: it sits above every heading, so the one
+        // that follows it is the closest there is.
+        return nearest || headings[0];
+    };
+
+    let heading = '';
+    try {
+        const node = readHeading();
+        heading = node ? (node.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    } catch {
+        const first = document.querySelector('h1, h2, h3');
+        heading = first ? (first.textContent || '').replace(/\s+/g, ' ').trim() : '';
+    }
+
     return {
         // The line breaks of the selection are kept: they are what the note is split
         // into paragraphs along. A heading is one line by definition, so its own are
         // folded away.
-        text: String(window.getSelection() || ''),
-        heading: heading ? (heading.textContent || '').replace(/\s+/g, ' ').trim() : '',
+        text: String(selection || ''),
+        heading,
     };
 }
 
@@ -95,8 +139,8 @@ async function handleCreateNoteFromSelection(message, sender, sendResponse) {
             return;
         }
 
-        // The page's own heading is what the note is called; a page without one falls
-        // back to the name the tab goes by.
+        // The heading nearest the selection is what the note is called; a page with no
+        // heading at all falls back to the name the tab goes by.
         const title = heading || tab.title || '';
         const contextKey = getContentContextKey(tab);
         const timestamp = new Date().toISOString();

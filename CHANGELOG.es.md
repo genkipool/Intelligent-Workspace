@@ -112,9 +112,65 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   elegidos, en vez de una sola vez.
 - **"Todo el día" al programar un tema por días de la semana**, sin tener que
   rellenar la hora de inicio y la de fin.
+- **Actividad web.** Un panel de control del tiempo que cuesta de verdad navegar:
+  cuánto se pasa en cada sitio, contado solo mientras se está de verdad —el reloj se
+  para al ausentarse o cuando el navegador pierde el foco— y clasificado por
+  categorías, las que reconoce solo y las que añade uno. Un tiempo permitido al día y
+  otro a la semana por sitio, con aviso antes de que se agote, y unas horas fuera de
+  las cuales el sitio no se abre; un sitio pasado de su tiempo enseña una pantalla que
+  dice por qué está bloqueado y cuándo se levanta, con cinco minutos más si hacen
+  falta, y se le puede poner una contraseña delante a las reglas para que quitar una no
+  esté a un clic. Los patrones se dibujan como un año en un mapa de calor, las horas
+  del día y los días de la semana, y cada sitio se lista con búsqueda, ordenación y las
+  columnas que se elijan. Hay sitios que se pueden dejar fuera del registro, el
+  historial antiguo se borra pasado el tiempo que se fije, y todo se guarda en este
+  dispositivo, con importación, exportación y sincronización opcional entre navegadores.
+  También se abre en el panel lateral, que se puede fijar, con lo que se está
+  cronometrando ahora mismo.
+- **Radio en línea, junto a la música.** Busca miles de emisoras en directo por
+  nombre, país o género, añade varias de una vez y guarda las que te gusten —guardadas
+  en el dispositivo, exportadas e importadas como JSON sin duplicados, y sincronizadas
+  entre navegadores—. La música local, las emisoras y una única cola unificada son tres
+  pestañas del mismo reproductor.
+- **Una nota con el texto seleccionado.** Selecciona algo en una página y una tecla
+  —o el menú del clic derecho del navegador, que es el mismo comando— lo archiva como
+  nota en el grupo al que pertenece la página, titulada con el encabezado más cercano
+  por encima de la selección —el último `h1`, `h2` o `h3` anterior a ella— y, en una
+  página sin ningún encabezado, con el nombre de la pestaña. Una segunda selección bajo
+  el mismo encabezado se añade a la nota que ya hay, así que una página larga deja una
+  nota por sección en vez de una sola para todo.
+- **Capturar un grupo entero desde el teclado.** Los tres recorridos que ofrece la
+  cámara de una tarjeta de grupo —el área visible de cada pestaña, la página completa
+  de cada pestaña y la página completa de cada pestaña por partes— tienen cada uno su
+  propio comando, listado y cambiable en los ajustes de navegación como los demás.
+- **Abrir lo que sea en el panel lateral desde la omnibar.** Un prefijo propio lista
+  las pestañas abiertas y acepta también una dirección o una búsqueda, y Ctrl+Enter
+  hace lo mismo con el resultado que esté seleccionado: una pestaña, un marcador, una
+  entrada del historial, una página cerrada hace poco o la propia búsqueda.
+
+### Cambiado
+
+- La barra de búsqueda de la lista de grupos abre en el panel lateral con Enter, y en
+  una pestaña del navegador con Ctrl+Enter. Era al revés: el panel es donde vive la
+  caja y donde casi siempre se quiere leer lo que se escribe en ella, así que es la
+  respuesta que no necesita modificador, y salir del panel es la pulsación deliberada.
+  El modificador significa además lo mismo en todas partes: antes se ignoraba con una
+  página abierta en el panel o desde la ventana emergente, que forzaban el panel se
+  pulsara lo que se pulsara.
 
 ### Corregido
 
+- Salir de la galería ya no deja la lista de grupos con la fila de búsqueda
+  equivocada. La clase de la que la hoja de estilos cuelga la barra de búsqueda plegada
+  y los controles repartidos se quita al pintar una vista encima de la lista, y nadie la
+  volvía a poner, así que una galería cerrada al borrar su última captura volvía a una
+  lista que no coincidía con la que abre el propio botón del popup. Las notas, la vista
+  web y el asistente volvían igual, y con ellos se quedaban ocultos los paneles del
+  pomodoro y del reproductor.
+- La versión más reciente del historial de la página «Acerca de» se puede plegar. Se
+  forzaba abierta en cada repintado, así que era la única entrada de la lista que no
+  respondía a un clic; y abrir una versión de la segunda página ya no abre la que
+  ocupara esa misma posición en la primera.
 - Editar una nota ya no la cambia de sitio. Al guardar se reconstruía el contexto a
   partir de la lista que hubiera en pantalla, así que editar desde la sección de
   huérfanas o desde el botón de notas del popup reescribía el contexto de la tarjeta:
@@ -183,12 +239,15 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ```
 Novedades
+• Actividad web: mira lo que te cuesta en tiempo cada sitio, ponle un límite al día o a la semana y las horas a las que se puede abrir, y que se bloquee cuando se agote.
 • Lee cualquier página en voz alta, con el párrafo y la palabra iluminados según se dicen, y la voz, la velocidad y el tono que elijas.
 • Captura la página completa —no solo lo que se ve— y descárgala en PDF.
 • Captura todas las pestañas de un grupo con un clic.
 • Toma cualquier color de la pantalla con la pipeta del editor de temas: lupa, valor hexadecimal y copia al portapapeles.
 • El clic derecho, la selección de texto y el copiado vuelven a funcionar en las webs que los bloquean.
-• Reproductor de música: elige una carpeta y escucha tu música mientras trabajas, con búsqueda, lista de pistas y controles completos.
+• Reproductor de música y radio en línea: tu propia carpeta o miles de emisoras en directo, con búsqueda, lista de pistas y controles completos.
+• Toma una nota con el texto que selecciones, en el grupo al que pertenece la página.
+• Abre una pestaña, una dirección o una búsqueda en el panel lateral desde la omnibar.
 • El asistente ya admite varias horas para una misma consulta programada.
 • Los temas programados por días de la semana admiten "todo el día".
 • Correcciones al renombrar grupos, al contador de pestañas vistas, al agrupado de pestañas nuevas y al altavoz de las vistas previas de los Shorts de YouTube.

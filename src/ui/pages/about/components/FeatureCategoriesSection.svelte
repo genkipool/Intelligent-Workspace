@@ -45,6 +45,10 @@
         <FeatureItem isMaterial={true} iconName="qr_code" textKey="feature_showQrCode" />
         <FeatureItem isMaterial={true} iconName="screenshot" textKey="feature_v100_screenshot_tool" />
         <FeatureItem isMaterial={true} iconName="document_scanner" textKey="feature_v100_screenshot_ocr" />
+        <FeatureItem isMaterial={true} iconName="fit_screen" textKey="feature_captureFullPage" />
+        <FeatureItem isMaterial={true} iconName="view_agenda" textKey="feature_captureParts" />
+        <FeatureItem isMaterial={true} iconName="burst_mode" textKey="feature_captureGroupTabs" />
+        <FeatureItem isMaterial={true} iconName="picture_as_pdf" textKey="feature_captureDownloadFormats" />
         <FeatureItem isMaterial={true} iconName="edit_note" textKey="feature_v100_notes_kanban" />
         <FeatureItem isMaterial={true} iconName="attach_file" textKey="feature_v100_view_files" />
         <FeatureItem isMaterial={true} iconName="unfold_less" textKey="feature_collapseExpandAll" />
@@ -90,6 +94,24 @@
         <FeatureItem isMaterial={true} iconName="analytics" textKey="feature_pomodoro_stats" />
         <FeatureItem isMaterial={true} iconName="dashboard" textKey="feature_v100_pomodoro_dashboard" />
         <FeatureItem isMaterial={true} iconName="settings_suggest" textKey="feature_pomodoro_config" />
+    </div>
+</section>
+
+<section class="features-section card">
+    <h3>{$t('sectionWebActivity')}</h3>
+    <div class="features-grid">
+        <FeatureItem isMaterial={true} iconName="timelapse" textKey="feature_webActivity_tracking" />
+        <FeatureItem isMaterial={true} iconName="assessment" textKey="feature_webActivity_dashboard" />
+        <FeatureItem isMaterial={true} iconName="category" textKey="feature_webActivity_categories" />
+        <FeatureItem isMaterial={true} iconName="av_timer" textKey="feature_webActivity_limits" />
+        <FeatureItem isMaterial={true} iconName="schedule" textKey="feature_webActivity_schedules" />
+        <FeatureItem isMaterial={true} iconName="block" textKey="feature_webActivity_blocking" />
+        <FeatureItem isMaterial={true} iconName="lock" textKey="feature_webActivity_password" />
+        <FeatureItem isMaterial={true} iconName="grid_on" textKey="feature_webActivity_patterns" />
+        <FeatureItem isMaterial={true} iconName="list_alt" textKey="feature_webActivity_log" />
+        <FeatureItem isMaterial={true} iconName="do_not_disturb_on" textKey="feature_webActivity_ignored" />
+        <FeatureItem isMaterial={true} iconName="vertical_split" textKey="feature_webActivity_panel" />
+        <FeatureItem isMaterial={true} iconName="sync" textKey="feature_webActivity_data" />
     </div>
 </section>
 
@@ -183,15 +205,14 @@
         <FeatureItem isMaterial={true} iconName="keyboard" textKey="featureKeyboardNavigation" />
         <FeatureItem isMaterial={true} iconName="touch_app" textKey="feature_keyboard_hints" />
         <FeatureItem isMaterial={true} iconName="keyboard_command_key" textKey="feature_v095_keyboard_nav_rules" />
-        <FeatureItem isMaterial={true} iconName="cookie" textKey="feature_v100_cookie_editor" />
         <FeatureItem isMaterial={true} iconName="text_snippet" textKey="feature_v100_text_snippets" />
         <FeatureItem isMaterial={true} iconName="data_object" textKey="feature_snippet_variables" />
         <FeatureItem isMaterial={true} iconName="text_format" textKey="feature_snippet_rich_text" />
         <FeatureItem isMaterial={true} iconName="format_clear" textKey="feature_snippet_plain_text" />
         <FeatureItem isMaterial={true} iconName="spellcheck" textKey="feature_snippet_realtime_validation" />
-        <FeatureItem isMaterial={true} iconName="download" textKey="feature_showDownloads" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_custom_site_shortcuts" />
         <FeatureItem isMaterial={true} iconName="bolt" textKey="feature_page_action_shortcuts" />
+        <FeatureItem isMaterial={true} iconName="note_add" textKey="feature_noteFromSelection" />
         <FeatureItem isMaterial={true} iconName="tab_unselected" textKey="feature_tab_management_shortcuts" />
         <FeatureItem isMaterial={true} iconName="contrast" textKey="feature_display_mode_shortcuts" />
         <FeatureItem isMaterial={true} iconName="settings_backup_restore" textKey="feature_shortcuts_backup_reset" />
@@ -203,6 +224,7 @@
         <FeatureItem isMaterial={true} iconName="video_settings" textKey="feature_contextMenuVideoPip" />
         <FeatureItem isMaterial={true} iconName="ads_click" textKey="feature_allowRightClick" />
         <FeatureItem isMaterial={true} iconName="save" textKey="feature_shortcuts_backup_restore_groups" />
+        <FeatureItem isMaterial={true} iconName="burst_mode" textKey="feature_shortcuts_group_capture" />
     </div>
 </section>
 
@@ -210,6 +232,7 @@
     <h3>{$t('sectionManageThemes')}</h3>
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="palette" textKey="feature_v091_theme_editor" />
+        <FeatureItem isMaterial={true} iconName="colorize" textKey="feature_theme_color_picker" />
         <FeatureItem isMaterial={true} iconName="schedule" textKey="feature_v099_theme_scheduling" />
         <FeatureItem isMaterial={true} iconName="import_export" textKey="feature_v095_import_export_themes" />
         <FeatureItem isMaterial={true} iconName="cloud_queue" textKey="feature_v097_cloud_local_storage" />
@@ -247,5 +270,7 @@
         <FeatureItem isMaterial={true} iconName="playlist_add_check" textKey="feature_v100_omnibar_are_shortcut" />
         <FeatureItem isMaterial={true} iconName="rule" textKey="feature_v100_omnibar_rl_shortcut" />
         <FeatureItem isMaterial={true} iconName="cleaning_services" textKey="feature_v100_dedup_add_to_rule" />
+        <FeatureItem isMaterial={true} iconName="record_voice_over" textKey="feature_omnibar_read_aloud" />
+        <FeatureItem isMaterial={true} iconName="vertical_split" textKey="feature_omnibar_side_panel" />
     </div>
 </section>

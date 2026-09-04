@@ -575,3 +575,53 @@ function handleOpenSidePanel(message, sender, sendResponse) {
     }
     openSidePanelTarget(target, sendResponse);
 }
+
+/**
+ * Opens one address inside the group list's web view.
+ *
+ * `SIDE_PANEL_TARGETS` above cannot hold this one: every entry there is a fixed page,
+ * and this target carries a payload. What it does share is the shape — a panel already
+ * on that page is told to open the address in place, and one that is not is opened
+ * straight at `?view=url`, the route `listGroupInit.js` has read on boot all along. The
+ * one thing it never does is toggle: asking for a page to be shown is not asking for
+ * the panel to close.
+ *
+ * @param {string} url The address to show. Already absolute; the callers resolve a
+ *   typed query into one before they get here.
+ */
+function openUrlInSidePanel(url, sendResponse) {
+    const answer = (response) => {
+        if (sendResponse) sendResponse(response);
+    };
+    const listGroupPath = SIDE_PANEL_TARGETS.listgroup.path;
+    const openFromCold = () =>
+        openOrToggleSidePanel(`${listGroupPath}?view=url&url=${encodeURIComponent(url)}`, sendResponse, {
+            neverClose: true,
+        });
+
+    if (!activeSidePanelPath || !activeSidePanelPath.includes(listGroupPath)) {
+        openFromCold();
+        return;
+    }
+
+    chrome.runtime.sendMessage({ action: 'panelOpenUrl', url }, (response) => {
+        // No listener means the page is not really there — the worker's idea of what is
+        // open outlived the panel — so open it from cold instead, exactly as
+        // `openSidePanelTarget` does when `panelShowView` goes unanswered.
+        if (chrome.runtime.lastError || !response?.opened) {
+            openFromCold();
+            return;
+        }
+        answer({ success: true });
+    });
+}
+
+/** The omnibar's `sp:` prefix and its Ctrl+Enter, which both name an address. */
+function handleOpenUrlInSidePanel(message, sender, sendResponse) {
+    const url = typeof message.url === 'string' ? message.url.trim() : '';
+    if (!url) {
+        sendResponse({ success: false, error: 'No URL to open in the side panel' });
+        return;
+    }
+    openUrlInSidePanel(url, sendResponse);
+}

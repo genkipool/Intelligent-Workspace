@@ -176,6 +176,29 @@ export async function restoreMainView() {
 
     isBookmarksViewActive.set(get(currentMainView) === 'bookmarks');
 
+    /**
+     * The group chrome comes back with the group list.
+     *
+     * `openOverlayView` takes `groups-view-active` off the body the moment one of the
+     * views that sit over the list is asked for, and nothing was putting it back. It is
+     * what the stylesheet hangs the collapsed search bar and the spread-out controls
+     * off (`listGroup.css`), so a view left by its own close — deleting the last
+     * capture in the gallery is the way in that shows it — came back to a group list
+     * still wearing the search row of a view that was no longer there, with the bar
+     * showing and the buttons bunched to the right. Reaching the same list through the
+     * popup's own button never went near this, which is why the two did not match.
+     *
+     * Only once nothing is painted over the list any more: this also runs on the way
+     * out of those views, and `closeUrlInPanel` can hand straight over to the notes.
+     */
+    const isOverlayViewActive =
+        get(isGeminiViewActive) || get(isNotesViewActive) || get(isGalleryViewActive) || get(isUrlViewActive);
+    document.body.classList.toggle('groups-view-active', !isOverlayViewActive && get(currentMainView) === 'groups');
+    document.body.classList.toggle(
+        'bookmarks-view-active',
+        !isOverlayViewActive && get(currentMainView) === 'bookmarks',
+    );
+
     if (_searchInput) _searchInput.value = '';
 
     if (typeof applySearchAndFilter === 'function') applySearchAndFilter();

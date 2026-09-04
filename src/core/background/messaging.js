@@ -747,6 +747,10 @@ const MESSAGE_HANDLERS = {
         handleCaptureTabs(message, sender, sendResponse);
         return true;
     },
+    captureGroupFromShortcut: (message, sender, sendResponse) => {
+        handleCaptureGroupFromShortcut(message, sender, sendResponse);
+        return true;
+    },
     areaSelectionCancelled: (message, sender, sendResponse) => {
         handleAreaSelectionCancelled(message, sender, sendResponse);
         return true;
@@ -857,6 +861,10 @@ const MESSAGE_HANDLERS = {
     },
     openSidePanel: (message, sender, sendResponse) => {
         handleOpenSidePanel(message, sender, sendResponse);
+        return true;
+    },
+    openUrlInSidePanel: (message, sender, sendResponse) => {
+        handleOpenUrlInSidePanel(message, sender, sendResponse);
         return true;
     },
     swapToPreviousTab: (message, sender, sendResponse) => {

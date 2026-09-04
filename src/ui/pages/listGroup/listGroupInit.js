@@ -457,6 +457,21 @@ function initRuntimeMessageListener() {
             return false;
         }
 
+        /**
+         * An address to show in the web view, from the omnibar's `sp:` prefix. The
+         * worker only sends this to a panel it believes is already on this page; one
+         * that is not gets `?view=url` on boot instead, which ends in the same call.
+         *
+         * Answered before the frame is built, for the reason above it: all the worker
+         * is waiting to hear is whether this page took the request.
+         */
+        if (message.action === 'panelOpenUrl') {
+            const url = typeof message.url === 'string' ? message.url.trim() : '';
+            sendResponse({ opened: !!url });
+            if (url) openUrlInPanel(url);
+            return false;
+        }
+
         if (message.action === 'refreshUI') {
             if (window.isBulkOpening || get(isBookmarksViewActive)) return;
             if (get(isProgrammaticActivation)) {

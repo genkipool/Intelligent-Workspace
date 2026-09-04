@@ -215,7 +215,20 @@ export async function handleSearchEnter(event) {
 
     if (shouldNavigate && get(searchState).results.length === 0) {
         const isReaderView = get(isUrlViewActive) && document.querySelector('.reader-view.active-view');
-        const wantsPanel = event.ctrlKey || event.metaKey || get(isUrlViewActive) || get(isPopupWindow);
+        /**
+         * Enter opens in the side panel; Ctrl (or Cmd) is what sends the page out to a
+         * browser tab.
+         *
+         * That way round because of where the box is: a search typed into the panel is
+         * nearly always meant to be read there, so the common answer is the one that
+         * needs no modifier, and leaving the panel — the rarer thing, and the one that
+         * takes the eye elsewhere — is the deliberate keypress.
+         *
+         * The modifier now means the same everywhere: it used to be ignored while a
+         * page was open in the panel or in a popup window, both of which forced the
+         * panel whatever was held down.
+         */
+        const wantsPanel = !(event.ctrlKey || event.metaKey);
 
         if (isReaderView) {
             const searchUrl = isLikelyDomain(trimmedQuery)

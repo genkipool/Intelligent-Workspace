@@ -108,9 +108,63 @@ Each version holds two different things, and they are worth keeping apart:
   once on the same day, or on each of the chosen weekdays, instead of only once.
 - **"All day" when scheduling a theme by weekday**, with no need to fill in a start
   and an end time.
+- **Web activity.** A dashboard for the time your browsing actually costs: how long
+  you spend on each site, counted only while you are really there — the clock stops
+  when you go idle or the browser loses focus — filed by category, with the ones it
+  recognises on its own and the ones you add. A daily and a weekly allowance per site,
+  with a warning before the time runs out, and hours outside which a site does not open
+  at all; a site over its allowance shows a screen saying why it is blocked and when it
+  lifts, with five more minutes if you need them, and a password can stand in front of
+  the rules so switching one off is not a click away. The patterns are drawn as a year
+  in a heatmap, the hours of the day and the days of the week, and every site is listed
+  with search, sorting and the columns you choose. Sites can be left out of the record
+  altogether, older history is deleted after the period you set, and everything is kept
+  on this device, with import, export and optional sync between your browsers. It
+  opens in the side panel too, pinnable, showing what is being timed right now.
+- **Online radio, next to the music.** Search thousands of live stations by name,
+  country or genre, add several at once, and keep the ones you like — stored on the
+  device, exported and imported as JSON without duplicates, and synced between your
+  browsers. Local music, the stations and a single unified queue are three tabs of the
+  same player.
+- **A note from the selected text.** Select something on a page and one key — or the
+  browser's own right-click menu, which is the same command — files it as a note under
+  the group the page belongs to, titled with the nearest heading above the selection —
+  the last `h1`, `h2` or `h3` before it — and falling back to the tab's name on a page
+  with no headings at all. A second selection under the same heading is added to the
+  note that is already there, so a long page leaves one note per section rather than
+  one note for the whole of it.
+- **Capture a whole group from the keyboard.** The three walks the camera on a group
+  card offers — the visible area of every tab, the whole page of every tab, and the
+  whole page of every tab in parts — each have a command of their own, listed and
+  changeable in Navigation settings like the rest.
+- **Open anything in the side panel from the omnibar.** A prefix of its own lists the
+  open tabs and takes an address or a search as well, and Ctrl+Enter does the same to
+  whichever result is highlighted — a tab, a bookmark, a history entry, a recently
+  closed page or the search itself.
+
+### Changed
+
+- The search bar of the group list opens in the side panel on Enter, and in a browser
+  tab on Ctrl+Enter. It was the other way round: the panel is where the box lives and
+  where a search typed into it is nearly always meant to be read, so it is the answer
+  that needs no modifier, and leaving the panel is the deliberate keypress. The
+  modifier now also means the same thing everywhere — it used to be ignored while a
+  page was open in the panel or in a popup window, both of which forced the panel
+  whatever was held down.
 
 ### Fixed
 
+- Leaving the gallery no longer leaves the group list wearing the wrong search row.
+  The class the stylesheet hangs the collapsed search bar and the spread-out controls
+  off is taken away when a view is painted over the list, and nothing put it back, so a
+  gallery closed by deleting its last capture came back to a list that did not match
+  the one the popup's own button opens. The notes, the web view and the assistant were
+  all coming back the same way, and the pomodoro and music panels stayed hidden with
+  them.
+- The newest version in the About page's history can be collapsed. It was forced open
+  on every render, so it was the one entry in the list that answered no click; opening
+  a version on the second page no longer opens whatever sat in the same position on the
+  first.
 - Editing a note no longer moves it. Saving rebuilt the note's context from whichever
   list was on screen, so editing from the orphans section or from the popup's notes
   button rewrote the context under the card — a note filed under `Genkipool` came back
@@ -177,12 +231,15 @@ Each version holds two different things, and they are worth keeping apart:
 
 ```
 What's new
+• Web activity: see what each site costs you in time, set a daily or weekly allowance and the hours it can be opened, and have it blocked when the time is up.
 • Read any page out loud, with the paragraph and the word lit up as they are said, and the voice, speed and pitch of your choice.
 • Capture the full page — not just what is on screen — and download it as a PDF.
 • Capture every tab of a group with one click.
 • Pick any colour on screen with the pipette in the theme editor: a magnifier, the hex value, and a copy to the clipboard.
 • Right-click, text selection and copying work again on sites that block them.
-• Music player: pick a folder and listen to your music while you work, with search, track list and full controls.
+• Music player and online radio: your own folder or thousands of live stations, with search, track list and full controls.
+• Take a note from the text you select, in the group the page belongs to.
+• Open a tab, an address or a search in the side panel straight from the omnibar.
 • Scheduled assistant queries can now run at several times of day.
 • Themes scheduled by weekday now support "all day".
 • Fixes to group renaming, the seen-tabs counter, grouping of new tabs and the speaker on YouTube Shorts previews.

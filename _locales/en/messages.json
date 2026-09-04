@@ -2363,20 +2363,8 @@
     "description": "Tooltip for rule name"
   },
   "contextMenuRegroupAll": {
-      "message": "Regroup All Tabs",
-      "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
-  },
-  "pomodoroShowTimer": {
-      "message": "Show timer interface (click to expand)",
-      "description": "Show timer interface (click to expand)"
-  },
-  "pomodoroHideTimer": {
-      "message": "Hide timer interface (click to collapse)",
-      "description": "Hide timer interface (click to collapse)"
-  },
-  "regroupBtnTooltip": {
-      "message": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore.",
-      "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
+    "message": "Regroup All Tabs",
+    "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
   },
   "contextMenuCreateRuleForPage": {
     "message": "Create Rule for this Website"
@@ -2876,7 +2864,7 @@
     "message": "Search by group, domain or tab title..."
   },
   "searchBarHelpTooltip": {
-    "message": "🔍 Smart Search Bar\n\n• Filters groups, subgroups and tabs that match by group name, URL or page title.\n\n• If there are matches, pressing Enter or Ctrl+Enter cycles through each occurrence.\n\n• If there are no matches, pressing Enter opens the search in the main browser window.\n\n• If there are no matches, pressing Ctrl+Enter opens the search in the side panel.\n\n• If you are already browsing in the side panel, simply press Enter to continue navigating within it."
+    "message": "🔍 Smart Search Bar\n\n• Filters groups, subgroups and tabs that match by group name, URL or page title.\n\n• If there are matches, pressing Enter or Ctrl+Enter cycles through each occurrence.\n\n• If there are no matches, pressing Enter opens the search in the side panel.\n\n• If there are no matches, pressing Ctrl+Enter opens the search in the main browser window.\n\n• If you are already browsing in the side panel, simply press Enter to continue navigating within it."
   },
   "enableRegexSearch": {
     "message": "Enable regular expression search"
@@ -6522,6 +6510,30 @@
   "omnibarPrefixPipDesc": {
     "message": "Select a tab to open as Picture-in-Picture window"
   },
+  "omnibarPrefixSidePanelTitle": {
+      "message": "Open in the side panel",
+      "description": "Title of the sp: prefix row"
+  },
+  "omnibarPrefixSidePanelDesc": {
+      "message": "Open a tab, an address or a search in the side panel",
+      "description": "What the sp: prefix does"
+  },
+  "omnibarSidePanelOpenUrl": {
+      "message": "Open this address in the side panel",
+      "description": "Row for a typed address"
+  },
+  "omnibarSidePanelSearch": {
+      "message": "Search for this in the side panel",
+      "description": "Row for typed search terms"
+  },
+  "omnibarTutorialSidePanelTitle": {
+      "message": "Press Ctrl + Enter on a page",
+      "description": "Tutorial row"
+  },
+  "omnibarTutorialSidePanelDesc": {
+      "message": "On a tab, a bookmark, a history entry or a search, Ctrl+Enter opens it in the side panel.",
+      "description": "Tutorial row"
+  },
   "omnibarPrefixVideoPipTitle": {
     "message": "Open Video PiP"
   },
@@ -7211,6 +7223,94 @@
   "sectionWebReadingPlayer": {
     "message": "Web Reading Player"
   },
+  "sectionWebActivity": {
+      "message": "Web activity",
+      "description": "About page: section title"
+  },
+  "feature_webActivity_tracking": {
+      "message": "Time spent on every site, counted only while you are really there: the clock stops when you go idle or the browser loses focus.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_dashboard": {
+      "message": "A dashboard with the totals, the sites that took the most time and the figures for whichever period you pick.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_categories": {
+      "message": "Every site filed by category, the ones it recognises on its own and the ones you add.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_limits": {
+      "message": "Daily and weekly allowances per site, with a warning before the time runs out.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_schedules": {
+      "message": "Allowed hours per site: outside the windows you set, the site does not open.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_blocking": {
+      "message": "A block screen that says why it is blocked and when it lifts, with five more minutes if you need them.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_password": {
+      "message": "A password guarding the rules, so switching off a limit is not one click away.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_patterns": {
+      "message": "When you browse: a year in a heatmap, the hours of the day and the days of the week.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_log": {
+      "message": "A log of every site with search, sorting and columns you choose.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_ignored": {
+      "message": "Sites that are never recorded, and a retention period after which the older history is deleted on its own.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_panel": {
+      "message": "The activity in the side panel, which can be pinned, showing what is being timed right now.",
+      "description": "Web activity feature"
+  },
+  "feature_webActivity_data": {
+      "message": "Everything kept on this device, with import, export and optional sync between your browsers.",
+      "description": "Web activity feature"
+  },
+  "feature_captureFullPage": {
+      "message": "Capture the whole page by scrolling through it, keeping sticky headers and cookie bars from being stamped onto every strip.",
+      "description": "List groups feature"
+  },
+  "feature_captureParts": {
+      "message": "Capture a full page in parts, one image per screenful, for a page that reads better as a series of screens.",
+      "description": "List groups feature"
+  },
+  "feature_captureGroupTabs": {
+      "message": "Capture every tab of a group in one go, with a count of how far along it is.",
+      "description": "List groups feature"
+  },
+  "feature_captureDownloadFormats": {
+      "message": "Download a capture, or a whole gallery, as PNG images or as a single PDF paginated across as many sheets as it needs.",
+      "description": "List groups feature"
+  },
+  "feature_theme_color_picker": {
+      "message": "Pipette: take any colour on screen with a magnifier, a pixel grid and the hex value under the cursor, on every platform.",
+      "description": "Themes feature"
+  },
+  "feature_omnibar_read_aloud": {
+      "message": "Read a tab out loud from the omnibar: it lists them all and reads the one you pick, waking it if it was asleep.",
+      "description": "Omnibar feature"
+  },
+  "feature_omnibar_side_panel": {
+      "message": "Open a tab, an address or a search in the side panel, from its own prefix or with Ctrl+Enter on any result.",
+      "description": "Omnibar feature"
+  },
+  "feature_shortcuts_group_capture": {
+      "message": "Capture every tab of a group from the keyboard: the visible area of each, the whole page of each, or the whole page in parts.",
+      "description": "Navigation shortcuts feature"
+  },
+  "feature_noteFromSelection": {
+      "message": "Take a note from the selected text, from the keyboard or the right-click menu: it is filed under the group the page belongs to and titled with the nearest heading above the selection, so a long page leaves one note per section instead of one note for the lot.",
+      "description": "Navigation shortcuts feature"
+  },
   "sectionListDownloads": {
     "message": "Downloads Manager"
   },
@@ -7446,6 +7546,10 @@
   "deleteAllBookmarksTooltip": {
     "message": "Delete all bookmarks",
     "description": "Delete all bookmarks"
+  },
+  "regroupBtnTooltip": {
+    "message": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore.",
+    "description": "Regroup all tabs\n\nUse when automatic tab grouping fails.\nOften happens when the browser closes unexpectedly and you click restore."
   },
   "backToGroups": {
     "message": "Back to group list section",
@@ -11778,6 +11882,14 @@
     "message": "Capture every tab (full page)",
     "description": "Capture every tab in the group, scrolling"
   },
+  "captureGroupTabsFullPageParts": {
+    "message": "Capture every tab (full page in parts)",
+    "description": "Capture every tab in the group, one image per screenful"
+  },
+  "noGroupToCapture": {
+    "message": "The current tab is not in any group",
+    "description": "The group capture command was used outside a group"
+  },
   "capturingGroupTabs": {
     "message": "Capturing tabs… ($1/$2)",
     "description": "Progress while the group is being captured",
@@ -12129,6 +12241,14 @@
   "editProjectName": {
     "message": "Edit project name",
     "description": "Tooltip and label for editing project name in sidebar"
+  },
+  "pomodoroHideTimer": {
+    "message": "Hide timer interface (click to collapse)",
+    "description": "Hide timer interface (click to collapse)"
+  },
+  "pomodoroShowTimer": {
+    "message": "Show timer interface (click to expand)",
+    "description": "Show timer interface (click to expand)"
   },
   "pomodoroMethodHint": {
     "message": "What the panel counts: the pomodoro cycle, or one of the three plain clocks.",

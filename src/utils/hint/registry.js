@@ -211,6 +211,21 @@ var CommandRegistry = class CommandRegistry {
                 action: () => this._send('captureAreaFromShortcut'),
                 description: 'hintDesc_ca',
             },
+            // The same three walks over every tab of the group, which is what the
+            // camera on a group card offers. Capital C is the group, lowercase c the
+            // page, so the mode letter stays the same on both sides.
+            Cs: {
+                action: () => this._captureGroup('visible'),
+                description: 'captureGroupTabsVisible',
+            },
+            Cp: {
+                action: () => this._captureGroup('fullPage'),
+                description: 'captureGroupTabsFullPage',
+            },
+            CP: {
+                action: () => this._captureGroup('fullPageParts'),
+                description: 'captureGroupTabsFullPageParts',
+            },
             ao: {
                 // The worker reads the selection and the heading out of the page, which
                 // is what lets this key and the context menu item be the same thing.
@@ -725,6 +740,18 @@ var CommandRegistry = class CommandRegistry {
                 console.error('Error copying the capture to the clipboard:', err);
             }
         });
+    }
+    /**
+     * Asks the worker to capture every tab of the group this page is in.
+     *
+     * Nothing comes back to the clipboard the way a single capture does: a walk over
+     * several tabs has no one image to put on it. The worker files them all and puts
+     * up the notices, so there is nothing to wait for here.
+     *
+     * @param {'visible'|'fullPage'|'fullPageParts'} mode
+     */
+    _captureGroup(mode) {
+        this._send('captureGroupFromShortcut', { mode });
     }
     _send(action, payload = {}) {
         try {

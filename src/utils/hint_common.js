@@ -157,6 +157,11 @@ var HintCommon = {
             'Alt+<grupo><n>+Enter': 'hintDesc_group_tab_nav',
             o: 'hintDesc_o',
             dg: 'hintDesc_dg',
+            // The three walks over a whole group, the same three the camera on a
+            // group card offers. Capital C is the group, lowercase c the page.
+            Cs: 'captureGroupTabsVisible',
+            Cp: 'captureGroupTabsFullPage',
+            CP: 'captureGroupTabsFullPageParts',
             so: 'hintDesc_so',
             st: 'hintDesc_st',
             // The side panels, all under `p`. `ph` is the home one — it was `pp`,
@@ -219,6 +224,7 @@ var HintCommon = {
             'w:': 'prefixSearchWikipedia',
             'we:': 'omnibarPrefixPopupDesc',
             'wp:': 'omnibarPrefixPipDesc',
+            'sp:': 'omnibarPrefixSidePanelDesc',
             'bgr:': 'omnibarPrefixBackupDesc',
             'bg:': 'omnibarPrefixBackupNowDesc',
             'dg:': 'prefixDeleteGroup',

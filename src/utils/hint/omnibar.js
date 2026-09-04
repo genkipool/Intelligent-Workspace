@@ -286,6 +286,13 @@ var OmniBar = class OmniBar {
                     desc: getOmniMsg('omnibarPrefixVideoPipDesc') || 'Select a tab to open as Video Picture-in-Picture',
                 },
                 {
+                    prefix: this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc'),
+                    title: getOmniMsg('omnibarPrefixSidePanelTitle') || 'Open in the side panel',
+                    desc:
+                        getOmniMsg('omnibarPrefixSidePanelDesc') ||
+                        'Open a tab, an address or a search in the side panel',
+                },
+                {
                     prefix: this._getPrefixVal('ar:', 'prefixReadAloud'),
                     title: getOmniMsg('omnibarPrefixReadAloudTitle') || 'Read Aloud',
                     desc: getOmniMsg('omnibarPrefixReadAloudDesc') || 'Pick a tab and have its text read out loud',
@@ -483,6 +490,13 @@ var OmniBar = class OmniBar {
                     icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 9h-6V3H5v18h14V9zM12 5v4h2v2h-4v2h4v2l3-3-3-3v2h-2V5h-2z" fill="var(--text-color)"/></svg>',
                 },
                 {
+                    title: getOmniMsg('omnibarTutorialSidePanelTitle') || 'Press Ctrl + Enter on a page',
+                    url:
+                        getOmniMsg('omnibarTutorialSidePanelDesc') ||
+                        'On a tab, a bookmark, a history entry or a search, Ctrl+Enter opens it in the side panel.',
+                    icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="var(--text-color)" stroke-width="2"/><path d="M15 4v16" stroke="var(--text-color)" stroke-width="2"/></svg>',
+                },
+                {
                     title: getOmniMsg('omnibarTutorialCtrlEnterTitle') || 'Press Ctrl + Enter',
                     url:
                         getOmniMsg('omnibarTutorialCtrlEnterDesc') ||
@@ -512,6 +526,26 @@ var OmniBar = class OmniBar {
             const q = query.substring(prefixUsed.length).trim();
             const filtered = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
             this._renderResults(filtered, isPopup ? 'popup-tab' : isVideoPip ? 'video-pip-tab' : 'pip-tab');
+            return;
+        }
+
+        // -- sp: Open a tab, an address or a search in the side panel -----
+        const pSidePanel = this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc');
+        if (lower.startsWith(pSidePanel)) {
+            const q = query.substring(pSidePanel.length).trim();
+            const rows = this.tabs.filter((t) => this._itemMatchesQuery('tab', t, q));
+            // What was typed goes at the top as a row of its own, because this prefix
+            // takes three kinds of thing and only one of them is a tab that already
+            // exists. It is the same reading `_executeDefaultSearch` gives the box: a
+            // domain is itself, anything else is searched.
+            if (q) {
+                rows.unshift({
+                    sidePanelQuery: q,
+                    isUrl: this._looksLikeUrl(q),
+                    url: this._urlForQuery(q),
+                });
+            }
+            this._renderResults(rows, 'side-panel-tab');
             return;
         }
 
@@ -1923,7 +1957,7 @@ var OmniBar = class OmniBar {
             // A site prefix is decided by what was typed, not by which row happens to be
             // highlighted: its single row is only a preview of what Enter will do.
             if (this._getSiteSearchPrefixes().some((entry) => currentLower.startsWith(entry.prefix))) {
-                this._executeDefaultSearch(currentValue);
+                this._executeDefaultSearch(currentValue, { inSidePanel: event.ctrlKey || event.metaKey });
                 return;
             }
             const pAtr = this._getPrefixVal('atr:', 'omnibarPrefixAddToRule');
@@ -2325,7 +2359,7 @@ var OmniBar = class OmniBar {
                 return;
             }
             if (count === 0) {
-                this._executeDefaultSearch(currentValue);
+                this._executeDefaultSearch(currentValue, { inSidePanel: event.ctrlKey || event.metaKey });
                 return;
             }
 
@@ -2350,6 +2384,23 @@ var OmniBar = class OmniBar {
                 }
                 if (t === 'image') {
                     this._expandImage(selectedItem);
+                    return;
+                }
+
+                /**
+                 * A row that stands for a page opens it in the side panel — the same
+                 * thing the `sp:` prefix does, reached without having to start the
+                 * query again with a prefix.
+                 *
+                 * Only these five: every other row type also carries a `url`, but
+                 * Ctrl+Enter on them already means something (expand, above; close the
+                 * tab; add it to the capture batch), and a modifier that means one
+                 * thing on some rows and the opposite on others is worse than one that
+                 * covers fewer.
+                 */
+                const opensInSidePanel = ['tab', 'side-panel-tab', 'b', 'h', 'c'];
+                if (opensInSidePanel.includes(t) && selectedItem?.dataset?.url) {
+                    this._openInSidePanel(selectedItem.dataset.url);
                     return;
                 }
 
@@ -2385,8 +2436,11 @@ var OmniBar = class OmniBar {
                     const pDeep = this._getPrefixVal('f:', 'prefixSearchText');
                     const pPopup = this._getPrefixVal('we:', 'omnibarPrefixPopupDesc');
                     const pPip = this._getPrefixVal('wp:', 'omnibarPrefixPipDesc');
+                    const pSidePanel = this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc');
                     const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const pPattern = [pBookmarks, pHistory, pClosed, pDeep, pPopup, pPip].map(escapeRegExp).join('|');
+                    const pPattern = [pBookmarks, pHistory, pClosed, pDeep, pPopup, pPip, pSidePanel]
+                        .map(escapeRegExp)
+                        .join('|');
                     const prefixMatch = current.match(new RegExp(`^(${pPattern})\\s*`));
                     const prefix = prefixMatch ? prefixMatch[0] : '';
                     input.value = prefix + title;
@@ -2397,7 +2451,13 @@ var OmniBar = class OmniBar {
             // If cursor is not at end, allow native cursor movement
         }
     }
-    _executeDefaultSearch(query) {
+    /**
+     * @param {{inSidePanel?: boolean}} [options] Show the result in the side panel
+     *   rather than in a tab — what Ctrl+Enter asks for. The address is worked out the
+     *   same way either way; for a site prefix it is the worker that builds it, so the
+     *   flag travels with the search rather than the URL.
+     */
+    _executeDefaultSearch(query, { inSidePanel = false } = {}) {
         if (!query) return;
         const webSearchPrefixes = {};
         webSearchPrefixes[this._getPrefixVal('y:', 'prefixSearchYouTube')] = 'searchYoutube';
@@ -2432,14 +2492,17 @@ var OmniBar = class OmniBar {
                 this._getPrefixVal('lnt:', 'prefixListNotes'),
                 this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
                 this._getPrefixVal('wp:', 'omnibarPrefixPipDesc'),
+                this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc'),
                 this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
             ];
-            const isUrl =
-                !nonUrlPrefixes.some((p) => query.startsWith(p)) &&
-                ((query.includes('.') && !query.includes(' ')) || query.toLowerCase().startsWith('localhost'));
+            const isUrl = !nonUrlPrefixes.some((p) => query.startsWith(p)) && this._looksLikeUrl(query);
             if (isUrl) {
                 let url = query;
                 if (!/^(https?|file):\/\//i.test(url)) url = 'https://' + url;
+                if (inSidePanel) {
+                    this._openInSidePanel(url);
+                    return;
+                }
                 chrome.runtime.sendMessage({
                     action: 'openUrl',
                     url,
@@ -2454,6 +2517,7 @@ var OmniBar = class OmniBar {
                 this._getPrefixVal('f:', 'prefixSearchText'),
                 this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
                 this._getPrefixVal('wp:', 'omnibarPrefixPipDesc'),
+                this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc'),
                 this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
             ];
             if (triggerPrefixes.some((p) => query.startsWith(p))) {
@@ -2468,6 +2532,7 @@ var OmniBar = class OmniBar {
             chrome.runtime.sendMessage({
                 action,
                 query: finalQuery,
+                inSidePanel,
             });
         }
         this.close();
@@ -2887,6 +2952,40 @@ var OmniBar = class OmniBar {
     _getCaptureMode(value) {
         const lower = (value || '').trim().toLowerCase();
         return this._getCapturePrefixes().find((entry) => lower.startsWith(entry.prefix)) || null;
+    }
+
+    /**
+     * Whether what was typed reads as an address rather than something to search for.
+     *
+     * The rule the box has always used, pulled out of `_executeDefaultSearch` so that
+     * the `sp:` prefix answers the question the same way: a dot and no spaces, or
+     * `localhost`. Its caller there still has to rule out its own prefixes first —
+     * `b:`, `h:` and the rest all contain a dot-free colon and none of them is a site.
+     */
+    /**
+     * Hands an address to the side panel and closes the box.
+     *
+     * The worker owns the panel — it is the only side that can open one — so this is a
+     * message and not a navigation, and it is the same message the `sp:` rows, their
+     * Ctrl+Enter and the typed-query row all send.
+     */
+    _openInSidePanel(url) {
+        if (!url) return;
+        chrome.runtime.sendMessage({ action: 'openUrlInSidePanel', url });
+        this.close();
+    }
+
+    _looksLikeUrl(query) {
+        const q = query.trim();
+        return (q.includes('.') && !q.includes(' ')) || q.toLowerCase().startsWith('localhost');
+    }
+
+    /** The address a typed query stands for: a domain as itself, anything else searched. */
+    _urlForQuery(query) {
+        const q = query.trim();
+        if (!q) return '';
+        if (!this._looksLikeUrl(q)) return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+        return /^(https?|file):\/\//i.test(q) ? q : `https://${q}`;
     }
 
     _getPrefixVal(defaultPrefix, descKey) {
@@ -4001,6 +4100,19 @@ IMPORTANT RULES:
                         );
                     }
                 }
+            } else if (type === 'side-panel-tab' && data.sidePanelQuery) {
+                // The typed query rather than a tab: it says what pressing Enter will
+                // open, because a domain and a search look the same in the box.
+                title = data.sidePanelQuery;
+                url = data.isUrl
+                    ? getOmniMsg('omnibarSidePanelOpenUrl') || 'Open this address in the side panel'
+                    : getOmniMsg('omnibarSidePanelSearch') || 'Search for this in the side panel';
+                favIcon = '';
+                li.dataset.url = data.url;
+                this._injectSvgIcon(
+                    li,
+                    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="var(--text-color)" stroke-width="2"/><path d="M15 4v16" stroke="var(--text-color)" stroke-width="2"/></svg>`,
+                );
             } else if (type === 'capture' && data.captureRow === 'group') {
                 title = data.title || getOmniMsg('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
                 url =
@@ -4019,6 +4131,7 @@ IMPORTANT RULES:
                     'pip-tab',
                     'video-pip-tab',
                     'read-aloud-tab',
+                    'side-panel-tab',
                     'ae-tab',
                     'dt',
                     'ts',
@@ -4506,6 +4619,10 @@ IMPORTANT RULES:
                         url: li.dataset.url,
                     });
                     this.close();
+                } else if (type === 'side-panel-tab') {
+                    // A tab row and the typed-query row both carry the address in
+                    // `dataset.url`, so there is nothing to tell apart here.
+                    this._openInSidePanel(li.dataset.url);
                 } else if (type === 'pip-tab') {
                     const url = li.dataset.url;
                     const tabId = li.dataset.tabId ? parseInt(li.dataset.tabId) : null;
