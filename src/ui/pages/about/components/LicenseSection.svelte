@@ -98,12 +98,16 @@
         font-size: var(--h4-size);
     }
 
-    /* Told apart by more than the colour: the two icons are a tick and a cross, so the
-       distinction survives a reader who cannot separate green from red. */
+    /* Both icons wear a colour of the chosen theme, so the block follows it the way the
+       rest of the page does. `--success-color` is not one of them — the theme defines
+       exactly nine — so this used to be a hard-coded green that stayed the same green
+       whichever theme was on.
+
+       Told apart by more than the colour, too: the two icons are a tick and a cross, so
+       the distinction survives both a theme whose accent is close to its error colour
+       and a reader who cannot separate the two. */
     .license-term-icon.allowed {
-        /* The theme does not define one, so the same fallback the other pages that
-           needed a green already carry (`hint_content.css`, `permission.css`). */
-        color: var(--success-color, #4caf50);
+        color: var(--text-on-color);
     }
 
     .license-term-icon.forbidden {

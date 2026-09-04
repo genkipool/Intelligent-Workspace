@@ -7220,8 +7220,13 @@
   "sectionListReading": {
     "message": "Reading list"
   },
-  "sectionWebReadingPlayer": {
-    "message": "Web Reading Player"
+  "sectionReadingAPage": {
+      "message": "Reading a web page",
+      "description": "About page: section title"
+  },
+  "sectionVideo": {
+      "message": "Video",
+      "description": "About page: section title"
   },
   "sectionWebActivity": {
       "message": "Web activity",

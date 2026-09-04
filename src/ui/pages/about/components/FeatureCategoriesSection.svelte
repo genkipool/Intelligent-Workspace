@@ -166,24 +166,40 @@
     </div>
 </section>
 
+<!-- Chrome's own saved-articles list, and nothing else: it is a list like the four
+     around it, and it was carrying the reader, the page colour modes and a video
+     player as well. -->
 <section class="features-section card">
     <h3>{$t('sectionListReading')}</h3>
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="chrome_reader_mode" textKey="feature_reading_list_access" />
-        <FeatureItem isMaterial={false} svgId="icon-reader" textKey="feature_readerView" />
-        <FeatureItem isMaterial={true} iconName="auto_stories" textKey="feature_changePageMode" />
-        <FeatureItem isMaterial={true} iconName="smart_display" textKey="feature_youtubeIntegration" />
-        <FeatureItem isMaterial={true} iconName="volume_up" textKey="feature_youtubeShortsPreviewAudio" />
     </div>
 </section>
 
+<!-- Everything about reading the page in front of you: stripping it down, recolouring
+     it, and having it read out loud. -->
 <section class="features-section card">
-    <h3>{$t('sectionWebReadingPlayer')}</h3>
+    <h3>{$t('sectionReadingAPage')}</h3>
     <div class="features-grid">
+        <FeatureItem isMaterial={false} svgId="icon-reader" textKey="feature_readerView" />
+        <FeatureItem isMaterial={true} iconName="auto_stories" textKey="feature_changePageMode" />
         <FeatureItem isMaterial={true} iconName="record_voice_over" textKey="feature_readerReadAloud" />
         <FeatureItem isMaterial={true} iconName="highlight" textKey="feature_readerWordTracking" />
         <FeatureItem isMaterial={true} iconName="opacity" textKey="feature_readerCustomOpacity" />
         <FeatureItem isMaterial={true} iconName="tune" textKey="feature_readerVoiceSettings" />
+    </div>
+</section>
+
+<!-- Watching, which is its own thing. `feature_videoPip` comes from the shortcuts
+     section, where it had been sitting without being a shortcut for want of anywhere
+     better; the per-surface PiP rows stay with their surfaces, because that is what
+     each of them is about. -->
+<section class="features-section card">
+    <h3>{$t('sectionVideo')}</h3>
+    <div class="features-grid">
+        <FeatureItem isMaterial={true} iconName="video_library" textKey="feature_videoPip" />
+        <FeatureItem isMaterial={true} iconName="smart_display" textKey="feature_youtubeIntegration" />
+        <FeatureItem isMaterial={true} iconName="volume_up" textKey="feature_youtubeShortsPreviewAudio" />
     </div>
 </section>
 
@@ -218,7 +234,6 @@
         <FeatureItem isMaterial={true} iconName="contrast" textKey="feature_display_mode_shortcuts" />
         <FeatureItem isMaterial={true} iconName="settings_backup_restore" textKey="feature_shortcuts_backup_reset" />
         <FeatureItem isMaterial={true} iconName="keyboard_alt" textKey="feature_omnibar_prefix_customization" />
-        <FeatureItem isMaterial={true} iconName="video_library" textKey="feature_videoPip" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_navigationPipPopup" />
         <FeatureItem isMaterial={true} iconName="shortcut" textKey="feature_navigationVideoPip" />
         <FeatureItem isMaterial={true} iconName="open_in_new" textKey="feature_contextMenuPipPopup" />

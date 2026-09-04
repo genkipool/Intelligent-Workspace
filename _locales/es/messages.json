@@ -7278,8 +7278,13 @@
     "sectionListReading": {
         "message": "Listar lectura"
     },
-    "sectionWebReadingPlayer": {
-        "message": "Reproductor de lectura web"
+    "sectionReadingAPage": {
+        "message": "Leer una página web",
+        "description": "About page: section title"
+    },
+    "sectionVideo": {
+        "message": "Vídeo",
+        "description": "About page: section title"
     },
     "sectionWebActivity": {
         "message": "Actividad web",
