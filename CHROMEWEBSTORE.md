@@ -140,7 +140,7 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 ## 4. Privacy & Data Use Disclosure Form
 
 ### Data Collection Checklist
-- **Does the extension collect user data?** **YES** (Stored locally on client; only external transmission is user-initiated Gemini AI queries via user API key).
+- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, the site-icon service behind the omnibar's results, and a one-off OCR language-model download).
 
 | Data Type | Collected? | Transmitted Off-Device? | Purpose | Shared with 3rd Parties? |
 |:---|:---|:---|:---|:---|
@@ -149,6 +149,8 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | **Web History** | Yes (local) | No | Workspace link search, history deduplication & local activity metrics | No |
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
 | **Website Content** | Yes (transient) | Yes (Only when user explicitly requests AI summary) | Transmitted directly to Google Gemini API using the user's API key for text summarization | Only to Google AI API upon user command |
+| **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
+| **Link domains** | Yes (transient) | Yes (omnibar results only) | The domain of a listed link, sent to Google's site-icon service to draw its favicon | Only to Google upon user command |
 
 ### Data Use Certification Checklist
 - [x] Data is **NOT** sold to third parties.
@@ -159,38 +161,189 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 
 ## 5. Official Privacy Policy Text (For `intelligentworkspace.genkipool.com/privacy`)
 
+> **The page is the canonical version.** It is published in English at
+> <https://intelligentworkspace.genkipool.com/privacy> and in Spanish at
+> <https://intelligentworkspace.genkipool.com/es/privacy>, and its copy lives in
+> `Intelligent-Workspace-Web/src/i18n/ui.ts` (the `privacy.*` keys) with the two tables in
+> `src/data/privacy.ts`. What follows is that text, kept here so a CWS reviewer can read the
+> policy without leaving this dossier. **If the two ever disagree, the published page wins —
+> update it there and copy it back.**
+
 ```markdown
 # Privacy Policy — Intelligent Workspace
 
-**Effective Date:** September 4, 2026  
-**Website:** https://intelligentworkspace.genkipool.com  
-**Contact:** privacy@genkipool.com  
+**In effect since:** 4 September 2026
+**Website:** https://intelligentworkspace.genkipool.com
+**Contact:** privacy@genkipool.com
 
-### 1. Introduction
-Intelligent Workspace ("we", "our", or "the extension") is a productivity extension designed to organize tabs, workspaces, and research workflows. We are deeply committed to safeguarding your privacy and ensuring you have complete control over your personal data.
+There is no account to create, no server of ours to talk to, and nothing in the extension that
+reports back. That leaves this document short on promises and long on specifics: what is stored,
+where it sits, and every moment something crosses the network.
 
-### 2. Information We Process
-Intelligent Workspace processes information strictly to provide on-device functionality:
-- **Tabs and Windows:** Information about open tabs (titles, URLs) is processed locally to group and categorize your tabs.
-- **Notes and Configurations:** Workspace settings, custom rules, and research notes are stored locally on your device via `chrome.storage.local`.
-- **Browsing Activity & History:** When using the optional history search or focus-tracking features, history items and timestamps are read and indexed strictly within your local browser storage (IndexedDB). No browsing logs leave your computer.
-- **Cookies:** Cookie access is strictly utilized for session isolation and embedded side panel previews. We never store or transmit cookies externally.
+- **No account, no server.** Nothing you do in the extension is sent to us. There is no "us" at
+  the other end: no backend, no database, no log with your name on it.
+- **Your key, your traffic.** The assistant talks to Google with the key you pasted, from your
+  browser, under your quota. There is no proxy of ours in the middle to read it.
+- **Nothing is sold, ever.** No advertising, no data brokers, no telemetry endpoint, and no
+  profile of you for anyone to buy.
 
-### 3. Third-Party Services & AI Integration
-- **Google Gemini API:** If you choose to enable the optional AI Assistant or Summarization features, text extracts or prompts are sent directly from your browser to Google's Gemini API endpoints (`generativelanguage.googleapis.com`) using your own configured API key. Your data is handled subject to Google's API Privacy Terms.
-- **Donation Processing:** Payments and voluntary donations are processed securely via external HTTPS payment portals (Stripe/PayPal). The extension never handles, collects, or stores payment card information.
+## 1. Two different things, one policy
 
-### 4. Data Sharing and Sale
-- We **never** sell, rent, or trade your personal data.
-- We **never** share your data with data brokers, ad networks, or analytics firms.
-- All core extension operations occur entirely offline on your local machine.
+This covers the Chrome extension and the website you are reading. They are separate pieces of
+software with separate privacy stories, and blurring the two is how a policy ends up meaning
+nothing. Wherever a rule applies to one and not the other, it says so.
 
-### 5. Your Rights & Data Deletion
-You retain complete ownership of your data. You can delete all locally stored workspace data, notes, and activity records at any time directly through the extension's settings or by uninstalling the extension from `chrome://extensions`.
+Both are published by Luis Reoyo (GENKI Organización), who is also the data controller for the
+little the website handles. Anything in this document can be checked against the source code,
+which is public.
 
-### 6. Changes to this Policy
-We may periodically update this Privacy Policy. Any modifications will be posted to this page with an updated effective date.
+## 2. What the extension keeps, and where
 
-### 7. Contact Us
-For questions regarding this policy, please reach out to: `privacy@genkipool.com`.
+Everything the extension knows lives in your own browser profile, in the two places Chrome gives
+an extension: its storage areas and an IndexedDB database. Neither is reachable from the internet,
+and no part of the extension copies them anywhere.
+
+| What | Where it lives | Does it leave this machine? |
+|:---|:---|:---|
+| Groups, rules, colours and grouping preferences | `chrome.storage.sync` | Only through Chrome's own profile sync, if you have it switched on |
+| Notes, checklists and Kanban boards | IndexedDB | No |
+| Screenshots, and the text OCR reads out of them | IndexedDB | No |
+| Conversations with the AI assistant | IndexedDB | No. The replies arrive from Google; the transcript stays here |
+| Saved sessions and group backups | IndexedDB | Only inside a file you export yourself, to the folder you choose |
+| Pomodoro sessions and their history | IndexedDB | No |
+| Music you add and your radio favourites | IndexedDB | No |
+| Web activity: seconds, visits and sessions per site, per day | `chrome.storage.local` | No, unless you switch on that record's own sync, which is off by default |
+| Snippets, keyboard overrides and omnibar preferences | `chrome.storage.sync` | Only through Chrome's own profile sync, if you have it switched on |
+| Your Google AI Studio key | `chrome.storage.local` | Never synced. It travels only as the header of your own request to Google |
+
+Removing the extension from `chrome://extensions` deletes all of it, databases included. Chrome
+does that itself, and nothing is left behind anywhere else, because there is nowhere else.
+
+## 3. Chrome's own sync, and what rides along
+
+Some settings — rules, snippets, keyboard overrides — are written to the browser's synced storage
+area so a second computer signed into the same Chrome profile behaves the same way. That area
+belongs to Chrome, not to us: with Chrome sync on, Google carries it under your account; with it
+off, it stays on this machine and behaves exactly like local storage.
+
+The web activity record is deliberately kept out of it. Syncing it is a switch of its own, off
+until you turn it on, because where somebody has been is not something to start shipping anywhere
+without being asked. Your API key is never synced at all.
+
+## 4. When something does leave your browser
+
+The features below reach the network because they cannot work otherwise, and each is listed with
+what it sends and when. None of them is on a schedule and none runs in the background waiting to
+phone home.
+
+| Where to | What is sent | When |
+|:---|:---|:---|
+| `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key | Only when you ask the assistant for something |
+| Chrome's built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
+| `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
+| The radio station you press play on | An ordinary audio request to that station's own server, which sees your IP address as any website does | While a station is playing |
+| `youtube.com` · `i.ytimg.com` | The video id, for the thumbnail and the embedded player | Only for a YouTube link you preview or play |
+| `google.com/s2/favicons` | The domain of a link, so the omnibar can draw its site icon | While the omnibar has results on screen |
+| `cdn.jsdelivr.net` | Nothing about you. It fetches the OCR language model, which Chrome then caches | The first time you run OCR on a screenshot |
+
+And, of course, the websites you open yourself. The extension arranges the tabs around a page; it
+does not sit between you and what is in it.
+
+## 5. The AI assistant
+
+The assistant runs one of two ways, and you pick which. Gemini goes over the network with a Google
+AI Studio key you create and paste yourself: the request is made by your browser, straight to
+Google, on your key and your quota, and it is covered by Google's API terms rather than by this
+policy. We are not a party to that traffic — there is no service of ours in the middle that could
+be.
+
+The alternative is Chrome's built-in model, which runs on your machine and needs neither a key nor
+a connection. Either way the conversation is written to the browser's own database and nowhere
+else, and clearing it in the panel clears it for good.
+
+## 6. Permissions, and what they are not for
+
+Chrome will tell you the extension asks for twenty-four permissions plus access to every site.
+That is a lot, and being suspicious about it is the right instinct, so each group is set out on the
+home page beside the feature that cannot exist without it. None of them builds a profile, and none
+feeds anything that leaves this machine except the connections listed above.
+
+Access to every site is what lets the link labels, reader mode, snippet expansion and the activity
+blocker work anywhere rather than on a list Chrome would have to approve first. It is not used to
+read pages in the background: those scripts wake up when you press the key that calls them.
+
+## 7. This website
+
+The site is a handful of static files on Vercel. It sets no cookies, has no login and asks for
+nothing. Your browser's request reaches Vercel's servers, which see what any web server sees: an IP
+address, a user agent, the page asked for. That is hosting, not tracking.
+
+Two Vercel measurement scripts do run here: Analytics, which counts page views without cookies and
+without a cross-site identifier, and Speed Insights, which reports how quickly the page rendered.
+Both only ever aggregate, neither follows you to another site, and the extension itself carries
+neither.
+
+The donation page is the one exception to "no third-party frames": it loads Stripe, and only
+Stripe.
+
+## 8. Donations
+
+Donations go through Stripe. The card form is Stripe's own, running inside Stripe's frame — the
+card number is typed into their field and never touches this site, the one server function behind
+it, or the extension. That function does exactly one thing: ask Stripe to create a payment between
+1 and 500 euros and hand the browser back a token good for that single payment.
+
+What Stripe collects, and what it does with it, is governed by Stripe's privacy policy rather than
+this one. We keep no record of who donated, because there is no database here to keep one in. A
+donation is voluntary, unlocks nothing, and is not a subscription.
+
+## 9. Chrome Web Store Limited Use
+
+Intelligent Workspace's use of information received from Google APIs follows the Chrome Web Store
+User Data Policy, including its Limited Use requirements. Concretely: the data is used only to
+provide the features described here and on the home page; it is never sold; it is never transferred
+to anyone except where a feature you triggered requires it; it is never used for advertising,
+profiling or creditworthiness; and no human reads it, because it never arrives anywhere a human
+could.
+
+## 10. Your data, and getting rid of it
+
+You hold all of it, which answers most of the usual rights on its own. There is no export request
+to file — the extension writes its own data to a file whenever you ask. There is no deletion
+request either, because the delete button is already in the panel.
+
+- Delete one thing — a note, a screenshot, a backup, a day of activity — where it is shown.
+- Wipe a whole area from the extension's settings, the activity record and the assistant's
+  conversations included.
+- Remove the extension at `chrome://extensions` and Chrome drops every byte of its storage with it.
+- Turn off Chrome's profile sync, or the activity record's own sync switch, if you would rather
+  nothing rode along.
+- Revoke your Google AI Studio key in Google's console. It is your key on your account, and
+  revoking it ends the extension's access immediately.
+
+If you are in the EU or the UK, the rights of access, rectification, erasure, restriction,
+portability and objection apply. In practice there is nothing here to act on — but write to the
+address below and you will get a straight answer about what exists, which is what those rights are
+for.
+
+## 11. Responsibility, minors and the law
+
+The controller is Luis Reoyo (GENKI Organización), Spain. Spanish and EU data protection law
+applies, and a complaint can also be taken to the Agencia Española de Protección de Datos.
+
+The extension is a general productivity tool, not directed at children, and it collects nothing
+that would identify one — or anyone else. There is no age gate because there is no account to put
+one in front of.
+
+## 12. Changes to this policy
+
+When this policy changes the new version replaces this page and the date at the top moves with it.
+Any change that alters what leaves your browser will also be named in the release notes of the
+version that makes it, so it cannot arrive quietly.
+
+## 13. Contact
+
+Questions about any of this — including the ones that begin "I do not believe you" — go to
+privacy@genkipool.com. The source code is public, so a claim on this page that the code does not
+back up is a bug report worth filing.
 ```
