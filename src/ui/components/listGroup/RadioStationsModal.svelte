@@ -2,6 +2,7 @@
     import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import { deaccent, foldForSearch } from '../../services/utils.js';
     import {
         radioStations,
         currentRadioStation,
@@ -65,14 +66,21 @@
 
     function filterAndRankOnlineStations(results, query) {
         if (!Array.isArray(results)) return [];
-        const trimmed = query.trim().toLowerCase();
+        /*
+         * Folded — lowercased and stripped of accents — on BOTH sides of every
+         * comparison below. The filter here is strict: a word that is not found throws
+         * the station away entirely, so `ole` against `Radio Olé` used to discard the
+         * very station the reader was looking for, even when the directory had returned
+         * it. What gets rendered is still `s.name` with its accents.
+         */
+        const trimmed = foldForSearch(query.trim());
         const words = trimmed.split(/\s+/).filter(Boolean);
         if (words.length === 0) return [];
 
         // 1. Strict filter: every search word must be present in name, tags, country, or state
         const valid = results.filter((s) => {
             if (!s.name || (!s.url_resolved && !s.url)) return false;
-            const haystack = `${s.name} ${s.tags || ''} ${s.country || ''} ${s.state || ''}`.toLowerCase();
+            const haystack = foldForSearch(`${s.name} ${s.tags || ''} ${s.country || ''} ${s.state || ''}`);
             return words.every((word) => haystack.includes(word));
         });
 
@@ -83,8 +91,8 @@
             const addedB = isStationAdded(b) ? 1 : 0;
             if (addedA !== addedB) return addedB - addedA;
 
-            const nameA = (a.name || '').toLowerCase();
-            const nameB = (b.name || '').toLowerCase();
+            const nameA = foldForSearch(a.name || '');
+            const nameB = foldForSearch(b.name || '');
 
             // Exact full phrase matching
             const exactA = nameA === trimmed ? 1 : 0;
@@ -162,44 +170,72 @@
             'https://at1.api.radio-browser.info',
         ];
 
+        /*
+         * THE DIRECTORY MATCHES ON THE LETTERS IT WAS GIVEN, accents included, so asking
+         * for what the reader typed is not enough on its own. Somebody looking for
+         * `Música` types `musica`, and somebody looking for `Musica` types `música`; the
+         * search has to work in both directions, and only the server knows which spelling
+         * the station was registered under.
+         *
+         * So both spellings are asked for — in parallel, since they go to the same mirror
+         * — and the answers are merged. When the query has no accents either way there is
+         * only one variant and this costs nothing.
+         */
+        const variants = [...new Set([trimmed, deaccent(trimmed)])];
+
+        /**
+         * Merges answers from several requests, keeping each station once and in the
+         * order the directory returned it — which is its own popularity ranking, and
+         * worth not shuffling. A plain object as the index rather than a `Map`: this is
+         * a throwaway lookup inside one call, not component state.
+         */
+        const mergeStations = (lists) => {
+            const seen = Object.create(null);
+            const merged = [];
+            for (const list of lists) {
+                if (!Array.isArray(list)) continue;
+                for (const station of list) {
+                    const key = station.stationuuid || `${station.name}|${station.url_resolved || station.url}`;
+                    if (!key || seen[key]) continue;
+                    seen[key] = true;
+                    merged.push(station);
+                }
+            }
+            return merged;
+        };
+
+        const askServer = async (buildUrl) => {
+            const answers = await Promise.all(
+                variants.map(async (variant) => {
+                    try {
+                        const response = await fetch(buildUrl(variant), { signal: AbortSignal.timeout(5000) });
+                        return response.ok ? await response.json() : null;
+                    } catch {
+                        return null;
+                    }
+                }),
+            );
+            const merged = mergeStations(answers);
+            return merged.length > 0 ? merged : null;
+        };
+
         let results = null;
         for (const server of servers) {
-            try {
-                // Primary search: query by name with active stream filter and clickcount sorting
-                const url = `${server}/json/stations/search?name=${encodeURIComponent(trimmed)}&hidebroken=true&order=clickcount&reverse=true&limit=60`;
-                const response = await fetch(url, {
-                    signal: AbortSignal.timeout(5000),
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        results = data;
-                        break;
-                    }
-                }
-            } catch {
-                // Try next mirror
-            }
+            // Primary search: query by name with active stream filter and clickcount sorting
+            results = await askServer(
+                (variant) =>
+                    `${server}/json/stations/search?name=${encodeURIComponent(variant)}&hidebroken=true&order=clickcount&reverse=true&limit=60`,
+            );
+            if (results) break;
         }
 
         // Fallback to /byname if search returned no results
         if (!results || results.length === 0) {
             for (const server of servers) {
-                try {
-                    const fallbackUrl = `${server}/json/stations/byname/${encodeURIComponent(trimmed)}?limit=60`;
-                    const response = await fetch(fallbackUrl, {
-                        signal: AbortSignal.timeout(5000),
-                    });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (Array.isArray(data) && data.length > 0) {
-                            results = data;
-                            break;
-                        }
-                    }
-                } catch {
-                    // Try next mirror
-                }
+                results = await askServer(
+                    (variant) => `${server}/json/stations/byname/${encodeURIComponent(variant)}?limit=60`,
+                );
+                if (results) break;
             }
         }
 

@@ -287,6 +287,29 @@ export function groupHistoryByDate(historyItems) {
     return Array.from(groups.values()).sort((a, b) => b.timestamp - a.timestamp);
 }
 
+/**
+ * A string with its accents removed, for comparing what somebody typed against what a
+ * name actually says.
+ *
+ * Nobody reaches for the accent key while searching, and the things being searched are
+ * full of them — `Radio Olé`, `Música`, `España`. Lowercasing alone leaves `ole` and
+ * `olé` as different strings, so a search that should obviously match finds nothing.
+ *
+ * `NFD` splits an accented letter into the letter and its mark; dropping the marks
+ * leaves the letter. It is used for COMPARING only — what gets displayed is always the
+ * original text, accents and all.
+ */
+export function deaccent(str) {
+    return String(str ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Lowercased and without accents, which is how nearly every comparison wants it. */
+export function foldForSearch(str) {
+    return deaccent(str).toLowerCase();
+}
+
 export function escapeHtml(str) {
     if (!str) return '';
     return str

@@ -240,9 +240,15 @@ function omniboxEscapeRegex(word) {
  * word for very short ones.
  */
 function omniboxContains(haystack, word) {
-    if (word.length > OMNIBOX_BOUNDARY_MAX) return haystack.includes(word);
-    const boundary = '[^a-z0-9áéíóúüñ]';
-    return new RegExp(`(^|${boundary})${omniboxEscapeRegex(word)}(${boundary}|$)`).test(haystack);
+    // Both sides folded, so `dia` finds `día` and `espana` finds `España`. Nobody
+    // reaches for the accent key while hunting for a tab, and the titles are full of
+    // them. `ñ` folds to `n` as a side effect of the same normalisation, which is the
+    // behaviour a Spanish reader expects anyway.
+    const hay = omniboxDeaccent(haystack);
+    const needle = omniboxDeaccent(word);
+    if (needle.length > OMNIBOX_BOUNDARY_MAX) return hay.includes(needle);
+    const boundary = '[^a-z0-9]';
+    return new RegExp(`(^|${boundary})${omniboxEscapeRegex(needle)}(${boundary}|$)`).test(hay);
 }
 
 chrome.omnibox.onInputStarted.addListener(() => {
@@ -282,10 +288,13 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
             const urlLower = (tab.url || '').toLowerCase();
             let score = 0;
 
-            // Rule A: Exact full substring match of normalized query in title/url
+            // Rule A: Exact full substring match of normalized query in title/url.
+            // Folded like everything else, so an accented question still recognises the
+            // whole phrase inside a title.
             if (normalizedText.length > 2) {
-                if (titleLower.includes(normalizedText)) score += 30;
-                else if (urlLower.includes(normalizedText)) score += 15;
+                const foldedQuery = omniboxDeaccent(normalizedText);
+                if (omniboxDeaccent(titleLower).includes(foldedQuery)) score += 30;
+                else if (omniboxDeaccent(urlLower).includes(foldedQuery)) score += 15;
             }
 
             // Rule B: Keyword-based matching
