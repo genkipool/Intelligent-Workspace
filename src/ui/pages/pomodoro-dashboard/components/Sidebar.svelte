@@ -1,5 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
+    import { compareNames } from '../../../services/utils.js';
 
     let {
         folderNames = [],
@@ -123,7 +124,7 @@
     <!-- Folders + projects tree -->
     <div class="sidebar-scroll">
         {#each folderNames as folder (folder)}
-            {@const projects = [...(folderMap[folder] || [])].sort()}
+            {@const projects = [...(folderMap[folder] || [])].sort(compareNames)}
             {@const folderMatches = matchesQuery(folder)}
             {@const anyProjectMatches = projects.some((p) => matchesQuery(p))}
             {#if folderMatches || anyProjectMatches}

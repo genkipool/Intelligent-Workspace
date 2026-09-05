@@ -310,6 +310,20 @@ export function foldForSearch(str) {
     return deaccent(str).toLowerCase();
 }
 
+/**
+ * How a list of names meant for a person gets ordered.
+ *
+ * `Array.prototype.sort()` with no comparator sorts by code point, and in that order
+ * every accented capital lands after `Z`: a folder called `Ñandú` or `Álvaro` sinks to
+ * the bottom of a list it belongs in the middle of. `localeCompare` knows that `Á`
+ * belongs with `A` and that `ñ` follows `n`, which is the order the reader is looking
+ * for. `numeric` makes `Proyecto 2` come before `Proyecto 10`, which is the other thing
+ * a plain sort gets wrong on names people write.
+ */
+export function compareNames(a, b) {
+    return String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+}
+
 export function escapeHtml(str) {
     if (!str) return '';
     return str
