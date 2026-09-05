@@ -512,6 +512,13 @@ export async function handleAgentQuery(userQuery, attachments = []) {
         }
     }
     const MAX_STEPS = 8;
+    /*
+     * Names this run so the worker can tell one agent conversation from another.
+     * It is what lets it remember that THIS run has read a web page, and refuse the
+     * tools that could carry what it found somewhere else. See
+     * `executeAgentTool` in agent-backend.js.
+     */
+    const agentRunId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let finalResponse = null;
 
     const addStep = (text, status = 'running') => {
@@ -603,6 +610,7 @@ export async function handleAgentQuery(userQuery, attachments = []) {
                             action: 'geminiAgentToolCall',
                             tool: toolName,
                             params: toolParams,
+                            runId: agentRunId,
                         },
                         (response) =>
                             resolve(
@@ -658,6 +666,9 @@ export async function handleAgentQuery(userQuery, attachments = []) {
     } finally {
         hideThinking();
         setAgentButtonRunning(false);
+        // The run is over either way — answered, errored or cancelled — so the worker can
+        // stop remembering whether it had read a page.
+        chrome.runtime.sendMessage({ action: 'geminiAgentRunFinished', runId: agentRunId });
     }
 
     if (isAgentQueryCancelled) {

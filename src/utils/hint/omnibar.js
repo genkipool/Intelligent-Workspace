@@ -3719,6 +3719,13 @@ IMPORTANT RULES:
 - ALWAYS respond in the SAME LANGUAGE the user used`;
         const steps = [];
         const MAX_STEPS = 8;
+        /*
+         * Names this run so the worker can tell one agent conversation from another.
+         * It is what lets it remember that THIS run has read a web page, and refuse the
+         * tools that could carry what it found somewhere else. See
+         * `executeAgentTool` in agent-backend.js.
+         */
+        const agentRunId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         let finalResponse = null;
         const contents = [
             {
@@ -3784,6 +3791,7 @@ IMPORTANT RULES:
                             action: 'geminiAgentToolCall',
                             tool: toolName,
                             params: toolParams,
+                            runId: agentRunId,
                         },
                         (response) =>
                             resolve(
@@ -3824,6 +3832,10 @@ IMPORTANT RULES:
             break;
         }
         if (!finalResponse) finalResponse = getOmniMsg('agentMaxStepsReached') || 'Max steps reached.';
+        // The run is over, so the worker can stop remembering whether it read a page.
+        // Losing this message costs nothing: the set lives in memory and a run nobody is
+        // talking to any more cannot be used against anyone.
+        chrome.runtime.sendMessage({ action: 'geminiAgentRunFinished', runId: agentRunId });
         this._renderAgentResponse(userQuery, steps, finalResponse);
     }
     _renderAIResponse(query, answer) {

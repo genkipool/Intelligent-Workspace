@@ -619,6 +619,13 @@ const MESSAGE_HANDLERS = {
         handleGeminiAgentToolCall(message, sendResponse);
         return true;
     },
+    // The agent loop says when it is done so the worker can stop tracking whether that
+    // run had read a web page. Losing the message is harmless: the set is in memory and
+    // an untracked run is one nobody is talking to any more.
+    geminiAgentRunFinished: (message) => {
+        forgetAgentRun(message.runId);
+        return false;
+    },
     getOmnibarConversations: (message, sender, sendResponse) => {
         handleGetOmnibarConversations(sendResponse);
         return true;
