@@ -91,12 +91,91 @@ const SIDEPANEL_MOBILE_UA =
 const SIDEPANEL_DESKTOP_UA_HOSTS = ['web.whatsapp.com', 'whatsapp.com', 'meet.google.com', 'teams.microsoft.com'];
 
 /**
+ * The second-level suffixes that are registries rather than sites.
+ *
+ * Without this, `slice(-2)` reduces `www.bbc.co.uk` to `co.uk` — and a DNR
+ * `requestDomains: ['co.uk']` matches that domain *and every subdomain of it*,
+ * which is every site in the United Kingdom. The rules below take framing
+ * headers off whatever they match, so an over-wide answer here is not a
+ * cosmetic bug: it is the difference between "this newspaper" and "half a TLD".
+ *
+ * A complete answer needs the Public Suffix List, which is 10k entries and not
+ * worth shipping for this; the list below is the suffixes a browser extension
+ * actually meets. Anything missing falls back to the old behaviour for that
+ * name only, so an unlisted suffix is no worse than before.
+ */
+const MULTIPART_SUFFIXES = new Set([
+    'co.uk',
+    'org.uk',
+    'me.uk',
+    'ac.uk',
+    'gov.uk',
+    'net.uk',
+    'sch.uk',
+    'com.au',
+    'net.au',
+    'org.au',
+    'edu.au',
+    'gov.au',
+    'co.nz',
+    'net.nz',
+    'org.nz',
+    'co.jp',
+    'or.jp',
+    'ne.jp',
+    'ac.jp',
+    'go.jp',
+    'co.kr',
+    'or.kr',
+    'com.br',
+    'net.br',
+    'org.br',
+    'gov.br',
+    'com.mx',
+    'com.ar',
+    'com.co',
+    'com.pe',
+    'com.uy',
+    've.com',
+    'co.za',
+    'org.za',
+    'com.cn',
+    'net.cn',
+    'org.cn',
+    'gov.cn',
+    'com.hk',
+    'com.sg',
+    'com.tw',
+    'com.tr',
+    'com.my',
+    'com.ph',
+    'co.in',
+    'net.in',
+    'org.in',
+    'co.il',
+    'org.il',
+    'com.ua',
+    'com.ru',
+    'com.pl',
+    'com.es',
+    'com.pt',
+    'com.gr',
+]);
+
+/**
  * Reduces a hostname to the domain DNR should match, so that `www.x.com`
- * also covers `x.com` and its subdomains.
+ * also covers `x.com` and its subdomains — without ever reducing it to a
+ * registry suffix. See `MULTIPART_SUFFIXES`.
  */
 function registrableDomain(hostname) {
-    const parts = (hostname || '').toLowerCase().split('.');
-    return parts.length > 2 ? parts.slice(-2).join('.') : hostname.toLowerCase();
+    const host = (hostname || '').toLowerCase();
+    const parts = host.split('.');
+    if (parts.length <= 2) return host;
+    const lastTwo = parts.slice(-2).join('.');
+    if (MULTIPART_SUFFIXES.has(lastTwo)) {
+        return parts.length > 3 ? parts.slice(-3).join('.') : host;
+    }
+    return lastTwo;
 }
 
 function pickSidePanelUserAgent(hostname) {
@@ -359,33 +438,28 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
  */
 async function getCookiesHeaderForDomain(url) {
     try {
-        const targetDomain = new URL(url).hostname;
-        // Get cookies for the domain
-        const cookies = await chrome.cookies.getAll({ domain: targetDomain });
+        /*
+         * ASK BY URL, NOT BY DOMAIN.
+         *
+         * `getAll({ domain })` matches the domain *and every subdomain of it*, and it
+         * ignores `path` and `secure` — so building the header that way put
+         * `internal.example.com`'s cookies, and cookies scoped to paths this request
+         * never touches, into a request to `www.example.com`. The manual walk up to
+         * the parent domain then widened it a second time.
+         *
+         * `getAll({ url })` is Chrome's own matching: exactly the cookies a real
+         * navigation to this URL would carry, parent-domain ones included, and
+         * nothing else. It is both narrower and more faithful to what the frame is
+         * pretending to be.
+         */
+        const cookies = await chrome.cookies.getAll({ url });
 
-        // Also get cookies for parent domain if applicable (e.g. .youtube.com if targetDomain is www.youtube.com)
-        let parentDomain = targetDomain;
-        const parts = targetDomain.split('.');
-        if (parts.length > 2) {
-            parentDomain = parts.slice(-2).join('.');
-        }
-
-        const allCookies = [];
         const seen = new Set();
-
-        const addCookies = (list) => {
-            for (const c of list) {
-                if (!seen.has(c.name)) {
-                    seen.add(c.name);
-                    allCookies.push(`${c.name}=${c.value}`);
-                }
-            }
-        };
-
-        addCookies(cookies);
-        if (parentDomain !== targetDomain) {
-            const parentCookies = await chrome.cookies.getAll({ domain: parentDomain });
-            addCookies(parentCookies);
+        const allCookies = [];
+        for (const c of cookies) {
+            if (seen.has(c.name)) continue;
+            seen.add(c.name);
+            allCookies.push(`${c.name}=${c.value}`);
         }
 
         return allCookies.join('; ');
@@ -404,6 +478,44 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
     (async () => {
         const responseHeaders = buildFramingResponseHeaders();
 
+        /*
+         * THE RULE HAS TO NAME A DOMAIN, and this is not a tidiness point.
+         *
+         * It used to carry `resourceTypes` and nothing else. A DNR condition with no
+         * host and no tab matches every request the extension has permission for, and
+         * this extension has `<all_urls>` — so floating one video took
+         * X-Frame-Options, CSP, COOP, COEP and CORP off *every iframe, XHR and script
+         * in the browser*, in every tab, for as long as the rule stood. That is
+         * universal clickjacking and a CSP bypass on sites that have nothing to do
+         * with the video, handed out by a feature that only ever needed to frame one
+         * page. `handlePrepareUrlForSidePanel` above already scopes its rules for
+         * exactly this reason; this one did not.
+         *
+         * Scoping to the target's registrable domain is what the PiP frame actually
+         * needs: the document it loads and the same-site frames and requests that
+         * document makes. Headers on a third-party subresource were never what let
+         * the frame open.
+         */
+        let target = null;
+        if (message.url) {
+            try {
+                target = new URL(message.url);
+            } catch {
+                target = null;
+            }
+        }
+        if (!target || !['http:', 'https:'].includes(target.protocol)) {
+            sendResponse({ success: false, error: 'A framable http(s) URL is required' });
+            return;
+        }
+        if (isPaymentHost(target.hostname)) {
+            // Same refusal as the side panel: see NEVER_STRIP_FRAMING_HOSTS. The list
+            // was only being consulted on one of the two paths that strip headers.
+            logMessage(`[DNR] Refusing to strip framing headers for payment host: ${target.hostname}`);
+            sendResponse({ success: false, error: 'Framing headers are never stripped for payment hosts' });
+            return;
+        }
+
         const ruleId = SIDEPANEL_RULE_ID + 2;
         const rule = {
             id: ruleId,
@@ -413,6 +525,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
                 responseHeaders: responseHeaders,
             },
             condition: {
+                requestDomains: [registrableDomain(target.hostname)],
                 resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'other'],
             },
         };
@@ -420,8 +533,8 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
         const rule2Id = SIDEPANEL_RULE_ID + 3;
         const rules = [rule];
 
-        if (message.url) {
-            const urlObj = new URL(message.url);
+        {
+            const urlObj = target;
             const isYouTube = urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be');
             if (!isYouTube) {
                 const cookieString = await getCookiesHeaderForDomain(message.url);
@@ -441,7 +554,15 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
                             ],
                         },
                         condition: {
-                            urlFilter: `*://${targetDomain}/*`,
+                            /*
+                             * `https` only. The filter used to be `*://`, and the header
+                             * it sets carries the site's session cookies — httpOnly and
+                             * Secure ones included, because that is the point of copying
+                             * them into a frame that would not receive them. Over `http://`
+                             * that is the whole session in cleartext, for a scheme the
+                             * framed page is never loaded on anyway.
+                             */
+                            urlFilter: `|https://${targetDomain}/`,
                             resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'other'],
                         },
                     });
@@ -512,6 +633,33 @@ function handlePrepareYouTubeEmbed(sendResponse) {
         } catch (error) {
             console.error('[DNR] Error installing YouTube embed rule:', error);
             sendResponse({ success: false, error: error.message });
+        }
+    })();
+}
+
+/**
+ * Takes the video-PiP rules back down.
+ *
+ * These are session rules: nothing expires them, the worker restarting does not
+ * clear them, and `handleCleanupSidePanelRules` below only ever removed the side
+ * panel's two. So a single float — one video, once — left the framing rules
+ * standing until the browser was closed, long after the window they were opened
+ * for had gone. The PiP window's own `pagehide` now asks for this.
+ *
+ * Safe to call when there is nothing to remove: `updateSessionRules` ignores ids
+ * that are not installed.
+ */
+function handleCleanupVideoPipRules(sendResponse) {
+    (async () => {
+        try {
+            await chrome.declarativeNetRequest.updateSessionRules({
+                removeRuleIds: [SIDEPANEL_RULE_ID + 2, SIDEPANEL_RULE_ID + 3],
+            });
+            logMessage('[DNR] Video PiP rules cleaned up.');
+            sendResponse?.({ success: true });
+        } catch (error) {
+            console.error('[DNR] Error cleaning up video PiP rules:', error);
+            sendResponse?.({ success: false, error: error.message });
         }
     })();
 }

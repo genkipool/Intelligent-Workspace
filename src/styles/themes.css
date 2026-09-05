@@ -1,3 +1,16 @@
+:root {
+    --logo-card-back: #5abccc;
+    --logo-rect-back: #ffffff;
+    --logo-card-mid: #66aceb;
+    --logo-rect-mid: #ffffff;
+    --logo-card-front: #4474c5;
+    --logo-bar: #9ac5ea;
+    --logo-dot-1: #f48325;
+    --logo-dot-2: #df5f1d;
+    --logo-dot-3: #f4d54e;
+    --logo-dot-4: #3e9d46;
+}
+
 [data-theme='light'] {
     --action-color: #3498db;
     --text-color: #000000;
@@ -8,6 +21,17 @@
     --interactive-color: #3498db;
     --error-color: #e74c3c;
     --header-color: #0658aa;
+
+    --logo-card-back: #5abccc;
+    --logo-rect-back: #ffffff;
+    --logo-card-mid: #3498db;
+    --logo-rect-mid: #ffffff;
+    --logo-card-front: #0658aa;
+    --logo-bar: #9ac5ea;
+    --logo-dot-1: #f48325;
+    --logo-dot-2: #df5f1d;
+    --logo-dot-3: #f4d54e;
+    --logo-dot-4: #3e9d46;
 }
 
 [data-theme='dark'] {
@@ -20,6 +44,17 @@
     --interactive-color: #5f6368;
     --error-color: #dbee0c;
     --header-color: #424242;
+
+    --logo-card-back: #424242;
+    --logo-rect-back: #ffffff;
+    --logo-card-mid: #5f6368;
+    --logo-rect-mid: #ffffff;
+    --logo-card-front: #2c2c2c;
+    --logo-bar: #424242;
+    --logo-dot-1: #f48325;
+    --logo-dot-2: #df5f1d;
+    --logo-dot-3: #f4d54e;
+    --logo-dot-4: #3e9d46;
 }
 
 [data-theme='viridian'] {
@@ -32,4 +67,28 @@
     --interactive-color: #16a085;
     --error-color: #e74c3c;
     --header-color: #0e6655;
+
+    --logo-card-back: #48c9b0;
+    --logo-rect-back: #ffffff;
+    --logo-card-mid: #16a085;
+    --logo-rect-mid: #ffffff;
+    --logo-card-front: #0e6655;
+    --logo-bar: #73d2be;
+    --logo-dot-1: #f48325;
+    --logo-dot-2: #df5f1d;
+    --logo-dot-3: #f4d54e;
+    --logo-dot-4: #3e9d46;
+}
+
+[data-theme='custom'] {
+    --logo-card-back: var(--interactive-color, #5abccc);
+    --logo-rect-back: #ffffff;
+    --logo-card-mid: var(--action-color, #66aceb);
+    --logo-rect-mid: #ffffff;
+    --logo-card-front: var(--header-color, #4474c5);
+    --logo-bar: var(--border-color, #9ac5ea);
+    --logo-dot-1: #f48325;
+    --logo-dot-2: #df5f1d;
+    --logo-dot-3: #f4d54e;
+    --logo-dot-4: #3e9d46;
 }

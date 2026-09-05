@@ -12,7 +12,7 @@
     import PermissionsSection from './components/PermissionsSection.svelte';
     import LicenseSection from './components/LicenseSection.svelte';
 
-    import icon128 from '../../../../assets/icons/icon128.png';
+    import AppLogo from '../../components/common/AppLogo.svelte';
     import teamImg from '../../../../assets/images/about/team.png';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
 
@@ -78,7 +78,7 @@
     <main class="content-area">
         <section class="intro-section card">
             <div class="intro-content">
-                <img src={icon128} alt="Intelligent Workspace Logo" class="app-logo" />
+                <AppLogo class="app-logo" />
                 <div class="intro-text">
                     <h1>{$t('appName')}</h1>
                     <p class="app-tagline">{$t('appDescription')}</p>

@@ -1098,7 +1098,7 @@ export function createGenericListItem(item, type) {
     if (url) {
         favicon.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(url)}&size=16`;
     } else {
-        favicon.src = '../../../assets/icons/icon16.png';
+        favicon.src = '../../../assets/icons/logo.svg';
     }
     const titleEl = el.querySelector('.item-title');
     const urlEl = el.querySelector('.item-url');

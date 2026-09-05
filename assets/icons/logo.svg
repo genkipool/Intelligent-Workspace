@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="536"
+     height="476"
+     viewBox="0 0 536 476">
+  <style>
+    .card-back { fill: var(--logo-card-back, #5ABCCC); }
+    .rect-back { fill: var(--logo-rect-back, #FFFFFF); }
+    .card-mid { fill: var(--logo-card-mid, #66ACEB); }
+    .rect-mid { fill: var(--logo-rect-mid, #FFFFFF); }
+    .card-front { fill: var(--logo-card-front, #4474C5); }
+    .bar { fill: var(--logo-bar, #9AC5EA); }
+    .dot-1 { fill: var(--logo-dot-1, #F48325); }
+    .dot-2 { fill: var(--logo-dot-2, #DF5F1D); }
+    .dot-3 { fill: var(--logo-dot-3, #F4D54E); }
+    .dot-4 { fill: var(--logo-dot-4, #3E9D46); }
+  </style>
+
+  <!-- TARJETA POSTERIOR -->
+  <rect x="11" y="10"
+        width="324" height="300"
+        rx="49"
+        class="card-back"
+        fill="#5ABCCC"/>
+
+  <!-- RECTÁNGULO BLANCO POSTERIOR -->
+  <rect x="49" y="42"
+        width="157" height="104"
+        rx="24"
+        class="rect-back"
+        fill="#FFFFFF"/>
+
+  <!-- TARJETA INTERMEDIA -->
+  <rect x="80" y="87"
+        width="324" height="300"
+        rx="49"
+        class="card-mid"
+        fill="#66ACEB"/>
+
+  <!-- RECTÁNGULO BLANCO INTERMEDIO -->
+  <rect x="116" y="117"
+        width="158" height="104"
+        rx="24"
+        class="rect-mid"
+        fill="#FFFFFF"/>
+
+  <!-- TARJETA PRINCIPAL -->
+  <rect x="148" y="146"
+        width="324" height="299"
+        rx="49"
+        class="card-front"
+        fill="#4474C5"/>
+
+  <!-- BARRA -->
+  <rect x="165" y="179"
+        width="343" height="84"
+        rx="18"
+        class="bar"
+        fill="#9AC5EA"/>
+
+  <!-- CÍRCULO NARANJA -->
+  <circle cx="213.5" cy="221"
+          r="31.5"
+          class="dot-1"
+          fill="#F48325"/>
+
+  <!-- CÍRCULO NARANJA OSCURO -->
+  <circle cx="295.5" cy="221"
+          r="31.5"
+          class="dot-2"
+          fill="#DF5F1D"/>
+
+  <!-- CÍRCULO AMARILLO -->
+  <circle cx="377.5" cy="221"
+          r="31.5"
+          class="dot-3"
+          fill="#F4D54E"/>
+
+  <!-- CÍRCULO VERDE -->
+  <circle cx="459.5" cy="221"
+          r="31.5"
+          class="dot-4"
+          fill="#3E9D46"/>
+
+</svg>

@@ -29,11 +29,40 @@
      * The address the user actually asked for, which the blocking rule appended raw
      * after `&u=`. It is read by splitting rather than with URLSearchParams because a
      * URL with its own query would be cut at the first `&`.
+     *
+     * IT HAS TO BE CHECKED AGAINST `d`, and this is not belt-and-braces.
+     * `blocked.html` is in `web_accessible_resources` for `<all_urls>`, so any page on
+     * the web can open it with a `d` and a `u` of its choosing. Taken on trust, `u` fed
+     * `location.replace` directly: a site could show the extension's own block screen,
+     * on the extension's own origin, naming a domain the reader trusts — and send them
+     * somewhere else entirely when they pressed "five more minutes".
+     *
+     * The rule in `waRebuildBlockRules` only ever substitutes a URL matching
+     * `^https?://([a-z0-9_-]+\.)*<domain>(:\d+)?/`, so requiring http(s) on `domain`
+     * or a subdomain of it accepts every address the blocker itself produces and
+     * nothing a stranger can invent. Anything else falls back to the domain's own home
+     * page, which is where the reader was trying to go anyway.
      */
     const requestedUrl = (() => {
+        const fallback = `https://${domain}`;
         const marker = window.location.search.indexOf('&u=');
-        if (marker < 0) return `https://${domain}`;
-        return window.location.search.slice(marker + 3) || `https://${domain}`;
+        if (marker < 0) return fallback;
+        const raw = window.location.search.slice(marker + 3);
+        if (!raw || !domain) return fallback;
+
+        let target;
+        try {
+            target = new URL(raw);
+        } catch {
+            return fallback;
+        }
+        if (target.protocol !== 'https:' && target.protocol !== 'http:') return fallback;
+
+        const host = target.hostname.toLowerCase();
+        const blocked = domain.toLowerCase();
+        if (host !== blocked && !host.endsWith(`.${blocked}`)) return fallback;
+
+        return raw;
     })();
 
     let verdict = $state(null);

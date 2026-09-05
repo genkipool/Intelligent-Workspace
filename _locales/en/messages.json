@@ -477,40 +477,40 @@
     "description": "Shortcut name"
   },
   "donation": {
-    "message": "Donation",
-    "description": "Donation section title"
+    "message": "Support Development",
+    "description": "Support section title"
   },
   "bitcoin": {
     "message": "Bitcoin",
-    "description": "Bitcoin donation label"
+    "description": "Bitcoin label"
   },
   "cardano": {
     "message": "Cardano",
-    "description": "Cardano donation label"
+    "description": "Cardano label"
   },
   "radix": {
     "message": "Radix",
-    "description": "Radix donation label"
+    "description": "Radix label"
   },
   "paypal": {
     "message": "PayPal",
-    "description": "PayPal donation label"
+    "description": "PayPal label"
   },
   "stripe": {
     "message": "Card",
-    "description": "Stripe donation label"
+    "description": "Stripe card label"
   },
   "googlePay": {
     "message": "Google Pay",
-    "description": "Google Pay donation label"
+    "description": "Google Pay label"
   },
   "applePay": {
     "message": "Apple Pay",
-    "description": "Apple Pay donation label"
+    "description": "Apple Pay label"
   },
   "ethereum": {
     "message": "Ethereum",
-    "description": "Ethereum donation label"
+    "description": "Ethereum label"
   },
   "developedBy": {
     "message": "Development: Luisrb85, Design & Testing: Flor Chávez.",
@@ -602,7 +602,7 @@
   },
   "addressCopied": {
     "message": "Address copied to clipboard!",
-    "description": "Notification for copied donation address"
+    "description": "Notification for copied address"
   },
   "errorCopyingAddress": {
     "message": "Error copying address.",
@@ -972,64 +972,64 @@
     "description": "Adjust the color used to indicate errors in the interface"
   },
   "donateWithBitcoin": {
-    "message": "Donate with Bitcoin",
+    "message": "Support with Bitcoin",
     "description": "Copy the Bitcoin address"
   },
   "donateWithCardano": {
-    "message": "Donate with Cardano",
+    "message": "Support with Cardano",
     "description": "Copy the Cardano address"
   },
   "donateWithRadix": {
-    "message": "Donate with Radix",
+    "message": "Support with Radix",
     "description": "Copy the Radix address"
   },
   "donateWithPaypal": {
-    "message": "Donate with PayPal",
-    "description": "Open the PayPal page to make a donation"
+    "message": "Support with PayPal",
+    "description": "Open the PayPal page to support"
   },
   "donateWithStripe": {
-    "message": "Donate by card",
-    "description": "Open the donation form to pay by card"
+    "message": "Support with card",
+    "description": "Open the form to pay by card"
   },
   "donateWithGooglePay": {
-    "message": "Donate with Google Pay",
-    "description": "Open the donation form and pay with Google Pay"
+    "message": "Support with Google Pay",
+    "description": "Open the form and pay with Google Pay"
   },
   "openStripeDonation": {
-    "message": "Open card donation form",
-    "description": "ARIA label for donation button"
+    "message": "Open card payment form",
+    "description": "ARIA label for payment button"
   },
   "openGooglePayDonation": {
-    "message": "Open Google Pay donation form",
-    "description": "ARIA label for donation button"
+    "message": "Open Google Pay payment form",
+    "description": "ARIA label for payment button"
   },
   "donateWithApplePay": {
-    "message": "Donate with Apple Pay",
-    "description": "Open the donation form and pay with Apple Pay"
+    "message": "Support with Apple Pay",
+    "description": "Open the form and pay with Apple Pay"
   },
   "openApplePayDonation": {
-    "message": "Open Apple Pay donation form",
-    "description": "ARIA label for donation button"
+    "message": "Open Apple Pay payment form",
+    "description": "ARIA label for payment button"
   },
   "donateWithEthereum": {
-    "message": "Donate with Ethereum",
+    "message": "Support with Ethereum",
     "description": "Copy the Ethereum address"
   },
   "copyEthereumAddress": {
-    "message": "Copy Ethereum donation address",
-    "description": "ARIA label for donation button"
+    "message": "Copy Ethereum address",
+    "description": "ARIA label for copy button"
   },
   "openPaypalDonation": {
-    "message": "Open PayPal donation form",
-    "description": "ARIA label for donation button"
+    "message": "Open PayPal payment form",
+    "description": "ARIA label for payment button"
   },
   "donationThanks": {
     "message": "Thank you for your support!",
-    "description": "Shown after a donation succeeds"
+    "description": "Shown after a payment succeeds"
   },
   "donationThanksAmount": {
-    "message": "Thank you for your €$1 donation!",
-    "description": "Shown after a donation succeeds, with the amount",
+    "message": "Thank you for your €$1 contribution!",
+    "description": "Shown after a payment succeeds, with the amount",
     "placeholders": {
       "amount": {
         "content": "$1"
@@ -1038,7 +1038,7 @@
   },
   "donationFailed": {
     "message": "The payment could not be completed.",
-    "description": "Shown when a donation fails"
+    "description": "Shown when a payment fails"
   },
   "donationLoading": {
     "message": "Loading the secure payment form…",
@@ -2404,7 +2404,7 @@
   },
   "donationDescText": {
     "message": "If you find this extension useful, please consider supporting its development. Every contribution is greatly appreciated!",
-    "description": "Text encouraging users to donate."
+    "description": "Text encouraging users to support the project."
   },
   "invalidRuleNameChars": {
     "message": "Rule name contains invalid characters (<, >): $1",
@@ -6999,20 +6999,20 @@
     "description": "ARIA label for shortcut configuration"
   },
   "copyBitcoinAddress": {
-    "message": "Copy Bitcoin donation address",
-    "description": "ARIA label for donation button"
+    "message": "Copy Bitcoin address",
+    "description": "ARIA label for copy button"
   },
   "copyCardanoAddress": {
-    "message": "Copy Cardano donation address",
-    "description": "ARIA label for donation button"
+    "message": "Copy Cardano address",
+    "description": "ARIA label for copy button"
   },
   "copyRadixAddress": {
-    "message": "Copy Radix donation address",
-    "description": "ARIA label for donation button"
+    "message": "Copy Radix address",
+    "description": "ARIA label for copy button"
   },
   "openPaypalPage": {
-    "message": "Open PayPal donation page",
-    "description": "ARIA label for donation button"
+    "message": "Open PayPal page",
+    "description": "ARIA label for link button"
   },
   "openWebConfigRules": {
     "message": "Open web configuration rules",

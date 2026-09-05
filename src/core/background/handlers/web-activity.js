@@ -929,6 +929,15 @@ function handleWebActivityImport(message, sendResponse) {
             for (const [day, record] of Object.entries(payload.days || {})) {
                 const existing = await waGetDay(day);
                 for (const [domain, incoming] of Object.entries(record.domains || {})) {
+                    /*
+                     * `JSON.parse` keeps `__proto__` as a real own property, so a file
+                     * naming a domain `__proto__` made `existing.domains[domain]` read
+                     * back `Object.prototype` — truthy, so `||=` left it alone — and
+                     * `waAddEntry` then wrote its counters onto the prototype every
+                     * object in this worker inherits from. The import is a file the
+                     * reader picked off disk, so it is not always a file they wrote.
+                     */
+                    if (domain === '__proto__' || domain === 'constructor' || domain === 'prototype') continue;
                     waAddEntry((existing.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay()), incoming);
                 }
                 writes[ITG_WEB_ACTIVITY.dayStorageKey(day)] = existing;
