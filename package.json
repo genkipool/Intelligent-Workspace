@@ -17,7 +17,8 @@
         "generate:logos": "node scripts/generate-theme-logos.mjs",
         "check:release": "node scripts/check-release.mjs",
         "sync:policy": "node scripts/sync-policy.mjs",
-        "verify": "pnpm run lint && pnpm run format && pnpm run check:release && pnpm run build"
+        "verify": "pnpm run lint && pnpm run format && pnpm run check:release && pnpm run build",
+        "package": "python3 scripts/package-extension.py"
     },
     "devDependencies": {
         "@crxjs/vite-plugin": "^2.4.0",
