@@ -198,7 +198,7 @@ was being shown for a capability the extension does not use.
 ## 4. Privacy & Data Use Disclosure Form
 
 ### Data Collection Checklist
-- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, the site-icon service behind the omnibar's results, and a one-off OCR language-model download).
+- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download).
 
 | Data Type | Collected? | Transmitted Off-Device? | Purpose | Shared with 3rd Parties? |
 |:---|:---|:---|:---|:---|
@@ -208,7 +208,7 @@ was being shown for a capability the extension does not use.
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
 | **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
-| **Link domains** | Yes (transient) | Yes (omnibar results only) | The domain of a listed link, sent to Google's site-icon service to draw its favicon | Only to Google upon user command |
+| **Link domains** | Yes (transient) | **No** | The omnibar draws each row's site icon from Chrome's own favicon store, through the worker, so no address leaves the browser to fetch one. It used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. | No |
 | **Nothing identifying** | — | Yes (first OCR run only) | The Tesseract language model (`eng`/`spa` `.traineddata`) is fetched once from `cdn.jsdelivr.net` and cached by Chrome. It is model data, not code: the OCR engine's WebAssembly core ships inside the package and is never fetched. Verified by observing the worker's own network on a clean profile. | No |
 
 ### The assistant cannot be talked into exfiltrating
@@ -325,7 +325,7 @@ The GDPR asks for a lawful basis per purpose rather than one for the whole produ
 are, one line each.
 
 - Running the features on your device: your consent, given when you install the extension and again when you switch on an optional feature such as the activity record or the assistant. Article 6.1.a.
-- Sending a prompt to Google, searching the radio directory, loading a YouTube thumbnail or fetching a site icon: your consent, given by the action itself. Nothing is sent until you ask for it.
+- Sending a prompt to Google, searching the radio directory or loading a YouTube thumbnail: your consent, given by the action itself. Nothing is sent until you ask for it.
 - Serving this website and keeping it up: our legitimate interest in delivering the pages you requested and in aggregate measurement that carries no identifier. Article 6.1.f.
 - Processing a software support contribution: performance of the transaction you started, and the accounting duties that follow it. Articles 6.1.b and 6.1.c.
 
@@ -379,7 +379,6 @@ phone home.
 | `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
 | The radio station you press play on | An ordinary audio request to that station’s own server, which sees your IP address as any website does | While a station is playing |
 | `youtube.com · i.ytimg.com` | The video id, for the thumbnail and the embedded player | Only for a YouTube link you preview or play |
-| `google.com/s2/favicons` | The domain of a link, so the omnibar can draw its site icon | While the omnibar has results on screen |
 | `cdn.jsdelivr.net` | Nothing about you. It fetches the OCR language model, which Chrome then caches | The first time you run OCR on a screenshot |
 
 And, of course, the websites you open yourself. The extension arranges the tabs around a page; it
