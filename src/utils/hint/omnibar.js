@@ -16,6 +16,87 @@ var getOmniMsg = (key, params, fallback) => {
  */
 var TAB_ACTION_TYPES = new Set(['dt', 'ts', 'capture']);
 
+/**
+ * [AI INSTRUCTION]
+ * SITE ICONS COME FROM CHROME, NOT FROM THE NETWORK.
+ *
+ * These rows used to draw their icon from
+ * `https://www.google.com/s2/favicons?domain_url=<the row's url>`, which meant that
+ * merely listing a bookmark, a history entry or a rule sent that address to Google —
+ * for a picture the browser already has. Under the Chrome Web Store's Limited Use
+ * rules, data collected has to be strictly necessary to the extension's purpose, and
+ * an avoidable request that names a page the reader is looking at is not.
+ *
+ * `_favicon/` is Chrome's own store and needs no network at all. A content script
+ * cannot reach it — measured: neither `fetch` nor an `<img>` resolves it, because it
+ * is not a web-accessible resource, and making it one would hand every page on the
+ * web a way to ask what the reader has visited. The worker can, so it fetches and
+ * answers with a data URL.
+ *
+ * Cached by ORIGIN, not by URL: the omnibar re-renders on every keystroke and a site's
+ * icon is the same for all of its pages, so a list of twenty rows across four sites
+ * costs four lookups once, and none after that.
+ */
+/*
+ * `var`, and reusing whatever is already there, because THIS FILE GETS RUN MORE THAN
+ * ONCE IN THE SAME ISOLATED WORLD. Every top-level name in the hint bundle is a `var`
+ * or a `function` for that reason: those redeclare silently, while a `const` throws
+ * `Identifier '…' has already been declared` and takes the whole script down with it —
+ * which is exactly what this line did on its first outing, killing the omnibar on any
+ * page where the bundle ran twice.
+ *
+ * Reusing the existing map rather than replacing it also keeps the icons already
+ * resolved, so a re-injection does not send the reader back to a blank list.
+ */
+var _omniFaviconCache = _omniFaviconCache || new Map();
+
+function _omniPaintLocalFavicon(img, pageUrl) {
+    let origin;
+    try {
+        origin = new URL(pageUrl).origin;
+    } catch {
+        return;
+    }
+    if (!origin || origin === 'null') return;
+
+    const show = (dataUrl) => {
+        if (!dataUrl || !img.isConnected) return;
+        img.src = dataUrl;
+        img.style.display = '';
+    };
+
+    /*
+     * The cache holds one of three things per origin: the data URL, `null` for a site
+     * Chrome has no icon for, or the in-flight promise. Keeping the promise is what
+     * makes twenty rows of the same site cost one lookup instead of twenty, and it is
+     * why a miss is stored rather than left absent — otherwise a site with no icon
+     * would be asked for again on every keystroke.
+     */
+    const cached = _omniFaviconCache.get(origin);
+    if (cached !== undefined) {
+        if (cached && typeof cached.then === 'function') cached.then(show);
+        else if (cached) show(cached);
+        return;
+    }
+
+    const pending = new Promise((resolve) => {
+        try {
+            chrome.runtime.sendMessage({ action: 'getFaviconDataUrl', pageUrl: origin }, (res) => {
+                if (chrome.runtime.lastError) return resolve(null);
+                resolve(res?.dataUrl || null);
+            });
+        } catch {
+            resolve(null);
+        }
+    }).then((dataUrl) => {
+        _omniFaviconCache.set(origin, dataUrl);
+        return dataUrl;
+    });
+
+    _omniFaviconCache.set(origin, pending);
+    pending.then(show);
+}
+
 var OmniBar = class OmniBar {
     constructor() {
         this.active = false;
@@ -4064,7 +4145,15 @@ IMPORTANT RULES:
                 // `<site>/assets/icons/default_favicon.png` and logged the failure.
                 // An empty value is what the rest of the branches below already use,
                 // and the renderer hides the image for it.
-                favIcon = '';
+                favIcon = '',
+                /*
+                 * Set instead of `favIcon` by the rows whose icon has to come from
+                 * Chrome's own favicon store rather than from a URL we already hold.
+                 * The renderer at the bottom resolves it through the worker, because a
+                 * content script cannot reach `_favicon/` itself — measured: the fetch
+                 * and the <img> both fail, since it is not a web-accessible resource.
+                 */
+                faviconPageUrl = '';
             if (data.isSpecialAction) {
                 title = data.title;
                 url = data.url || '';
@@ -4169,7 +4258,7 @@ IMPORTANT RULES:
             } else if (['b', 'h', 'c'].includes(type)) {
                 title = data.title || data.url;
                 li.dataset.url = data.url;
-                favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
+                faviconPageUrl = data.url;
             } else if (type === 'dg') {
                 title = data.title || getOmniMsg('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
                 url = getOmniMsg('omnibarClickDeleteGroup') || 'Click to delete group';
@@ -4361,7 +4450,7 @@ IMPORTANT RULES:
                     li.dataset.ruleName = data.name;
                     li.dataset.tabUrl = data.url;
                     li.dataset.actionId = `${data.name}::${data.url}`;
-                    favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
+                    faviconPageUrl = data.url;
                 }
             } else if (type === 'rl-item') {
                 title = data.title;
@@ -4380,7 +4469,7 @@ IMPORTANT RULES:
                     li.dataset.ruleName = data.name;
                     li.dataset.tabUrl = data.url;
                     li.dataset.actionId = `${data.name}::${data.url}`;
-                    favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
+                    faviconPageUrl = data.url;
                 }
             } else if (type === 'ccr-item') {
                 title = data.title;
@@ -4529,7 +4618,7 @@ IMPORTANT RULES:
                     // reads the URL from here: without it the box said "undefined".
                     li.dataset.url = data.url;
                     li.dataset.actionId = `${data.name}::${data.url}`;
-                    favIcon = `https://www.google.com/s2/favicons?sz=16&domain_url=${encodeURIComponent(data.url)}`;
+                    faviconPageUrl = data.url;
                 }
             } else if (type === 'er-preview') {
                 title = data.title;
@@ -4563,6 +4652,11 @@ IMPORTANT RULES:
                     img.onerror = null; // prevent infinite loop
                     img.style.display = 'none';
                 };
+            } else if (faviconPageUrl) {
+                // Hidden until it arrives: a row that ends up without an icon should
+                // look like the rows that never had one, not like a broken image.
+                img.style.display = 'none';
+                _omniPaintLocalFavicon(img, faviconPageUrl);
             } else {
                 img.style.display = 'none';
             }

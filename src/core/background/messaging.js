@@ -21,6 +21,47 @@ async function handleGetExtensionFileContent(message, sendResponse) {
             });
     }
 }
+/**
+ * Answers with a site's icon from Chrome's own favicon store, as a data URL.
+ *
+ * The omnibar runs as a content script and cannot read `_favicon/` itself: it is not a
+ * web-accessible resource, and measured from a page both `fetch` and an `<img>` fail.
+ * Making it web-accessible is not the answer — that would let any site on the web ask
+ * the browser which icons the reader has, which is a history oracle. The worker has the
+ * extension's own origin and the `favicon` permission, so the lookup happens here.
+ *
+ * This exists to stop the omnibar drawing its icons from
+ * `google.com/s2/favicons?domain_url=…`, which sent the address of every listed
+ * bookmark, history entry and rule to Google for a picture the browser already had.
+ *
+ * Answers `{ dataUrl: null }` rather than an error when there is no icon: a missing
+ * favicon is an ordinary outcome, not a failure, and the caller hides the image.
+ */
+async function handleGetFaviconDataUrl(message, sendResponse) {
+    try {
+        const pageUrl = String(message?.pageUrl || '');
+        // A same-origin `_favicon` lookup takes any URL of the site; an origin is
+        // enough, and is what the caller caches by.
+        const target = new URL(pageUrl);
+        if (!['http:', 'https:'].includes(target.protocol)) return sendResponse({ dataUrl: null });
+
+        const url = chrome.runtime.getURL(`_favicon/?pageUrl=${encodeURIComponent(target.origin)}&size=16`);
+        const response = await fetch(url);
+        if (!response.ok) return sendResponse({ dataUrl: null });
+
+        const blob = await response.blob();
+        const dataUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+        });
+        sendResponse({ dataUrl });
+    } catch {
+        sendResponse({ dataUrl: null });
+    }
+}
+
 chrome.commands.onCommand.addListener(async (command) => {
     logMessage(`[onCommand] Received command: ${command}.`);
     switch (command) {
@@ -585,6 +626,12 @@ const MESSAGE_HANDLERS = {
     },
     restoreBackupTab: (message, sender, sendResponse) => {
         handleRestoreBackupTab(message, sendResponse);
+        return true;
+    },
+    // The omnibar's site icons. Deliberately NOT in SENSITIVE_UI_ACTIONS: the omnibar
+    // is a content script and this is what keeps it from asking Google instead.
+    getFaviconDataUrl: (message, sender, sendResponse) => {
+        handleGetFaviconDataUrl(message, sendResponse);
         return true;
     },
     getExtensionFileContent: (message, sender, sendResponse) => {
