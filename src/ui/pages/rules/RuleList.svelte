@@ -1,5 +1,6 @@
 <script>
     import RuleCard from './RuleCard.svelte';
+    import { foldForSearch } from '../../services/utils.js';
     import { t } from '../../stores/i18nStore.js';
     import {
         rulesStore,
@@ -42,9 +43,11 @@
             .map((rule, storedIndex) => ({ rule, storedIndex }))
             .filter(({ rule }) => {
                 if (!$searchQueryStore) return true;
-                const query = $searchQueryStore.toLowerCase();
-                const nameMatch = rule.name ? rule.name.toLowerCase().includes(query) : false;
-                const urlMatch = rule.urls ? rule.urls.some((u) => u.toLowerCase().includes(query)) : false;
+                // Folded: rules get named by their user, so "Diseño" has to be findable
+                // as "diseno". See `foldForSearch` in services/utils.js.
+                const query = foldForSearch($searchQueryStore);
+                const nameMatch = rule.name ? foldForSearch(rule.name).includes(query) : false;
+                const urlMatch = rule.urls ? rule.urls.some((u) => foldForSearch(u).includes(query)) : false;
                 return nameMatch || urlMatch;
             }),
     );

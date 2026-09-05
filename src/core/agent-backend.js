@@ -242,9 +242,10 @@ const AGENT_TOOLS = {
     findAndSwitchToTab: async (params) => {
         if (!params.query) return 'Error: query required';
         const tabs = await chrome.tabs.query({});
-        const q = params.query.toLowerCase();
+        // Folded so `dia` finds `día`; tab titles are full of accents.
+        const q = foldForSearch(params.query);
         const match = tabs.find(
-            (t) => (t.title && t.title.toLowerCase().includes(q)) || (t.url && t.url.toLowerCase().includes(q)),
+            (t) => (t.title && foldForSearch(t.title).includes(q)) || (t.url && foldForSearch(t.url).includes(q)),
         );
         if (!match) return `No tab found matching "${params.query}"`;
         await chrome.tabs.update(match.id, { active: true });
@@ -388,7 +389,8 @@ const AGENT_TOOLS = {
         if (!themeName) return 'Error: themeName required';
 
         const savedThemes = await StorageService.getSavedThemes();
-        let theme = savedThemes.find((t) => t.name && t.name.toLowerCase().includes(themeName.toLowerCase()));
+        // Themes get named by their user, in their own language and with their own accents.
+        let theme = savedThemes.find((t) => t.name && foldForSearch(t.name).includes(foldForSearch(themeName)));
 
         if (!theme) {
             const allNames = savedThemes.map((t) => t.name).join(', ');
@@ -804,16 +806,17 @@ async function saveStoredSiteShortcuts(shortcuts) {
  */
 function findGroupIdByName(name, groups) {
     if (!name) return null;
-    const q = name.toLowerCase();
+    // Folded: a group the user called "Diseño" has to be findable as "diseno".
+    const q = foldForSearch(name);
 
     // 1. Try finding by displayed title
-    let match = groups.find((g) => g.title && g.title.toLowerCase().includes(q));
+    let match = groups.find((g) => g.title && foldForSearch(g.title).includes(q));
     if (match) return match;
 
     // 2. Fallback: search in groupInfoMap (which keeps the full original title)
     if (typeof groupInfoMap !== 'undefined') {
         for (const [id, info] of groupInfoMap.entries()) {
-            if (info.title && info.title.toLowerCase().includes(q)) {
+            if (info.title && foldForSearch(info.title).includes(q)) {
                 // Confirm the group still exists in the browser
                 const existing = groups.find((g) => g.id === id);
                 if (existing) return existing;

@@ -1,5 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
+    import { foldForSearch } from '../../services/utils.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
@@ -554,7 +555,9 @@
         const term = e.target.value;
         searchQueryStore.set(term);
         if (term.trim()) hideTutorial();
-        syncSearchExpansion(term.trim().toLowerCase());
+        // Folded here so the comparisons inside get a term on the same footing as the
+        // rule names they are matched against.
+        syncSearchExpansion(foldForSearch(term.trim()));
     }
 
     function syncSearchExpansion(term) {
@@ -566,8 +569,8 @@
 
         if (term) {
             for (const rule of $rulesStore) {
-                const urlMatch = (rule.urls || []).some((url) => url.toLowerCase().includes(term));
-                const nameMatch = (rule.name || '').toLowerCase().includes(term);
+                const urlMatch = (rule.urls || []).some((url) => foldForSearch(url).includes(term));
+                const nameMatch = foldForSearch(rule.name || '').includes(term);
                 if (urlMatch && !nameMatch && (isSmallScreen || overflowingRules.has(rule.name))) {
                     states.set(rule.name, true);
                 }

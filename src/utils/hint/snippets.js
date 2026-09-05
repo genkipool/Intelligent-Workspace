@@ -1576,9 +1576,11 @@ ${finalHtml}
 
         // 5. Search Bar Events
         searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase();
+            // Snippets are the user's own words, in their own language: folded so an
+            // accent typed or omitted does not hide one.
+            const query = itgFoldForSearch(searchInput.value);
             this.filteredSnippets = this.parsedSnippets.filter(
-                (s) => s.trigger.toLowerCase().includes(query) || s.expansion.toLowerCase().includes(query),
+                (s) => itgFoldForSearch(s.trigger).includes(query) || itgFoldForSearch(s.expansion).includes(query),
             );
             this.popupSelectedIndex = 0;
             this._renderPopupList();

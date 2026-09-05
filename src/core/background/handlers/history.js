@@ -52,11 +52,11 @@ async function handleGetRecentlyClosed(message, sendResponse) {
         // Filter by search if query exists
         const matchingResults = message.query
             ? results.filter((item) => {
-                  const title = item.title || '';
-                  const url = item.url || '';
+                  // Folded on both sides: history titles are where accents live, and
+                  // `dia` has to find `día`. See `foldForSearch` in utils.js.
+                  const needle = foldForSearch(message.query);
                   return (
-                      title.toLowerCase().includes(message.query.toLowerCase()) ||
-                      url.toLowerCase().includes(message.query.toLowerCase())
+                      foldForSearch(item.title || '').includes(needle) || foldForSearch(item.url || '').includes(needle)
                   );
               })
             : results;
