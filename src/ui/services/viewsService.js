@@ -1984,7 +1984,13 @@ export function getActiveScrollableElement() {
         if (get(currentMainView) === 'history') return document.getElementById('history-view-container');
         if (get(currentMainView) === 'recent') return document.getElementById('recent-view-container');
         if (get(currentMainView) === 'reading') return document.getElementById('reading-list-view-container');
-        if (get(currentMainView) === 'downloads') return document.getElementById('downloads-view-container');
+        if (get(currentMainView) === 'downloads') {
+            const dlContent = document.querySelector('.downloads-list-content');
+            if (dlContent && (dlContent.scrollHeight > dlContent.clientHeight || dlContent.scrollTop > 0)) {
+                return dlContent;
+            }
+            return document.getElementById('downloads-view-container');
+        }
         return _groupListContainer;
     }
 }

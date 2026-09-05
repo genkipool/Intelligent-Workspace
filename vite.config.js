@@ -104,6 +104,7 @@ export default defineConfig({
         },
     },
     build: {
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
             input: {
                 popup: resolve(__dirname, 'src/ui/pages/popup/popup.html'),

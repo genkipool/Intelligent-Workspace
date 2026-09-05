@@ -17,6 +17,7 @@ import {
     splitIntoSpeechChunks,
     cancelSpeech,
 } from '../services/speechService.js';
+import { showErrorView } from '../services/viewsService.js';
 
 const STORAGE_KEYS = {
     API_KEY: 'geminiApiKey',
@@ -189,7 +190,6 @@ function createGeminiStore() {
             chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
             // The reason has to be shown: a quota or connection error used to leave the
             // question simply vanishing with no explanation.
-            const { showErrorView } = await import('../services/viewsService.js');
             showErrorView(errorMsg);
             return;
         }
