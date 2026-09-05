@@ -386,7 +386,7 @@
             <div class="section-title">{$t('rateExtensionTitle')}</div>
             <div class="rate-button-container">
                 <a
-                    href="https://chromewebstore.google.com/category/extensions"
+                    href="https://chromewebstore.google.com/detail/cmkbnppbnhoklenlngmbdfecgbnlojoo/reviews"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="rate-store-btn"

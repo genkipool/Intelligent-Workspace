@@ -127,7 +127,7 @@
                 <p class="rate-extension-desc">{$t('rateExtensionDesc')}</p>
                 <div class="rate-button-container">
                     <a
-                        href="https://chromewebstore.google.com/category/extensions"
+                        href="https://chromewebstore.google.com/detail/cmkbnppbnhoklenlngmbdfecgbnlojoo/reviews"
                         id="rate-store-link"
                         target="_blank"
                         rel="noopener noreferrer"
