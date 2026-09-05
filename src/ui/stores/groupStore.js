@@ -219,6 +219,8 @@ export const groupStore = {
                 await tick();
                 const { scrollToActiveGroupIfNeeded } = await import('../services/groupsService.js');
                 scrollToActiveGroupIfNeeded();
+                const { updateScrollButtons } = await import('../components/common/ScrollButtons.svelte');
+                updateScrollButtons();
             }
         } catch (err) {
             console.error('[groupStore] fetch error:', err);

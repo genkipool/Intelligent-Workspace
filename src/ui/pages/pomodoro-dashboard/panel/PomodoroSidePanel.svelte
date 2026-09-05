@@ -27,6 +27,7 @@
     import PeriodChips from '../../../components/common/PeriodChips.svelte';
     import PomodoroPanel from '../../../components/listGroup/PomodoroPanel.svelte';
     import PomodoroPopups from '../../../components/listGroup/PomodoroPopups.svelte';
+    import ScrollButtons from '../../../components/common/ScrollButtons.svelte';
     import { initPomodoro } from '../../listGroup/features/pomodoro/index.js';
     import { computeKpis, dedupeSessions, pickKpis, withinPeriod } from '../dashboardAnalytics.js';
     import { PANEL_PERIODS } from '../../../services/dashboard/periods.js';
@@ -69,6 +70,7 @@
     let period = $state(7);
     let sessions = $state([]);
     let loaded = $state(false);
+    let listEl = $state(null);
 
     const shown = $derived(sessions.filter((entry) => withinPeriod(entry, period)));
 
@@ -171,7 +173,7 @@
 <div class="side-panel-shell">
     <SidePanelHeader title={$t('pomodoroTitle')} actions={headerActions} />
 
-    <div class="side-panel-body pomo-panel-body">
+    <div class="side-panel-body pomo-panel-body" bind:this={listEl}>
         <!-- Full-bleed: the timer is the page's own chrome, not a card on it. -->
         <PomodoroPanel embedded />
 
@@ -201,4 +203,6 @@
             {/if}
         </section>
     </div>
+
+    <ScrollButtons target={() => listEl} minScroll={10} edge={5} />
 </div>

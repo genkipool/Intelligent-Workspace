@@ -52,6 +52,10 @@
     let upButton = $state(null);
     let downButton = $state(null);
     let frame = null;
+    let observedTarget = null;
+    let resizeObserver = null;
+    let mutationObserver = null;
+    let settleTimer = null;
 
     /** The scrollable thing and its measurements, or null when there is none. */
     function measure() {
@@ -85,14 +89,45 @@
             if (!container || !upButton || !downButton) return;
 
             const info = measure();
-            const distance = info ? info.scrollHeight - info.clientHeight : 0;
+            const currentTargetEl = info?.target instanceof Element ? info.target : null;
+
+            if (resizeObserver && currentTargetEl !== observedTarget) {
+                if (observedTarget) {
+                    try {
+                        resizeObserver.unobserve(observedTarget);
+                    } catch {}
+                }
+                if (
+                    currentTargetEl &&
+                    currentTargetEl !== document.documentElement &&
+                    currentTargetEl !== document.body
+                ) {
+                    try {
+                        resizeObserver.observe(currentTargetEl);
+                    } catch {}
+                }
+                observedTarget = currentTargetEl;
+            }
+
+            const distance = info && info.clientHeight > 0 ? info.scrollHeight - info.clientHeight : 0;
 
             if (distance > minScroll) {
-                container.classList.add('visible');
-                upButton.style.display = info.scrollTop < edge ? 'none' : 'flex';
-                downButton.style.display = info.scrollTop >= distance - edge ? 'none' : 'flex';
+                const showUp = info.scrollTop >= edge;
+                const showDown = info.scrollTop < distance - edge;
+
+                if (showUp || showDown) {
+                    container.classList.add('visible');
+                    upButton.style.display = showUp ? 'flex' : 'none';
+                    downButton.style.display = showDown ? 'flex' : 'none';
+                } else {
+                    container.classList.remove('visible');
+                    upButton.style.display = 'none';
+                    downButton.style.display = 'none';
+                }
             } else {
                 container.classList.remove('visible');
+                upButton.style.display = 'none';
+                downButton.style.display = 'none';
             }
 
             onupdate?.();
@@ -104,6 +139,13 @@
         info?.target.scrollTo({ top, behavior: 'smooth' });
     }
 
+    $effect(() => {
+        target;
+        minScroll;
+        edge;
+        update();
+    });
+
     onMount(() => {
         instances.push(update);
         const handler = () => update();
@@ -111,6 +153,43 @@
         window.addEventListener('resize', handler, { passive: true });
         // Scroll does not bubble, so a container of its own is only heard down here.
         document.addEventListener('scroll', handler, { capture: true, passive: true });
+
+        const transitionHandler = (e) => {
+            if (!container || !container.contains(e.target)) {
+                update();
+            }
+        };
+        document.addEventListener('transitionend', transitionHandler, { passive: true });
+        document.addEventListener('animationend', transitionHandler, { passive: true });
+
+        if (typeof ResizeObserver !== 'undefined') {
+            resizeObserver = new ResizeObserver(() => {
+                update();
+            });
+            if (document.documentElement) {
+                resizeObserver.observe(document.documentElement);
+            }
+        }
+
+        if (typeof MutationObserver !== 'undefined' && document.body) {
+            mutationObserver = new MutationObserver((mutations) => {
+                const onlyScrollButtons = mutations.every((m) => {
+                    return container && (m.target === container || container.contains(m.target));
+                });
+                if (onlyScrollButtons) return;
+
+                update();
+                if (settleTimer) clearTimeout(settleTimer);
+                settleTimer = setTimeout(update, 350);
+            });
+
+            mutationObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'hidden', 'open'],
+            });
+        }
 
         update();
         // The page is still settling: what is scrollable now may not be in a moment.
@@ -121,7 +200,12 @@
             window.removeEventListener('scroll', handler);
             window.removeEventListener('resize', handler);
             document.removeEventListener('scroll', handler, { capture: true });
+            document.removeEventListener('transitionend', transitionHandler);
+            document.removeEventListener('animationend', transitionHandler);
+            if (resizeObserver) resizeObserver.disconnect();
+            if (mutationObserver) mutationObserver.disconnect();
             if (frame) cancelAnimationFrame(frame);
+            if (settleTimer) clearTimeout(settleTimer);
             for (const timer of settling) clearTimeout(timer);
         };
     });

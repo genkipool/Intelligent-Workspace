@@ -21,6 +21,7 @@
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
     import PeriodChips from '../../../components/common/PeriodChips.svelte';
     import PanelSite from './PanelSite.svelte';
+    import ScrollButtons from '../../../components/common/ScrollButtons.svelte';
     import { createPanelNav, panelNavActions } from '../../../services/sidePanelNav.js';
     import { PANEL_PERIODS } from '../../../services/dashboard/periods.js';
 
@@ -262,4 +263,6 @@
             </p>
         {/if}
     </div>
+
+    <ScrollButtons target={() => listEl} minScroll={10} edge={5} />
 </div>

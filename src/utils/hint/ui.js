@@ -1083,7 +1083,14 @@ var HelpModal = class HelpModal {
                 if (sb) {
                     const sh = body.scrollHeight,
                         ch = body.clientHeight;
-                    sb.classList.toggle('visible', sh - ch > 0);
+                    const hasScroll = sh - ch > 0;
+                    sb.classList.toggle('visible', hasScroll);
+                    if (!hasScroll) {
+                        const up = content.querySelector('#itg-scroll-up');
+                        const down = content.querySelector('#itg-scroll-down');
+                        if (up) up.style.display = 'none';
+                        if (down) down.style.display = 'none';
+                    }
                 }
             });
 
@@ -1202,6 +1209,8 @@ var HelpModal = class HelpModal {
             const scrollTop = modal.scrollTop;
             if (scrollableHeight <= 0) {
                 scrollButtons.classList.remove('visible');
+                scrollUpBtn.style.display = 'none';
+                scrollDownBtn.style.display = 'none';
                 return;
             }
             scrollButtons.classList.add('visible');
@@ -1221,6 +1230,19 @@ var HelpModal = class HelpModal {
             });
         });
         modal.addEventListener('scroll', updateScrollButtons);
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(() => updateScrollButtons());
+            ro.observe(modal);
+        }
+        if (typeof MutationObserver !== 'undefined') {
+            const mo = new MutationObserver(() => updateScrollButtons());
+            mo.observe(modal, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class', 'hidden'],
+            });
+        }
         updateScrollButtons();
     }
     _setupPinListeners(container) {

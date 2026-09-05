@@ -4,7 +4,7 @@
         getActiveScrollableElement,
         adjustScrollButtonsForGeminiView,
     } from '../../services/viewsService.js';
-    import ScrollButtons from '../../components/common/ScrollButtons.svelte';
+    import ScrollButtons, { updateScrollButtons } from '../../components/common/ScrollButtons.svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import HiddenGroupsBar from '../../components/listGroup/HiddenGroupsBar.svelte';
@@ -12,7 +12,7 @@
     import PomodoroPanel from '../../components/listGroup/PomodoroPanel.svelte';
     import MusicPlayerPanel from '../../components/listGroup/MusicPlayerPanel.svelte';
     import PersistentConversationControls from '../../components/listGroup/PersistentConversationControls.svelte';
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import { groupStore, groupsStore } from '../../stores/groupStore.js';
     import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
     import { i18nStore, t, tt } from '../../stores/i18nStore.js';
@@ -136,6 +136,11 @@
 
     let hiddenGroupIds = $derived($listGroupState.hiddenGroupIds ?? new Set());
     let visibleGroups = $derived(($groupsStore ?? []).filter((g) => g?.group && !hiddenGroupIds.has(g.group.id)));
+
+    $effect(() => {
+        visibleGroups;
+        tick().then(updateScrollButtons);
+    });
 
     onMount(async () => {
         initNumberSpinnerArrows();
