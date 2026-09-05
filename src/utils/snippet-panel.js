@@ -443,9 +443,20 @@
             });
 
             searchInput.addEventListener('input', () => {
-                const q = searchInput.value.toLowerCase();
+                /*
+                 * Folded on both sides so a snippet is not hidden by an accent typed or
+                 * left out. This file is injected on its own and shares no bundle with
+                 * the hint scripts, so it carries its own copy of the rule rather than
+                 * a different one — see `itgFoldForSearch` in `hint/utils.js`.
+                 */
+                const fold = (v) =>
+                    String(v ?? '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+                const q = fold(searchInput.value);
                 this.filteredSnippets = this.parsedSnippets.filter(
-                    (s) => s.trigger.toLowerCase().includes(q) || s.expansion.toLowerCase().includes(q),
+                    (s) => fold(s.trigger).includes(q) || fold(s.expansion).includes(q),
                 );
                 this.popupSelectedIndex = 0;
                 this._renderPopupList();

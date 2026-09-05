@@ -1,3 +1,32 @@
+/**
+ * [AI INSTRUCTION]
+ * HOW EVERY SEARCH IN THE WORKER COMPARES TEXT. Use `foldForSearch` on BOTH sides of a
+ * comparison against something a person typed.
+ *
+ * Nobody reaches for the accent key while searching, and what is being searched — page
+ * titles, group names, the names of their own rules — is full of them. Lowercasing
+ * alone leaves `dia` and `día` as different strings, so a search that should obviously
+ * match quietly finds nothing.
+ *
+ * `NFD` splits an accented letter into the letter and its mark; dropping the marks
+ * leaves the letter. `ñ` becomes `n` as a side effect, which is what a Spanish reader
+ * expects of a search box anyway. Folding is for COMPARING only — what is displayed is
+ * always the original text.
+ *
+ * The UI bundle has its own copy in `src/ui/services/utils.js` and the hint content
+ * scripts a third: three bundles that cannot import from each other, not three
+ * different rules.
+ */
+function deaccent(str) {
+    return String(str ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+function foldForSearch(str) {
+    return deaccent(str).toLowerCase();
+}
+
 function logMessage(...args) {
     if (isModeDebug) {
         console.log(...args);

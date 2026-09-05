@@ -641,6 +641,31 @@ var Utils = class Utils {
 /**
  * @class OmniBar
  */
+// -- Text folding for every search these scripts do ---------------
+
+/**
+ * [AI INSTRUCTION]
+ * HOW THESE SCRIPTS COMPARE TEXT AGAINST SOMETHING A PERSON TYPED. Fold BOTH sides.
+ *
+ * Nobody reaches for the accent key while searching, and what gets searched — tab
+ * titles, group names, their own snippets — is full of them. Lowercasing alone leaves
+ * `dia` and `día` as different strings, so the search quietly finds nothing.
+ *
+ * `ñ` folds to `n` as a side effect of the same normalisation, which is what a Spanish
+ * reader expects of a search box anyway. Folding is for COMPARING only — what is shown
+ * on screen is always the original text.
+ *
+ * The worker keeps its own copy in `background/utils.js` and the extension pages a
+ * third in `ui/services/utils.js`: three bundles that cannot import from each other,
+ * not three different rules.
+ */
+function itgFoldForSearch(str) {
+    return String(str ?? '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+}
+
 // -- Markdown mini-parser for omnibar responses ------------------
 function _omniParseMarkdown(text) {
     if (!text) return '';

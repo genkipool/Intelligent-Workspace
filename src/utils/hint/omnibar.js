@@ -758,7 +758,7 @@ var OmniBar = class OmniBar {
                 (res) => {
                     if (seq !== this._inputSeq) return;
                     let convs = res && res.success ? res.conversations : [];
-                    if (q) convs = convs.filter((c) => c.title.toLowerCase().includes(q));
+                    if (q) convs = convs.filter((c) => itgFoldForSearch(c.title).includes(itgFoldForSearch(q)));
                     if (convs.length === 0)
                         convs = [
                             {
@@ -1383,7 +1383,9 @@ var OmniBar = class OmniBar {
                     tabGroups.forEach((group) => {
                         const title = group.title || `Group ${group.id}`;
                         const groupMatches =
-                            !q || title.toLowerCase().includes(qLower) || (group.color && group.color.includes(qLower));
+                            !q ||
+                            itgFoldForSearch(title).includes(itgFoldForSearch(qLower)) ||
+                            (group.color && group.color.includes(qLower));
                         if (groupMatches) {
                             results.push({
                                 type: 'ccg-group',

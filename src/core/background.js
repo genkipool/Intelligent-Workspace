@@ -217,19 +217,6 @@ const OMNIBOX_BOUNDARY_MAX = 3;
 /** A local guess this weak is a coincidence, not an answer. See where it is used. */
 const OMNIBOX_MIN_ACCEPTABLE_SCORE = 10;
 
-/**
- * Drops the accents from a word, for comparing against the filler list only.
- *
- * People type `¿dónde estaba…?` with the accent, and lowercasing alone leaves `dónde`,
- * which does not equal the `donde` in the list — so the filler survived the filter and
- * went on to earn points against any URL containing it. The accents are stripped for
- * this comparison and nowhere else: what gets matched against titles is still the word
- * the reader typed.
- */
-function omniboxDeaccent(word) {
-    return word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 /** Escapes a search term so it can go inside a RegExp — `c++` and `c#` are real queries. */
 function omniboxEscapeRegex(word) {
     return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -244,8 +231,8 @@ function omniboxContains(haystack, word) {
     // reaches for the accent key while hunting for a tab, and the titles are full of
     // them. `ñ` folds to `n` as a side effect of the same normalisation, which is the
     // behaviour a Spanish reader expects anyway.
-    const hay = omniboxDeaccent(haystack);
-    const needle = omniboxDeaccent(word);
+    const hay = deaccent(haystack);
+    const needle = deaccent(word);
     if (needle.length > OMNIBOX_BOUNDARY_MAX) return hay.includes(needle);
     const boundary = '[^a-z0-9]';
     return new RegExp(`(^|${boundary})${omniboxEscapeRegex(needle)}(${boundary}|$)`).test(hay);
@@ -279,7 +266,7 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
             // judged by the filler list rather than by length, so `IA`, `UI`, `3D` and
             // `C#` survive. They used to be dropped by a `length > 2` rule, which is why
             // searching for a two-letter thing found nothing at all.
-            .filter((word) => word.length > 1 && !OMNIBOX_FILLER_WORDS.has(omniboxDeaccent(word)));
+            .filter((word) => word.length > 1 && !OMNIBOX_FILLER_WORDS.has(deaccent(word)));
 
         let localMatches = [];
 
@@ -292,9 +279,9 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
             // Folded like everything else, so an accented question still recognises the
             // whole phrase inside a title.
             if (normalizedText.length > 2) {
-                const foldedQuery = omniboxDeaccent(normalizedText);
-                if (omniboxDeaccent(titleLower).includes(foldedQuery)) score += 30;
-                else if (omniboxDeaccent(urlLower).includes(foldedQuery)) score += 15;
+                const foldedQuery = deaccent(normalizedText);
+                if (deaccent(titleLower).includes(foldedQuery)) score += 30;
+                else if (deaccent(urlLower).includes(foldedQuery)) score += 15;
             }
 
             // Rule B: Keyword-based matching
