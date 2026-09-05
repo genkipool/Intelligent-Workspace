@@ -599,6 +599,12 @@ const MESSAGE_HANDLERS = {
         handleCleanupSidePanelRules(sendResponse);
         return true;
     },
+    // Asked for by the PiP window as it goes away. Without it the framing rules it
+    // installed outlive the window and stand for the rest of the browser session.
+    cleanupVideoPipRules: (message, sender, sendResponse) => {
+        handleCleanupVideoPipRules(sendResponse);
+        return true;
+    },
     fetchPageContent: (message, sender, sendResponse) => {
         handleFetchPageContent(message, sendResponse);
         return true;
@@ -1046,14 +1052,6 @@ const MESSAGE_HANDLERS = {
         handleGetOldBookmarks(sendResponse);
         return true; // Asynchronous
     },
-    getHistory: (message, sender, sendResponse) => {
-        handleGetHistory(message, sendResponse);
-        return true;
-    },
-    getRecentlyClosed: (message, sender, sendResponse) => {
-        handleGetRecentlyClosed(message, sendResponse);
-        return true;
-    },
     getReadingList: (message, sender, sendResponse) => {
         handleGetReadingList(sendResponse);
         return true;
@@ -1184,6 +1182,14 @@ const SENSITIVE_UI_ACTIONS = new Set([
     'setCookie',
     'removeCookie',
     'prepareUrlForSidePanel',
+    /*
+     * An unrestricted `fetch` from the worker, which runs with `<all_urls>` host
+     * permissions and therefore reads across origins with no CORS to answer to —
+     * an intranet address or a device on the LAN included. Its only caller is
+     * `viewsService.js`, an extension page, so naming it here costs nothing and
+     * takes the reach of a compromised content script down by a long way.
+     */
+    'fetchPageContent',
     'downloadFilesBatch',
     'openDownload',
     'eraseDownload',

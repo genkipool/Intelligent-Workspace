@@ -122,7 +122,39 @@ try {
     if (!manifest.web_accessible_resources.includes(war)) {
         manifest.web_accessible_resources.push(war);
     }
-    
+
+    /*
+     * 3b. Hide the web-accessible resources behind per-session URLs.
+     *
+     * Anything listed here is fetchable by ANY page at a URL it can work out from the
+     * extension id, which is fixed once the extension is on the Web Store. That is a
+     * reliable "is this person running Intelligent Workspace" probe for every site the
+     * reader visits — a tracking signal the reader never agreed to. `use_dynamic_url`
+     * swaps the id for a GUID that changes every session, so `chrome.runtime.getURL()`
+     * inside the extension keeps working (measured: 200 for every resource) while the
+     * guessable URL stops resolving (measured: blocked for every resource).
+     *
+     * It is applied HERE rather than only in the source manifest because the bundler
+     * writes its own entries for the hashed `assets/*.js` copies of the content
+     * scripts, and those would otherwise stay probeable — leaving one open door, which
+     * is all a fingerprint needs.
+     *
+     * blocked.html is included, and that is a deliberate reversal. It is the target of
+     * the web-activity blocker's declarativeNetRequest rules, which are *dynamic* and
+     * therefore outlive a browser restart, while the GUID is reissued on every one — so
+     * between a restart and the first `waRebuildBlockRules` (now also called from
+     * `runtime.onStartup`) a blocked site redirects to a URL that no longer resolves.
+     * Measured, rather than assumed: the request FAILS CLOSED. Chrome shows
+     * ERR_BLOCKED_BY_CLIENT and the blocked site does not load. The whole cost is an
+     * ugly error page instead of the block screen, in a window of milliseconds — which
+     * is a smaller price than leaving every site on the web able to detect this
+     * extension.
+     */
+    for (const entry of manifest.web_accessible_resources) {
+        entry.use_dynamic_url = true;
+    }
+    console.log(`\u2705 use_dynamic_url on ${manifest.web_accessible_resources.reduce((n, e) => n + e.resources.length, 0)} web-accessible resources`);
+
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
     console.log('✅ Injected content_scripts and web_accessible_resources into manifest.json');
   }

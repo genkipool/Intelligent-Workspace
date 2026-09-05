@@ -6,6 +6,8 @@
   "default_locale": "en",
   "icons": {
     "16": "assets/icons/icon16.png",
+    "24": "assets/icons/icon24.png",
+    "32": "assets/icons/icon32.png",
     "48": "assets/icons/icon48.png",
     "128": "assets/icons/icon128.png"
   },
@@ -23,7 +25,6 @@
     "downloads.open",
     "system.display",
     "windows",
-    "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
     "cookies",
     "history",
@@ -145,7 +146,10 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "assets/icons/logo.svg",
         "assets/icons/icon16.png",
+        "assets/icons/icon24.png",
+        "assets/icons/icon32.png",
         "assets/icons/icon48.png",
         "assets/icons/icon128.png",
         "assets/*.png",
@@ -164,7 +168,6 @@
         "src/styles/section-filter.css",
         "src/styles/prevent_flash.css",
         "src/utils/hint_common.js",
-        "src/ui/pages/web-activity/blocked.html",
         "src/styles/themes.css",
         "src/styles/dashboard.css",
         "src/styles/fonts.css",
@@ -180,17 +183,22 @@
         "src/utils/hint/engine.js",
         "src/utils/hint/preview.js",
         "src/utils/hint/registry.js",
-        "src/utils/hint/main.js"
+        "src/utils/hint/main.js",
+        "src/ui/pages/web-activity/blocked.html"
       ],
       "matches": [
         "<all_urls>"
-      ]
+      ],
+      "use_dynamic_url": true
     }
   ],
   "action": {
     "default_icon": {
       "16": "assets/icons/icon16.png",
-      "48": "assets/icons/icon48.png"
+      "24": "assets/icons/icon24.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
     }
   },
   "side_panel": {

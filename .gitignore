@@ -45,5 +45,13 @@ skills-lock.json
 # Machine-local agent settings
 .claude/settings.local.json
 
+# Installed skills. `.agents` above covers where the CLI puts the files, but it also
+# symlinks them into `.claude/skills/`, which that rule does not reach — so a skill
+# installed into this project would have walked into a public repository through here.
+.claude/skills/
+
+# Working copies of the icons kept aside while the themed logos were being made.
+assets/icons/backup-old/
+
 # Zips
 *.zip

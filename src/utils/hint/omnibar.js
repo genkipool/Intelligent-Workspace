@@ -4735,11 +4735,18 @@ IMPORTANT RULES:
                                     console.warn('Error resuming original video:', e);
                                 }
                             };
+                            // The framing rules asked for above are session rules and
+                            // outlive this window unless somebody takes them down.
+                            const releasePipNetworkRules = () => {
+                                chrome.runtime.sendMessage({ action: 'cleanupVideoPipRules' }).catch(() => {});
+                            };
                             pipWindow.addEventListener('pagehide', () => {
                                 resumeOriginalVideo(!document.hidden);
+                                releasePipNetworkRules();
                             });
                             pipWindow.addEventListener('unload', () => {
                                 resumeOriginalVideo(!document.hidden);
+                                releasePipNetworkRules();
                             });
                             return;
                         } catch (err) {

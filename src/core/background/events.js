@@ -1120,6 +1120,22 @@ chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
 
 chrome.runtime.onStartup.addListener(() => {
     chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
+    /*
+     * The blocker's redirect rules name `blocked.html` by URL, and that URL is a
+     * per-session GUID (`use_dynamic_url`, see fix-sw.js). The rules are dynamic, so
+     * they survive the restart that reissued the GUID and come back pointing at an
+     * address that no longer resolves. Rebuilding here stamps the new one in before
+     * anything can be blocked against the old.
+     *
+     * It is a repair, not the only one: `waRebuildBlockRules` also runs on every focus
+     * change, so a rule missed here is fixed at the first tab the reader touches. And
+     * the failure it is closing is cosmetic — a stale target fails closed, with Chrome
+     * showing ERR_BLOCKED_BY_CLIENT instead of the block screen, never with the blocked
+     * site loading.
+     */
+    waRebuildBlockRules().catch((error) => {
+        console.error('[onStartup] Could not rebuild the web-activity block rules:', error);
+    });
 });
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {

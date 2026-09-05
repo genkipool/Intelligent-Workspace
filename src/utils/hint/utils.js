@@ -208,8 +208,20 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
                     } catch {}
                 }
             };
+            /*
+             * The framing rules `prepareVideoUrlForPip` installs are session rules:
+             * they stand until something takes them down, and nothing did. Closing
+             * the window is the moment they stop being needed, so it is the moment
+             * they go — otherwise one float leaves CSP and X-Frame-Options stripped
+             * for the rest of the browser session.
+             */
+            const releasePipNetworkRules = () => {
+                chrome.runtime.sendMessage({ action: 'cleanupVideoPipRules' }).catch(() => {});
+            };
             pipWindow.addEventListener('pagehide', resumePausedVideos, { once: true });
             pipWindow.addEventListener('unload', resumePausedVideos, { once: true });
+            pipWindow.addEventListener('pagehide', releasePipNetworkRules, { once: true });
+            pipWindow.addEventListener('unload', releasePipNetworkRules, { once: true });
 
             await chrome.runtime.sendMessage({
                 action: 'prepareVideoUrlForPip',
