@@ -52,6 +52,30 @@ export default defineConfig({
                     rename: { stripBase: true },
                 },
                 {
+                    /*
+                     * The two files the OCR engine loads BY URL rather than by import.
+                     *
+                     * Everything else in `src/lib` is imported as a module and the
+                     * bundler emits it into `assets/`, so copying the folder wholesale
+                     * would ship a second, unused megabyte. These two cannot work that
+                     * way: `Tesseract.createWorker` is handed `workerPath` and
+                     * `corePath` as `chrome.runtime.getURL(...)` strings and fetches
+                     * them at run time, so they have to exist at that exact path
+                     * inside the package.
+                     *
+                     * They were not copied at all, so both URLs 404'd, `createWorker`
+                     * threw, and the OCR button in the gallery failed for every user
+                     * while working perfectly from source. Worth stating plainly:
+                     * without them Tesseract's own defaults point at a CDN, and an
+                     * extension that fetches its WASM core from the network is remote
+                     * code — which Manifest V3 forbids outright. Keeping these local
+                     * is what keeps the package self-contained.
+                     */
+                    src: 'src/lib/{worker.min.js,tesseract-core.wasm.js}',
+                    dest: 'src/lib',
+                    rename: { stripBase: true },
+                },
+                {
                     src: 'assets/images/*',
                     dest: 'assets/images',
                     rename: { stripBase: true },
