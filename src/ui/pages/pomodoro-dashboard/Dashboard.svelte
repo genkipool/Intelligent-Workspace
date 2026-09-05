@@ -1,5 +1,6 @@
 <script>
     import '../../../core/services/dbSchema.js';
+    import { compareNames } from '../../services/utils.js';
     import { onMount, onDestroy, mount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
@@ -288,8 +289,10 @@
                 if (!standaloneProjs.includes(p)) standaloneProjs.push(p);
             }
         }
-        standaloneProjs.sort();
-        const folderNames = Object.keys(folderMap).sort();
+        // Names people wrote: ordered the way they read, not by code point. See
+        // `compareNames` — a plain `.sort()` puts `Ñandú` after `Zulú`.
+        standaloneProjs.sort(compareNames);
+        const folderNames = Object.keys(folderMap).sort(compareNames);
         return { folderNames, folderMap, projectCounts, standaloneProjs, totalCount };
     });
 
@@ -397,7 +400,7 @@
 
     // --- TAG FILTER ---------------------------------------------------
     function populateTagFilter() {
-        const tags = [...new Set(allData.map((e) => e.projectTag || '').filter(Boolean))].sort();
+        const tags = [...new Set(allData.map((e) => e.projectTag || '').filter(Boolean))].sort(compareNames);
         const sel = document.getElementById('tag-filter');
         if (!sel) return;
 

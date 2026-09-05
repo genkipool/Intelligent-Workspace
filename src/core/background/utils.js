@@ -503,7 +503,10 @@ const setupContextMenus = async () => {
             contexts: ['page'],
         });
 
-        const sortedDomains = [...domainCountMap.keys()].sort();
+        // Ordered for a person to read down the menu, not by code point.
+        const sortedDomains = [...domainCountMap.keys()].sort((a, b) =>
+            String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' }),
+        );
 
         if (sortedDomains.length > 0) {
             for (const domain of sortedDomains) {
