@@ -42,6 +42,41 @@
   a sensitive permission is named there: capture and text recognition, reading aloud, the
   media players, the cookie editor, and the assistant.
 
+### How each tool serves that one purpose
+
+The reasonable question a reviewer asks of a workspace this wide is what a radio has to do
+with tab management. The answer the product is built on is that productivity is not only the
+speed of a task: it is also whether the person can concentrate, and how much friction and
+stress the work carries. Each tool below is here because it removes friction from a working
+session, and none of them is a separate product bolted on.
+
+- **Music and internet radio.** Background sound is how a great many people hold their
+  concentration while they study or work, and how they take the edge off a stressful stretch.
+  It plays in the workspace so that keeping it going does not cost another tab, another
+  window and another thing to manage.
+- **Text recognition on a screenshot.** People work with images that have words in them —
+  a scanned invoice, a slide, a screenshot a colleague sent — and then need those words in
+  an email or a message. Reading them out of the picture is the difference between a
+  keystroke and retyping a paragraph by hand.
+- **QR codes.** Someone working with product images that carry a QR code would otherwise
+  reach for their phone to read one. Reading it where the image already is keeps them at the
+  desk they were working at.
+- **The colour picker.** It exists to build custom themes for the extension's own interface,
+  not to sample colours from the web at large. A workspace someone has to look at all day is
+  worth them liking, and an interface that suits its reader is a smaller drag on the day
+  than one that does not.
+- **The YouTube tools — floating window, loop, per-video sound.** YouTube is where a lot of
+  people study: a language, a choreography, a technique, a passage repeated until it is
+  memorised, karaoke. The floating window is what lets them keep the video in view while
+  they take notes in the tab underneath, instead of alternating between the two.
+- **The cookie inspector.** Straightforwardly a developer's tool, for the developers who
+  spend their working day in this browser.
+
+Stated plainly so it can be judged rather than assumed: the common thread is a single
+working session in one browser window, and every tool above is reached from inside that
+session and serves it. None of them opens a second product, and none collects anything for
+a purpose outside it.
+
 ---
 
 ## 2. Detailed Store Listing Copy
@@ -66,9 +101,9 @@ HOW IT WORKS
 
 • The keyboard, for all of it. Link hints, jump markers, and an omnibar that searches tabs, history, bookmarks and your own notes by prefix.
 
-• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, reading a page aloud, a floating video player, and background music and radio.
+• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, a floating video player, and background music and radio.
 
-• An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
+• An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. Type `find` in Chrome's address bar to ask it for an open tab in your own words. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
 
 PRIVACY & DATA PROTECTION
 Intelligent Workspace is built privacy-first:
@@ -102,9 +137,9 @@ CÓMO FUNCIONA
 
 • El teclado, para todo. Etiquetas sobre los enlaces, marcadores de salto y una barra de comandos que busca por prefijo en pestañas, historial, marcadores y tus notas.
 
-• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, lectura de la página en voz alta, reproductor de vídeo flotante, y música y radio de fondo.
+• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, reproductor de vídeo flotante, y música y radio de fondo.
 
-• Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
+• Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Escribe `find` en la barra de direcciones de Chrome para pedirle una pestaña abierta con tus palabras. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
 
 PRIVACIDAD Y SEGURIDAD
 Intelligent Workspace prioriza tu privacidad:
@@ -128,7 +163,7 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 
 | Permission | Type | Official Justification for CWS Review Team |
 |:---|:---|:---|
-| `tabs` | `permissions` | Required to query, identify, and monitor active browser tabs so they can be grouped, organized by domain/rules, calculated for memory metrics, and restored into workspace sessions. |
+| `tabs` | `permissions` | Reading which tabs are open, and their titles and addresses, so they can be grouped by domain or rule, listed in the panel and the omnibar, measured for the memory a group is holding, discarded to free it, and restored into a session. It also covers capturing the visible tab as an image, which is what the screenshot tool and the group gallery are built on — always on an action the user took on that tab, never on a timer. |
 | `tabGroups` | `permissions` | Core functionality. Allows creating, color-coding, naming, collapsing, and expanding native Chrome tab groups automatically according to user rules and auto-collapse timers. |
 | `storage` | `permissions` | Required to locally persist workspace configurations, custom grouping rules, themes, project notes, and session states across browser restarts. |
 | `commands` | `permissions` | Enables customizable keyboard shortcuts for power-user navigation (e.g., toggling the workspace side panel, collapsing groups, and navigating tabs without mouse interaction). |
@@ -137,13 +172,13 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `notifications` | `permissions` | Delivers desktop notifications when background workspace events complete, such as Pomodoro focus work/break transitions and scheduled reminders. |
 | `sidePanel` | `permissions` | Core UI interface. Hosts the primary Intelligent Workspace manager in Chrome's native side panel for seamless side-by-side multitasking without leaving the active web page. |
 | `scripting` | `permissions` | Injects helper scripts into the tab the user is acting on, each on an action they took: reading the current selection to file it as a note, reading the page's visible text when they ask the assistant about it, stitching a full-page screenshot, and putting the reader, colour picker and area-selector overlays on screen. Nothing is injected into pages the user has not acted on. |
-| `downloads` | `permissions` | Allows users to export their workspace configurations, session backups, productivity statistics, and research notes to local files for safekeeping. |
+| `downloads` | `permissions` | **Two uses.** (1) Writing the user's own data out to a file: workspace configurations, session backups, productivity statistics, notes and screenshots. (2) A "files on this page" list: on a page the user asks about, the extension reads the page's HTML and lists the addresses it links to with `<a href>` — documents, archives, images, audio and video — so the user can tick several and save them in one go. **It is not a media downloader**, and the distinction is load-bearing: it reads nothing but `href` attributes, extracts no stream, parses no HLS or DASH manifest, touches no `<video>` element, and defeats no protection. It surfaces links the page already offers, which is what clicking each of them one at a time would do. |
 | `downloads.open` | `permissions` | Enables opening exported workspace backup files and generated productivity reports directly from the extension's internal downloads manager. |
 | `system.display` | `permissions` | Queries screen display geometry and multi-monitor setups to optimize split-view layouts and side-by-side workspace positioning across displays. |
 | `windows` | `permissions` | Organizes, moves, and manages browser windows when restoring multi-group project workspaces or segregating workspaces across distinct monitors. |
 | `declarativeNetRequestWithHostAccess` | `permissions` | **Three uses, all user-initiated, described in full below the table because a one-line answer here would understate the second one.** (1) Time limits: a redirect rule sends a top-level request to the extension's own block page when the user opens a site they set a daily or weekly limit on. (2) The side panel's web view and the floating video player: a session rule removes framing headers from the one site the user chose to open there. (3) A `Referer` header on YouTube embeds the extension itself creates, which the player refuses to run without. |
 | `cookies` | `permissions` | **Two uses.** (1) The side panel's web view opens a site inside an extension frame, and Chrome partitions third-party cookies by top-level site, so that site would load signed out even though the user is signed in; the cookies it has already set are copied into the extension's own partition so the framed page sees the session the user already has. (2) A cookie inspector the user opens for a site from the panel, which lists that site's cookies and lets them edit or delete one. Cookies are never sent anywhere: both uses read and write them inside this browser only. |
-| `history` | `permissions` | Enables searching and deduplicating visited workspace links, calculating recent session productivity stats, and cleaning history from workspace groups. |
+| `history` | `permissions` | Searching visited pages from the omnibar and the panel, de-duplicating workspace links, and the history view itself, where the user can delete an entry or clear their history — the latter behind a confirmation, because it is not undoable. Nothing is read on a schedule and nothing derived from it leaves the device. |
 | `sessions` | `permissions` | Restores previously closed tab groups, closed tabs, and window sessions when recovering from unexpected browser crashes or reopening archived workspaces. |
 | `bookmarks` | `permissions` | Integrates the user's bookmarks directly into the workspace side panel, allowing seamless bookmark organization and folder-to-group conversions. |
 | `readingList` | `permissions` | Synchronizes workspace reading queues with Chrome's native reading list for later review and offline reading. |
@@ -151,7 +186,7 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `alarms` | `permissions` | Triggers periodic background maintenance tasks, Pomodoro focus interval ticks, and inactive group auto-collapse timers reliably in the Manifest V3 service worker. |
 | `offscreen` | `permissions` | Executes audio chime playback for Pomodoro timer notifications and off-screen canvas operations without interrupting the user's foreground browsing. |
 | `idle` | `permissions` | Detects when the user is inactive or away from the computer to automatically pause Pomodoro timers and suspend idle tab groups to save CPU/RAM. |
-| `<all_urls>` | `host_permissions` | Required to provide universal tab grouping by domain across any website, overlay keyboard navigation hints, and enforce distraction blocking on any domain during focus mode. |
+| `<all_urls>` | `host_permissions` | **The whole list, because this is the permission that deserves one.** Grouping tabs by the domain of any site; the keyboard overlays that run on any page (link hints, snippet expansion, the omnibar, restoring a blocked right-click, the floating-video buttons); site time limits, which cannot be limited to a list Chrome would have to approve first; and the things the extension does to a page **only when the user asks on that page** — capturing it as a screenshot, reading the selection into a note, reading its text for the assistant, putting the reader, colour picker or area selector on screen, and taking the framing headers off the one site opened in the panel's web view. Nothing reads a page in the background: the injected scripts wake on the key that calls them. |
 
 ### On `declarativeNetRequest`, said plainly
 
@@ -206,6 +241,7 @@ was being shown for a capability the extension does not use.
 | **Authentication Info / Cookies** | Yes (local read/write) | No | Session isolation for the side panel's web view, and the cookie inspector the user opens for a site | No |
 | **Web History** | Yes (local) | No | Workspace link search, history deduplication & local activity metrics | No |
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
+| **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking the assistant for an open tab — from the panel or with the `find` keyword in Chrome's address bar — sends the titles and addresses of the open tabs, because that is the list it searches. It is tried locally first and only reaches the API when the local match is ambiguous. | Only to the Google Gemini API, on the user's command |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
 | **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
 | **Link domains** | Yes (transient) | **No** | The omnibar draws each row's site icon from Chrome's own favicon store, through the worker, so no address leaves the browser to fetch one. It used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. | No |
@@ -374,7 +410,7 @@ phone home.
 
 | Where to | What is sent | When |
 |:---|:---|:---|
-| `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key | Only when you ask the assistant for something |
+| `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something, including through the `find` keyword in Chrome’s address bar |
 | Chrome’s built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
 | `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
 | The radio station you press play on | An ordinary audio request to that station’s own server, which sees your IP address as any website does | While a station is playing |
