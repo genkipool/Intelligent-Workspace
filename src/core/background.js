@@ -108,6 +108,143 @@ importScripts('/background/pomodoro.js');
 
 // --- Omnibox AI-Powered Tab Finder ---
 
+/**
+ * Words that carry no signal in "which tab was it" phrasing, in both languages the
+ * extension ships.
+ *
+ * The list used to be Spanish only, so an English question dragged its own filler into
+ * the scoring and `where`, `the` and `my` earned points against whatever URL happened to
+ * contain them. It also held `abril` — the month, sitting next to `abrir`, and almost
+ * certainly a slip of the finger — which silently threw away the search term of anyone
+ * looking for something about April.
+ *
+ * It now has to carry the short words too, because the length filter that used to hide
+ * them is gone.
+ */
+const OMNIBOX_FILLER_WORDS = new Set([
+    // Spanish
+    'el',
+    'la',
+    'lo',
+    'los',
+    'las',
+    'un',
+    'una',
+    'uno',
+    'unos',
+    'unas',
+    'de',
+    'del',
+    'al',
+    'en',
+    'con',
+    'por',
+    'para',
+    'sin',
+    'sobre',
+    'entre',
+    'que',
+    'donde',
+    'cual',
+    'cuando',
+    'como',
+    'esta',
+    'este',
+    'esa',
+    'ese',
+    'eso',
+    'estaba',
+    'era',
+    'fue',
+    'hay',
+    'tengo',
+    'tenia',
+    'mi',
+    'mis',
+    'tu',
+    'su',
+    'abrir',
+    'abierto',
+    'abrio',
+    'abierta',
+    'pestana',
+    'pestaa',
+    // English
+    'the',
+    'of',
+    'in',
+    'on',
+    'at',
+    'to',
+    'is',
+    'it',
+    'was',
+    'were',
+    'be',
+    'been',
+    'my',
+    'me',
+    'and',
+    'or',
+    'for',
+    'with',
+    'from',
+    'that',
+    'this',
+    'these',
+    'those',
+    'where',
+    'which',
+    'what',
+    'when',
+    'had',
+    'have',
+    'has',
+    'open',
+    'opened',
+]);
+
+/**
+ * How short a word has to be before it is matched on a word boundary instead of as a
+ * plain substring.
+ *
+ * Short terms are worth keeping — `IA`, `UI`, `3D` — but `includes('ia')` also matches
+ * *Wikipedia*, and a two-letter substring against forty titles finds something every
+ * time. Anything at or below this length has to appear as a word of its own.
+ */
+const OMNIBOX_BOUNDARY_MAX = 3;
+
+/** A local guess this weak is a coincidence, not an answer. See where it is used. */
+const OMNIBOX_MIN_ACCEPTABLE_SCORE = 10;
+
+/**
+ * Drops the accents from a word, for comparing against the filler list only.
+ *
+ * People type `¿dónde estaba…?` with the accent, and lowercasing alone leaves `dónde`,
+ * which does not equal the `donde` in the list — so the filler survived the filter and
+ * went on to earn points against any URL containing it. The accents are stripped for
+ * this comparison and nowhere else: what gets matched against titles is still the word
+ * the reader typed.
+ */
+function omniboxDeaccent(word) {
+    return word.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+/** Escapes a search term so it can go inside a RegExp — `c++` and `c#` are real queries. */
+function omniboxEscapeRegex(word) {
+    return word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Whether `word` occurs in `haystack`, as a substring for ordinary words and as a whole
+ * word for very short ones.
+ */
+function omniboxContains(haystack, word) {
+    if (word.length > OMNIBOX_BOUNDARY_MAX) return haystack.includes(word);
+    const boundary = '[^a-z0-9áéíóúüñ]';
+    return new RegExp(`(^|${boundary})${omniboxEscapeRegex(word)}(${boundary}|$)`).test(haystack);
+}
+
 chrome.omnibox.onInputStarted.addListener(() => {
     const suggestion =
         chrome.i18n.getMessage('omniboxDefaultSuggestion') ||
@@ -132,30 +269,11 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
         const queryWords = normalizedText
             .replace(/[¿?¡!]/g, '')
             .split(/\s+/)
-            .filter(
-                (word) =>
-                    word.length > 2 &&
-                    ![
-                        'donde',
-                        'estaba',
-                        'que',
-                        'con',
-                        'del',
-                        'los',
-                        'las',
-                        'para',
-                        'una',
-                        'uno',
-                        'por',
-                        'sobre',
-                        'abril',
-                        'abrir',
-                        'abierto',
-                        'abrio',
-                        'esta',
-                        'este',
-                    ].includes(word),
-            );
+            // One-letter words are never what someone is looking for; everything else is
+            // judged by the filler list rather than by length, so `IA`, `UI`, `3D` and
+            // `C#` survive. They used to be dropped by a `length > 2` rule, which is why
+            // searching for a two-letter thing found nothing at all.
+            .filter((word) => word.length > 1 && !OMNIBOX_FILLER_WORDS.has(omniboxDeaccent(word)));
 
         let localMatches = [];
 
@@ -173,10 +291,10 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
             // Rule B: Keyword-based matching
             let matchedCount = 0;
             for (const word of queryWords) {
-                if (titleLower.includes(word)) {
+                if (omniboxContains(titleLower, word)) {
                     score += 10;
                     matchedCount++;
-                } else if (urlLower.includes(word)) {
+                } else if (omniboxContains(urlLower, word)) {
                     score += 3;
                     matchedCount++;
                 }
@@ -257,11 +375,26 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
                 }
             }
 
-            // If Gemini did not return a match, use our best local guess as a final fallback
-            if (!matchedTabId && bestLocalMatch) {
+            /*
+             * The last resort, and it now has a floor.
+             *
+             * This used to take `bestLocalMatch` whatever its score, which meant that with
+             * no API key configured — when the branch above is skipped entirely — a single
+             * query word appearing anywhere in a URL was enough to jump somewhere. Three
+             * points out of a possible sixty is a coincidence, and being sent to the wrong
+             * tab is worse than being told the tab was not found.
+             *
+             * Ten is one word matched in a title, or the whole query inside a URL. Below
+             * that the answer is "no".
+             */
+            if (!matchedTabId && bestLocalMatch && bestLocalMatch.score >= OMNIBOX_MIN_ACCEPTABLE_SCORE) {
                 matchedTabId = bestLocalMatch.tab.id;
                 logMessage(
                     `[Omnibox] No Gemini match, falling back to best local guess: "${bestLocalMatch.tab.title}" (Score: ${bestLocalMatch.score})`,
+                );
+            } else if (!matchedTabId && bestLocalMatch) {
+                logMessage(
+                    `[Omnibox] Best local guess "${bestLocalMatch.tab.title}" scored ${bestLocalMatch.score}, below ${OMNIBOX_MIN_ACCEPTABLE_SCORE}; reporting no match instead.`,
                 );
             }
         }
