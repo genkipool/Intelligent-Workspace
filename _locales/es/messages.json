@@ -481,40 +481,40 @@
         "description": "Nombre del atajo"
     },
     "donation": {
-        "message": "Donación",
-        "description": "Título de la sección de donación"
+        "message": "Apoyo al desarrollo",
+        "description": "Título de la sección de apoyo"
     },
     "bitcoin": {
         "message": "Bitcoin",
-        "description": "Etiqueta de donación Bitcoin"
+        "description": "Etiqueta Bitcoin"
     },
     "cardano": {
         "message": "Cardano",
-        "description": "Etiqueta de donación Cardano"
+        "description": "Etiqueta Cardano"
     },
     "radix": {
         "message": "Radix",
-        "description": "Etiqueta de donación Radix"
+        "description": "Etiqueta Radix"
     },
     "paypal": {
         "message": "PayPal",
-        "description": "Etiqueta de donación PayPal"
+        "description": "Etiqueta PayPal"
     },
     "stripe": {
         "message": "Tarjeta",
-        "description": "Etiqueta de donación con tarjeta"
+        "description": "Etiqueta con tarjeta"
     },
     "googlePay": {
         "message": "Google Pay",
-        "description": "Etiqueta de donación Google Pay"
+        "description": "Etiqueta Google Pay"
     },
     "applePay": {
         "message": "Apple Pay",
-        "description": "Etiqueta de donación Apple Pay"
+        "description": "Etiqueta Apple Pay"
     },
     "ethereum": {
         "message": "Ethereum",
-        "description": "Etiqueta de donación Ethereum"
+        "description": "Etiqueta Ethereum"
     },
     "developedBy": {
         "message": "Desarrollo: Luisrb85, Diseño & Testing: Flor Chávez.",
@@ -606,7 +606,7 @@
     },
     "addressCopied": {
         "message": "¡Dirección copiada al portapapeles!",
-        "description": "Notificación para dirección de donación copiada"
+        "description": "Notificación para dirección copiada"
     },
     "errorCopyingAddress": {
         "message": "Error al copiar la dirección.",
@@ -992,64 +992,64 @@
         "description": "Ajustar el color usado para indicar errores en la interfaz"
     },
     "donateWithBitcoin": {
-        "message": "Donar con Bitcoin",
+        "message": "Apoyar con Bitcoin",
         "description": "Copiar dirección de Bitcoin"
     },
     "donateWithCardano": {
-        "message": "Donar con Cardano",
+        "message": "Apoyar con Cardano",
         "description": "Copiar dirección de Cardano"
     },
     "donateWithRadix": {
-        "message": "Donar con Radix",
+        "message": "Apoyar con Radix",
         "description": "Copiar dirección de Radix"
     },
     "donateWithPaypal": {
-        "message": "Donar con PayPal",
-        "description": "Abrir la página de PayPal para donar"
+        "message": "Apoyar con PayPal",
+        "description": "Abrir la página de PayPal"
     },
     "donateWithStripe": {
-        "message": "Donar con tarjeta",
-        "description": "Abrir el formulario de donación para pagar con tarjeta"
+        "message": "Apoyar con tarjeta",
+        "description": "Abrir el formulario para pagar con tarjeta"
     },
     "donateWithGooglePay": {
-        "message": "Donar con Google Pay",
-        "description": "Abrir el formulario de donación y pagar con Google Pay"
+        "message": "Apoyar con Google Pay",
+        "description": "Abrir el formulario para pagar con Google Pay"
     },
     "openStripeDonation": {
-        "message": "Abrir formulario de donación con tarjeta",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Abrir formulario de pago con tarjeta",
+        "description": "Etiqueta ARIA para botón de pago"
     },
     "openGooglePayDonation": {
-        "message": "Abrir formulario de donación con Google Pay",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Abrir formulario de pago con Google Pay",
+        "description": "Etiqueta ARIA para botón de pago"
     },
     "donateWithApplePay": {
-        "message": "Donar con Apple Pay",
-        "description": "Abrir el formulario de donación y pagar con Apple Pay"
+        "message": "Apoyar con Apple Pay",
+        "description": "Abrir el formulario para pagar con Apple Pay"
     },
     "openApplePayDonation": {
-        "message": "Abrir formulario de donación con Apple Pay",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Abrir formulario de pago con Apple Pay",
+        "description": "Etiqueta ARIA para botón de pago"
     },
     "donateWithEthereum": {
-        "message": "Donar con Ethereum",
+        "message": "Apoyar con Ethereum",
         "description": "Copiar la dirección de Ethereum"
     },
     "copyEthereumAddress": {
-        "message": "Copiar dirección de donación Ethereum",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Copiar dirección de Ethereum",
+        "description": "Etiqueta ARIA para botón de copia"
     },
     "openPaypalDonation": {
-        "message": "Abrir formulario de donación con PayPal",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Abrir formulario de pago con PayPal",
+        "description": "Etiqueta ARIA para botón de pago"
     },
     "donationThanks": {
         "message": "¡Gracias por tu apoyo!",
-        "description": "Se muestra cuando la donación se completa"
+        "description": "Se muestra cuando el pago de apoyo se completa"
     },
     "donationThanksAmount": {
-        "message": "¡Gracias por tu donación de $1 €!",
-        "description": "Se muestra cuando la donación se completa, con el importe",
+        "message": "¡Gracias por tu aportación de $1 €!",
+        "description": "Se muestra cuando el pago de apoyo se completa, con el importe",
         "placeholders": {
             "amount": {
                 "content": "$1"
@@ -1058,7 +1058,7 @@
     },
     "donationFailed": {
         "message": "No se ha podido completar el pago.",
-        "description": "Se muestra cuando la donación falla"
+        "description": "Se muestra cuando el pago falla"
     },
     "donationLoading": {
         "message": "Cargando el formulario de pago seguro…",
@@ -2380,7 +2380,7 @@
     },
     "donationDescText": {
         "message": "Si encuentras útil esta extensión, por favor, considera apoyar su desarrollo. ¡Cada contribución es muy apreciada!",
-        "description": "Texto animando a los usuarios a donar."
+        "description": "Texto animando a los usuarios a apoyar el proyecto."
     },
     "invalidRuleNameChars": {
         "message": "El nombre de la regla contiene caracteres no válidos (<, >): $1",
@@ -7057,20 +7057,20 @@
         "description": "Etiqueta ARIA para configuración de atajo"
     },
     "copyBitcoinAddress": {
-        "message": "Copiar dirección de donación Bitcoin",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Copiar dirección de Bitcoin",
+        "description": "Etiqueta ARIA para botón de copia"
     },
     "copyCardanoAddress": {
-        "message": "Copiar dirección de donación Cardano",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Copiar dirección de Cardano",
+        "description": "Etiqueta ARIA para botón de copia"
     },
     "copyRadixAddress": {
-        "message": "Copiar dirección de donación Radix",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Copiar dirección de Radix",
+        "description": "Etiqueta ARIA para botón de copia"
     },
     "openPaypalPage": {
-        "message": "Abrir página de donación PayPal",
-        "description": "Etiqueta ARIA para botón de donación"
+        "message": "Abrir página de PayPal",
+        "description": "Etiqueta ARIA para botón de enlace"
     },
     "openWebConfigRules": {
         "message": "Abrir reglas de configuración web",

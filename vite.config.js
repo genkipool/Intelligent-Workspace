@@ -61,6 +61,16 @@ export default defineConfig({
                     dest: 'assets/fonts',
                     rename: { stripBase: true },
                 },
+                {
+                    src: 'assets/icons/*',
+                    dest: 'assets/icons',
+                    rename: { stripBase: true },
+                },
+                {
+                    src: 'assets/icons/themes/*',
+                    dest: 'assets/icons/themes',
+                    rename: { stripBase: true },
+                },
             ],
         }),
     ],

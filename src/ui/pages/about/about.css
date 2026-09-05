@@ -211,6 +211,7 @@ body {
     border-radius: var(--border-radius-sm);
     object-fit: contain;
     flex-shrink: 0;
+    box-sizing: border-box;
     background-color: var(--bg-color);
     padding: var(--spacing-xs);
     @media (max-width: 768px) {

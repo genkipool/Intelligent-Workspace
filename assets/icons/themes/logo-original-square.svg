@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="512"
+     height="512"
+     viewBox="-1 -33 520 520">
+
+  <!-- TARJETA POSTERIOR -->
+  <rect x="11" y="10"
+        width="324" height="300"
+        rx="49"
+        fill="#5ABCCC"/>
+
+  <!-- RECTÁNGULO BLANCO POSTERIOR -->
+  <rect x="49" y="42"
+        width="157" height="104"
+        rx="24"
+        fill="#FFFFFF"/>
+
+  <!-- TARJETA INTERMEDIA -->
+  <rect x="80" y="87"
+        width="324" height="300"
+        rx="49"
+        fill="#66ACEB"/>
+
+  <!-- RECTÁNGULO BLANCO INTERMEDIO -->
+  <rect x="116" y="117"
+        width="158" height="104"
+        rx="24"
+        fill="#FFFFFF"/>
+
+  <!-- TARJETA PRINCIPAL -->
+  <rect x="148" y="146"
+        width="324" height="299"
+        rx="49"
+        fill="#4474C5"/>
+
+  <!-- BARRA -->
+  <rect x="165" y="179"
+        width="343" height="84"
+        rx="18"
+        fill="#9AC5EA"/>
+
+  <!-- CÍRCULO NARANJA -->
+  <circle cx="213.5" cy="221"
+          r="31.5"
+          fill="#F48325"/>
+
+  <!-- CÍRCULO NARANJA OSCURO -->
+  <circle cx="295.5" cy="221"
+          r="31.5"
+          fill="#DF5F1D"/>
+
+  <!-- CÍRCULO AMARILLO -->
+  <circle cx="377.5" cy="221"
+          r="31.5"
+          fill="#F4D54E"/>
+
+  <!-- CÍRCULO VERDE -->
+  <circle cx="459.5" cy="221"
+          r="31.5"
+          fill="#3E9D46"/>
+
+</svg>

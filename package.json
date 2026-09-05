@@ -14,6 +14,7 @@
         "format:fix": "prettier --write .",
         "check": "pnpm run lint && pnpm run format",
         "prepare": "husky",
+        "generate:logos": "node scripts/generate-theme-logos.mjs",
         "check:release": "node scripts/check-release.mjs",
         "verify": "pnpm run lint && pnpm run format && pnpm run check:release && pnpm run build"
     },

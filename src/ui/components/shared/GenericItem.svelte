@@ -26,7 +26,7 @@
     let faviconUrl = $derived(
         url
             ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(url)}&size=16`
-            : '../../../assets/icons/icon16.png',
+            : '../../../assets/icons/logo.svg',
     );
 
     let title = $derived.by(() => {
