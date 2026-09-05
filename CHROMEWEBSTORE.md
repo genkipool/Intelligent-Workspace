@@ -103,7 +103,7 @@ HOW IT WORKS
 
 • Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, a floating video player, and background music and radio.
 
-• An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. Type `find` in Chrome's address bar to ask it for an open tab in your own words. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
+• An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
 
 PRIVACY & DATA PROTECTION
 Intelligent Workspace is built privacy-first:
@@ -139,7 +139,7 @@ CÓMO FUNCIONA
 
 • Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, reproductor de vídeo flotante, y música y radio de fondo.
 
-• Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Escribe `find` en la barra de direcciones de Chrome para pedirle una pestaña abierta con tus palabras. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
+• Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
 
 PRIVACIDAD Y SEGURIDAD
 Intelligent Workspace prioriza tu privacidad:
@@ -241,7 +241,7 @@ was being shown for a capability the extension does not use.
 | **Authentication Info / Cookies** | Yes (local read/write) | No | Session isolation for the side panel's web view, and the cookie inspector the user opens for a site | No |
 | **Web History** | Yes (local) | No | Workspace link search, history deduplication & local activity metrics | No |
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
-| **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking the assistant for an open tab — from the panel or with the `find` keyword in Chrome's address bar — sends the titles and addresses of the open tabs, because that is the list it searches. It is tried locally first and only reaches the API when the local match is ambiguous. | Only to the Google Gemini API, on the user's command |
+| **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking the assistant for an open tab sends the titles and addresses of the open tabs, because that is the list it searches. A `find` keyword for Chrome's address bar is declared in the manifest for the same purpose, but it does not currently activate in a real browser and is therefore not claimed as a feature anywhere in this listing — it is named here because the manifest key is there for a reviewer to find. | Only to the Google Gemini API, on the user's command |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
 | **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
 | **Link domains** | Yes (transient) | **No** | The omnibar draws each row's site icon from Chrome's own favicon store, through the worker, so no address leaves the browser to fetch one. It used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. | No |
@@ -410,7 +410,7 @@ phone home.
 
 | Where to | What is sent | When |
 |:---|:---|:---|
-| `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something, including through the `find` keyword in Chrome’s address bar |
+| `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something |
 | Chrome’s built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
 | `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
 | The radio station you press play on | An ordinary audio request to that station’s own server, which sees your IP address as any website does | While a station is playing |
