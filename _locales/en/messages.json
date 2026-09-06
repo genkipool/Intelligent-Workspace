@@ -3088,7 +3088,7 @@
   },
   "addApiKeyBtn": {
     "message": "Add API Key",
-    "description": "Tooltip for the button to add a new API key"
+    "description": "Add a Gemini API key so the assistant can answer."
   },
   "geminiFreeTier": {
     "message": "Free Tier",
@@ -3336,11 +3336,11 @@
   },
   "showApiKeyTitle": {
     "message": "Show API Key",
-    "description": "Show API Key button title"
+    "description": "Show the key in clear text."
   },
   "hideApiKeyTitle": {
     "message": "Hide API Key",
-    "description": "Hide API Key button title"
+    "description": "Hide the key again."
   },
   "geminiApiKeySaved": {
     "message": "Gemini API Key saved successfully.",
@@ -3396,7 +3396,7 @@
   },
   "copyApiKeyTooltip": {
     "message": "Copy API key",
-    "description": "Tooltip for the copy API key button"
+    "description": "Copy this key to the clipboard."
   },
   "apiKeyCopied": {
     "message": "API key copied to clipboard",
@@ -3499,7 +3499,7 @@
   },
   "download": {
     "message": "Download",
-    "description": "Main text for the download button."
+    "description": "Save this file to your computer."
   },
   "downloadsStarted": {
     "message": "Started $1 downloads.",
@@ -3918,7 +3918,7 @@
   },
   "stopReadingAloud": {
     "message": "Stop reading",
-    "description": "Stop reading"
+    "description": "Stop reading the page aloud."
   },
   "errorDeletingScreenshots": {
     "message": "Error deleting screenshots. Please try again.",
@@ -4178,7 +4178,7 @@
   },
   "deleteCookie": {
     "message": "Delete Cookie",
-    "description": "Tooltip for the button to delete a single cookie entry."
+    "description": "Delete this cookie from the site."
   },
   "cookieValue": {
     "message": "Value",
@@ -4226,7 +4226,7 @@
   },
   "noteStatsTooltipText": {
     "message": "Shows the word and character count ($1 words / $2 chars).",
-    "description": "Tooltip for the note stats when the type is text."
+    "description": "$1 words and $2 characters in this note."
   },
   "noteStatsTooltipChecklist": {
     "message": "Shows completed tasks out of the total ($1/$2).",
@@ -4266,7 +4266,7 @@
   },
   "backToCookieEditor": {
     "message": "Back to Cookie Editor",
-    "description": "Tooltip for the button to return from the import panel to the cookie editor modal."
+    "description": "Leave the import panel and go back to the cookie list."
   },
   "dragDropCookie": {
     "message": "Drag & drop a .json file here or click to select one",
@@ -4274,7 +4274,7 @@
   },
   "selectCookieFile": {
     "message": "Select a cookie file to import",
-    "description": "Tooltip/aria-label for the drag and drop area."
+    "description": "Drop a cookie file here, or click to choose one."
   },
   "cookiesImported": {
     "message": "Successfully imported $COUNT$ cookies.",
@@ -4550,7 +4550,7 @@
   },
   "conversationEditedDateTooltip": {
     "message": "Last modified",
-    "description": "Tooltip text for the date a conversation was last added to."
+    "description": "When something was last added to this conversation."
   },
   "errorDuplicateConversationTitle": {
     "message": "A conversation with this title already exists.",
@@ -4743,7 +4743,7 @@
   },
   "addCommandButton": {
     "message": "Add Command",
-    "description": "Text on the button to submit a new command."
+    "description": "Save this command so it appears in the list."
   },
   "currentCommandsSectionTitle": {
     "message": "Current Custom Commands",
@@ -4994,6 +4994,26 @@
   "enableSubgroupsFirstTooltip": {
     "message": "Enable domain visibility first to use this option",
     "description": "Enable domain visibility first to use this option"
+  },
+  "copy": {
+    "message": "Copy",
+    "description": "Copy it to the clipboard."
+  },
+  "openUrl": {
+    "message": "Open URL",
+    "description": "Open this address in a new tab."
+  },
+  "moreOptions": {
+    "message": "More options",
+    "description": "Show the rest of the actions for this download."
+  },
+  "removeScheduleTime": {
+    "message": "Remove time",
+    "description": "Remove this time from the schedule."
+  },
+  "enableChildFoldersFirstTooltip": {
+    "message": "Show child folders first to use this option",
+    "description": "Show child folders first to use this option"
   },
   "showQrCode": {
     "message": "Show QR Code for URL",
@@ -5748,7 +5768,7 @@
   },
   "deleteHistoryForDate": {
     "message": "Delete history for this date",
-    "description": "Tooltip for the delete button on history groups and title of the confirmation modal"
+    "description": "Delete every history entry from this day."
   },
   "deleteHistoryConfirmDesc": {
     "message": "Are you sure you want to delete all history items for:",
@@ -6976,15 +6996,15 @@
   },
   "deleteAllNotesContext": {
     "message": "Delete all notes in this context",
-    "description": "Tooltip for deleting all notes"
+    "description": "Delete every note filed under this context. It cannot be undone."
   },
   "viewOrphanScreenshots": {
     "message": "View orphan screenshots",
-    "description": "Tooltip for orphan screenshots"
+    "description": "Show captures whose group no longer exists."
   },
   "uploadFileTooltip": {
     "message": "Upload file",
-    "description": "Tooltip for file upload"
+    "description": "Choose a file from your computer."
   },
   "configureCollapseExpandAllTabs": {
     "message": "Configure Collapse/Expand All Tabs shortcut",
@@ -7374,7 +7394,7 @@
   },
   "licenseFullTextTitle": {
       "message": "Opens the LICENSE file of the repository on GitHub",
-      "description": "License section: link tooltip"
+    "description": "Opens the LICENSE file of the repository on GitHub"
   },
   "sectionListDownloads": {
     "message": "Downloads Manager"
@@ -7682,7 +7702,7 @@
   },
   "geminiChangeModelTooltip": {
     "message": "Change AI model",
-    "description": "Tooltip for changing the AI model"
+    "description": "Pick which AI model answers."
   },
   "geminiPreviousModel": {
     "message": "Previous model",
@@ -7861,11 +7881,11 @@
   },
   "pomodoroShortBreak": {
     "message": "Short Break",
-    "description": "Short break mode label"
+    "description": "The short rest between one pomodoro and the next."
   },
   "pomodoroLongBreak": {
     "message": "Long Break",
-    "description": "Long break mode label"
+    "description": "The longer rest that closes a cycle of pomodoros."
   },
   "pomodoroStart": {
     "message": "Start",
@@ -7921,11 +7941,11 @@
   },
   "pomodoroSound": {
     "message": "Sound notifications",
-    "description": "Sound toggle label"
+    "description": "Play a chime when a phase ends."
   },
   "pomodoroAutostart": {
     "message": "Auto-start next session",
-    "description": "Autostart toggle label"
+    "description": "Start the next session without waiting for you to press play."
   },
   "pomodoroProjectName": {
     "message": "Project name",
@@ -7941,7 +7961,7 @@
   },
   "pomodoroStats": {
     "message": "Statistics",
-    "description": "Statistics section label"
+    "description": "Where the hours went: sessions, focus time and streaks."
   },
   "pomodoroStatsFocusTime": {
     "message": "Focus time",
@@ -8045,7 +8065,7 @@
   },
   "pomodoroEfficiencyTooltip": {
     "message": "📊 Session Efficiency\n\n• Deep green (≥80%): Excellent session — almost all time was pure focus.\n• Medium green (60-79%): Good session, breaks within expected range.\n• Yellow (40-59%): Room to improve — breaks are outweighing focus.\n• Red (<40%): Many interruptions or overly long breaks.\n\nFormula: (Focus time ÷ Total time) × 100\nTotal time includes focus + breaks + interruptions.",
-    "description": "Explanatory tooltip for the efficiency bar"
+    "description": "📊 Session Efficiency\n\n• Deep green (≥80%): Excellent session — almost all time was pure focus.\n• Medium green (60-79%): Good session, breaks within expected range.\n• Yellow (40-59%): Room to improve — breaks are outweighing focus.\n• Red (<40%): Many interruptions or overly long breaks.\n\nFormula: (Focus time ÷ Total time) × 100\nTotal time includes focus + breaks + interruptions."
   },
   "pomodoroDashboardTitle": {
     "message": "Pomodoro Dashboard",
@@ -8596,7 +8616,7 @@
   },
   "pomodoroSettingsCyclesTitle": {
     "message": "Cycle: group of pomodoros ending with a long break. Session: one complete task from start to finish",
-    "description": "Cycle and session title"
+    "description": "Cycle: group of pomodoros ending with a long break. Session: one complete task from start to finish"
   },
   "pomodoroUnitSessionsTitle": {
     "message": "With $1 pomodoros you finish the task. Each completed task counts as a session",
@@ -8710,11 +8730,11 @@
   },
   "dashboardExportJSON": {
     "message": "Export Statistics (JSON)",
-    "description": "Tooltip for exporting stats as JSON"
+    "description": "Save your statistics to a JSON file."
   },
   "dashboardImportJSON": {
     "message": "Import Statistics (JSON)",
-    "description": "Tooltip for importing stats from JSON"
+    "description": "Load statistics back in from a JSON file."
   },
   "pomodoroStatsTotalAll": {
     "message": "Totals (all)",
@@ -8906,11 +8926,11 @@
   },
   "showYouTubePlayer": {
     "message": "Show YouTube player",
-    "description": "Tooltip for button that restores the hidden YouTube player"
+    "description": "Bring the hidden player back into view."
   },
   "closeYouTubePlayer": {
     "message": "Close YouTube player",
-    "description": "Tooltip for button that permanently closes the hidden YouTube player"
+    "description": "Close the hidden player and stop its audio."
   },
   "listGroupFeatures": {
     "message": "List & Group Management Features",
@@ -12313,7 +12333,7 @@
   },
   "pomodoroSettingsHint": {
     "message": "Configure timer methods, durations, and options",
-    "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
+    "description": "Set the timer method, how long each phase lasts, and the rest of the options."
   },
   "pomodoroSettingsShared": {
     "message": "Select the default method. Changes made here apply to the side panel and the group list at the same time.",
@@ -12321,7 +12341,7 @@
   },
   "editProjectName": {
     "message": "Edit project name",
-    "description": "Tooltip and label for editing project name in sidebar"
+    "description": "Rename this project."
   },
   "pomodoroHideTimer": {
     "message": "Hide timer interface (click to collapse)",
@@ -12495,7 +12515,7 @@
     "message": "Searching internet radio sends what you typed to the public radio-browser.info directory."
   },
   "dataUseOcrItem": {
-    "message": "Reading text out of a screenshot downloads its language model once, from jsDelivr, and the browser caches it. Nothing about you is sent."
+    "message": "Reading text out of a screenshot downloads its language models once — Spanish and English — from jsDelivr, and the browser caches them. Nothing about you is sent."
   },
   "dataUseContributionItem": {
     "message": "Supporting the project opens our payment page, which handles the card through Stripe. Card details never reach the extension."

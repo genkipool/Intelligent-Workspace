@@ -16,6 +16,22 @@ export default defineConfig({
         viteStaticCopy({
             targets: [
                 {
+                    /*
+                     * The licence and provenance notices travel with the package, not just
+                     * with the repository.
+                     *
+                     * Two of the bundled libraries are Apache-2.0, whose section 4(d) asks
+                     * for the notices to accompany the distribution — and the package *is*
+                     * the distribution; the repository is not what a user installs. It also
+                     * answers, inside the zip where the question gets asked, why
+                     * `src/lib/tesseract-core.wasm.js` is 4.6 MB of base64: it names the
+                     * package and version it was built from, with a hash to check it
+                     * against. Unexplained, a blob that size reads as obfuscation.
+                     */
+                    src: 'THIRD-PARTY-NOTICES.md',
+                    dest: '.',
+                },
+                {
                     src: 'src/core/background/*',
                     dest: 'background',
                     rename: { stripBase: true },
