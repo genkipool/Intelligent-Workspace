@@ -772,7 +772,7 @@
         </div>
     </div>
 
-    <!-- ② 3-Tab Interface: Música, Radio, Todo (visible when search/list view is open) -->
+    <!-- ② 3-tab interface: music, radio, all (visible when the search/list view is open) -->
     {#if $isSearchOpen}
         <div class="music-tabs" role="tablist">
             <button

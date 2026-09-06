@@ -47,34 +47,34 @@
         <title>{title}</title>
     {/if}
 
-    <!-- TARJETA POSTERIOR -->
+    <!-- BACK CARD -->
     <rect x="11" y="10" width="324" height="300" rx="49" class="card-back" />
 
-    <!-- RECTÁNGULO BLANCO POSTERIOR -->
+    <!-- BACK WHITE RECTANGLE -->
     <rect x="49" y="42" width="157" height="104" rx="24" class="rect-back" />
 
-    <!-- TARJETA INTERMEDIA -->
+    <!-- MIDDLE CARD -->
     <rect x="80" y="87" width="324" height="300" rx="49" class="card-mid" />
 
-    <!-- RECTÁNGULO BLANCO INTERMEDIO -->
+    <!-- MIDDLE WHITE RECTANGLE -->
     <rect x="116" y="117" width="158" height="104" rx="24" class="rect-mid" />
 
-    <!-- TARJETA PRINCIPAL AZUL -->
+    <!-- MAIN BLUE CARD -->
     <rect x="148" y="146" width="324" height="299" rx="49" class="card-front" />
 
-    <!-- BARRA CELESTE -->
+    <!-- LIGHT BLUE BAR -->
     <rect x="165" y="179" width="343" height="84" rx="18" class="bar" />
 
-    <!-- CÍRCULO NARANJA -->
+    <!-- ORANGE CIRCLE -->
     <circle cx="213.5" cy="221" r="31.5" class="dot-1" />
 
-    <!-- CÍRCULO NARANJA OSCURO -->
+    <!-- DARK ORANGE CIRCLE -->
     <circle cx="295.5" cy="221" r="31.5" class="dot-2" />
 
-    <!-- CÍRCULO AMARILLO -->
+    <!-- YELLOW CIRCLE -->
     <circle cx="377.5" cy="221" r="31.5" class="dot-3" />
 
-    <!-- CÍRCULO VERDE -->
+    <!-- GREEN CIRCLE -->
     <circle cx="459.5" cy="221" r="31.5" class="dot-4" />
 </svg>
 

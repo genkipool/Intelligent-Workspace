@@ -15,67 +15,67 @@
     .dot-4 { fill: var(--logo-dot-4, #3E9D46); }
   </style>
 
-  <!-- TARJETA POSTERIOR -->
+  <!-- BACK CARD -->
   <rect x="11" y="10"
         width="324" height="300"
         rx="49"
         class="card-back"
         fill="#5ABCCC"/>
 
-  <!-- RECTÁNGULO BLANCO POSTERIOR -->
+  <!-- BACK WHITE RECTANGLE -->
   <rect x="49" y="42"
         width="157" height="104"
         rx="24"
         class="rect-back"
         fill="#FFFFFF"/>
 
-  <!-- TARJETA INTERMEDIA -->
+  <!-- MIDDLE CARD -->
   <rect x="80" y="87"
         width="324" height="300"
         rx="49"
         class="card-mid"
         fill="#66ACEB"/>
 
-  <!-- RECTÁNGULO BLANCO INTERMEDIO -->
+  <!-- MIDDLE WHITE RECTANGLE -->
   <rect x="116" y="117"
         width="158" height="104"
         rx="24"
         class="rect-mid"
         fill="#FFFFFF"/>
 
-  <!-- TARJETA PRINCIPAL -->
+  <!-- MAIN CARD -->
   <rect x="148" y="146"
         width="324" height="299"
         rx="49"
         class="card-front"
         fill="#4474C5"/>
 
-  <!-- BARRA -->
+  <!-- BAR -->
   <rect x="165" y="179"
         width="343" height="84"
         rx="18"
         class="bar"
         fill="#9AC5EA"/>
 
-  <!-- CÍRCULO NARANJA -->
+  <!-- ORANGE CIRCLE -->
   <circle cx="213.5" cy="221"
           r="31.5"
           class="dot-1"
           fill="#F48325"/>
 
-  <!-- CÍRCULO NARANJA OSCURO -->
+  <!-- DARK ORANGE CIRCLE -->
   <circle cx="295.5" cy="221"
           r="31.5"
           class="dot-2"
           fill="#DF5F1D"/>
 
-  <!-- CÍRCULO AMARILLO -->
+  <!-- YELLOW CIRCLE -->
   <circle cx="377.5" cy="221"
           r="31.5"
           class="dot-3"
           fill="#F4D54E"/>
 
-  <!-- CÍRCULO VERDE -->
+  <!-- GREEN CIRCLE -->
   <circle cx="459.5" cy="221"
           r="31.5"
           class="dot-4"

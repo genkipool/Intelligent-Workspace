@@ -1006,7 +1006,7 @@ const MESSAGE_HANDLERS = {
     },
     hintStatusChanged: (message, sender, sendResponse) => {
         handleHintStatusChanged(message);
-        // Sólo un aviso: nadie espera respuesta.
+        // A notification only: nobody is waiting for a reply.
         return false;
     },
     muteAllTabs: (message, sender, sendResponse) => {
@@ -1019,12 +1019,12 @@ const MESSAGE_HANDLERS = {
     },
     hintCommandsUpdated: (message, sender, sendResponse) => {
         handleHintCommandsUpdated();
-        // Sólo un aviso: nadie espera respuesta.
+        // A notification only: nobody is waiting for a reply.
         return false;
     },
     themeChanged: (message, sender, sendResponse) => {
         handleThemeChanged();
-        // Sólo un aviso: nadie espera respuesta.
+        // A notification only: nobody is waiting for a reply.
         return false;
     },
     printHtmlAsPdf: (message, sender, sendResponse) => {
