@@ -48,11 +48,12 @@ async function handleValidateApiKey(message, sendResponse) {
         return;
     }
 
-    // We use a lightweight API endpoint to verify the key's validity.
-    const validationUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-
+    // We use a lightweight API endpoint to verify the key's validity. The URL and the way
+    // the key is attached both come from `gemini-api.js`, which `background.js` imports
+    // first: this file used to spell out its own `?key=` URL, and a key in a query string
+    // is exactly what the Web Store's data-transmission rule is about.
     try {
-        const response = await fetch(validationUrl);
+        const response = await fetch(GEMINI_MODELS_URL, geminiRequestInit(apiKey));
         if (response.ok) {
             // The key is valid if the request is successful.
             sendResponse({ success: true });

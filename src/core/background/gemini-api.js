@@ -7,6 +7,34 @@
  * Both use the internal `_executeGeminiAPI` which correctly manages Google API constraints.
  */
 
+/**
+ * THE KEY GOES IN A HEADER, NEVER IN THE QUERY STRING.
+ *
+ * The API accepts `?key=…` and that is how these three call sites used to be written. It
+ * works, and it is still the wrong place for it: a query string is the part of a request
+ * that gets written down — proxy logs, `Referer` headers, crash dumps, the address bar of
+ * anyone who copies a failing URL into a bug report — while a header is not. The Chrome Web
+ * Store says so as a rule rather than a suggestion ("don't encode data in request headers or
+ * query parameters, even over HTTPS"), and Google's own Gemini documentation reaches the
+ * same place from the other direction by naming `x-goog-api-key` as the way to send it.
+ *
+ * The key is the user's own, which is what makes this worth doing rather than shrugging at:
+ * it is the credential they pasted in, and leaking it spends their quota, not ours.
+ *
+ * No preflight is involved. The extension holds `<all_urls>`, so these fetches are made with
+ * the extension's own privileges and never become CORS requests, which is why a custom header
+ * costs nothing here that it would cost on a web page.
+ */
+function geminiRequestInit(apiKey, init = {}) {
+    return {
+        ...init,
+        headers: { ...init.headers, 'x-goog-api-key': apiKey },
+    };
+}
+
+/** The one endpoint used to list models — and, because it is the cheapest call there is, to check a key. */
+const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+
 async function fetchAvailableModels() {
     const { geminiApiKey, geminiApiKeysList } = await chrome.storage.local.get(['geminiApiKey', 'geminiApiKeysList']);
     const apiKey =
@@ -17,10 +45,8 @@ async function fetchAvailableModels() {
         return { success: false, error: 'NO_API_KEY' };
     }
 
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(GEMINI_MODELS_URL, geminiRequestInit(apiKey));
         if (!response.ok) {
             const errorData = await response.json();
             const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
@@ -83,7 +109,7 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
         const currentKeyObj = keysList[currentIndex];
         const currentKey = currentKeyObj.key;
 
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${currentKey}`;
+        const API_URL = `${GEMINI_MODELS_URL}/${MODEL_NAME}:generateContent`;
 
         const makeRequest = async (applySearchTool) => {
             const requestBody = requestBodyBuilder();
@@ -111,11 +137,14 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
                     delay *= 2;
                 }
 
-                response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(requestBody),
-                });
+                response = await fetch(
+                    API_URL,
+                    geminiRequestInit(currentKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody),
+                    }),
+                );
 
                 if (response.status === 429 && r < retries) {
                     continue;

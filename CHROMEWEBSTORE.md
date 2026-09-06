@@ -1,6 +1,8 @@
 # Chrome Web Store Submission & Justifications Dossier: Intelligent Workspace
 
-> **Last Updated:** 2026-09-05 (data disclosure, DNR scoping and cookie lifetime)  
+> **Last Updated:** 2026-09-06 (audit against the Web Store troubleshooting list: full header
+> inventory for DNR, API key out of the query string, contribution page disclosed, third-party
+> notices shipped)  
 > **Extension Name:** Intelligent Workspace  
 > **Version:** 1.0  
 > **Manifest Version:** 3  
@@ -77,6 +79,27 @@ working session in one browser window, and every tool above is reached from insi
 session and serves it. None of them opens a second product, and none collects anything for
 a purpose outside it.
 
+### The contribution page, and why it is not in the feature list
+
+The extension has a voluntary contribution page — card, Google Pay, Apple Pay and PayPal, all
+of them Stripe, on a page of our own website that the panel frames; plus four wallet addresses
+on the About page that a click copies to the clipboard. It is disclosed in the listing, in the
+"Support & Community" block, and **deliberately not among the features**.
+
+That placement is the honest description and not a way of hiding it. Taking money for the work
+is not something the extension *does for the user*, so writing it up as a capability alongside
+the tabs and the notes would describe the product wrongly and, worse, would read as a second
+purpose bolted onto the first — which is the thing the single-purpose policy exists to catch.
+The extension is free and feature-complete; there is no paywall, no unlock, no tier, and no
+behaviour anywhere in it that changes according to whether somebody has contributed. Nothing to
+disclose about the product follows from the page existing, which is exactly why it belongs with
+the support links rather than with the features.
+
+The wallet addresses are static text that a click copies. There is no wallet integration, no
+connection to any chain, no transaction the extension can see or construct, and **no mining of
+any kind** — worth saying outright, because "cryptocurrency" in an extension is a word that
+earns a second look, and it should survive one.
+
 ---
 
 ## 2. Detailed Store Listing Copy
@@ -117,6 +140,7 @@ SUPPORT & COMMUNITY
 • Support & Documentation: https://intelligentworkspace.genkipool.com
 • Bug reports & Feedback: https://intelligentworkspace.genkipool.com/support
 • Privacy Policy: https://intelligentworkspace.genkipool.com/privacy
+• The workspace is free and complete, with nothing held back and nothing to unlock. If it saves you time and you want to support its development, there is a voluntary contribution page — card, Google Pay, Apple Pay or PayPal, handled entirely by Stripe on our own website, and a few wallet addresses on the About page for anyone who prefers them. Nothing in the extension changes whether you use it or not.
 ```
 
 ### Spanish Detailed Description (Descripción detallada en español)
@@ -153,6 +177,7 @@ SOPORTE Y CONTACTO
 • Sitio web y documentación: https://intelligentworkspace.genkipool.com
 • Soporte y sugerencias: https://intelligentworkspace.genkipool.com/support
 • Política de Privacidad: https://intelligentworkspace.genkipool.com/privacy
+• El espacio de trabajo es gratuito y está completo: no hay nada reservado ni nada que desbloquear. Si te ahorra tiempo y quieres apoyar su desarrollo, hay una página de apoyo voluntario —tarjeta, Google Pay, Apple Pay o PayPal, gestionados íntegramente por Stripe en nuestra propia web— y unas cuantas direcciones de monedero en la página «Acerca de» para quien las prefiera. Nada dentro de la extensión cambia lo uses o no.
 ```
 
 ---
@@ -173,41 +198,75 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `sidePanel` | `permissions` | Core UI interface. Hosts the primary Intelligent Workspace manager in Chrome's native side panel for seamless side-by-side multitasking without leaving the active web page. |
 | `scripting` | `permissions` | Injects helper scripts into the tab the user is acting on, each on an action they took: reading the current selection to file it as a note, reading the page's visible text when they ask the assistant about it, stitching a full-page screenshot, and putting the reader, colour picker and area-selector overlays on screen. Nothing is injected into pages the user has not acted on. |
 | `downloads` | `permissions` | **Two uses.** (1) Writing the user's own data out to a file: workspace configurations, session backups, productivity statistics, notes and screenshots. (2) A "files on this page" list: on a page the user asks about, the extension reads the page's HTML and lists the addresses it links to with `<a href>` — documents, archives, images, audio and video — so the user can tick several and save them in one go. **It is not a media downloader**, and the distinction is load-bearing: it reads nothing but `href` attributes, extracts no stream, parses no HLS or DASH manifest, touches no `<video>` element, and defeats no protection. It surfaces links the page already offers, which is what clicking each of them one at a time would do. |
-| `downloads.open` | `permissions` | Enables opening exported workspace backup files and generated productivity reports directly from the extension's internal downloads manager. |
+| `downloads.open` | `permissions` | The panel lists the browser's downloads so a file the session just produced does not cost a trip to another window, and a list of files nobody can open from is a list, not a tool. This opens the entry the user clicks — any of them, the same as clicking it in Chrome's own downloads page, and only on that click. |
 | `system.display` | `permissions` | Queries screen display geometry and multi-monitor setups to optimize split-view layouts and side-by-side workspace positioning across displays. |
 | `windows` | `permissions` | Organizes, moves, and manages browser windows when restoring multi-group project workspaces or segregating workspaces across distinct monitors. |
-| `declarativeNetRequestWithHostAccess` | `permissions` | **Three uses, all user-initiated, described in full below the table because a one-line answer here would understate the second one.** (1) Time limits: a redirect rule sends a top-level request to the extension's own block page when the user opens a site they set a daily or weekly limit on. (2) The side panel's web view and the floating video player: a session rule removes framing headers from the one site the user chose to open there. (3) A `Referer` header on YouTube embeds the extension itself creates, which the player refuses to run without. |
+| `declarativeNetRequestWithHostAccess` | `permissions` | **Four uses, all user-initiated, described in full below the table because a one-line answer here would understate the second one.** (1) Time limits: a redirect rule sends a top-level request to the extension's own block page when the user opens a site they set a daily or weekly limit on. (2) The side panel's web view and the floating video player: a session rule removes framing headers from the one site the user chose to open there, and makes the request look like the ordinary top-level navigation that site expects. (3) A `Cookie` header carrying the user's own cookies for that one site, back to that same site, so a page opened in the floating player is not signed out. (4) A `Referer` header on YouTube embeds the extension itself creates, which the player refuses to run without. **Every header the rules touch is listed below the table, in full.** |
 | `cookies` | `permissions` | **Two uses.** (1) The side panel's web view opens a site inside an extension frame, and Chrome partitions third-party cookies by top-level site, so that site would load signed out even though the user is signed in; the cookies it has already set are copied into the extension's own partition so the framed page sees the session the user already has. (2) A cookie inspector the user opens for a site from the panel, which lists that site's cookies and lets them edit or delete one. Cookies are never sent anywhere: both uses read and write them inside this browser only. The copies made for (1) are written **without an expiry**, so they are session cookies that the browser drops on close whatever else happens, and they are cleared outright when the view closes. A copy never outlives the frame it was made for, and the user's real cookies are left untouched. |
 | `history` | `permissions` | Searching visited pages from the omnibar and the panel, de-duplicating workspace links, and the history view itself, where the user can delete an entry or clear their history — the latter behind a confirmation, because it is not undoable. Nothing is read on a schedule and nothing derived from it leaves the device. |
 | `sessions` | `permissions` | Restores previously closed tab groups, closed tabs, and window sessions when recovering from unexpected browser crashes or reopening archived workspaces. |
 | `bookmarks` | `permissions` | Integrates the user's bookmarks directly into the workspace side panel, allowing seamless bookmark organization and folder-to-group conversions. |
-| `readingList` | `permissions` | Synchronizes workspace reading queues with Chrome's native reading list for later review and offline reading. |
+| `readingList` | `permissions` | Chrome's own reading list is one of the places a working session leaves things to come back to, so the panel lists it beside the tabs, bookmarks and history rather than making the user go and find it in a different menu. Two calls: reading the entries to show them, and removing one when the user clears it from the panel. Nothing is added behind their back and nothing is read on a schedule. |
 | `clipboardWrite` | `permissions` | Allows users to copy workspace URL lists, research notes, markdown summaries, and color picker hex values to the system clipboard with a single click. |
 | `alarms` | `permissions` | Triggers periodic background maintenance tasks, Pomodoro focus interval ticks, and inactive group auto-collapse timers reliably in the Manifest V3 service worker. |
 | `offscreen` | `permissions` | Executes audio chime playback for Pomodoro timer notifications and off-screen canvas operations without interrupting the user's foreground browsing. |
-| `idle` | `permissions` | Detects when the user is inactive or away from the computer to automatically pause Pomodoro timers and suspend idle tab groups to save CPU/RAM. |
+| `idle` | `permissions` | Stops the clock when the user walks away. The workspace records how long they spend on a site so it can enforce the limits they set and show them where the hours went, and a tab left open while somebody makes coffee is not time spent working — without this, every limit is wrong and the record is worthless. Chrome is asked only whether the machine is active, idle or locked, on a threshold the user sets; it returns no activity, no input and nothing about what they were doing. |
 | `<all_urls>` | `host_permissions` | **The whole list, because this is the permission that deserves one.** Grouping tabs by the domain of any site; the keyboard overlays that run on any page (link hints, snippet expansion, the omnibar, restoring a blocked right-click, the floating-video buttons); site time limits, which cannot be limited to a list Chrome would have to approve first; and the things the extension does to a page **only when the user asks on that page** — capturing it as a screenshot, reading the selection into a note, reading its text for the assistant, putting the reader, colour picker or area selector on screen, and taking the framing headers off the one site opened in the panel's web view. Nothing reads a page in the background: the injected scripts wake on the key that calls them. |
 
 ### On `declarativeNetRequest`, said plainly
 
-A reviewer running static analysis on this extension will find `modifyHeaders` rules removing
-`x-frame-options`, `content-security-policy`, `content-security-policy-report-only`,
-`x-webkit-csp`, `cross-origin-opener-policy`, `cross-origin-embedder-policy` and
-`cross-origin-resource-policy`. That is real, it is deliberate, and it is set out here rather
-than left to be discovered, because a capability found in the code that the paperwork did not
-mention is a good reason to distrust the paperwork.
+A reviewer running static analysis on this extension will find `modifyHeaders` rules. **This is
+the whole list of what they touch**, because a capability found in the code that the paperwork
+did not mention is a good reason to distrust the paperwork — and a partial list is worse than
+none, since it looks like the complete one.
+
+*On the response:*
+
+| Header | Operation | Why |
+|:---|:---|:---|
+| `x-frame-options` | remove | The framing refusals. Without removing these the panel's web view is a blank rectangle. |
+| `content-security-policy` | remove | Same: `frame-ancestors` is the modern form of the same refusal. |
+| `content-security-policy-report-only` | remove | Same, in its reporting form. |
+| `x-webkit-csp` | remove | Same, the legacy spelling still served by some sites. |
+| `cross-origin-opener-policy` | remove | Same family; a site that isolates its browsing context cannot be framed. |
+| `cross-origin-embedder-policy` | remove | Same. |
+| `cross-origin-resource-policy` | remove | Same. |
+| `permissions-policy` | **set** to `browsing-topics=()` | Not needed to make framing work. It is set because the framed page inherits the panel's document, and switching Topics off for it means opening a site in the workspace cannot become an advertising signal. It removes a capability rather than granting one. |
+
+*On the request, for the framed navigation only:*
+
+| Header | Operation | Why |
+|:---|:---|:---|
+| `user-agent` | set | The panel is a narrow column, so the web view asks for the mobile layout, which is the one that fits it. Four hosts that serve a "download our app" wall to mobile browsers get the desktop string instead (`SIDEPANEL_DESKTOP_UA_HOSTS`). |
+| `sec-ch-ua`, `sec-ch-ua-mobile`, `sec-ch-ua-platform`, `sec-ch-ua-platform-version`, `sec-ch-ua-model` | set, **only when the mobile string is used** | Chrome keeps sending its real client hints alongside whatever `User-Agent` a request carries, so a mobile string with desktop hints describes two devices at once and a server is right to reject it. These make the request internally consistent with the line above; they are not sent to say anything the `User-Agent` does not already say. |
+| `sec-fetch-dest`, `sec-fetch-mode`, `sec-fetch-site`, `sec-fetch-user` | set | Some sites read these instead of, or as well as, `X-Frame-Options` and refuse to serve their app when `Sec-Fetch-Dest: iframe` arrives. Removing the framing headers without this leaves the view blank on exactly the sites the header removal was for. |
+| `if-none-match`, `if-modified-since` | remove | A cached `304` replays the *original* response headers, framing refusals included, and the view breaks on the second visit only. |
+| `Cookie` | set, scoped to `https://<the domain the user opened>/` | Described in full under the `cookies` permission above: Chrome partitions third-party cookies by top-level site, so a site opened in the floating video player would load signed out. This replays the cookies the browser already holds for that one domain, **to that same domain and nowhere else** — the user sends it nothing it does not already receive from them in an ordinary tab, and no other site receives anything. It is installed only for the floating player, never for the side panel's web view, and only for a non-YouTube site. |
+
+Stated plainly because it is the line most worth being suspicious of: **the `User-Agent` change
+is a layout request, not a disguise.** It is confined to the extension's own panel tab, it
+never touches a page in the user's ordinary browsing, and no ordinary tab in this browser ever
+sends a `User-Agent` this extension wrote.
 
 **What it is for.** The side panel has a web view: the user picks a site and it opens beside
 their work instead of in another window. Many sites answer with headers that forbid being
-framed, and the frame comes up blank. The rule takes those headers off so the page the user
+framed, and the frame comes up blank. The rules above take those headers off, and make the
+request look like the ordinary top-level navigation the site expects, so the page the user
 asked for can be shown. The floating video player does the same thing for one video.
 
 **How it is bounded**, and every one of these is enforced in `handlers/dnr.js`:
 
-- The rule names the **domain of the site the user opened** — not "all sites". A rule installed
+- Every rule names the **domain of the site the user opened** — not "all sites". A rule installed
   for one newspaper does not touch anything else the browser loads.
-- The side panel's rules are scoped to the **extension's own tab and frame ids**, so they cannot
-  reach the user's ordinary browsing.
+- **The two surfaces are bounded differently, and the difference is worth stating rather than
+  glossing.** The side panel's rules add the **extension's own tab and frame ids** on top of the
+  domain, so they cannot reach the user's ordinary browsing at all. The floating video player's
+  rules are bounded by domain alone: its window is not a tab the extension can name in a
+  condition. So while a video is floating, that one domain's framing headers are also relaxed if
+  the same domain happens to be loaded elsewhere in the browser. The narrowing that matters is
+  already there — it is one registrable domain, chosen by the user, for as long as the window is
+  open — and it is the reason the rule is scoped to a domain at all rather than to nothing, which
+  is how it was originally written.
 - They are **session rules**, and they are removed when the view or the floating window closes.
 - **Payment and gateway hosts are excluded twice over.** `NEVER_STRIP_FRAMING_HOSTS` covers
   Stripe, PayPal, Google Pay and this project's own domain. A request to prepare one of those
@@ -306,11 +365,24 @@ is worth a second look:
 - What is fetched from `cdn.jsdelivr.net` is the trained **language model**, once, and Chrome
   caches it. It is data the recognizer reads, not code it runs.
 - Verified rather than asserted: with the worker's own network observed on a clean profile, an
-  OCR run makes exactly one external request — `eng.traineddata.gz` — and loads the WebAssembly
-  core from the extension's own origin.
+  OCR run's only external requests are the two `.traineddata.gz` files for the languages it is
+  asked for — the engine is created with `'spa+eng'`, so Spanish and English — and the
+  WebAssembly core is loaded from the extension's own origin.
 - No extension page loads a remote script. The `extension_pages` CSP is `script-src 'self'
-  'wasm-unsafe-eval'`, which forbids it, and there is no `eval` or `new Function` anywhere in
-  the source.
+  'wasm-unsafe-eval'`, which forbids it.
+- **No string is turned into code anywhere in the package.** There is no `eval`. There was one
+  construct that built a function from a string, in a place worth naming because a scan finds
+  it and a claim like this one is worthless if it is contradicted by a grep: webpack's
+  `globalThis` polyfill inside the vendored `src/lib/worker.min.js`, in a branch unreachable in
+  any browser that runs Manifest V3. It has been patched out — the line now reads
+  `return this || globalThis;` — and the patch is recorded both in a header comment on that
+  file and in `THIRD-PARTY-NOTICES.md`, which ships inside the package.
+- The large minified files are identified rather than left to be guessed at.
+  `THIRD-PARTY-NOTICES.md` names each bundled library, its version, its licence and a `sha256`
+  to check it against the published package. That matters most for
+  `src/lib/tesseract-core.wasm.js`, which is 4.6 MB and mostly one base64 string: that is an
+  Emscripten `SINGLE_FILE` build, which is how a WebAssembly binary is carried inside a `.js`
+  file, and unexplained a blob that size reads as obfuscation.
 - Stripe.js, which the contribution form needs, never runs in an extension page. It runs on the
   hosted payment page inside a frame, on its own origin, which is the whole reason that page is
   hosted separately.
@@ -544,15 +616,23 @@ Clearing your browser data removes it and the site goes back to following your s
 
 ## 12. Support and Payments
 
-Payments to support development go through Stripe. The card form is Stripe’s own, running inside
-Stripe’s frame, so the card number is typed into their field and never touches this site, the one
-server function behind it, or the extension. That function does exactly one thing: ask Stripe to
-create a payment between 1 and 500 euros and hand the browser back a token good for that single
-payment.
+Payments to support development go through Stripe. Card, Google Pay, Apple Pay and PayPal are four
+ways of paying it, not four processors: Stripe presents each of them, and choosing a wallet hands
+the payment to that wallet’s own sheet under whatever terms you already have with it. The card form
+is Stripe’s own, running inside Stripe’s frame, so the card number is typed into their field and
+never touches this site, the one server function behind it, or the extension. That function does
+exactly one thing: ask Stripe to create a payment between 1 and 500 euros and hand the browser back
+a token good for that single payment.
 
 What Stripe collects, and what it does with it, is governed by Stripe’s privacy policy rather than
 this one. We keep no record of who contributed, because there is no database here to keep one in. A
 payment is voluntary, unlocks nothing, and is not a subscription.
+
+The extension’s About page also shows a few cryptocurrency addresses, for anyone who would rather
+send something that way. They are static text with a button that copies one to your clipboard. No
+wallet is connected or read, no transaction is built or seen, nothing is mined, and no network
+request is made — the addresses are as inert as an account number printed on a page, and nothing
+here learns that you copied one.
 
 ## 13. Chrome Web Store Limited Use
 

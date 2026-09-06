@@ -3057,7 +3057,7 @@
     },
     "addApiKeyBtn": {
         "message": "Añadir Clave API",
-        "description": "Tooltip para el botón de añadir una nueva clave API"
+        "description": "Añade una clave de la API de Gemini para que el asistente pueda responder."
     },
     "geminiFreeTier": {
         "message": "Nivel Gratuito",
@@ -3305,11 +3305,11 @@
     },
     "showApiKeyTitle": {
         "message": "Mostrar clave API",
-        "description": "Mostrar clave API button title"
+        "description": "Muestra la clave en texto legible."
     },
     "hideApiKeyTitle": {
         "message": "Ocultar clave API",
-        "description": "Ocultar clave API button title"
+        "description": "Vuelve a ocultar la clave."
     },
     "geminiApiKeySaved": {
         "message": "Clave API de Gemini guardada correctamente.",
@@ -3365,7 +3365,7 @@
     },
     "copyApiKeyTooltip": {
         "message": "Copiar clave de API",
-        "description": "Tooltip para el botón de copiar clave API"
+        "description": "Copia esta clave al portapapeles."
     },
     "apiKeyCopied": {
         "message": "Clave de API copiada al portapapeles",
@@ -3393,11 +3393,11 @@
     },
     "showYouTubePlayer": {
         "message": "Mostrar reproductor de YouTube",
-        "description": "Tooltip para el botón que restaura la vista oculta del reproductor de YouTube."
+        "description": "Vuelve a mostrar el reproductor oculto."
     },
     "closeYouTubePlayer": {
         "message": "Cerrar reproductor de YouTube",
-        "description": "Tooltip para el botón 'X' que cierra permanentemente el reproductor de YouTube oculto."
+        "description": "Cierra el reproductor oculto y detén su audio."
     },
     "copyAllUrls": {
         "message": "Copiar todas las URL de este grupo",
@@ -3437,7 +3437,7 @@
     },
     "download": {
         "message": "Descargar",
-        "description": "Texto principal para el botón de descarga."
+        "description": "Guarda este archivo en tu equipo."
     },
     "noDownloadsAvailable": {
         "message": "No se encontraron archivos descargables en esta página.",
@@ -3921,7 +3921,7 @@
     },
     "stopReadingAloud": {
         "message": "Detener lectura",
-        "description": "Tooltip para el botón de texto a voz cuando está reproduciendo audio."
+        "description": "Detén la lectura en voz alta de la página."
     },
     "errorDeletingScreenshots": {
         "message": "Error al eliminar las capturas. Por favor, inténtalo de nuevo.",
@@ -4181,7 +4181,7 @@
     },
     "deleteCookie": {
         "message": "Eliminar cookie",
-        "description": "Información sobre herramientas del botón para eliminar una sola cookie."
+        "description": "Elimina esta cookie del sitio."
     },
     "cookieValue": {
         "message": "Valor",
@@ -4229,7 +4229,7 @@
     },
     "noteStatsTooltipText": {
         "message": "Muestra el recuento de palabras y caracteres ($1 palabra / $2 caracteres).",
-        "description": "Información sobre herramientas para las estadísticas de la nota cuando el tipo es texto."
+        "description": "$1 palabras y $2 caracteres en esta nota."
     },
     "noteStatsTooltipChecklist": {
         "message": "Muestra las tareas completadas del total ($1/$2).",
@@ -4269,7 +4269,7 @@
     },
     "backToCookieEditor": {
         "message": "Volver al Editor de Cookies",
-        "description": "Tooltip para el botón que regresa del panel de importación al modal de edición de cookies."
+        "description": "Sal del panel de importación y vuelve a la lista de cookies."
     },
     "dragDropCookie": {
         "message": "Arrastra y suelta un archivo .json aquí o haz click para seleccionar uno",
@@ -4277,7 +4277,7 @@
     },
     "selectCookieFile": {
         "message": "Seleccionar un archivo de cookies para importar",
-        "description": "Tooltip/aria-label para el área de arrastrar y soltar."
+        "description": "Suelta aquí un archivo de cookies, o haz clic para elegir uno."
     },
     "cookiesImported": {
         "message": "Se importaron $COUNT$ cookies correctamente.",
@@ -4553,7 +4553,7 @@
     },
     "conversationEditedDateTooltip": {
         "message": "Última modificación",
-        "description": "Texto de información sobre herramientas con la fecha en que se añadió una conversación por última vez."
+        "description": "Cuándo se añadió algo por última vez a esta conversación."
     },
     "errorDuplicateConversationTitle": {
         "message": "Ya existe una conversación con este título.",
@@ -4746,7 +4746,7 @@
     },
     "addCommandButton": {
         "message": "Añadir Comando",
-        "description": "Texto en el botón para guardar un nuevo comando."
+        "description": "Guarda este comando para que aparezca en la lista."
     },
     "currentCommandsSectionTitle": {
         "message": "Comandos Personalizados Actuales",
@@ -4998,6 +4998,26 @@
     "enableSubgroupsFirstTooltip": {
         "message": "Activa la visibilidad de los dominios primero para usar esta opción",
         "description": "Activa la visibilidad de los dominios primero para usar esta opción"
+    },
+    "copy": {
+        "message": "Copiar",
+        "description": "Cópialo al portapapeles."
+    },
+    "openUrl": {
+        "message": "Abrir URL",
+        "description": "Abre esta dirección en una pestaña nueva."
+    },
+    "moreOptions": {
+        "message": "Más opciones",
+        "description": "Muestra el resto de acciones de esta descarga."
+    },
+    "removeScheduleTime": {
+        "message": "Quitar hora",
+        "description": "Quita esta hora de la programación."
+    },
+    "enableChildFoldersFirstTooltip": {
+        "message": "Muestra primero las subcarpetas para poder usar esta opción",
+        "description": "Muestra primero las subcarpetas para poder usar esta opción"
     },
     "showQrCode": {
         "message": "Mostrar código QR para URL",
@@ -5752,7 +5772,7 @@
     },
     "deleteHistoryForDate": {
         "message": "Borrar historial de esta fecha",
-        "description": "Borrar historial de esta fecha"
+        "description": "Borra todas las entradas del historial de este día."
     },
     "deleteHistoryConfirmDesc": {
         "message": "¿Estás seguro de que quieres eliminar todo el historial de:",
@@ -7034,15 +7054,15 @@
     },
     "deleteAllNotesContext": {
         "message": "Eliminar todas las notas en este contexto",
-        "description": "Tooltip para eliminar todas las notas"
+        "description": "Elimina todas las notas archivadas en este contexto. No se puede deshacer."
     },
     "viewOrphanScreenshots": {
         "message": "Ver capturas huérfanas",
-        "description": "Tooltip para capturas huérfanas"
+        "description": "Muestra las capturas cuyo grupo ya no existe."
     },
     "uploadFileTooltip": {
         "message": "Subir archivo",
-        "description": "Tooltip para subida de archivos"
+        "description": "Elige un archivo de tu equipo."
     },
     "configureCollapseExpandAllTabs": {
         "message": "Configurar atajo para Colapsar/Expandir todas las pestañas",
@@ -7432,7 +7452,7 @@
     },
     "licenseFullTextTitle": {
         "message": "Abre el fichero LICENSE del repositorio en GitHub",
-        "description": "License section: link tooltip"
+        "description": "Abre el fichero LICENSE del repositorio en GitHub"
     },
     "sectionListDownloads": {
         "message": "Gestor de descargas"
@@ -7740,7 +7760,7 @@
     },
     "geminiChangeModelTooltip": {
         "message": "Cambiar el modelo de IA",
-        "description": "Tooltip para cambiar el modelo de IA"
+        "description": "Elige qué modelo de IA responde."
     },
     "geminiPreviousModel": {
         "message": "Modelo anterior",
@@ -7922,11 +7942,11 @@
     },
     "pomodoroShortBreak": {
         "message": "Descanso corto",
-        "description": "Descanso corto"
+        "description": "El descanso corto entre un pomodoro y el siguiente."
     },
     "pomodoroLongBreak": {
         "message": "Descanso largo",
-        "description": "Descanso largo"
+        "description": "El descanso largo con el que se cierra un ciclo de pomodoros."
     },
     "pomodoroStart": {
         "message": "Iniciar",
@@ -7982,11 +8002,11 @@
     },
     "pomodoroSound": {
         "message": "Notificaciones de sonido",
-        "description": "Notificaciones de sonido"
+        "description": "Suena un aviso cuando termina una fase."
     },
     "pomodoroAutostart": {
         "message": "Iniciar siguiente sesión automáticamente",
-        "description": "Iniciar siguiente sesión automáticamente"
+        "description": "Empieza la siguiente sesión sin esperar a que pulses play."
     },
     "pomodoroProjectName": {
         "message": "Nombre del proyecto",
@@ -8002,7 +8022,7 @@
     },
     "pomodoroStats": {
         "message": "Estadísticas",
-        "description": "Estadísticas"
+        "description": "Dónde han ido las horas: sesiones, tiempo de foco y rachas."
     },
     "pomodoroStatsFocusTime": {
         "message": "Tiempo de foco",
@@ -8106,7 +8126,7 @@
     },
     "pomodoroEfficiencyTooltip": {
         "message": "📊 Eficiencia de sesión\n\n• Verde intenso (≥80%): Sesión excelente, casi todo el tiempo fue foco real.\n• Verde medio (60-79%): Buena sesión, descansos dentro de lo esperado.\n• Amarillo (40-59%): Sesión mejorable, los descansos superan al foco.\n• Rojo (<40%): Muchas interrupciones o descansos largos.\n\nFórmula: (Tiempo de foco ÷ Tiempo total) × 100\nEl tiempo total incluye foco + descansos + interrupciones.",
-        "description": "Eficiencia de sesión\n\n• Verde intenso (≥80%): Sesión excelente, casi todo el tiempo fue foco real.\n• Verde medio (60-79%): Buena sesión, descansos dentro de lo esperado.\n• Amarillo (40-59%): Sesión mejorable, los descansos superan al foco.\n• Rojo (<40%): Muchas interrupciones o descansos largos.\n\nFórmula: (Tiempo de foco ÷ Tiempo total) × 100\nEl tiempo total incluye foco + descansos + interrupciones."
+        "description": "📊 Eficiencia de sesión\n\n• Verde intenso (≥80%): Sesión excelente, casi todo el tiempo fue foco real.\n• Verde medio (60-79%): Buena sesión, descansos dentro de lo esperado.\n• Amarillo (40-59%): Sesión mejorable, los descansos superan al foco.\n• Rojo (<40%): Muchas interrupciones o descansos largos.\n\nFórmula: (Tiempo de foco ÷ Tiempo total) × 100\nEl tiempo total incluye foco + descansos + interrupciones."
     },
     "pomodoroDashboardTitle": {
         "message": "Dashboard de Pomodoro",
@@ -8657,7 +8677,7 @@
     },
     "pomodoroSettingsCyclesTitle": {
         "message": "Pomodoro: grupo de focos que termina con un descanso largo. Sesión: una tarea completa de principio a fin",
-        "description": "Title explicativo de pomodoro y sesión"
+        "description": "Pomodoro: grupo de focos que termina con un descanso largo. Sesión: una tarea completa de principio a fin"
     },
     "pomodoroUnitSessionsTitle": {
         "message": "Con $1 pomodoros terminas la tarea. Cada tarea finalizada cuenta como una sesión",
@@ -8759,11 +8779,11 @@
     },
     "dashboardExportJSON": {
         "message": "Exportar estadísticas (JSON)",
-        "description": "Tooltip para exportar estadísticas como JSON"
+        "description": "Guarda tus estadísticas en un archivo JSON."
     },
     "dashboardImportJSON": {
         "message": "Importar estadísticas (JSON)",
-        "description": "Tooltip para importar estadísticas desde JSON"
+        "description": "Carga estadísticas desde un archivo JSON."
     },
     "pomodoroCurrentSessionLabel": {
         "message": "— sesión actual —",
@@ -12293,7 +12313,7 @@
     },
     "pomodoroSettingsHint": {
         "message": "Configura los métodos, tiempos y opciones del temporizador",
-        "description": "Tooltip of the settings entry in the pomodoro dashboard sidebar"
+        "description": "Ajusta el método del temporizador, cuánto dura cada fase y el resto de opciones."
     },
     "pomodoroSettingsShared": {
         "message": "Selecciona el método por defecto. Lo que cambies aquí cambia a la vez en el panel lateral y en el listado de grupos.",
@@ -12301,7 +12321,7 @@
     },
     "editProjectName": {
         "message": "Editar nombre del proyecto",
-        "description": "Tooltip and label for editing project name in sidebar"
+        "description": "Cambia el nombre de este proyecto."
     },
     "pomodoroHideTimer": {
         "message": "Ocultar interfaz del temporizador (clic para colapsar)",
@@ -12475,7 +12495,7 @@
     "message": "Buscar radio por internet envía lo que escribes al directorio público radio-browser.info."
   },
   "dataUseOcrItem": {
-    "message": "Leer el texto de una captura descarga una vez su modelo de idioma, desde jsDelivr, y el navegador lo guarda en caché. No se envía nada sobre ti."
+    "message": "Leer el texto de una captura descarga una vez sus modelos de idioma —español e inglés— desde jsDelivr, y el navegador los guarda en caché. No se envía nada sobre ti."
   },
   "dataUseContributionItem": {
     "message": "Apoyar el proyecto abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
