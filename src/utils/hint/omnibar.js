@@ -4779,7 +4779,22 @@ IMPORTANT RULES:
                             pipWindow.document.body.style.padding = '0';
                             pipWindow.document.body.style.overflow = 'hidden';
                             pipWindow.document.body.style.backgroundColor = '#1e1e1e';
-                            chrome.runtime.sendMessage({
+                            /*
+                             * AWAIT, y no es cosmético.
+                             *
+                             * Esto instala las reglas que quitan `X-Frame-Options` y la
+                             * CSP del sitio. Sin esperarlas, el `iframe` de abajo sale
+                             * antes de que existan y la petición se va sin regla que la
+                             * toque: el marco lo bloquea el sitio y la ventana flotante
+                             * queda en blanco. No es una carrera que unas veces se gane
+                             * —medido en un navegador real, 0 de 5 con `await` fuera y
+                             * 5 de 5 con él puesto—, así que abrir una página en el
+                             * flotante desde la omnibarra nunca funcionó en un sitio que
+                             * se niegue a ser enmarcado, que son justo los sitios para
+                             * los que existe la regla. `utils.js`, el otro camino hasta
+                             * el flotante, siempre lo esperó.
+                             */
+                            await chrome.runtime.sendMessage({
                                 action: 'prepareVideoUrlForPip',
                                 url: targetUrl,
                             });

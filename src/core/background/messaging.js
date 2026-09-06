@@ -724,7 +724,9 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     prepareVideoUrlForPip: (message, sender, sendResponse) => {
-        handlePrepareVideoUrlForPip(message, sendResponse);
+        // The sender's tab is what identifies the float it just opened: the PiP window
+        // is a tab of its own whose `openerTabId` is this one. See `findPipTabId`.
+        handlePrepareVideoUrlForPip(message, sendResponse, sender?.tab?.id);
         return true;
     },
     registerPipWindow: (message, sender, sendResponse) => {

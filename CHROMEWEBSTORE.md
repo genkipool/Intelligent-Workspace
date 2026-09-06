@@ -241,7 +241,7 @@ none, since it looks like the complete one.
 | `sec-ch-ua`, `sec-ch-ua-mobile`, `sec-ch-ua-platform`, `sec-ch-ua-platform-version`, `sec-ch-ua-model` | set, **only when the mobile string is used** | Chrome keeps sending its real client hints alongside whatever `User-Agent` a request carries, so a mobile string with desktop hints describes two devices at once and a server is right to reject it. These make the request internally consistent with the line above; they are not sent to say anything the `User-Agent` does not already say. |
 | `sec-fetch-dest`, `sec-fetch-mode`, `sec-fetch-site`, `sec-fetch-user` | set | Some sites read these instead of, or as well as, `X-Frame-Options` and refuse to serve their app when `Sec-Fetch-Dest: iframe` arrives. Removing the framing headers without this leaves the view blank on exactly the sites the header removal was for. |
 | `if-none-match`, `if-modified-since` | remove | A cached `304` replays the *original* response headers, framing refusals included, and the view breaks on the second visit only. |
-| `Cookie` | set, scoped to `https://<the domain the user opened>/` | Described in full under the `cookies` permission above: Chrome partitions third-party cookies by top-level site, so a site opened in the floating video player would load signed out. This replays the cookies the browser already holds for that one domain, **to that same domain and nowhere else** — the user sends it nothing it does not already receive from them in an ordinary tab, and no other site receives anything. It is installed only for the floating player, never for the side panel's web view, and only for a non-YouTube site. |
+| `Cookie` | set, scoped to `https://<the domain the user opened>/` **and to the floating window's own tab** | Described in full under the `cookies` permission above: Chrome partitions third-party cookies by top-level site, so a site opened in the floating video player would load signed out. This replays the cookies the browser already holds for that one domain, to that same domain, **inside that one window and nowhere else**. It is installed only for the floating player, never for the side panel's web view, and only for a non-YouTube site. |
 
 Stated plainly because it is the line most worth being suspicious of: **the `User-Agent` change
 is a layout request, not a disguise.** It is confined to the extension's own panel tab, it
@@ -258,15 +258,25 @@ asked for can be shown. The floating video player does the same thing for one vi
 
 - Every rule names the **domain of the site the user opened** — not "all sites". A rule installed
   for one newspaper does not touch anything else the browser loads.
-- **The two surfaces are bounded differently, and the difference is worth stating rather than
-  glossing.** The side panel's rules add the **extension's own tab and frame ids** on top of the
-  domain, so they cannot reach the user's ordinary browsing at all. The floating video player's
-  rules are bounded by domain alone: its window is not a tab the extension can name in a
-  condition. So while a video is floating, that one domain's framing headers are also relaxed if
-  the same domain happens to be loaded elsewhere in the browser. The narrowing that matters is
-  already there — it is one registrable domain, chosen by the user, for as long as the window is
-  open — and it is the reason the rule is scoped to a domain at all rather than to nothing, which
-  is how it was originally written.
+- **Both surfaces are scoped to a tab as well as a domain, and the floating player's tab was
+  the harder half.** The side panel's rules always added the extension's own tab ids on top of
+  the domain. The floating player's did not, because its window did not look like something the
+  extension could name in a condition — and measured in a real browser, that gap was not
+  theoretical: with a float open on a site, a second tab loading a third-party `<iframe>` of that
+  same site had its framing headers stripped **and** received the user's session cookie, which the
+  browser had correctly withheld because the cookie is `SameSite=Lax` and that is a cross-site
+  request. Defeating that is a CSRF boundary.
+
+  It is closed. `documentPictureInPicture.requestWindow()` does give Chrome a real tab — one in a
+  window of its own, at `about:blank`, whose `openerTabId` is the tab that asked for it — and both
+  callers await the window before asking for the rules, so it exists by then. `findPipTabId` in
+  `handlers/dnr.js` identifies it and both rules carry it as `tabIds`. If it ever cannot be
+  identified the rules install the way they used to, because a float that works with a wider rule
+  is a better failure than a float that shows a blank rectangle.
+
+  Verified in a real browser rather than argued: with the float open, the third-party frame in
+  the other tab now gets neither the header removal nor the cookie, while the float itself still
+  loads a site that answers `X-Frame-Options: DENY` and still loads it signed in.
 - They are **session rules**, and they are removed when the view or the floating window closes.
 - **Payment and gateway hosts are excluded twice over.** `NEVER_STRIP_FRAMING_HOSTS` covers
   Stripe, PayPal, Google Pay and this project's own domain. A request to prepare one of those
