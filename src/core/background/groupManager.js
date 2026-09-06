@@ -46,7 +46,14 @@ function findManagedGroup(groupType, groupKey, existingGroups, windowId) {
     return null;
 }
 
-async function updateGroupProperties(group, tabIds, newColor, clusterConfig, currentGroupIdByTabId = null) {
+async function updateGroupProperties(
+    group,
+    tabIds,
+    newColor,
+    clusterConfig,
+    currentGroupIdByTabId = null,
+    colorPending = false,
+) {
     // Only the tabs that are not in the group yet. Re-adding the ones already there
     // is not free: Chrome relocates the whole group to keep it contiguous, so a pass
     // in which nothing had changed still paid one tab-strip write per group and left
@@ -69,6 +76,14 @@ async function updateGroupProperties(group, tabIds, newColor, clusterConfig, cur
 
     if (group.color !== newColor) {
         updatePayload.color = newColor;
+    }
+
+    // Which colour the extension put there, and whether it is still the stand-in it
+    // used while the site's favicon had not arrived. Both are what let a later pass
+    // tell "nobody has touched this" from "the user picked this colour".
+    if (info) {
+        info.autoColor = newColor;
+        info.colorPending = colorPending;
     }
 
     // A special group follows the name set in the settings — unless the user has
@@ -139,7 +154,15 @@ function buildUiTitleForNewGroup(groupType, groupKey, fullTitle, tabIds, isCompa
     }
 }
 
-async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clusterConfig, willBeCompact = false) {
+async function createAndConfigureGroup(
+    groupType,
+    groupKey,
+    color,
+    tabIds,
+    clusterConfig,
+    willBeCompact = false,
+    colorPending = false,
+) {
     logMessage(`[createAndConfigureGroup] Creating and IMMEDIATELY registering a NEW group for key '${groupKey}'.`);
 
     // 1. Create the tab group.
@@ -174,6 +197,8 @@ async function createAndConfigureGroup(groupType, groupKey, color, tabIds, clust
         key: groupKey,
         title: fullTitle, // Use the full title built by the auxiliary function.
         isCompact: willBeCompact,
+        autoColor: effectiveColor,
+        colorPending: colorPending,
     };
     groupInfoMap.set(groupId, groupInfo);
     logMessage(`[createAndConfigureGroup] Group ${groupId} created and INSTANTLY identified in groupInfoMap.`);
@@ -190,6 +215,7 @@ async function manageGroup(
     windowId,
     willBeCompact = false,
     currentGroupIdByTabId = null,
+    colorPending = false,
 ) {
     logMessage(`[manageGroup] Process start. Type: '${groupType}', Key: '${groupKey}'.`);
     const localClusterConfig = extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG;
@@ -201,12 +227,27 @@ async function manageGroup(
 
     if (existingGroup) {
         // 2a. If it exists, update it.
-        await updateGroupProperties(existingGroup, tabIds, color, localClusterConfig, currentGroupIdByTabId);
+        await updateGroupProperties(
+            existingGroup,
+            tabIds,
+            color,
+            localClusterConfig,
+            currentGroupIdByTabId,
+            colorPending,
+        );
         groupId = existingGroup.id;
         //groupFinalTitle = groupInfoMap.get(groupId)?.title || existingGroup.title;
     } else {
         // 2b. If it doesn't exist, create it.
-        groupId = await createAndConfigureGroup(groupType, groupKey, color, tabIds, localClusterConfig, willBeCompact);
+        groupId = await createAndConfigureGroup(
+            groupType,
+            groupKey,
+            color,
+            tabIds,
+            localClusterConfig,
+            willBeCompact,
+            colorPending,
+        );
         groupFinalTitle = groupInfoMap.get(groupId)?.title;
     }
 
@@ -466,6 +507,123 @@ function planCustomGroups(customGroupTabs, customRules) {
     return groupingPlan;
 }
 
+/**
+ * The colour a group about to be created should be given.
+ *
+ * When the favicon is not available yet the group is still created — waiting for a
+ * picture would leave the tabs loose on the strip — but it is marked as waiting, so
+ * that the colour is asked for again instead of the fallback becoming permanent.
+ */
+async function resolveColorForNewGroup(tabs, fallbackKey) {
+    const { color, definitive } = await resolveFaviconColor(tabs);
+    return {
+        color: color || getDeterministicColor(fallbackKey),
+        colorPending: !color && !definitive,
+    };
+}
+
+/**
+ * The colour a group already on the strip should keep.
+ *
+ * A group's colour belongs to whoever is using the browser, so it is left alone.
+ * The one exception is a group born before its site's favicon had arrived: it was
+ * given a fallback colour and flagged as waiting for the real one. As long as the
+ * colour on the strip is still exactly the one the extension wrote, asking again is
+ * what finally gets those groups the colour they should have had; the moment it
+ * differs, the choice was somebody else's and the flag is dropped for good.
+ * For every other group this is a plain object lookup.
+ */
+async function resolveColorForExistingGroup(group, tabs) {
+    const info = groupInfoMap.get(group.id);
+    if (!info?.colorPending) {
+        return { color: group.color, colorPending: false };
+    }
+    if (info.autoColor && group.color !== info.autoColor) {
+        info.colorPending = false;
+        return { color: group.color, colorPending: false };
+    }
+
+    const { color, definitive } = await resolveFaviconColor(tabs);
+    if (color) return { color, colorPending: false };
+    return { color: group.color, colorPending: !definitive };
+}
+
+// How many times a group still showing a stand-in colour is asked again before the
+// colour it has is accepted as the one it keeps. At the pause below that is about
+// half a minute, which is far longer than a favicon takes to arrive.
+const GROUP_COLOR_MAX_TRIES = 8;
+const GROUP_COLOR_RETRY_PAUSE_MS = 3000;
+
+/**
+ * Gives the groups that were created without their site's colour another chance.
+ *
+ * The favicon usually turns up a moment after the page reports itself loaded, which
+ * is after the regroup that created the group has already run; and nothing else in
+ * the window may happen for a long time. Regrouping every tab over a picture would
+ * be a whole pass, so this walks only the groups still marked as waiting and writes
+ * to the tab strip only for the ones that got an answer.
+ */
+async function refreshPendingGroupColors() {
+    if (isGrouping) return;
+
+    const pending = [];
+    for (const [groupId, info] of groupInfoMap) {
+        if (info?.colorPending) pending.push([groupId, info]);
+    }
+    if (pending.length === 0) return;
+
+    let changed = false;
+    for (const [groupId, info] of pending) {
+        let group;
+        try {
+            group = await chrome.tabGroups.get(groupId);
+        } catch {
+            info.colorPending = false; // The group is gone.
+            changed = true;
+            continue;
+        }
+
+        if (info.autoColor && group.color !== info.autoColor) {
+            info.colorPending = false; // Recoloured by hand; leave it alone from now on.
+            changed = true;
+            continue;
+        }
+
+        // However this attempt goes, it is counted. A group whose tabs answer nothing
+        // — they were closed, or they are browser pages with no favicon at all — must
+        // not keep this pass scheduling itself forever.
+        info.colorTries = (info.colorTries || 0) + 1;
+        const lastTry = info.colorTries >= GROUP_COLOR_MAX_TRIES;
+        changed = true;
+
+        const tabs = await chrome.tabs.query({ groupId });
+        // Asked without the usual wait: this pass only runs because a favicon has
+        // just turned up, or because it has been given time to.
+        const { color, definitive } = await resolveFaviconColor(tabs, { force: true });
+        if (!color) {
+            if (definitive || lastTry) info.colorPending = false;
+            continue;
+        }
+
+        info.colorPending = false;
+        if (color !== group.color) {
+            info.autoColor = color;
+            logMessage(`[refreshPendingGroupColors] Group ${groupId} takes its favicon colour: ${color}.`);
+            await executeWithRetries(
+                async () => await chrome.tabGroups.update(groupId, { color }),
+                `recolour group ${groupId} from its favicon`,
+            );
+        }
+    }
+
+    if (changed) await saveGroupInfoMap();
+
+    // Chrome writes the icon into its own database a moment after handing it to the
+    // tab, so the answer can still be "not yet". Each attempt is counted and the
+    // colour settles for good after a handful of them, so this cannot keep going.
+    if (hasGroupsAwaitingFaviconColor()) debounceRefreshPendingGroupColors(GROUP_COLOR_RETRY_PAUSE_MS);
+}
+
 async function planDomainGroups(domainTabs, existingGroups, windowId) {
     const subdomainsEnabled = extensionSettings.clusterConfig?.subdomainsEnabled ?? false;
     const domainThreshold = subdomainsEnabled
@@ -482,19 +640,15 @@ async function planDomainGroups(domainTabs, existingGroups, windowId) {
         );
 
         if ((tabs.length >= domainThreshold || existingGroup) && tabs.length > 0) {
-            let color;
-            if (existingGroup) {
-                color = existingGroups[existingGroup[0]].color;
-            } else {
-                const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
-                const extractedColor = await getFaviconColor(favIconUrl);
-                color = extractedColor && extractedColor !== 'grey' ? extractedColor : getDeterministicColor(domain);
-            }
+            const { color, colorPending } = existingGroup
+                ? await resolveColorForExistingGroup(existingGroups[existingGroup[0]], tabs)
+                : await resolveColorForNewGroup(tabs, domain);
             return {
                 plan: {
                     type: 'domain',
                     key: domain,
                     color: color,
+                    colorPending: colorPending,
                     tabIds: tabIds,
                     name: domain,
                 },
@@ -614,22 +768,15 @@ async function planSpecialGroups(chromeTabs, fileTabs, localhostTabs, ipTabs, ex
         const existingGroupInfo = findExistingSpecialGroup(name); // Search for existing group
 
         if (ipConfig.enabled && (tabs.length >= ipThreshold || existingGroupInfo) && tabs.length > 0) {
-            let color; // Declare color variable
-
-            if (existingGroupInfo) {
-                // If the group already exists, we get its current color to preserve user changes.
-                const existingGroupId = existingGroupInfo[0];
-                color = existingGroups[existingGroupId].color;
-            } else {
-                const favIconUrl = tabs[0]?.favIconUrl || faviconURL(tabs[0].url);
-                const extractedColor = await getFaviconColor(favIconUrl);
-                color = extractedColor && extractedColor !== 'grey' ? extractedColor : getDeterministicColor(name);
-            }
+            const { color, colorPending } = existingGroupInfo
+                ? await resolveColorForExistingGroup(existingGroups[existingGroupInfo[0]], tabs)
+                : await resolveColorForNewGroup(tabs, name);
 
             return {
                 type: 'special',
                 key: name,
                 color: color, // We use the correctly determined color
+                colorPending: colorPending,
                 tabIds: tabs.map((tab) => tab.id),
                 name: name,
             };
@@ -729,6 +876,7 @@ async function executeGroupingPlan(groupingPlan, existingGroups, windowId, curre
                     windowId,
                     willBeCompact,
                     currentGroupIdByTabId,
+                    plan.colorPending === true,
                 );
                 if (plan.name) {
                     return [plan.name, groupId];
@@ -1771,6 +1919,12 @@ async function groupTabs() {
         if (typeof hasPendingRegroup !== 'undefined' && hasPendingRegroup) {
             hasPendingRegroup = false;
             debounceGroupTabs(50);
+        } else if (hasGroupsAwaitingFaviconColor()) {
+            // Some group was created before its site's favicon was there. The tab
+            // reporting it raises an event that triggers this same pass, but a window
+            // being restored can finish loading everything before the extension is
+            // listening, and then nothing else would ever ask.
+            debounceRefreshPendingGroupColors(1500);
         }
     }
 }

@@ -42,6 +42,15 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         });
         await syncWithExistingGroups();
     }
+    // The favicon almost always arrives after the page reports itself loaded, so the
+    // regroup that created the group ran without it. It does not change which group
+    // a tab belongs to, so this does not regroup anything: it only asks again for the
+    // colour of the groups that are still showing a stand-in, and only while there
+    // are any.
+    if (changeInfo.favIconUrl && hasGroupsAwaitingFaviconColor()) {
+        debounceRefreshPendingGroupColors();
+    }
+
     if (changeInfo.audible !== undefined || changeInfo.mutedInfo !== undefined) {
         debounceSetupContextMenus();
     }
