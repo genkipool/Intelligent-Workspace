@@ -9,6 +9,7 @@
     import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import VersionHistorySection from './components/VersionHistorySection.svelte';
     import FeatureCategoriesSection from './components/FeatureCategoriesSection.svelte';
+    import DataUseSection from './components/DataUseSection.svelte';
     import PermissionsSection from './components/PermissionsSection.svelte';
     import LicenseSection from './components/LicenseSection.svelte';
 
@@ -85,6 +86,8 @@
                 </div>
             </div>
         </section>
+
+        <DataUseSection />
 
         <VersionHistorySection />
 

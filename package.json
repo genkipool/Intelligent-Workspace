@@ -18,6 +18,7 @@
         "check:release": "node scripts/check-release.mjs",
         "sync:policy": "node scripts/sync-policy.mjs",
         "verify": "pnpm run lint && pnpm run format && pnpm run check:release && pnpm run build",
+        "release": "pnpm run verify && pnpm run package",
         "package": "python3 scripts/package-extension.py"
     },
     "devDependencies": {

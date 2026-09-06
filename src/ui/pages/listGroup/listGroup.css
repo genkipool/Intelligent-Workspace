@@ -4445,6 +4445,13 @@ body.gallery-view-active .search-and-controls .search-container {
     display: flex;
 }
 
+body.url-view-active #search-toggle-btn,
+body.url-view-active #remove-duplicates-btn,
+body.url-view-active #duplicate-badge,
+body.url-view-active .controls-container > :not(#reader-view-btn):not(#header-screenshot-btn) {
+    display: none !important;
+}
+
 /* Hide when in Gemini view if we want specific behavior, 
    but the user asked to reuse it, so we might just keep it visible.
    Actually, the user said "No entiendo porque no se ha reutilizado el botón toggle-gemini-search-btn".

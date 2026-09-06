@@ -1,6 +1,6 @@
 # Chrome Web Store Submission & Justifications Dossier: Intelligent Workspace
 
-> **Last Updated:** 2026-09-05  
+> **Last Updated:** 2026-09-05 (data disclosure, DNR scoping and cookie lifetime)  
 > **Extension Name:** Intelligent Workspace  
 > **Version:** 1.0  
 > **Manifest Version:** 3  
@@ -177,7 +177,7 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `system.display` | `permissions` | Queries screen display geometry and multi-monitor setups to optimize split-view layouts and side-by-side workspace positioning across displays. |
 | `windows` | `permissions` | Organizes, moves, and manages browser windows when restoring multi-group project workspaces or segregating workspaces across distinct monitors. |
 | `declarativeNetRequestWithHostAccess` | `permissions` | **Three uses, all user-initiated, described in full below the table because a one-line answer here would understate the second one.** (1) Time limits: a redirect rule sends a top-level request to the extension's own block page when the user opens a site they set a daily or weekly limit on. (2) The side panel's web view and the floating video player: a session rule removes framing headers from the one site the user chose to open there. (3) A `Referer` header on YouTube embeds the extension itself creates, which the player refuses to run without. |
-| `cookies` | `permissions` | **Two uses.** (1) The side panel's web view opens a site inside an extension frame, and Chrome partitions third-party cookies by top-level site, so that site would load signed out even though the user is signed in; the cookies it has already set are copied into the extension's own partition so the framed page sees the session the user already has. (2) A cookie inspector the user opens for a site from the panel, which lists that site's cookies and lets them edit or delete one. Cookies are never sent anywhere: both uses read and write them inside this browser only. |
+| `cookies` | `permissions` | **Two uses.** (1) The side panel's web view opens a site inside an extension frame, and Chrome partitions third-party cookies by top-level site, so that site would load signed out even though the user is signed in; the cookies it has already set are copied into the extension's own partition so the framed page sees the session the user already has. (2) A cookie inspector the user opens for a site from the panel, which lists that site's cookies and lets them edit or delete one. Cookies are never sent anywhere: both uses read and write them inside this browser only. The copies made for (1) are written **without an expiry**, so they are session cookies that the browser drops on close whatever else happens, and they are cleared outright when the view closes. A copy never outlives the frame it was made for, and the user's real cookies are left untouched. |
 | `history` | `permissions` | Searching visited pages from the omnibar and the panel, de-duplicating workspace links, and the history view itself, where the user can delete an entry or clear their history — the latter behind a confirmation, because it is not undoable. Nothing is read on a schedule and nothing derived from it leaves the device. |
 | `sessions` | `permissions` | Restores previously closed tab groups, closed tabs, and window sessions when recovering from unexpected browser crashes or reopening archived workspaces. |
 | `bookmarks` | `permissions` | Integrates the user's bookmarks directly into the workspace side panel, allowing seamless bookmark organization and folder-to-group conversions. |
@@ -209,10 +209,14 @@ asked for can be shown. The floating video player does the same thing for one vi
 - The side panel's rules are scoped to the **extension's own tab and frame ids**, so they cannot
   reach the user's ordinary browsing.
 - They are **session rules**, and they are removed when the view or the floating window closes.
-- **Payment and gateway hosts are refused by name.** `NEVER_STRIP_FRAMING_HOSTS` covers Stripe,
-  PayPal, Google Pay and this project's own domain; a request to prepare one of those is
-  rejected outright rather than quietly served. Framing a payment page with its defences
-  removed is clickjacking, and the code refuses to do it even to its own donation page.
+- **Payment and gateway hosts are excluded twice over.** `NEVER_STRIP_FRAMING_HOSTS` covers
+  Stripe, PayPal, Google Pay and this project's own domain. A request to prepare one of those
+  is rejected outright rather than quietly served — and, because a check that runs once cannot
+  bind a rule that outlives it, the same list is also carried on every rule as
+  `excludedRequestDomains`, so the exclusion is enforced by Chrome's own matcher rather than by
+  the order events happen to arrive in. Verified with `declarativeNetRequest.testMatchOutcome`
+  in a real browser: with the panel's rules installed, the donation page matches no rule at all
+  while an ordinary site matches both.
 - Non-`http(s)` URLs are refused.
 
 **What it is not.** It is not ad blocking, it is not request interception, it does not read or
@@ -231,6 +235,30 @@ was being shown for a capability the extension does not use.
 ---
 
 ## 4. Privacy & Data Use Disclosure Form
+
+### Where the disclosure lives
+
+The listing is what satisfies the policy, and deliberately so. Google's own remediation
+guidance for the prominent-disclosure violation says that **"prominent disclosure of data
+collection in the extension's Chrome Web Store listing is sufficient"**, and the detailed
+description above is written to be exactly that: every feature that touches data is named
+there, including the ones that need the sensitive permissions. The alternative route in the
+same guidance — collection *not* named in the listing, allowed with just-in-time consent —
+is not one this extension needs, because nothing is left out of the listing.
+
+The same account is also kept **inside the extension**, in the About page under "Privacy and
+your data", reachable in one click from the popup. That is the "may be provided elsewhere"
+the guidance allows, and it exists so that somebody who installed the extension months ago
+can check what it does with their data without going back to the store.
+
+It is not a gate. There is no first-run interstitial, no modal and no consent wall, because
+the policy does not ask for one where the listing already carries the disclosure, and a
+screen that interrupts every new user to repeat what the listing said is a cost paid by
+people rather than by the reviewer.
+
+**What this means for a future change:** a new destination for data has to be added in both
+places, the listing and that section. One without the other is the discrepancy that costs a
+review, and it is the thing to check before any release that touches data.
 
 ### Data Collection Checklist
 - **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download).

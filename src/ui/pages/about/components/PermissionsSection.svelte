@@ -20,10 +20,6 @@
         <li><strong translate="no">system.display:</strong> <span>{$t('permSystemDisplay')}</span></li>
         <li><strong translate="no">windows:</strong> <span>{$t('permWindows')}</span></li>
         <li>
-            <strong translate="no">declarativeNetRequest:</strong>
-            <span>{$t('permDeclarativeNetRequest')}</span>
-        </li>
-        <li>
             <strong translate="no">declarativeNetRequestWithHostAccess:</strong>
             <span>{$t('permDeclarativeNetRequestWithHostAccess')}</span>
         </li>

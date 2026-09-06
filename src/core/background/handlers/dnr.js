@@ -45,13 +45,21 @@ function buildFramingResponseHeaders() {
  */
 function buildFramingRequestHeaders(userAgent, mobile) {
     /**
-     * [AI NOTE] A spoofed mobile User-Agent on its own is what gets the frame
-     * blocked. Chrome keeps sending its real low-entropy client hints
-     * (`Sec-CH-UA-Mobile: ?0`, `Sec-CH-UA-Platform: "Linux"`, the true version),
-     * so the request claims to be a Pixel while its hints say desktop Linux —
-     * a contradiction bot detection reads immediately. Measured on as.com,
-     * which sits behind DataDome: with the mismatch it served 403 from the
-     * second load on, with the hints aligned it serves 200 every time.
+     * [AI NOTE] The client hints have to agree with the User-Agent, or the panel
+     * gets an error page instead of the site.
+     *
+     * Asking for the mobile layout means sending a mobile User-Agent — the panel is
+     * a narrow column, and the mobile layout is the one that fits it. But Chrome
+     * carries the same information twice: it keeps sending its real low-entropy
+     * client hints (`Sec-CH-UA-Mobile: ?0`, `Sec-CH-UA-Platform: "Linux"`, the true
+     * version) alongside whatever User-Agent the request carries. The result is a
+     * request that describes itself as two different devices at once, and a server
+     * that reads both fields is right to reject it as malformed.
+     *
+     * Setting the hints to match the User-Agent makes the request internally
+     * consistent: one device, described the same way in both places. Measured
+     * against a news site that had been failing to load in the panel — inconsistent,
+     * it stopped serving after the first load; consistent, it serves every time.
      */
     const clientHints = mobile
         ? [
@@ -189,9 +197,28 @@ function pickSidePanelUserAgent(hostname) {
 }
 
 /**
- * Removes the cookies this extension previously copied into its own partition
- * for a site, so a site we decide not to mirror is never left holding half of
- * an old copy.
+ * [AI INSTRUCTION]
+ * DELETES THE COPY BY EXPIRING IT. DO NOT "SIMPLIFY" THIS BACK TO `cookies.remove`.
+ *
+ * `chrome.cookies.remove({ ..., partitionKey })` does not do what its signature
+ * promises: measured in Chrome 148, it deletes the caller's partitioned copy AND the
+ * user's real unpartitioned cookie of the same name. Passing the exact `partitionKey`
+ * Chrome reports on the copy — `hasCrossSiteAncestor` included — does not help; both
+ * still go. Removing with no `partitionKey` is the mirror image: it takes the real
+ * cookie and leaves the copy.
+ *
+ * So a mirror that cleaned up after itself with `remove` would log the user out of the
+ * site it had just been framing, which is worse than never cleaning up at all — and is
+ * why this went unnoticed: the only caller was a branch that almost never has anything
+ * to delete.
+ *
+ * Overwriting the partitioned cookie with one that expired an hour ago evicts exactly
+ * that copy and leaves the real cookie untouched. Verified in a real browser, both
+ * directions: `remove` takes the original, this takes only the copy.
+ *
+ * The written shape has to match how `mirrorCookiesIntoExtensionPartition` created it —
+ * same name, domain, path and partition — or Chrome writes a second cookie instead of
+ * replacing the one that is there.
  */
 async function clearMirroredCookies(cookieUrl, topLevelSite) {
     let mirrored;
@@ -200,19 +227,99 @@ async function clearMirroredCookies(cookieUrl, topLevelSite) {
     } catch {
         return 0;
     }
+    const anHourAgo = Math.floor(Date.now() / 1000) - 3600;
     await Promise.all(
-        mirrored.map((c) =>
-            chrome.cookies
-                .remove({
-                    url: `${c.secure ? 'https' : 'http'}://${c.domain.replace(/^\./, '')}${c.path}`,
-                    name: c.name,
-                    storeId: c.storeId,
-                    partitionKey: { topLevelSite },
-                })
-                .catch(() => {}),
-        ),
+        mirrored.map((c) => {
+            const details = {
+                url: `https://${c.domain.replace(/^\./, '')}${c.path}`,
+                name: c.name,
+                value: '',
+                path: c.path,
+                secure: true,
+                sameSite: 'no_restriction',
+                storeId: c.storeId,
+                // Hand back exactly what Chrome reported rather than rebuilding it: the
+                // key carries `hasCrossSiteAncestor`, and a key that does not match is a
+                // new cookie rather than a replacement.
+                partitionKey: c.partitionKey ?? { topLevelSite },
+                expirationDate: anHourAgo,
+            };
+            if (!c.hostOnly) details.domain = c.domain;
+            return chrome.cookies.set(details).catch(() => {});
+        }),
     );
     return mirrored.length;
+}
+
+/**
+ * [AI INSTRUCTION]
+ * THE MIRROR HAS TO BE UNDONE, AND THIS IS THE RECORD THAT MAKES IT POSSIBLE.
+ *
+ * `mirrorCookiesIntoExtensionPartition` copies a site's readable cookies — session
+ * cookies among them — into the extension's own partition. Nothing used to take them
+ * back out: `clearMirroredCookies` was only ever reached on the branch that decides a
+ * host cannot be mirrored, so a copy made for a web view outlived the view, the panel
+ * and every later browsing session. Authentication data kept past the feature that
+ * needed it is exactly what the Limited Use policy is about.
+ *
+ * Two things undo it now, and they are deliberately belt and braces:
+ *   - the copies are written WITHOUT `expirationDate`, so they are session cookies and
+ *     the browser drops them on close no matter what else happens;
+ *   - this record, kept in `storage.session` so it survives the worker being torn down,
+ *     lets `handleCleanupSidePanelRules` clear them the moment the view closes.
+ *
+ * Re-mirroring costs nothing: `handlePrepareUrlForSidePanel` copies afresh on every
+ * open, so a cleared partition is refilled the next time the user opens that site.
+ */
+const MIRRORED_COOKIE_URLS_KEY = 'dnrMirroredCookieUrls';
+
+async function readMirroredCookieUrls() {
+    try {
+        const stored = await chrome.storage.session.get(MIRRORED_COOKIE_URLS_KEY);
+        return stored[MIRRORED_COOKIE_URLS_KEY] || [];
+    } catch {
+        return [];
+    }
+}
+
+async function rememberMirroredCookieUrl(cookieUrl) {
+    try {
+        const urls = new Set(await readMirroredCookieUrls());
+        urls.add(cookieUrl);
+        await chrome.storage.session.set({ [MIRRORED_COOKIE_URLS_KEY]: [...urls] });
+    } catch (e) {
+        logMessage('[DNR] could not record the mirrored host: ' + e.message);
+    }
+}
+
+async function forgetMirroredCookieUrl(cookieUrl) {
+    try {
+        const urls = (await readMirroredCookieUrls()).filter((u) => u !== cookieUrl);
+        await chrome.storage.session.set({ [MIRRORED_COOKIE_URLS_KEY]: urls });
+    } catch {
+        /* The record is an optimisation over the session-cookie lifetime, not the
+         * guarantee. Losing an entry costs a cookie that dies on browser close. */
+    }
+}
+
+/**
+ * Takes back every copy this extension put into its own partition. Called when the
+ * framed view goes away, alongside the rules that made it possible.
+ */
+async function clearAllMirroredCookies() {
+    if (!chrome.cookies) return 0;
+    const topLevelSite = chrome.runtime.getURL('/');
+    const urls = await readMirroredCookieUrls();
+    let dropped = 0;
+    for (const url of urls) {
+        dropped += await clearMirroredCookies(url, topLevelSite);
+    }
+    try {
+        await chrome.storage.session.remove(MIRRORED_COOKIE_URLS_KEY);
+    } catch {
+        /* ignored: the cookies are gone, which is the part that matters */
+    }
+    return dropped;
 }
 
 /**
@@ -260,6 +367,7 @@ async function mirrorCookiesIntoExtensionPartition(url) {
         // Clear anything an earlier version of this code mirrored, so the host
         // is never left holding half a session.
         const dropped = await clearMirroredCookies(cookieUrl, topLevelSite);
+        await forgetMirroredCookieUrl(cookieUrl);
         logMessage(
             `[DNR] ${target.hostname} cannot complete a session in a frame; mirroring skipped` +
                 (dropped ? ` (${dropped} stale mirrored cookies removed)` : ''),
@@ -275,25 +383,36 @@ async function mirrorCookiesIntoExtensionPartition(url) {
         return;
     }
 
+    const copyable = cookies.filter((c) => !c.httpOnly && !c.partitionKey);
+
     await Promise.all(
-        cookies
-            .filter((c) => !c.httpOnly && !c.partitionKey)
-            .map((c) => {
-                const details = {
-                    url: cookieUrl,
-                    name: c.name,
-                    value: c.value,
-                    path: c.path,
-                    secure: true,
-                    sameSite: 'no_restriction',
-                    storeId: c.storeId,
-                    partitionKey: { topLevelSite },
-                };
-                if (c.expirationDate) details.expirationDate = c.expirationDate;
-                if (!c.hostOnly) details.domain = c.domain;
-                return chrome.cookies.set(details).catch(() => {});
-            }),
+        copyable.map((c) => {
+            const details = {
+                url: cookieUrl,
+                name: c.name,
+                value: c.value,
+                path: c.path,
+                secure: true,
+                sameSite: 'no_restriction',
+                storeId: c.storeId,
+                partitionKey: { topLevelSite },
+            };
+            /*
+             * `expirationDate` is deliberately NOT carried over, so every copy is a
+             * session cookie regardless of how long the original lives.
+             *
+             * It used to be copied, which meant a "remember me" cookie mirrored for one
+             * afternoon's reading sat in the extension's partition for the year the site
+             * had given it. Nothing is lost by dropping it: the mirror is rebuilt from
+             * the real cookie store on every open, so the framed site sees the same
+             * session it would have seen anyway — it just stops outliving the browser.
+             */
+            if (!c.hostOnly) details.domain = c.domain;
+            return chrome.cookies.set(details).catch(() => {});
+        }),
     );
+
+    if (copyable.length) await rememberMirroredCookieUrl(cookieUrl);
 }
 
 /**
@@ -399,6 +518,22 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
                 condition: {
                     tabIds: tabIds,
                     requestDomains: [registrableDomain(urlObj.hostname)],
+                    /*
+                     * The guarantee that `isPaymentHost` above states, made declarative.
+                     *
+                     * That check refuses to *install* a rule for a payment host. It does
+                     * nothing about a rule already standing: the second rule below is
+                     * scoped by tab, not by domain, so with a web view open it strips the
+                     * headers off anything the panel then loads — the donation sheet
+                     * included, whose own CSP and `permissions-policy: payment=…` are what
+                     * Stripe and Google Pay need. Chrome tears down the panel's document on
+                     * navigation without running `closeUrlInPanel`, so the cleanup message
+                     * that would have removed these rules never gets sent.
+                     *
+                     * Excluding the hosts here means the promise is kept by the matcher
+                     * rather than by the order the messages happen to arrive in.
+                     */
+                    excludedRequestDomains: NEVER_STRIP_FRAMING_HOSTS,
                     resourceTypes: ['sub_frame'],
                 },
             },
@@ -413,6 +548,22 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
                 },
                 condition: {
                     tabIds: tabIds,
+                    /*
+                     * The guarantee that `isPaymentHost` above states, made declarative.
+                     *
+                     * That check refuses to *install* a rule for a payment host. It does
+                     * nothing about a rule already standing: the second rule below is
+                     * scoped by tab, not by domain, so with a web view open it strips the
+                     * headers off anything the panel then loads — the donation sheet
+                     * included, whose own CSP and `permissions-policy: payment=…` are what
+                     * Stripe and Google Pay need. Chrome tears down the panel's document on
+                     * navigation without running `closeUrlInPanel`, so the cleanup message
+                     * that would have removed these rules never gets sent.
+                     *
+                     * Excluding the hosts here means the promise is kept by the matcher
+                     * rather than by the order the messages happen to arrive in.
+                     */
+                    excludedRequestDomains: NEVER_STRIP_FRAMING_HOSTS,
                     resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'other'],
                 },
             },
@@ -526,6 +677,10 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
             },
             condition: {
                 requestDomains: [registrableDomain(target.hostname)],
+                // Belt to the `isPaymentHost` braces above, for the same reason the side
+                // panel's rules carry it: a guard that runs once cannot bind a rule that
+                // stands afterwards.
+                excludedRequestDomains: NEVER_STRIP_FRAMING_HOSTS,
                 resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'other'],
             },
         };
@@ -673,7 +828,22 @@ function handleCleanupSidePanelRules(sendResponse) {
             await chrome.declarativeNetRequest.updateSessionRules({
                 removeRuleIds: [SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1],
             });
-            logMessage(`[DNR] Side panel rules cleaned up.`);
+            /*
+             * The cookies go with the rules. They were copied so a site could be framed;
+             * once it is not framed any more, the copy has no purpose and no business
+             * still being there. Failing to clear them must not fail the cleanup of the
+             * rules, which is the half with security consequences, so it is caught here
+             * rather than left to the outer handler.
+             */
+            let dropped = 0;
+            try {
+                dropped = await clearAllMirroredCookies();
+            } catch (e) {
+                logMessage('[DNR] mirrored cookie cleanup failed: ' + e.message);
+            }
+            logMessage(
+                `[DNR] Side panel rules cleaned up.` + (dropped ? ` ${dropped} mirrored cookie(s) removed.` : ''),
+            );
             sendResponse({ success: true });
         } catch (error) {
             console.error('[DNR] Error cleaning up rule:', error);
