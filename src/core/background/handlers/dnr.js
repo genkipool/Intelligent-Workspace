@@ -584,6 +584,46 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
 }
 
 /**
+ * Finds the tab id of the Document Picture-in-Picture window the caller just opened.
+ *
+ * WHY THIS EXISTS. The floating player's rules used to be bounded by domain alone,
+ * while the side panel's are bounded by domain *and* the extension's own tab ids. That
+ * asymmetry was not a style difference: measured in a real browser, with a float open
+ * on a site, a second tab loading a third-party `<iframe>` of that same site got its
+ * framing headers stripped **and** the user's session cookie replayed into it — a
+ * cookie the browser had correctly withheld, because it is `SameSite=Lax` and that is a
+ * cross-site request. Defeating that is a CSRF boundary, not a cosmetic detail.
+ *
+ * WHY IT IS FINDABLE. `documentPictureInPicture.requestWindow()` gives Chrome a real
+ * tab, in a window of its own, and `chrome.tabs` knows it. Measured: the tab's `url` is
+ * `about:blank`, its `windowId` is not the opener's, and its `openerTabId` is the tab
+ * that asked for it. The three together identify it, and the window it lives in holds
+ * nothing else. Both callers await `requestWindow()` before sending this message, so
+ * the tab already exists by the time this runs.
+ *
+ * WHY IT FAILS SOFT. If the tab cannot be found — a Chrome that stops modelling the
+ * float as a tab, a caller that ever sends the message first — this returns null and
+ * the caller installs the rules the way it always did. A float that still works with a
+ * wider rule is a better failure than a float that shows a blank rectangle.
+ */
+async function findPipTabId(senderTabId) {
+    if (typeof senderTabId !== 'number') return null;
+    try {
+        const sender = await chrome.tabs.get(senderTabId);
+        const tabs = await chrome.tabs.query({});
+        const candidates = tabs.filter(
+            (t) => t.openerTabId === senderTabId && t.windowId !== sender.windowId && t.url === 'about:blank',
+        );
+        // More than one match means the guess is not identifying anything; widening the
+        // rule is safer than pointing it at the wrong tab.
+        return candidates.length === 1 ? candidates[0].id : null;
+    } catch (e) {
+        logMessage('[DNR] findPipTabId: ' + e.message);
+        return null;
+    }
+}
+
+/**
  * Gets cookies for a domain to inject into sub_frame requests.
  * Used by handlePrepareVideoUrlForPip for non-YouTube sites.
  */
@@ -625,7 +665,7 @@ async function getCookiesHeaderForDomain(url) {
  * framing-restriction headers WITHOUT altering the User-Agent.
  * This ensures the site serves its desktop version with native video controls intact.
  */
-function handlePrepareVideoUrlForPip(message, sendResponse) {
+function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
     (async () => {
         const responseHeaders = buildFramingResponseHeaders();
 
@@ -667,6 +707,19 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
             return;
         }
 
+        /*
+         * The float's own tab, when it can be identified — see `findPipTabId`. Adding it
+         * to both conditions is what stops these rules from reaching the rest of the
+         * browser while the window is open. `null` keeps the old, domain-only shape.
+         */
+        const pipTabId = await findPipTabId(senderTabId);
+        const onlyPipTab = pipTabId === null ? {} : { tabIds: [pipTabId] };
+        logMessage(
+            pipTabId === null
+                ? '[DNR] PiP tab not identified; rules stay scoped to the domain alone'
+                : `[DNR] PiP rules scoped to tab ${pipTabId}`,
+        );
+
         const ruleId = SIDEPANEL_RULE_ID + 2;
         const rule = {
             id: ruleId,
@@ -676,6 +729,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
                 responseHeaders: responseHeaders,
             },
             condition: {
+                ...onlyPipTab,
                 requestDomains: [registrableDomain(target.hostname)],
                 // Belt to the `isPaymentHost` braces above, for the same reason the side
                 // panel's rules carry it: a guard that runs once cannot bind a rule that
@@ -709,6 +763,14 @@ function handlePrepareVideoUrlForPip(message, sendResponse) {
                             ],
                         },
                         condition: {
+                            /*
+                             * The float's own tab. Without it this rule replayed the
+                             * user's session cookie into *any* frame of this domain
+                             * anywhere in the browser — measured, including a
+                             * third-party `<iframe>` in another tab, where the browser
+                             * had deliberately withheld it.
+                             */
+                            ...onlyPipTab,
                             /*
                              * `https` only. The filter used to be `*://`, and the header
                              * it sets carries the site's session cookies — httpOnly and
