@@ -4780,19 +4780,19 @@ IMPORTANT RULES:
                             pipWindow.document.body.style.overflow = 'hidden';
                             pipWindow.document.body.style.backgroundColor = '#1e1e1e';
                             /*
-                             * AWAIT, y no es cosmético.
+                             * AWAIT, and not for tidiness.
                              *
-                             * Esto instala las reglas que quitan `X-Frame-Options` y la
-                             * CSP del sitio. Sin esperarlas, el `iframe` de abajo sale
-                             * antes de que existan y la petición se va sin regla que la
-                             * toque: el marco lo bloquea el sitio y la ventana flotante
-                             * queda en blanco. No es una carrera que unas veces se gane
-                             * —medido en un navegador real, 0 de 5 con `await` fuera y
-                             * 5 de 5 con él puesto—, así que abrir una página en el
-                             * flotante desde la omnibarra nunca funcionó en un sitio que
-                             * se niegue a ser enmarcado, que son justo los sitios para
-                             * los que existe la regla. `utils.js`, el otro camino hasta
-                             * el flotante, siempre lo esperó.
+                             * This installs the rules that take `X-Frame-Options` and the
+                             * site's CSP off. Without waiting for them, the `iframe` below
+                             * is appended first and its request goes out with no rule to
+                             * touch it: the site refuses the frame and the floating window
+                             * comes up blank. It is not a race that is sometimes won —
+                             * measured in a real browser, 0 of 5 without the `await` and 5
+                             * of 5 with it — so opening a page in the floating player from
+                             * the omnibar never worked on a site that refuses to be framed,
+                             * which is exactly the kind of site the rule exists for.
+                             * `utils.js`, the other way to the floating player, always
+                             * awaited it.
                              */
                             await chrome.runtime.sendMessage({
                                 action: 'prepareVideoUrlForPip',

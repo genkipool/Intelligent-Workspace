@@ -807,7 +807,7 @@ export async function initCustomizeHints() {
         };
         updateUsage();
 
-        // --- Event Listeners Globales del Item (Change / Editable) ---
+        // --- Item-wide event listeners (change / editable) ---
         // (Kept identical to your previous version, just ensure to use them over the 'li' and 'mainRow' references created here)
 
         varsContainer.addEventListener('change', async (e) => {
