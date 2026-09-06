@@ -167,6 +167,22 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- Un grupo automático coge el color del sitio que contiene muchas más veces, y deja de
+  equivocarse para el resto de la sesión. El color sale del favicon del sitio, y el
+  icono se estaba pidiendo por la peor de las tres vías que da Chrome: la dirección que
+  declara la propia página, que cuesta una petición nombrando la página que se está
+  leyendo y que además no se puede descodificar cuando el sitio sirve un SVG — así que
+  GitHub, Stack Overflow, MDN y Hacker News, precisamente los sitios con el color más
+  reconocible, nunca tenían ninguno. Ahora se lee del icono que Chrome ya tiene, que no
+  sale del navegador y contesta en uno o dos milisegundos. La otra mitad del problema
+  era el momento: el favicon llega un instante después de que la página se dé por
+  cargada, que es después de haber construido el grupo, y para un sitio que aún no
+  conoce Chrome no contesta con nada sino con un globo gris de relleno. Ese relleno se
+  estaba archivando como «este sitio no tiene color», así que un grupo construido en
+  ese hueco se quedaba con un color provisional para siempre. Ahora el relleno se
+  reconoce como lo que es, y a un grupo que se quedó con un color provisional se le
+  pone el suyo en cuanto aparece el icono — salvo que se haya cambiado a mano mientras
+  tanto, en cuyo caso no se vuelve a tocar nunca.
 - Salir de la galería ya no deja la lista de grupos con la fila de búsqueda
   equivocada. La clase de la que la hoja de estilos cuelga la barra de búsqueda plegada
   y los controles repartidos se quita al pintar una vista encima de la lista, y nadie la

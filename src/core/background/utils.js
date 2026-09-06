@@ -1109,6 +1109,33 @@ function debounceUpdateAllGroupPrefixes(windowId, options = {}, delay = 250) {
     pendingPrefixUpdates.set(windowId, { timer: newTimer, options: mergedOptions });
 }
 
+/**
+ * Coalesces the second look at the colours of the groups still waiting for one.
+ * Several tabs report their favicon within a few milliseconds of each other, and
+ * the whole point of the pass is to be cheaper than a regroup.
+ */
+let pendingGroupColorsTimer = null;
+
+function debounceRefreshPendingGroupColors(delay = 600) {
+    clearTimeout(pendingGroupColorsTimer);
+    pendingGroupColorsTimer = setTimeout(async () => {
+        pendingGroupColorsTimer = null;
+        try {
+            await refreshPendingGroupColors();
+        } catch (e) {
+            logMessage('[Favicon] The pending colour pass failed.', e);
+        }
+    }, delay);
+}
+
+/** Whether any group is still showing a stand-in colour. Cheap enough to ask often. */
+function hasGroupsAwaitingFaviconColor() {
+    for (const info of groupInfoMap.values()) {
+        if (info?.colorPending) return true;
+    }
+    return false;
+}
+
 let hasPendingRegroup = false;
 
 function debounceGroupTabs(delay = 250) {
@@ -1596,18 +1623,6 @@ async function removeTabsByDomainCommand(domain) {
     }
 }
 
-function faviconURL(u) {
-    try {
-        const url = new URL(chrome.runtime.getURL('/_favicon/'));
-        url.searchParams.set('pageUrl', u);
-        url.searchParams.set('size', '16');
-        return url.toString();
-    } catch (error) {
-        console.warn('Invalid URL for favicon:', error);
-        return null;
-    }
-}
-
 /**
  * Converts RGB values to HSL representation.
  * @param {number} r (0-255)
@@ -1674,23 +1689,67 @@ function classifyHslToChromeGroupColor(h, s, l) {
     return 'red';
 }
 
-const faviconColorCache = new Map();
-const FAVICON_COLOR_CACHE_KEY = 'faviconColorCache_v2';
+/**
+ * Where a group's colour comes from, and why it used to be wrong.
+ *
+ * The icon is read from Chrome's own `_favicon` endpoint, which hands back exactly
+ * what the browser paints on the tab strip: already rasterised to PNG, read off disk
+ * in 1-3 ms, and never a request to anybody. Asking it for the origin rather than the
+ * page address gets the same icon for every page of a site, so one lookup answers for
+ * all of them.
+ *
+ * The obvious alternative is the address the page itself declared, on `favIconUrl`.
+ * It was what this used to ask for first, and it was the wrong choice three times
+ * over: it costs a network round trip naming a page the user is reading (measured
+ * between 3 ms and 285 ms, against 1-3 ms here); `createImageBitmap` has no SVG
+ * decoder inside a worker, so it fails outright on GitHub, Stack Overflow, MDN and
+ * Hacker News — precisely the sites with the most recognisable colour; and Chrome has
+ * already rasterised that same icon anyway. Measured against the endpoint below it
+ * never once produced an answer the endpoint had not already given, so it is gone.
+ *
+ * The one catch is that while a site is still unknown to the favicon database the
+ * endpoint answers with a placeholder globe rather than failing. The placeholder is
+ * grey, so it classifies as "no colour" — and that answer was filed away as final. A
+ * group created in the gap between the page loading and its favicon arriving
+ * therefore kept a fallback colour for the rest of the session, which is what made
+ * the colour look right sometimes and wrong other times for the same site. So "no
+ * colour" is only believed when it came from a real icon: the placeholder is
+ * recognised by its own bytes, read once from a domain that cannot be visited, since
+ * hard-coding them would not survive a Chrome release or a change of theme. An
+ * answer that is not believed is asked for again, which is what `colorPending` on a
+ * group is for.
+ */
+const FAVICON_REQUEST_SIZE = 32;
+const FAVICON_MAX_SAMPLE_SIDE = 64;
+const FAVICON_LOCAL_TIMEOUT_MS = 500;
+const FAVICON_RETRY_DELAY_MS = 4000;
+const FAVICON_MAX_TRIES = 8;
+
+const faviconColorCache = new Map(); // origin -> { color, definitive, ts, tries }
+const faviconColorInFlight = new Map(); // origin -> Promise
+const FAVICON_COLOR_CACHE_KEY = 'faviconColorCache_v3';
 let faviconColorCacheLoaded = false;
 let faviconColorSaveTimer = null;
+let placeholderFaviconSignature = null;
+let placeholderFaviconProbe = null;
 
-/**
- * Two pages of the same site share a favicon, so the cache is keyed by origin.
- * Keying it by the full page URL (which is what the `_favicon` URL carries) meant
- * a miss — a fetch plus an image decode — for practically every group created.
- */
-function faviconCacheKeyFor(faviconUrl) {
+/** The `_favicon` address for a site, keyed by origin so every page shares it. */
+function faviconURL(u, size = FAVICON_REQUEST_SIZE) {
     try {
-        const url = new URL(faviconUrl);
-        const pageUrl = url.searchParams.get('pageUrl');
-        if (pageUrl) return new URL(pageUrl).origin;
-    } catch {}
-    return faviconUrl;
+        const url = new URL(chrome.runtime.getURL('/_favicon/'));
+        let pageUrl = u;
+        try {
+            pageUrl = new URL(u).origin;
+        } catch {
+            // Not a parseable address (a file path, say): let the endpoint decide.
+        }
+        url.searchParams.set('pageUrl', pageUrl);
+        url.searchParams.set('size', String(size));
+        return url.toString();
+    } catch (error) {
+        console.warn('Invalid URL for favicon:', error);
+        return null;
+    }
 }
 
 /** Survives the service worker being torn down between grouping runs. */
@@ -1700,7 +1759,9 @@ async function ensureFaviconColorCacheLoaded() {
     try {
         const stored = await chrome.storage.session.get(FAVICON_COLOR_CACHE_KEY);
         for (const [key, value] of Object.entries(stored[FAVICON_COLOR_CACHE_KEY] || {})) {
-            if (!faviconColorCache.has(key)) faviconColorCache.set(key, value);
+            if (!faviconColorCache.has(key) && value && typeof value === 'object') {
+                faviconColorCache.set(key, value);
+            }
         }
     } catch (e) {
         logMessage('[Favicon] Could not restore the colour cache from session storage.', e);
@@ -1718,46 +1779,93 @@ function scheduleFaviconColorCacheSave() {
 
 function clearFaviconColorCache() {
     faviconColorCache.clear();
+    faviconColorInFlight.clear();
+    placeholderFaviconSignature = null;
+    placeholderFaviconProbe = null;
     chrome.storage.session.remove(FAVICON_COLOR_CACHE_KEY).catch(() => {});
     logMessage('[Favicon] Favicon color cache cleared successfully.');
 }
 
-async function getFaviconColor(faviconUrl) {
-    if (!faviconUrl) return null;
-    await ensureFaviconColorCacheLoaded();
-    const cacheKey = faviconCacheKeyFor(faviconUrl);
-    if (faviconColorCache.has(cacheKey)) {
-        const cached = faviconColorCache.get(cacheKey);
-        if (cached === 'grey') return null;
-        return cached;
+/** Enough of the bytes to tell two icons apart without keeping either. */
+function faviconSignature(bytes) {
+    let hash = 0;
+    for (let i = 0; i < bytes.length; i++) {
+        hash = ((hash << 5) - hash + bytes[i]) | 0;
     }
+    return `${bytes.length}:${hash}`;
+}
 
-    // Remembering the failures too: without this every group creation paid the
-    // fetch (and, on an unreachable favicon, the full 180 ms timeout) again.
-    const remember = (color) => {
-        const finalColor = color === 'grey' ? null : color;
-        faviconColorCache.set(cacheKey, finalColor);
-        scheduleFaviconColorCacheSave();
-        return finalColor;
-    };
+/**
+ * The bytes Chrome answers with when it has never seen the site's favicon.
+ * Read once, from a domain that cannot resolve, so nothing can ever have been
+ * stored for it.
+ */
+async function getPlaceholderFaviconSignature() {
+    if (placeholderFaviconSignature !== null) return placeholderFaviconSignature;
+    if (!placeholderFaviconProbe) {
+        placeholderFaviconProbe = (async () => {
+            const answer = await fetchFaviconBytes(
+                faviconURL('https://never-visited.invalid/'),
+                FAVICON_LOCAL_TIMEOUT_MS,
+            );
+            // Without it the placeholder simply counts as a colourless icon, which is
+            // how this behaved before: a fallback colour, and no retry.
+            placeholderFaviconSignature = answer ? faviconSignature(answer.bytes) : '';
+            return placeholderFaviconSignature;
+        })();
+    }
+    return placeholderFaviconProbe;
+}
 
+/**
+ * `no-store` because the whole point of asking again is to find out whether Chrome
+ * has learned the site's icon since last time; a cached answer would be the
+ * placeholder for ever.
+ */
+async function fetchFaviconBytes(url, timeoutMs) {
+    if (!url) return null;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 180);
-        const response = await fetch(faviconUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!response.ok) return remember(null);
-
+        const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) return null;
         const blob = await response.blob();
-        if (!blob || blob.size === 0) return remember(null);
+        if (!blob || blob.size === 0) return null;
+        return { blob, bytes: new Uint8Array(await blob.arrayBuffer()) };
+    } catch {
+        return null;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
 
-        const imageBitmap = await createImageBitmap(blob);
-        if (!imageBitmap || imageBitmap.width === 0 || imageBitmap.height === 0) return remember(null);
+/**
+ * The dominant colour of an icon, as one of Chrome's tab group colours, or null
+ * when the icon has no colour to speak of (a black and white logo, say).
+ * `decoded` tells that apart from an icon that could not be read at all.
+ */
+async function colorFromFaviconImage(blob) {
+    let bitmap;
+    try {
+        bitmap = await createImageBitmap(blob);
+    } catch {
+        return { decoded: false, color: null };
+    }
+    try {
+        if (!bitmap.width || !bitmap.height) return { decoded: false, color: null };
 
-        const canvas = new OffscreenCanvas(imageBitmap.width, imageBitmap.height);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(imageBitmap, 0, 0);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        // Icons come in every size up to 256 px, and the vote below reads every
+        // pixel. Anything larger than this is drawn down first: a dominant colour
+        // does not need 65 000 samples, and the groups are counted in dozens.
+        const longest = Math.max(bitmap.width, bitmap.height);
+        const scale = longest > FAVICON_MAX_SAMPLE_SIDE ? FAVICON_MAX_SAMPLE_SIDE / longest : 1;
+        const width = Math.max(1, Math.round(bitmap.width * scale));
+        const height = Math.max(1, Math.round(bitmap.height * scale));
+
+        const canvas = new OffscreenCanvas(width, height);
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(bitmap, 0, 0, width, height);
+        const imageData = ctx.getImageData(0, 0, width, height).data;
 
         const votes = {
             red: 0,
@@ -1768,7 +1876,6 @@ async function getFaviconColor(faviconUrl) {
             blue: 0,
             purple: 0,
             pink: 0,
-            grey: 0,
         };
 
         let totalChromaticWeight = 0;
@@ -1787,37 +1894,122 @@ async function getFaviconColor(faviconUrl) {
 
             const { h, s, l } = rgbToHsl(r, g, b);
             const category = classifyHslToChromeGroupColor(h, s, l);
+            if (category === 'grey') continue;
 
-            if (category === 'grey') {
-                votes.grey += (a / 255) * 0.5;
-            } else {
-                // Weight by saturation and alpha so vibrant brand colors dominate over dull tints
-                const weight = (a / 255) * Math.pow(s, 1.2) * (1 - Math.abs(l - 0.5) * 0.8);
-                votes[category] += weight;
-                totalChromaticWeight += weight;
-            }
+            // Weight by saturation and alpha so vibrant brand colors dominate over dull tints
+            const weight = (a / 255) * Math.pow(s, 1.2) * (1 - Math.abs(l - 0.5) * 0.8);
+            votes[category] += weight;
+            totalChromaticWeight += weight;
         }
 
-        // If no significant chromatic pixels were found, return null (grey is reserved strictly for misc)
-        if (totalChromaticWeight < 0.5) {
-            return remember(null);
-        }
+        // Nothing coloured enough to build a group around: grey is reserved for misc,
+        // so the caller falls back to the colour derived from the group's name.
+        if (totalChromaticWeight < 0.5) return { decoded: true, color: null };
 
-        // Find the chromatic category with the highest weighted vote
         let bestColor = null;
         let maxWeight = 0;
         for (const [color, weight] of Object.entries(votes)) {
-            if (color === 'grey') continue;
             if (weight > maxWeight) {
                 maxWeight = weight;
                 bestColor = color;
             }
         }
-
-        if (bestColor === 'grey') return remember(null);
-        return remember(bestColor);
+        return { decoded: true, color: bestColor };
     } catch {
-        return remember(null);
+        return { decoded: false, color: null };
+    } finally {
+        bitmap.close?.();
+    }
+}
+
+/**
+ * The colour of the icon Chrome holds for a site.
+ * `definitive` is false when Chrome answered with its placeholder, meaning it has no
+ * icon for the site yet and the question is worth asking again rather than settling
+ * for a fallback colour for good.
+ */
+async function lookupFaviconColor(origin) {
+    const local = await fetchFaviconBytes(faviconURL(origin), FAVICON_LOCAL_TIMEOUT_MS);
+    if (local) {
+        const placeholder = await getPlaceholderFaviconSignature();
+        if (!placeholder || faviconSignature(local.bytes) !== placeholder) {
+            const { decoded, color } = await colorFromFaviconImage(local.blob);
+            if (decoded) return { color, definitive: true };
+        }
+    }
+    return { color: null, definitive: false };
+}
+
+/**
+ * Of the tabs that will make up a group, the one to take the site address from.
+ * A group can hold more than one origin — a plain-http page, a subdomain — and a tab
+ * that has already reported a favicon is one Chrome demonstrably holds an icon for.
+ * It used to be whichever tab came first, which on a window being restored or a page
+ * still loading is a tab that knows nothing yet.
+ */
+function pickFaviconSourceTab(tabs) {
+    if (!Array.isArray(tabs) || tabs.length === 0) return null;
+    return (
+        tabs.find((t) => t?.favIconUrl && t.status === 'complete') ||
+        tabs.find((t) => t?.favIconUrl) ||
+        tabs.find((t) => t?.status === 'complete') ||
+        tabs[0]
+    );
+}
+
+/**
+ * The colour for a group of tabs, taken from the favicon they share.
+ * Returns `{ color, definitive }`: a null colour with `definitive` false means the
+ * icon has not turned up yet and the question is worth asking again.
+ */
+async function resolveFaviconColor(tabs, { force = false } = {}) {
+    const tab = pickFaviconSourceTab(tabs);
+    if (!tab?.url) return { color: null, definitive: false };
+
+    let origin;
+    try {
+        origin = new URL(tab.url).origin;
+    } catch {
+        return { color: null, definitive: false };
+    }
+
+    await ensureFaviconColorCacheLoaded();
+    const cached = faviconColorCache.get(origin);
+    if (cached) {
+        const exhausted = cached.tries >= FAVICON_MAX_TRIES;
+        // `force` is for the caller that has just been told the favicon arrived. The
+        // wait below exists so that a burst of grouping passes does not ask the same
+        // question over and over, but it was long enough to swallow that one event,
+        // and then nothing else ever asked again.
+        const waiting = !force && Date.now() - cached.ts < FAVICON_RETRY_DELAY_MS;
+        if (cached.definitive || exhausted || waiting) {
+            return { color: cached.color, definitive: cached.definitive || exhausted };
+        }
+    }
+
+    // One lookup per site at a time: a window holding ten tabs of the same site used
+    // to start ten identical fetches, and a grouping pass runs them all in parallel.
+    const running = faviconColorInFlight.get(origin);
+    if (running) return running;
+
+    const work = (async () => {
+        const result = await lookupFaviconColor(origin);
+        const tries = (cached?.tries || 0) + 1;
+        faviconColorCache.set(origin, {
+            color: result.color,
+            definitive: result.definitive,
+            ts: Date.now(),
+            tries,
+        });
+        scheduleFaviconColorCacheSave();
+        return { color: result.color, definitive: result.definitive || tries >= FAVICON_MAX_TRIES };
+    })();
+
+    faviconColorInFlight.set(origin, work);
+    try {
+        return await work;
+    } finally {
+        faviconColorInFlight.delete(origin);
     }
 }
 

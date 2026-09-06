@@ -161,6 +161,22 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- An automatic group takes the colour of the site it holds far more often, and stops
+  getting it wrong for the rest of the session. The colour is read from the site's
+  favicon, and the icon was being asked for in the worst of the three ways Chrome
+  offers it: the address the page itself declares, which costs a request naming the
+  page being read and which cannot be decoded at all when the site serves an SVG — so
+  GitHub, Stack Overflow, MDN and Hacker News, the sites with the most recognisable
+  colour of all, never had one. It is now read from the icon Chrome already holds,
+  which never leaves the browser and answers in a millisecond or two. The second half
+  of the problem was timing: the favicon arrives a moment after the page reports
+  itself loaded, which is after the group has already been built, and Chrome answers
+  for a site it does not know yet with a grey placeholder rather than with nothing.
+  That placeholder was being filed away as "this site has no colour", so a group built
+  in that gap kept a stand-in colour for good. The placeholder is now recognised for
+  what it is, and a group that got a stand-in is given its real colour as soon as the
+  icon turns up — unless the colour has been changed by hand in the meantime, which is
+  left alone for ever after.
 - Leaving the gallery no longer leaves the group list wearing the wrong search row.
   The class the stylesheet hangs the collapsed search bar and the spread-out controls
   off is taken away when a view is painted over the list, and nothing put it back, so a
