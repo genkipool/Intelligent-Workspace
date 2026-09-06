@@ -1300,7 +1300,7 @@ const WEB_VIEW_ALLOW = [
 /**
  * [AI NOTE] The payment frame gets a deliberately shorter list than the web view.
  *
- * No downloads, no modals, no top-level navigation, no camera — a donation form needs
+ * No downloads, no modals, no top-level navigation, no camera — a contribution form needs
  * none of them, and every one of them is something a payment page should not be able
  * to do to the panel. `allow-popups` stays because PayPal cannot complete a login in
  * a frame and has to open its own window; `allow-same-origin` stays because without it
@@ -1443,7 +1443,7 @@ function createPaymentSkeleton() {
     const skeleton = document.createElement('div');
     skeleton.className = 'pay-skeleton';
     skeleton.setAttribute('role', 'status');
-    skeleton.setAttribute('aria-label', chrome.i18n.getMessage('donationLoading') || 'Loading');
+    skeleton.setAttribute('aria-label', chrome.i18n.getMessage('contributionLoading') || 'Loading');
     skeleton.innerHTML = `
         <div class="pay-sk-line pay-sk-title"></div>
         <div class="pay-sk-line pay-sk-label"></div>
@@ -1461,7 +1461,7 @@ function createPaymentSkeleton() {
 
 /**
  * [AI INSTRUCTION]
- * OPENS THE DONATION FORM IN THE PANEL.
+ * OPENS THE CONTRIBUTION FORM IN THE PANEL.
  *
  * DO NOT route this through `prepareUrlForSidePanel`. That handler strips
  * X-Frame-Options and CSP so a hostile-to-framing site can be read in the panel; doing
@@ -1470,13 +1470,13 @@ function createPaymentSkeleton() {
  * refuses payment hosts by name so this cannot be undone by accident.
  */
 export async function openPaymentInPanel(provider) {
-    const { container, mainHeaderTitle } = enterFramedView('donation');
+    const { container, mainHeaderTitle } = enterFramedView('contribution');
 
     /*
      * The search row goes, and only here.
      *
      * `VIEWS_HIDDEN_BY_A_FRAME` deliberately leaves it alone, because the web view uses
-     * it: typing there navigates the frame, and the tooltip says so. A donation sheet has
+     * it: typing there navigates the frame, and the tooltip says so. A contribution sheet has
      * nothing to search and nothing to navigate, so the row was two dozen controls sitting
      * above a payment form doing nothing — the assistant toggle, the regex switch, the
      * pomodoro, the screenshot button. `closeUrlInPanel` puts it back.
@@ -1531,7 +1531,7 @@ export async function openPaymentInPanel(provider) {
      */
     /**
      * [AI INSTRUCTION]
-     * WHERE A FINISHED DONATION LEAVES THE READER — AND THE GROUP LIST IS NOT AN OPTION.
+     * WHERE A FINISHED CONTRIBUTION LEAVES THE READER — AND THE GROUP LIST IS NOT AN OPTION.
      *
      * DO NOT ADD A `closeUrlInPanel()` FALLBACK HERE. It used to have two, and both did
      * the same unwelcome thing: money leaves someone's account and the panel answers by
@@ -1539,8 +1539,8 @@ export async function openPaymentInPanel(provider) {
      * worked, and it happens while the thank-you is still on screen.
      *
      * The rule is that this function only ever moves the panel when it can put the reader
-     * back exactly where they came from — the popup, which `donationService` recorded as
-     * `navSource`. Anything else and the panel stays on the donation view, which is by
+     * back exactly where they came from — the popup, which `contributionService` recorded as
+     * `navSource`. Anything else and the panel stays on the contribution view, which is by
      * then showing "thank you" and is the most informative thing it could be showing.
      * The way out is the back button, pressed on purpose, which is the only place a
      * decision to leave should be made.
@@ -1548,7 +1548,7 @@ export async function openPaymentInPanel(provider) {
      * `delay` gives the thank-you notification time to be read before the page changes
      * under it.
      */
-    const leaveDonation = async (delay = 0) => {
+    const leaveContribution = async (delay = 0) => {
         if (get(standaloneOverlayView) !== 'payment') return;
 
         const { navSource } = await chrome.storage.local.get('navSource');
@@ -1582,16 +1582,16 @@ export async function openPaymentInPanel(provider) {
             // Before the notification: the thank-you belongs in the panel, and a paid-for
             // window still sitting on screen behind it reads as something left undone.
             closeHandoffWindow();
-            if (amount) showNotification('donationThanksAmount', false, [String(amount)]);
-            else showNotification('donationThanks');
-            void leaveDonation(1800);
+            if (amount) showNotification('contributionThanksAmount', false, [String(amount)]);
+            else showNotification('contributionThanks');
+            void leaveContribution(1800);
         },
         onError: (message) => {
             // The frame's own wording when it gave one; ours when it did not.
             if (message) showNotification(message, true);
-            else showNotification('donationFailed', true);
+            else showNotification('contributionFailed', true);
         },
-        onClose: () => void leaveDonation(),
+        onClose: () => void leaveContribution(),
         onExternal: (url) => {
             /*
              * A WINDOW, AND THE PANEL STAYS PUT.
@@ -1610,7 +1610,7 @@ export async function openPaymentInPanel(provider) {
              *
              * The panel is NOT closed. It used to be, which sent the reader to the group
              * list the moment they chose Revolut Pay — the sheet vanished mid-payment and
-             * the panel showed something unrelated. It stays on the donation view while
+             * the panel showed something unrelated. It stays on the contribution view while
              * they pay, and the back button still returns to the popup afterwards.
              */
             chrome.windows
@@ -1834,7 +1834,7 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     const _container = document.querySelector('.container');
 
     /*
-     * Before the early return, so that switching straight from the donation sheet into
+     * Before the early return, so that switching straight from the contribution sheet into
      * another framed view gets the row back: `enterFramedView` calls this with
      * `isSwitchingView`, and the next view hides again whatever it needs to.
      * `restoreMainView` does not touch this element, so nobody else would.

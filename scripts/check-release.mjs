@@ -2,7 +2,7 @@
  * The two things that break silently between "it builds" and "it works for a user".
  *
  * Neither is caught by lint, by the build, or by clicking around: the extension loads,
- * the panel opens, and the damage only shows up as donations that never arrive or an
+ * the panel opens, and the damage only shows up as contributions that never arrive or an
  * extension Chrome refuses to install. Both are one grep, so they are cheap to assert
  * and expensive to miss.
  */
@@ -16,7 +16,7 @@ const problems = [];
 // The origin is `import.meta.env.VITE_PAYMENT_ORIGIN || <default>`. Local development
 // overrides it through `.env.local`, which git ignores. What must never regress is the
 // fallback baked into the source: if that ever became a local or plaintext origin, a
-// release would ship a donation frame that loads nothing, with nothing to say so.
+// release would ship a contribution frame that loads nothing, with nothing to say so.
 {
     const source = readFileSync('src/config/payments.js', 'utf8');
     const fallback = source.match(/PAYMENT_ORIGIN\s*=\s*import\.meta\.env\.\w+\s*\|\|\s*['"]([^'"]+)['"]/);

@@ -35,7 +35,7 @@
     --focus-shadow-spread: clamp(0.5px, 0.104vw, 7px);
     --transition-duration: 0.3s;
     --size-height-github-link-wrapper: clamp(50px, 2.3vw, 155px);
-    --donation-icon-size: clamp(10px, 3.33vw, 220px);
+    --contribution-icon-size: clamp(10px, 3.33vw, 220px);
     --small-spacing: clamp(6px, 0.42vw, 24px);
 }
 
@@ -810,7 +810,7 @@ ul {
         --h1-size: 1.1rem;
     }
 }
-.donation-title {
+.contribution-title {
     margin-top: var(--spacing-lg);
     margin-bottom: var(--spacing-sm);
 }
@@ -822,7 +822,7 @@ ul {
 
    The narrow steps stay on even numbers — 4, then 2, then 1 — so the split never lands
    mid-row and leaves a gateway stranded among the coins. */
-.donation-links-container {
+.contribution-links-container {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     justify-items: center;
@@ -837,7 +837,7 @@ ul {
     }
 }
 
-.donation-link {
+.contribution-link {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -862,17 +862,17 @@ ul {
     }
 }
 
-.donation-link:hover,
-.donation-link:focus-visible {
+.contribution-link:hover,
+.contribution-link:focus-visible {
     background-color: var(--bg-color);
     transform: translateY(-3px);
     color: var(--interactive-color);
     outline: none;
 }
 
-.donation-icon {
-    width: var(--donation-icon-size);
-    height: var(--donation-icon-size);
+.contribution-icon {
+    width: var(--contribution-icon-size);
+    height: var(--contribution-icon-size);
     object-fit: contain;
     display: block;
     margin: 0 auto;
@@ -890,7 +890,7 @@ ul {
     }
 }
 
-.donation-label {
+.contribution-label {
     text-align: center;
     width: 100%;
 }

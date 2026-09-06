@@ -28,8 +28,8 @@ import {
     paymentPagePath,
     PAYMENT_MESSAGE_TYPES,
     PAYMENT_THEME_TOKENS,
-    DONATION_CURRENCY,
-    DONATION_DEFAULT_AMOUNT,
+    CONTRIBUTION_CURRENCY,
+    CONTRIBUTION_DEFAULT_AMOUNT,
 } from '../../config/payments.js';
 
 /**
@@ -58,18 +58,18 @@ export function mintPaymentNonce() {
 }
 
 /**
- * @param {object} provider An entry from `donationProviders.js` with `kind: 'payment'`.
+ * @param {object} provider An entry from `contributionProviders.js` with `kind: 'payment'`.
  * @param {object} [options]
  * @param {string} [options.nonce] Omit for the about page, which opens a plain tab and
  *   has no bridge to authenticate.
  */
-export function buildPaymentUrl(provider, { nonce = null, amount = DONATION_DEFAULT_AMOUNT } = {}) {
+export function buildPaymentUrl(provider, { nonce = null, amount = CONTRIBUTION_DEFAULT_AMOUNT } = {}) {
     /*
      * THE LANGUAGE THE READER CHOSE, not the one the browser is in.
      *
      * This used to read `chrome.i18n.getUILanguage()`, which reports Chrome's own UI
      * language and knows nothing about the extension's language switch. Someone running
-     * Chrome in English with the extension set to Spanish got an English donation sheet,
+     * Chrome in English with the extension set to Spanish got an English contribution sheet,
      * and nothing in the panel explained why.
      *
      * `currentLang` is the store the whole interface already renders from, so the sheet
@@ -80,7 +80,7 @@ export function buildPaymentUrl(provider, { nonce = null, amount = DONATION_DEFA
     const url = new URL(paymentPagePath(locale), PAYMENT_ORIGIN);
     url.searchParams.set('method', provider.method);
     url.searchParams.set('amount', String(amount));
-    url.searchParams.set('currency', DONATION_CURRENCY);
+    url.searchParams.set('currency', CONTRIBUTION_CURRENCY);
     if (nonce) {
         url.searchParams.set('nonce', nonce);
         // Only the framed flow needs the palette; a tab renders on the page's own.
@@ -147,7 +147,7 @@ export function attachPaymentBridge(iframe, nonce, handlers = {}) {
 }
 
 /**
- * Opens the connections the donation sheet will need, before anybody asks for it.
+ * Opens the connections the contribution sheet will need, before anybody asks for it.
  *
  * The sheet's cost is its first load, and almost none of it is our page: `js.stripe.com`
  * has to arrive and then stand up a controller and a metrics frame on two further
@@ -202,12 +202,12 @@ let warmFrame = null;
 
 /**
  * [AI INSTRUCTION]
- * BOOTS THE DONATION SHEET IN THE BACKGROUND, BEFORE ANYBODY ASKS FOR IT.
+ * BOOTS THE CONTRIBUTION SHEET IN THE BACKGROUND, BEFORE ANYBODY ASKS FOR IT.
  *
  * `warmPaymentOrigin` opens the sockets. This loads the page: a 1×1 frame, off screen,
  * pointed at the same sheet the panel will open, so that Stripe.js has been fetched and
  * parsed and its controller and metrics frames have been stood up by the time the reader
- * presses Donate. Measured, cold profile, two pairs of runs — the moment Stripe's wallet
+ * presses Contribute. Measured, cold profile, two pairs of runs — the moment Stripe's wallet
  * row lands, which is when the sheet stops moving:
  *
  *     without this   1134 ms / 978 ms

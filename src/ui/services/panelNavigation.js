@@ -7,7 +7,7 @@
  * and it belongs here.
  *
  * It used to exist twice: `Popup.svelte` had it as a local `handleNavigation`, and
- * `DonationSection.svelte` had its own hand-written version for the PayPal link — the
+ * `ContributionSection.svelte` had its own hand-written version for the PayPal link — the
  * same four checks in a different order, with `chrome.tabs.create` as a fallback the
  * other one did not have. A third copy sat in the dead `src/utils/donation.js`.
  *
@@ -23,7 +23,7 @@
 
 /**
  * Resolved once per page. `chrome.runtime.getContexts` is a worker round-trip, and
- * every donation icon would otherwise pay for it again.
+ * every contribution icon would otherwise pay for it again.
  */
 let contextsCache = null;
 

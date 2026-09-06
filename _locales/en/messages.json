@@ -476,7 +476,7 @@
     "message": "Toggle Alphabetical Sorting",
     "description": "Shortcut name"
   },
-  "donation": {
+  "contribution": {
     "message": "Support Development",
     "description": "Support section title"
   },
@@ -971,47 +971,47 @@
     "message": "Customize Error Color",
     "description": "Adjust the color used to indicate errors in the interface"
   },
-  "donateWithBitcoin": {
+  "contributeWithBitcoin": {
     "message": "Support with Bitcoin",
     "description": "Copy the Bitcoin address"
   },
-  "donateWithCardano": {
+  "contributeWithCardano": {
     "message": "Support with Cardano",
     "description": "Copy the Cardano address"
   },
-  "donateWithRadix": {
+  "contributeWithRadix": {
     "message": "Support with Radix",
     "description": "Copy the Radix address"
   },
-  "donateWithPaypal": {
+  "contributeWithPaypal": {
     "message": "Support with PayPal",
     "description": "Open the PayPal page to support"
   },
-  "donateWithStripe": {
+  "contributeWithStripe": {
     "message": "Support with card",
     "description": "Open the form to pay by card"
   },
-  "donateWithGooglePay": {
+  "contributeWithGooglePay": {
     "message": "Support with Google Pay",
     "description": "Open the form and pay with Google Pay"
   },
-  "openStripeDonation": {
+  "openStripeContribution": {
     "message": "Open card payment form",
     "description": "ARIA label for payment button"
   },
-  "openGooglePayDonation": {
+  "openGooglePayContribution": {
     "message": "Open Google Pay payment form",
     "description": "ARIA label for payment button"
   },
-  "donateWithApplePay": {
+  "contributeWithApplePay": {
     "message": "Support with Apple Pay",
     "description": "Open the form and pay with Apple Pay"
   },
-  "openApplePayDonation": {
+  "openApplePayContribution": {
     "message": "Open Apple Pay payment form",
     "description": "ARIA label for payment button"
   },
-  "donateWithEthereum": {
+  "contributeWithEthereum": {
     "message": "Support with Ethereum",
     "description": "Copy the Ethereum address"
   },
@@ -1019,15 +1019,15 @@
     "message": "Copy Ethereum address",
     "description": "ARIA label for copy button"
   },
-  "openPaypalDonation": {
+  "openPaypalContribution": {
     "message": "Open PayPal payment form",
     "description": "ARIA label for payment button"
   },
-  "donationThanks": {
+  "contributionThanks": {
     "message": "Thank you for your support!",
     "description": "Shown after a payment succeeds"
   },
-  "donationThanksAmount": {
+  "contributionThanksAmount": {
     "message": "Thank you for your €$1 contribution!",
     "description": "Shown after a payment succeeds, with the amount",
     "placeholders": {
@@ -1036,11 +1036,11 @@
       }
     }
   },
-  "donationFailed": {
+  "contributionFailed": {
     "message": "The payment could not be completed.",
     "description": "Shown when a payment fails"
   },
-  "donationLoading": {
+  "contributionLoading": {
     "message": "Loading the secure payment form…",
     "description": "Shown while the payment page loads"
   },
@@ -2402,7 +2402,7 @@
     "message": "Allows the extension to display its interface in the browser's side panel for quick access.",
     "description": "Explanation of the 'sidePanel' permission."
   },
-  "donationDescText": {
+  "contributionDescText": {
     "message": "If you find this extension useful, please consider supporting its development. Every contribution is greatly appreciated!",
     "description": "Text encouraging users to support the project."
   },
@@ -12497,8 +12497,8 @@
   "dataUseOcrItem": {
     "message": "Reading text out of a screenshot downloads its language model once, from jsDelivr, and the browser caches it. Nothing about you is sent."
   },
-  "dataUseDonationItem": {
-    "message": "Donating opens our payment page, which handles the card through Stripe. Card details never reach the extension."
+  "dataUseContributionItem": {
+    "message": "Supporting the project opens our payment page, which handles the card through Stripe. Card details never reach the extension."
   },
   "dataUseNeverTitle": {
     "message": "What never happens"

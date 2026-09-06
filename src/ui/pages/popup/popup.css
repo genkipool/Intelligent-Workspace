@@ -426,13 +426,13 @@ button:active {
     margin-right: 6px;
 }
 
-/* Donation Section */
-.donation-section {
+/* Contribution Section */
+.contribution-section {
     padding: 10px;
     border-bottom: 1px solid var(--border-color);
 }
 
-.donation-title {
+.contribution-title {
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 12px;
@@ -441,13 +441,13 @@ button:active {
 /* Equal columns rather than `flex: 1` on a space-between row: the four labels are
    different lengths in every language, and with flex the widest one — "Google Pay" —
    stole width from its neighbours and pushed Bitcoin's icon off centre. */
-.donation-options {
+.contribution-options {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
 }
 
-.donation-option {
+.contribution-option {
     min-width: 0;
     cursor: pointer;
     text-align: center;
@@ -457,11 +457,11 @@ button:active {
     align-items: center;
 }
 
-.donation-option:focus-visible {
+.contribution-option:focus-visible {
     outline: none;
 }
 
-.donation-icon-container {
+.contribution-icon-container {
     width: 48px;
     height: 48px;
     border-radius: 6px;
@@ -474,7 +474,7 @@ button:active {
     background-color: var(--bg-panel-color);
 }
 
-.donation-label {
+.contribution-label {
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
@@ -483,13 +483,13 @@ button:active {
     width: 100%;
 }
 
-.donation-option:hover .donation-icon-container,
-.donation-option:focus-visible .donation-icon-container {
+.contribution-option:hover .contribution-icon-container,
+.contribution-option:focus-visible .contribution-icon-container {
     scale: 1.1;
     border-color: var(--interactive-color);
 }
 
-.donation-icon-container img {
+.contribution-icon-container img {
     max-width: 48px;
     max-height: 48px;
     width: 100%;
@@ -499,8 +499,8 @@ button:active {
     transition: transform 0.2s ease;
 }
 
-.donation-option:hover img,
-.donation-option:focus-visible img {
+.contribution-option:hover img,
+.contribution-option:focus-visible img {
     transform: scale(1.1);
 }
 

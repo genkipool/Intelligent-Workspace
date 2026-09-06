@@ -9674,7 +9674,7 @@ body:not(.groups-view-active) .music-panel,
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   THE DONATION SHEET, WHILE IT IS STILL ARRIVING
+   THE CONTRIBUTION SHEET, WHILE IT IS STILL ARRIVING
 
    The frame is asked for about 100 ms after the press and its markup
    lands roughly 300 ms after that, so without this the panel is a

@@ -1,10 +1,10 @@
 /**
  * [AI INSTRUCTION]
- * THE ONE PLACE THAT KNOWS WHICH DONATION OPTIONS EXIST.
+ * THE ONE PLACE THAT KNOWS WHICH CONTRIBUTION OPTIONS EXIST.
  *
- * REUSE: every surface that shows donation options reads this table. Do not write a
+ * REUSE: every surface that shows contribution options reads this table. Do not write a
  * second list of addresses, icons or labels anywhere. The addresses used to live in
- * BOTH `src/utils/donation.js` and `DonationSection.svelte`, and the two had already
+ * BOTH `src/utils/donation.js` and `ContributionSection.svelte`, and the two had already
  * started to drift — that file is gone and this one replaced it.
  *
  * ADDING A PROVIDER is one entry here plus its i18n keys. Nothing else changes: the
@@ -16,14 +16,14 @@
  * this order rather than out of any markup.
  */
 
-import bitcoinImg from '../../assets/images/donation/bitcoin.svg';
-import cardanoImg from '../../assets/images/donation/cardano.svg';
-import radixImg from '../../assets/images/donation/radix.png';
-import paypalImg from '../../assets/images/donation/paypal.png';
-import stripeImg from '../../assets/images/donation/stripe.svg';
-import googlePayImg from '../../assets/images/donation/google-pay.svg';
-import applePayImg from '../../assets/images/donation/apple-pay.svg';
-import ethereumImg from '../../assets/images/donation/ethereum.svg';
+import bitcoinImg from '../../assets/images/contribution/bitcoin.svg';
+import cardanoImg from '../../assets/images/contribution/cardano.svg';
+import radixImg from '../../assets/images/contribution/radix.png';
+import paypalImg from '../../assets/images/contribution/paypal.png';
+import stripeImg from '../../assets/images/contribution/stripe.svg';
+import googlePayImg from '../../assets/images/contribution/google-pay.svg';
+import applePayImg from '../../assets/images/contribution/apple-pay.svg';
+import ethereumImg from '../../assets/images/contribution/ethereum.svg';
 
 /**
  * `kind` decides what a click does, and nothing else in the codebase branches on the
@@ -32,7 +32,7 @@ import ethereumImg from '../../assets/images/donation/ethereum.svg';
  *     the about page). `method` is passed to that page so it can preselect the wallet.
  *   - `crypto` copies `address` to the clipboard.
  */
-export const DONATION_PROVIDERS = [
+export const CONTRIBUTION_PROVIDERS = [
     {
         id: 'stripe',
         kind: 'payment',
@@ -40,8 +40,8 @@ export const DONATION_PROVIDERS = [
         img: stripeImg,
         alt: 'Stripe',
         labelKey: 'stripe',
-        titleKey: 'donateWithStripe',
-        ariaLabelKey: 'openStripeDonation',
+        titleKey: 'contributeWithStripe',
+        ariaLabelKey: 'openStripeContribution',
         surfaces: ['popup', 'about'],
     },
     {
@@ -51,8 +51,8 @@ export const DONATION_PROVIDERS = [
         img: googlePayImg,
         alt: 'Google Pay',
         labelKey: 'googlePay',
-        titleKey: 'donateWithGooglePay',
-        ariaLabelKey: 'openGooglePayDonation',
+        titleKey: 'contributeWithGooglePay',
+        ariaLabelKey: 'openGooglePayContribution',
         surfaces: ['popup', 'about'],
     },
     {
@@ -69,8 +69,8 @@ export const DONATION_PROVIDERS = [
         img: applePayImg,
         alt: 'Apple Pay',
         labelKey: 'applePay',
-        titleKey: 'donateWithApplePay',
-        ariaLabelKey: 'openApplePayDonation',
+        titleKey: 'contributeWithApplePay',
+        ariaLabelKey: 'openApplePayContribution',
         surfaces: ['popup', 'about'],
     },
     {
@@ -80,8 +80,8 @@ export const DONATION_PROVIDERS = [
         img: paypalImg,
         alt: 'PayPal',
         labelKey: 'paypal',
-        titleKey: 'donateWithPaypal',
-        ariaLabelKey: 'openPaypalDonation',
+        titleKey: 'contributeWithPaypal',
+        ariaLabelKey: 'openPaypalContribution',
         surfaces: ['popup', 'about'],
     },
     {
@@ -91,7 +91,7 @@ export const DONATION_PROVIDERS = [
         img: bitcoinImg,
         alt: 'Bitcoin',
         labelKey: 'bitcoin',
-        titleKey: 'donateWithBitcoin',
+        titleKey: 'contributeWithBitcoin',
         ariaLabelKey: 'copyBitcoinAddress',
         surfaces: ['about'],
     },
@@ -102,7 +102,7 @@ export const DONATION_PROVIDERS = [
         img: ethereumImg,
         alt: 'Ethereum',
         labelKey: 'ethereum',
-        titleKey: 'donateWithEthereum',
+        titleKey: 'contributeWithEthereum',
         ariaLabelKey: 'copyEthereumAddress',
         surfaces: ['about'],
     },
@@ -116,7 +116,7 @@ export const DONATION_PROVIDERS = [
         img: cardanoImg,
         alt: 'Cardano',
         labelKey: 'cardano',
-        titleKey: 'donateWithCardano',
+        titleKey: 'contributeWithCardano',
         ariaLabelKey: 'copyCardanoAddress',
         surfaces: ['about'],
     },
@@ -127,7 +127,7 @@ export const DONATION_PROVIDERS = [
         img: radixImg,
         alt: 'Radix',
         labelKey: 'radix',
-        titleKey: 'donateWithRadix',
+        titleKey: 'contributeWithRadix',
         ariaLabelKey: 'copyRadixAddress',
         surfaces: ['about'],
     },
@@ -135,9 +135,9 @@ export const DONATION_PROVIDERS = [
 
 /** @param {'popup'|'about'} surface */
 export function providersFor(surface) {
-    return DONATION_PROVIDERS.filter((provider) => provider.surfaces.includes(surface));
+    return CONTRIBUTION_PROVIDERS.filter((provider) => provider.surfaces.includes(surface));
 }
 
 export function getProvider(id) {
-    return DONATION_PROVIDERS.find((provider) => provider.id === id) || null;
+    return CONTRIBUTION_PROVIDERS.find((provider) => provider.id === id) || null;
 }

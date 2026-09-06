@@ -22,7 +22,7 @@ STRIPPED_MANIFEST_KEYS = ('key',)
 # `import.meta.env.VITE_PAYMENT_ORIGIN || <fallback>`, so an uncommented line in
 # `.env.local` overrides it at build time and the check still reports "payment origin is
 # production" — measured, not assumed. The build then carries `https://localhost:4321`
-# into `paymentService`, and every donation in the published extension quietly goes
+# into `paymentService`, and every contribution in the published extension quietly goes
 # nowhere with nothing in the panel to say why.
 #
 # This runs on `dist`, which is the artifact that actually gets uploaded, so it catches

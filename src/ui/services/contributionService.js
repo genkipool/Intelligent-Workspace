@@ -1,9 +1,9 @@
 /**
  * [AI INSTRUCTION]
- * WHAT A CLICK ON A DONATION ICON DOES.
+ * WHAT A CLICK ON A CONTRIBUTION ICON DOES.
  *
- * REUSE: the popup and the about page both call `handleDonationClick`. Neither knows
- * about clipboards, side panels or payment URLs — they render `donationProviders.js`
+ * REUSE: the popup and the about page both call `handleContributionClick`. Neither knows
+ * about clipboards, side panels or payment URLs — they render `contributionProviders.js`
  * and hand the entry back here.
  *
  * The branch is on `kind`, never on the provider id: adding a fourth gateway must not
@@ -27,12 +27,12 @@ async function copyAddress(provider) {
 }
 
 /**
- * @param {object} provider Entry from `donationProviders.js`.
+ * @param {object} provider Entry from `contributionProviders.js`.
  * @param {object} options
  * @param {'popup'|'about'} options.variant Which surface was clicked.
  * @param {Event|null} [options.event]
  */
-export async function handleDonationClick(provider, { variant, event = null }) {
+export async function handleContributionClick(provider, { variant, event = null }) {
     if (!provider) return;
 
     if (provider.kind === 'crypto') {

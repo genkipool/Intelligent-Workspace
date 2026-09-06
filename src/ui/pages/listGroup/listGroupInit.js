@@ -10,7 +10,7 @@ import { initAgentUI } from '../../../utils/agent-ui.js';
 import { exportBookmarkFolder } from '../../../utils/importExport.js';
 import '../../../lib/marked.js';
 import { initializeBookmarksView } from '../../bookmarks/bookmarks.js';
-import { getProvider } from '../../../config/donationProviders.js';
+import { getProvider } from '../../../config/contributionProviders.js';
 import { warmPaymentOrigin } from '../../services/paymentService.js';
 import { saveGeminiEntryToDb, getNoteFromDb } from '../../../utils/db.js';
 
@@ -169,7 +169,7 @@ const PANEL_VIEWS = {
         show: (options) => openOverlayView('gallery', () => showScreenshotGallery('orphan', null, null), options),
     },
     /**
-     * The donation form. It rides on the same framed-view machinery the web view uses
+     * The contribution form. It rides on the same framed-view machinery the web view uses
      * — `isUrlViewActive`, the same header, the same back button — because it is the
      * same thing: an iframe filling the panel. What it does NOT share is the DNR
      * header stripping; see `openPaymentInPanel`.
@@ -186,7 +186,7 @@ const PANEL_VIEWS = {
          * every view was dropped on the floor and `standaloneOverlayView` stayed null.
          * Back then fell through to the web view's branch — `closeUrlInPanel` — and left
          * the reader on the group list, which is not where they came from. They came
-         * from the popup, and `donationService` has already stored it as `navSource`.
+         * from the popup, and `contributionService` has already stored it as `navSource`.
          */
         show: (options) =>
             openOverlayView(
@@ -291,7 +291,7 @@ async function handleMainBackClick() {
     }
 
     if (get(isUrlViewActive)) {
-        // The donation form shares this branch with the web view, but not its meaning of
+        // The contribution form shares this branch with the web view, but not its meaning of
         // "back": opened straight from the popup, back is the popup.
         if (await leaveStandaloneOverlay('payment')) return;
 
@@ -554,7 +554,7 @@ function initRuntimeMessageListener() {
 }
 
 export async function initializeAllEvents() {
-    // Open the donation sheet's connections now, while nobody is waiting on them.
+    // Open the contribution sheet's connections now, while nobody is waiting on them.
     warmPaymentOrigin();
     initSearchEvents();
     initNotesEvents();

@@ -25,12 +25,12 @@
  * The page lives in a separate repository (`Intelligent-Workspace-Web`), deployed to
  * Vercel at `intelligentworkspace.genkipool.com`. It is a subdomain of its own and not
  * `genkipool.com`, which serves an unrelated older site: pointing this at the parent
- * domain frames that site instead, and every donation fails with nothing in the panel
+ * domain frames that site instead, and every contribution fails with nothing in the panel
  * to say why.
  *
  * PRODUCTION IS THE DEFAULT, and that is deliberate. This used to be a pair of lines
  * with the local one uncommented, which meant a release could ship pointing at
- * `localhost` — a build where every donation silently goes nowhere, with nothing in the
+ * `localhost` — a build where every contribution silently goes nowhere, with nothing in the
  * UI to say so. Now the only way to get a local origin is to set it in `.env.local`,
  * which git ignores, so it cannot be committed by accident.
  *
@@ -59,16 +59,16 @@ export function paymentPagePath(locale) {
  * field — but the amount is re-validated server-side in `api/intent.js`, because a
  * framed page's query string is user input like any other.
  */
-export const DONATION_AMOUNTS = [1, 5, 10];
+export const CONTRIBUTION_AMOUNTS = [1, 5, 10];
 
 /**
- * The amount the sheet opens on. `defaultDonationAmount` in the site's `src/data/site.ts`
+ * The amount the sheet opens on. `defaultContributionAmount` in the site's `src/data/site.ts`
  * is the same number, and the two have to move together: this one only seeds the URL, and
  * the page picks its own chip from its own constant.
  */
-export const DONATION_DEFAULT_AMOUNT = 1;
+export const CONTRIBUTION_DEFAULT_AMOUNT = 1;
 
-export const DONATION_CURRENCY = 'eur';
+export const CONTRIBUTION_CURRENCY = 'eur';
 
 /**
  * The theme tokens handed to the page so Stripe's Appearance API can match whatever

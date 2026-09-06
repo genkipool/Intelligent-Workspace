@@ -480,7 +480,7 @@
         "message": "Activar/Desactivar Orden Alfabético",
         "description": "Nombre del atajo"
     },
-    "donation": {
+    "contribution": {
         "message": "Apoyo al desarrollo",
         "description": "Título de la sección de apoyo"
     },
@@ -991,47 +991,47 @@
         "message": "Personalizar Color de Error",
         "description": "Ajustar el color usado para indicar errores en la interfaz"
     },
-    "donateWithBitcoin": {
+    "contributeWithBitcoin": {
         "message": "Apoyar con Bitcoin",
         "description": "Copiar dirección de Bitcoin"
     },
-    "donateWithCardano": {
+    "contributeWithCardano": {
         "message": "Apoyar con Cardano",
         "description": "Copiar dirección de Cardano"
     },
-    "donateWithRadix": {
+    "contributeWithRadix": {
         "message": "Apoyar con Radix",
         "description": "Copiar dirección de Radix"
     },
-    "donateWithPaypal": {
+    "contributeWithPaypal": {
         "message": "Apoyar con PayPal",
         "description": "Abrir la página de PayPal"
     },
-    "donateWithStripe": {
+    "contributeWithStripe": {
         "message": "Apoyar con tarjeta",
         "description": "Abrir el formulario para pagar con tarjeta"
     },
-    "donateWithGooglePay": {
+    "contributeWithGooglePay": {
         "message": "Apoyar con Google Pay",
         "description": "Abrir el formulario para pagar con Google Pay"
     },
-    "openStripeDonation": {
+    "openStripeContribution": {
         "message": "Abrir formulario de pago con tarjeta",
         "description": "Etiqueta ARIA para botón de pago"
     },
-    "openGooglePayDonation": {
+    "openGooglePayContribution": {
         "message": "Abrir formulario de pago con Google Pay",
         "description": "Etiqueta ARIA para botón de pago"
     },
-    "donateWithApplePay": {
+    "contributeWithApplePay": {
         "message": "Apoyar con Apple Pay",
         "description": "Abrir el formulario para pagar con Apple Pay"
     },
-    "openApplePayDonation": {
+    "openApplePayContribution": {
         "message": "Abrir formulario de pago con Apple Pay",
         "description": "Etiqueta ARIA para botón de pago"
     },
-    "donateWithEthereum": {
+    "contributeWithEthereum": {
         "message": "Apoyar con Ethereum",
         "description": "Copiar la dirección de Ethereum"
     },
@@ -1039,15 +1039,15 @@
         "message": "Copiar dirección de Ethereum",
         "description": "Etiqueta ARIA para botón de copia"
     },
-    "openPaypalDonation": {
+    "openPaypalContribution": {
         "message": "Abrir formulario de pago con PayPal",
         "description": "Etiqueta ARIA para botón de pago"
     },
-    "donationThanks": {
+    "contributionThanks": {
         "message": "¡Gracias por tu apoyo!",
         "description": "Se muestra cuando el pago de apoyo se completa"
     },
-    "donationThanksAmount": {
+    "contributionThanksAmount": {
         "message": "¡Gracias por tu aportación de $1 €!",
         "description": "Se muestra cuando el pago de apoyo se completa, con el importe",
         "placeholders": {
@@ -1056,11 +1056,11 @@
             }
         }
     },
-    "donationFailed": {
+    "contributionFailed": {
         "message": "No se ha podido completar el pago.",
         "description": "Se muestra cuando el pago falla"
     },
-    "donationLoading": {
+    "contributionLoading": {
         "message": "Cargando el formulario de pago seguro…",
         "description": "Se muestra mientras carga la página de pago"
     },
@@ -2378,7 +2378,7 @@
         "message": "Permite que la extensión muestre su interfaz en el panel lateral del navegador para un acceso rápido.",
         "description": "Explicación del permiso 'sidePanel'."
     },
-    "donationDescText": {
+    "contributionDescText": {
         "message": "Si encuentras útil esta extensión, por favor, considera apoyar su desarrollo. ¡Cada contribución es muy apreciada!",
         "description": "Texto animando a los usuarios a apoyar el proyecto."
     },
@@ -12477,8 +12477,8 @@
   "dataUseOcrItem": {
     "message": "Leer el texto de una captura descarga una vez su modelo de idioma, desde jsDelivr, y el navegador lo guarda en caché. No se envía nada sobre ti."
   },
-  "dataUseDonationItem": {
-    "message": "Donar abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
+  "dataUseContributionItem": {
+    "message": "Apoyar el proyecto abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
   },
   "dataUseNeverTitle": {
     "message": "Qué no pasa nunca"
