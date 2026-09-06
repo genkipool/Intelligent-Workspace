@@ -1,11 +1,11 @@
 <script>
     /**
      * [AI INSTRUCTION]
-     * THE DONATION ICONS, ON BOTH SURFACES.
+     * THE CONTRIBUTION ICONS, ON BOTH SURFACES.
      *
      * This component renders and nothing else. Which providers exist lives in
-     * `config/donationProviders.js`, and what a click does lives in
-     * `services/donationService.js`. It used to hold its own copy of the addresses and
+     * `config/contributionProviders.js`, and what a click does lives in
+     * `services/contributionService.js`. It used to hold its own copy of the addresses and
      * its own hand-written side-panel navigation; both are gone.
      *
      * The about page ships its own stylesheet for this block, so the class names it
@@ -13,25 +13,25 @@
      * size and blow that page's grid column open.
      */
     import { t, tt } from '../../stores/i18nStore.js';
-    import { providersFor } from '../../../config/donationProviders.js';
-    import { handleDonationClick } from '../../services/donationService.js';
+    import { providersFor } from '../../../config/contributionProviders.js';
+    import { handleContributionClick } from '../../services/contributionService.js';
 
     let { variant = 'popup' } = $props();
     const isAbout = $derived(variant === 'about');
     const providers = $derived(providersFor(isAbout ? 'about' : 'popup'));
 
-    const activate = (provider, event) => handleDonationClick(provider, { variant, event });
+    const activate = (provider, event) => handleContributionClick(provider, { variant, event });
 </script>
 
-<section class="donation-section">
+<section class="contribution-section">
     {#if !isAbout}
-        <div class="donation-title">{$t('donation')}</div>
+        <div class="contribution-title">{$t('contribution')}</div>
     {/if}
-    <div class={isAbout ? 'donation-links-container' : 'donation-options'}>
+    <div class={isAbout ? 'contribution-links-container' : 'contribution-options'}>
         {#each providers as provider (provider.id)}
             <div
-                class={isAbout ? 'donation-link' : 'donation-option'}
-                id="donation-{provider.id}"
+                class={isAbout ? 'contribution-link' : 'contribution-option'}
+                id="contribution-{provider.id}"
                 role="button"
                 tabindex="0"
                 aria-label={$t(provider.ariaLabelKey)}
@@ -40,13 +40,13 @@
                 onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && activate(provider, e)}
             >
                 {#if isAbout}
-                    <img src={provider.img} alt={provider.alt} class="donation-icon" />
+                    <img src={provider.img} alt={provider.alt} class="contribution-icon" />
                 {:else}
-                    <div class="donation-icon-container" id="{provider.id}-link">
+                    <div class="contribution-icon-container" id="{provider.id}-link">
                         <img src={provider.img} alt={provider.alt} />
                     </div>
                 {/if}
-                <div class="donation-label">{$t(provider.labelKey)}</div>
+                <div class="contribution-label">{$t(provider.labelKey)}</div>
             </div>
         {/each}
     </div>

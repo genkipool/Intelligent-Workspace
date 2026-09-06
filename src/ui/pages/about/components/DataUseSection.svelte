@@ -38,7 +38,7 @@
         <li>{$t('dataUseGeminiItem')}</li>
         <li>{$t('dataUseRadioItem')}</li>
         <li>{$t('dataUseOcrItem')}</li>
-        <li>{$t('dataUseDonationItem')}</li>
+        <li>{$t('dataUseContributionItem')}</li>
     </ul>
 
     <h4>{$t('dataUseNeverTitle')}</h4>

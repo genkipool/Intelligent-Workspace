@@ -215,7 +215,7 @@ asked for can be shown. The floating video player does the same thing for one vi
   bind a rule that outlives it, the same list is also carried on every rule as
   `excludedRequestDomains`, so the exclusion is enforced by Chrome's own matcher rather than by
   the order events happen to arrive in. Verified with `declarativeNetRequest.testMatchOutcome`
-  in a real browser: with the panel's rules installed, the donation page matches no rule at all
+  in a real browser: with the panel's rules installed, the contribution page matches no rule at all
   while an ordinary site matches both.
 - Non-`http(s)` URLs are refused.
 
@@ -311,7 +311,7 @@ is worth a second look:
 - No extension page loads a remote script. The `extension_pages` CSP is `script-src 'self'
   'wasm-unsafe-eval'`, which forbids it, and there is no `eval` or `new Function` anywhere in
   the source.
-- Stripe.js, which the donation form needs, never runs in an extension page. It runs on the
+- Stripe.js, which the contribution form needs, never runs in an extension page. It runs on the
   hosted payment page inside a frame, on its own origin, which is the whole reason that page is
   hosted separately.
 

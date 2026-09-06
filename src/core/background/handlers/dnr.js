@@ -449,7 +449,7 @@ async function getSidePanelRuleTabIds() {
  * the feature. For a payment page it is clickjacking — it is precisely the attack
  * `frame-ancestors` exists to stop — and it breaks the SCA/3DS redirect besides.
  *
- * The donation form does not need any of it: `intelligentworkspace.genkipool.com` grants
+ * The contribution form does not need any of it: `intelligentworkspace.genkipool.com` grants
  * this extension
  * framing rights itself, and `openPaymentInPanel` frames it directly without ever
  * calling this handler. This list is the belt to that pair of braces, so a later change
@@ -524,7 +524,7 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
                      * That check refuses to *install* a rule for a payment host. It does
                      * nothing about a rule already standing: the second rule below is
                      * scoped by tab, not by domain, so with a web view open it strips the
-                     * headers off anything the panel then loads — the donation sheet
+                     * headers off anything the panel then loads — the contribution sheet
                      * included, whose own CSP and `permissions-policy: payment=…` are what
                      * Stripe and Google Pay need. Chrome tears down the panel's document on
                      * navigation without running `closeUrlInPanel`, so the cleanup message
@@ -554,7 +554,7 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
                      * That check refuses to *install* a rule for a payment host. It does
                      * nothing about a rule already standing: the second rule below is
                      * scoped by tab, not by domain, so with a web view open it strips the
-                     * headers off anything the panel then loads — the donation sheet
+                     * headers off anything the panel then loads — the contribution sheet
                      * included, whose own CSP and `permissions-policy: payment=…` are what
                      * Stripe and Google Pay need. Chrome tears down the panel's document on
                      * navigation without running `closeUrlInPanel`, so the cleanup message

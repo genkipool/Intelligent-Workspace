@@ -4,7 +4,7 @@
     import { themeStore } from '../../stores/themeStore.js';
     import Icons from '../../components/Icons.svelte';
     import Notification from '../../components/common/Notification.svelte';
-    import DonationSection from '../../components/common/DonationSection.svelte';
+    import ContributionSection from '../../components/common/ContributionSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import VersionHistorySection from './components/VersionHistorySection.svelte';
@@ -112,9 +112,9 @@
                 <h3>{$t('feedbackSupport')}</h3>
                 <p>{$t('feedbackDescText')}</p>
                 <FeedbackSection variant="about" email="intelligent.tab.group@gmail.com" />
-                <h3 class="donation-title">{$t('donation')}</h3>
-                <p>{$t('donationDescText')}</p>
-                <DonationSection variant="about" />
+                <h3 class="contribution-title">{$t('contribution')}</h3>
+                <p>{$t('contributionDescText')}</p>
+                <ContributionSection variant="about" />
                 <h3 class="acknowledgements-title">{$t('acknowledgements')}</h3>
                 <p class="acknowledgements-text">
                     <span>{$t('ThanksDesc_nameThanksDesc_part1')}</span><span class="acknowledged-name"

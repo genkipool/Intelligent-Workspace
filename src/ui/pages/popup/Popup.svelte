@@ -9,7 +9,7 @@
     import ThemeSelector from '../../components/common/ThemeSelector.svelte';
     import SettingsSection from '../../components/common/SettingsSection.svelte';
     import ActionButtonGrid from '../../components/common/ActionButtonGrid.svelte';
-    import DonationSection from '../../components/common/DonationSection.svelte';
+    import ContributionSection from '../../components/common/ContributionSection.svelte';
     import FeedbackSection from '../../components/common/FeedbackSection.svelte';
     import Notification from '../../components/common/Notification.svelte';
     import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
@@ -85,7 +85,7 @@
     }
 
     /**
-     * The decision itself lives in `services/panelNavigation.js`, because the donation
+     * The decision itself lives in `services/panelNavigation.js`, because the contribution
      * icons need exactly the same one and used to carry their own copy of it.
      */
     function handleNavigation(event, popupUrl, sidePanelUrl, sourcePath) {
@@ -366,7 +366,7 @@
             <ActionButtonGrid items={quickAccessItems} toggles={{ 'quick-web-activity-btn': trackingToggle }} />
         </section>
 
-        <DonationSection />
+        <ContributionSection />
 
         <section class="section feedback-section">
             <div class="section-title">{$t('feedbackSupport')}</div>
