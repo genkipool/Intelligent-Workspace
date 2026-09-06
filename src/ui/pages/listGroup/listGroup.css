@@ -3920,7 +3920,7 @@ body.popup-window {
 .gemini-model-dropdown {
     position: absolute;
     bottom: calc(100% + 4px);
-    /* Se posiciona encima del selector */
+    /* Sits above the select */
     right: 8px;
     background-color: var(--bg-panel-color);
     border: 1px solid var(--border-color);
@@ -4069,8 +4069,8 @@ input[type='search']::-webkit-search-cancel-button:hover {
 }
 
 /* 
- * Focus style for all input fields, text areas, and selectors
- * dentro de los modales. Esto proporciona una respuesta visual clara.
+ * Focus style for all input fields, text areas and selects inside the modals,
+ * so that what has focus is unmistakable.
  */
 .modal-overlay input:not([type='checkbox']):not([type='radio']):focus-visible,
 .modal-overlay textarea:focus-visible,
@@ -7647,7 +7647,7 @@ summary.stats-toggle-btn::marker {
     .special-delete-modal {
         max-width: 500px;
         height: 500px;
-        /* Altura fija para consistencia visual */
+        /* Fixed height, so the panel does not jump */
     }
 }
 
