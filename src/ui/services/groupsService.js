@@ -544,28 +544,34 @@ export async function updateDuplicateCountBadge() {
     const run = ++duplicateBadgeRun;
     const isStale = () => run !== duplicateBadgeRun;
 
-    const $isBookmarksViewActive = get(isBookmarksViewActive) || get(currentMainView) === 'bookmarks';
-    const isGroupsViewActive =
-        get(currentMainView) === 'groups' &&
-        !get(isBookmarksViewActive) &&
-        !get(isGeminiViewActive) &&
-        !get(isNotesViewActive) &&
-        !get(isGalleryViewActive) &&
-        !get(isUrlViewActive);
-    const isRelevantView = $isBookmarksViewActive || isGroupsViewActive;
+    const checkIsRelevantView = () => {
+        const isOverlay =
+            get(isGeminiViewActive) || get(isNotesViewActive) || get(isGalleryViewActive) || get(isUrlViewActive);
+        if (isOverlay) return false;
+        const $isBookmarksViewActive = get(isBookmarksViewActive) || get(currentMainView) === 'bookmarks';
+        const isGroupsViewActive = get(currentMainView) === 'groups' && !get(isBookmarksViewActive);
+        return $isBookmarksViewActive || isGroupsViewActive;
+    };
 
-    if (!isRelevantView) {
+    if (!checkIsRelevantView()) {
         duplicateBadge.classList.add('hidden');
         removeDuplicatesBtn.classList.add('hidden');
         return;
     }
+    const $isBookmarksViewActive = get(isBookmarksViewActive) || get(currentMainView) === 'bookmarks';
     const tooltipKey = $isBookmarksViewActive ? 'removeDuplicateBookmarksTooltip' : 'removeDuplicateTabs';
     removeDuplicatesBtn.setAttribute('data-i18n-title', tooltipKey);
     applyTranslations(removeDuplicatesBtn);
 
     if ($isBookmarksViewActive) {
         chrome.runtime.sendMessage({ action: 'getDuplicateBookmarkCount' }, (response) => {
-            if (isStale()) return;
+            if (isStale() || !checkIsRelevantView()) {
+                if (!checkIsRelevantView()) {
+                    duplicateBadge.classList.add('hidden');
+                    removeDuplicatesBtn.classList.add('hidden');
+                }
+                return;
+            }
             if (chrome.runtime.lastError) {
                 console.error('Error getting duplicate bookmark count:', chrome.runtime.lastError.message);
                 duplicateBadge.classList.add('hidden');
@@ -608,7 +614,13 @@ export async function updateDuplicateCountBadge() {
                 return sum + (count > 1 ? count - 1 : 0);
             }, 0);
 
-            if (isStale()) return;
+            if (isStale() || !checkIsRelevantView()) {
+                if (!checkIsRelevantView()) {
+                    duplicateBadge.classList.add('hidden');
+                    removeDuplicatesBtn.classList.add('hidden');
+                }
+                return;
+            }
             if (duplicateCount > 0) {
                 duplicateBadge.textContent = duplicateCount > 999 ? '999+' : String(duplicateCount);
                 duplicateBadge.classList.remove('hidden');

@@ -55,3 +55,10 @@ assets/icons/backup-old/
 
 # Zips
 *.zip
+
+# The private half of the development signing key. Its public half is the `key` field
+# in manifest.json, which is what pins the unpacked extension to one ID
+# (phfhghnjjimkbbmfjcjgaegjombeophi) instead of a new one per machine — that ID is named
+# in the payment site's frame-ancestors, so it has to stay stable. The public half is
+# meant to be committed; this half signs, so it is not, and the remote is public.
+dev-key.pem

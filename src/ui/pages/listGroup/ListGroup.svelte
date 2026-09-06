@@ -66,6 +66,7 @@
         gemini: 'geminiViewTitle',
         notes: 'notesViewTitle',
         gallery: 'screenshotGalleryTitle',
+        url: 'webViewTitle',
     };
     /**
      * The views painted *over* the group list rather than replacing it. They still get
@@ -73,7 +74,7 @@
      * the assistant has always had — which is what stops the page showing the group
      * list's chrome for a moment on the way in.
      */
-    const OVERLAY_VIEWS = new Set(['notes', 'gallery', 'gemini']);
+    const OVERLAY_VIEWS = new Set(['notes', 'gallery', 'gemini', 'url']);
     const requestedView = new URLSearchParams(window.location.search).get('view');
     const initialTitleKey = VIEW_TITLE_KEYS[requestedView] || 'listTabGroups';
 

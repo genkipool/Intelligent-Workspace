@@ -1305,7 +1305,7 @@
     "message": "About Intelligent Workspace"
   },
   "appDescription": {
-    "message": "Intelligent Workspace helps you automatically organize your browser tabs into relevant groups based on custom rules or website domains, making your browsing experience cleaner and more productive."
+    "message": "Intelligent Workspace is your smart workstation for faster, cleaner, and stress-free browsing. It automatically organizes your tabs into relevant groups based on your rules or domains, while bringing key productivity tools into the side panel to handle routine tasks in just a few clicks without leaving your page or losing focus. By centralizing your entire workflow into one intuitive environment, you eliminate the cognitive overload and friction of installing and learning multiple separate extensions. A single cohesive purpose: helping you work with greater focus, speed, and peace of mind."
   },
   "versionHistory": {
     "message": "Version History"
@@ -7199,6 +7199,14 @@
   "permOffscreen": {
     "message": "Enables background audio playback and text-to-speech without disrupting your active tabs."
   },
+  "featuresOverviewTitle": {
+    "message": "Workspace & Workflow Capabilities",
+    "description": "About page: features overview section title"
+  },
+  "featuresOverviewDesc": {
+    "message": "Intelligent Workspace provides a unified environment designed to organize your tabs, streamline daily tasks, and help you stay focused without switching tools.",
+    "description": "About page: features overview description"
+  },
   "sectionManageRules": {
     "message": "Manage rules"
   },
@@ -7225,11 +7233,11 @@
       "description": "About page: section title"
   },
   "sectionVideo": {
-      "message": "Video",
+      "message": "Floating Video & PiP Tools",
       "description": "About page: section title"
   },
   "sectionWebActivity": {
-      "message": "Web activity",
+      "message": "Web Activity & Digital Wellbeing",
       "description": "About page: section title"
   },
   "feature_webActivity_tracking": {
@@ -10330,7 +10338,7 @@
     "message": "Previous station: $1"
   },
   "sectionMusicPlayer": {
-    "message": "Music Player"
+    "message": "Focus Audio & Concentration"
   },
   "feature_music_local_folder": {
     "message": "Play music from local folders directly in the browser."
@@ -12458,5 +12466,50 @@
   "errorConvertingImages": {
     "message": "$1 image(s) could not be converted to $2.",
     "description": "Conversion failed"
+  },
+  "dataUseTitle": {
+    "message": "How Intelligent Workspace handles your data"
+  },
+  "dataUseIntro": {
+    "message": "Intelligent Workspace reads your tabs, history, bookmarks and the pages you act on. Here is where all of that goes, in full."
+  },
+  "dataUseLocalTitle": {
+    "message": "It stays on this device"
+  },
+  "dataUseLocalBody": {
+    "message": "Your groups, notes, screenshots, saved sessions, time records and Pomodoro history are kept in this browser's own storage. There is no account and no server of ours for them to go to."
+  },
+  "dataUseSyncTitle": {
+    "message": "Your settings follow your Chrome profile"
+  },
+  "dataUseSyncBody": {
+    "message": "Grouping rules, snippets and shortcuts live in Chrome's synced storage, so a second computer signed into the same profile behaves the same way. With Chrome sync off, none of it leaves this machine. Time spent per site is deliberately excluded, behind a switch of its own that starts off."
+  },
+  "dataUseLeavesTitle": {
+    "message": "What leaves the device, and only when you ask for it"
+  },
+  "dataUseGeminiItem": {
+    "message": "The assistant sends the page you point it at, anything you attach, and the titles of your open tabs when you search them by description, to Google's Gemini API under your own API key. Chrome's built-in on-device model sends nothing. The assistant stays off until you set it up."
+  },
+  "dataUseRadioItem": {
+    "message": "Searching internet radio sends what you typed to the public radio-browser.info directory."
+  },
+  "dataUseOcrItem": {
+    "message": "Reading text out of a screenshot downloads its language model once, from jsDelivr, and the browser caches it. Nothing about you is sent."
+  },
+  "dataUseDonationItem": {
+    "message": "Donating opens our payment page, which handles the card through Stripe. Card details never reach the extension."
+  },
+  "dataUseNeverTitle": {
+    "message": "What never happens"
+  },
+  "dataUseNeverBody": {
+    "message": "No analytics, no tracking, no advertising. Nothing you browse, read or write is collected, sold or shared with anyone."
+  },
+  "dataUsePolicyLink": {
+    "message": "Read the full privacy policy"
+  },
+  "dataUsePrivacyLink": {
+    "message": "Privacy and your data"
   }
 }

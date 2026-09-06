@@ -1276,7 +1276,7 @@
         "message": "Acerca de Intelligent Workspace"
     },
     "appDescription": {
-        "message": "Intelligent Workspace te ayuda a organizar automáticamente tus pestañas del navegador en grupos relevantes según reglas personalizadas o dominios web, haciendo tu experiencia de navegación más limpia y productiva."
+        "message": "Intelligent Workspace es tu estación de trabajo inteligente para una navegación más rápida, ordenada y libre de estrés. Te ayuda a organizar automáticamente tus pestañas en grupos relevantes según tus reglas o dominios, y reúne en el panel lateral herramientas clave de productividad para resolver tareas habituales en pocos clics sin salir de tu página ni perder la concentración. Al centralizar todo tu flujo de trabajo en un único entorno intuitivo, eliminas la sobrecarga y la fricción de instalar y aprender múltiples extensiones dispersas. Un único propósito: ayudarte a trabajar con mayor enfoque, rapidez y calma mental."
     },
     "versionHistory": {
         "message": "Historial de versiones"
@@ -7257,6 +7257,14 @@
     "permOffscreen": {
         "message": "Permite la reproducción de audio y lectura en voz alta en segundo plano sin interrumpir la navegación activa."
     },
+    "featuresOverviewTitle": {
+        "message": "Herramientas de organización y flujo de trabajo",
+        "description": "About page: features overview section title"
+    },
+    "featuresOverviewDesc": {
+        "message": "Intelligent Workspace ofrece un entorno unificado diseñado para organizar tus pestañas, agilizar tareas cotidianas y ayudarte a mantener la concentración sin cambiar de herramientas.",
+        "description": "About page: features overview description"
+    },
     "sectionManageRules": {
         "message": "Gestionar reglas"
     },
@@ -7283,11 +7291,11 @@
         "description": "About page: section title"
     },
     "sectionVideo": {
-        "message": "Vídeo",
+        "message": "Vídeo flotante (PiP) y referencias",
         "description": "About page: section title"
     },
     "sectionWebActivity": {
-        "message": "Actividad web",
+        "message": "Actividad web y bienestar digital",
         "description": "About page: section title"
     },
     "feature_webActivity_tracking": {
@@ -10310,7 +10318,7 @@
         "message": "Anterior emisora: $1"
     },
     "sectionMusicPlayer": {
-        "message": "Reproductor de Música"
+        "message": "Audio y música de concentración"
     },
     "feature_music_local_folder": {
         "message": "Reproduce música desde carpetas locales directamente en el navegador."
@@ -12438,5 +12446,50 @@
     "errorConvertingImages": {
         "message": "No se pudieron convertir $1 imagen(es) a $2.",
         "description": "Falló la conversión"
-    }
+    },
+  "dataUseTitle": {
+    "message": "Qué hace Intelligent Workspace con tus datos"
+  },
+  "dataUseIntro": {
+    "message": "Intelligent Workspace lee tus pestañas, tu historial, tus marcadores y las páginas sobre las que actúas. Esto es, entero, adónde va todo eso."
+  },
+  "dataUseLocalTitle": {
+    "message": "Se queda en este dispositivo"
+  },
+  "dataUseLocalBody": {
+    "message": "Tus grupos, notas, capturas, sesiones guardadas, registros de tiempo e historial de Pomodoro se guardan en el almacenamiento del propio navegador. No hay cuenta ni hay servidor nuestro al que puedan ir."
+  },
+  "dataUseSyncTitle": {
+    "message": "Tus ajustes acompañan a tu perfil de Chrome"
+  },
+  "dataUseSyncBody": {
+    "message": "Las reglas de agrupado, los snippets y los atajos viven en el almacenamiento sincronizado de Chrome, así que un segundo ordenador con el mismo perfil se comporta igual. Con la sincronización de Chrome apagada, nada de eso sale de esta máquina. El tiempo por sitio queda deliberadamente fuera, tras un interruptor propio que empieza apagado."
+  },
+  "dataUseLeavesTitle": {
+    "message": "Qué sale del dispositivo, y solo cuando tú lo pides"
+  },
+  "dataUseGeminiItem": {
+    "message": "El asistente envía la página que le señalas, lo que le adjuntes y los títulos de tus pestañas abiertas cuando las buscas por descripción, a la API de Gemini de Google con tu propia clave. El modelo local de Chrome no envía nada. El asistente está apagado hasta que lo configuras."
+  },
+  "dataUseRadioItem": {
+    "message": "Buscar radio por internet envía lo que escribes al directorio público radio-browser.info."
+  },
+  "dataUseOcrItem": {
+    "message": "Leer el texto de una captura descarga una vez su modelo de idioma, desde jsDelivr, y el navegador lo guarda en caché. No se envía nada sobre ti."
+  },
+  "dataUseDonationItem": {
+    "message": "Donar abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
+  },
+  "dataUseNeverTitle": {
+    "message": "Qué no pasa nunca"
+  },
+  "dataUseNeverBody": {
+    "message": "Ni analítica, ni rastreo, ni publicidad. Nada de lo que navegas, lees o escribes se recopila, se vende ni se comparte con nadie."
+  },
+  "dataUsePolicyLink": {
+    "message": "Leer la política de privacidad completa"
+  },
+  "dataUsePrivacyLink": {
+    "message": "Privacidad y tus datos"
+  }
 }

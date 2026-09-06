@@ -3,6 +3,11 @@
     import FeatureItem from '../../../components/common/FeatureItem.svelte';
 </script>
 
+<section class="features-overview card">
+    <h3>{$t('featuresOverviewTitle')}</h3>
+    <p class="features-overview-desc">{$t('featuresOverviewDesc')}</p>
+</section>
+
 <section class="features-section card">
     <h3>{$t('sectionManageRules')}</h3>
     <div class="features-grid">
@@ -290,3 +295,11 @@
         <FeatureItem isMaterial={true} iconName="vertical_split" textKey="feature_omnibar_side_panel" />
     </div>
 </section>
+
+<style>
+    .features-overview-desc {
+        margin: 0;
+        line-height: 1.6;
+        color: var(--text-color);
+    }
+</style>

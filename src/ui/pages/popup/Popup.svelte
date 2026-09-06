@@ -402,6 +402,28 @@
             </div>
         </section>
 
+        <div class="privacy-link-container">
+            <!--
+                The disclosure is reachable from the surface people actually open, not only
+                from the store listing. It deep-links into the About page's own section
+                rather than opening anything of its own: one account of what happens to a
+                person's data, in one place.
+            -->
+            <a
+                href="#privacy"
+                id="privacy-link-popup"
+                class="footer-link"
+                onclick={(e) => {
+                    e.preventDefault();
+                    chrome.tabs.create({
+                        url: chrome.runtime.getURL('src/ui/pages/about/about.html#privacy-section'),
+                    });
+                }}
+            >
+                {$t('dataUsePrivacyLink')}
+            </a>
+        </div>
+
         <div class="main-footer-wrapper">
             <a
                 href="#footer"

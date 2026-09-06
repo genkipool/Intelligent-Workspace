@@ -8,6 +8,7 @@
         isNotesViewActive,
         isGalleryViewActive,
         isGeminiViewActive,
+        isUrlViewActive,
     } from '../../../stores/appStore.svelte.js';
     import { pickImageFiles, pickImageFolder } from '../../../services/screenshotsService.js';
     import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
@@ -51,6 +52,7 @@
         notes: 'notesViewTitle',
         gallery: 'screenshotGalleryTitle',
         gemini: 'geminiViewTitle',
+        url: 'webViewTitle',
     };
 
     let overlayTitleKey = $derived(
@@ -61,7 +63,9 @@
                   ? 'screenshotGalleryTitle'
                   : $isGeminiViewActive
                     ? 'geminiViewTitle'
-                    : null),
+                    : $isUrlViewActive
+                      ? 'webViewTitle'
+                      : null),
     );
 
     let titleKey = $derived(overlayTitleKey || VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
@@ -228,7 +232,10 @@
             type="button"
             class="control-btn"
             title={$tt('toggleSearch')}
-            class:hidden={startsHidden('search-toggle-btn')}
+            class:hidden={startsHidden('search-toggle-btn') ||
+                $isUrlViewActive ||
+                $isNotesViewActive ||
+                $isGalleryViewActive}
         >
             <svg width="24" height="24" transform="scale(-1 1)" aria-hidden="true" focusable="false">
                 <use href="#icon-search-global"></use>
@@ -310,7 +317,11 @@
             type="button"
             class="control-btn"
             title={$tt('removeDuplicateTabs')}
-            class:hidden={startsHidden('remove-duplicates-btn')}
+            class:hidden={startsHidden('remove-duplicates-btn') ||
+                $isUrlViewActive ||
+                $isNotesViewActive ||
+                $isGalleryViewActive ||
+                $isGeminiViewActive}
         >
             <svg width="24" height="24" aria-hidden="true" focusable="false">
                 <use href="#icon-duplicates"></use>

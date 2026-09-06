@@ -543,9 +543,10 @@ const viewConfig = {
      * that list, generalised.
      *
      * These must agree with what `updateHeaderButtonsVisibility` settles on a moment
-     * later, or the difference between the two *is* the flash. Which is why the notes
-     * and the gallery do not list `search-toggle-btn`: `updateMainPanelButtons` takes
-     * it away from both of them by name.
+     * later, or the difference between the two *is* the flash. Which is why the notes,
+     * the gallery and the side browser (url) do not list `search-toggle-btn`:
+     * `updateMainPanelButtons` takes it away from them by name (as the search bar is
+     * already visible or not needed).
      *
      * Buttons that depend on data rather than on the view — whether there are any
      * screenshots to download, how many duplicates there are — belong in
@@ -558,6 +559,7 @@ const viewConfig = {
     // has to wait for an answer before it can appear.
     gallery: ['upload-images-btn', 'delete-all-context-btn'],
     gemini: ['search-toggle-btn', 'expand-all-btn', 'pin-toggle', 'add-api-key-btn', 'schedule-gemini-btn'],
+    url: [],
 };
 
 const allButtonIds = [
@@ -845,7 +847,10 @@ export function updateMainPanelButtons(currentView) {
             const isAlwaysVisibleInSpecial = id === 'search-toggle-btn';
 
             let shouldHide = (isTrulySpecialView && !isAlwaysVisibleInSpecial) || !visibleIds.has(id);
-            if (id === 'search-toggle-btn' && (get(isNotesViewActive) || get(isGalleryViewActive))) {
+            if (
+                id === 'search-toggle-btn' &&
+                (get(isNotesViewActive) || get(isGalleryViewActive) || get(isUrlViewActive))
+            ) {
                 shouldHide = true;
             }
 
@@ -1327,8 +1332,6 @@ function createPanelIframe({ src, sandbox = null, allow = null, referrerPolicy =
  * group chrome hidden, the header renamed. Returns the container to append into.
  */
 function enterFramedView(titleKey, context = null) {
-    isUrlViewActive.set(true);
-    currentPanelContext.set(context);
     geminiStore.closeView(true);
     if (!context || !context.fromNotes) {
         closeNotesView(true);
@@ -1340,7 +1343,11 @@ function enterFramedView(titleKey, context = null) {
     }
     closeScreenshotGallery();
     closeUrlInPanel(true);
+    isUrlViewActive.set(true);
     currentPanelContext.set(context);
+
+    document.body.classList.remove('groups-view-active', 'bookmarks-view-active');
+    document.body.classList.add('url-view-active');
 
     const mainHeaderTitle = document.getElementById('main-header-title');
     if (mainHeaderTitle) mainHeaderTitle.setAttribute('data-i18n', titleKey);
@@ -1350,12 +1357,23 @@ function enterFramedView(titleKey, context = null) {
         if (el) el.style.display = 'none';
     });
 
+    const duplicateBadge = document.getElementById('duplicate-badge');
+    const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
+    if (duplicateBadge) duplicateBadge.classList.add('hidden');
+    if (removeDuplicatesBtn) removeDuplicatesBtn.classList.add('hidden');
+
+    updateHeaderButtonsVisibility();
+
     return { container, mainHeaderTitle };
 }
 
 /** Repaints the header chrome once the frame is on screen. */
 function settleFramedView(mainHeaderTitle) {
     isUrlViewActive.set(true);
+    const duplicateBadge = document.getElementById('duplicate-badge');
+    const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
+    if (duplicateBadge) duplicateBadge.classList.add('hidden');
+    if (removeDuplicatesBtn) removeDuplicatesBtn.classList.add('hidden');
     updateHeaderButtonsVisibility();
     updateScrollButtons();
     updateBackButtonTooltip();
@@ -1825,6 +1843,7 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     if (searchRow) searchRow.style.display = '';
 
     isUrlViewActive.set(false);
+    document.body.classList.remove('url-view-active');
     currentPanelUrl.set(null);
     previousIframeUrl.set(null);
     detachFrameScrollbar();
@@ -2306,6 +2325,7 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
 
     document.body.classList.toggle('notes-view-active', get(isNotesViewActive));
     document.body.classList.toggle('gallery-view-active', get(isGalleryViewActive));
+    document.body.classList.toggle('url-view-active', get(isUrlViewActive));
     // Left the gallery: the next one that opens says for itself what it holds.
     if (!get(isGalleryViewActive)) _galleryHasScreenshots = false;
 
