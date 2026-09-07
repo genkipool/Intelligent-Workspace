@@ -24,6 +24,9 @@ yarn.lock
 *.njsproj
 *.sln
 *.sw?
+.*.sw?
+*.kate-swp
+.*.kate-swp
 
 # AI Agents
 .antigravitycli
