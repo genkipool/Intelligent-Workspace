@@ -36,7 +36,6 @@
     <h4>{$t('dataUseLeavesTitle')}</h4>
     <ul>
         <li>{$t('dataUseGeminiItem')}</li>
-        <li>{$t('dataUseRadioItem')}</li>
         <li>{$t('dataUseOcrItem')}</li>
         <li>{$t('dataUseContributionItem')}</li>
     </ul>

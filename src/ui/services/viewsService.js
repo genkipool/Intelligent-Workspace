@@ -464,7 +464,6 @@ const viewConfig = {
         'regroup-btn',
         'open-gemini-view-btn',
         'open-pomodoro-btn',
-        'open-music-player-btn',
         'pin-toggle',
         'mute-all-tabs-btn',
         'remove-duplicates-btn',
@@ -584,7 +583,6 @@ const allButtonIds = [
     'open-gemini-view-btn',
     'mute-all-tabs-btn',
     'open-pomodoro-btn',
-    'open-music-player-btn',
     'remove-duplicates-btn',
     'expand-all-btn',
     'toggle-view-panel-btn',
@@ -726,8 +724,8 @@ export async function switchMainView(
     if (skipReveal) {
         // Taken off rather than left alone: switching to the notes *from* the group
         // list would otherwise keep the class, and with it the group chrome the
-        // stylesheet hangs off it — the pomodoro and music panels among other things,
-        // which would sit there under the notes.
+        // stylesheet hangs off it — the pomodoro panel among other things, which would
+        // sit there under the notes.
         document.body.classList.remove('groups-view-active', 'bookmarks-view-active');
     } else {
         document.body.classList.toggle('groups-view-active', viewName === 'groups');

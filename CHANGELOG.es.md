@@ -176,6 +176,29 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   página abierta en el panel o desde la ventana emergente, que forzaban el panel se
   pulsara lo que se pulsara.
 
+### Eliminado
+
+- **El reproductor de música y la radio en línea salen de la extensión.** Se van para
+  estrechar lo que la ficha tiene que defender ante la política de propósito único de
+  Google: son dos funciones que, por útiles que sean de fondo mientras se trabaja, no
+  se explican solas al lado de la gestión de pestañas.
+
+  Con ellas se van el panel del reproductor, la ventana de emisoras, sus dos almacenes
+  de IndexedDB, la mitad del documento offscreen que reproducía el audio, 33 KB de
+  hoja de estilos y 115 claves de traducción por idioma. La extensión deja de hablar
+  con `api.radio-browser.info` y con los servidores de las emisoras, así que esas dos
+  filas desaparecen también de la política de privacidad.
+
+  **No se ha quitado ningún permiso del manifest**, y conviene saber por qué: el
+  documento offscreen lo crea el pomodoro para su sonido de fin de ciclo, así que
+  `offscreen` sigue haciendo falta; el directorio de emisoras se pedía con un `fetch`
+  corriente que ya cubría `host_permissions`, que la extensión necesita igualmente
+  para sus content scripts; y elegir la carpeta de música usaba `showDirectoryPicker`,
+  que no pide permiso ninguno.
+
+  El código no se ha perdido: vive en la rama `feature/musica-y-radio`, y devolverlo
+  es mezclarla.
+
 ### Corregido
 
 - Un grupo automático coge el color del sitio que contiene muchas más veces, y deja de

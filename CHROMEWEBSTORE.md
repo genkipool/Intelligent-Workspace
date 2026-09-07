@@ -42,20 +42,15 @@
   So the description below states the purpose and groups the tools **under** it, with one
   bullet for the working tools as a family rather than a line each. Everything that touches
   a sensitive permission is named there: capture and text recognition, reading aloud, the
-  media players, the cookie editor, and the assistant.
+  floating video player, the cookie editor, and the assistant.
 
 ### How each tool serves that one purpose
 
-The reasonable question a reviewer asks of a workspace this wide is what a radio has to do
-with tab management. The answer the product is built on is that productivity is not only the
-speed of a task: it is also whether the person can concentrate, and how much friction and
-stress the work carries. Each tool below is here because it removes friction from a working
-session, and none of them is a separate product bolted on.
-
-- **Music and internet radio.** Background sound is how a great many people hold their
-  concentration while they study or work, and how they take the edge off a stressful stretch.
-  It plays in the workspace so that keeping it going does not cost another tab, another
-  window and another thing to manage.
+The reasonable question a reviewer asks of a workspace this wide is what a screenshot has
+to do with tab management. The answer the product is built on is that productivity is not
+only the speed of a task: it is also whether the person can concentrate, and how much
+friction and stress the work carries. Each tool below is here because it removes friction
+from a working session, and none of them is a separate product bolted on.
 - **Text recognition on a screenshot.** People work with images that have words in them —
   a scanned invoice, a slide, a screenshot a colleague sent — and then need those words in
   an email or a message. Reading them out of the picture is the difference between a
@@ -124,7 +119,7 @@ HOW IT WORKS
 
 • The keyboard, for all of it. Link hints, jump markers, and an omnibar that searches tabs, history, bookmarks and your own notes by prefix.
 
-• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, a floating video player, and background music and radio.
+• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, and a floating video player.
 
 • An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. To jump to an open tab in your own words, type `find` and a space in Chrome's address bar and describe the one you are after. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
 
@@ -161,7 +156,7 @@ CÓMO FUNCIONA
 
 • El teclado, para todo. Etiquetas sobre los enlaces, marcadores de salto y una barra de comandos que busca por prefijo en pestañas, historial, marcadores y tus notas.
 
-• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, reproductor de vídeo flotante, y música y radio de fondo.
+• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, y reproductor de vídeo flotante.
 
 • Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Para saltar a una pestaña abierta con tus palabras, escribe `find` y un espacio en la barra de direcciones de Chrome y descríbela. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
 
@@ -330,7 +325,7 @@ places, the listing and that section. One without the other is the discrepancy t
 review, and it is the thing to check before any release that touches data.
 
 ### Data Collection Checklist
-- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download).
+- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download).
 
 | Data Type | Collected? | Transmitted Off-Device? | Purpose | Shared with 3rd Parties? |
 |:---|:---|:---|:---|:---|
@@ -340,7 +335,6 @@ review, and it is the thing to check before any release that touches data.
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
 | **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking for an open tab — from the panel, or with the `find` keyword in Chrome's address bar — sends the titles and addresses of the open tabs, because that is the list being searched. It is matched locally first and only reaches the API when the local result is ambiguous, so most searches never leave the browser at all. | Only to the Google Gemini API, on the user's command |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
-| **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
 | **Link domains** | Yes (transient) | **No** | Every site icon the extension draws or reads comes from Chrome's own favicon store, through the worker, so no address leaves the browser to fetch one. That covers the omnibar rows, the panel and bookmark lists, and the colour an automatic group takes from the site it holds. The omnibar used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; the group colour used to fetch the icon address the page itself declared, which named the page being read to its own server for an image Chrome had already rasterised. Under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. Both are gone. | No |
 | **Nothing identifying** | — | Yes (first OCR run only) | The Tesseract language model (`eng`/`spa` `.traineddata`) is fetched once from `cdn.jsdelivr.net` and cached by Chrome. It is model data, not code: the OCR engine's WebAssembly core ships inside the package and is never fetched. Verified by observing the worker's own network on a clean profile. | No |
 
@@ -450,7 +444,7 @@ where it sits, and every moment something crosses the network.
 | **Controller** | Luis Reoyo (GENKI Organización), Spain. |
 | **Purpose** | To run the features of the extension on your own device, and to serve this website. |
 | **Legal basis** | Your consent, given by installing the extension and by switching on each optional feature, and our legitimate interest in serving and securing the website. |
-| **Recipients** | None by default. A feature you trigger yourself can reach Google, the radio directory, YouTube, jsDelivr, Stripe or Vercel, each listed in section 5. |
+| **Recipients** | None by default. A feature you trigger yourself can reach Google, YouTube, jsDelivr, Stripe or Vercel, each listed in section 5. |
 | **Transfers** | Those providers are outside the EEA. The request is made by your browser and only when you ask for it. Section 6 explains the safeguards. |
 | **Your rights** | Access, rectification, erasure, restriction, portability, objection, and the withdrawal of consent. Most of them you exercise yourself, from the panel. Section 14. |
 
@@ -471,7 +465,7 @@ The GDPR asks for a lawful basis per purpose rather than one for the whole produ
 are, one line each.
 
 - Running the features on your device: your consent, given when you install the extension and again when you switch on an optional feature such as the activity record or the assistant. Article 6.1.a.
-- Sending a prompt to Google, searching the radio directory or loading a YouTube thumbnail: your consent, given by the action itself. Nothing is sent until you ask for it.
+- Sending a prompt to Google or loading a YouTube thumbnail: your consent, given by the action itself. Nothing is sent until you ask for it.
 - Serving this website and keeping it up: our legitimate interest in delivering the pages you requested and in aggregate measurement that carries no identifier. Article 6.1.f.
 - Processing a software support contribution: performance of the transaction you started, and the accounting duties that follow it. Articles 6.1.b and 6.1.c.
 
@@ -493,7 +487,6 @@ no part of the extension copies them anywhere.
 | Conversations with the AI assistant | `IndexedDB` | No. The replies arrive from Google; the transcript stays here |
 | Saved sessions and group backups | `IndexedDB` | Only inside a file you export yourself, to the folder you choose |
 | Pomodoro sessions and their history | `IndexedDB` | No |
-| Music you add and your radio favourites | `IndexedDB` | No |
 | Web activity: seconds, visits and sessions per site, per day | `chrome.storage.local` | No, unless you switch on that record’s own sync, which is off by default |
 | Snippets, keyboard overrides and omnibar preferences | `chrome.storage.sync` | Only through Chrome’s own profile sync, if you have it switched on |
 | Your Google AI Studio key | `chrome.storage.local` | Never synced. It travels only as the header of your own request to Google |
@@ -522,8 +515,6 @@ phone home.
 |:---|:---|:---|
 | `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something — from the panel, or by typing `find` and a space in Chrome’s address bar |
 | Chrome’s built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
-| `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
-| The radio station you press play on | An ordinary audio request to that station’s own server, which sees your IP address as any website does | While a station is playing |
 | `youtube.com · i.ytimg.com` | The video id, for the thumbnail and the embedded player | Only for a YouTube link you preview or play |
 | `cdn.jsdelivr.net` | Nothing about you. It fetches the OCR language model, which Chrome then caches | The first time you run OCR on a screenshot |
 
@@ -533,7 +524,7 @@ does not sit between you and what is in it.
 ## 6. Transfers outside the European Economic Area
 
 Every provider in that table is a company established in the United States: Google, Vercel, Stripe,
-the jsDelivr network, and whichever server hosts the radio station you chose. A request to any of
+and the jsDelivr network. A request to any of
 them is an international transfer, so it is named here rather than left implied.
 
 Two things limit it. The request is made by your browser, not forwarded by a server of ours, and it
@@ -547,10 +538,10 @@ govern what they do with the request once it arrives.
 Nothing here has a server-side lifetime, because there is no server holding it. What exists on your
 device stays until you delete it, and these are the rules it follows.
 
-- Notes, screenshots, backups, conversations, Pomodoro history and the music library: kept until you delete them or remove the extension.
+- Notes, screenshots, backups, conversations and Pomodoro history: kept until you delete them or remove the extension.
 - The web activity record: kept for the number of days you set in its own settings, and older days are dropped automatically.
 - Settings, rules and snippets: kept while the extension is installed. If Chrome sync carried a copy, removing the extension clears that copy too.
-- A prompt sent to Google, or a search sent to the radio directory: gone from here as soon as the answer arrives. What the receiving service keeps is set by its own retention policy.
+- A prompt sent to Google: gone from here as soon as the answer arrives. What the receiving service keeps is set by its own retention policy.
 
 This website keeps no record of your visit beyond the request logs its host produces, which Vercel
 rotates on its own schedule, and the aggregate page counts described in section 10.

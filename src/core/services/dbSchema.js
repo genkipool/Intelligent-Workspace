@@ -26,8 +26,6 @@ const ITG_DB_SCHEMA = {
         notes: 'notesStore',
         backups: 'backupsGroups',
         pomodoroStats: 'pomodoroStats',
-        musicTracks: 'musicTracks',
-        radioStations: 'radioStations',
     },
 
     /**
@@ -69,17 +67,6 @@ const ITG_DB_SCHEMA = {
             const pomoStore = db.createObjectStore(s.pomodoroStats, { keyPath: 'id' });
             pomoStore.createIndex('projectName', 'projectName', { unique: false });
             pomoStore.createIndex('savedAt', 'savedAt', { unique: false });
-        }
-
-        // The picked music folder. The audio lives here rather than in the page so the
-        // offscreen document — which is what actually plays it — can reach it, and so
-        // playback outlives whichever page picked the folder.
-        if (!db.objectStoreNames.contains(s.musicTracks)) {
-            db.createObjectStore(s.musicTracks, { keyPath: 'index' });
-        }
-
-        if (!db.objectStoreNames.contains(s.radioStations)) {
-            db.createObjectStore(s.radioStations, { keyPath: 'id' });
         }
     },
 };
