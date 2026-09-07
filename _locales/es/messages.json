@@ -7456,6 +7456,14 @@
         "message": "Leer la licencia completa, en inglés y español",
         "description": "License section: link to the LICENSE file"
     },
+    "termsLink": {
+        "message": "Leer las condiciones del servicio",
+        "description": "License section: link to the terms of service on the website"
+    },
+    "termsLinkTitle": {
+        "message": "Condiciones del servicio: la licencia, las garantías y qué es una propina",
+        "description": "License section: tooltip on the terms of service link"
+    },
     "licenseFullTextTitle": {
         "message": "Abre el fichero LICENSE del repositorio en GitHub",
         "description": "Abre el fichero LICENSE del repositorio en GitHub"

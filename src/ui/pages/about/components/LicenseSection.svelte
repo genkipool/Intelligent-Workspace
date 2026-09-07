@@ -4,9 +4,13 @@
      * THE LICENCE, SAID IN THE READER'S OWN LANGUAGE.
      *
      * A summary, not a second copy of the terms: `LICENSE` at the root of the
-     * repository is the licence, this is what it means, and the link at the bottom
-     * goes to it. That file already carries both languages one after the other; here
-     * the reader gets theirs, the way every other word on this page works.
+     * repository is the licence, this is what it means, and the first link at the
+     * bottom goes to it. That file already carries both languages one after the other;
+     * here the reader gets theirs, the way every other word on this page works.
+     *
+     * The second link goes to the terms of service on the website, which is the other
+     * document this section is the doorway to — and the only place in the product that
+     * says, in full, that a contribution is a voluntary tip and buys nothing.
      *
      * If the terms in `LICENSE` change, these strings change with them — a summary
      * that has drifted from what it summarises is worse than no summary at all.
@@ -14,6 +18,21 @@
     import { t, tt } from '../../../stores/i18nStore.js';
 
     const LICENSE_URL = 'https://github.com/genkipool/Intelligent-Workspace/blob/main/LICENSE';
+
+    /**
+     * The terms of service, which are the other half of this section: the licence says
+     * what you may do with the code, the terms say what you are agreeing to by using the
+     * extension — and, the part that actually needed writing down, that a contribution is
+     * a voluntary tip that buys nothing.
+     *
+     * Published one page per language, the way the privacy policy and the payment page
+     * are, and chosen the same way: an unknown language falls back to English, which is
+     * what the site itself does for an unknown prefix. See `DataUseSection.svelte` for
+     * the twin of this line.
+     */
+    const TERMS_URL = (chrome.i18n.getUILanguage() || '').toLowerCase().startsWith('es')
+        ? 'https://intelligentworkspace.genkipool.com/es/terms'
+        : 'https://intelligentworkspace.genkipool.com/terms';
 </script>
 
 <section class="license-section card">
@@ -50,16 +69,29 @@
         </div>
     </div>
 
-    <a
-        class="license-full-link"
-        href={LICENSE_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        title={$tt('licenseFullTextTitle')}
-    >
-        <span class="material-icons-sharp" translate="no" aria-hidden="true">description</span>
-        <span>{$t('licenseFullTextLink')}</span>
-    </a>
+    <div class="license-links">
+        <a
+            class="license-full-link"
+            href={LICENSE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={$tt('licenseFullTextTitle')}
+        >
+            <span class="material-icons-sharp" translate="no" aria-hidden="true">description</span>
+            <span>{$t('licenseFullTextLink')}</span>
+        </a>
+
+        <a
+            class="license-full-link"
+            href={TERMS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={$tt('termsLinkTitle')}
+        >
+            <span class="material-icons-sharp" translate="no" aria-hidden="true">gavel</span>
+            <span>{$t('termsLink')}</span>
+        </a>
+    </div>
 </section>
 
 <style>
@@ -121,6 +153,14 @@
 
     .license-terms-block li {
         margin-bottom: var(--spacing-xs);
+    }
+
+    /* Side by side where there is room, stacked where there is not — the two links are a
+       pair, not a link and an afterthought. */
+    .license-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm) var(--spacing-xl);
     }
 
     .license-full-link {
