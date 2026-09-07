@@ -1961,7 +1961,9 @@ export async function initCustomizeHints() {
                     const name = titleEl.textContent.trim();
                     if (name) {
                         const count = section.querySelectorAll('.command-item').length;
-                        sections.push({ name, count, el: section });
+                        // What is inside it, so the menu's own box can find a section
+                        // by something one of its commands says.
+                        sections.push({ name, count, el: section, text: section.textContent || '' });
                     }
                 }
             });
@@ -2002,7 +2004,10 @@ export async function initCustomizeHints() {
             item.dataset.sectionName = s.name;
             item.innerHTML = `<span class="at-section-icon">@</span><span class="at-section-label">${s.name}</span><span class="at-section-count">${s.count}</span>`;
             item.addEventListener('click', () => {
-                applySectionFilter(s.name);
+                // Adds to whatever is already chosen, the way the menu does.
+                const current = HintCommon.parseSectionQuery(searchInput.value).sections;
+                const already = current.some((n) => n.toLowerCase() === s.name.toLowerCase());
+                applySectionFilter(already ? current : [...current, s.name]);
             });
             item.addEventListener('mouseenter', () => {
                 atDropdownItems?.forEach((el) => el.classList.remove('highlighted'));
@@ -2021,69 +2026,59 @@ export async function initCustomizeHints() {
         atHighlightIndex = -1;
     };
 
-    /** The section the box is filtering by, if any: whatever follows the last `@`. */
-    const getActiveSection = () => {
-        const atIdx = searchInput.value.lastIndexOf('@');
-        return atIdx >= 0 ? searchInput.value.substring(atIdx + 1).trim() || null : null;
-    };
+    /** The sections the box is filtering by: every `@name` written in it. */
+    const getActiveSection = () => HintCommon.parseSectionQuery(searchInput.value).sections;
 
     /**
-     * Narrows the page to one section, or to all of them with `null`.
+     * Narrows the page to the given sections, or to all of them with none.
      *
      * The filter itself is the `@name` the search box already understood, so the
      * dropdown and the three-dot menu both come through here and neither has a
-     * filtering rule of its own.
+     * filtering rule of its own. `fromMenu` says the three-dot menu is still open and
+     * still holds the keyboard, so the focus is left where it is instead of being
+     * pulled back into the box between one section and the next.
      */
-    const applySectionFilter = (sectionName) => {
-        const current = searchInput.value;
-        const atIdx = current.lastIndexOf('@');
-        const text = (atIdx >= 0 ? current.substring(0, atIdx) : current).trim();
-        searchInput.value = sectionName ? `${text ? `${text} ` : ''}@${sectionName}` : text;
+    const applySectionFilter = (sections, meta = {}) => {
+        const names = Array.isArray(sections) ? sections : sections ? [sections] : [];
+        const { text } = HintCommon.parseSectionQuery(searchInput.value);
+        searchInput.value = HintCommon.buildSectionQuery(text, names);
         hideAtDropdown();
         applySearchFilter();
-        searchInput.focus();
+        if (!meta.fromMenu) searchInput.focus();
     };
 
     const applySearchFilter = () => {
         const query = searchInput.value;
-        const lowerQuery = query.toLowerCase().trim();
+        // The `@names` say which sections; the rest is what to look for inside them.
+        // Feeding the whole box to the item filter, `@` and all, matched nothing and
+        // was put right afterwards by showing every item of the named section again.
+        const { text: words, sections: chosen } = HintCommon.parseSectionQuery(query);
+        const lowerQuery = words.toLowerCase();
 
-        // Extract @ section filter
-        let sectionFilter = null;
-        const atIdx = query.lastIndexOf('@');
-        if (atIdx >= 0) {
-            sectionFilter = query.substring(atIdx + 1).trim();
-        }
-
-        // Filter items by text content
-        HintCommon.filterItems(query, document.querySelectorAll('.command-item'), {
+        HintCommon.filterItems(words, document.querySelectorAll('.command-item'), {
             onComplete: () => {
                 document
                     .querySelectorAll('.category-container, .omnibar-section-container, .itg-manage-section')
                     .forEach((section) => {
                         const items = section.querySelectorAll('.command-item');
-                        const hasVisible = Array.from(items).some((el) => el.style.display !== 'none');
-
-                        // Check if section title matches query
                         const titleEl = section.querySelector('.category-title, .section-title');
-                        let titleMatch = false;
-                        if (titleEl && lowerQuery) {
-                            titleMatch = titleEl.textContent.toLowerCase().includes(lowerQuery);
+                        const title = titleEl ? titleEl.textContent : '';
+
+                        // Out of the chosen sections: nothing in it can show, whatever
+                        // it says.
+                        if (!HintCommon.sectionIsSelected(title, chosen)) {
+                            section.style.display = 'none';
+                            return;
                         }
 
-                        // Check if @ section filter matches this section
-                        let sectionFilterMatch = false;
-                        if (sectionFilter && titleEl) {
-                            sectionFilterMatch = titleEl.textContent
-                                .toLowerCase()
-                                .includes(sectionFilter.toLowerCase());
-                        }
-
-                        const show = !lowerQuery || hasVisible || titleMatch || sectionFilterMatch;
+                        const titleMatch = !!lowerQuery && title.toLowerCase().includes(lowerQuery);
+                        const hasVisible = Array.from(items).some((el) => el.style.display !== 'none');
+                        const show = !lowerQuery || hasVisible || titleMatch;
                         section.style.display = show ? '' : 'none';
 
-                        // If section title matches or @ filter matches, show all items
-                        if (show && (titleMatch || sectionFilterMatch)) {
+                        // A section named by its title holds nothing that is not about
+                        // it, so all of it shows.
+                        if (show && titleMatch) {
                             items.forEach((item) => {
                                 item.style.display = '';
                             });
@@ -2144,7 +2139,11 @@ export async function initCustomizeHints() {
             if (atHighlightIndex >= 0 && atDropdownItems && atDropdownItems[atHighlightIndex]) {
                 e.preventDefault();
                 const name = atDropdownItems[atHighlightIndex].dataset.sectionName;
-                if (name) applySectionFilter(name);
+                if (name) {
+                    const current = HintCommon.parseSectionQuery(searchInput.value).sections;
+                    const already = current.some((n) => n.toLowerCase() === name.toLowerCase());
+                    applySectionFilter(already ? current : [...current, name]);
+                }
             }
         } else if (e.key === 'Escape') {
             hideAtDropdown();

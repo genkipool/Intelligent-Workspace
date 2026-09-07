@@ -36,6 +36,17 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- **The section filter has a search box, and more than one section can be on at once.**
+  The three-dot menu beside the search bar — on the keyboard navigation settings page
+  and in the modal the `?` key opens — now opens with a box that has the keyboard
+  ready. It searches what a section holds and not only what it is called, so typing
+  "notes" brings up every section with something about notes in it even though none of
+  them is named that. Rows are toggles with a tick rather than a single choice, and the
+  menu stays open while they are picked, so narrowing to two sections is two clicks
+  instead of a choice between them. The arrows walk the list, Enter adds the first
+  match and empties the box ready for the next name, and Escape clears the search
+  before it closes anything.
+
 - Notes gathered from every context — the orphans section and the popup's notes button
   — can be edited. The button used to be taken off those cards because saving from a
   list that belongs to no single group had nowhere to file the note back to; an edit no

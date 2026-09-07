@@ -2650,6 +2650,49 @@ var HintCommon = {
     },
 
     /**
+     * The `@section` filters and the plain words, told apart in one search box.
+     *
+     * The box carries both: what to look for, and which sections to look in. Sections
+     * are written `@name`, and there can be several — `@Notes @Reader find` narrows to
+     * those two sections and searches for "find" inside them. Everything before the
+     * first `@` is the words; each `@` opens a name that runs to the next one, so names
+     * with spaces in them keep working, which is why they are not split on whitespace.
+     *
+     * Reading the last `@` alone, which is what both surfaces used to do, made a second
+     * one silently replace the first.
+     */
+    parseSectionQuery(value) {
+        const raw = String(value ?? '');
+        const first = raw.indexOf('@');
+        if (first < 0) return { text: raw.trim(), sections: [] };
+        const sections = raw
+            .slice(first + 1)
+            .split('@')
+            .map((part) => part.trim())
+            .filter(Boolean);
+        return { text: raw.slice(0, first).trim(), sections };
+    },
+
+    /** The inverse: what the box should read for these words and these sections. */
+    buildSectionQuery(text, sections) {
+        const parts = [];
+        if (text) parts.push(text);
+        (sections || []).filter(Boolean).forEach((name) => parts.push(`@${name}`));
+        return parts.join(' ');
+    },
+
+    /**
+     * Whether a section is one of the chosen ones. No choice means all of them.
+     * Matched the way the box has always matched a typed `@name`: on the name
+     * containing what was written, so a half-typed name still lands.
+     */
+    sectionIsSelected(sectionName, selected) {
+        if (!selected || selected.length === 0) return true;
+        const name = String(sectionName || '').toLowerCase();
+        return selected.some((wanted) => name.includes(String(wanted).toLowerCase()));
+    },
+
+    /**
      * The three-dot menu that narrows a list of commands down to one section.
      *
      * The settings page and the shortcut modal show the same commands under the same
@@ -2661,12 +2704,19 @@ var HintCommon = {
      * The popup opens on hover and is held open by an invisible bridge that covers the
      * gap down from the button, so crossing it does not close the menu.
      *
+     * More than one section can be on at a time: a row is a toggle and the menu stays
+     * open while they are picked, so narrowing to "notes and the reader" is two clicks
+     * rather than a choice between them.
+     *
      * @param {object} options
      * @param {HTMLElement} options.container Where the button is appended.
-     * @param {() => Array<{name: string, count: number}>} options.getSections Read
-     *   every time the menu opens: sections appear as the page fills in.
-     * @param {(name: string|null) => void} options.onSelect `null` means every section.
-     * @param {() => (string|null)} [options.getActive] Which one is on, for the mark.
+     * @param {() => Array<{name: string, count: number, text?: string}>} options.getSections
+     *   Read every time the menu opens: sections appear as the page fills in. `text` is
+     *   what the section holds, which is what the box inside the menu searches through.
+     * @param {(names: string[], meta: {fromMenu: boolean}) => void} options.onSelect An
+     *   empty array means every section. `fromMenu` says the menu is still open and
+     *   still has the keyboard, so the caller should not take the focus back.
+     * @param {() => (string[]|string|null)} [options.getActive] Which are on, for the marks.
      * @returns {HTMLElement} The menu, already inside the container.
      */
     createSectionFilter({ container, getSections, onSelect, getActive = () => null }) {
@@ -2695,23 +2745,76 @@ var HintCommon = {
 
         const popup = create('div', { className: 'itg-section-filter-popup' });
         popup.appendChild(create('div', { className: 'itg-section-filter-bridge' }));
+        /*
+         * `type="text"`, not `search`: the browser's own clear cross sits where the
+         * list's scrollbar already is, and clicking it inside a shadow root does not
+         * fire the `input` event the filtering hangs off.
+         */
+        const search = create('input', {
+            className: 'itg-section-filter-search',
+            type: 'text',
+            autocomplete: 'off',
+            spellcheck: 'false',
+            'data-i18n-placeholder': 'sectionFilterSearchPlaceholder',
+            placeholder: msg('sectionFilterSearchPlaceholder', 'Search sections...'),
+            'aria-label': msg('sectionFilterSearchPlaceholder', 'Search sections...'),
+        });
+        popup.appendChild(search);
         const list = create('div', { className: 'itg-section-filter-list' });
         popup.appendChild(list);
         menu.appendChild(button);
         menu.appendChild(popup);
         container.appendChild(menu);
 
-        const render = () => {
+        /** Whatever `getActive` hands back, as a list of names. */
+        const activeNames = () => {
             const active = getActive();
+            if (Array.isArray(active)) return active.filter(Boolean);
+            return active ? [active] : [];
+        };
+
+        const render = () => {
+            const active = activeNames();
             list.textContent = '';
+            const query = search.value.toLowerCase().trim();
             const rows = [
                 { name: null, label: msg('sectionFilterAll', 'All sections'), count: null },
                 ...getSections().map((section) => ({
                     name: section.name,
                     label: section.name,
                     count: section.count,
+                    // What the section holds, so that a word can be looked for in the
+                    // commands themselves and not only in the headings. Typing "notes"
+                    // finds the sections that have something to do with notes even when
+                    // none of them is called that, which is the point of searching here
+                    // rather than reading down the list.
+                    text: section.text || '',
                 })),
-            ];
+            ]
+                // "All sections" is how the filter is taken off again, so it survives
+                // a query that does not name it — otherwise a typo leaves the list
+                // with no way back to everything.
+                .filter(
+                    (row) =>
+                        !query ||
+                        !row.name ||
+                        row.label.toLowerCase().includes(query) ||
+                        row.text.toLowerCase().includes(query),
+                );
+
+            if (rows.length === 1 && query) {
+                list.appendChild(
+                    create(
+                        'div',
+                        {
+                            className: 'itg-section-filter-empty',
+                            'data-i18n': 'sectionFilterNoMatches',
+                        },
+                        msg('sectionFilterNoMatches', 'No section matches'),
+                    ),
+                );
+            }
+
             rows.forEach((row) => {
                 const item = create('div', {
                     className: 'itg-section-filter-item',
@@ -2719,22 +2822,65 @@ var HintCommon = {
                     tabindex: '0',
                 });
                 const isActive = row.name
-                    ? !!active && row.name.toLowerCase() === String(active).toLowerCase()
-                    : !active;
+                    ? active.some((name) => name.toLowerCase() === row.name.toLowerCase())
+                    : active.length === 0;
                 if (isActive) item.classList.add('active');
+                item.setAttribute('role', row.name ? 'checkbox' : 'button');
+                if (row.name) item.setAttribute('aria-checked', isActive ? 'true' : 'false');
+                // The tick keeps its space whether or not it is drawn, so the labels of
+                // a list where only some rows are on still line up.
+                item.appendChild(create('span', { className: 'itg-section-filter-tick' }, isActive ? '\u2713' : ''));
                 item.appendChild(create('span', { className: 'itg-section-filter-label' }, row.label));
                 if (row.count !== null && row.count !== undefined) {
                     item.appendChild(create('span', { className: 'itg-section-filter-count' }, String(row.count)));
                 }
                 const choose = () => {
-                    menu.classList.remove('open');
-                    onSelect(row.name);
+                    // "All sections" is the way out of every filter, so it clears them
+                    // and closes; a section is a toggle and the menu stays open, which
+                    // is what makes picking a second one one click rather than four.
+                    if (!row.name) {
+                        closeMenu();
+                        onSelect([], { fromMenu: true });
+                        return;
+                    }
+                    /*
+                     * The focus goes to the box first, and only then is the list
+                     * redrawn.
+                     *
+                     * A row is focusable, so pressing one with the mouse gives it the
+                     * focus. Redrawing while it holds it destroys the focused element,
+                     * the focus falls back to the document, and the menu's own
+                     * "focus has left" rule closed it and cleared the search — so
+                     * picking a section from a searched list threw the search away and
+                     * put every section back. Moving the focus somewhere that survives
+                     * the redraw first is what keeps the query.
+                     */
+                    search.focus();
+                    const current = activeNames();
+                    const without = current.filter((name) => name.toLowerCase() !== row.name.toLowerCase());
+                    onSelect(without.length === current.length ? [...current, row.name] : without, {
+                        fromMenu: true,
+                    });
+                    render();
                 };
                 item.addEventListener('click', choose);
                 item.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
                         choose();
+                        return;
+                    }
+                    // The arrows walk the list the search box hands them into, and
+                    // going back up past the first row returns to the box.
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                        event.preventDefault();
+                        const items = Array.from(list.querySelectorAll('.itg-section-filter-item'));
+                        const next = items.indexOf(item) + (event.key === 'ArrowDown' ? 1 : -1);
+                        if (next < 0) search.focus();
+                        else items[Math.min(next, items.length - 1)]?.focus();
+                    } else if (event.key === 'Escape') {
+                        event.preventDefault();
+                        search.focus();
                     }
                 });
                 list.appendChild(item);
@@ -2766,25 +2912,146 @@ var HintCommon = {
             { passive: false },
         );
 
-        // Hover is what opens it; `open` is for the keyboard, which has no hover.
-        menu.addEventListener('mouseenter', render);
-        menu.addEventListener('mouseleave', () => menu.classList.remove('open'));
-        button.addEventListener('click', () => {
+        /*
+         * Whether taking the focus now would take it off someone mid-sentence.
+         *
+         * This menu opens on hover, and the box it sits next to is a search box people
+         * type in. Focusing on hover alone would mean a pointer drifting over the three
+         * dots swallowed the rest of what was being typed, so a field already in use
+         * keeps what it has and the menu waits to be opened on purpose.
+         */
+        const wouldStealFocus = () => {
+            const doc = menu.getRootNode();
+            const active = doc.activeElement;
+            if (!active || active === doc.body || menu.contains(active)) return false;
+            if (active.isContentEditable) return true;
+            const tag = active.tagName;
+            return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+        };
+
+        /*
+         * The popup is `visibility: hidden` until the class that opens it has been
+         * through a style recalculation, and a hidden field cannot take focus — asking
+         * in the same tick as the class change is simply ignored. So the ask waits for
+         * the frame that puts the popup on screen.
+         */
+        /*
+         * The popup fades in, and a field inside something still `visibility: hidden`
+         * cannot take the focus: the ask is dropped without a word. Which frame of the
+         * transition is the first one that accepts it is not something to count — two
+         * frames was right most of the time and wrong often enough to see, and inside
+         * the shadow root more often than on the page. So it asks, checks whether it
+         * worked, and asks again on the next frame until it does.
+         *
+         * It gives up after ten frames, and the moment the focus is somewhere else
+         * inside the popup — a row reached with the arrows — it has done its job and
+         * stops, so it cannot end up fighting the person using it. The three-dot button
+         * is deliberately not part of that test: pressing it with a real mouse is what
+         * gives it the focus in the first place, and treating that as "already placed"
+         * meant the box was never focused for anyone using a pointer, which is very
+         * nearly everyone.
+         */
+        const FOCUS_ATTEMPT_FRAMES = 10;
+        const focusSearchWhenShown = () => {
+            let attempts = 0;
+            const attempt = () => {
+                if (!menu.classList.contains('open')) return;
+                const root = menu.getRootNode();
+                if (root.activeElement === search || popup.contains(root.activeElement)) return;
+                search.focus();
+                if (root.activeElement !== search && ++attempts < FOCUS_ATTEMPT_FRAMES) {
+                    requestAnimationFrame(attempt);
+                }
+            };
+            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(attempt);
+            else setTimeout(attempt, 0);
+        };
+
+        const openMenu = ({ focusSearch }) => {
             render();
-            menu.classList.toggle('open');
+            menu.classList.add('open');
+            if (focusSearch) focusSearchWhenShown();
+        };
+
+        const closeMenu = () => {
+            menu.classList.remove('open');
+            // Next time it opens it shows everything again, rather than resuming a
+            // query nobody remembers typing.
+            if (search.value) {
+                search.value = '';
+                render();
+            }
+        };
+
+        // Hover is what opens it; `open` is for the keyboard, which has no hover.
+        menu.addEventListener('mouseenter', () => openMenu({ focusSearch: !wouldStealFocus() }));
+        menu.addEventListener('mouseleave', () => {
+            // Not while the pointer's own menu is the one being typed in: the popup is
+            // still on screen because the focus is holding it there.
+            if (!menu.contains(menu.getRootNode().activeElement)) closeMenu();
+        });
+        /*
+         * A press on the button means "I want to use this menu", never "close it".
+         *
+         * The pointer opens the menu on its way to the button, so a plain toggle here
+         * closed the very menu the click was reaching for, and the search box was never
+         * given the keyboard for anyone using a mouse. It only closes once the menu is
+         * open *and* already has the keyboard — which is the second press, the one that
+         * really does mean "away with it".
+         */
+        button.addEventListener('click', () => {
+            const root = menu.getRootNode();
+            if (menu.classList.contains('open') && popup.contains(root.activeElement)) closeMenu();
+            else openMenu({ focusSearch: true });
         });
         button.addEventListener('keydown', (event) => {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                render();
-                menu.classList.add('open');
-                list.querySelector('.itg-section-filter-item')?.focus();
+                openMenu({ focusSearch: true });
             } else if (event.key === 'Escape') {
-                menu.classList.remove('open');
+                closeMenu();
             }
         });
+
+        // Typing in it is what holds the menu open once the pointer has moved on.
+        search.addEventListener('input', render);
+        search.addEventListener('focus', () => menu.classList.add('open'));
+        search.addEventListener('keydown', (event) => {
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                list.querySelector('.itg-section-filter-item')?.focus();
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                /*
+                 * Type enough to name a section and press Enter to add it. The first
+                 * row is "All sections", which is what Enter should mean on an empty
+                 * box and never what it should mean on a query — so with a query the
+                 * first real section is taken, and the box is emptied ready for the
+                 * next name.
+                 */
+                const rows = list.querySelectorAll('.itg-section-filter-item');
+                const target = search.value.trim() ? rows[1] : rows[0];
+                if (!target) return;
+                const hadQuery = !!search.value;
+                target.click();
+                if (hadQuery && menu.classList.contains('open')) {
+                    search.value = '';
+                    render();
+                }
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                if (search.value) {
+                    search.value = '';
+                    render();
+                    return;
+                }
+                closeMenu();
+                button.focus();
+            }
+        });
+
         menu.addEventListener('focusout', (event) => {
-            if (!menu.contains(event.relatedTarget)) menu.classList.remove('open');
+            if (!menu.contains(event.relatedTarget)) closeMenu();
         });
 
         return menu;

@@ -1305,7 +1305,7 @@
     "message": "About Intelligent Workspace"
   },
   "appDescription": {
-    "message": "Intelligent Workspace is your smart workstation for faster, cleaner, and stress-free browsing. It automatically organizes your tabs into relevant groups based on your rules or domains, while bringing key productivity tools into the side panel to handle routine tasks in just a few clicks without leaving your page or losing focus. By centralizing your entire workflow into one intuitive environment, you eliminate the cognitive overload and friction of installing and learning multiple separate extensions. A single cohesive purpose: helping you work with greater focus, speed, and peace of mind."
+    "message": "Intelligent Workspace is your smart workstation for faster, cleaner, and stress-free browsing. It automatically organizes your tabs into relevant groups based on your rules or domains, while bringing key productivity tools into the side panel to handle routine tasks in just a few clicks without leaving your page or losing focus."
   },
   "versionHistory": {
     "message": "Version History"
@@ -2658,7 +2658,7 @@
     "description": "The name of the extension."
   },
   "extDescription": {
-    "message": "Intelligent productivity workspace: automated tab organization, smart side panel, integrated notes, and workflow focus tools.",
+    "message": "A workspace that organizes your tabs into groups with web activity and basic tools that improve your productivity and focus.",
     "description": "Short description for Chrome Web Store (maximum 132 characters)."
   },
   "contextMenuRemoveDuplicateTabs": {
@@ -4708,6 +4708,14 @@
   },
   "sectionFilterAll": {
     "message": "All sections"
+  },
+  "sectionFilterSearchPlaceholder": {
+    "message": "Search sections...",
+    "description": "Placeholder for the search box inside the section filter popup."
+  },
+  "sectionFilterNoMatches": {
+    "message": "No section matches",
+    "description": "Shown in the section filter popup when the typed text matches no section."
   },
   "searchCommandsPlaceholder": {
     "message": "Filter commands by keyword or description...",
