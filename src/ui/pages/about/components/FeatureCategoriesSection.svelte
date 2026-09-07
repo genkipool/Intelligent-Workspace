@@ -121,24 +121,6 @@
 </section>
 
 <section class="features-section card">
-    <h3>{$t('sectionMusicPlayer')}</h3>
-    <div class="features-grid">
-        <FeatureItem isMaterial={true} iconName="library_music" textKey="feature_music_local_folder" />
-        <FeatureItem isMaterial={true} iconName="play_circle" textKey="feature_music_playback" />
-        <FeatureItem isMaterial={true} iconName="fast_forward" textKey="feature_music_seek" />
-        <FeatureItem isMaterial={true} iconName="search" textKey="feature_music_search" />
-        <FeatureItem isMaterial={true} iconName="queue_music" textKey="feature_music_playlist" />
-        <FeatureItem isMaterial={true} iconName="headphones" textKey="feature_music_keeps_playing" />
-        <FeatureItem isMaterial={true} iconName="radio" textKey="feature_radio_online_search" />
-        <FeatureItem isMaterial={true} iconName="bookmark" textKey="feature_radio_saved_stations" />
-        <FeatureItem isMaterial={true} iconName="playlist_add_check" textKey="feature_radio_batch_add" />
-        <FeatureItem isMaterial={true} iconName="import_export" textKey="feature_radio_import_export" />
-        <FeatureItem isMaterial={true} iconName="sync" textKey="feature_radio_sync" />
-        <FeatureItem isMaterial={true} iconName="featured_play_list" textKey="feature_radio_unified_tabs" />
-    </div>
-</section>
-
-<section class="features-section card">
     <h3>{$t('sectionListBookmarks')}</h3>
     <div class="features-grid">
         <FeatureItem isMaterial={true} iconName="bookmarks" textKey="feature_bookmarks_search" />
