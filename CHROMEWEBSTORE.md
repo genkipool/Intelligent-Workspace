@@ -17,14 +17,14 @@
 ### Short Description (Max 132 characters)
 - **English:**
   ```text
-  Intelligent productivity workspace: automated tab organization, smart side panel, integrated notes, and workflow focus tools.
+  A workspace that organizes your tabs into groups with web activity and basic tools that improve your productivity and focus.
   ```
-  *(125 characters)*
+  *(124 characters)*
 - **Spanish:**
   ```text
-  Estación de trabajo inteligente: organización automática de pestañas, panel lateral de notas y herramientas de productividad.
+  Estación de trabajo que organiza tus pestañas en grupos con actividad web y herramientas básicas que mejoran tu producción y foco.
   ```
-  *(125 characters)*
+  *(130 characters)*
 
 ### Category
 - **Category:** `Productivity` / `Productividad`
