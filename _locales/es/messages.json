@@ -1276,7 +1276,7 @@
         "message": "Acerca de Intelligent Workspace"
     },
     "appDescription": {
-        "message": "Intelligent Workspace es tu estación de trabajo inteligente para una navegación más rápida, ordenada y libre de estrés. Te ayuda a organizar automáticamente tus pestañas en grupos relevantes según tus reglas o dominios, y reúne en el panel lateral herramientas clave de productividad para resolver tareas habituales en pocos clics sin salir de tu página ni perder la concentración. Al centralizar todo tu flujo de trabajo en un único entorno intuitivo, eliminas la sobrecarga y la fricción de instalar y aprender múltiples extensiones dispersas. Un único propósito: ayudarte a trabajar con mayor enfoque, rapidez y calma mental."
+        "message": "Intelligent Workspace es tu estación de trabajo inteligente para una navegación más rápida, ordenada y libre de estrés. Te ayuda a organizar automáticamente tus pestañas en grupos relevantes según tus reglas o dominios, y reúne en el panel lateral herramientas clave de productividad para resolver tareas habituales en pocos clics sin salir de tu página ni perder la concentración."
     },
     "versionHistory": {
         "message": "Historial de versiones"
@@ -2634,7 +2634,7 @@
         "description": "El nombre de la extensión."
     },
     "extDescription": {
-        "message": "Estación de trabajo inteligente: organización automática de pestañas, panel lateral de notas y herramientas de productividad.",
+        "message": "Estación de trabajo que organiza tus pestañas en grupos con actividad web y herramientas básicas que mejoran tu producción y foco.",
         "description": "Descripción corta de la extensión para Chrome Web Store (máximo 132 caracteres)."
     },
     "contextMenuRemoveDuplicateTabs": {
@@ -4711,6 +4711,12 @@
     },
     "sectionFilterAll": {
         "message": "Todas las secciones"
+    },
+    "sectionFilterSearchPlaceholder": {
+        "message": "Buscar secciones..."
+    },
+    "sectionFilterNoMatches": {
+        "message": "Ninguna sección coincide"
     },
     "searchCommandsPlaceholder": {
         "message": "Filtrar comandos por tecla o descripción...",

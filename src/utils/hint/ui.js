@@ -898,6 +898,9 @@ var HelpModal = class HelpModal {
                                 h3: el,
                                 table,
                                 type: 'category',
+                                // The rows too, so the menu's own box can find a
+                                // section by something one of its shortcuts says.
+                                text: `${name} ${table.textContent || ''}`,
                             });
                             i++;
                         }
@@ -911,6 +914,7 @@ var HelpModal = class HelpModal {
                                 count,
                                 el,
                                 type: 'manage',
+                                text: el.textContent || '',
                             });
                         }
                     }
@@ -950,7 +954,10 @@ var HelpModal = class HelpModal {
                     item.dataset.sectionName = s.name;
                     item.innerHTML = `<span class="at-section-icon">@</span><span class="at-section-label">${s.name}</span><span class="at-section-count">${s.count}</span>`;
                     item.addEventListener('click', () => {
-                        applySectionFilter(s.name);
+                        // Adds to whatever is already chosen, the way the menu does.
+                        const current = HintCommon.parseSectionQuery(modalSearchInput.value).sections;
+                        const already = current.some((n) => n.toLowerCase() === s.name.toLowerCase());
+                        applySectionFilter(already ? current : [...current, s.name]);
                     });
                     item.addEventListener('mouseenter', () => {
                         atDropdownItems?.forEach((el) => el.classList.remove('highlighted'));
@@ -967,40 +974,35 @@ var HelpModal = class HelpModal {
                 atDropdownItems = null;
                 atHighlightIndex = -1;
             };
-            /** The section the box is filtering by: whatever follows the last `@`. */
-            const getActiveSection = () => {
-                const atIdx = modalSearchInput.value.lastIndexOf('@');
-                return atIdx >= 0 ? modalSearchInput.value.substring(atIdx + 1).trim() || null : null;
-            };
+            /** The sections the box is filtering by: every `@name` written in it. */
+            const getActiveSection = () => HintCommon.parseSectionQuery(modalSearchInput.value).sections;
             /**
-             * Narrows the modal to one section, or to all of them with `null`.
+             * Narrows the modal to the given sections, or to all of them with none.
              *
              * The filter is the `@name` the box already understood, so the dropdown
-             * and the three-dot menu both come through here.
+             * and the three-dot menu both come through here. `fromMenu` says the menu
+             * is still open and still holds the keyboard, so the focus stays there
+             * instead of being pulled back into the box between one section and the
+             * next.
              */
-            const applySectionFilter = (sectionName) => {
-                const current = modalSearchInput.value;
-                const atIdx = current.lastIndexOf('@');
-                const text = (atIdx >= 0 ? current.substring(0, atIdx) : current).trim();
-                modalSearchInput.value = sectionName ? `${text ? `${text} ` : ''}@${sectionName}` : text;
+            const applySectionFilter = (sections, meta = {}) => {
+                const names = Array.isArray(sections) ? sections : sections ? [sections] : [];
+                const { text } = HintCommon.parseSectionQuery(modalSearchInput.value);
+                modalSearchInput.value = HintCommon.buildSectionQuery(text, names);
                 hideAtDropdown();
                 applyModalSearchFilter();
-                modalSearchInput.focus();
+                if (!meta.fromMenu) modalSearchInput.focus();
             };
             const applyModalSearchFilter = () => {
-                const query = modalSearchInput.value.toLowerCase().trim();
+                // The `@names` say which sections; the rest is what to look for inside
+                // them. Both used to be handed to the same comparison, so a section
+                // filter and a word could not be used together.
+                const parsed = HintCommon.parseSectionQuery(modalSearchInput.value);
+                const chosen = parsed.sections;
+                const query = parsed.text.toLowerCase();
                 const bodyEl = shadowRoot.getElementById('itg-help-body');
                 const children = Array.from(bodyEl.children);
 
-                // Extract @ section filter
-                let sectionFilter = null;
-                const atIdx = query.lastIndexOf('@');
-                if (atIdx >= 0) {
-                    sectionFilter = query
-                        .substring(atIdx + 1)
-                        .trim()
-                        .toLowerCase();
-                }
                 for (let i = 0; i < children.length; i++) {
                     const el = children[i];
                     if (el.tagName === 'H3') {
@@ -1010,14 +1012,14 @@ var HelpModal = class HelpModal {
                             const rows = table.querySelectorAll('tr');
                             const h3Text = el.textContent.toLowerCase().trim();
 
-                            // Check if heading matches query or @ section filter
-                            let headingMatch = false;
-                            if (query) {
-                                headingMatch = h3Text.includes(query);
+                            if (!HintCommon.sectionIsSelected(h3Text, chosen)) {
+                                el.style.display = 'none';
+                                table.style.display = 'none';
+                                i++;
+                                continue;
                             }
-                            if (!headingMatch && sectionFilter) {
-                                headingMatch = h3Text.includes(sectionFilter);
-                            }
+
+                            const headingMatch = !!query && h3Text.includes(query);
                             let anyRowMatch = !query || headingMatch;
                             if (query && !headingMatch) {
                                 anyRowMatch = Array.from(rows).some((tr) =>
@@ -1038,13 +1040,14 @@ var HelpModal = class HelpModal {
                         // Manage section with its own heading inside
                         const items = el.querySelectorAll('.command-item');
                         const titleEl = el.querySelector('h3') || el.querySelector('.section-title');
-                        let titleMatch = false;
-                        if (titleEl && query) {
-                            titleMatch = titleEl.textContent.toLowerCase().trim().includes(query);
+                        const title = titleEl ? titleEl.textContent.toLowerCase().trim() : '';
+
+                        if (!HintCommon.sectionIsSelected(title, chosen)) {
+                            el.style.display = 'none';
+                            continue;
                         }
-                        if (!titleMatch && sectionFilter && titleEl) {
-                            titleMatch = titleEl.textContent.toLowerCase().trim().includes(sectionFilter);
-                        }
+
+                        const titleMatch = !!query && title.includes(query);
                         const hasMatch =
                             !query ||
                             titleMatch ||
@@ -1123,7 +1126,11 @@ var HelpModal = class HelpModal {
                     if (atHighlightIndex >= 0 && atDropdownItems && atDropdownItems[atHighlightIndex]) {
                         e.preventDefault();
                         const name = atDropdownItems[atHighlightIndex].dataset.sectionName;
-                        if (name) applySectionFilter(name);
+                        if (name) {
+                            const current = HintCommon.parseSectionQuery(modalSearchInput.value).sections;
+                            const already = current.some((n) => n.toLowerCase() === name.toLowerCase());
+                            applySectionFilter(already ? current : [...current, name]);
+                        }
                     }
                 } else if (e.key === 'Escape') {
                     hideAtDropdown();

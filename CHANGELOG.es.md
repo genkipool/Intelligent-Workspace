@@ -36,6 +36,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- **El filtro de secciones tiene barra de búsqueda, y se puede elegir más de una
+  sección a la vez.** El menú de tres puntos que hay junto al buscador — en la página
+  de ajustes de navegación y en la ventana que abre la tecla `?` — ahora se abre con
+  una caja que ya tiene el teclado puesto. Busca por lo que la sección contiene y no
+  solo por cómo se llama, así que escribiendo «notas» aparecen todas las secciones que
+  llevan algo de notas aunque ninguna se llame así. Las filas son interruptores con su
+  marca en vez de una elección única, y el menú se queda abierto mientras se eligen,
+  de modo que quedarse con dos secciones son dos clics y no una disyuntiva. Las flechas
+  recorren la lista, Enter añade la primera coincidencia y vacía la caja para el
+  siguiente nombre, y Escape borra la búsqueda antes de cerrar nada.
+
 - Las notas reunidas de todos los contextos — la sección de huérfanas y el botón de
   notas del popup — ya se pueden editar. El botón se quitaba de esas tarjetas porque
   guardar desde una lista que no pertenece a ningún grupo no tenía dónde archivar la
