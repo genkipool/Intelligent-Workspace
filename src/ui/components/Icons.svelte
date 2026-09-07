@@ -779,6 +779,18 @@
         <symbol id="icon-play-solid" viewBox="0 0 24 24">
             <path d="M5 3l14 9-14 9V3z" fill="currentColor" />
         </symbol>
+        <symbol id="icon-music" viewBox="0 0 24 24">
+            <path
+                d="M9 18V6l11-2v12"
+                stroke="currentColor"
+                stroke-width="2"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            />
+            <circle cx="6" cy="18" r="3" fill="currentColor" />
+            <circle cx="17" cy="16" r="3" fill="currentColor" />
+        </symbol>
         <symbol id="icon-track-prev" viewBox="0 0 24 24">
             <path d="M20 5v14l-11-7 11-7z" fill="currentColor" />
             <rect x="4" y="5" width="3" height="14" rx="1" fill="currentColor" />
@@ -1080,6 +1092,27 @@
                 stroke-linejoin="round"
                 fill="none"
             />
+        </symbol>
+        <symbol id="icon-radio" viewBox="0 0 24 24">
+            <path
+                d="M4 8h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+            <path
+                d="m5 8 10.5-4.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+            <circle cx="8" cy="14" r="2.5" stroke="currentColor" stroke-width="2" fill="none" />
+            <line x1="14" y1="12" x2="18" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            <line x1="14" y1="16" x2="18" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>
         <symbol id="icon-grip-vertical" viewBox="0 0 24 24">
             <circle cx="9" cy="5" r="1.5" fill="currentColor" />

@@ -170,29 +170,6 @@ Each version holds two different things, and they are worth keeping apart:
   page was open in the panel or in a popup window, both of which forced the panel
   whatever was held down.
 
-### Removed
-
-- **The music player and the online radio leave the extension.** They go to narrow what
-  the listing has to defend against Google's single-purpose policy: two features that,
-  however useful as background while you work, do not explain themselves next to tab
-  management.
-
-  With them go the player panel, the stations window, their two IndexedDB stores, the
-  half of the offscreen document that played the audio, 33 KB of stylesheet and 115
-  translation keys per language. The extension stops talking to
-  `api.radio-browser.info` and to the stations' own servers, so those two rows leave
-  the privacy policy as well.
-
-  **No manifest permission was removed**, and it is worth knowing why: the offscreen
-  document is created by the Pomodoro for its end-of-cycle sound, so `offscreen` is
-  still needed; the station directory was reached with an ordinary `fetch` already
-  covered by `host_permissions`, which the extension needs for its content scripts
-  anyway; and picking the music folder used `showDirectoryPicker`, which asks for no
-  permission at all.
-
-  The code is not lost: it lives on the `feature/musica-y-radio` branch, and bringing
-  it back is a merge.
-
 ### Fixed
 
 - An automatic group takes the colour of the site it holds far more often, and stops

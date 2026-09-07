@@ -292,7 +292,7 @@ export function groupHistoryByDate(historyItems) {
  * name actually says.
  *
  * Nobody reaches for the accent key while searching, and the things being searched are
- * full of them — `Diseño`, `Programación`, `España`. Lowercasing alone leaves `diseno`
+ * full of them — `Radio Olé`, `Música`, `España`. Lowercasing alone leaves `ole` and
  * `olé` as different strings, so a search that should obviously match finds nothing.
  *
  * `NFD` splits an accented letter into the letter and its mark; dropping the marks

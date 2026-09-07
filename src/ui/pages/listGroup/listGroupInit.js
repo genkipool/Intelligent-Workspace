@@ -228,8 +228,8 @@ async function openOverlayView(name, open, { standalone = false } = {}) {
     /**
      * The group chrome goes now, in the same breath as the request.
      *
-     * `body.groups-view-active` is what the stylesheet hangs the pomodoro panel and the
-     * hidden search bar off, and `switchMainView` cannot be trusted
+     * `body.groups-view-active` is what the stylesheet hangs the pomodoro panel, the
+     * music panel and the hidden search bar off, and `switchMainView` cannot be trusted
      * to take it off here: asked for the view it is already on it returns at the first
      * line and never reaches its own class handling. That is why switching to the notes
      * *from* the group list left the pomodoro panel sitting under them.

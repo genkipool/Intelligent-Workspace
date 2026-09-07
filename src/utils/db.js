@@ -9,6 +9,8 @@ const CONVERSATION_STORE_NAME = ITG_STORES.conversations;
 const NOTES_STORE_NAME = ITG_STORES.notes;
 const BACKUPS_STORE_NAME = ITG_STORES.backups;
 const POMO_STATS_STORE_NAME = ITG_STORES.pomodoroStats;
+const MUSIC_TRACKS_STORE_NAME = ITG_STORES.musicTracks;
+const RADIO_STATIONS_STORE_NAME = ITG_STORES.radioStations;
 let dbPromise = null;
 
 function openDb() {
@@ -577,5 +579,220 @@ export async function clearPomoStatsFromDb(projectName) {
         } catch (e) {
             reject(e);
         }
+    });
+}
+
+// ─── Music player ────────────────────────────────────────────────────
+// The picked folder's audio is kept here, keyed by its place in the playlist, so the
+// offscreen document that actually plays it can read a track without the page that
+// picked the folder still being open. The names and order live in
+// `chrome.storage.local` instead: they are small, and listing the folder should not
+// mean reading every blob back.
+
+/**
+ * Replaces the stored folder with a new one.
+ *
+ * @param {Array<{index: number, blob: Blob}>} records
+ */
+export async function saveMusicTracksToDb(records) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        store.clear();
+        for (const record of records) store.put(record);
+        transaction.oncomplete = () => resolve(records.length);
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * @param {number} index
+ * @returns {Promise<Blob|undefined>}
+ */
+export async function getMusicTrackFromDb(index) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readonly');
+        const request = transaction.objectStore(MUSIC_TRACKS_STORE_NAME).get(index);
+        request.onsuccess = (event) => resolve(event.target.result?.blob);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Removes a track at a specific index and shifts remaining indexes down.
+ *
+ * @param {number} removeIndex
+ * @returns {Promise<void>}
+ */
+export async function removeMusicTrackFromDb(removeIndex) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            store.clear();
+            const reindexed = records
+                .filter((r) => r.index !== removeIndex)
+                .sort((a, b) => a.index - b.index)
+                .map((r, i) => ({ ...r, index: i }));
+            for (const r of reindexed) store.put(r);
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Appends new track blobs to IndexedDB starting from a given offset index.
+ *
+ * @param {Array<{index: number, blob: Blob}>} records
+ * @returns {Promise<number>}
+ */
+export async function appendMusicTracksToDb(records) {
+    if (!records || records.length === 0) return 0;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        for (const record of records) store.put(record);
+        transaction.oncomplete = () => resolve(records.length);
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Removes multiple tracks by their indices and shifts remaining indices.
+ *
+ * @param {Set<number>|number[]} indicesToRemove
+ * @returns {Promise<void>}
+ */
+export async function removeMusicTracksByIndicesFromDb(indicesToRemove) {
+    const removeSet = indicesToRemove instanceof Set ? indicesToRemove : new Set(indicesToRemove);
+    if (removeSet.size === 0) return;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            store.clear();
+            const reindexed = records
+                .filter((r) => !removeSet.has(r.index))
+                .sort((a, b) => a.index - b.index)
+                .map((r, i) => ({ ...r, index: i }));
+            for (const r of reindexed) store.put(r);
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Reorders the stored track blobs in IndexedDB according to the new sequence of indices.
+ * @param {number[]} newOrderIndices Array of old track indices in their new sequence.
+ * @returns {Promise<void>}
+ */
+export async function reorderMusicTracksInDb(newOrderIndices) {
+    if (!Array.isArray(newOrderIndices) || newOrderIndices.length === 0) return;
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(MUSIC_TRACKS_STORE_NAME);
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => {
+            const records = getAllReq.result || [];
+            const blobMap = new Map(records.map((r) => [r.index, r.blob]));
+            store.clear();
+            for (let newIndex = 0; newIndex < newOrderIndices.length; newIndex++) {
+                const oldIndex = newOrderIndices[newIndex];
+                const blob = blobMap.get(oldIndex);
+                if (blob) {
+                    store.put({ index: newIndex, blob });
+                }
+            }
+        };
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+export async function clearMusicTracksInDb() {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([MUSIC_TRACKS_STORE_NAME], 'readwrite');
+        const request = transaction.objectStore(MUSIC_TRACKS_STORE_NAME).clear();
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Loads all saved radio stations from IndexedDB.
+ * @returns {Promise<Array<{id: string, name: string, url: string}>>}
+ */
+export async function getRadioStationsFromDb() {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readonly');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        const request = store.getAll();
+        request.onsuccess = (event) => resolve(event.target.result || []);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Saves or replaces the complete list of radio stations in IndexedDB.
+ * @param {Array<{id: string, name: string, url: string}>} stations
+ * @returns {Promise<void>}
+ */
+export async function saveRadioStationsToDb(stations) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.clear();
+        for (const st of stations) {
+            store.put(st);
+        }
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Adds a single radio station to IndexedDB.
+ * @param {{id: string, name: string, url: string}} station
+ * @returns {Promise<void>}
+ */
+export async function addRadioStationToDb(station) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.put(station);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/**
+ * Deletes a radio station by ID from IndexedDB.
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
+export async function deleteRadioStationFromDb(id) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([RADIO_STATIONS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(RADIO_STATIONS_STORE_NAME);
+        store.delete(id);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = (event) => reject(event.target.error);
     });
 }

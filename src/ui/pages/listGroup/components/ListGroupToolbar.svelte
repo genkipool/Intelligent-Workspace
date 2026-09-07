@@ -11,6 +11,7 @@
         isUrlViewActive,
     } from '../../../stores/appStore.svelte.js';
     import { pickImageFiles, pickImageFolder } from '../../../services/screenshotsService.js';
+    import MusicPlayerButton from '../../../components/listGroup/MusicPlayerButton.svelte';
     import MuteAllButton from '../../../components/listGroup/MuteAllButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
@@ -298,6 +299,7 @@
             </svg>
             <span class="gemini-notification-badge hidden">0</span>
         </button>
+        <MusicPlayerButton hidden={startsHidden('open-music-player-btn')} />
         <button
             id="open-pomodoro-btn"
             type="button"

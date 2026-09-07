@@ -1,5 +1,6 @@
 import { showNotification } from '../../../../../utils/i18n.js';
 import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
+import { hidePanel } from '../../../../stores/musicPlayerStore.js';
 import { openDashboard } from '../../../../services/dashboard/dashboardPages.js';
 
 // ============================================================
@@ -1573,10 +1574,11 @@ export function initPomodoro({ embedded = false } = {}) {
         const wasHidden = panel.classList.contains('hidden');
         panel.classList.toggle('hidden', !wasHidden);
 
-        // If opening Pomodoro, hide the view-toggle panel to avoid conflicts
+        // If opening Pomodoro, hide view-toggle-panel and music player panel to avoid conflicts
         if (wasHidden) {
             const vtPanel = document.getElementById('view-toggle-panel');
             if (vtPanel) vtPanel.classList.add('hidden');
+            hidePanel();
         }
         // Stop blinking when panel opens; resume when panel hides
         if (!wasHidden) {

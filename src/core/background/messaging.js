@@ -1205,6 +1205,20 @@ const MESSAGE_HANDLERS = {
         handleSetSnippetPopupTriggerKey(message.triggerKey, sendResponse);
         return true;
     },
+    // Only the worker may create the offscreen document, so the player asks for it
+    // here before sending it anything.
+    musicEnsureOffscreen: (message, sender, sendResponse) => {
+        ensureOffscreenDocument('Play the music folder the player was given')
+            .then((created) => sendResponse({ success: true, created }))
+            .catch((error) => sendResponse({ success: false, error: String(error) }));
+        return true;
+    },
+    // The offscreen player cannot reach storage, so what it reports is filed here.
+    // A page opened later reads this and shows what is playing straight away.
+    musicState: (message) => {
+        chrome.storage.session.set({ musicPlayerState: message.state }).catch(() => {});
+        return false;
+    },
 };
 
 /**
