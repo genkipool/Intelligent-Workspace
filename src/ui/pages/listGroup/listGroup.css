@@ -4834,6 +4834,8 @@ body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-p
     right: auto !important;
     z-index: 9999999 !important;
     box-shadow: 0 0px 5px var(--interactive-color);
+    box-sizing: border-box;
+    overflow: hidden !important;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-5px);
@@ -5085,7 +5087,9 @@ body.bookmarks-view-active #view-toggle-panel {
     box-shadow: 0 0px 5px var(--interactive-color);
     width: max-content;
     box-sizing: border-box;
+    overflow: hidden !important;
     overflow-x: hidden !important;
+    overflow-y: hidden !important;
     border: 1px solid var(--border-color);
 
     /* We improve the transition to avoid unwanted interactions */
@@ -5212,7 +5216,9 @@ body.bookmarks-view-active #view-toggle-panel {
     border: 1px solid var(--border-color);
     width: max-content;
     box-sizing: border-box;
+    overflow: hidden !important;
     overflow-x: hidden !important;
+    overflow-y: hidden !important;
     z-index: 9999999 !important;
     /* Dominates the entire screen */
 
@@ -5236,6 +5242,18 @@ body.bookmarks-view-active #view-toggle-panel {
     visibility: visible !important;
     transform: translateY(0) !important;
     pointer-events: auto !important;
+}
+
+.group-overflow-popup,
+.overflow-popup-detached.group-overflow-popup {
+    max-width: 280px;
+    padding: 5px;
+}
+
+.group-overflow-popup .overflow-popup-item {
+    padding: 5px 8px;
+    gap: 6px;
+    font-size: 0.78rem;
 }
 
 /* Keep element action buttons visible when the overflow menu or action popup is active */
