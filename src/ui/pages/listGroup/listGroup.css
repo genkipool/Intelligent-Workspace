@@ -4784,7 +4784,9 @@ body.show-domain-headers .domain-header {
 
 #action-visibility-controls-panel {
     display: grid;
-    grid-template-columns: repeat(11, 1fr);
+    /* Set from setupActionVisibilityControls: as many columns as leave every row of
+       toggles ending at the panel's edge. The fallback is the groups view's count. */
+    grid-template-columns: repeat(var(--action-toggle-columns, 11), 1fr);
     gap: 2px;
     padding: 8px var(--spacing-md);
     border-bottom: 1px solid var(--border-color);

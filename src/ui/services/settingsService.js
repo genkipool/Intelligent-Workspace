@@ -14,6 +14,7 @@ import {
 } from '../../utils/db.js';
 
 import { STORAGE_KEYS, ACTION_GROUPS, BOOKMARK_ACTION_GROUPS } from './constants.js';
+import { toggleGridColumns } from './toggleGrid.js';
 
 import { createOverflowMenu } from './contextMenuService.js';
 import { renderHistoryView } from './viewsService.js';
@@ -707,6 +708,13 @@ export function setupActionVisibilityControls() {
 
         _actionVisibilityControlsPanel.appendChild(toggleBtn);
     });
+
+    // The grid takes its column count from the toggles this view actually has, so its
+    // rows end at the panel's edge instead of trailing off wherever a fixed count left them.
+    _actionVisibilityControlsPanel.style.setProperty(
+        '--action-toggle-columns',
+        String(toggleGridColumns(_actionVisibilityControlsPanel.childElementCount)),
+    );
 
     applyActionVisibility();
     applyTranslations();
