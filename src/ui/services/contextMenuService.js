@@ -637,6 +637,14 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
         closeActiveHoverPopup();
         closeOverflowMenu();
         popupEl.classList.add('overflow-popup-detached');
+        if (
+            templateId === 'group-item-template' ||
+            templateId === 'domain-subgroup-template' ||
+            contextElement.classList.contains('group-item') ||
+            contextElement.classList.contains('domain-subgroup')
+        ) {
+            popupEl.classList.add('group-overflow-popup');
+        }
         document.body.appendChild(popupEl);
         applyTranslations(popupEl);
 

@@ -157,12 +157,25 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         // Comfortably fits below anchor
         popupEl.style.top = `${rect.bottom + gap}px`;
         popupEl.classList.remove('popup-upwards');
+        popupEl.style.overflowY = 'hidden';
     } else if (spaceAbove >= popupHeight + gap) {
         // Comfortably fits above anchor
         popupEl.style.top = `${rect.top - popupHeight - gap}px`;
         popupEl.classList.add('popup-upwards');
+        popupEl.style.overflowY = 'hidden';
+    } else if (popupHeight <= windowHeight - 2 * margin) {
+        // Fits within viewport height: shift vertically so it displays completely without scrollbars
+        let top = spaceBelow >= spaceAbove ? rect.bottom + gap : rect.top - popupHeight - gap;
+        top = Math.max(margin, Math.min(top, windowHeight - popupHeight - margin));
+        popupEl.style.top = `${top}px`;
+        if (spaceBelow >= spaceAbove) {
+            popupEl.classList.remove('popup-upwards');
+        } else {
+            popupEl.classList.add('popup-upwards');
+        }
+        popupEl.style.overflowY = 'hidden';
     } else {
-        // Limited space in both directions: choose the side with more room and enable scrolling
+        // Only when the popup is taller than the entire window itself
         if (spaceBelow >= spaceAbove) {
             popupEl.style.top = `${rect.bottom + gap}px`;
             popupEl.style.maxHeight = `${Math.max(60, spaceBelow - gap)}px`;

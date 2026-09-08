@@ -7439,7 +7439,7 @@
         "description": "List groups feature"
     },
     "feature_captureParts": {
-        "message": "Captura una página completa por partes, una imagen por pantalla, para una página que se lee mejor por pantallas que como una imagen altísima.",
+        "message": "Captura una web completa por partes, una imagen por pantalla, para una página que se lee mejor por pantallas que como una imagen altísima.",
         "description": "List groups feature"
     },
     "feature_captureGroupTabs": {
@@ -7463,7 +7463,7 @@
         "description": "Omnibar feature"
     },
     "feature_shortcuts_group_capture": {
-        "message": "Captura todas las pestañas de un grupo desde el teclado: el área visible de cada una, la página completa de cada una, o la página completa por partes.",
+        "message": "Captura todas las pestañas de un grupo desde el teclado: el área visible de cada una, la web completa de cada una, o la web completa por partes.",
         "description": "Navigation shortcuts feature"
     },
     "feature_noteFromSelection": {
@@ -9160,13 +9160,13 @@
         "message": "Capturar área de la página"
     },
     "capturingFullPageNotify": {
-        "message": "Capturando página completa..."
+        "message": "Capturando web completa..."
     },
     "capturingVisibleNotify": {
         "message": "Capturando el área visible..."
     },
     "capturingFullPagePartsNotify": {
-        "message": "Capturando la página completa por partes..."
+        "message": "Capturando la web completa por partes..."
     },
     "capturingAreaNotify": {
         "message": "Selecciona el área a capturar"
@@ -9391,16 +9391,16 @@
         "message": "Hacer una captura del área visible de las pestañas elegidas"
     },
     "omnibarPrefixCaptureFullPageTitle": {
-        "message": "Capturar (página completa)"
+        "message": "Capturar (web completa)"
     },
     "omnibarPrefixCaptureFullPageDesc": {
-        "message": "Hacer una captura de la página completa de las pestañas elegidas"
+        "message": "Hacer una captura de la web completa de las pestañas elegidas"
     },
     "omnibarPrefixCapturePartsTitle": {
         "message": "Capturar (por partes)"
     },
     "omnibarPrefixCapturePartsDesc": {
-        "message": "Hacer una captura de la página completa, una imagen por pantalla"
+        "message": "Hacer una captura de la web completa, una imagen por pantalla"
     },
     "omnibarPrefixCaptureAreaTitle": {
         "message": "Capturar (área)"
@@ -11678,11 +11678,11 @@
         "description": "Capturar el área visible de cada pestaña del grupo"
     },
     "captureGroupTabsFullPage": {
-        "message": "Capturar cada pestaña (página completa)",
+        "message": "Capturar cada pestaña (web completa)",
         "description": "Capturar cada pestaña del grupo con desplazamiento"
     },
     "captureGroupTabsFullPageParts": {
-        "message": "Capturar cada pestaña (página completa por partes)",
+        "message": "Capturar cada pestaña (web completa por partes)",
         "description": "Capturar cada pestaña del grupo, una imagen por pantalla"
     },
     "noGroupToCapture": {
@@ -11719,24 +11719,24 @@
         "description": "Capturar solo lo que se ve en pantalla"
     },
     "captureFullPageScroll": {
-        "message": "Capturar la página completa",
+        "message": "Capturar la web completa",
         "description": "Capturar toda la página recorriéndola"
     },
     "capturingFullPage": {
-        "message": "Capturando la página completa…",
+        "message": "Capturando la web completa…",
         "description": "Se muestra mientras se recorre y captura la página"
     },
     "errorCapturingFullPage": {
-        "message": "No se ha podido capturar la página completa",
-        "description": "Falló la captura de página completa"
+        "message": "No se ha podido capturar la web completa",
+        "description": "Falló la captura de web completa"
     },
     "fullPageBadge": {
-        "message": "Página completa",
+        "message": "Web completa",
         "description": "Marca una imagen de la galería capturada con desplazamiento"
     },
     "fullPagePartBadge": {
         "message": "Captura parte $1/$2",
-        "description": "Marca una parte de una página completa capturada por partes"
+        "description": "Marca una parte de una web completa capturada por partes"
     },
     "generatingPdf": {
         "message": "Creando el PDF…",
@@ -11941,7 +11941,7 @@
         "description": "Qué significa elegir AVIF"
     },
     "captureFullPageSplit": {
-        "message": "Capturar la página completa por partes",
+        "message": "Capturar la web completa por partes",
         "description": "Una imagen por pantalla en vez de una imagen larga"
     },
     "categoryReadAloudControls": {
