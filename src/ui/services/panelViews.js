@@ -45,15 +45,19 @@ export const OVERLAY_VIEWS = new Set(['notes', 'gallery', 'gemini', ...FRAMED_VI
  * The title a view claims at the first paint, or null when the URL names no view this
  * page knows — in which case the caller falls back to the group list.
  *
- * `document` is the one view whose title depends on a second parameter: which of the
- * published pages is being framed.
+ * A document is called what it is: the side browser view. Naming it after the page in
+ * the frame meant the header read "Soporte" and became "Navegador Lateral" a few frames
+ * later, once the view finished opening — and a header that changes on its own is the
+ * flash, whichever of the two words is the better one. `document` still needs `params`,
+ * because a page this route does not publish claims no title at all and falls through
+ * to the group list rather than framing nothing.
  *
  * @param {string|null} view
  * @param {URLSearchParams} params
  * @returns {string|null}
  */
 export function bootTitleKey(view, params) {
-    if (view === 'document') return SITE_DOCUMENT_TITLES[params.get('page')] || null;
+    if (view === 'document') return SITE_DOCUMENT_TITLES[params.get('page')] ? 'webViewTitle' : null;
     return VIEW_TITLE_KEYS[view] || null;
 }
 

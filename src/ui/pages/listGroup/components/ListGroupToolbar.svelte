@@ -14,7 +14,7 @@
     import MuteAllButton from '../../../components/listGroup/MuteAllButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
-    import { bootTitleKey } from '../../../services/panelViews.js';
+    import { bootTitleKey, isFramedView } from '../../../services/panelViews.js';
 
     let {
         initialTitleKey = 'listTabGroups',
@@ -31,6 +31,21 @@
 
     /** `document` is the one view whose title needs a second parameter; see `bootTitleKey`. */
     const bootParams = new URLSearchParams(window.location.search);
+
+    /**
+     * A framed view opened straight from the popup keeps its own name for as long as it
+     * is up.
+     *
+     * `overlayViewOpening` only names a view while it is *opening*; the moment it clears,
+     * the fallback below saw nothing but `isUrlViewActive` and said "Navegador Lateral".
+     * So the header read "Soporte" and changed a few frames later, which is the flash
+     * left after the layout stopped flashing. The page cannot navigate away from one of
+     * these — the search row is hidden — so the name the URL asked for is the name for
+     * the whole of it.
+     */
+    const framedTitleKey = isFramedView(bootParams.get('view'))
+        ? bootTitleKey(bootParams.get('view'), bootParams)
+        : null;
 
     /**
      * The header's name for what is on screen.
@@ -53,7 +68,7 @@
                   : $isGeminiViewActive
                     ? 'geminiViewTitle'
                     : $isUrlViewActive
-                      ? 'webViewTitle'
+                      ? framedTitleKey || 'webViewTitle'
                       : null),
     );
 

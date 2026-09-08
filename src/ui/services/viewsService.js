@@ -1522,13 +1522,14 @@ function createPaymentSkeleton() {
  *   rather than framed: this route names a page, it does not carry an address.
  */
 export async function openDocumentInPanel(page) {
-    const titleKey = SITE_DOCUMENT_TITLES[page];
-    if (!titleKey) {
+    // The table is the guest list, not the header: only a page the site has agreed to be
+    // framed on gets through, and what the header calls the result is the browser view.
+    if (!SITE_DOCUMENT_TITLES[page]) {
         await switchMainView('groups', false);
         return;
     }
 
-    const { container, mainHeaderTitle } = enterFramedView(titleKey);
+    const { container, mainHeaderTitle } = enterFramedView('webViewTitle');
 
     const searchRow = container.querySelector('.search-and-controls');
     if (searchRow) searchRow.style.display = 'none';
