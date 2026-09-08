@@ -424,6 +424,7 @@
                     rel="noopener noreferrer"
                     class="rate-store-btn"
                     id="rate-store-link-popup"
+                    title={$tt('rateExtensionBtnTitle')}
                 >
                     <span class="material-icons-sharp" translate="no" aria-hidden="true">star</span>
                     <span class="material-icons-sharp" translate="no" aria-hidden="true">star</span>
@@ -446,7 +447,7 @@
                 <a
                     class="footer-link"
                     href={siteUrl(link.page)}
-                    title={$tt(link.i18n)}
+                    title={siteUrl(link.page)}
                     onclick={(e) => openDocument(e, link.page)}
                 >
                     {$t(link.i18n)}

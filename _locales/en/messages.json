@@ -7686,6 +7686,10 @@
   "rateExtensionBtn": {
     "message": "Leave a Review"
   },
+  "rateExtensionBtnTitle": {
+      "message": "Opens the Chrome Web Store listing, on its reviews tab",
+      "description": "Tooltip on the popup button that leads to the store reviews."
+  },
   "rateExtensionDescShort": {
     "message": "Enjoying Intelligent Workspace? Please consider leaving a 5-star review!"
   },
