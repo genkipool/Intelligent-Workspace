@@ -63,6 +63,13 @@ export function validateSite(text) {
     const raw = String(text || '').trim();
     if (!raw) return { domain: '', errorKey: 'webActivitySiteRequired' };
 
+    const rawHost = raw
+        .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+        .split(/[/?#:]/)[0]
+        .toLowerCase()
+        .replace(/^www\./, '');
+    if (!rawHost || /^\d+$/.test(rawHost)) return { domain: '', errorKey: 'webActivitySiteInvalid' };
+
     let host = '';
     try {
         host = new URL(raw.includes('://') ? raw : `https://${raw}`).hostname;
@@ -74,7 +81,10 @@ export function validateSite(text) {
 
     // An address, which the browser writes back in canonical form, so a plain
     // four-number check is enough here.
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return { domain: host, errorKey: '' };
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+        if (rawHost === host) return { domain: host, errorKey: '' };
+        return { domain: '', errorKey: 'webActivitySiteInvalid' };
+    }
 
     const labels = host.split('.');
     if (labels.length < 2) return { domain: '', errorKey: 'webActivitySiteNoDot' };

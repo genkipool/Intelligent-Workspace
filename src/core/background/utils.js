@@ -90,6 +90,33 @@ function isValidUrl(urlString) {
         if (isChrome) return true;
         if (isChromeExtensions) return true;
         if ((isHttp || isHttps) && url.hostname && url.hostname.length > 0) {
+            let hostPart = trimmedUrl.slice(trimmedUrl.indexOf('://') + 3).split(/[/?#]/)[0];
+            const atIdx = hostPart.lastIndexOf('@');
+            if (atIdx !== -1) hostPart = hostPart.slice(atIdx + 1);
+            let rawHost;
+            if (hostPart.startsWith('[')) {
+                const closeIdx = hostPart.indexOf(']');
+                rawHost = closeIdx !== -1 ? hostPart.slice(0, closeIdx + 1) : hostPart;
+            } else {
+                const colonIdx = hostPart.indexOf(':');
+                rawHost = colonIdx !== -1 ? hostPart.slice(0, colonIdx) : hostPart;
+            }
+
+            if (!rawHost || /^\d+$/.test(rawHost)) return false;
+            if (url.hostname === 'localhost' && rawHost.toLowerCase() === 'localhost') return true;
+            if (url.hostname.startsWith('[') && url.hostname.endsWith(']')) {
+                return rawHost.toLowerCase() === url.hostname.toLowerCase();
+            }
+            if (
+                /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/.test(url.hostname)
+            ) {
+                return rawHost === url.hostname;
+            }
+            const labels = url.hostname.split('.');
+            if (labels.length < 2) return false;
+            if (!labels.every((l) => /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(l))) return false;
+            const tld = labels[labels.length - 1];
+            if (!/^(?:[a-z0-9-]*[a-z][a-z0-9-]*|xn--[a-z0-9-]+)$/i.test(tld)) return false;
             return true;
         }
         return false;
