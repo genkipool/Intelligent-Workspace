@@ -2394,12 +2394,8 @@ function itgReadYouTubeComments(limit = 40) {
             const dislikeBtn = el.querySelector(
                 '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button',
             );
-            const isLiked =
-                likeBtn?.getAttribute('aria-pressed') === 'true' ||
-                likeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
-            const isDisliked =
-                dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
-                dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
+            const isLiked = itgIsVoteButtonPressed(likeBtn);
+            const isDisliked = itgIsVoteButtonPressed(dislikeBtn);
             return {
                 el,
                 author: itgText(el, ['#author-text', 'a#author-text span', '#header-author a']),
@@ -2435,12 +2431,8 @@ function itgReadYouTubeReplies(thread) {
             const dislikeBtn = el.querySelector(
                 '#dislike-button button, dislike-button-shape button, ytd-toggle-button-renderer#dislike-button button',
             );
-            const isLiked =
-                likeBtn?.getAttribute('aria-pressed') === 'true' ||
-                likeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
-            const isDisliked =
-                dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
-                dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal');
+            const isLiked = itgIsVoteButtonPressed(likeBtn);
+            const isDisliked = itgIsVoteButtonPressed(dislikeBtn);
             return {
                 el,
                 author: itgText(el, ['#author-text', 'a#author-text span']),
@@ -2459,46 +2451,79 @@ function itgReadYouTubeReplies(thread) {
         .filter(Boolean);
 }
 
-function itgGetYouTubeVideoLikeButton() {
+/**
+ * Where the vote of the video being watched lives.
+ *
+ * A YouTube page holds several like buttons at once — the one under the video, one
+ * in the player's own quick-action overlay, one more for the wide layouts — and
+ * `document.querySelector` hands over whichever comes first in the document, which
+ * is the player's. That one is part of the player, not of the video: it survives
+ * the site's navigation between videos and keeps whatever was pressed on it, so a
+ * vote read there follows the window from video to video. The button under the
+ * video is rebuilt with the rest of the metadata on every navigation, which makes
+ * it the one that actually answers "is this video liked". Shorts keeps every reel
+ * it has rendered, each with its own, so there the answer is inside the active one.
+ */
+function itgYouTubeVoteRoot() {
     return (
-        document.querySelector('like-button-view-model button') ||
-        document.querySelector(
-            'ytd-watch-metadata #top-level-buttons-computed segmented-like-dislike-button-view-model button:first-of-type',
+        document.querySelector('ytd-reel-video-renderer[is-active]') ||
+        document.querySelector('ytd-watch-metadata') ||
+        document
+    );
+}
+
+function itgGetYouTubeVideoLikeButton() {
+    const root = itgYouTubeVoteRoot();
+    return (
+        root.querySelector('like-button-view-model button') ||
+        root.querySelector(
+            '#top-level-buttons-computed segmented-like-dislike-button-view-model button:first-of-type',
         ) ||
-        document.querySelector('#segmented-like-button button') ||
-        document.querySelector('ytd-toggle-button-renderer#like-button button') ||
-        document.querySelector('#like-button button') ||
-        document.querySelector('ytd-like-button-renderer button')
+        root.querySelector('#segmented-like-button button') ||
+        root.querySelector('ytd-toggle-button-renderer#like-button button') ||
+        root.querySelector('#like-button button') ||
+        root.querySelector('ytd-like-button-renderer button')
     );
 }
 
 function itgGetYouTubeVideoDislikeButton() {
+    const root = itgYouTubeVoteRoot();
     return (
-        document.querySelector('dislike-button-view-model button') ||
-        document.querySelector(
-            'ytd-watch-metadata #top-level-buttons-computed segmented-like-dislike-button-view-model button:last-of-type',
+        root.querySelector('dislike-button-view-model button') ||
+        root.querySelector(
+            '#top-level-buttons-computed segmented-like-dislike-button-view-model button:last-of-type',
         ) ||
-        document.querySelector('#segmented-dislike-button button') ||
-        document.querySelector('ytd-toggle-button-renderer#dislike-button button') ||
-        document.querySelector('#dislike-button button') ||
-        document.querySelector('ytd-dislike-button-renderer button')
+        root.querySelector('#segmented-dislike-button button') ||
+        root.querySelector('ytd-toggle-button-renderer#dislike-button button') ||
+        root.querySelector('#dislike-button button') ||
+        root.querySelector('ytd-dislike-button-renderer button')
+    );
+}
+
+/**
+ * Whether a vote button is the pressed one.
+ *
+ * `aria-pressed` is the button's own answer and the only reliable one: the class
+ * names below belong to older layouts, where the pressed state was a style. Reading
+ * them on a current button is what would report a like that is not there, because
+ * today's segmented buttons carry the tonal style whether or not they are pressed.
+ */
+function itgIsVoteButtonPressed(btn) {
+    if (!btn) return false;
+    const pressed = btn.getAttribute('aria-pressed');
+    if (pressed === 'true' || pressed === 'false') return pressed === 'true';
+    return (
+        btn.classList.contains('yt-spec-button-shape-next--tonal') ||
+        !!btn.parentElement?.classList?.contains('style-default-active')
     );
 }
 
 function itgGetYouTubeVideoVoteStatus() {
     const likeBtn = itgGetYouTubeVideoLikeButton();
     const dislikeBtn = itgGetYouTubeVideoDislikeButton();
-    const isLiked =
-        likeBtn?.getAttribute('aria-pressed') === 'true' ||
-        likeBtn?.classList.contains('yt-spec-button-shape-next--tonal') ||
-        likeBtn?.parentElement?.classList?.contains('style-default-active');
-    const isDisliked =
-        dislikeBtn?.getAttribute('aria-pressed') === 'true' ||
-        dislikeBtn?.classList.contains('yt-spec-button-shape-next--tonal') ||
-        dislikeBtn?.parentElement?.classList?.contains('style-default-active');
     return {
-        isLiked: !!isLiked,
-        isDisliked: !!isDisliked,
+        isLiked: itgIsVoteButtonPressed(likeBtn),
+        isDisliked: itgIsVoteButtonPressed(dislikeBtn),
         hasLike: !!likeBtn,
         hasDislike: !!dislikeBtn,
     };
@@ -2778,6 +2803,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.sideTab = 'videos';
         this.adoptions = [];
         this.disposers = [];
+        // The like button of the video that just left, while the page rebuilds.
+        this.staleVoteButton = null;
+        this.staleVoteVideoId = '';
         this.hideTimer = null;
         this.dragging = false;
         this.isYouTube = itgIsYouTube();
@@ -2822,6 +2850,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.watchForVideoSwap();
         }
         if (this.isYouTube) this.watchLists();
+        this.watchVoteState();
         this.refreshLists();
         this.render();
         this.loadConfiguredSize();
@@ -3076,6 +3105,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         // The container itself can be replaced, which the observer above cannot see.
         if (this.isYouTube) {
             const onNavigate = () => {
+                // The vote belongs to the video that just left, not to this one.
+                this.markVideoVoteStale();
+                this.rewatchVoteState?.();
                 setTimeout(() => {
                     const replacement = this.youtubePlayerVideo();
                     if (replacement && replacement !== this.video && itgIsUsableVideo(replacement)) {
@@ -3768,7 +3800,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         }
     }
 
-    updateVideoVotes() {
+    updateVideoVotes(status = null) {
         if (!this.buttons?.like || !this.buttons?.dislike) return;
         const canVote = this.isYouTube;
         this.buttons.like.hidden = !canVote;
@@ -3782,22 +3814,86 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         if (!canVote) return;
 
-        const status = itgGetYouTubeVideoVoteStatus();
-        this.buttons.like.classList.toggle('is-on', status.isLiked);
-        this.buttons.dislike.classList.toggle('is-on', status.isDisliked);
-        this.buttons.like.innerHTML = status.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
-        this.buttons.dislike.innerHTML = status.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
+        if (!status) {
+            if (!this.voteStateIsCurrent()) return;
+            this.staleVoteButton = null;
+            this.staleVoteVideoId = '';
+        }
+
+        const votes = status || itgGetYouTubeVideoVoteStatus();
+        this.buttons.like.classList.toggle('is-on', votes.isLiked);
+        this.buttons.dislike.classList.toggle('is-on', votes.isDisliked);
+        this.buttons.like.innerHTML = votes.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
+        this.buttons.dislike.innerHTML = votes.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
 
         if (moreLike) {
-            moreLike.classList.toggle('is-on', status.isLiked);
+            moreLike.classList.toggle('is-on', votes.isLiked);
             const icon = moreLike.querySelector('.itg-pip-more-icon');
-            if (icon) icon.innerHTML = status.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
+            if (icon) icon.innerHTML = votes.isLiked ? ITG_PIP_ICONS.likeFilled : ITG_PIP_ICONS.like;
         }
         if (moreDislike) {
-            moreDislike.classList.toggle('is-on', status.isDisliked);
+            moreDislike.classList.toggle('is-on', votes.isDisliked);
             const icon = moreDislike.querySelector('.itg-pip-more-icon');
-            if (icon) icon.innerHTML = status.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
+            if (icon) icon.innerHTML = votes.isDisliked ? ITG_PIP_ICONS.dislikeFilled : ITG_PIP_ICONS.dislike;
         }
+    }
+
+    /**
+     * The page's vote buttons are the only source of truth, and they belong to the
+     * video they were rendered for: on a video change the page builds new ones, so
+     * whatever is still in the document is the previous video's vote. This marks
+     * that reading as spent and shows the honest state meanwhile — a video nobody
+     * has voted — until `voteStateIsCurrent` says the page has caught up.
+     */
+    markVideoVoteStale() {
+        if (!this.isYouTube) return;
+        this.staleVoteButton = itgGetYouTubeVideoLikeButton();
+        this.staleVoteVideoId = itgExtractYouTubeVideoId(window.location.href);
+        this.updateVideoVotes({ isLiked: false, isDisliked: false });
+    }
+
+    /** Whether the buttons in the page are the ones of the video playing now. */
+    voteStateIsCurrent() {
+        if (!this.staleVoteButton) return true;
+        const button = itgGetYouTubeVideoLikeButton();
+        // A watch navigation replaces the button; Shorts reuses it, and there it is
+        // the address that moves on.
+        if (button && button !== this.staleVoteButton) return true;
+        return itgExtractYouTubeVideoId(window.location.href) !== this.staleVoteVideoId;
+    }
+
+    /**
+     * Follows the page's own buttons instead of guessing when to look at them: the
+     * video can be voted from the page as well, and every navigation rebuilds them.
+     */
+    watchVoteState() {
+        if (!this.isYouTube) return;
+        let pending = false;
+        const sync = () => {
+            if (pending) return;
+            pending = true;
+            // The page rebuilds in bursts of mutations; one reading per burst.
+            setTimeout(() => {
+                pending = false;
+                if (!this.pipWindow || this.pipWindow.closed) return;
+                this.updateVideoVotes();
+            }, 100);
+        };
+        const observer = new MutationObserver(sync);
+        this.rewatchVoteState = () => {
+            const host = itgYouTubeVoteRoot();
+            if (host === document) return;
+            observer.disconnect();
+            observer.observe(host, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['aria-pressed', 'is-active'],
+            });
+            sync();
+        };
+        this.rewatchVoteState();
+        this.disposers.push(() => observer.disconnect());
     }
 
     togglePlay() {
@@ -4380,10 +4476,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     goToSibling(offset) {
         if (this.isShorts) {
             itgShortsNavButton(offset > 0 ? 'next' : 'prev')?.click();
+            this.markVideoVoteStale();
             return;
         }
         const target = this.siblingItem(offset);
-        if (target) target.linkEl.click();
+        if (target) {
+            target.linkEl.click();
+            this.markVideoVoteStale();
+        }
     }
 
     siblingItem(offset) {
