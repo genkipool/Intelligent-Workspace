@@ -594,7 +594,7 @@
                         <span class="filter-option-label"
                             >{$t('downloadFilterPausedFailed') || 'Pausadas / Errores'}</span
                         >
-                        <span class="chip-count">{$downloadStats.interrupted + $downloadStats.paused}</span>
+                        <span class="chip-count">{$downloadStats.interrupted}</span>
                     </button>
                 </div>
             </div>
