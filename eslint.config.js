@@ -177,6 +177,12 @@ export default [
         files: ['scripts/**/*.mjs'],
         languageOptions: { globals: { ...globals.node } },
     },
+    {
+        // The test suite runs on Node too, and builds the DOM it needs with jsdom
+        // rather than borrowing a page's globals.
+        files: ['test/**/*.mjs'],
+        languageOptions: { globals: { ...globals.node } },
+    },
     /**
      * The plugin's recommended preset ends with a block that carries rules but no
      * `files`, so its 37 svelte/* rules were being applied to every file in the

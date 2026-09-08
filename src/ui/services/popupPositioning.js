@@ -33,8 +33,58 @@ export function getScrollParent(el) {
     return null;
 }
 
+/** Share of the distance still owed that each frame of the glide consumes. */
+const GLIDE_EASING = 0.22;
+
+/** Below this the remainder is spent in one frame instead of easing forever. */
+const GLIDE_MIN_STEP = 1;
+
+/** @type {{scroller: HTMLElement, remaining: number, raf: number}|null} */
+let wheelGlide = null;
+
+/** One frame of the glide: move a share of what is owed, then ask for the next. */
+function stepWheelGlide() {
+    const glide = wheelGlide;
+    if (!glide) return;
+
+    const eased = glide.remaining * GLIDE_EASING;
+    const isLastStep = Math.abs(eased) < GLIDE_MIN_STEP;
+    const step = isLastStep ? glide.remaining : eased;
+
+    const before = glide.scroller.scrollTop;
+    glide.scroller.scrollTop = before + step;
+    glide.remaining -= step;
+
+    // Finished, or the list is at an end and has nothing left to give.
+    if (isLastStep || glide.scroller.scrollTop === before) {
+        wheelGlide = null;
+        return;
+    }
+    glide.raf = requestAnimationFrame(stepWheelGlide);
+}
+
 /**
- * Wheel over a detached popup scrolls the list behind it.
+ * Scrolls `scroller` by `delta`, eased over a few frames.
+ *
+ * Landing a whole wheel notch in one frame reads as a stutter next to the panel's
+ * own wheel scrolling, which the browser animates. What is still owed is carried
+ * rather than replaced, so a fast burst of notches adds up instead of each one
+ * cutting the last short, and reading `scrollTop` fresh every frame lets a drag of
+ * the scrollbar move the list without fighting the glide.
+ *
+ * @param {HTMLElement} scroller
+ * @param {number} delta
+ */
+function glideScrollBy(scroller, delta) {
+    const owed = wheelGlide?.scroller === scroller ? wheelGlide.remaining : 0;
+    if (wheelGlide) cancelAnimationFrame(wheelGlide.raf);
+    wheelGlide = { scroller, remaining: owed + delta, raf: 0 };
+    wheelGlide.raf = requestAnimationFrame(stepWheelGlide);
+}
+
+/**
+ * Wheel over a detached popup scrolls the list behind it, as smoothly as the list
+ * scrolls on its own.
  *
  * A detached popup is fixed and parented to <body>, so a wheel over it would
  * otherwise land nowhere and the panel would sit still under the pointer.
@@ -55,7 +105,7 @@ export function forwardWheelToScrollParent(popupEl, anchorEl) {
         (event) => {
             if (popupEl.classList.contains(SCROLLING_POPUP_CLASS)) return;
             const scroller = getScrollParent(anchorEl);
-            if (scroller) scroller.scrollTop += event.deltaY;
+            if (scroller) glideScrollBy(scroller, event.deltaY);
         },
         { passive: true },
     );
