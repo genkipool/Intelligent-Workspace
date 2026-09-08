@@ -15,6 +15,7 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
+import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
 import {
     mintPaymentNonce,
     buildPaymentUrl,
@@ -942,10 +943,23 @@ export function initCustomCalendar() {
     if (toggleBtn.dataset.calendarBound === 'true') return;
     toggleBtn.dataset.calendarBound = 'true';
 
+    // A range is picked in two clicks. `rangeAnchor` is the end already pinned, and
+    // `rangeHover` is where the pointer is, so the grid can show the range forming
+    // before the second click lands. Both null means no pick is in progress.
+    let rangeAnchor = null;
+    let rangeHover = null;
+
+    /** Abandons a half-finished pick, so reopening the calendar starts clean. */
+    const cancelRange = () => {
+        rangeAnchor = null;
+        rangeHover = null;
+    };
+
     toggleBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         const isHidden = calendarPopup.classList.contains('hidden');
 
+        cancelRange();
         if (isHidden) {
             calendarPopup.classList.remove('hidden');
             renderCalendar();
@@ -958,8 +972,9 @@ export function initCustomCalendar() {
         e.stopPropagation();
     });
 
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', () => {
         if (!calendarPopup.classList.contains('hidden')) {
+            cancelRange();
             calendarPopup.classList.add('hidden');
         }
     });
@@ -974,6 +989,7 @@ export function initCustomCalendar() {
     });
 
     nextBtn.addEventListener('click', () => {
+        if (nextBtn.disabled) return;
         calCurrentDate.update((d) => {
             const nd = new Date(d);
             nd.setMonth(nd.getMonth() + 1);
@@ -983,6 +999,7 @@ export function initCustomCalendar() {
     });
 
     clearBtn.addEventListener('click', () => {
+        cancelRange();
         calSelectedDate.set(null);
         currentHistoryDateFilter.set(null);
         downloadsDateFilter.set(null);
@@ -1023,6 +1040,9 @@ export function initCustomCalendar() {
 
         const today = new Date();
 
+        // There is nothing to look at past this month, so the arrow stops here.
+        nextBtn.disabled = isCurrentMonthOrLater(year, month, today);
+
         for (let i = 0; i < firstDayIndex; i++) {
             const emptyCell = document.createElement('div');
             emptyCell.className = 'calendar-day empty';
@@ -1037,52 +1057,78 @@ export function initCustomCalendar() {
             activeDateFilter = get(downloadsDateFilter);
         }
 
+        // What the grid should show as chosen: the range being picked right now if
+        // there is one, otherwise the range already filtering the list.
+        const shownRange = rangeAnchor ? normalizeRange(rangeAnchor, rangeHover || rangeAnchor) : activeDateFilter;
+
         for (let day = 1; day <= daysInMonth; day++) {
             const dayEl = document.createElement('div');
             dayEl.className = 'calendar-day';
             dayEl.textContent = day;
 
+            const date = new Date(year, month, day);
+
             if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
                 dayEl.classList.add('today');
             }
 
-            if (activeDateFilter && activeDateFilter.start) {
-                const selD = new Date(activeDateFilter.start);
-                if (day === selD.getDate() && month === selD.getMonth() && year === selD.getFullYear()) {
-                    dayEl.classList.add('selected');
-                }
-            } else {
-                const sel = get(calSelectedDate);
-                if (sel && day === sel.getDate() && month === sel.getMonth() && year === sel.getFullYear()) {
-                    dayEl.classList.add('selected');
-                }
+            // Nothing has been downloaded or visited tomorrow, so tomorrow is not on offer.
+            if (isFutureDay(date, today)) {
+                dayEl.classList.add('disabled');
+                gridEl.appendChild(dayEl);
+                continue;
             }
 
+            const inRange = dayInRange(date, shownRange);
+            if (inRange.inside) {
+                dayEl.classList.add('in-range');
+                if (inRange.isStart) dayEl.classList.add('range-start');
+                if (inRange.isEnd) dayEl.classList.add('range-end');
+                if (inRange.isSingleDay) dayEl.classList.add('selected');
+            }
+
+            dayEl.addEventListener('mouseenter', () => {
+                if (!rangeAnchor) return;
+                // Redrawing replaces the cell under the pointer, which fires this again;
+                // without the guard the preview would feed itself.
+                if (rangeHover && startOfDay(rangeHover) === startOfDay(date)) return;
+                rangeHover = date;
+                renderCalendar();
+            });
+
             dayEl.addEventListener('click', () => {
-                calSelectedDate.set(new Date(year, month, day));
-
-                const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
-                const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
-
-                toggleBtn.classList.add('active');
-                toggleBtn.setAttribute('aria-pressed', 'true');
-                calendarPopup.classList.add('hidden');
-
-                if (get(currentMainView) === 'history') {
-                    currentHistoryDateFilter.set({
-                        start: startOfDay.getTime(),
-                        end: endOfDay.getTime(),
-                    });
-                    renderHistoryView(startOfDay.getTime(), endOfDay.getTime());
-                } else if (get(currentMainView) === 'downloads') {
-                    downloadsDateFilter.set({
-                        start: startOfDay.getTime(),
-                        end: endOfDay.getTime(),
-                    });
+                // First click pins one end of the range and leaves the calendar open;
+                // the second closes it. Picking one day is the same day twice.
+                if (!rangeAnchor) {
+                    rangeAnchor = date;
+                    rangeHover = date;
+                    renderCalendar();
+                    return;
                 }
+                applyRange(rangeAnchor, date);
             });
 
             gridEl.appendChild(dayEl);
+        }
+    }
+
+    /** Puts the finished range to work in whichever view asked for it. */
+    function applyRange(from, to) {
+        const { start, end } = normalizeRange(from, to);
+
+        rangeAnchor = null;
+        rangeHover = null;
+        calSelectedDate.set(new Date(start));
+
+        toggleBtn.classList.add('active');
+        toggleBtn.setAttribute('aria-pressed', 'true');
+        calendarPopup.classList.add('hidden');
+
+        if (get(currentMainView) === 'history') {
+            currentHistoryDateFilter.set({ start, end });
+            renderHistoryView(start, end);
+        } else if (get(currentMainView) === 'downloads') {
+            downloadsDateFilter.set({ start, end });
         }
     }
 }

@@ -587,13 +587,20 @@
                     </button>
                     <button
                         type="button"
+                        class="filter-popup-option chip-paused"
+                        class:active={$downloadsStatusFilter === 'paused'}
+                        onclick={() => downloadsStatusFilter.set('paused')}
+                    >
+                        <span class="filter-option-label">{$t('downloadFilterPaused') || 'Pausadas'}</span>
+                        <span class="chip-count">{$downloadStats.paused}</span>
+                    </button>
+                    <button
+                        type="button"
                         class="filter-popup-option chip-failed"
                         class:active={$downloadsStatusFilter === 'interrupted'}
                         onclick={() => downloadsStatusFilter.set('interrupted')}
                     >
-                        <span class="filter-option-label"
-                            >{$t('downloadFilterPausedFailed') || 'Pausadas / Errores'}</span
-                        >
+                        <span class="filter-option-label">{$t('downloadFilterFailed') || 'Errores'}</span>
                         <span class="chip-count">{$downloadStats.interrupted}</span>
                     </button>
                 </div>
