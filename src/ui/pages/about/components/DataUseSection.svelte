@@ -15,12 +15,10 @@
 -->
 <script>
     import { t } from '../../../stores/i18nStore.js';
+    import { siteUrl } from '../../../../config/site.js';
 
-    // The policy is published one page per language, the way the payment page is.
-    // An unknown language falls back to English, which is what the site does too.
-    const href = (chrome.i18n.getUILanguage() || '').toLowerCase().startsWith('es')
-        ? 'https://intelligentworkspace.genkipool.com/es/privacy'
-        : 'https://intelligentworkspace.genkipool.com/privacy';
+    // The policy is published one page per language; `config/site.js` picks the reader's.
+    const href = siteUrl('privacy');
 </script>
 
 <section id="privacy-section" class="data-use-section card">
