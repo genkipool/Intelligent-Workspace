@@ -1,4 +1,4 @@
-# <img src="assets/icons/logo.svg" alt="Logo de Intelligent Workspace" width="36" height="32" align="middle" style="vertical-align: middle;" /> Intelligent Workspace
+# <img src="assets/icons/logo.svg" alt="Logo de Intelligent Workspace" width="36" height="32" align="top" style="vertical-align: top;" /> Intelligent Workspace
 
 > **Transforma Google Chrome en una estación de trabajo inteligente, hiper-productiva y autónoma.**
 

@@ -153,6 +153,23 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     const spaceBelow = windowHeight - rect.bottom - margin;
     const spaceAbove = rect.top - margin;
 
+    const isTab =
+        options.isTab ??
+        (popupEl.classList.contains('tab-overflow-popup') ||
+            Boolean(anchorEl.closest && anchorEl.closest('.tab-item')));
+
+    let hasScroll = options.hasScroll;
+    if (hasScroll === undefined) {
+        const scrollContainer = anchorEl.closest
+            ? anchorEl.closest(
+                  '#groups-list, .groups-list, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container, #downloads-view-container, #notes-view',
+              )
+            : null;
+        hasScroll = scrollContainer
+            ? scrollContainer.scrollHeight > scrollContainer.clientHeight || scrollContainer.scrollTop > 0
+            : document.body.scrollHeight > window.innerHeight;
+    }
+
     if (spaceBelow >= popupHeight + gap) {
         // Comfortably fits below anchor
         popupEl.style.top = `${rect.bottom + gap}px`;
@@ -162,6 +179,12 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         // Comfortably fits above anchor
         popupEl.style.top = `${rect.top - popupHeight - gap}px`;
         popupEl.classList.add('popup-upwards');
+        popupEl.style.overflowY = 'hidden';
+    } else if (isTab && hasScroll) {
+        // If it doesn't fit above or below, but the side panel has scroll:
+        // Follow downwards below the anchor and let it extend below the panel's scroll, no need to shift it up.
+        popupEl.style.top = `${rect.bottom + gap}px`;
+        popupEl.classList.remove('popup-upwards');
         popupEl.style.overflowY = 'hidden';
     } else if (popupHeight <= windowHeight - 2 * margin) {
         // Fits within viewport height: shift vertically so it displays completely without scrollbars

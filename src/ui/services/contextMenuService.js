@@ -161,7 +161,15 @@ function getVisibleScrollContainer() {
 }
 
 function positionDetachedPopup(buttonEl, popupEl) {
-    positionSmartPopup(buttonEl, popupEl, { margin: 8, gap: 5 });
+    const isTab =
+        popupEl.classList.contains('tab-overflow-popup') || Boolean(buttonEl.closest && buttonEl.closest('.tab-item'));
+
+    const scrollContainer = getVisibleScrollContainer();
+    const hasScroll = scrollContainer
+        ? scrollContainer.scrollHeight > scrollContainer.clientHeight || scrollContainer.scrollTop > 0
+        : document.body.scrollHeight > window.innerHeight;
+
+    positionSmartPopup(buttonEl, popupEl, { margin: 8, gap: 5, isTab, hasScroll });
 }
 
 export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey }) {
@@ -644,6 +652,9 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
             contextElement.classList.contains('domain-subgroup')
         ) {
             popupEl.classList.add('group-overflow-popup');
+        }
+        if (templateId === 'tab-item-template' || contextElement?.classList?.contains('tab-item')) {
+            popupEl.classList.add('tab-overflow-popup');
         }
         document.body.appendChild(popupEl);
         applyTranslations(popupEl);
