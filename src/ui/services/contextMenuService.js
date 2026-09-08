@@ -7,7 +7,7 @@ import {
 } from '../stores/appStore.svelte.js';
 export { activeContextMenu };
 import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS, PAGE_MODES } from './constants.js';
-import { applyPageMode } from './groupsService.js';
+import { applyPageMode, positionSmartPopup, closeActiveHoverPopup } from './groupsService.js';
 import { captureGroupTabsById, captureTabArea, handleScreenshotRequest } from './screenshotsService.js';
 import { readAloudTargetOf, startReadAloud } from './readAloudService.js';
 
@@ -160,29 +160,7 @@ function getVisibleScrollContainer() {
 }
 
 function positionDetachedPopup(buttonEl, popupEl) {
-    const rect = buttonEl.getBoundingClientRect();
-    const popupWidth = popupEl.offsetWidth;
-    const popupHeight = popupEl.offsetHeight;
-
-    popupEl.style.position = 'fixed';
-    popupEl.style.zIndex = '9999999';
-
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-
-    if (spaceBelow < popupHeight && spaceAbove > popupHeight) {
-        popupEl.style.top = `${rect.top - popupHeight - 5}px`;
-        popupEl.classList.add('popup-upwards');
-    } else {
-        popupEl.style.top = `${rect.bottom + 5}px`;
-        popupEl.classList.remove('popup-upwards');
-    }
-
-    let leftPos = rect.right - popupWidth;
-    if (leftPos < 10) {
-        leftPos = 10;
-    }
-    popupEl.style.left = `${leftPos}px`;
+    positionSmartPopup(buttonEl, popupEl, { margin: 8, gap: 5 });
 }
 
 export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey }) {
@@ -217,6 +195,8 @@ export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onCl
 }
 
 export async function showContextMenu(event, contextElement) {
+    closeActiveHoverPopup();
+    closeOverflowMenu();
     const ctx = get(activeContextMenu);
     if (ctx) {
         ctx.remove();
@@ -231,11 +211,19 @@ export async function showContextMenu(event, contextElement) {
     const list = menu.querySelector('.context-menu-list');
 
     let actionsSelector;
-    if (contextElement.classList.contains('group-item')) actionsSelector = '.group-actions';
-    else if (contextElement.classList.contains('domain-subgroup')) actionsSelector = '.subgroup-actions';
-    else if (contextElement.classList.contains('tab-item')) actionsSelector = '.tab-actions';
-    else if (contextElement.classList.contains('bookmark-item')) actionsSelector = '.bookmark-actions';
-    else if (contextElement.classList.contains('bookmark-folder')) actionsSelector = '.folder-actions';
+    if (contextElement.classList.contains('group-item')) {
+        actionsSelector = '.group-actions';
+        menuOverlay.classList.add('context-menu-centered');
+    } else if (contextElement.classList.contains('domain-subgroup')) {
+        actionsSelector = '.subgroup-actions';
+        menuOverlay.classList.add('context-menu-centered');
+    } else if (contextElement.classList.contains('tab-item')) {
+        actionsSelector = '.tab-actions';
+    } else if (contextElement.classList.contains('bookmark-item')) {
+        actionsSelector = '.bookmark-actions';
+    } else if (contextElement.classList.contains('bookmark-folder')) {
+        actionsSelector = '.folder-actions';
+    }
 
     if (!actionsSelector) return;
 
@@ -497,7 +485,14 @@ export function createOverflowMenu(actionsContainer, templateId, contextElement)
             }
         });
 
-        actionsContainer.appendChild(overflowContainer);
+        const deleteBtn = actionsContainer.querySelector(
+            '.delete-tab-btn, .delete-group-btn, .delete-subgroup-btn, .delete-btn',
+        );
+        if (deleteBtn) {
+            actionsContainer.insertBefore(overflowContainer, deleteBtn);
+        } else {
+            actionsContainer.appendChild(overflowContainer);
+        }
         applyTranslations(overflowContainer);
     }
 }
@@ -642,6 +637,7 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
     });
 
     if (popupEl.childElementCount > 1) {
+        closeActiveHoverPopup();
         closeOverflowMenu();
         popupEl.classList.add('overflow-popup-detached');
         document.body.appendChild(popupEl);
@@ -805,6 +801,7 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
     });
 
     if (popupEl.childElementCount > 1) {
+        closeActiveHoverPopup();
         closeOverflowMenu();
         popupEl.classList.add('overflow-popup-detached');
         document.body.appendChild(popupEl);

@@ -33,6 +33,7 @@ import { getStorage, loadState, saveState, whenStateLoaded } from './settingsSer
 import { openUrlInPanel, toggleExpandAll, updateExpandAllButtonState } from './viewsService.js';
 import { closeDownloadModal } from './downloadsService.js';
 import { getReadAloudReadings, setAllReadAloudPaused } from './readAloudService.js';
+import { closeOverflowMenu } from './contextMenuService.js';
 
 // Store imports from appStore (replacing state.X)
 import {
@@ -91,31 +92,180 @@ export const pinnedAtLastPositionId = writable(null);
  * @param {HTMLElement} container The positioned wrapper the popup is appended to.
  * @param {() => Array<{label?: string, i18n?: string, active?: boolean, onSelect: () => void}>} buildItems
  */
+let activeHoverPopup = null;
+let activeHoverSource = null;
+let activeHoverRemoveFn = null;
+
+export function closeActiveHoverPopup() {
+    if (activeHoverRemoveFn) {
+        activeHoverRemoveFn();
+    }
+}
+
+/**
+ * Intelligently positions a popup relative to an anchor element
+ * so that it stays entirely within the viewport / side panel container bounds.
+ *
+ * @param {HTMLElement} anchorEl - The button or container the popup is attached to.
+ * @param {HTMLElement} popupEl - The popup element.
+ * @param {{ margin?: number, gap?: number }} [options]
+ */
+export function positionSmartPopup(anchorEl, popupEl, options = {}) {
+    if (!anchorEl || !popupEl) return;
+
+    const margin = options.margin ?? 8;
+    const gap = options.gap ?? 4;
+    const rect = anchorEl.getBoundingClientRect();
+
+    popupEl.style.position = 'fixed';
+    popupEl.style.zIndex = '9999999';
+
+    // Reset styles for accurate measurement
+    popupEl.style.maxHeight = '';
+    popupEl.style.maxWidth = '';
+    popupEl.style.overflowY = '';
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // Constrain maxWidth if larger than window width minus margins
+    const maxAvailableWidth = Math.max(100, windowWidth - 2 * margin);
+    popupEl.style.maxWidth = `${maxAvailableWidth}px`;
+
+    const popupWidth = popupEl.offsetWidth;
+    const popupHeight = popupEl.offsetHeight;
+
+    // 1. Horizontal placement:
+    // Align popup right edge with anchor right edge
+    let left = rect.right - popupWidth;
+
+    // Boundary checks:
+    if (left < margin) {
+        left = margin;
+    }
+    if (left + popupWidth > windowWidth - margin) {
+        left = Math.max(margin, windowWidth - popupWidth - margin);
+    }
+    popupEl.style.left = `${left}px`;
+
+    // 2. Vertical placement:
+    const spaceBelow = windowHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+
+    if (spaceBelow >= popupHeight + gap) {
+        // Comfortably fits below anchor
+        popupEl.style.top = `${rect.bottom + gap}px`;
+        popupEl.classList.remove('popup-upwards');
+    } else if (spaceAbove >= popupHeight + gap) {
+        // Comfortably fits above anchor
+        popupEl.style.top = `${rect.top - popupHeight - gap}px`;
+        popupEl.classList.add('popup-upwards');
+    } else {
+        // Limited space in both directions: choose the side with more room and enable scrolling
+        if (spaceBelow >= spaceAbove) {
+            popupEl.style.top = `${rect.bottom + gap}px`;
+            popupEl.style.maxHeight = `${Math.max(60, spaceBelow - gap)}px`;
+            popupEl.classList.remove('popup-upwards');
+        } else {
+            const availableHeight = Math.max(60, spaceAbove - gap);
+            popupEl.style.top = `${rect.top - availableHeight - gap}px`;
+            popupEl.style.maxHeight = `${availableHeight}px`;
+            popupEl.classList.add('popup-upwards');
+        }
+        popupEl.style.overflowY = 'auto';
+    }
+}
+
+/**
+ * A hover menu attached to an action button, positioned intelligently within the side panel.
+ *
+ * @param {HTMLElement} container The positioned wrapper the popup is appended to.
+ * @param {() => Array<{label?: string, i18n?: string, active?: boolean, onSelect: () => void}>} buildItems
+ */
 export function createHoverActionPopup(container, buildItems) {
     if (!container || container.dataset.hoverPopupBound === 'true') return;
     container.dataset.hoverPopupBound = 'true';
 
     let popupEl = null;
-    let hideTimeout;
+    let hideTimeout = null;
+    let scrollRaf = null;
+
+    const cancelHide = () => {
+        if (hideTimeout) {
+            clearTimeout(hideTimeout);
+            hideTimeout = null;
+        }
+    };
 
     const removePopup = () => {
+        cancelHide();
+        if (scrollRaf) {
+            cancelAnimationFrame(scrollRaf);
+            scrollRaf = null;
+        }
+        document.removeEventListener('scroll', handleScroll, { capture: true });
+        window.removeEventListener('resize', handleResize);
+        document.removeEventListener('click', handleOutsideClick);
+
         if (!popupEl) return;
         const leaving = popupEl;
         popupEl = null;
+
+        if (activeHoverPopup === leaving) {
+            activeHoverPopup = null;
+            activeHoverSource = null;
+            activeHoverRemoveFn = null;
+        }
+
+        container.classList.remove('active');
         leaving.classList.remove('visible');
         setTimeout(() => leaving.remove(), 200);
     };
 
+    const scheduleHide = () => {
+        cancelHide();
+        hideTimeout = setTimeout(removePopup, 200);
+    };
+
+    const updatePosition = () => {
+        if (!popupEl) return;
+        const rect = container.getBoundingClientRect();
+        if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth) {
+            removePopup();
+            return;
+        }
+        positionSmartPopup(container, popupEl);
+    };
+
+    const handleScroll = () => {
+        if (!popupEl) return;
+        if (scrollRaf) cancelAnimationFrame(scrollRaf);
+        scrollRaf = requestAnimationFrame(updatePosition);
+    };
+
+    const handleResize = () => {
+        if (!popupEl) return;
+        updatePosition();
+    };
+
+    const handleOutsideClick = (e) => {
+        if (popupEl && !popupEl.contains(e.target) && !container.contains(e.target)) {
+            removePopup();
+        }
+    };
+
     const showPopup = () => {
-        clearTimeout(hideTimeout);
+        cancelHide();
         if (popupEl) return;
+
+        closeActiveHoverPopup();
+        closeOverflowMenu();
 
         const items = buildItems() || [];
         if (items.length === 0) return;
 
         popupEl = document.createElement('div');
-        // The look is the page-mode menu's; `action-popup` is what the two share.
-        popupEl.className = 'page-mode-popup action-popup';
+        popupEl.className = 'page-mode-popup action-popup action-popup-detached';
 
         items.forEach((item) => {
             const row = document.createElement('div');
@@ -134,14 +284,58 @@ export function createHoverActionPopup(container, buildItems) {
             popupEl.appendChild(row);
         });
 
-        container.appendChild(popupEl);
-        requestAnimationFrame(() => popupEl?.classList.add('visible'));
+        // Add invisible bridge to prevent mouse flickering between anchor and popup
+        const bridge = document.createElement('div');
+        bridge.className = 'action-popup-bridge';
+        popupEl.appendChild(bridge);
+
+        container.classList.add('active');
+        document.body.appendChild(popupEl);
         applyTranslations(popupEl);
+
+        activeHoverPopup = popupEl;
+        activeHoverSource = container;
+        activeHoverRemoveFn = removePopup;
+
+        positionSmartPopup(container, popupEl);
+
+        popupEl.addEventListener('mouseenter', cancelHide);
+        popupEl.addEventListener('mouseleave', (e) => {
+            if (e.relatedTarget && container.contains(e.relatedTarget)) {
+                return;
+            }
+            scheduleHide();
+        });
+
+        popupEl.addEventListener(
+            'wheel',
+            (e) => {
+                const scrollContainer = document.querySelector('#groups-list');
+                if (scrollContainer) {
+                    scrollContainer.scrollTop += e.deltaY;
+                }
+            },
+            { passive: true },
+        );
+
+        document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+        window.addEventListener('resize', handleResize, { passive: true });
+        document.addEventListener('click', handleOutsideClick);
+
+        requestAnimationFrame(() => {
+            if (popupEl) {
+                positionSmartPopup(container, popupEl);
+                popupEl.classList.add('visible');
+            }
+        });
     };
 
     container.addEventListener('mouseenter', showPopup);
-    container.addEventListener('mouseleave', () => {
-        hideTimeout = setTimeout(removePopup, 200);
+    container.addEventListener('mouseleave', (e) => {
+        if (e.relatedTarget && popupEl && popupEl.contains(e.relatedTarget)) {
+            return;
+        }
+        scheduleHide();
     });
 }
 
