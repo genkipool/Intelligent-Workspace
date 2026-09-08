@@ -25,10 +25,11 @@ export function siteUrl(page, language = uiLanguage()) {
 }
 
 /**
- * The documents the panel will frame, and what the header calls each one.
+ * The documents the panel will frame, and the label each is offered under.
  *
  * A table rather than a URL parameter, and the reason the route names a page instead of
- * carrying an address: nothing else can be pushed through it.
+ * carrying an address: nothing else can be pushed through it. The header does not use
+ * these — a framed document is called the browser view, like anything else in a frame.
  */
 export const SITE_DOCUMENT_TITLES = {
     privacy: 'popupPrivacyPolicyLink',

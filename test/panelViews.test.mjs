@@ -33,14 +33,25 @@ describe('vistas enmarcadas', () => {
     it('cada una reclama su propio titulo, no el de la lista de grupos', () => {
         assert.equal(bootTitleKey('url', params()), 'webViewTitle');
         assert.equal(bootTitleKey('payment', params()), 'contribution');
-        assert.equal(bootTitleKey('document', params('page=terms')), 'popupTermsLink');
+        assert.equal(bootTitleKey('document', params('page=terms')), 'webViewTitle');
+    });
+
+    it('el titulo no cambia entre el primer fotograma y el final', () => {
+        // La cabecera se nombra dos veces: al arrancar, desde la URL, y luego desde la
+        // vista abierta. Si las dos no dijeran lo mismo, el texto cambiaria solo — que
+        // es el parpadeo que queda cuando la disposicion ya no parpadea.
+        FRAMED.forEach((view) => {
+            const atBoot = bootTitleKey(view, params('page=support'));
+            const whileOpen = view === 'payment' ? 'contribution' : 'webViewTitle';
+            assert.equal(atBoot, whileOpen, view);
+        });
     });
 });
 
 describe('bootTitleKey', () => {
-    it('nombra cada documento por su pagina', () => {
-        Object.entries(SITE_DOCUMENT_TITLES).forEach(([page, key]) => {
-            assert.equal(bootTitleKey('document', params(`page=${page}`)), key);
+    it('llama a cualquier documento por lo que es: la vista de navegador', () => {
+        Object.keys(SITE_DOCUMENT_TITLES).forEach((page) => {
+            assert.equal(bootTitleKey('document', params(`page=${page}`)), 'webViewTitle');
         });
     });
 
