@@ -99,6 +99,7 @@ export function closeOverflowMenu() {
     }
     document.removeEventListener('click', closeMenuOnClickOutside);
     document.removeEventListener('scroll', handleScrollPositioning, { capture: true });
+    window.removeEventListener('resize', handleScrollPositioning);
 }
 
 function scheduleHideOverflowMenu() {
@@ -421,6 +422,9 @@ export function createOverflowMenu(actionsContainer, templateId, contextElement)
         return;
     }
 
+    // Always ensure overflow button is at the far right of all actions, even after the delete/close button
+    actionsContainer.appendChild(overflowContainer);
+
     if (isNew) {
         overflowContainer.addEventListener('mouseenter', (event) => {
             cancelHideOverflowMenu();
@@ -485,14 +489,7 @@ export function createOverflowMenu(actionsContainer, templateId, contextElement)
             }
         });
 
-        const deleteBtn = actionsContainer.querySelector(
-            '.delete-tab-btn, .delete-group-btn, .delete-subgroup-btn, .delete-btn',
-        );
-        if (deleteBtn) {
-            actionsContainer.insertBefore(overflowContainer, deleteBtn);
-        } else {
-            actionsContainer.appendChild(overflowContainer);
-        }
+        actionsContainer.appendChild(overflowContainer);
         applyTranslations(overflowContainer);
     }
 }
@@ -641,6 +638,7 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
         closeOverflowMenu();
         popupEl.classList.add('overflow-popup-detached');
         document.body.appendChild(popupEl);
+        applyTranslations(popupEl);
 
         activeOverflowPopup = popupEl;
         activeOverflowSource = container;
@@ -670,15 +668,16 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
             { passive: true },
         );
 
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             if (activeOverflowPopup === popupEl) {
+                positionDetachedPopup(container, popupEl);
                 popupEl.classList.add('visible');
             }
-        }, 0);
+        });
 
-        applyTranslations(popupEl);
         document.addEventListener('click', closeMenuOnClickOutside);
         document.addEventListener('scroll', handleScrollPositioning, { capture: true, passive: true });
+        window.addEventListener('resize', handleScrollPositioning, { passive: true });
     }
 }
 
@@ -805,6 +804,7 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
         closeOverflowMenu();
         popupEl.classList.add('overflow-popup-detached');
         document.body.appendChild(popupEl);
+        applyTranslations(popupEl);
 
         activeOverflowPopup = popupEl;
         activeOverflowSource = container;
@@ -834,14 +834,15 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
             { passive: true },
         );
 
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             if (activeOverflowPopup === popupEl) {
+                positionDetachedPopup(container, popupEl);
                 popupEl.classList.add('visible');
             }
-        }, 0);
+        });
 
-        applyTranslations(popupEl);
         document.addEventListener('click', closeMenuOnClickOutside);
         document.addEventListener('scroll', handleScrollPositioning, { capture: true, passive: true });
+        window.addEventListener('resize', handleScrollPositioning, { passive: true });
     }
 }
