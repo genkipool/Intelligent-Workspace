@@ -36,6 +36,18 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- **The theme editor has a colour picker of its own.** Clicking one of the nine colour
+  boxes no longer opens the browser's dialog — which knows nothing about the theme and,
+  in the side panel, appeared wherever it liked — but the extension's own picker,
+  painted with the theme colours like the rest of its calendars and clocks. It carries
+  the saturation and brightness square, a hue bar and an opacity bar, and the colour can
+  be read and typed in HEX, RGB or HSLA: one field per number in each notation, and a
+  button that copies the colour exactly as it is shown. It opens to the right of the
+  box and, where that does not fit — the editor's right-hand column in a narrow panel —
+  it hangs from the other side instead; the same upwards when the bottom of the window
+  is close. It all works from the keyboard, and Escape closes it without closing the
+  theme editor.
+
 - **The section filter has a search box, and more than one section can be on at once.**
   The three-dot menu beside the search bar — on the keyboard navigation settings page
   and in the modal the `?` key opens — now opens with a box that has the keyboard
@@ -162,6 +174,10 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Changed
 
+- Modal dialogs wear their header flush with the top edge, so the title has the same
+  air above it as below. The dialog added a margin of its own over a header that
+  already carries one, and the title sat lower than the hairline under it suggested.
+
 - The search bar of the group list opens in the side panel on Enter, and in a browser
   tab on Ctrl+Enter. It was the other way round: the panel is where the box lives and
   where a search typed into it is nearly always meant to be read, so it is the answer
@@ -194,6 +210,17 @@ Each version holds two different things, and they are worth keeping apart:
   it back is a merge.
 
 ### Fixed
+
+- **Labels that came out raw or blank are translated.** Turning off the theme in use
+  showed a notice reading literally "themeDeselected": the key existed in neither
+  language, and what gets painted when one is missing is the key itself. A sweep of
+  every key the code asks for against `messages.json` turned up six more in the same
+  state — the times of a scheduled Gemini query and its add button, the "Paused /
+  Failed" downloads filter, the default title of an exported conversation and the
+  "Read / Unread" of the reading list — which showed up not as odd text but as an empty
+  gap, because a missing key translates to an empty string everywhere except a notice.
+  Both Gemini API key errors asked for keys that did not exist either, and now use the
+  ones already written.
 
 - An automatic group takes the colour of the site it holds far more often, and stops
   getting it wrong for the rest of the session. The colour is read from the site's

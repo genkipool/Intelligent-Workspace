@@ -655,7 +655,10 @@ button:focus-visible {
 
 .modal-content {
     background-color: var(--bg-panel-color);
-    padding: 10px 0px;
+    /* No padding above: the header is the top of the dialog and its own 10px are the
+       space over the title. With the dialog's 10px on top of them the title sat lower
+       than the hairline under it was low, and the bar read off-centre. */
+    padding: 0 0 10px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
     width: 90%;
@@ -1031,51 +1034,6 @@ button:focus-visible {
     height: 32px;
     display: flex;
     align-items: center;
-}
-
-.color-option input[type='color'],
-.color-input-wrapper input[type='color'] {
-    width: 100%;
-    height: 100%;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background-color: transparent;
-    box-sizing: border-box;
-    padding: 0;
-    margin: 0;
-}
-
-.color-option input[type='color']:hover,
-.color-input-wrapper input[type='color']:hover {
-    border-color: var(--border-color);
-    transform: translateY(-1px);
-    box-shadow: 0 0 5px 1px var(--interactive-color);
-}
-
-.color-option input[type='color']:focus-visible,
-.color-input-wrapper input[type='color']:focus-visible {
-    outline: none;
-    border-color: var(--border-color);
-    box-shadow: 0 0 0 2px var(--interactive-color);
-}
-
-.color-option input[type='color']::-webkit-color-swatch-wrapper,
-.color-input-wrapper input[type='color']::-webkit-color-swatch-wrapper {
-    padding: 0;
-}
-
-.color-option input[type='color']::-webkit-color-swatch,
-.color-input-wrapper input[type='color']::-webkit-color-swatch {
-    border: none;
-    border-radius: 5px;
-}
-
-.color-option input[type='color']::-moz-color-swatch,
-.color-input-wrapper input[type='color']::-moz-color-swatch {
-    border: none;
-    border-radius: 5px;
 }
 
 .button-eyedropper {

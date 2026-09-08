@@ -36,6 +36,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- **El editor de temas tiene su propio selector de color.** Al pulsar una de las nueve
+  cajas de color ya no se abre la ventana del navegador —que no sabe nada del tema y en
+  el panel lateral aparecía donde le parecía—, sino un selector de la extensión, pintado
+  con los colores del tema como el resto de sus calendarios y relojes. Trae el cuadro de
+  saturación y brillo, la barra de tono y una de opacidad, y el color se puede leer y
+  escribir en HEX, en RGB o en HSLA: cada notación con un campo por número, y un botón
+  que copia el color tal y como se está viendo. Se abre hacia la derecha de la caja y,
+  cuando ahí no cabe —la columna derecha del editor en un panel estrecho—, se cuelga del
+  otro lado; lo mismo hacia arriba cuando el final de la ventana queda cerca. Funciona
+  entero con el teclado, y Escape lo cierra sin cerrar el editor de temas.
+
 - **El filtro de secciones tiene barra de búsqueda, y se puede elegir más de una
   sección a la vez.** El menú de tres puntos que hay junto al buscador — en la página
   de ajustes de navegación y en la ventana que abre la tecla `?` — ahora se abre con
@@ -168,6 +179,11 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Cambiado
 
+- Las ventanas modales llevan su cabecera pegada al borde de arriba, de modo que el
+  título tiene el mismo aire por encima que por debajo. El diálogo añadía un margen
+  propio sobre una cabecera que ya trae el suyo, y el título quedaba más bajo de lo que
+  la línea que lo separa del contenido daba a entender.
+
 - La barra de búsqueda de la lista de grupos abre en el panel lateral con Enter, y en
   una pestaña del navegador con Ctrl+Enter. Era al revés: el panel es donde vive la
   caja y donde casi siempre se quiere leer lo que se escribe en ella, así que es la
@@ -200,6 +216,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   es mezclarla.
 
 ### Corregido
+
+- **Etiquetas que salían en crudo o en blanco ya están traducidas.** Al quitar el tema
+  en uso, el aviso decía literalmente «themeDeselected»: la clave no existía en ninguno
+  de los dos idiomas y lo que se pinta cuando falta es la propia clave. Un repaso de
+  todas las claves que el código pide y `messages.json` no tenía dejó otras seis en el
+  mismo estado —las horas de una consulta programada de Gemini y su botón de añadir, el
+  filtro de descargas «Pausadas / Errores», el título por defecto de una conversación
+  exportada y el «Leído / Sin leer» de la lista de lectura—, que además no se veían
+  como un texto raro sino como un hueco vacío, porque una clave que falta se traduce a
+  cadena vacía en todo lo que no sea un aviso. Los dos errores de la clave de API de
+  Gemini pedían claves que tampoco existían, y ahora usan las que ya estaban escritas.
 
 - Un grupo automático coge el color del sitio que contiene muchas más veces, y deja de
   equivocarse para el resto de la sesión. El color sale del favicon del sitio, y el

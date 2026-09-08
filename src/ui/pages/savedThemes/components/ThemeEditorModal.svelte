@@ -1,9 +1,27 @@
 <script>
     import ModalHeader from '../../../components/common/ModalHeader.svelte';
+    import ColorField from '../../../components/common/ColorField.svelte';
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
     import { pickScreenColor } from '../../../services/colorPickerService.js';
     import { showNotification } from '../../../../utils/i18n.js';
     import { t } from '../../../stores/i18nStore.js';
+
+    /**
+     * The nine slots a theme is made of, in the order they are shown. The list used to
+     * be written inline in the `{#each}`; it is up here because the picker also needs
+     * it, to offer the theme's own colours as swatches.
+     */
+    const COLOR_SLOTS = [
+        { id: 'bg-color', key: 'bgColor' },
+        { id: 'bg-panel-color', key: 'bgPanelColor' },
+        { id: 'text-color', key: 'textColor' },
+        { id: 'text-on-color', key: 'textOnColor' },
+        { id: 'action-color', key: 'actionColor' },
+        { id: 'interactive-color', key: 'interactiveColor' },
+        { id: 'border-color', key: 'borderColor' },
+        { id: 'error-color', key: 'errorColor' },
+        { id: 'header-color', key: 'headerColor' },
+    ];
 
     let {
         show = false,
@@ -57,15 +75,16 @@
             />
             <section class="section" style="border-bottom: none; padding-bottom: 0;">
                 <div class="color-options">
-                    {#each [{ id: 'bg-color', k: 'bgColor', l: 'bgColor' }, { id: 'bg-panel-color', k: 'bgPanelColor', l: 'bgPanelColor' }, { id: 'text-color', k: 'textColor', l: 'textColor' }, { id: 'text-on-color', k: 'textOnColor', l: 'textOnColor' }, { id: 'action-color', k: 'actionColor', l: 'actionColor' }, { id: 'interactive-color', k: 'interactiveColor', l: 'interactiveColor' }, { id: 'border-color', k: 'borderColor', l: 'borderColor' }, { id: 'error-color', k: 'errorColor', l: 'errorColor' }, { id: 'header-color', k: 'headerColor', l: 'headerColor' }] as colorInput (colorInput.id)}
+                    {#each COLOR_SLOTS as slot (slot.id)}
                         <div class="color-option">
-                            <label for={colorInput.id} data-i18n={colorInput.l}></label>
+                            <label for={slot.id} data-i18n={slot.key}></label>
                             <div class="color-input-wrapper">
-                                <input
-                                    type="color"
-                                    id={colorInput.id}
-                                    value={editorColors[colorInput.k]}
-                                    oninput={(e) => onColorInput(e, colorInput.k)}
+                                <ColorField
+                                    id={slot.id}
+                                    value={editorColors[slot.key]}
+                                    title={$t(slot.key)}
+                                    ariaLabel={$t(slot.key)}
+                                    onchange={(color) => onColorInput({ target: { value: color } }, slot.key)}
                                 />
                                 <button
                                     type="button"
@@ -73,7 +92,7 @@
                                     data-i18n-title="pickColorEyeDropper"
                                     data-i18n-aria-label="pickColorEyeDropper"
                                     onmousedown={(e) => e.stopPropagation()}
-                                    onclick={(e) => pickColor(e, colorInput.k)}
+                                    onclick={(e) => pickColor(e, slot.key)}
                                 >
                                     <svg
                                         viewBox="0 0 24 24"
@@ -127,45 +146,6 @@
         height: 32px;
         display: flex;
         align-items: center;
-    }
-
-    .color-input-wrapper input[type='color'] {
-        width: 100%;
-        height: 100%;
-        border: 1px solid var(--border-color, #ccc);
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        background-color: transparent;
-        box-sizing: border-box;
-        padding: 0;
-        margin: 0;
-    }
-
-    .color-input-wrapper input[type='color']:hover {
-        border-color: var(--border-color, #ccc);
-        transform: translateY(-1px);
-        box-shadow: 0 0 5px 1px var(--interactive-color, #3498db);
-    }
-
-    .color-input-wrapper input[type='color']:focus-visible {
-        outline: none;
-        border-color: var(--border-color, #ccc);
-        box-shadow: 0 0 0 2px var(--interactive-color, #3498db);
-    }
-
-    .color-input-wrapper input[type='color']::-webkit-color-swatch-wrapper {
-        padding: 0;
-    }
-
-    .color-input-wrapper input[type='color']::-webkit-color-swatch {
-        border: none;
-        border-radius: 5px;
-    }
-
-    .color-input-wrapper input[type='color']::-moz-color-swatch {
-        border: none;
-        border-radius: 5px;
     }
 
     .button-eyedropper {

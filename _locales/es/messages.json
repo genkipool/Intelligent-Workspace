@@ -3007,6 +3007,68 @@
         "message": "No se ha podido capturar la página, así que no hay píxeles que seleccionar.",
         "description": "Aviso cuando captureVisibleTab falla al abrir el cuentagotas alternativo"
     },
+    "colorPickerTitle": {
+        "message": "Selector de color",
+        "description": "Nombre accesible de la ventana del selector de color propio de la extensión"
+    },
+    "colorPickerSaturation": {
+        "message": "Saturación y brillo",
+        "description": "Nombre accesible del cuadro de saturación y brillo del selector de color"
+    },
+    "colorPickerHue": {
+        "message": "Tono",
+        "description": "Nombre accesible de la barra de tono del selector de color"
+    },
+    "colorPickerAlpha": {
+        "message": "Opacidad",
+        "description": "Nombre accesible de la barra de opacidad del selector de color"
+    },
+    "colorPickerValue": {
+        "message": "Valor del color",
+        "description": "Nombre accesible del campo de texto con el color en el selector"
+    },
+    "colorPickerCopy": {
+        "message": "Copiar color",
+        "description": "Tooltip del botón que copia el color del selector"
+    },
+    "colorPickerFormat": {
+        "message": "Notación del color",
+        "description": "Nombre accesible del conmutador HEX / RGB del selector de color"
+    },
+    "themeDeselected": {
+        "message": "Tema '$1' deseleccionado.",
+        "description": "Notificación cuando el usuario quita el tema que estaba en uso.",
+        "placeholders": {
+            "theme_name": {
+                "content": "$1",
+                "example": "Mi Tema Azul"
+            }
+        }
+    },
+    "scheduleTimes": {
+        "message": "Horas",
+        "description": "Etiqueta sobre la lista de horas a las que se lanza una consulta programada."
+    },
+    "addScheduleTime": {
+        "message": "Añadir hora",
+        "description": "Botón que añade otra hora a una programación."
+    },
+    "downloadFilterPausedFailed": {
+        "message": "Pausadas / Errores",
+        "description": "Filtro de descargas pausadas y con error."
+    },
+    "geminiConversationDefaultTitle": {
+        "message": "Conversación de Gemini",
+        "description": "Título que se usa cuando una conversación exportada no tiene título propio."
+    },
+    "readingListItemRead": {
+        "message": "Leído",
+        "description": "Elemento de la lista de lectura que ya se ha leído."
+    },
+    "readingListItemUnread": {
+        "message": "Sin leer",
+        "description": "Elemento de la lista de lectura que aún no se ha leído."
+    },
     "geminiFooterModel": {
         "message": "Modelo",
         "description": "Label for the AI model name in Gemini response footer."
