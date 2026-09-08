@@ -26,6 +26,7 @@ import {
     initCustomCalendar,
     handleIframeMessage,
     openUrlInPanel,
+    openDocumentInPanel,
     openPaymentInPanel,
     closeUrlInPanel,
     hideYoutubeView,
@@ -178,6 +179,21 @@ const PANEL_VIEWS = {
      * passes its target. An unknown or missing provider falls through to the group
      * list rather than opening an empty frame.
      */
+    /**
+     * One of the three published documents, framed the same way the contribution form
+     * is and for the same reason: the site grants this extension framing rights on those
+     * pages. Which one comes from the query string; an unknown name falls through to the
+     * group list rather than opening an empty frame.
+     */
+    document: {
+        is: () => get(isUrlViewActive),
+        show: (options) =>
+            openOverlayView(
+                'document',
+                () => openDocumentInPanel(new URLSearchParams(window.location.search).get('page')),
+                options,
+            ),
+    },
     payment: {
         is: () => get(isUrlViewActive),
         /**

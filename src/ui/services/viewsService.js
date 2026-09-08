@@ -16,6 +16,7 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
 import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
+import { siteUrl } from '../../config/site.js';
 import {
     mintPaymentNonce,
     buildPaymentUrl,
@@ -1307,6 +1308,17 @@ const VIEWS_HIDDEN_BY_A_FRAME =
  * open windows, download, show modals, ask for storage access. Trimming this list is
  * what leaves x.com or WhatsApp Web stuck on a blank shell.
  */
+/**
+ * The documents this panel will frame, and what the header calls each one. Being a
+ * table rather than a URL parameter is the point: the route names a page the site has
+ * agreed to be framed on, so no other address can be pushed through it.
+ */
+const SITE_DOCUMENT_TITLES = {
+    privacy: 'popupPrivacyPolicyLink',
+    support: 'popupSupportLink',
+    terms: 'popupTermsLink',
+};
+
 const WEB_VIEW_SANDBOX =
     'allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals allow-storage-access-by-user-activation allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation';
 
@@ -1502,6 +1514,50 @@ function createPaymentSkeleton() {
  * grants us framing rights itself with `frame-ancestors`, and `handlers/dnr.js`
  * refuses payment hosts by name so this cannot be undone by accident.
  */
+/**
+ * [AI INSTRUCTION]
+ * ONE OF THE PUBLISHED DOCUMENTS, IN THE PANEL.
+ *
+ * DO NOT route this through `prepareUrlForSidePanel`, and do not add `genkipool.com` to
+ * anything that strips framing headers. That handler exists to make a site that refuses
+ * to be framed readable anyway, and it refuses to touch this host on purpose (see
+ * `NEVER_STRIP_FRAMING_HOSTS` in `dnr.js`) — which is why routing the footer links
+ * through it landed the reader in the reader view instead of the browser.
+ *
+ * These three pages need none of it: the site names this extension in their
+ * `frame-ancestors`, exactly as it does for the contribution form, so the frame is built
+ * directly. The search row goes for the same reason it goes on the contribution sheet —
+ * a policy has nothing to search and nothing to navigate.
+ *
+ * @param {'privacy'|'support'|'terms'} page Which document. Anything else is refused
+ *   rather than framed: this route names a page, it does not carry an address.
+ */
+export async function openDocumentInPanel(page) {
+    const titleKey = SITE_DOCUMENT_TITLES[page];
+    if (!titleKey) {
+        await switchMainView('groups', false);
+        return;
+    }
+
+    const { container, mainHeaderTitle } = enterFramedView(titleKey);
+
+    const searchRow = container.querySelector('.search-and-controls');
+    if (searchRow) searchRow.style.display = 'none';
+
+    const src = siteUrl(page);
+    currentPanelUrl.set(src);
+
+    const iframe = createPanelIframe({
+        src,
+        sandbox: WEB_VIEW_SANDBOX,
+        allow: WEB_VIEW_ALLOW,
+        referrerPolicy: 'no-referrer',
+    });
+    attachFrameScrollbar(iframe);
+    container.appendChild(iframe);
+    settleFramedView(mainHeaderTitle);
+}
+
 export async function openPaymentInPanel(provider) {
     const { container, mainHeaderTitle } = enterFramedView('contribution');
 
