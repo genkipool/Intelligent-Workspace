@@ -12,6 +12,9 @@ const MIN_POPUP_HEIGHT = 40;
 /** The `overflow-y` values that turn an element into a scroll container. */
 const SCROLLABLE_OVERFLOW = /^(auto|scroll|overlay)$/;
 
+/** Marks a popup that was clamped and therefore scrolls itself. */
+const SCROLLING_POPUP_CLASS = 'has-scroll-y';
+
 /**
  * The scroller an element lives in — the list of whichever view is on screen.
  *
@@ -34,9 +37,14 @@ export function getScrollParent(el) {
  * Wheel over a detached popup scrolls the list behind it.
  *
  * A detached popup is fixed and parented to <body>, so a wheel over it would
- * otherwise land nowhere. Once the popup scrolls itself the browser handles the
- * wheel, and the `overscroll-behavior: contain` on `.has-scroll-y` keeps that
- * scroll from chaining into the panel when the popup reaches its end.
+ * otherwise land nowhere and the panel would sit still under the pointer.
+ *
+ * Whether the popup scrolls itself is read off the class `positionSmartPopup` set,
+ * never off its geometry: the invisible hover bridge is an absolutely positioned
+ * child that hangs past the bottom edge, so `scrollHeight` is always larger than
+ * `clientHeight` and would veto every forward. When the popup does scroll the
+ * browser handles the wheel, and `overscroll-behavior: contain` keeps that scroll
+ * from chaining into the panel once the popup reaches its end.
  *
  * @param {HTMLElement} popupEl
  * @param {HTMLElement} anchorEl The element the popup is anchored to.
@@ -45,7 +53,7 @@ export function forwardWheelToScrollParent(popupEl, anchorEl) {
     popupEl.addEventListener(
         'wheel',
         (event) => {
-            if (popupEl.scrollHeight > popupEl.clientHeight) return;
+            if (popupEl.classList.contains(SCROLLING_POPUP_CLASS)) return;
             const scroller = getScrollParent(anchorEl);
             if (scroller) scroller.scrollTop += event.deltaY;
         },
@@ -85,7 +93,7 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     popupEl.style.maxHeight = '';
     popupEl.style.overflowY = 'hidden';
     popupEl.style.overflowX = 'hidden';
-    popupEl.classList.remove('has-scroll-y', 'popup-upwards');
+    popupEl.classList.remove(SCROLLING_POPUP_CLASS, 'popup-upwards');
 
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
@@ -117,7 +125,7 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         const availableHeight = Math.max(MIN_POPUP_HEIGHT, (upwards ? spaceAbove : spaceBelow) - gap);
         popupEl.style.maxHeight = `${availableHeight}px`;
         popupEl.style.overflowY = 'auto';
-        popupEl.classList.add('has-scroll-y');
+        popupEl.classList.add(SCROLLING_POPUP_CLASS);
         popupEl.style.top = upwards ? `${rect.top - availableHeight - gap}px` : `${rect.bottom + gap}px`;
         if (upwards) popupEl.classList.add('popup-upwards');
     }
