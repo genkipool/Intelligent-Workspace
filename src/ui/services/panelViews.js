@@ -74,6 +74,28 @@ export function bootLayoutView(view) {
 }
 
 /**
+ * The framed views with nothing to search and nothing to navigate.
+ *
+ * The web view keeps the search row — typing there navigates its frame — but a
+ * contribution sheet and a published document have no use for it, and the row is two
+ * dozen controls sitting over a page that ignores every one of them. The openers hide it
+ * by hand at the end of the boot, which is late enough to be seen: the row was drawn and
+ * then taken away, and that is the flash. The class goes on from the URL instead, and
+ * `closeUrlInPanel` takes it off when the frame goes.
+ */
+const BARE_FRAMED_VIEWS = new Set(['payment', 'document']);
+
+/**
+ * Whether a view is framed with no search row of its own.
+ *
+ * @param {string|null} view
+ * @returns {boolean}
+ */
+export function isBareFramedView(view) {
+    return BARE_FRAMED_VIEWS.has(view);
+}
+
+/**
  * Whether a view is an iframe filling the panel.
  *
  * `body.url-view-active` is what the stylesheet hides the group toolbar behind, and

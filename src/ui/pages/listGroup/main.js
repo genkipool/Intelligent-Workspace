@@ -9,7 +9,7 @@ import '../../../styles/hint_content.css';
 import '../../../utils/hint_common.js';
 import '../../../utils/snippet-panel.js';
 import { listGroupStore } from '../../stores/listGroupStore.js';
-import { isFramedView } from '../../services/panelViews.js';
+import { isBareFramedView, isFramedView } from '../../services/panelViews.js';
 
 // Kicked off here rather than on mount: it is the page's first chrome.storage read
 // and pays the subsystem's warm-up cost, so starting it now overlaps that with the
@@ -24,6 +24,7 @@ listGroupStore.init();
 const requestedView = new URLSearchParams(window.location.search).get('view') || 'groups';
 document.body.classList.toggle('groups-view-active', requestedView === 'groups');
 document.body.classList.toggle('url-view-active', isFramedView(requestedView));
+document.body.classList.toggle('bare-frame-view', isBareFramedView(requestedView));
 
 const app = mountPage(ListGroup, {
     target: document.body,
