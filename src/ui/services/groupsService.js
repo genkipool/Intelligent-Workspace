@@ -180,8 +180,8 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         popupEl.style.top = `${rect.top - popupHeight - gap}px`;
         popupEl.classList.add('popup-upwards');
         popupEl.style.overflowY = 'hidden';
-    } else if (isTab && hasScroll) {
-        // If it doesn't fit above or below, but the side panel has scroll:
+    } else if (options.allowOverflowBelow || (isTab && hasScroll)) {
+        // If it doesn't fit above or below, but the side panel has scroll or allows overflow below:
         // Follow downwards below the anchor and let it extend below the panel's scroll, no need to shift it up.
         popupEl.style.top = `${rect.bottom + gap}px`;
         popupEl.classList.remove('popup-upwards');

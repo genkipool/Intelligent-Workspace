@@ -84,7 +84,34 @@ function captureGroupFromCard(groupEl, options) {
     captureGroupTabsById(groupEl?.dataset?.groupId, options);
 }
 
+let activeOverflowSpacer = null;
+
+function ensureOverflowScrollSpacer(neededExtraScroll) {
+    const scrollContainer = getVisibleScrollContainer();
+    if (!scrollContainer || neededExtraScroll <= 0) return;
+
+    if (!activeOverflowSpacer) {
+        activeOverflowSpacer = document.createElement('div');
+        activeOverflowSpacer.className = 'overflow-scroll-spacer';
+        activeOverflowSpacer.setAttribute('aria-hidden', 'true');
+        activeOverflowSpacer.style.cssText = 'width: 100%; flex-shrink: 0; pointer-events: none; opacity: 0;';
+        scrollContainer.appendChild(activeOverflowSpacer);
+    }
+    const currentHeight = parseFloat(activeOverflowSpacer.style.height) || 0;
+    if (neededExtraScroll > currentHeight) {
+        activeOverflowSpacer.style.height = `${Math.ceil(neededExtraScroll)}px`;
+    }
+}
+
+function removeOverflowScrollSpacer() {
+    if (activeOverflowSpacer) {
+        activeOverflowSpacer.remove();
+        activeOverflowSpacer = null;
+    }
+}
+
 export function closeOverflowMenu() {
+    removeOverflowScrollSpacer();
     if (activeOverflowSource) {
         activeOverflowSource.classList.remove('active');
     }
@@ -144,6 +171,7 @@ function handleScrollPositioning() {
 function getVisibleScrollContainer() {
     const selectors = [
         '#groups-list',
+        '.groups-list',
         '#bookmarks-view-container',
         '#history-view-container',
         '#recent-view-container',
@@ -169,7 +197,34 @@ function positionDetachedPopup(buttonEl, popupEl) {
         ? scrollContainer.scrollHeight > scrollContainer.clientHeight || scrollContainer.scrollTop > 0
         : document.body.scrollHeight > window.innerHeight;
 
-    positionSmartPopup(buttonEl, popupEl, { margin: 8, gap: 5, isTab, hasScroll });
+    const margin = 8;
+    const gap = 5;
+    const rect = buttonEl.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const popupHeight = popupEl.offsetHeight;
+
+    const spaceBelow = windowHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+
+    let allowOverflowBelow = false;
+
+    // If it doesn't fit above nor below in the visible viewport:
+    if (spaceBelow < popupHeight + gap && spaceAbove < popupHeight + gap) {
+        // Grow the scroll of the side panel so the popup can extend below and be scrolled into view:
+        const neededExtraScroll = rect.bottom + gap + popupHeight - (windowHeight - margin) + 16;
+        if (neededExtraScroll > 0) {
+            ensureOverflowScrollSpacer(neededExtraScroll);
+            allowOverflowBelow = true;
+        }
+    }
+
+    positionSmartPopup(buttonEl, popupEl, {
+        margin,
+        gap,
+        isTab,
+        hasScroll: hasScroll || allowOverflowBelow,
+        allowOverflowBelow,
+    });
 }
 
 export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey }) {
