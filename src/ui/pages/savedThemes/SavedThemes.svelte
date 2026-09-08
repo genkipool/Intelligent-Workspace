@@ -200,8 +200,17 @@
         applyTranslations(document.getElementById('theme-editor-modal'));
     }
 
+    /**
+     * Closing puts back the theme that is really in use.
+     *
+     * Every colour dialled in the editor is painted on this page as a preview, and
+     * leaving by the cross, by the backdrop or with Escape is not a decision to keep
+     * it: the page used to stay dressed in a theme nobody had saved, which then looked
+     * exactly like a theme that had been applied.
+     */
     function closeThemeEditor() {
         showThemeEditor = false;
+        initializeActiveTheme();
     }
 
     /**
@@ -217,6 +226,24 @@
         applyCustomTheme(editorColors);
     }
 
+    /**
+     * Makes a theme the chosen one: what this page shows, what the rest of the
+     * extension is told about, and what deselecting it later comes back from.
+     *
+     * Shared by clicking a theme and by saving one, which now do the same thing —
+     * saving a theme is choosing it, and the notice for it always said so.
+     */
+    async function selectTheme(theme) {
+        // Remembered so deselecting or deleting the theme in use can go back to the
+        // one before it; re-saving the theme already in use is not a change of theme.
+        if (activeTheme && activeTheme.name !== theme.name) {
+            await chrome.storage.local.set({ previousActiveTheme: activeTheme });
+        }
+        applyCustomTheme(theme.colors);
+        await saveActiveTheme(theme);
+        chrome.runtime.sendMessage({ action: 'themeChanged' });
+    }
+
     async function saveEditedTheme() {
         const storage = chrome.storage[currentStorageArea];
         let { savedThemes: currentThemes = [] } = await storage.get('savedThemes');
@@ -226,12 +253,10 @@
                 const themeName = currentThemes[editorState.themeIndex].name;
                 currentThemes[editorState.themeIndex].colors = editorColors;
                 await storage.set({ savedThemes: currentThemes });
-                // Editing the theme in use updates what is on screen; editing any
-                // other one must not quietly make it the chosen theme.
-                if (activeTheme && activeTheme.name === themeName) {
-                    await saveActiveTheme(currentThemes[editorState.themeIndex]);
-                    chrome.runtime.sendMessage({ action: 'themeChanged' });
-                }
+                // Updating a theme chooses it. Somebody who has just spent nine
+                // colours on it is looking at the result and means to keep it, and
+                // leaving it unchosen threw that away the moment the editor closed.
+                await selectTheme(currentThemes[editorState.themeIndex]);
                 showNotification('themeUpdatedSuccessfully', false, [themeName]);
             }
         } else {
@@ -260,15 +285,14 @@
             const newTheme = { name: newThemeName, colors: editorColors };
             currentThemes.push(newTheme);
             await storage.set({ savedThemes: currentThemes });
-            // Saving keeps the theme; it does not choose it. What is on screen is
-            // still only the preview, and the chosen theme comes back as soon as
-            // this page is left — clicking the theme is what applies it.
+            // Saving chooses it too, which is what the notice has always said:
+            // "saved and applied".
+            await selectTheme(newTheme);
             showNotification('customThemeSaved', false, [newThemeName]);
         }
         await fetchThemes();
+        // Closing shows whatever is in use, which after saving is this very theme.
         closeThemeEditor();
-        // Drop the preview and show whatever is actually in use.
-        await initializeActiveTheme();
     }
 
     async function randomTheme() {
@@ -321,14 +345,8 @@
             fetchThemes();
             return;
         }
-        // Remembered so deselecting or deleting the theme in use can go back to the one before it.
-        if (activeTheme) {
-            await chrome.storage.local.set({ previousActiveTheme: activeTheme });
-        }
-        applyCustomTheme(theme.colors);
-        saveActiveTheme(theme);
+        await selectTheme(theme);
         showNotification('themeApplied', false, [theme.name]);
-        chrome.runtime.sendMessage({ action: 'themeChanged' });
         if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
         fetchThemes();
     }

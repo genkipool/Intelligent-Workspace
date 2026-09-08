@@ -174,6 +174,11 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Changed
 
+- Saving or updating a theme selects it. Whoever has just spent nine colours on it is
+  looking at the result and means to keep it, and until now that was thrown away the
+  moment the editor closed; the notice, besides, already said "saved and applied".
+  Deselecting it afterwards still goes back to the theme before it.
+
 - Modal dialogs wear their header flush with the top edge, so the title has the same
   air above it as below. The dialog added a margin of its own over a header that
   already carries one, and the title sat lower than the hairline under it suggested.
@@ -210,6 +215,17 @@ Each version holds two different things, and they are worth keeping apart:
   it back is a merge.
 
 ### Fixed
+
+- **Closing the theme editor without saving no longer leaves the colours on.** Every
+  colour touched is painted on the page so it can be seen, and leaving by the cross, by
+  the backdrop or with Escape is not a decision to keep it: the page stayed dressed in
+  a theme nobody had saved, which looked exactly like one that had been applied.
+  Closing now puts back the theme that is really in use, or the default look when there
+  is none.
+- **Escape closes modal dialogs properly again.** It closed by tearing the dialog out
+  of the DOM whenever it could not find its close button, and the cross of the shared
+  header was not on its list: the component still believed it was open — so it could
+  not be opened again — and none of the work its close does got done.
 
 - **Labels that came out raw or blank are translated.** Turning off the theme in use
   showed a notice reading literally "themeDeselected": the key existed in neither
