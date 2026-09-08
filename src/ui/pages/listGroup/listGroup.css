@@ -5084,6 +5084,8 @@ body.bookmarks-view-active #view-toggle-panel {
     border-radius: var(--border-radius);
     box-shadow: 0 0px 5px var(--interactive-color);
     width: max-content;
+    box-sizing: border-box;
+    overflow-x: hidden !important;
     border: 1px solid var(--border-color);
 
     /* We improve the transition to avoid unwanted interactions */
@@ -5108,6 +5110,13 @@ body.bookmarks-view-active #view-toggle-panel {
     background: transparent;
     pointer-events: auto;
     z-index: -1;
+}
+
+.overflow-popup-detached .overflow-bridge {
+    left: 0;
+    width: 100%;
+    top: -10px;
+    height: calc(100% + 20px);
 }
 
 .overflow-popup.popup-upwards {
@@ -5138,6 +5147,15 @@ body.bookmarks-view-active #view-toggle-panel {
     white-space: nowrap;
     transition: background-color 0.2s;
     text-align: left;
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+.overflow-item-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .overflow-popup-item:hover,
@@ -5189,11 +5207,12 @@ body.bookmarks-view-active #view-toggle-panel {
     /* Prevents right: 0 from overflow-popup from breaking the position */
     background-color: var(--bg-panel-color);
     padding: 6px;
-    padding-top: 11px;
     border-radius: var(--border-radius);
     box-shadow: 0 0px 5px var(--interactive-color);
     border: 1px solid var(--border-color);
     width: max-content;
+    box-sizing: border-box;
+    overflow-x: hidden !important;
     z-index: 9999999 !important;
     /* Dominates the entire screen */
 
@@ -5206,6 +5225,10 @@ body.bookmarks-view-active #view-toggle-panel {
         opacity 0.15s ease,
         transform 0.15s ease,
         visibility 0.15s;
+}
+
+.overflow-popup-detached.popup-upwards {
+    transform: translateY(5px);
 }
 
 .overflow-popup-detached.visible {

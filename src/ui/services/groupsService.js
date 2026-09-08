@@ -123,6 +123,8 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     popupEl.style.maxHeight = '';
     popupEl.style.maxWidth = '';
     popupEl.style.overflowY = '';
+    popupEl.style.overflowX = 'hidden';
+    popupEl.style.boxSizing = 'border-box';
 
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
@@ -172,6 +174,7 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
             popupEl.classList.add('popup-upwards');
         }
         popupEl.style.overflowY = 'auto';
+        popupEl.style.overflowX = 'hidden';
     }
 }
 
