@@ -4828,6 +4828,10 @@
         "message": "Navegación",
         "description": "Configurar atajos de navegación, snippets y omnibar."
     },
+    "navigationSettingsTitle": {
+        "message": "Ajustes Navegación",
+        "description": "Popup: heading over the navigation button, which carries the on/off switch."
+    },
     "toggleHintsTooltip": {
         "message": "Activar/Desactivar todos los comandos de atajos",
         "description": "Tooltip para el interruptor en el popup que activa o desactiva la función de atajos."

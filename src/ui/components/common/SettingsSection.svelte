@@ -43,7 +43,7 @@
         },
         {
             id: 'customize-hints-btn',
-            titleKey: 'customizeCommandsTooltip',
+            titleKey: 'navigationSettingsTitle',
             labelKey: 'customizeCommandsTooltip',
             tooltipKey: 'customizeNavKeyboardTitle',
             icon: '#icon-hints',
