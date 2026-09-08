@@ -133,6 +133,24 @@ export const downloadsStatusFilter = writable('all'); // 'all' | 'in_progress' |
 export const downloadsDateFilter = writable(null); // { start: number, end: number } | null
 
 /**
+ * What each status chip means, written once.
+ *
+ * A chip shows a count and, when clicked, filters the list to what it counted. Those
+ * two answers used to be worked out separately and disagreed: a paused download is
+ * `in_progress` with `paused` set, so the counter's if/else chain filed it under
+ * "in progress" and never reached the `paused` branch, while the filter listed it
+ * under "paused / failed". Sharing the predicates makes a chip's number the size of
+ * the list it opens, by construction.
+ *
+ * `all` has no predicate: it is the whole list.
+ */
+const STATUS_PREDICATES = {
+    in_progress: (item) => item.state === 'in_progress',
+    complete: (item) => item.state === 'complete',
+    interrupted: (item) => item.state === 'interrupted' || !!item.paused,
+};
+
+/**
  * Filtered downloads based on search term, status tab, and date filter.
  */
 const filteredDownloads = derived(
@@ -149,13 +167,8 @@ const filteredDownloads = derived(
         }
 
         // Filter by status tab
-        if ($statusFilter === 'in_progress') {
-            list = list.filter((item) => item.state === 'in_progress');
-        } else if ($statusFilter === 'complete') {
-            list = list.filter((item) => item.state === 'complete');
-        } else if ($statusFilter === 'interrupted') {
-            list = list.filter((item) => item.state === 'interrupted' || item.paused);
-        }
+        const matchesStatus = STATUS_PREDICATES[$statusFilter];
+        if (matchesStatus) list = list.filter(matchesStatus);
 
         // Filter by search query
         if ($searchQuery && $searchQuery.trim() !== '') {
@@ -177,26 +190,14 @@ const filteredDownloads = derived(
 const groupedStore = derived(filteredDownloads, ($filtered) => groupDownloadsByDate($filtered));
 
 /**
- * Summary stats for header chips.
+ * Summary stats for header chips: how many downloads each chip's filter would show.
  */
-export const downloadStats = derived(rawDownloads, ($downloads) => {
-    let inProgress = 0;
-    let complete = 0;
-    let interrupted = 0;
-
-    $downloads.forEach((d) => {
-        if (d.state === 'in_progress') inProgress++;
-        else if (d.state === 'complete') complete++;
-        else if (d.state === 'interrupted' || d.paused) interrupted++;
-    });
-
-    return {
-        total: $downloads.length,
-        inProgress,
-        complete,
-        interrupted,
-    };
-});
+export const downloadStats = derived(rawDownloads, ($downloads) => ({
+    total: $downloads.length,
+    inProgress: $downloads.filter(STATUS_PREDICATES.in_progress).length,
+    complete: $downloads.filter(STATUS_PREDICATES.complete).length,
+    interrupted: $downloads.filter(STATUS_PREDICATES.interrupted).length,
+}));
 
 // ─── Live Event Listeners Setup ──────────────────────────────────
 
