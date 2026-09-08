@@ -3,6 +3,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { siteUrl } from '../../../config/site.js';
+    import { prefetchSiteDocument } from '../../services/prefetchService.js';
     import { i18nStore } from '../../stores/i18nStore.js';
     import { themeStore } from '../../stores/themeStore.js';
 
@@ -449,6 +450,8 @@
                     href={siteUrl(link.page)}
                     title={siteUrl(link.page)}
                     onclick={(e) => openDocument(e, link.page)}
+                    onmouseenter={() => prefetchSiteDocument(link.page)}
+                    onfocus={() => prefetchSiteDocument(link.page)}
                 >
                     {$t(link.i18n)}
                 </a>
