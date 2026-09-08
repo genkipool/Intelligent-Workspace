@@ -195,6 +195,11 @@
             if (request.action === 'toggleAllExpand') {
                 toggleExpandAll();
             }
+            if (request.action === 'sortAlphaChanged' && request.value !== undefined) {
+                if ($sortAlphaStore !== request.value) {
+                    sortAlphaStore.set(request.value);
+                }
+            }
         });
 
         if (typeof ResizeObserver !== 'undefined') {
@@ -252,8 +257,8 @@
         await chrome.storage.local.set({ ruleStorageArea: newMode });
         await initializeRules();
         showTutorial = $rulesStore.length === 0;
-        showNotification('storageModeSet', false, [newMode.toUpperCase()]);
-        showNotification('storageChangeWarning', true);
+        showNotification('storageModeSet', false, [newMode.toUpperCase()], true);
+        showNotification('storageChangeWarning', true, [], true);
     }
 
     function handleStorageChanged(changes) {
@@ -263,6 +268,21 @@
         if (changes.clusteringEnabled !== undefined) isClusterEnabled = changes.clusteringEnabled.newValue;
         if (changes.sortGroupsAlphabetically !== undefined)
             isSortGroupsEnabled = changes.sortGroupsAlphabetically.newValue;
+        if (changes.sortAlphaPreference !== undefined) {
+            const newSortAlpha = !!changes.sortAlphaPreference.newValue;
+            if ($sortAlphaStore !== newSortAlpha) {
+                sortAlphaStore.set(newSortAlpha);
+            }
+        }
+        if (changes.isAllExpanded !== undefined) {
+            const newExpanded = !!changes.isAllExpanded.newValue;
+            if ($isAllExpandedStore !== newExpanded) {
+                isAllExpandedStore.set(newExpanded);
+                const newMap = new SvelteMap($expandedStatesStore);
+                for (const name of expandableRuleNames) newMap.set(name, newExpanded);
+                expandedStatesStore.set(newMap);
+            }
+        }
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
         if (changes.ruleStorageArea) {
@@ -596,6 +616,11 @@
         const newState = !$sortAlphaStore;
         sortAlphaStore.set(newState);
         saveSettings({ sortAlphaPreference: newState });
+        try {
+            chrome.runtime?.sendMessage?.({ action: 'sortAlphaChanged', value: newState })?.catch?.(() => {});
+        } catch {
+            // Ignore messaging errors when no recipient is active
+        }
     }
 
     // On wide screens only rules whose URLs actually overflow can be expanded, so

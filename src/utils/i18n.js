@@ -107,9 +107,11 @@ export function getCurrentLang() {
     return langPromise;
 }
 
-chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes['preferred-language']) langPromise = null;
-});
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes['preferred-language']) langPromise = null;
+    });
+}
 
 /**
  * Applies translations to the provided container (defaults to document).
@@ -215,8 +217,8 @@ export function updateLanguageIndicator(lang, langEn, langEs) {
     langEs.style.fontWeight = lang === 'es' ? 'bold' : 'normal';
 }
 
-// Variables to manage the import notification queue
-let importNotificationQueue = [];
+// Variables to manage the notification queue
+let notificationQueueList = [];
 let isNotificationVisible = false;
 
 export async function showNotification(messageKey, isError = false, params = [], notificationQueue = false) {
@@ -236,13 +238,19 @@ export async function showNotification(messageKey, isError = false, params = [],
     const openDialog = document.querySelector('dialog[open]');
     const targetParent = openDialog || document.body;
 
+    let completeNotification = null;
+
     if (openDialog) {
         notification.classList.add('in-dialog');
         openDialog.addEventListener(
             'close',
             () => {
                 if (notification.parentNode === openDialog) {
-                    notification.remove();
+                    if (completeNotification) {
+                        completeNotification();
+                    } else {
+                        notification.remove();
+                    }
                 }
             },
             { once: true },
@@ -255,32 +263,38 @@ export async function showNotification(messageKey, isError = false, params = [],
         notification.style.setProperty('--notification-height', `${notificationHeight}px`);
         isNotificationVisible = true;
 
-        notification.addEventListener(
-            'animationend',
-            () => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-                isNotificationVisible = false;
-                // Show the next import notification if any in the queue
-                if (importNotificationQueue.length > 0) {
-                    const nextNotification = importNotificationQueue.shift();
-                    nextNotification();
-                }
-            },
-            { once: true },
-        );
+        let completed = false;
+        let fallbackTimer = null;
+        completeNotification = () => {
+            if (completed) return;
+            completed = true;
+            if (fallbackTimer) clearTimeout(fallbackTimer);
+            if (notification.parentNode) {
+                notification.remove();
+            }
+            isNotificationVisible = false;
+            // Show the next notification if any in the queue
+            if (notificationQueueList.length > 0) {
+                const nextNotification = notificationQueueList.shift();
+                nextNotification();
+            }
+        };
+
+        notification.addEventListener('animationend', completeNotification, { once: true });
+        fallbackTimer = setTimeout(completeNotification, 4000);
     };
 
-    if (notificationQueue) {
+    const useQueue = typeof notificationQueue === 'boolean' ? notificationQueue : !!notificationQueue?.queue;
+
+    if (useQueue) {
         // Add to the queue and execute if no notification is visible
-        importNotificationQueue.push(showNotificationNow);
+        notificationQueueList.push(showNotificationNow);
         if (!isNotificationVisible) {
-            const nextNotification = importNotificationQueue.shift();
+            const nextNotification = notificationQueueList.shift();
             nextNotification();
         }
     } else {
-        // Show immediately for non-import related notifications
+        // Show immediately for non-queued notifications
         showNotificationNow();
     }
 }
