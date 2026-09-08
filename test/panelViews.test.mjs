@@ -11,7 +11,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { bootLayoutView, bootTitleKey, OVERLAY_VIEWS } from '../src/ui/services/panelViews.js';
+import { bootLayoutView, bootTitleKey, isFramedView, OVERLAY_VIEWS } from '../src/ui/services/panelViews.js';
 import { SITE_DOCUMENT_TITLES } from '../src/config/site.js';
 
 const params = (search = '') => new URLSearchParams(search);
@@ -75,5 +75,26 @@ describe('bootLayoutView', () => {
             assert.ok(claimsTitle, `${view} deberia reclamar un titulo`);
             assert.notEqual(bootLayoutView(view), 'groups', `${view} no puede arrancar como la lista de grupos`);
         });
+    });
+});
+
+describe('isFramedView', () => {
+    it('reconoce las tres, que es lo que reclama la clase del marco antes del primer pintado', () => {
+        FRAMED.forEach((view) => assert.ok(isFramedView(view), view));
+    });
+
+    it('no reclama el marco para ninguna otra vista', () => {
+        ['groups', 'bookmarks', 'history', 'notes', 'gallery', 'gemini', 'nonesuch', null].forEach((view) =>
+            assert.equal(isFramedView(view), false, String(view)),
+        );
+    });
+
+    it('dice lo mismo que la disposicion de arranque', () => {
+        // main.js reclama la clase del marco con esto, y ListGroup.svelte elige la
+        // disposicion con lo otro. Si las dos mitades del arranque dejan de coincidir,
+        // una de ellas vuelve a pintar el chrome de la lista de grupos primero.
+        [...FRAMED, 'groups', 'bookmarks', 'history', 'notes', 'gallery', 'gemini', 'nonesuch', null].forEach((view) =>
+            assert.equal(isFramedView(view), bootLayoutView(view) === 'url', String(view)),
+        );
     });
 });

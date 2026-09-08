@@ -68,3 +68,19 @@ export function bootLayoutView(view) {
     if (FRAMED_VIEWS.has(view)) return 'url';
     return VIEW_TITLE_KEYS[view] ? view : 'groups';
 }
+
+/**
+ * Whether a view is an iframe filling the panel.
+ *
+ * `body.url-view-active` is what the stylesheet hides the group toolbar behind, and
+ * `enterFramedView` only adds it once the boot has run — hundreds of milliseconds after
+ * the first paint, during which the whole group toolbar was drawn and then swept away.
+ * That is the flash. The class is claimed from the URL instead, the way the assistant
+ * claims `gemini-view-active` in the markup.
+ *
+ * @param {string|null} view
+ * @returns {boolean}
+ */
+export function isFramedView(view) {
+    return FRAMED_VIEWS.has(view);
+}
