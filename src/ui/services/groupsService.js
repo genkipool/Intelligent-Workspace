@@ -34,6 +34,7 @@ import { openUrlInPanel, toggleExpandAll, updateExpandAllButtonState } from './v
 import { closeDownloadModal } from './downloadsService.js';
 import { getReadAloudReadings, setAllReadAloudPaused } from './readAloudService.js';
 import { closeOverflowMenu } from './contextMenuService.js';
+import { positionSmartPopup, forwardWheelToScrollParent } from './popupPositioning.js';
 
 // Store imports from appStore (replacing state.X)
 import {
@@ -99,94 +100,6 @@ export function closeActiveHoverPopup() {
     if (activeHoverRemoveFn) {
         activeHoverRemoveFn();
     }
-}
-
-/**
- * Intelligently positions a popup relative to an anchor element
- * so that it stays entirely within the viewport / side panel container bounds.
- *
- * @param {HTMLElement} anchorEl - The button or container the popup is attached to.
- * @param {HTMLElement} popupEl - The popup element.
- * @param {{ margin?: number, gap?: number }} [options]
- */
-export function positionSmartPopup(anchorEl, popupEl, options = {}) {
-    if (!anchorEl || !popupEl) return;
-
-    const margin = options.margin ?? 8;
-    const gap = options.gap ?? 4;
-    const rect = anchorEl.getBoundingClientRect();
-
-    popupEl.style.position = 'fixed';
-    popupEl.style.zIndex = '9999999';
-
-    // Reset styles for accurate measurement
-    popupEl.style.maxHeight = '';
-    popupEl.style.maxWidth = '';
-    popupEl.classList.remove('has-scroll-y');
-    popupEl.style.overflowY = '';
-    popupEl.style.overflowX = 'hidden';
-    popupEl.style.boxSizing = 'border-box';
-
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    // Constrain maxWidth if larger than window width minus margins
-    const maxAvailableWidth = Math.max(100, windowWidth - 2 * margin);
-    popupEl.style.maxWidth = `${maxAvailableWidth}px`;
-
-    const popupHeight = popupEl.offsetHeight;
-
-    // 1. Vertical placement:
-    const spaceBelow = windowHeight - rect.bottom - margin;
-    const spaceAbove = rect.top - margin;
-
-    if (spaceBelow >= popupHeight + gap) {
-        // Comfortably fits below anchor
-        popupEl.style.top = `${rect.bottom + gap}px`;
-        popupEl.classList.remove('popup-upwards');
-        popupEl.classList.remove('has-scroll-y');
-        popupEl.style.maxHeight = '';
-        popupEl.style.overflowY = 'hidden';
-        popupEl.style.overflowX = 'hidden';
-    } else if (spaceAbove >= popupHeight + gap) {
-        // Comfortably fits above anchor
-        popupEl.style.top = `${rect.top - popupHeight - gap}px`;
-        popupEl.classList.add('popup-upwards');
-        popupEl.classList.remove('has-scroll-y');
-        popupEl.style.maxHeight = '';
-        popupEl.style.overflowY = 'hidden';
-        popupEl.style.overflowX = 'hidden';
-    } else {
-        // Limited space in both directions: clamp maxHeight to available room and enable vertical scroll only
-        if (spaceBelow >= spaceAbove) {
-            const availableHeight = Math.max(40, spaceBelow - gap);
-            popupEl.style.top = `${rect.bottom + gap}px`;
-            popupEl.style.maxHeight = `${availableHeight}px`;
-            popupEl.classList.remove('popup-upwards');
-        } else {
-            const availableHeight = Math.max(40, spaceAbove - gap);
-            popupEl.style.top = `${rect.top - availableHeight - gap}px`;
-            popupEl.style.maxHeight = `${availableHeight}px`;
-            popupEl.classList.add('popup-upwards');
-        }
-        popupEl.classList.add('has-scroll-y');
-        popupEl.style.overflowY = 'auto';
-        popupEl.style.overflowX = 'hidden';
-    }
-
-    // 2. Horizontal placement (measured after vertical layout & scrollbar are determined):
-    const popupWidth = popupEl.offsetWidth;
-    // Align popup right edge with anchor right edge
-    let left = rect.right - popupWidth;
-
-    // Boundary checks:
-    if (left < margin) {
-        left = margin;
-    }
-    if (left + popupWidth > windowWidth - margin) {
-        left = Math.max(margin, windowWidth - popupWidth - margin);
-    }
-    popupEl.style.left = `${left}px`;
 }
 
 /**
@@ -318,19 +231,7 @@ export function createHoverActionPopup(container, buildItems) {
             scheduleHide();
         });
 
-        popupEl.addEventListener(
-            'wheel',
-            (e) => {
-                if (popupEl.scrollHeight > popupEl.clientHeight) {
-                    return;
-                }
-                const scrollContainer = document.querySelector('#groups-list');
-                if (scrollContainer) {
-                    scrollContainer.scrollTop += e.deltaY;
-                }
-            },
-            { passive: true },
-        );
+        forwardWheelToScrollParent(popupEl, container);
 
         document.addEventListener('scroll', handleScroll, { capture: true, passive: true });
         window.addEventListener('resize', handleResize, { passive: true });

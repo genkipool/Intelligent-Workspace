@@ -4850,6 +4850,7 @@ body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-p
 .action-popup.action-popup-detached.has-scroll-y {
     overflow-y: auto !important;
     overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .action-popup.action-popup-detached.popup-upwards {
@@ -5237,10 +5238,14 @@ body.bookmarks-view-active #view-toggle-panel {
         visibility 0.15s;
 }
 
+/* Clamped popup: it scrolls itself, and that scroll never reaches the panel behind it.
+   The stable gutter makes room for the scrollbar so the rows keep their full width
+   instead of overflowing sideways into the always-hidden horizontal axis. */
 .overflow-popup.has-scroll-y,
 .overflow-popup-detached.has-scroll-y {
     overflow-y: auto !important;
     overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .overflow-popup-detached.popup-upwards {

@@ -1,0 +1,138 @@
+/**
+ * popupPositioning.js — where a detached popup goes, and what scrolls when it is open.
+ *
+ * Every floating menu in the panel (the overflow menus, the hover action menus)
+ * shares these rules, and they depend on nothing but the DOM, so they live apart
+ * from the services that build the menus themselves.
+ */
+
+/** Smallest popup worth clamping to when neither side has real room. */
+const MIN_POPUP_HEIGHT = 40;
+
+/** The `overflow-y` values that turn an element into a scroll container. */
+const SCROLLABLE_OVERFLOW = /^(auto|scroll|overlay)$/;
+
+/**
+ * The scroller an element lives in — the list of whichever view is on screen.
+ *
+ * Walking up from the element keeps this right for every view (groups, bookmarks,
+ * notes, downloads…) without an id list to keep in sync, and it returns only
+ * scrollers that currently have somewhere to scroll to.
+ *
+ * @param {HTMLElement|null} el
+ * @returns {HTMLElement|null}
+ */
+export function getScrollParent(el) {
+    for (let node = el?.parentElement; node && node !== document.body; node = node.parentElement) {
+        if (node.scrollHeight <= node.clientHeight) continue;
+        if (SCROLLABLE_OVERFLOW.test(getComputedStyle(node).overflowY)) return node;
+    }
+    return null;
+}
+
+/**
+ * Wheel over a detached popup scrolls the list behind it.
+ *
+ * A detached popup is fixed and parented to <body>, so a wheel over it would
+ * otherwise land nowhere. Once the popup scrolls itself the browser handles the
+ * wheel, and the `overscroll-behavior: contain` on `.has-scroll-y` keeps that
+ * scroll from chaining into the panel when the popup reaches its end.
+ *
+ * @param {HTMLElement} popupEl
+ * @param {HTMLElement} anchorEl The element the popup is anchored to.
+ */
+export function forwardWheelToScrollParent(popupEl, anchorEl) {
+    popupEl.addEventListener(
+        'wheel',
+        (event) => {
+            if (popupEl.scrollHeight > popupEl.clientHeight) return;
+            const scroller = getScrollParent(anchorEl);
+            if (scroller) scroller.scrollTop += event.deltaY;
+        },
+        { passive: true },
+    );
+}
+
+/**
+ * Intelligently positions a popup relative to an anchor element so that it stays
+ * within the viewport, in this order of preference:
+ *
+ * 1. Whole, below the anchor.
+ * 2. Whole, above it.
+ * 3. Whole, below it and past the bottom edge — only when the panel can still
+ *    scroll down far enough to bring the rest into view. The popup rides the
+ *    anchor up on every scroll event, so it ends up fully visible.
+ * 4. Clamped to the roomier side, scrolling on its own.
+ *
+ * It never scrolls horizontally: the width is capped to the window and the
+ * overflow on that axis stays hidden in every branch.
+ *
+ * @param {HTMLElement} anchorEl - The button or container the popup is attached to.
+ * @param {HTMLElement} popupEl - The popup element.
+ * @param {{ margin?: number, gap?: number }} [options]
+ */
+export function positionSmartPopup(anchorEl, popupEl, options = {}) {
+    if (!anchorEl || !popupEl) return;
+
+    const margin = options.margin ?? 8;
+    const gap = options.gap ?? 4;
+    const rect = anchorEl.getBoundingClientRect();
+
+    // Reset before measuring: a previous call's clamp would be read back as the height.
+    popupEl.style.position = 'fixed';
+    popupEl.style.zIndex = '9999999';
+    popupEl.style.boxSizing = 'border-box';
+    popupEl.style.maxHeight = '';
+    popupEl.style.overflowY = 'hidden';
+    popupEl.style.overflowX = 'hidden';
+    popupEl.classList.remove('has-scroll-y', 'popup-upwards');
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    popupEl.style.maxWidth = `${Math.max(100, windowWidth - 2 * margin)}px`;
+
+    // 1. Vertical placement:
+    const popupHeight = popupEl.offsetHeight;
+    const neededHeight = popupHeight + gap;
+    const spaceBelow = windowHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    // Room the popup can borrow by riding the anchor up as the panel scrolls, rather
+    // than being clamped and given a scrollbar of its own.
+    const scroller = getScrollParent(anchorEl);
+    const borrowable = scroller ? scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight : 0;
+    const fitsBelow = spaceBelow >= neededHeight;
+    const fitsAbove = spaceAbove >= neededHeight;
+
+    if (fitsAbove && !fitsBelow) {
+        popupEl.style.top = `${rect.top - popupHeight - gap}px`;
+        popupEl.classList.add('popup-upwards');
+    } else if (fitsBelow || spaceBelow + borrowable >= neededHeight) {
+        // Below, whole. In the borrowed case it starts off past the bottom edge and
+        // walks back into view as the panel scrolls, repositioned on every scroll event.
+        popupEl.style.top = `${rect.bottom + gap}px`;
+    } else {
+        // Nowhere to put it whole and no scroll left to borrow: clamp it to the roomier
+        // side and let it scroll itself.
+        const upwards = spaceAbove > spaceBelow;
+        const availableHeight = Math.max(MIN_POPUP_HEIGHT, (upwards ? spaceAbove : spaceBelow) - gap);
+        popupEl.style.maxHeight = `${availableHeight}px`;
+        popupEl.style.overflowY = 'auto';
+        popupEl.classList.add('has-scroll-y');
+        popupEl.style.top = upwards ? `${rect.top - availableHeight - gap}px` : `${rect.bottom + gap}px`;
+        if (upwards) popupEl.classList.add('popup-upwards');
+    }
+
+    // 2. Horizontal placement (measured after vertical layout & scrollbar are determined):
+    const popupWidth = popupEl.offsetWidth;
+    // Align popup right edge with anchor right edge
+    let left = rect.right - popupWidth;
+
+    // Boundary checks:
+    if (left < margin) {
+        left = margin;
+    }
+    if (left + popupWidth > windowWidth - margin) {
+        left = Math.max(margin, windowWidth - popupWidth - margin);
+    }
+    popupEl.style.left = `${left}px`;
+}

@@ -7,7 +7,8 @@ import {
 } from '../stores/appStore.svelte.js';
 export { activeContextMenu };
 import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS, PAGE_MODES } from './constants.js';
-import { applyPageMode, positionSmartPopup, closeActiveHoverPopup } from './groupsService.js';
+import { applyPageMode, closeActiveHoverPopup } from './groupsService.js';
+import { positionSmartPopup, forwardWheelToScrollParent } from './popupPositioning.js';
 import { captureGroupTabsById, captureTabArea, handleScreenshotRequest } from './screenshotsService.js';
 import { readAloudTargetOf, startReadAloud } from './readAloudService.js';
 
@@ -141,28 +142,58 @@ function handleScrollPositioning() {
     }
 }
 
-function getVisibleScrollContainer() {
-    const selectors = [
-        '#groups-list',
-        '.groups-list',
-        '#bookmarks-view-container',
-        '#history-view-container',
-        '#recent-view-container',
-        '#reading-list-view-container',
-        '#downloads-view-container',
-        '#notes-view',
-    ];
-    for (const selector of selectors) {
-        const el = document.querySelector(selector);
-        if (el && window.getComputedStyle(el).display !== 'none') {
-            return el;
-        }
-    }
-    return null;
-}
-
 function positionDetachedPopup(buttonEl, popupEl) {
     positionSmartPopup(buttonEl, popupEl, { margin: 8, gap: 5 });
+}
+
+/**
+ * Puts a built overflow popup on screen.
+ *
+ * Both builders — the group/tab one and the bookmark one — end exactly the same
+ * way, so that ending lives here once: mount, position, and wire the hover, wheel
+ * and dismissal behaviour.
+ *
+ * @param {HTMLElement} popupEl The populated popup.
+ * @param {HTMLElement} container The overflow button wrapper the popup hangs from.
+ * @param {HTMLElement} actionsContainer The row of action buttons `container` sits in.
+ * @param {string[]} [extraClasses] Variant classes for this popup's context.
+ */
+function mountOverflowPopup(popupEl, container, actionsContainer, extraClasses = []) {
+    closeActiveHoverPopup();
+    closeOverflowMenu();
+    popupEl.classList.add('overflow-popup-detached', ...extraClasses);
+    document.body.appendChild(popupEl);
+    applyTranslations(popupEl);
+
+    activeOverflowPopup = popupEl;
+    activeOverflowSource = container;
+    container.classList.add('active');
+
+    positionDetachedPopup(container, popupEl);
+
+    popupEl.addEventListener('mouseenter', cancelHideOverflowMenu);
+    popupEl.addEventListener('mouseleave', (event) => {
+        if (
+            event.relatedTarget &&
+            (actionsContainer.contains(event.relatedTarget) || container.contains(event.relatedTarget))
+        ) {
+            return;
+        }
+        scheduleHideOverflowMenu();
+    });
+
+    forwardWheelToScrollParent(popupEl, container);
+
+    requestAnimationFrame(() => {
+        if (activeOverflowPopup !== popupEl) return;
+        // Measured again now that the popup has been laid out for real.
+        positionDetachedPopup(container, popupEl);
+        popupEl.classList.add('visible');
+    });
+
+    document.addEventListener('click', closeMenuOnClickOutside);
+    document.addEventListener('scroll', handleScrollPositioning, { capture: true, passive: true });
+    window.addEventListener('resize', handleScrollPositioning, { passive: true });
 }
 
 export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey }) {
@@ -635,64 +666,17 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
     });
 
     if (popupEl.childElementCount > 1) {
-        closeActiveHoverPopup();
-        closeOverflowMenu();
-        popupEl.classList.add('overflow-popup-detached');
-        if (
+        const isGroupContext =
             templateId === 'group-item-template' ||
             templateId === 'domain-subgroup-template' ||
             contextElement.classList.contains('group-item') ||
-            contextElement.classList.contains('domain-subgroup')
-        ) {
-            popupEl.classList.add('group-overflow-popup');
-        }
-        if (templateId === 'tab-item-template' || contextElement?.classList?.contains('tab-item')) {
-            popupEl.classList.add('tab-overflow-popup');
-        }
-        document.body.appendChild(popupEl);
-        applyTranslations(popupEl);
+            contextElement.classList.contains('domain-subgroup');
+        const isTabContext = templateId === 'tab-item-template' || contextElement?.classList?.contains('tab-item');
 
-        activeOverflowPopup = popupEl;
-        activeOverflowSource = container;
-        container.classList.add('active');
-
-        positionDetachedPopup(container, popupEl);
-
-        popupEl.addEventListener('mouseenter', cancelHideOverflowMenu);
-        popupEl.addEventListener('mouseleave', (e) => {
-            if (
-                e.relatedTarget &&
-                (actionsContainer.contains(e.relatedTarget) || container.contains(e.relatedTarget))
-            ) {
-                return;
-            }
-            scheduleHideOverflowMenu();
-        });
-
-        popupEl.addEventListener(
-            'wheel',
-            (e) => {
-                if (popupEl.scrollHeight > popupEl.clientHeight) {
-                    return;
-                }
-                const scrollContainer = getVisibleScrollContainer();
-                if (scrollContainer) {
-                    scrollContainer.scrollTop += e.deltaY;
-                }
-            },
-            { passive: true },
-        );
-
-        requestAnimationFrame(() => {
-            if (activeOverflowPopup === popupEl) {
-                positionDetachedPopup(container, popupEl);
-                popupEl.classList.add('visible');
-            }
-        });
-
-        document.addEventListener('click', closeMenuOnClickOutside);
-        document.addEventListener('scroll', handleScrollPositioning, { capture: true, passive: true });
-        window.addEventListener('resize', handleScrollPositioning, { passive: true });
+        mountOverflowPopup(popupEl, container, actionsContainer, [
+            ...(isGroupContext ? ['group-overflow-popup'] : []),
+            ...(isTabContext ? ['tab-overflow-popup'] : []),
+        ]);
     }
 }
 
@@ -815,52 +799,6 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
     });
 
     if (popupEl.childElementCount > 1) {
-        closeActiveHoverPopup();
-        closeOverflowMenu();
-        popupEl.classList.add('overflow-popup-detached');
-        document.body.appendChild(popupEl);
-        applyTranslations(popupEl);
-
-        activeOverflowPopup = popupEl;
-        activeOverflowSource = container;
-        container.classList.add('active');
-
-        positionDetachedPopup(container, popupEl);
-
-        popupEl.addEventListener('mouseenter', cancelHideOverflowMenu);
-        popupEl.addEventListener('mouseleave', (e) => {
-            if (
-                e.relatedTarget &&
-                (actionsContainer.contains(e.relatedTarget) || container.contains(e.relatedTarget))
-            ) {
-                return;
-            }
-            scheduleHideOverflowMenu();
-        });
-
-        popupEl.addEventListener(
-            'wheel',
-            (e) => {
-                if (popupEl.scrollHeight > popupEl.clientHeight) {
-                    return;
-                }
-                const scrollContainer = getVisibleScrollContainer();
-                if (scrollContainer) {
-                    scrollContainer.scrollTop += e.deltaY;
-                }
-            },
-            { passive: true },
-        );
-
-        requestAnimationFrame(() => {
-            if (activeOverflowPopup === popupEl) {
-                positionDetachedPopup(container, popupEl);
-                popupEl.classList.add('visible');
-            }
-        });
-
-        document.addEventListener('click', closeMenuOnClickOutside);
-        document.addEventListener('scroll', handleScrollPositioning, { capture: true, passive: true });
-        window.addEventListener('resize', handleScrollPositioning, { passive: true });
+        mountOverflowPopup(popupEl, container, actionsContainer);
     }
 }
