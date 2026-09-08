@@ -283,11 +283,13 @@ const isSpecialViewActive = () =>
  * Only when nothing has been navigated since: once there is history, back means the
  * previous view and this page is where "back where it came from" already led.
  *
- * @param {'notes'|'gallery'|'gemini'} name
+ * @param {...('notes'|'gallery'|'gemini'|'payment'|'document')} names The views this
+ *   press could be leaving. The framed branch hosts more than one, and naming them all
+ *   here is what keeps that branch from growing an `if` per view.
  * @returns {Promise<boolean>} Whether it handled the press.
  */
-async function leaveStandaloneOverlay(name) {
-    if (get(standaloneOverlayView) !== name || get(navigationHistory).length > 0) return false;
+async function leaveStandaloneOverlay(...names) {
+    if (!names.includes(get(standaloneOverlayView)) || get(navigationHistory).length > 0) return false;
     const { navSource } = await chrome.storage.local.get('navSource');
     if (!navSource) return false;
     window.location.href = navSource;
@@ -307,9 +309,10 @@ async function handleMainBackClick() {
     }
 
     if (get(isUrlViewActive)) {
-        // The contribution form shares this branch with the web view, but not its meaning of
-        // "back": opened straight from the popup, back is the popup.
-        if (await leaveStandaloneOverlay('payment')) return;
+        // The contribution form and the published documents share this branch with the web
+        // view, but not its meaning of "back": opened straight from the popup, back is the
+        // popup, not the group list behind it.
+        if (await leaveStandaloneOverlay('payment', 'document')) return;
 
         const activeView = document.querySelector('.container')?.querySelector('.active-view');
         if (activeView?.dataset.containsYoutube === 'true') {

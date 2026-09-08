@@ -7742,6 +7742,10 @@
     "rateExtensionBtn": {
         "message": "Dejar una Reseña"
     },
+    "rateExtensionBtnTitle": {
+        "message": "Abre la ficha de la Chrome Web Store, en su pestaña de reseñas",
+        "description": "Tooltip on the popup button that leads to the store reviews."
+    },
     "rateExtensionDescShort": {
         "message": "¿Disfrutas de Intelligent Workspace? ¡Por favor considera dejarnos 5 estrellas!"
     },
