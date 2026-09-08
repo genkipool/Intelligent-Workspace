@@ -93,7 +93,6 @@ export const pinnedAtLastPositionId = writable(null);
  * @param {() => Array<{label?: string, i18n?: string, active?: boolean, onSelect: () => void}>} buildItems
  */
 let activeHoverPopup = null;
-let activeHoverSource = null;
 let activeHoverRemoveFn = null;
 
 export function closeActiveHoverPopup() {
@@ -213,7 +212,6 @@ export function createHoverActionPopup(container, buildItems) {
 
         if (activeHoverPopup === leaving) {
             activeHoverPopup = null;
-            activeHoverSource = null;
             activeHoverRemoveFn = null;
         }
 
@@ -294,7 +292,6 @@ export function createHoverActionPopup(container, buildItems) {
         applyTranslations(popupEl);
 
         activeHoverPopup = popupEl;
-        activeHoverSource = container;
         activeHoverRemoveFn = removePopup;
 
         positionSmartPopup(container, popupEl);
