@@ -2,8 +2,10 @@
     /* global chrome */
     import { onMount, onDestroy } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
+    import { siteUrl } from '../../../config/site.js';
     import { i18nStore } from '../../stores/i18nStore.js';
     import { themeStore } from '../../stores/themeStore.js';
+
     import { settingsStore } from '../../stores/settingsStore.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ThemeSelector from '../../components/common/ThemeSelector.svelte';
@@ -17,6 +19,25 @@
     import { saveSettings } from '../../services/webActivityService.js';
     import { navigateToPanel, primePanelContexts } from '../../services/panelNavigation.js';
     import { warmPaymentOrigin, warmPaymentSheet } from '../../services/paymentService.js';
+    /**
+     * The published documents, in the order they are asked for: what happens to a
+     * person's data first, then where to ask for help, then what they are agreeing to.
+     *
+     * They open in the side panel rather than a tab, which the site allows by naming
+     * this extension in the `frame-ancestors` of these three pages — nowhere else on it
+     * may be framed, and the extension never strips a site's headers to get its way.
+     */
+    const SITE_LINKS = [
+        { page: 'privacy', i18n: 'popupPrivacyPolicyLink' },
+        { page: 'support', i18n: 'popupSupportLink' },
+        { page: 'terms', i18n: 'popupTermsLink' },
+    ];
+
+    /** Hands an address to the panel's web view; the worker opens the panel if it is shut. */
+    function openInSidePanel(event, url) {
+        event.preventDefault();
+        chrome.runtime.sendMessage({ action: 'openUrlInSidePanel', url });
+    }
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
@@ -402,26 +423,23 @@
             </div>
         </section>
 
+        <!--
+            The three published documents, reachable from the surface people actually
+            open rather than only from the store listing. The `href` is the real address
+            so the link can be copied or opened in a tab the usual ways; the click is
+            taken over to show it in the panel instead.
+        -->
         <div class="privacy-link-container">
-            <!--
-                The disclosure is reachable from the surface people actually open, not only
-                from the store listing. It deep-links into the About page's own section
-                rather than opening anything of its own: one account of what happens to a
-                person's data, in one place.
-            -->
-            <a
-                href="#privacy"
-                id="privacy-link-popup"
-                class="footer-link"
-                onclick={(e) => {
-                    e.preventDefault();
-                    chrome.tabs.create({
-                        url: chrome.runtime.getURL('src/ui/pages/about/about.html#privacy-section'),
-                    });
-                }}
-            >
-                {$t('dataUsePrivacyLink')}
-            </a>
+            {#each SITE_LINKS as link (link.page)}
+                <a
+                    class="footer-link"
+                    href={siteUrl(link.page)}
+                    title={$tt(link.i18n)}
+                    onclick={(e) => openInSidePanel(e, siteUrl(link.page))}
+                >
+                    {$t(link.i18n)}
+                </a>
+            {/each}
         </div>
 
         <div class="main-footer-wrapper">

@@ -609,11 +609,16 @@ footer:hover {
    goes looking, not something that competes with the controls above it. */
 .privacy-link-container {
     padding: 8px 10px 0;
-    text-align: center;
+    /* One row of four short links, wrapping onto a second rather than being cut off
+       when the reader's language spells them out longer. */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    gap: 4px 10px;
 }
 
 .privacy-link-container .footer-link {
-    display: inline-block;
     font-size: 11px;
     opacity: 0.7;
     text-decoration: underline;

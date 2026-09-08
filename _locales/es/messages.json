@@ -12239,7 +12239,16 @@
   "dataUsePolicyLink": {
     "message": "Leer la política de privacidad completa"
   },
-  "dataUsePrivacyLink": {
-    "message": "Privacidad y tus datos"
-  }
+    "popupSupportLink": {
+        "message": "Soporte",
+        "description": "Popup footer: link to the support page on the website."
+    },
+    "popupTermsLink": {
+        "message": "Condiciones de uso",
+        "description": "Popup footer: link to the terms of service on the website."
+    },
+    "popupPrivacyPolicyLink": {
+        "message": "Política de privacidad",
+        "description": "Popup footer: link to the privacy policy on the website."
+    }
 }

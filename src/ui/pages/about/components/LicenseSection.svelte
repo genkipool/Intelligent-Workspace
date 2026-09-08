@@ -16,6 +16,7 @@
      * that has drifted from what it summarises is worse than no summary at all.
      */
     import { t, tt } from '../../../stores/i18nStore.js';
+    import { siteUrl } from '../../../../config/site.js';
 
     const LICENSE_URL = 'https://github.com/genkipool/Intelligent-Workspace/blob/main/LICENSE';
 
@@ -25,14 +26,9 @@
      * extension — and, the part that actually needed writing down, that a contribution is
      * a voluntary tip that buys nothing.
      *
-     * Published one page per language, the way the privacy policy and the payment page
-     * are, and chosen the same way: an unknown language falls back to English, which is
-     * what the site itself does for an unknown prefix. See `DataUseSection.svelte` for
-     * the twin of this line.
+     * Published one page per language; `config/site.js` picks the reader's.
      */
-    const TERMS_URL = (chrome.i18n.getUILanguage() || '').toLowerCase().startsWith('es')
-        ? 'https://intelligentworkspace.genkipool.com/es/terms'
-        : 'https://intelligentworkspace.genkipool.com/terms';
+    const TERMS_URL = siteUrl('terms');
 </script>
 
 <section class="license-section card">
