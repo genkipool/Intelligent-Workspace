@@ -125,21 +125,31 @@ function closeMenuOnClickOutside(event) {
     }
 }
 let scrollPosRaf = null;
-function handleScrollPositioning() {
-    if (activeOverflowPopup && activeOverflowSource) {
-        if (scrollPosRaf) cancelAnimationFrame(scrollPosRaf);
-        scrollPosRaf = requestAnimationFrame(() => {
-            if (!activeOverflowPopup || !activeOverflowSource) return;
+/**
+ * Follows the anchor when the list under the popup scrolls.
+ *
+ * Listens on the document in the capture phase, so it also hears the popup
+ * scrolling itself — and that one must be ignored: repositioning re-measures the
+ * popup, and the reader would be dragged back up as they scrolled down.
+ *
+ * @param {Event} [event]
+ */
+function handleScrollPositioning(event) {
+    if (!activeOverflowPopup || !activeOverflowSource) return;
+    if (event?.target instanceof Node && activeOverflowPopup.contains(event.target)) return;
 
-            const rect = activeOverflowSource.getBoundingClientRect();
+    if (scrollPosRaf) cancelAnimationFrame(scrollPosRaf);
+    scrollPosRaf = requestAnimationFrame(() => {
+        if (!activeOverflowPopup || !activeOverflowSource) return;
 
-            if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
-                closeOverflowMenu();
-            } else {
-                positionDetachedPopup(activeOverflowSource, activeOverflowPopup);
-            }
-        });
-    }
+        const rect = activeOverflowSource.getBoundingClientRect();
+
+        if (rect.bottom <= 0 || rect.top >= window.innerHeight) {
+            closeOverflowMenu();
+        } else {
+            positionDetachedPopup(activeOverflowSource, activeOverflowPopup);
+        }
+    });
 }
 
 function positionDetachedPopup(buttonEl, popupEl) {

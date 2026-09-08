@@ -73,7 +73,8 @@ export function forwardWheelToScrollParent(popupEl, anchorEl) {
  * 4. Clamped to the roomier side, scrolling on its own.
  *
  * It never scrolls horizontally: the width is capped to the window and the
- * overflow on that axis stays hidden in every branch.
+ * overflow on that axis stays hidden in every branch. Calling it again on an open
+ * popup keeps whatever the reader had scrolled to.
  *
  * @param {HTMLElement} anchorEl - The button or container the popup is attached to.
  * @param {HTMLElement} popupEl - The popup element.
@@ -85,6 +86,10 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     const margin = options.margin ?? 8;
     const gap = options.gap ?? 4;
     const rect = anchorEl.getBoundingClientRect();
+
+    // Dropping the clamp below lets the popup grow to its full height, which clamps
+    // `scrollTop` to zero; the reader's place is restored once the clamp is back on.
+    const previousScrollTop = popupEl.scrollTop;
 
     // Reset before measuring: a previous call's clamp would be read back as the height.
     popupEl.style.position = 'fixed';
@@ -143,4 +148,7 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         left = Math.max(margin, windowWidth - popupWidth - margin);
     }
     popupEl.style.left = `${left}px`;
+
+    // Harmless when the popup no longer scrolls: the browser clamps it back to zero.
+    popupEl.scrollTop = previousScrollTop;
 }

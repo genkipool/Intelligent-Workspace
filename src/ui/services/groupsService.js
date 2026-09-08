@@ -162,8 +162,11 @@ export function createHoverActionPopup(container, buildItems) {
         positionSmartPopup(container, popupEl);
     };
 
-    const handleScroll = () => {
+    // The popup scrolling itself reaches this document-level capture listener too;
+    // repositioning on it would re-measure the popup and undo the reader's scroll.
+    const handleScroll = (event) => {
         if (!popupEl) return;
+        if (event?.target instanceof Node && popupEl.contains(event.target)) return;
         if (scrollRaf) cancelAnimationFrame(scrollRaf);
         scrollRaf = requestAnimationFrame(updatePosition);
     };
