@@ -4745,6 +4745,13 @@ body.show-domain-headers .domain-header {
     display: none !important;
 }
 
+body.url-view-active #action-visibility-controls-panel,
+body.url-view-active #visibility-controls-panel,
+body:not(.groups-view-active):not(.bookmarks-view-active) #action-visibility-controls-panel,
+body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-panel {
+    display: none !important;
+}
+
 #action-visibility-controls-panel .control-btn {
     opacity: 0.7;
     border: 1px solid transparent;

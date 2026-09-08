@@ -1360,6 +1360,11 @@ function enterFramedView(titleKey, context = null) {
     if (duplicateBadge) duplicateBadge.classList.add('hidden');
     if (removeDuplicatesBtn) removeDuplicatesBtn.classList.add('hidden');
 
+    const visibilityControlsPanel = document.getElementById('visibility-controls-panel');
+    const actionVisibilityControlsPanel = document.getElementById('action-visibility-controls-panel');
+    if (visibilityControlsPanel) visibilityControlsPanel.classList.add('hidden');
+    if (actionVisibilityControlsPanel) actionVisibilityControlsPanel.classList.add('hidden');
+
     updateHeaderButtonsVisibility();
 
     return { container, mainHeaderTitle };
@@ -1935,10 +1940,18 @@ export function restoreYoutubeView() {
             el.style.display = 'none';
         });
 
+    const visibilityControlsPanel = document.getElementById('visibility-controls-panel');
+    const actionVisibilityControlsPanel = document.getElementById('action-visibility-controls-panel');
+    if (visibilityControlsPanel) visibilityControlsPanel.classList.add('hidden');
+    if (actionVisibilityControlsPanel) actionVisibilityControlsPanel.classList.add('hidden');
+
     hv.style.display = '';
     hv.classList.add('active-view');
     isUrlViewActive.set(true);
+    document.body.classList.remove('groups-view-active', 'bookmarks-view-active');
+    document.body.classList.add('url-view-active');
     hiddenYoutubeView.set(null);
+    updateHeaderButtonsVisibility();
 }
 
 /** Throws the parked player away: what the circle's delete badge does. */
@@ -2242,6 +2255,7 @@ let _galleryHasScreenshots = false;
 
 export function updateHeaderButtonsVisibility(contextualData = {}) {
     const _visibilityControlsPanel = document.getElementById('visibility-controls-panel');
+    const _actionVisibilityControlsPanel = document.getElementById('action-visibility-controls-panel');
     const _copyGeminiBtn = document.getElementById('copy-gemini-btn');
     const _readerViewBtn = document.getElementById('reader-view-btn');
     const _downloadAllScreenshotsBtn = document.getElementById('download-all-screenshots-btn');
@@ -2272,8 +2286,15 @@ export function updateHeaderButtonsVisibility(contextualData = {}) {
         mainViewTogglePanel.classList.add('hidden');
     }
 
-    if (_visibilityControlsPanel && isTrulySpecialView) {
+    const shouldHideVisibilityPanels =
+        isTrulySpecialView || (get(currentMainView) !== 'groups' && get(currentMainView) !== 'bookmarks');
+
+    if (_visibilityControlsPanel && shouldHideVisibilityPanels) {
         _visibilityControlsPanel.classList.add('hidden');
+    }
+
+    if (_actionVisibilityControlsPanel && shouldHideVisibilityPanels) {
+        _actionVisibilityControlsPanel.classList.add('hidden');
     }
 
     const pomodoroPanel = document.getElementById('pomodoro-panel');
