@@ -614,7 +614,7 @@ footer:hover {
     display: flex;
     align-items: stretch;
     border-top: 1px solid var(--border-color);
-    padding: 8px 10px 0;
+    padding: 4px 10px 0;
 }
 
 .privacy-link-container .footer-link {
@@ -672,20 +672,34 @@ footer:hover {
     margin-top: 0;
 }
 
+/*
+ * The button does not move on hover — it used to grow by 2%, which nudged the row
+ * under the pointer. What answers instead is light: the gradient sweeps across, the
+ * shadow deepens, and the five stars warm up one after another from left to right.
+ */
 .rate-store-btn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 16px;
-    background: linear-gradient(135deg, var(--interactive-color), hsl(from var(--interactive-color) h s calc(l - 15%)));
+    /* Three stops over twice the width, so sliding the position sweeps the highlight
+       across the button instead of just fading it. */
+    background-image: linear-gradient(
+        115deg,
+        var(--interactive-color),
+        hsl(from var(--interactive-color) h s calc(l - 15%)),
+        var(--interactive-color)
+    );
+    background-size: 220% 100%;
+    background-position: 100% 0;
     color: var(--text-on-color);
     font-weight: 600;
     font-size: 13px;
     border-radius: 6px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
+        background-position 0.5s ease,
+        box-shadow 0.25s ease;
     text-decoration: none;
     width: 100%;
     justify-content: center;
@@ -693,7 +707,7 @@ footer:hover {
 
 .rate-store-btn:hover,
 .rate-store-btn:focus-visible {
-    transform: scale(1.02);
+    background-position: 0 0;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     color: var(--text-on-color);
     text-decoration: none;
@@ -703,6 +717,39 @@ footer:hover {
 .rate-store-btn .material-icons-sharp {
     color: #ffd700;
     font-size: 16px;
+    transition:
+        color 0.25s ease,
+        text-shadow 0.25s ease;
+}
+
+.rate-store-btn:hover .material-icons-sharp,
+.rate-store-btn:focus-visible .material-icons-sharp {
+    color: #fff3b0;
+    text-shadow: 0 0 9px rgba(255, 215, 0, 0.85);
+}
+
+/* Left to right, a star every 60ms. The label is the sixth span and keeps no delay. */
+.rate-store-btn .material-icons-sharp:nth-of-type(2) {
+    transition-delay: 0.06s;
+}
+
+.rate-store-btn .material-icons-sharp:nth-of-type(3) {
+    transition-delay: 0.12s;
+}
+
+.rate-store-btn .material-icons-sharp:nth-of-type(4) {
+    transition-delay: 0.18s;
+}
+
+.rate-store-btn .material-icons-sharp:nth-of-type(5) {
+    transition-delay: 0.24s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rate-store-btn,
+    .rate-store-btn .material-icons-sharp {
+        transition: none;
+    }
 }
 
 /* Specific styling for the email button group to integrate the copy button */

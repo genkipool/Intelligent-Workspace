@@ -33,12 +33,6 @@
         { page: 'terms', i18n: 'popupTermsLink' },
     ];
 
-    /** Hands an address to the panel's web view; the worker opens the panel if it is shut. */
-    function openInSidePanel(event, url) {
-        event.preventDefault();
-        chrome.runtime.sendMessage({ action: 'openUrlInSidePanel', url });
-    }
-
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
     let port = null;
@@ -111,6 +105,24 @@
      */
     function handleNavigation(event, popupUrl, sidePanelUrl, sourcePath) {
         return navigateToPanel({ event, popupUrl, sidePanelUrl, sourcePath });
+    }
+
+    /**
+     * A published document, opened in the panel's browser view the way the contribution
+     * buttons open the payment sheet — same navigation, same `navSource`, so back brings
+     * the reader here instead of leaving them on the group list.
+     *
+     * The route names the page rather than carrying its address: handing the address to
+     * `openUrlInSidePanel` sent it through the header-stripping handler, which refuses
+     * this host on purpose and dropped the reader into the reader view.
+     */
+    function openDocument(event, page) {
+        return handleNavigation(
+            event,
+            `../listGroup/listGroup.html?view=document&page=${page}`,
+            `src/ui/pages/listGroup/listGroup.html?view=document&page=${page}`,
+            '../popup/popup.html',
+        );
     }
 
     function openRules(e) {
@@ -435,7 +447,7 @@
                     class="footer-link"
                     href={siteUrl(link.page)}
                     title={$tt(link.i18n)}
-                    onclick={(e) => openInSidePanel(e, siteUrl(link.page))}
+                    onclick={(e) => openDocument(e, link.page)}
                 >
                     {$t(link.i18n)}
                 </a>
