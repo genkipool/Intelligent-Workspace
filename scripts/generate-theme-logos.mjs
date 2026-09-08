@@ -150,8 +150,8 @@ function buildSvg(c) {
 function buildAdaptiveSvg() {
     return `<svg xmlns="http://www.w3.org/2000/svg"
      width="536"
-     height="476"
-     viewBox="0 0 536 476">
+     height="508"
+     viewBox="0 -32 536 508">
   <style>
     .card-back { fill: var(--logo-card-back, #5ABCCC); }
     .rect-back { fill: var(--logo-rect-back, #FFFFFF); }
