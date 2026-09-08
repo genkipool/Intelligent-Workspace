@@ -674,9 +674,9 @@ footer:hover {
 
 /*
  * The button does not move on hover — it used to grow by 2%, which nudged the row under
- * the pointer. What answers instead is light: the fill lifts, an accent halo blooms
- * around it against the page, and the five stars glow one after another from left to
- * right. Nothing travels and nothing is displaced.
+ * the pointer. What answers instead is light: the fill lifts and an accent halo blooms
+ * around it against the page. Nothing travels and nothing is displaced, and the stars
+ * keep the colour they had.
  *
  * The label is `--text-color`, not `--text-on-color`. Despite the name, that token is
  * text *tinted with* the theme colour — in the light and viridian themes it is the very
@@ -723,38 +723,12 @@ footer:hover {
 }
 
 .rate-store-btn .material-icons-sharp {
-    color: #ffd700;
+    color: var(--text-on-color);
     font-size: 16px;
-    transition: text-shadow 0.25s ease;
-}
-
-/* Only the glow ramps up. Washing the gold out towards cream read as the stars fading
-   rather than lighting, and worst of all on a light theme's brighter fill. */
-.rate-store-btn:hover .material-icons-sharp,
-.rate-store-btn:focus-visible .material-icons-sharp {
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.95);
-}
-
-/* Left to right, a star every 60ms. The label is the sixth span and keeps no delay. */
-.rate-store-btn .material-icons-sharp:nth-of-type(2) {
-    transition-delay: 0.06s;
-}
-
-.rate-store-btn .material-icons-sharp:nth-of-type(3) {
-    transition-delay: 0.12s;
-}
-
-.rate-store-btn .material-icons-sharp:nth-of-type(4) {
-    transition-delay: 0.18s;
-}
-
-.rate-store-btn .material-icons-sharp:nth-of-type(5) {
-    transition-delay: 0.24s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .rate-store-btn,
-    .rate-store-btn .material-icons-sharp {
+    .rate-store-btn {
         transition: none;
     }
 }
