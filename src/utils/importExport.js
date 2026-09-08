@@ -170,6 +170,7 @@ async function parseAndValidateImportedRules(file) {
                             typeof r.name === 'string' &&
                             typeof r.color === 'string' &&
                             Array.isArray(r.urls) &&
+                            r.urls.every((u) => typeof u === 'string') &&
                             typeof r.active === 'boolean',
                     )
                 ) {

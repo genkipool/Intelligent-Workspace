@@ -19,6 +19,15 @@ export const DEFAULT_SCHEME = 'https://';
 
 const SCHEME_RE = /^[a-z][a-z0-9+.-]*:\/\//i;
 
+/** Strict 4-octet IPv4 pattern (each octet 0-255, no leading zeros unless 0). */
+const IPV4_RE = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+
+/** DNS label pattern (alphanumeric and internal hyphens, max 63 chars). */
+const DNS_LABEL_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
+
+/** TLD pattern (at least one letter or IDN punycode prefix; never purely numeric). */
+const TLD_RE = /^(?:[a-z0-9-]*[a-z][a-z0-9-]*|xn--[a-z0-9-]+)$/i;
+
 /** Whether the text already carries a scheme of its own, valid or not. */
 export function hasScheme(url) {
     return SCHEME_RE.test(String(url).trim());
@@ -98,20 +107,65 @@ export function normalizeUrl(url) {
 }
 
 /**
- * A scheme-less entry is read as `https://`, but its host still has to look like a
- * host: `example` parses as a perfectly good URL and would never match a tab, so it
- * is refused the same way an empty host is.
+ * Extracts the raw host from a URL before the WHATWG URL parser mutates or canonicalizes it.
+ *
+ * `new URL('https://3242342424')` parses 3242342424 as a 32-bit integer IPv4 address
+ * and rewrites `hostname` to `193.66.56.24`. Extracting the host string as written allows
+ * detecting whether the user actually typed a valid hostname or a raw integer.
  */
-function isValidSchemelessUrl(trimmedUrl) {
-    let url;
-    try {
-        url = new URL(DEFAULT_SCHEME + trimmedUrl);
-    } catch {
-        return false;
+export function extractRawHost(urlString) {
+    let s = String(urlString).trim();
+    const schemeMatch = s.match(SCHEME_RE);
+    if (schemeMatch) {
+        s = s.slice(schemeMatch[0].length);
     }
-    const host = url.hostname;
-    if (!host) return false;
-    return host.includes('.') || host.startsWith('[') || host === 'localhost';
+    s = s.split(/[/?#]/)[0];
+    const atIdx = s.lastIndexOf('@');
+    if (atIdx !== -1) s = s.slice(atIdx + 1);
+    if (s.startsWith('[')) {
+        const closeIdx = s.indexOf(']');
+        if (closeIdx !== -1) return s.slice(0, closeIdx + 1);
+        return s;
+    }
+    const colonIdx = s.indexOf(':');
+    if (colonIdx !== -1) return s.slice(0, colonIdx);
+    return s;
+}
+
+/**
+ * Validates the host part of an http(s) URL.
+ *
+ * Ensures the host was written as an intentional, valid web host:
+ * - `localhost`
+ * - Bracketed IPv6 (e.g. `[2002::1]`)
+ * - Canonical 4-octet IPv4 (e.g. `192.168.1.1`)
+ * - Domain name with at least 2 labels and a non-numeric TLD (e.g. `example.com`)
+ *
+ * Pure numbers/integers like `3242342424` or `12345` are rejected.
+ */
+export function isValidHost(rawHost, parsedHostname) {
+    if (!rawHost || !parsedHostname) return false;
+    if (/^\d+$/.test(rawHost)) return false;
+
+    if (parsedHostname === 'localhost' && rawHost.toLowerCase() === 'localhost') {
+        return true;
+    }
+
+    if (parsedHostname.startsWith('[') && parsedHostname.endsWith(']')) {
+        return rawHost.toLowerCase() === parsedHostname.toLowerCase();
+    }
+
+    if (IPV4_RE.test(parsedHostname)) {
+        return rawHost === parsedHostname;
+    }
+
+    const labels = parsedHostname.split('.');
+    if (labels.length < 2) return false;
+    if (!labels.every((label) => DNS_LABEL_RE.test(label))) return false;
+    const tld = labels[labels.length - 1];
+    if (!TLD_RE.test(tld)) return false;
+
+    return true;
 }
 
 /** URL validation shared with the background rule matcher. */
@@ -119,17 +173,35 @@ export function isValidUrl(urlString) {
     if (!urlString || typeof urlString !== 'string') return false;
     const trimmedUrl = urlString.trim();
     if (trimmedUrl.includes(' ')) return false;
-    if (!hasScheme(trimmedUrl)) return isValidSchemelessUrl(trimmedUrl);
-    if (!VALID_SCHEMES.some((scheme) => trimmedUrl.startsWith(scheme))) return false;
-    try {
-        const url = new URL(trimmedUrl);
-        if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
-            return Boolean(url.hostname);
+
+    const schemePresent = hasScheme(trimmedUrl);
+    if (schemePresent && !VALID_SCHEMES.some((scheme) => trimmedUrl.startsWith(scheme))) {
+        return false;
+    }
+
+    if (
+        trimmedUrl.startsWith('file:///') ||
+        trimmedUrl.startsWith('chrome://') ||
+        trimmedUrl.startsWith('chrome-extension://')
+    ) {
+        try {
+            new URL(trimmedUrl);
+            return true;
+        } catch {
+            return false;
         }
-        return true;
+    }
+
+    const fullUrl = schemePresent ? trimmedUrl : DEFAULT_SCHEME + trimmedUrl;
+    let url;
+    try {
+        url = new URL(fullUrl);
     } catch {
         return false;
     }
+
+    const rawHost = extractRawHost(trimmedUrl);
+    return isValidHost(rawHost, url.hostname);
 }
 
 /**
@@ -199,6 +271,7 @@ function hasRuleShape(entry) {
         typeof entry.name === 'string' &&
         typeof entry.color === 'string' &&
         Array.isArray(entry.urls) &&
+        entry.urls.every((u) => typeof u === 'string') &&
         typeof entry.active === 'boolean'
     );
 }
@@ -250,11 +323,12 @@ export function validateImportedRules(importedData, existingRules, mode) {
         name: r.name,
         color: r.color,
         // A file may hold scheme-less URLs too, now that the modal accepts them, but
-        // what is stored always carries a scheme.
+        // what is stored always carries a scheme. Only valid scheme-less URLs receive
+        // the default scheme; invalid entries retain their raw form for error reporting.
         urls: r.urls
-            .map((u) => String(u).trim())
+            .map((u) => u.trim())
             .filter((u) => u)
-            .map(withDefaultScheme),
+            .map((u) => (isValidUrl(u) && !hasScheme(u) ? withDefaultScheme(u) : u)),
         active: r.active ?? true,
         isStarred: r.isStarred ?? false,
     }));
