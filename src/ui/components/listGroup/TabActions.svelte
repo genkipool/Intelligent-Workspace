@@ -153,9 +153,6 @@
     <div class="copy-tab-url-btn action-btn" role="button" tabindex="0" title={$tt('copyUrl')} onclick={onCopyUrl}>
         <svg width="14" height="14"><use href="#icon-copy"></use></svg>
     </div>
-    <div class="delete-tab-btn action-btn" role="button" tabindex="0" title={$tt('closeTab')} onclick={onDeleteTab}>
-        <svg width="14" height="14"><use href="#icon-close"></use></svg>
-    </div>
     <div
         class="pip-btn action-btn"
         role="button"
@@ -185,5 +182,8 @@
         onmouseenter={onPrefetchTab}
     >
         <svg width="14" height="14"><use href="#icon-popup"></use></svg>
+    </div>
+    <div class="delete-tab-btn action-btn" role="button" tabindex="0" title={$tt('closeTab')} onclick={onDeleteTab}>
+        <svg width="14" height="14"><use href="#icon-close"></use></svg>
     </div>
 </div>
