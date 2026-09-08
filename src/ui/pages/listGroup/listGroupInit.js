@@ -391,6 +391,7 @@ function initDeleteAllContextButton() {
                     visibilityPanel
                         .querySelectorAll('.delete-option-btn')
                         .forEach((b) => b?.classList.remove('hidden'));
+                    document.getElementById('action-visibility-controls-panel')?.classList.add('hidden');
                 }
             }
         } else if (view === 'history') {
