@@ -4799,6 +4799,13 @@ body.show-domain-headers .domain-header {
     display: none !important;
 }
 
+/* A contribution sheet or a published document: nothing to search, nothing to navigate.
+   Claimed from the URL before the first paint, so the row is never drawn and taken away.
+   `closeUrlInPanel` removes the class when the frame goes. */
+body.bare-frame-view .search-and-controls {
+    display: none !important;
+}
+
 body.url-view-active #action-visibility-controls-panel,
 body.url-view-active #visibility-controls-panel,
 body:not(.groups-view-active):not(.bookmarks-view-active) #action-visibility-controls-panel,

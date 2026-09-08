@@ -11,7 +11,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { bootLayoutView, bootTitleKey, isFramedView, OVERLAY_VIEWS } from '../src/ui/services/panelViews.js';
+import {
+    bootLayoutView,
+    bootTitleKey,
+    isBareFramedView,
+    isFramedView,
+    OVERLAY_VIEWS,
+} from '../src/ui/services/panelViews.js';
 import { SITE_DOCUMENT_TITLES } from '../src/config/site.js';
 
 const params = (search = '') => new URLSearchParams(search);
@@ -107,5 +113,29 @@ describe('isFramedView', () => {
         [...FRAMED, 'groups', 'bookmarks', 'history', 'notes', 'gallery', 'gemini', 'nonesuch', null].forEach((view) =>
             assert.equal(isFramedView(view), bootLayoutView(view) === 'url', String(view)),
         );
+    });
+});
+
+describe('isBareFramedView', () => {
+    it('la hoja de pago y los documentos no tienen barra de busqueda', () => {
+        ['payment', 'document'].forEach((view) => assert.ok(isBareFramedView(view), view));
+    });
+
+    it('la vista web si la conserva, porque escribir en ella navega el marco', () => {
+        assert.equal(isBareFramedView('url'), false);
+    });
+
+    it('ninguna vista sin marco la pierde', () => {
+        ['groups', 'bookmarks', 'history', 'notes', 'gallery', 'gemini', 'nonesuch', null].forEach((view) =>
+            assert.equal(isBareFramedView(view), false, String(view)),
+        );
+    });
+
+    it('solo una vista enmarcada puede quedarse sin ella', () => {
+        // La clase se reclama junto a la del marco, en la misma linea de main.js: pedirla
+        // para algo que no se enmarca escondería la barra de una vista que la necesita.
+        ['payment', 'document', 'url', 'groups', 'notes', 'gemini', null].forEach((view) => {
+            if (isBareFramedView(view)) assert.ok(isFramedView(view), String(view));
+        });
     });
 });

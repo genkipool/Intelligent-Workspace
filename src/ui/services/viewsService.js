@@ -1531,8 +1531,9 @@ export async function openDocumentInPanel(page) {
 
     const { container, mainHeaderTitle } = enterFramedView('webViewTitle');
 
-    const searchRow = container.querySelector('.search-and-controls');
-    if (searchRow) searchRow.style.display = 'none';
+    // Normally already on from the URL; added here too for a switch made in place, where
+    // there was no boot to claim it.
+    document.body.classList.add('bare-frame-view');
 
     const src = siteUrl(page);
     currentPanelUrl.set(src);
@@ -1552,16 +1553,19 @@ export async function openPaymentInPanel(provider) {
     const { container, mainHeaderTitle } = enterFramedView('contribution');
 
     /*
-     * The search row goes, and only here.
+     * The search row goes.
      *
      * `VIEWS_HIDDEN_BY_A_FRAME` deliberately leaves it alone, because the web view uses
-     * it: typing there navigates the frame, and the tooltip says so. A contribution sheet has
-     * nothing to search and nothing to navigate, so the row was two dozen controls sitting
-     * above a payment form doing nothing — the assistant toggle, the regex switch, the
-     * pomodoro, the screenshot button. `closeUrlInPanel` puts it back.
+     * it: typing there navigates the frame, and the tooltip says so. A contribution sheet
+     * has nothing to search and nothing to navigate, so the row was two dozen controls
+     * sitting above a payment form doing nothing — the assistant toggle, the regex switch,
+     * the pomodoro, the screenshot button.
+     *
+     * Normally the class is already on from the URL, which is what stops the row being
+     * drawn and taken away a moment later; this covers a switch made in place, where there
+     * was no boot to claim it. `closeUrlInPanel` puts the row back.
      */
-    const searchRow = container.querySelector('.search-and-controls');
-    if (searchRow) searchRow.style.display = 'none';
+    document.body.classList.add('bare-frame-view');
 
     const nonce = mintPaymentNonce();
     const src = buildPaymentUrl(provider, { nonce });
@@ -1920,6 +1924,8 @@ export async function closeUrlInPanel(isSwitchingView = false) {
      */
     const searchRow = _container?.querySelector('.search-and-controls');
     if (searchRow) searchRow.style.display = '';
+    // The boot claimed this from the URL so the row was never drawn; it goes with the frame.
+    document.body.classList.remove('bare-frame-view');
 
     isUrlViewActive.set(false);
     document.body.classList.remove('url-view-active');
