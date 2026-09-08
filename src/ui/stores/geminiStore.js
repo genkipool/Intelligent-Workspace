@@ -1410,24 +1410,24 @@ function createGeminiStore() {
                     return { ok: true };
                 }
                 if (errorMsg) {
-                    errorMsg.textContent = t('geminiInvalidApiKey');
+                    errorMsg.textContent = t('geminiApiKeyInvalid');
                     errorMsg.classList.remove('hidden');
                 }
                 input.classList.add('input-error');
                 saveBtn.classList.add('error-state');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
-                return { ok: false, errorKey: 'geminiInvalidApiKey' };
+                return { ok: false, errorKey: 'geminiApiKeyInvalid' };
             } catch {
                 if (errorMsg) {
-                    errorMsg.textContent = t('geminiApiKeyValidationError');
+                    errorMsg.textContent = t('errorValidatingApiKey');
                     errorMsg.classList.remove('hidden');
                 }
                 input.classList.add('input-error');
                 saveBtn.classList.add('error-state');
                 saveBtn.disabled = false;
                 saveBtn.textContent = originalText;
-                return { ok: false, errorKey: 'geminiApiKeyValidationError' };
+                return { ok: false, errorKey: 'errorValidatingApiKey' };
             }
         },
 

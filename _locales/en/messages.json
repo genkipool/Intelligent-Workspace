@@ -3038,6 +3038,68 @@
     "message": "The page could not be captured, so there are no pixels to pick from.",
     "description": "Shown when captureVisibleTab fails while opening the eyedropper fallback"
   },
+  "colorPickerTitle": {
+    "message": "Color picker",
+    "description": "Accessible name of the extension's own colour picker popup"
+  },
+  "colorPickerSaturation": {
+    "message": "Saturation and brightness",
+    "description": "Accessible name of the saturation and brightness square in the colour picker"
+  },
+  "colorPickerHue": {
+    "message": "Hue",
+    "description": "Accessible name of the hue bar in the colour picker"
+  },
+  "colorPickerAlpha": {
+    "message": "Opacity",
+    "description": "Accessible name of the opacity bar in the colour picker"
+  },
+  "colorPickerValue": {
+    "message": "Color value",
+    "description": "Accessible name of the text field holding the colour in the picker"
+  },
+  "colorPickerCopy": {
+    "message": "Copy color",
+    "description": "Tooltip of the button that copies the colour from the picker"
+  },
+  "colorPickerFormat": {
+    "message": "Color notation",
+    "description": "Accessible name of the HEX / RGB switch in the colour picker"
+  },
+  "themeDeselected": {
+    "message": "Theme '$1' deselected.",
+    "description": "Notification when a user turns off the theme in use.",
+    "placeholders": {
+      "theme_name": {
+        "content": "$1",
+        "example": "My Blue Theme"
+      }
+    }
+  },
+  "scheduleTimes": {
+    "message": "Times",
+    "description": "Label over the list of times a scheduled query runs at."
+  },
+  "addScheduleTime": {
+    "message": "Add time",
+    "description": "Button that adds another time to a schedule."
+  },
+  "downloadFilterPausedFailed": {
+    "message": "Paused / Failed",
+    "description": "Downloads filter for paused and failed downloads."
+  },
+  "geminiConversationDefaultTitle": {
+    "message": "Gemini Conversation",
+    "description": "Title used when an exported conversation has no title of its own."
+  },
+  "readingListItemRead": {
+    "message": "Read",
+    "description": "Reading list item that has already been read."
+  },
+  "readingListItemUnread": {
+    "message": "Unread",
+    "description": "Reading list item that has not been read yet."
+  },
   "geminiFooterModel": {
     "message": "Model",
     "description": "Label for the AI model name in Gemini response footer."
