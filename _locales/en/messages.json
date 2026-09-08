@@ -3084,10 +3084,6 @@
     "message": "Add time",
     "description": "Button that adds another time to a schedule."
   },
-  "downloadFilterPausedFailed": {
-    "message": "Paused / Failed",
-    "description": "Downloads filter for paused and failed downloads."
-  },
   "geminiConversationDefaultTitle": {
     "message": "Gemini Conversation",
     "description": "Title used when an exported conversation has no title of its own."
@@ -5821,8 +5817,11 @@
   "downloadFilterComplete": {
     "message": "Completed"
   },
+  "downloadFilterPaused": {
+      "message": "Paused"
+  },
   "downloadFilterFailed": {
-    "message": "Paused / Errors"
+      "message": "Failed"
   },
   "filterDownloads": {
     "message": "Filter downloads"

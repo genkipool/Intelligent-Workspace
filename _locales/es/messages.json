@@ -3053,10 +3053,6 @@
         "message": "Añadir hora",
         "description": "Botón que añade otra hora a una programación."
     },
-    "downloadFilterPausedFailed": {
-        "message": "Pausadas / Errores",
-        "description": "Filtro de descargas pausadas y con error."
-    },
     "geminiConversationDefaultTitle": {
         "message": "Conversación de Gemini",
         "description": "Título que se usa cuando una conversación exportada no tiene título propio."
@@ -5823,8 +5819,11 @@
     "downloadFilterComplete": {
         "message": "Completadas"
     },
+    "downloadFilterPaused": {
+        "message": "Pausadas"
+    },
     "downloadFilterFailed": {
-        "message": "Pausadas / Errores"
+        "message": "Errores"
     },
     "filterDownloads": {
         "message": "Filtrar descargas"

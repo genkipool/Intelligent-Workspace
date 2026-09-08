@@ -1,17 +1,25 @@
 <script>
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { downloadsStore, formatBytes, getFilename, getFileCategory } from '../../stores/downloadsStore.js';
+    import {
+        downloadsStore,
+        formatBytes,
+        getFilename,
+        getFileCategory,
+        STATUS_PREDICATES,
+    } from '../../stores/downloadsStore.js';
     import { showNotification } from '../../../utils/i18n.js';
 
     let { item } = $props();
 
     let filename = $derived(getFilename(item));
     let category = $derived(getFileCategory(filename, item.mime));
-    let isInProgress = $derived(item.state === 'in_progress' && !item.paused);
-    let isPaused = $derived(item.paused || (item.state === 'in_progress' && item.canResume));
-    let isComplete = $derived(item.state === 'complete');
-    let isInterrupted = $derived(item.state === 'interrupted' && !item.paused);
+    // The same predicates the chips count with, so a row's badge can never say
+    // something the chip above it contradicts.
+    let isInProgress = $derived(STATUS_PREDICATES.in_progress(item));
+    let isPaused = $derived(STATUS_PREDICATES.paused(item));
+    let isComplete = $derived(STATUS_PREDICATES.complete(item));
+    let isInterrupted = $derived(STATUS_PREDICATES.interrupted(item));
 
     let percentage = $derived.by(() => {
         if (isComplete) return 100;

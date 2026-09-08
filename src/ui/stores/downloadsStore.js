@@ -129,25 +129,36 @@ export function groupDownloadsByDate(items) {
 const rawDownloads = writable([]);
 export const downloadsLoaded = writable(false);
 export const downloadsSearchQuery = writable('');
-export const downloadsStatusFilter = writable('all'); // 'all' | 'in_progress' | 'complete' | 'interrupted'
+export const downloadsStatusFilter = writable('all'); // 'all' | keyof STATUS_PREDICATES
 export const downloadsDateFilter = writable(null); // { start: number, end: number } | null
+
+/**
+ * Whether a download is paused.
+ *
+ * Chrome never gives a paused download a state of its own: it stays `in_progress`
+ * and raises `paused`, and sets `canResume` on the same occasion. Reading that here,
+ * once, is what keeps the badge on a row, the chip counters and the filter from each
+ * inventing their own answer.
+ *
+ * @param {chrome.downloads.DownloadItem} item
+ */
+export const isDownloadPaused = (item) => !!item.paused || (item.state === 'in_progress' && !!item.canResume);
 
 /**
  * What each status chip means, written once.
  *
- * A chip shows a count and, when clicked, filters the list to what it counted. Those
- * two answers used to be worked out separately and disagreed: a paused download is
- * `in_progress` with `paused` set, so the counter's if/else chain filed it under
- * "in progress" and never reached the `paused` branch, while the filter listed it
- * under "paused / failed". Sharing the predicates makes a chip's number the size of
- * the list it opens, by construction.
+ * A chip shows a count and, when clicked, filters the list to what it counted, so
+ * both answers come from the same predicate: a chip's number is the size of the list
+ * it opens, by construction. The four are mutually exclusive, so they add up to the
+ * total — a paused download belongs to "paused" and to nothing else.
  *
  * `all` has no predicate: it is the whole list.
  */
-const STATUS_PREDICATES = {
-    in_progress: (item) => item.state === 'in_progress',
+export const STATUS_PREDICATES = {
+    in_progress: (item) => item.state === 'in_progress' && !isDownloadPaused(item),
     complete: (item) => item.state === 'complete',
-    interrupted: (item) => item.state === 'interrupted' || !!item.paused,
+    paused: isDownloadPaused,
+    interrupted: (item) => item.state === 'interrupted' && !isDownloadPaused(item),
 };
 
 /**
@@ -196,6 +207,7 @@ export const downloadStats = derived(rawDownloads, ($downloads) => ({
     total: $downloads.length,
     inProgress: $downloads.filter(STATUS_PREDICATES.in_progress).length,
     complete: $downloads.filter(STATUS_PREDICATES.complete).length,
+    paused: $downloads.filter(STATUS_PREDICATES.paused).length,
     interrupted: $downloads.filter(STATUS_PREDICATES.interrupted).length,
 }));
 
