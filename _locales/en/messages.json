@@ -4827,6 +4827,10 @@
     "message": "Navigation",
     "description": "Customize navigation hints, snippets and omnibar."
   },
+  "navigationSettingsTitle": {
+      "message": "Navigation settings",
+      "description": "Popup: heading over the navigation button, which carries the on/off switch."
+  },
   "toggleHintsTooltip": {
     "message": "Enable/Disable all hint commands",
     "description": "Tooltip for the switch in the popup that enables or disables the hint feature."
