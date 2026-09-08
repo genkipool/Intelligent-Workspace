@@ -673,33 +673,37 @@ footer:hover {
 }
 
 /*
- * The button does not move on hover — it used to grow by 2%, which nudged the row
- * under the pointer. What answers instead is light: the gradient sweeps across, the
- * shadow deepens, and the five stars warm up one after another from left to right.
+ * The button does not move on hover — it used to grow by 2%, which nudged the row under
+ * the pointer. What answers instead is light: the fill lifts, an accent halo blooms
+ * around it against the page, and the five stars glow one after another from left to
+ * right. Nothing travels and nothing is displaced.
+ *
+ * The label is `--text-color`, not `--text-on-color`. Despite the name, that token is
+ * text *tinted with* the theme colour — in the light and viridian themes it is the very
+ * colour of this button's fill, so the label was being painted in the background's own
+ * colour and could not be read. Every other filled control in this file uses
+ * `--text-color`, and so does this one now.
  */
 .rate-store-btn {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 4px 16px;
-    /* Three stops over twice the width, so sliding the position sweeps the highlight
-       across the button instead of just fading it. */
     background-image: linear-gradient(
-        115deg,
+        135deg,
         var(--interactive-color),
-        hsl(from var(--interactive-color) h s calc(l - 15%)),
-        var(--interactive-color)
+        hsl(from var(--interactive-color) h s calc(l - 15%))
     );
-    background-size: 220% 100%;
-    background-position: 100% 0;
-    color: var(--text-on-color);
+    color: var(--text-color);
     font-weight: 600;
     font-size: 13px;
     border-radius: 6px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* `filter` and `box-shadow` both interpolate; two gradients do not, which is why the
+       lift is a brightness rather than a second background. */
     transition:
-        background-position 0.5s ease,
-        box-shadow 0.25s ease;
+        filter 0.25s ease,
+        box-shadow 0.3s ease;
     text-decoration: none;
     width: 100%;
     justify-content: center;
@@ -707,9 +711,13 @@ footer:hover {
 
 .rate-store-btn:hover,
 .rate-store-btn:focus-visible {
-    background-position: 0 0;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    color: var(--text-on-color);
+    filter: brightness(1.12) saturate(1.08);
+    /* The halo is the accent itself, so it reads against the page in every theme — the
+       one place a light theme has the contrast the fill cannot give on its own. */
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--interactive-color) 40%, transparent),
+        0 6px 20px rgba(0, 0, 0, 0.28);
+    color: var(--text-color);
     text-decoration: none;
     outline: none;
 }
@@ -717,15 +725,14 @@ footer:hover {
 .rate-store-btn .material-icons-sharp {
     color: #ffd700;
     font-size: 16px;
-    transition:
-        color 0.25s ease,
-        text-shadow 0.25s ease;
+    transition: text-shadow 0.25s ease;
 }
 
+/* Only the glow ramps up. Washing the gold out towards cream read as the stars fading
+   rather than lighting, and worst of all on a light theme's brighter fill. */
 .rate-store-btn:hover .material-icons-sharp,
 .rate-store-btn:focus-visible .material-icons-sharp {
-    color: #fff3b0;
-    text-shadow: 0 0 9px rgba(255, 215, 0, 0.85);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.95);
 }
 
 /* Left to right, a star every 60ms. The label is the sixth span and keeps no delay. */

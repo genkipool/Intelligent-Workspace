@@ -16,7 +16,7 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
 import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
-import { siteUrl } from '../../config/site.js';
+import { SITE_DOCUMENT_TITLES, siteUrl } from '../../config/site.js';
 import {
     mintPaymentNonce,
     buildPaymentUrl,
@@ -1308,17 +1308,6 @@ const VIEWS_HIDDEN_BY_A_FRAME =
  * open windows, download, show modals, ask for storage access. Trimming this list is
  * what leaves x.com or WhatsApp Web stuck on a blank shell.
  */
-/**
- * The documents this panel will frame, and what the header calls each one. Being a
- * table rather than a URL parameter is the point: the route names a page the site has
- * agreed to be framed on, so no other address can be pushed through it.
- */
-const SITE_DOCUMENT_TITLES = {
-    privacy: 'popupPrivacyPolicyLink',
-    support: 'popupSupportLink',
-    terms: 'popupTermsLink',
-};
-
 const WEB_VIEW_SANDBOX =
     'allow-scripts allow-same-origin allow-popups allow-forms allow-downloads allow-modals allow-storage-access-by-user-activation allow-popups-to-escape-sandbox allow-presentation allow-top-navigation-by-user-activation';
 

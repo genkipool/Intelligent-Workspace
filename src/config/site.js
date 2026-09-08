@@ -23,3 +23,15 @@ export function siteUrl(page, language = uiLanguage()) {
     const prefix = language.toLowerCase().startsWith('es') ? '/es' : '';
     return `${SITE_ORIGIN}${prefix}/${page}`;
 }
+
+/**
+ * The documents the panel will frame, and what the header calls each one.
+ *
+ * A table rather than a URL parameter, and the reason the route names a page instead of
+ * carrying an address: nothing else can be pushed through it.
+ */
+export const SITE_DOCUMENT_TITLES = {
+    privacy: 'popupPrivacyPolicyLink',
+    support: 'popupSupportLink',
+    terms: 'popupTermsLink',
+};

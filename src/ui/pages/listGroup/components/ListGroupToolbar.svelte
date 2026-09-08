@@ -14,6 +14,7 @@
     import MuteAllButton from '../../../components/listGroup/MuteAllButton.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import SearchAndControls from '../../../components/common/SearchAndControls.svelte';
+    import { bootTitleKey } from '../../../services/panelViews.js';
 
     let {
         initialTitleKey = 'listTabGroups',
@@ -28,15 +29,8 @@
         handleCopyConversation = () => {},
     } = $props();
 
-    const VIEW_TITLE_MAP = {
-        groups: 'listTabGroups',
-        bookmarks: 'bookmarksViewTitle',
-        history: 'historyViewTitle',
-        recent: 'recentlyClosedViewTitle',
-        reading: 'readingListViewTitle',
-        downloads: 'downloadsViewTitle',
-        gemini: 'geminiViewTitle',
-    };
+    /** `document` is the one view whose title needs a second parameter; see `bootTitleKey`. */
+    const bootParams = new URLSearchParams(window.location.search);
 
     /**
      * The header's name for what is on screen.
@@ -46,16 +40,12 @@
      * "Listar Grupos" for a frame in the middle of opening the notes. `overlayViewOpening`
      * is set before that switch and the flags stay up for as long as the view does, so
      * between them there is no moment when nobody is claiming the header.
+     *
+     * What each view is called comes from `panelViews.js`, the same table the boot names
+     * the header from: two lists would be two chances to disagree for a frame.
      */
-    const OVERLAY_TITLE_MAP = {
-        notes: 'notesViewTitle',
-        gallery: 'screenshotGalleryTitle',
-        gemini: 'geminiViewTitle',
-        url: 'webViewTitle',
-    };
-
     let overlayTitleKey = $derived(
-        OVERLAY_TITLE_MAP[$overlayViewOpening] ||
+        bootTitleKey($overlayViewOpening, bootParams) ||
             ($isNotesViewActive
                 ? 'notesViewTitle'
                 : $isGalleryViewActive
@@ -67,7 +57,7 @@
                       : null),
     );
 
-    let titleKey = $derived(overlayTitleKey || VIEW_TITLE_MAP[$currentMainView] || initialTitleKey);
+    let titleKey = $derived(overlayTitleKey || bootTitleKey($currentMainView, bootParams) || initialTitleKey);
 
     /**
      * The two ways of adding pictures to the gallery.

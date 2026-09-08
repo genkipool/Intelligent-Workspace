@@ -5,6 +5,7 @@
         adjustScrollButtonsForGeminiView,
     } from '../../services/viewsService.js';
     import ScrollButtons, { updateScrollButtons } from '../../components/common/ScrollButtons.svelte';
+    import { bootLayoutView, bootTitleKey, OVERLAY_VIEWS } from '../../services/panelViews.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import HiddenGroupsBar from '../../components/listGroup/HiddenGroupsBar.svelte';
@@ -52,36 +53,20 @@
     import { copyRichTextToClipboard } from '../../services/utils.js';
     import { showNotification } from '../../../utils/i18n.js';
 
-    // The page can be opened straight into a view, and the URL says which one before
-    // any storage is read. Without this the title rendered as the group list and the
-    // boot corrected it a few frames later, which read as the header flashing.
-    const VIEW_TITLE_KEYS = {
-        groups: 'listTabGroups',
-        bookmarks: 'bookmarksViewTitle',
-        history: 'historyViewTitle',
-        recent: 'recentlyClosedViewTitle',
-        reading: 'readingListViewTitle',
-        downloads: 'downloadsViewTitle',
-        gemini: 'geminiViewTitle',
-        notes: 'notesViewTitle',
-        gallery: 'screenshotGalleryTitle',
-        url: 'webViewTitle',
-    };
-    /**
-     * The views painted *over* the group list rather than replacing it. They still get
-     * their own header, their own controls and their own initial layout — everything
-     * the assistant has always had — which is what stops the page showing the group
-     * list's chrome for a moment on the way in.
-     */
-    const OVERLAY_VIEWS = new Set(['notes', 'gallery', 'gemini', 'url']);
-    const requestedView = new URLSearchParams(window.location.search).get('view');
-    const initialTitleKey = VIEW_TITLE_KEYS[requestedView] || 'listTabGroups';
+    // The page can be opened straight into a view, and the URL says which one before any
+    // storage is read. Without this the title rendered as the group list and the boot
+    // corrected it a few frames later, which read as the header flashing. Which views
+    // exist, and what each is called, lives in `panelViews.js` — it has to be the same
+    // answer here, in the toolbar and in the boot.
+    const bootParams = new URLSearchParams(window.location.search);
+    const requestedView = bootParams.get('view');
+    const initialTitleKey = bootTitleKey(requestedView, bootParams) || 'listTabGroups';
 
     // The markup used to start laid out for the group list whatever the URL asked for,
     // so opening another view showed the group shell for a few frames before the boot
     // swapped it. The initial layout now comes from the same per-view configuration
     // the boot itself uses, so there is nothing to swap.
-    const initialView = VIEW_TITLE_KEYS[requestedView] ? requestedView : 'groups';
+    const initialView = bootLayoutView(requestedView);
     /**
      * Whether the group list is on screen at the first paint.
      *
