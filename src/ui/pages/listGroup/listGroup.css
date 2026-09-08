@@ -4835,7 +4835,8 @@ body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-p
     z-index: 9999999 !important;
     box-shadow: 0 0px 5px var(--interactive-color);
     box-sizing: border-box;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
+    overflow-y: hidden;
     opacity: 0;
     visibility: hidden;
     transform: translateY(-5px);
@@ -4844,6 +4845,11 @@ body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-p
         opacity 0.15s ease,
         transform 0.15s ease,
         visibility 0.15s;
+}
+
+.action-popup.action-popup-detached.has-scroll-y {
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
 }
 
 .action-popup.action-popup-detached.popup-upwards {
@@ -5087,9 +5093,8 @@ body.bookmarks-view-active #view-toggle-panel {
     box-shadow: 0 0px 5px var(--interactive-color);
     width: max-content;
     box-sizing: border-box;
-    overflow: hidden !important;
     overflow-x: hidden !important;
-    overflow-y: hidden !important;
+    overflow-y: hidden;
     border: 1px solid var(--border-color);
 
     /* We improve the transition to avoid unwanted interactions */
@@ -5216,9 +5221,8 @@ body.bookmarks-view-active #view-toggle-panel {
     border: 1px solid var(--border-color);
     width: max-content;
     box-sizing: border-box;
-    overflow: hidden !important;
     overflow-x: hidden !important;
-    overflow-y: hidden !important;
+    overflow-y: hidden;
     z-index: 9999999 !important;
     /* Dominates the entire screen */
 
@@ -5231,6 +5235,12 @@ body.bookmarks-view-active #view-toggle-panel {
         opacity 0.15s ease,
         transform 0.15s ease,
         visibility 0.15s;
+}
+
+.overflow-popup.has-scroll-y,
+.overflow-popup-detached.has-scroll-y {
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
 }
 
 .overflow-popup-detached.popup-upwards {

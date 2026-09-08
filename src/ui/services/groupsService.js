@@ -122,6 +122,7 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     // Reset styles for accurate measurement
     popupEl.style.maxHeight = '';
     popupEl.style.maxWidth = '';
+    popupEl.classList.remove('has-scroll-y');
     popupEl.style.overflowY = '';
     popupEl.style.overflowX = 'hidden';
     popupEl.style.boxSizing = 'border-box';
@@ -133,10 +134,48 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     const maxAvailableWidth = Math.max(100, windowWidth - 2 * margin);
     popupEl.style.maxWidth = `${maxAvailableWidth}px`;
 
-    const popupWidth = popupEl.offsetWidth;
     const popupHeight = popupEl.offsetHeight;
 
-    // 1. Horizontal placement:
+    // 1. Vertical placement:
+    const spaceBelow = windowHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+
+    if (spaceBelow >= popupHeight + gap) {
+        // Comfortably fits below anchor
+        popupEl.style.top = `${rect.bottom + gap}px`;
+        popupEl.classList.remove('popup-upwards');
+        popupEl.classList.remove('has-scroll-y');
+        popupEl.style.maxHeight = '';
+        popupEl.style.overflowY = 'hidden';
+        popupEl.style.overflowX = 'hidden';
+    } else if (spaceAbove >= popupHeight + gap) {
+        // Comfortably fits above anchor
+        popupEl.style.top = `${rect.top - popupHeight - gap}px`;
+        popupEl.classList.add('popup-upwards');
+        popupEl.classList.remove('has-scroll-y');
+        popupEl.style.maxHeight = '';
+        popupEl.style.overflowY = 'hidden';
+        popupEl.style.overflowX = 'hidden';
+    } else {
+        // Limited space in both directions: clamp maxHeight to available room and enable vertical scroll only
+        if (spaceBelow >= spaceAbove) {
+            const availableHeight = Math.max(40, spaceBelow - gap);
+            popupEl.style.top = `${rect.bottom + gap}px`;
+            popupEl.style.maxHeight = `${availableHeight}px`;
+            popupEl.classList.remove('popup-upwards');
+        } else {
+            const availableHeight = Math.max(40, spaceAbove - gap);
+            popupEl.style.top = `${rect.top - availableHeight - gap}px`;
+            popupEl.style.maxHeight = `${availableHeight}px`;
+            popupEl.classList.add('popup-upwards');
+        }
+        popupEl.classList.add('has-scroll-y');
+        popupEl.style.overflowY = 'auto';
+        popupEl.style.overflowX = 'hidden';
+    }
+
+    // 2. Horizontal placement (measured after vertical layout & scrollbar are determined):
+    const popupWidth = popupEl.offsetWidth;
     // Align popup right edge with anchor right edge
     let left = rect.right - popupWidth;
 
@@ -148,70 +187,6 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
         left = Math.max(margin, windowWidth - popupWidth - margin);
     }
     popupEl.style.left = `${left}px`;
-
-    // 2. Vertical placement:
-    const spaceBelow = windowHeight - rect.bottom - margin;
-    const spaceAbove = rect.top - margin;
-
-    const isTab =
-        options.isTab ??
-        (popupEl.classList.contains('tab-overflow-popup') ||
-            Boolean(anchorEl.closest && anchorEl.closest('.tab-item')));
-
-    let hasScroll = options.hasScroll;
-    if (hasScroll === undefined) {
-        const scrollContainer = anchorEl.closest
-            ? anchorEl.closest(
-                  '#groups-list, .groups-list, #bookmarks-view-container, #history-view-container, #recent-view-container, #reading-list-view-container, #downloads-view-container, #notes-view',
-              )
-            : null;
-        hasScroll = scrollContainer
-            ? scrollContainer.scrollHeight > scrollContainer.clientHeight || scrollContainer.scrollTop > 0
-            : document.body.scrollHeight > window.innerHeight;
-    }
-
-    if (spaceBelow >= popupHeight + gap) {
-        // Comfortably fits below anchor
-        popupEl.style.top = `${rect.bottom + gap}px`;
-        popupEl.classList.remove('popup-upwards');
-        popupEl.style.overflowY = 'hidden';
-    } else if (spaceAbove >= popupHeight + gap) {
-        // Comfortably fits above anchor
-        popupEl.style.top = `${rect.top - popupHeight - gap}px`;
-        popupEl.classList.add('popup-upwards');
-        popupEl.style.overflowY = 'hidden';
-    } else if (options.allowOverflowBelow || (isTab && hasScroll)) {
-        // If it doesn't fit above or below, but the side panel has scroll or allows overflow below:
-        // Follow downwards below the anchor and let it extend below the panel's scroll, no need to shift it up.
-        popupEl.style.top = `${rect.bottom + gap}px`;
-        popupEl.classList.remove('popup-upwards');
-        popupEl.style.overflowY = 'hidden';
-    } else if (popupHeight <= windowHeight - 2 * margin) {
-        // Fits within viewport height: shift vertically so it displays completely without scrollbars
-        let top = spaceBelow >= spaceAbove ? rect.bottom + gap : rect.top - popupHeight - gap;
-        top = Math.max(margin, Math.min(top, windowHeight - popupHeight - margin));
-        popupEl.style.top = `${top}px`;
-        if (spaceBelow >= spaceAbove) {
-            popupEl.classList.remove('popup-upwards');
-        } else {
-            popupEl.classList.add('popup-upwards');
-        }
-        popupEl.style.overflowY = 'hidden';
-    } else {
-        // Only when the popup is taller than the entire window itself
-        if (spaceBelow >= spaceAbove) {
-            popupEl.style.top = `${rect.bottom + gap}px`;
-            popupEl.style.maxHeight = `${Math.max(60, spaceBelow - gap)}px`;
-            popupEl.classList.remove('popup-upwards');
-        } else {
-            const availableHeight = Math.max(60, spaceAbove - gap);
-            popupEl.style.top = `${rect.top - availableHeight - gap}px`;
-            popupEl.style.maxHeight = `${availableHeight}px`;
-            popupEl.classList.add('popup-upwards');
-        }
-        popupEl.style.overflowY = 'auto';
-        popupEl.style.overflowX = 'hidden';
-    }
 }
 
 /**
@@ -346,6 +321,9 @@ export function createHoverActionPopup(container, buildItems) {
         popupEl.addEventListener(
             'wheel',
             (e) => {
+                if (popupEl.scrollHeight > popupEl.clientHeight) {
+                    return;
+                }
                 const scrollContainer = document.querySelector('#groups-list');
                 if (scrollContainer) {
                     scrollContainer.scrollTop += e.deltaY;
