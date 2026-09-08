@@ -1,7 +1,7 @@
 /**
  * viewsService.js — Service extracted from views.js
  *
- * Functions: showWelcomeMessage, restoreMainView, closeBookmarksView, toggleViews, updateSplitButtonsUI, manageViewVisibility, switchMainView, openDeleteHistoryConfirmModal, updateMainPanelButtons, renderHistoryView, showNoHistoryMessage, renderRecentlyClosedView, renderReadingListView, initCustomCalendar, createGenericListItem, handleIframeMessage, openUrlInPip, openUrlInPopup, openUrlInPanel, fetchContentForReaderView, showReaderView, showErrorView, closeUrlInPanel, hideYoutubeView, restoreYoutubeView, discardYoutubeView, adjustScrollButtonsForGeminiView, getActiveScrollableElement, updateScrollButtons, updateBackButtonTooltip, updateExpandAllButtonState, toggleExpandAll, updateHeaderButtonsVisibility, initViewEvents
+ * Functions: showWelcomeMessage, restoreMainView, closeBookmarksView, toggleViews, updateSplitButtonsUI, manageViewVisibility, switchMainView, openDeleteHistoryConfirmModal, updateMainPanelButtons, renderHistoryView, renderRecentlyClosedView, renderReadingListView, initCustomCalendar, createGenericListItem, handleIframeMessage, openUrlInPip, openUrlInPopup, openUrlInPanel, fetchContentForReaderView, showReaderView, showErrorView, closeUrlInPanel, hideYoutubeView, restoreYoutubeView, discardYoutubeView, adjustScrollButtonsForGeminiView, getActiveScrollableElement, updateScrollButtons, updateBackButtonTooltip, updateExpandAllButtonState, toggleExpandAll, updateHeaderButtonsVisibility, initViewEvents
  */
 
 import { get } from 'svelte/store';
@@ -900,22 +900,6 @@ export async function renderDownloadsView() {
     import('../stores/downloadsStore.js').then(({ downloadsStore }) => {
         downloadsStore.loadDownloads(searchTerm);
     });
-}
-
-export function showNoHistoryMessage(container, dateFilter) {
-    const el = document.getElementById('history-view-container');
-    const target = container || (el ? el.querySelector('.list-content') : null);
-    if (!target) return;
-    const noMsg = document.createElement('p');
-    noMsg.className = 'no-items-message';
-    if (dateFilter) {
-        const dateStr = new Date(dateFilter).toLocaleDateString();
-        const msg = chrome.i18n.getMessage('noHistoryForDate', [dateStr]) || `No history for ${dateStr}`;
-        noMsg.textContent = msg;
-    } else {
-        noMsg.textContent = chrome.i18n.getMessage('noHistoryFound') || 'No history found.';
-    }
-    target.appendChild(noMsg);
 }
 
 export async function renderRecentlyClosedView() {
