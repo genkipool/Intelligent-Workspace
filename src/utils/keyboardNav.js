@@ -181,8 +181,16 @@ export function initializeKeyboardNavigation(customHandlers = {}) {
                     event.preventDefault();
                     event.stopPropagation();
 
+                    // `.itg-modal-close` is the cross of the shared header
+                    // (`ModalHeader.svelte`), and it has to be on this list: what
+                    // happens when no close button is found is `activeOverlay.remove()`,
+                    // which tears the dialog out of the DOM behind Svelte's back. The
+                    // component still believes it is open — so it cannot be opened
+                    // again — and none of the work its close does gets done: the theme
+                    // editor, for one, left the page dressed in a preview of colours
+                    // nobody had saved.
                     const closeBtn = activeOverlay.querySelector(
-                        '.close-modal-btn, #close-gemini-schedule-modal, .close-error-btn, #back-from-cookie-import-btn',
+                        '.itg-modal-close, .close-modal-btn, #close-gemini-schedule-modal, .close-error-btn, #back-from-cookie-import-btn',
                     );
                     if (closeBtn) {
                         closeBtn.click();

@@ -179,6 +179,11 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Cambiado
 
+- Guardar o actualizar un tema lo elige. Quien acaba de repartir nueve colores está
+  mirando el resultado y quiere quedárselo, y hasta ahora eso se tiraba en cuanto se
+  cerraba el editor; el aviso, además, ya decía «guardado y aplicado». Deseleccionarlo
+  después sigue devolviendo al tema anterior.
+
 - Las ventanas modales llevan su cabecera pegada al borde de arriba, de modo que el
   título tiene el mismo aire por encima que por debajo. El diálogo añadía un margen
   propio sobre una cabecera que ya trae el suyo, y el título quedaba más bajo de lo que
@@ -216,6 +221,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   es mezclarla.
 
 ### Corregido
+
+- **Cerrar el editor de temas sin guardar ya no deja los colores puestos.** Cada color
+  que se toca se pinta en la página para verlo, y salir por la cruz, por el fondo o con
+  Escape no es decidir quedárselo: la página se quedaba vestida con un tema que nadie
+  había guardado, que además se veía exactamente igual que uno aplicado. Al cerrar se
+  vuelve a poner el tema que de verdad está en uso, o el aspecto por defecto si no hay
+  ninguno.
+- **Escape vuelve a cerrar bien las ventanas modales.** Cerraba arrancando el diálogo
+  del DOM cuando no encontraba su botón de cerrar, y la cruz de la cabecera compartida
+  no estaba en la lista: el componente seguía creyéndose abierto —así que no se podía
+  volver a abrir— y no se hacía nada de lo que su cierre tiene que hacer.
 
 - **Etiquetas que salían en crudo o en blanco ya están traducidas.** Al quitar el tema
   en uso, el aviso decía literalmente «themeDeselected»: la clave no existía en ninguno
