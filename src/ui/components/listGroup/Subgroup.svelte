@@ -1,12 +1,15 @@
 <script>
     import { tt } from '../../stores/i18nStore.js';
     import TabItem from './TabItem.svelte';
-    import { listGroupState } from '../../stores/listGroupStore.js';
     import { listGroupStore } from '../../stores/listGroupStore.js';
     import { updateExpandAllButtonState, updateScrollButtons } from '../../services/viewsService.js';
     import { renderNotesButton, renderScreenshotButton } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
-    import { actionVisibilitySettings, expandedSubgroupStates } from '../../stores/appStore.svelte.js';
+    import {
+        actionVisibilitySettings,
+        expandedSubgroupStates,
+        viewExpandStates,
+    } from '../../stores/appStore.svelte.js';
     import { showNotification } from '@/utils/i18n.js';
 
     let { domain = '', tabs = [], groupId, renderContext = {} } = $props();
@@ -26,7 +29,7 @@
     // by hand cannot disagree.
     let isOpen = $derived.by(() => {
         const stored = $expandedSubgroupStates.get(subGroupKey);
-        return stored !== undefined ? stored : $listGroupState.viewExpandStates.groups;
+        return stored !== undefined ? stored : $viewExpandStates.groups;
     });
 
     function toggleOpen(e) {
