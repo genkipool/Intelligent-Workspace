@@ -207,6 +207,7 @@ describe('RuleCard click expansion behavior', () => {
         const cardEl = document.getElementById('card');
         handler({ target: cardEl, clientX: 250, preventDefault: () => {} });
         assert.equal(expandCalled, false, 'must not expand when clicking on cardEl in the actions column');
+        assert.equal(deleteCalled, false, 'must not delete when clicking below deleteButton');
     });
 
     it('clicking on rule header on narrow screen toggles expand', () => {
