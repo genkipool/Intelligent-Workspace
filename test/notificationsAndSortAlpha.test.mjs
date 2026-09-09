@@ -135,4 +135,79 @@ describe('Rules sortAlpha real-time sync', () => {
             ['Zebra', 'Apple', 'Mango'],
         );
     });
+
+    it('ordena dominios de una regla alfabeticamente o por longitud segun sortStatesStore', async () => {
+        const { sortStatesStore } = await import(`../src/ui/pages/rules/rulesStore.js?t=${Date.now()}`);
+
+        const rule = {
+            name: 'Dev',
+            urls: ['github.com/developer', 'gitlab.com', 'a.co', 'bitbucket.org'],
+        };
+
+        function getDisplayUrls(urls, isAlphaSort) {
+            if (isAlphaSort) {
+                return [...urls].sort((a, b) => a.localeCompare(b));
+            }
+            return [...urls].sort((a, b) => a.length - b.length);
+        }
+
+        let currentSort = false;
+        const unsubscribe = sortStatesStore.subscribe((m) => {
+            currentSort = m.get('Dev') || false;
+        });
+
+        // Estado inicial: false -> orden por longitud
+        const map = new Map();
+        map.set('Dev', false);
+        sortStatesStore.set(map);
+
+        assert.equal(currentSort, false);
+        assert.deepEqual(getDisplayUrls(rule.urls, currentSort), [
+            'a.co',
+            'gitlab.com',
+            'bitbucket.org',
+            'github.com/developer',
+        ]);
+
+        // Al activar sortStatesStore -> orden alfabetico
+        const updated = new Map(map);
+        updated.set('Dev', true);
+        sortStatesStore.set(updated);
+
+        assert.equal(currentSort, true);
+        assert.deepEqual(getDisplayUrls(rule.urls, currentSort), [
+            'a.co',
+            'bitbucket.org',
+            'github.com/developer',
+            'gitlab.com',
+        ]);
+
+        // Al restaurar -> orden por longitud
+        const restored = new Map(updated);
+        restored.set('Dev', false);
+        sortStatesStore.set(restored);
+
+        assert.equal(currentSort, false);
+        assert.deepEqual(getDisplayUrls(rule.urls, currentSort), [
+            'a.co',
+            'gitlab.com',
+            'bitbucket.org',
+            'github.com/developer',
+        ]);
+
+        unsubscribe();
+    });
+});
+
+describe('Validate errors text capitalization', () => {
+    it('tiene la primera letra en mayuscula en espanol e ingles', async () => {
+        const fs = await import('node:fs');
+        const path = await import('node:path');
+
+        const esMessages = JSON.parse(fs.readFileSync(path.resolve('_locales/es/messages.json'), 'utf-8'));
+        const enMessages = JSON.parse(fs.readFileSync(path.resolve('_locales/en/messages.json'), 'utf-8'));
+
+        assert.equal(esMessages.validateErrors.message, 'Validar errores');
+        assert.equal(enMessages.validateErrors.message, 'Validate errors');
+    });
 });

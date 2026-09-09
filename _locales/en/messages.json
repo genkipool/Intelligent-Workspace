@@ -761,7 +761,7 @@
     "description": "Notification when drag-drop is disabled due to alphabetical sorting"
   },
   "validateErrors": {
-    "message": "validate errors",
+    "message": "Validate errors",
     "description": "Label for real-time validation toggle in rule form"
   },
   "validateErrorsRealTime": {

@@ -651,6 +651,10 @@
             aria-pressed={isAlphaSort}
             style="display: {isExpanded ? 'inline-block' : 'none'};"
             title={$tt(isAlphaSort ? 'viewOriginalOrder' : 'sortAlphabeticallyButton')}
+            onclick={(e) => {
+                e.stopPropagation();
+                toggleSort();
+            }}
         >
             <!-- The icon is drawn with currentColor, so the pressed state is a colour
                  change on the svg and lives in the shared stylesheet. -->
