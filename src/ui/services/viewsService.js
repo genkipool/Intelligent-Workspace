@@ -51,6 +51,7 @@ import {
     isPopupWindow,
     expandedGroupStates,
     expandedSubgroupStates,
+    viewExpandStates,
 } from '../stores/appStore.svelte.js';
 
 // ─── Svelte Stores (other) ───────────────────────────────────────
@@ -2317,6 +2318,12 @@ export function toggleExpandAll() {
             return states;
         });
     }
+
+    // What the button has just settled on is also how the view draws a card it
+    // remembers nothing about — a group created after the list was folded, or one
+    // brought back from hidden. Without this the default stayed "expanded" for ever,
+    // so those cards arrived open with every other one shut.
+    viewExpandStates.update((states) => ({ ...states, [viewKey]: shouldExpand }));
 
     updateExpandAllButtonState();
     updateScrollButtons();

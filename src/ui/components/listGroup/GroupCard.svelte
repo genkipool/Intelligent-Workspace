@@ -1,4 +1,6 @@
 <script>
+    import { untrack } from 'svelte';
+    import { get } from 'svelte/store';
     import { tt } from '../../stores/i18nStore.js';
     import TabItem from './TabItem.svelte';
     import Subgroup from './Subgroup.svelte';
@@ -12,8 +14,21 @@
         makeGroupTitleEditable,
     } from '../../services/groupsService.js';
     import { captureGroupTabs } from '../../services/screenshotsService.js';
-    import { backedUpGroupData, expandedGroupStates } from '../../stores/appStore.svelte.js';
+    import {
+        backedUpGroupData,
+        expandedGroupStates,
+        expandedSubgroupStates,
+        viewExpandStates,
+    } from '../../stores/appStore.svelte.js';
     import GroupActions from './GroupActions.svelte';
+    import {
+        decideSummaryFold,
+        resolveGroupOpenState,
+        createActiveTabFollow,
+        subgroupsToReveal,
+        FOLD_BLOCKED,
+        FOLD_DELAYED,
+    } from './groupExpansion.js';
 
     /**
      * `liveTabs` are the tabs already restored from this backup: real tabs again.
@@ -38,27 +53,34 @@
 
     let hasActiveTab = $derived(tabs.some((t) => t.active));
 
-    // Ensure the group containing the active tab is expanded so it is visible
+    // With the list folded, the card opens as the active tab arrives and shuts as it
+    // leaves. The rule lives in `groupExpansion.js`; what matters here is that it is
+    // written into the shared map like any other fold, and read back below like any
+    // other. Holding the active tab used to force the card open in the derived itself,
+    // which is what stopped it folding at all: "collapse all" shut it and the very next
+    // read opened it again, so the group holding the tab you are looking at — one per
+    // window, so several at a time — was the one group nothing could fold.
+    const activeTabFollow = createActiveTabFollow();
     $effect(() => {
-        if (hasActiveTab && group.id !== undefined) {
-            const stored = $expandedGroupStates.get(group.id);
-            if (stored === false) {
-                // Reactivity here belongs to the store, not to the Map: subscribers
-                // are notified because update replaces the value, so the new Map is
-                // built as one expression and never mutated afterwards.
-                expandedGroupStates.update((map) => new Map([...map, [group.id, true]]));
-            }
-        }
+        if (group.id === undefined) return;
+        // `isExpanded` is read untracked: this effect answers to the tab moving and
+        // to the list being folded, not to the map it writes.
+        const next = activeTabFollow.next(
+            hasActiveTab,
+            $viewExpandStates.groups,
+            untrack(() => isExpanded),
+        );
+        if (next === null) return;
+        // Reactivity here belongs to the store, not to the Map: subscribers are
+        // notified because update replaces the value, so the new Map is built as one
+        // expression and never mutated afterwards.
+        expandedGroupStates.update((map) => new Map([...map, [group.id, next]]));
     });
 
     // Derived from the shared map rather than mirrored into local state. The mirror
     // was written back by an effect that depended on the whole store, so toggling one
     // group re-evaluated every card and could snap a different one open or shut.
-    let isExpanded = $derived.by(() => {
-        if (hasActiveTab) return true;
-        const stored = $expandedGroupStates.get(group.id);
-        return stored !== undefined ? stored : $listGroupState.viewExpandStates.groups;
-    });
+    let isExpanded = $derived(resolveGroupOpenState($expandedGroupStates.get(group.id), $viewExpandStates.groups));
 
     let isHidden = $derived(group.title && group.title.startsWith('_hidden_'));
 
@@ -110,6 +132,7 @@
 
     let domains = $derived(Object.keys(subGroupsMap));
     let hasSubgroups = $derived(tabs.length > 1 && domains.length > 1);
+    let subGroupKeys = $derived(hasSubgroups ? domains.map((domain) => `${group.id}_${domain}`) : []);
 
     // Native Svelte Action for Drag and Drop
     function useDraggable(node) {
@@ -222,17 +245,14 @@
     let titleFoldTimer = null;
 
     function handleToggleOpen(e) {
-        if (isBackup || isUngrouped) {
+        const decision = decideSummaryFold(e.target, { isBackup, isUngrouped });
+        if (decision === FOLD_BLOCKED) {
+            // Clicks on the actions, the colour dot or the rename field are not a
+            // request to fold the group.
             e.preventDefault();
             return;
         }
-        // Clicks on the actions, the colour dot or the rename field are not a request
-        // to fold the group.
-        if (e.target.closest('.group-actions, .color-indicator, .group-title-input')) {
-            e.preventDefault();
-            return;
-        }
-        if (e.target.closest('.group-title')) {
+        if (decision === FOLD_DELAYED) {
             e.preventDefault();
             clearTimeout(titleFoldTimer);
             titleFoldTimer = setTimeout(() => {
@@ -267,11 +287,23 @@
      */
     function handleToggled(e) {
         const open = e.currentTarget.open;
-        if (open === isExpanded) return;
-        expandedGroupStates.update((states) => {
-            states.set(group.id, open);
-            return states;
-        });
+        if (open !== isExpanded) {
+            expandedGroupStates.update((states) => {
+                states.set(group.id, open);
+                return states;
+            });
+        }
+        if (!open) return;
+
+        // A card that opens onto nothing opens its domains with it. Read with `get`
+        // rather than `$`: what the domains are doing decides this one click, and the
+        // card has no reason to redraw every time one of them is folded.
+        const stored = get(expandedSubgroupStates);
+        const keys = subgroupsToReveal(subGroupKeys, (key) =>
+            resolveGroupOpenState(stored.get(key), $viewExpandStates.groups),
+        );
+        if (keys.length === 0) return;
+        expandedSubgroupStates.update((map) => new Map([...map, ...keys.map((key) => [key, true])]));
     }
 
     function togglePin(e) {
