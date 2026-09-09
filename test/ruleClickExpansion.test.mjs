@@ -19,7 +19,7 @@ describe('RuleCard click expansion behavior', () => {
                         <span class="color-indicator"></span>
                         <h3 class="rule-name">Work</h3>
                         <button class="sort-domains-btn" type="button">Sort</button>
-                        <button class="collapse-btn" type="button">Collapse</button>
+                        <button id="collapseSectionBtn" class="collapse-btn" type="button"><span class="svg-deploy"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icon-chevron-up"></use></svg></span></button>
                     </div>
                     <div class="rule-urls-container">
                         <div class="rule-urls-wrapper" data-url="example.com" data-url-index="0">
@@ -29,6 +29,7 @@ describe('RuleCard click expansion behavior', () => {
                                 <button class="delete-icon" type="button">Delete domain</button>
                             </div>
                         </div>
+                        <button id="expandUrlsBtn" class="expand-btn" type="button">^</button>
                     </div>
                     <div id="ruleActions" class="rule-actions">
                         <button id="deployButton" class="deploy-btn rule-actions-button" type="button">Deploy</button>
@@ -250,5 +251,40 @@ describe('RuleCard click expansion behavior', () => {
         handler({ target: urlsContainer, clientX: 50, preventDefault: () => {} });
 
         assert.equal(expandCalled, false, 'clicking in urls container background must not toggle expand');
+    });
+
+    it('clicking collapse-btn (or inside svg-deploy) triggers toggleExpand', () => {
+        let expandCalled = false;
+
+        const handler = createClickHandler({
+            isLargeScreen: true,
+            onToggleExpand: () => {
+                expandCalled = true;
+            },
+        });
+
+        const chevronSvg = document.querySelector('#collapseSectionBtn svg');
+        handler({ target: chevronSvg, preventDefault: () => {} });
+        assert.equal(expandCalled, true, 'clicking inside chevron svg must trigger toggleExpand');
+
+        expandCalled = false;
+        const collapseBtn = document.getElementById('collapseSectionBtn');
+        handler({ target: collapseBtn, preventDefault: () => {} });
+        assert.equal(expandCalled, true, 'clicking collapse-btn directly must trigger toggleExpand');
+    });
+
+    it('clicking expand-btn (^ button) triggers toggleExpand', () => {
+        let expandCalled = false;
+
+        const handler = createClickHandler({
+            isLargeScreen: true,
+            onToggleExpand: () => {
+                expandCalled = true;
+            },
+        });
+
+        const expandBtn = document.getElementById('expandUrlsBtn');
+        handler({ target: expandBtn, preventDefault: () => {} });
+        assert.equal(expandCalled, true, 'clicking ^ expand-btn must trigger toggleExpand');
     });
 });

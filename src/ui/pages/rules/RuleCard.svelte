@@ -679,6 +679,10 @@
             style="display: {isExpanded && isLargeScreen ? 'inline-block' : 'none'};"
             title={$tt('collapseSection')}
             aria-label={$t('collapseSection')}
+            onclick={(e) => {
+                e.stopPropagation();
+                toggleExpand();
+            }}
         >
             <span class="svg-deploy">
                 <svg
@@ -775,7 +779,11 @@
                 tabindex="0"
                 translate="no"
                 title={$tt('collapseUrlsButton')}
-                aria-label={$t('showLessUrls')}>^</button
+                aria-label={$t('showLessUrls')}
+                onclick={(e) => {
+                    e.stopPropagation();
+                    toggleExpand();
+                }}>^</button
             >
         {:else if hasHiddenUrls}
             <button
@@ -784,7 +792,11 @@
                 tabindex="0"
                 translate="no"
                 title={$tt('expandUrlsButton')}
-                aria-label={$t('showMoreUrls')}>. . .</button
+                aria-label={$t('showMoreUrls')}
+                onclick={(e) => {
+                    e.stopPropagation();
+                    toggleExpand();
+                }}>. . .</button
             >
         {/if}
     </div>

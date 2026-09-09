@@ -261,6 +261,7 @@
         const newMode = detail?.value;
         if (!newMode || newMode === storageMode) return;
         storageMode = newMode;
+        initialRestoredRules.clear();
         await chrome.storage.local.set({ ruleStorageArea: newMode });
         await initializeRules();
         showTutorial = $rulesStore.length === 0;
@@ -313,21 +314,13 @@
                 sortAlphaStore.set(newSortAlpha);
             }
         }
-        if (changes.isAllExpanded !== undefined) {
-            const newExpanded = !!changes.isAllExpanded.newValue;
-            if ($isAllExpandedStore !== newExpanded) {
-                isAllExpandedStore.set(newExpanded);
-                const newMap = new SvelteMap($expandedStatesStore);
-                for (const name of expandableRuleNames) newMap.set(name, newExpanded);
-                expandedStatesStore.set(newMap);
-            }
-        }
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
         if (changes.ruleStorageArea) {
             const newArea = changes.ruleStorageArea.newValue || 'sync';
             if (newArea !== storageMode) {
                 storageMode = newArea;
+                initialRestoredRules.clear();
                 initializeRules().then(() => {
                     showTutorial = $rulesStore.length === 0;
                 });
@@ -465,6 +458,7 @@
         const updatedRules = [...$rulesStore];
         const [deleted] = updatedRules.splice(index, 1);
         if (!deleted) return;
+        initialRestoredRules.delete(deleted.name);
         await saveRulesToStorage(updatedRules);
         // The rule is gone, so the group it kept together stops being a group: its tabs
         // are released, exactly as the original does before saying goodbye to the rule.
@@ -501,8 +495,20 @@
     function handleToggleExpand(detail) {
         const { name } = detail;
         let updatedStates = new SvelteMap($expandedStatesStore);
-        updatedStates.set(name, !updatedStates.get(name));
+        const nextState = !updatedStates.get(name);
+        updatedStates.set(name, nextState);
         expandedStatesStore.set(updatedStates);
+        if (!nextState) {
+            isAllExpandedStore.set(false);
+            saveSettings({ isAllExpanded: false });
+        } else {
+            const allExpanded =
+                expandableRuleNames.length > 0 && expandableRuleNames.every((ruleName) => updatedStates.get(ruleName));
+            if (allExpanded) {
+                isAllExpandedStore.set(true);
+                saveSettings({ isAllExpanded: true });
+            }
+        }
     }
 
     /**
@@ -604,6 +610,10 @@
             expanded.delete(oldName);
             expandedStatesStore.set(expanded);
         }
+        if (initialRestoredRules.has(oldName)) {
+            initialRestoredRules.delete(oldName);
+            initialRestoredRules.add(newName);
+        }
         groupTabs();
     }
 
@@ -690,6 +700,7 @@
     // would open cards that have nothing to reveal. Each card reports its own
     // overflow state as it is measured.
     let overflowingRules = new SvelteSet();
+    let initialRestoredRules = new SvelteSet();
 
     function handleOverflowChange({ name, hasHiddenUrls }) {
         if (hasHiddenUrls) overflowingRules.add(name);
@@ -697,12 +708,14 @@
 
         // "Expand all" is remembered across reloads, but a card can only be expanded
         // once it has measured itself and knows it has URLs to reveal. Applying the
-        // saved state as each card reports in is what restores it — the original does
-        // the same, per card, at render time.
-        if (hasHiddenUrls && $isAllExpandedStore && !$expandedStatesStore.get(name)) {
-            const restored = new SvelteMap($expandedStatesStore);
-            restored.set(name, true);
-            expandedStatesStore.set(restored);
+        // saved state as each card reports in is what restores it on initial load.
+        if (hasHiddenUrls && !initialRestoredRules.has(name)) {
+            initialRestoredRules.add(name);
+            if ($isAllExpandedStore && !$expandedStatesStore.get(name)) {
+                const restored = new SvelteMap($expandedStatesStore);
+                restored.set(name, true);
+                expandedStatesStore.set(restored);
+            }
         }
     }
 
@@ -720,7 +733,10 @@
         if (expandableRuleNames.length === 0) return;
         const newState = !areAllExpanded;
         const newMap = new SvelteMap($expandedStatesStore);
-        for (const name of expandableRuleNames) newMap.set(name, newState);
+        for (const name of expandableRuleNames) {
+            newMap.set(name, newState);
+            initialRestoredRules.add(name);
+        }
         expandedStatesStore.set(newMap);
         isAllExpandedStore.set(newState);
         // The setting was being read back on every load and never written, so the
