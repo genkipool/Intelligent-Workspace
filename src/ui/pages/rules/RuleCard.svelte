@@ -112,11 +112,11 @@
     }
 
     /**
-     * Single delegated click handler: each interactive element is handled by the
-     * first matching branch and whatever is left over toggles the card. The `else if`
-     * chain matters — with independent guards the actions strip (and, on narrow
-     * screens, the whole card) stops being clickable and the card only expands on the
-     * few pixels no child element covers.
+     * Single delegated click handler: each interactive element is handled by its
+     * specific branch. Clicks on action or domain toolbars/containers are guarded so
+     * misclicks around buttons (e.g. below the delete button) never trigger unintended
+     * card expansion. On narrow screens, clicking non-interactive card header areas
+     * toggles expansion.
      */
     function handleCardClick(e) {
         if (isEditingName || editingDomainIndex !== -1) return;
@@ -148,17 +148,25 @@
             e.preventDefault();
             copyRuleUrls();
         } else if (target.closest('.rule-actions')) {
-            // The whole actions strip toggles, except the on/off switch.
-            if (
-                !target.closest('.switch-rule-actions') &&
-                !target.closest('input') &&
-                !target.closest('.svg-toggle-button')
-            ) {
-                toggleExpand();
-            }
+            // Action buttons are handled above; clicks on the toolbar itself never toggle the card.
+            return;
+        } else if (target.closest('.rule-urls-container')) {
+            // Domain clicks and icon clicks are handled above; clicks on the container background never toggle the card.
+            return;
         } else if (!isLargeScreen) {
-            // Narrow screens: anywhere on the card that is not interactive.
+            // Narrow screens: expand when clicking non-interactive card header areas outside the actions toolbar.
             if (!target.closest('.drag-handle') && !target.closest('input') && !target.closest('textarea')) {
+                const actionsEl = cardEl?.querySelector('.rule-actions');
+                if (
+                    actionsEl &&
+                    typeof e.clientX === 'number' &&
+                    typeof actionsEl.getBoundingClientRect === 'function'
+                ) {
+                    const rect = actionsEl.getBoundingClientRect();
+                    if (rect.left > 0 && e.clientX >= rect.left - 4) {
+                        return;
+                    }
+                }
                 toggleExpand();
             }
         }

@@ -1252,6 +1252,7 @@ h1 {
     flex-wrap: nowrap;
     min-width: fit-content;
     padding: var(--spacing-vsm) 0;
+    cursor: default;
 
     @media (width <=600px) {
         display: flex;
@@ -1260,8 +1261,10 @@ h1 {
         align-items: center;
         gap: 8px;
         padding: 0;
-        height: var(--button-size-header);
+        height: 100%;
+        min-height: var(--button-size-header);
         order: 1;
+        cursor: default;
 
         .switch {
             display: none;
@@ -2267,6 +2270,7 @@ form {
     text-wrap: pretty;
     flex-shrink: 1;
     overflow: hidden;
+    cursor: default;
 
     .expand-btn {
         justify-content: start;
