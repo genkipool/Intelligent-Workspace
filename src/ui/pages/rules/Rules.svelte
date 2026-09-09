@@ -207,13 +207,6 @@
                     sortStatesStore.set(updated);
                 }
             }
-            if (request.action === 'ruleExpandChanged' && request.ruleName) {
-                const updated = new SvelteMap($expandedStatesStore);
-                if (updated.get(request.ruleName) !== request.value) {
-                    updated.set(request.ruleName, request.value);
-                    expandedStatesStore.set(updated);
-                }
-            }
         });
 
         if (typeof ResizeObserver !== 'undefined') {
@@ -281,12 +274,9 @@
             rulesStore.set(newRules);
             if (newRules.length > 0) {
                 const sortStateKeys = newRules.map((rule) => `sortState_${rule.name}`);
-                const expandStateKeys = newRules.map((rule) => `expandState_${rule.name}`);
-                getSettings([...sortStateKeys, ...expandStateKeys]).then((stateData) => {
+                getSettings(sortStateKeys).then((stateData) => {
                     const sortMap = new SvelteMap($sortStatesStore);
-                    const expandMap = new SvelteMap($expandedStatesStore);
                     let sChanged = false;
-                    let eChanged = false;
                     for (const r of newRules) {
                         if (stateData && stateData[`sortState_${r.name}`] !== undefined) {
                             if (sortMap.get(r.name) !== stateData[`sortState_${r.name}`]) {
@@ -294,15 +284,8 @@
                                 sChanged = true;
                             }
                         }
-                        if (stateData && stateData[`expandState_${r.name}`] !== undefined) {
-                            if (expandMap.get(r.name) !== stateData[`expandState_${r.name}`]) {
-                                expandMap.set(r.name, stateData[`expandState_${r.name}`]);
-                                eChanged = true;
-                            }
-                        }
                     }
                     if (sChanged) sortStatesStore.set(sortMap);
-                    if (eChanged) expandedStatesStore.set(expandMap);
                 });
             }
         }
@@ -320,22 +303,6 @@
         }
         if (sortStatesChanged) {
             sortStatesStore.set(updatedSortStates);
-        }
-
-        let expandStatesChanged = false;
-        const updatedExpandStates = new SvelteMap($expandedStatesStore);
-        for (const key of Object.keys(changes)) {
-            if (key.startsWith('expandState_')) {
-                const ruleName = key.slice('expandState_'.length);
-                const val = !!changes[key].newValue;
-                if (updatedExpandStates.get(ruleName) !== val) {
-                    updatedExpandStates.set(ruleName, val);
-                    expandStatesChanged = true;
-                }
-            }
-        }
-        if (expandStatesChanged) {
-            expandedStatesStore.set(updatedExpandStates);
         }
         if (changes.clusteringEnabled !== undefined) isClusterEnabled = changes.clusteringEnabled.newValue;
         if (changes.sortGroupsAlphabetically !== undefined)
@@ -534,21 +501,8 @@
     function handleToggleExpand(detail) {
         const { name } = detail;
         let updatedStates = new SvelteMap($expandedStatesStore);
-        const newState = !updatedStates.get(name);
-        updatedStates.set(name, newState);
+        updatedStates.set(name, !updatedStates.get(name));
         expandedStatesStore.set(updatedStates);
-        saveSettings({ [`expandState_${name}`]: newState });
-        try {
-            chrome.runtime
-                ?.sendMessage?.({
-                    action: 'ruleExpandChanged',
-                    ruleName: name,
-                    value: newState,
-                })
-                ?.catch?.(() => {});
-        } catch {
-            // Ignore messaging errors when no recipient is active
-        }
     }
 
     /**
@@ -646,22 +600,9 @@
         }
         const expanded = new SvelteMap($expandedStatesStore);
         if (expanded.has(oldName)) {
-            const val = expanded.get(oldName);
-            expanded.set(newName, val);
+            expanded.set(newName, expanded.get(oldName));
             expanded.delete(oldName);
             expandedStatesStore.set(expanded);
-            saveSettings({ [`expandState_${newName}`]: val });
-            try {
-                chrome.runtime
-                    ?.sendMessage?.({
-                        action: 'ruleExpandChanged',
-                        ruleName: newName,
-                        value: val,
-                    })
-                    ?.catch?.(() => {});
-            } catch {
-                // Ignore messaging errors
-            }
         }
         groupTabs();
     }
