@@ -761,7 +761,7 @@
         "description": "Notificación cuando el arrastrar y soltar está deshabilitado por orden alfabético"
     },
     "validateErrors": {
-        "message": "validar errores",
+        "message": "Validar errores",
         "description": "Label for real-time validation toggle in rule form"
     },
     "validateErrorsRealTime": {
