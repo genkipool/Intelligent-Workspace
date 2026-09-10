@@ -1,6 +1,7 @@
 <script>
     import { tick } from 'svelte';
     import { portal } from '../../actions/portal.js';
+    import { t } from '../../stores/i18nStore.js';
 
     /**
      * Time field with the extension's own hour/minute popup.
@@ -100,6 +101,14 @@
         commit();
         open = false;
     }
+
+    function handleApply(e) {
+        e?.stopPropagation?.();
+        hour = clamp(hour, maxHour);
+        minute = clamp(minute, 59);
+        commit();
+        open = false;
+    }
 </script>
 
 <!--
@@ -182,6 +191,9 @@
         </div>
         <!-- The original shows the bare format, not the sentence in messages.json. -->
         <div class="time-picker-label">{pickerLabel}</div>
+        <button type="button" class="time-picker-apply-btn" onclick={handleApply}>
+            {$t('apply') || 'Aplicar'}
+        </button>
     </div>
 {/if}
 
@@ -189,13 +201,14 @@
     /* Same story as the calendar: one copy of the design the schedule, cookie and
        pomodoro screens each used to carry. */
     .custom-time-picker {
-        width: 190px;
+        width: 220px;
+        box-sizing: border-box;
         background-color: var(--bg-panel-color);
         border: 1px solid var(--border-color);
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         z-index: 99999;
-        padding: 12px 10px 8px;
+        padding: 14px 16px 10px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -205,13 +218,13 @@
     .time-picker-main-row {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
 
     .time-arrows {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 3px;
     }
 
     .time-arrow-btn {
@@ -285,5 +298,38 @@
         color: var(--text-color);
         text-transform: uppercase;
         letter-spacing: 1px;
+    }
+
+    .time-picker-apply-btn {
+        width: 100%;
+        height: 26px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 8px;
+        background-color: var(--action-color, #3498db);
+        border: 1px solid var(--action-color, #3498db);
+        border-radius: 4px;
+        color: #ffffff;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        transition:
+            filter 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .time-picker-apply-btn:hover {
+        filter: brightness(1.1);
+    }
+
+    .time-picker-apply-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--action-color, #3498db);
+    }
+
+    .time-picker-apply-btn:active {
+        filter: brightness(0.95);
     }
 </style>

@@ -75,6 +75,7 @@ function createGeminiStore() {
         scheduleEditorState: { mode: 'add', scheduleIndex: -1 },
         isInitialized: false,
         _returnToMainView: false,
+        apiKeys: [],
     });
 
     const { subscribe, update, set } = state;
@@ -1431,9 +1432,19 @@ function createGeminiStore() {
             }
         },
 
-        deleteApiKey: async (index) => {
+        deleteApiKey: async (target) => {
             const storageData = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
             let keysList = storageData.geminiApiKeysList || [];
+            let index = -1;
+            if (typeof target === 'number') {
+                index = target;
+            } else if (typeof target === 'string') {
+                index = keysList.findIndex((k) => k.key === target);
+            } else if (target && typeof target === 'object' && target.key) {
+                index = keysList.findIndex((k) => k.key === target.key);
+            }
+            if (index < 0 || index >= keysList.length) return { ok: false };
+
             const keyString = keysList[index]?.key;
             keysList.splice(index, 1);
             const updateData = { geminiApiKeysList: keysList };
@@ -1442,7 +1453,8 @@ function createGeminiStore() {
             }
             await chrome.storage.local.set(updateData);
             update((st) => ({ ...st, apiKeys: keysList }));
-            showNotification('apiKeyDeleted');
+            showNotification('apiKeyDeleted', true);
+            return { ok: true, keysList };
         },
 
         reset: () => {
@@ -1469,6 +1481,7 @@ function createGeminiStore() {
                 calSelectedDate: null,
                 scheduleEditorState: { mode: 'add', scheduleIndex: -1 },
                 isInitialized: false,
+                apiKeys: [],
             });
         },
     };
@@ -1486,3 +1499,4 @@ export const selectedModel = derived(geminiStore, ($g) => $g.selectedModel);
 export const availableModels = derived(geminiStore, ($g) => $g.availableModels);
 export const pendingAttachments = derived(geminiStore, ($g) => $g.pendingAttachments);
 export const agentModeEnabled = derived(geminiStore, ($g) => $g.agentModeEnabled);
+export const apiKeys = derived(geminiStore, ($g) => $g.apiKeys);

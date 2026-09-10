@@ -90,6 +90,35 @@
     overflow-wrap: break-word;
 }
 
+.query-expand-btn {
+    display: inline;
+    background: none;
+    border: none;
+    color: var(--action-color, #3498db);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0 4px;
+    margin-left: 6px;
+    text-decoration: underline;
+    vertical-align: baseline;
+    font-family: inherit;
+    line-height: inherit;
+    transition:
+        opacity 0.15s ease,
+        filter 0.15s ease;
+}
+
+[data-theme='dark'] .query-expand-btn {
+    color: var(--text-color, #a8a8a8);
+}
+
+.query-expand-btn:hover {
+    color: var(--interactive-color, #3498db);
+    filter: brightness(1.2);
+    opacity: 0.85;
+}
+
 .entry-actions {
     display: flex;
     align-items: center;

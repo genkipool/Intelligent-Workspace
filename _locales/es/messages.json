@@ -3449,6 +3449,12 @@
         "message": "Eliminar esta consulta",
         "description": "Eliminar esta consulta"
     },
+    "expandQuery": {
+        "message": "Ver más"
+    },
+    "collapseQuery": {
+        "message": "Ver menos"
+    },
     "showYouTubePlayer": {
         "message": "Mostrar reproductor de YouTube",
         "description": "Vuelve a mostrar el reproductor oculto."
@@ -6578,6 +6584,42 @@
             "1": {
                 "content": "$1",
                 "example": "Mi programación"
+            }
+        }
+    },
+    "geminiNotificationQuery": {
+        "message": "Consulta",
+        "description": "Etiqueta para consulta en notificaciones de escritorio de Gemini"
+    },
+    "geminiNotificationAnswer": {
+        "message": "Respuesta",
+        "description": "Etiqueta para respuesta en notificaciones de escritorio de Gemini"
+    },
+    "geminiScheduledResponseNotification": {
+        "message": "Consulta: \"$1\"\nRespuesta: $2",
+        "description": "Contenido de la notificación de escritorio para una respuesta programada de Gemini",
+        "placeholders": {
+            "1": {
+                "content": "$1",
+                "example": "Mi consulta"
+            },
+            "2": {
+                "content": "$2",
+                "example": "Texto de respuesta de Gemini"
+            }
+        }
+    },
+    "geminiScheduledTaskErrorMsg": {
+        "message": "No se pudo ejecutar la consulta: \"$1\". Error: $2",
+        "description": "Mensaje de error para consulta programada de Gemini fallida",
+        "placeholders": {
+            "1": {
+                "content": "$1",
+                "example": "Mi consulta"
+            },
+            "2": {
+                "content": "$2",
+                "example": "Error de red"
             }
         }
     },

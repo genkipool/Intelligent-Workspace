@@ -241,12 +241,21 @@ async function checkGeminiSchedules() {
 
                 chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
 
+                await loadI18nMessages();
                 const shortAnswer = response.answer.substring(0, 150) + (response.answer.length > 150 ? '...' : '');
+                const notificationTitle =
+                    getI18nMsg('geminiResponseTitle', [schedule.title]) || `Gemini Response: ${schedule.title}`;
+                const queryLabel = getI18nMsg('geminiNotificationQuery') || 'Query';
+                const answerLabel = getI18nMsg('geminiNotificationAnswer') || 'Answer';
+                const notificationMessage =
+                    getI18nMsg('geminiScheduledResponseNotification', [schedule.query, shortAnswer]) ||
+                    `${queryLabel}: "${schedule.query}"\n${answerLabel}: ${shortAnswer}`;
+
                 chrome.notifications.create({
                     type: 'basic',
                     iconUrl: '/assets/icons/icon128.png',
-                    title: getI18nMsg('geminiResponseTitle', [schedule.title]) || `Gemini Response: ${schedule.title}`,
-                    message: `Query: "${schedule.query}"\nAnswer: ${shortAnswer}`,
+                    title: notificationTitle,
+                    message: notificationMessage,
                 });
 
                 // Every run that was due is written off, not just the one that fired:
@@ -266,11 +275,17 @@ async function checkGeminiSchedules() {
                 chrome.runtime.sendMessage({ action: 'geminiQueryCompleted', entry: errorEntry });
                 chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
 
+                await loadI18nMessages();
+                const errorTitle = getI18nMsg('geminiTaskError') || 'Gemini Task Error';
+                const errorMessage =
+                    getI18nMsg('geminiScheduledTaskErrorMsg', [schedule.query, response.error]) ||
+                    `Could not execute query: "${schedule.query}". Error: ${response.error}`;
+
                 chrome.notifications.create({
                     type: 'basic',
                     iconUrl: '/assets/icons/icon128.png',
-                    title: getI18nMsg('geminiTaskError') || 'Gemini Task Error',
-                    message: `Could not execute query: "${schedule.query}". Error: ${response.error}`,
+                    title: errorTitle,
+                    message: errorMessage,
                 });
                 if (schedule.type === 'onetime') {
                     schedule.hasBeenTriggered = true;

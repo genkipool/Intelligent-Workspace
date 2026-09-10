@@ -19,16 +19,34 @@
     /** 'api' keeps the keys; 'local' is Chrome's own model. */
     let activeTab = $state('api');
 
-    // Loaded here rather than by whoever opens the modal: four different call sites
-    // opened it, and the ones that forgot to pass the list showed no saved keys at all.
-    let loadedKeys = $state([]);
-    const keys = $derived(apiKeys.length > 0 ? apiKeys : loadedKeys);
+    // The keys list is kept in reactive state, updated optimistically on delete
+    // and synchronized in real time with chrome.storage.local.
+    let savedKeys = $state([]);
 
     $effect(() => {
         if (!show) return;
+
+        // Seed with props if available for immediate render without empty flash
+        if (apiKeys?.length > 0 && savedKeys.length === 0) {
+            savedKeys = [...apiKeys];
+        }
+
         chrome.storage.local.get('geminiApiKeysList').then(({ geminiApiKeysList = [] }) => {
-            loadedKeys = geminiApiKeysList;
+            savedKeys = geminiApiKeysList;
         });
+
+        const handleStorageChanged = (changes, area) => {
+            if (area === 'local' && changes.geminiApiKeysList) {
+                savedKeys = changes.geminiApiKeysList.newValue || [];
+            }
+        };
+
+        if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+            chrome.storage.onChanged.addListener(handleStorageChanged);
+            return () => {
+                chrome.storage.onChanged.removeListener(handleStorageChanged);
+            };
+        }
     });
 
     // The browser is asked every time the tab is opened, not once at boot: the model can
@@ -230,8 +248,18 @@
         }
     }
 
-    function handleDelete(index) {
-        onDelete?.(index);
+    async function handleDelete(keyData, index) {
+        const targetKey = keyData?.key;
+        // Real-time optimistic update: remove immediately so it vanishes from the modal UI on click
+        savedKeys = savedKeys.filter((k, i) => (targetKey ? k.key !== targetKey : i !== index));
+
+        try {
+            await onDelete?.(targetKey ?? index);
+        } catch (err) {
+            console.error('[ApiKeyModal] Failed to delete API key:', err);
+            const { geminiApiKeysList = [] } = await chrome.storage.local.get('geminiApiKeysList');
+            savedKeys = geminiApiKeysList;
+        }
     }
 
     function maskKey(keyStr) {
@@ -344,14 +372,14 @@
                             <span
                                 class="api-keys-counter"
                                 style="margin-left:auto;font-size:0.8em;opacity:0.7;font-weight:normal;"
-                                >{keys.length}/10</span
+                                >{savedKeys.length}/10</span
                             >
                         </div>
                         <div id="saved-api-keys-list" class="saved-api-keys-list">
-                            {#if keys.length === 0}
+                            {#if savedKeys.length === 0}
                                 <div class="no-keys-message">{$t('geminiSavedKeysEmpty')}</div>
                             {:else}
-                                {#each keys as keyData, i (keyData.key)}
+                                {#each savedKeys as keyData, i (keyData.key)}
                                     <div class="saved-api-key-item" class:has-quota-error={keyData.hasQuotaError}>
                                         <div class="saved-api-key-header">
                                             <div class="api-key-name-wrapper">
@@ -370,8 +398,11 @@
                                                         e.currentTarget.title = newName;
                                                         const { geminiApiKeysList = [] } =
                                                             await chrome.storage.local.get('geminiApiKeysList');
-                                                        if (geminiApiKeysList[i]) {
-                                                            geminiApiKeysList[i].name = newName;
+                                                        const item = geminiApiKeysList.find(
+                                                            (k) => k.key === keyData.key,
+                                                        );
+                                                        if (item) {
+                                                            item.name = newName;
                                                             await chrome.storage.local.set({ geminiApiKeysList });
                                                         }
                                                     }}
@@ -388,7 +419,7 @@
                                                 type="button"
                                                 class="saved-api-key-delete-btn"
                                                 title={$tt('deleteApiKeyTooltip')}
-                                                onclick={() => handleDelete(i)}>&times;</button
+                                                onclick={() => handleDelete(keyData, i)}>&times;</button
                                             >
                                         </div>
                                         <div class="api-key-value-row">

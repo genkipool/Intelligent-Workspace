@@ -1881,6 +1881,17 @@ export function initPomodoro({ embedded = false } = {}) {
                     updatePomoTimeTrigger();
                 });
             });
+
+            $('pomo-time-apply-btn')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (pomoInputHour && pomoInputHour.value === '') pomoInputHour.value = '00';
+                if (pomoInputMinute && pomoInputMinute.value === '') pomoInputMinute.value = '00';
+                if (pomoInputHour) pomoInputHour.value = pomoInputHour.value.padStart(2, '0');
+                if (pomoInputMinute) pomoInputMinute.value = pomoInputMinute.value.padStart(2, '0');
+                updatePomoTimeTrigger();
+                validateAndFixTiempoTime();
+                closeAll();
+            });
         }
 
         pomoTimeTrigger.addEventListener('click', (e) => {

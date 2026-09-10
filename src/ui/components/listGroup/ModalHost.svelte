@@ -56,8 +56,16 @@
             if (!result?.ok) throw new Error($t(result?.errorKey || 'errorValidatingApiKey'));
             closeModal(showApiKeyModal);
         }}
-        onDelete={async (index) => {
-            await geminiStore.deleteApiKey(index);
+        onDelete={async (target) => {
+            await geminiStore.deleteApiKey(target);
+            if ($modalData?.apiKeys) {
+                const keyStr = typeof target === 'string' ? target : target?.key;
+                if (keyStr) {
+                    $modalData.apiKeys = $modalData.apiKeys.filter((k) => k.key !== keyStr);
+                } else if (typeof target === 'number') {
+                    $modalData.apiKeys = $modalData.apiKeys.filter((_, idx) => idx !== target);
+                }
+            }
         }}
     />
 {/if}

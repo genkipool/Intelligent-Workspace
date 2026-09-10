@@ -169,7 +169,7 @@ export function highlight(node, searchTerm, isRegex) {
     } else if (
         node.nodeType === 1 &&
         node.childNodes &&
-        !/script|style/i.test(node.tagName) &&
+        !/script|style|button/i.test(node.tagName) &&
         !node.classList.contains('search-highlight')
     ) {
         Array.from(node.childNodes).forEach((child) => highlight(child, searchTerm, isRegex));

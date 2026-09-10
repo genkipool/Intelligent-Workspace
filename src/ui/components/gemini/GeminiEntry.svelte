@@ -25,6 +25,27 @@
     let isPaused = $state(false);
     let unsubscribe;
 
+    let isQueryExpanded = $state(false);
+    let currentEntryId = $state(entry?.id);
+
+    $effect(() => {
+        if (entry?.id !== currentEntryId) {
+            currentEntryId = entry?.id;
+            isQueryExpanded = false;
+        }
+    });
+
+    let isLongQuery = $derived((entry?.query || '').length > 250);
+    let displayQuery = $derived(
+        isLongQuery && !isQueryExpanded ? (entry?.query || '').slice(0, 250) + '... ' : entry?.query || '',
+    );
+
+    function handleToggleQueryExpand(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        isQueryExpanded = !isQueryExpanded;
+    }
+
     $effect(() => {
         if (entry && entryEl) {
             renderGeminiResponse(entryEl, entry);
@@ -78,6 +99,7 @@
             onsaveedit?.({ entry, newQuery: editText.trim() });
         }
         isEditing = false;
+        isQueryExpanded = false;
     }
 
     function handleEditKeydown(e) {
@@ -222,7 +244,14 @@
                 </div>
             </div>
         {:else}
-            <h2 data-original-text={entry?.query || ''} class="entry-title">{entry?.query || ''}</h2>
+            <h2 data-original-text={entry?.query || ''} data-svelte-managed="true" class="entry-title">
+                {displayQuery}{#if isLongQuery}<button
+                        type="button"
+                        class="query-expand-btn"
+                        onclick={handleToggleQueryExpand}
+                        >{isQueryExpanded ? $t('collapseQuery') || 'Ver menos' : $t('expandQuery') || 'Ver más'}</button
+                    >{/if}
+            </h2>
             {#if entry?.attachments?.length}
                 <!-- The files that were sent with this question, shown where it was asked. -->
                 <div class="entry-attachments">
@@ -284,5 +313,34 @@
         text-overflow: ellipsis;
         white-space: nowrap;
         max-width: 180px;
+    }
+
+    .query-expand-btn {
+        display: inline;
+        background: none;
+        border: none;
+        color: var(--action-color, #3498db);
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 0 4px;
+        margin-left: 6px;
+        text-decoration: underline;
+        vertical-align: baseline;
+        font-family: inherit;
+        line-height: inherit;
+        transition:
+            opacity 0.15s ease,
+            filter 0.15s ease;
+    }
+
+    :global([data-theme='dark']) .query-expand-btn {
+        color: var(--text-color, #a8a8a8);
+    }
+
+    .query-expand-btn:hover {
+        color: var(--interactive-color, #3498db);
+        filter: brightness(1.2);
+        opacity: 0.85;
     }
 </style>

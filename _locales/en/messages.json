@@ -3472,6 +3472,12 @@
     "message": "Delete this query",
     "description": "Delete this query"
   },
+  "expandQuery": {
+    "message": "Show more"
+  },
+  "collapseQuery": {
+    "message": "Show less"
+  },
   "starRuleActivated": {
     "message": "Star Rule",
     "description": "Add rule to favorites"
@@ -6522,6 +6528,42 @@
       "1": {
         "content": "$1",
         "example": "My schedule"
+      }
+    }
+  },
+  "geminiNotificationQuery": {
+    "message": "Query",
+    "description": "Label for query in Gemini desktop notifications"
+  },
+  "geminiNotificationAnswer": {
+    "message": "Answer",
+    "description": "Label for answer in Gemini desktop notifications"
+  },
+  "geminiScheduledResponseNotification": {
+    "message": "Query: \"$1\"\nAnswer: $2",
+    "description": "Content of desktop notification for scheduled Gemini query response",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "My query"
+      },
+      "2": {
+        "content": "$2",
+        "example": "Gemini response text"
+      }
+    }
+  },
+  "geminiScheduledTaskErrorMsg": {
+    "message": "Could not execute query: \"$1\". Error: $2",
+    "description": "Error message for failed scheduled Gemini query",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "My query"
+      },
+      "2": {
+        "content": "$2",
+        "example": "Network error"
       }
     }
   },

@@ -39,4 +39,7 @@
         </div>
     </div>
     <div class="time-picker-label">{$t('format24h') || '24h'}</div>
+    <button type="button" id="pomo-time-apply-btn" class="time-picker-apply-btn">
+        {$t('apply') || 'Aplicar'}
+    </button>
 </div>

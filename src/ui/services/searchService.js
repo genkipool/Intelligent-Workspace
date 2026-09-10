@@ -386,7 +386,7 @@ export function applySearchAndFilter() {
                 highlight(contentEl, keywordSearch, isRegex);
             }
 
-            const queryText = queryEl ? queryEl.textContent : '';
+            const queryText = queryEl ? queryEl.dataset.originalText || queryEl.textContent : '';
             const contentText = contentEl ? contentEl.textContent : '';
             const queryMatches = searchRegex
                 ? searchRegex.test(queryText)

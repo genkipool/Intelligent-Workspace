@@ -85,6 +85,35 @@ export function parseMarkdown(text) {
         .join('');
 }
 
+function renderQueryWithExpansion(queryEl, query) {
+    queryEl.innerHTML = '';
+    const text = query || '';
+    if (text.length > 250) {
+        let isExpanded = false;
+        const textNode = document.createTextNode(text.slice(0, 250) + '... ');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'query-expand-btn';
+        btn.textContent = chrome.i18n.getMessage('expandQuery') || 'Ver más';
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            isExpanded = !isExpanded;
+            if (isExpanded) {
+                textNode.textContent = text + ' ';
+                btn.textContent = chrome.i18n.getMessage('collapseQuery') || 'Ver menos';
+            } else {
+                textNode.textContent = text.slice(0, 250) + '... ';
+                btn.textContent = chrome.i18n.getMessage('expandQuery') || 'Ver más';
+            }
+        });
+        queryEl.appendChild(textNode);
+        queryEl.appendChild(btn);
+    } else {
+        queryEl.textContent = text;
+    }
+}
+
 // --- GEMINI RENDERER ---
 /**
  * Renders Gemini response content within an existing container.
@@ -112,8 +141,10 @@ export function renderGeminiResponse(entryContainer, entry) {
 
     contentEl.innerHTML = '';
 
-    queryEl.textContent = query;
-    queryEl.dataset.originalText = query;
+    queryEl.dataset.originalText = query || '';
+    if (!queryEl.dataset.svelteManaged) {
+        renderQueryWithExpansion(queryEl, query);
+    }
 
     if (isLoading) {
         const loadingP = document.createElement('p');
