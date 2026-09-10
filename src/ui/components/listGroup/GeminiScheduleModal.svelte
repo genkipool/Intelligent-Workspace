@@ -24,15 +24,12 @@
 
     const MAX_TIMES = 6;
 
+    const MAX_QUERY_CHARS = 1000;
+
     // ─── Derived ─────────────────────────────────────────────────────────────
     let isRepeating = $derived(selectedDays.length > 0);
     let canAddTime = $derived(formTimes.length < MAX_TIMES);
-    let stats = $derived.by(() => {
-        const text = formQuery || '';
-        const chars = text.length;
-        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-        return { words, chars };
-    });
+    let queryCharCount = $derived((formQuery || '').length);
 
     // Day name translation keys (JS Date.getDay(): 0=Sunday)
     const dayKeys = ['daySun', 'dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat'];
@@ -271,14 +268,14 @@
                                 <textarea
                                     id="gemini-schedule-query"
                                     bind:value={formQuery}
-                                    maxlength="1000"
+                                    maxlength={MAX_QUERY_CHARS}
                                     placeholder={$t('geminiQueryPlaceholder')}
                                 ></textarea>
                                 <span
                                     class="note-editor-stats"
-                                    title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}
+                                    title={$tt('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
                                 >
-                                    {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+                                    {$t('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
                                 </span>
                             </div>
                         </div>

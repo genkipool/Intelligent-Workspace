@@ -4231,6 +4231,20 @@
             }
         }
     },
+    "charCountLimit": {
+        "message": "$1/$2 caracteres",
+        "description": "Contador de caracteres respecto al límite permitido.",
+        "placeholders": {
+            "current": {
+                "content": "$1",
+                "example": "300"
+            },
+            "max": {
+                "content": "$2",
+                "example": "1000"
+            }
+        }
+    },
     "editCookies": {
         "message": "Editar cookies",
         "description": "Editar cookies"

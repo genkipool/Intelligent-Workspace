@@ -35,12 +35,9 @@
         getDayNames = (d) => d,
     } = $props();
 
-    let stats = $derived.by(() => {
-        const text = scheduleReminder || '';
-        const chars = text.length;
-        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-        return { words, chars };
-    });
+    const MAX_REMINDER_CHARS = 200;
+
+    let reminderCharCount = $derived((scheduleReminder || '').length);
 </script>
 
 {#if show}
@@ -227,16 +224,16 @@
                             <div class="schedule-reminder-wrapper note-content-wrapper">
                                 <textarea
                                     id="schedule-reminder"
-                                    maxlength="200"
+                                    maxlength={MAX_REMINDER_CHARS}
                                     data-i18n-placeholder="scheduleReminderPlaceholder"
                                     bind:value={scheduleReminder}
                                     oninput={() => (scheduleError = '')}
                                 ></textarea>
                                 <span
                                     class="schedule-reminder-stats note-editor-stats"
-                                    title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}
+                                    title={$tt('charCountLimit', [reminderCharCount, MAX_REMINDER_CHARS])}
                                 >
-                                    {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+                                    {$t('charCountLimit', [reminderCharCount, MAX_REMINDER_CHARS])}
                                 </span>
                             </div>
                         </div>

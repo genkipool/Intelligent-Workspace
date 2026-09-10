@@ -4228,6 +4228,20 @@
       }
     }
   },
+  "charCountLimit": {
+    "message": "$1/$2 characters",
+    "description": "Character counter with maximum limit.",
+    "placeholders": {
+      "current": {
+        "content": "$1",
+        "example": "300"
+      },
+      "max": {
+        "content": "$2",
+        "example": "1000"
+      }
+    }
+  },
   "editCookies": {
     "message": "Edit Cookies",
     "description": "Edit Cookies"

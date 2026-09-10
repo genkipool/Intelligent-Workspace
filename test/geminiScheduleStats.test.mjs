@@ -23,28 +23,28 @@ describe('Gemini schedule query stats counter', () => {
         assert.equal(stats.words, 11);
     });
 
-    it('GeminiScheduleModal.svelte includes note-content-wrapper and note-editor-stats', () => {
+    it('GeminiScheduleModal.svelte includes note-content-wrapper, note-editor-stats and charCountLimit', () => {
         const fileContent = readFileSync('src/ui/components/listGroup/GeminiScheduleModal.svelte', 'utf8');
         assert.match(fileContent, /id="gemini-schedule-query"/);
         assert.match(fileContent, /class="note-content-wrapper"/);
         assert.match(fileContent, /class="note-editor-stats"/);
-        assert.match(fileContent, /noteEditorStatsWordsChars/);
-        assert.match(fileContent, /noteStatsTooltipText/);
+        assert.match(fileContent, /charCountLimit/);
     });
 
-    it('ThemeScheduleModal.svelte includes schedule-reminder-wrapper and stats counter', () => {
+    it('ThemeScheduleModal.svelte includes schedule-reminder-wrapper and charCountLimit stats counter', () => {
         const fileContent = readFileSync('src/ui/pages/savedThemes/components/ThemeScheduleModal.svelte', 'utf8');
         assert.match(fileContent, /id="schedule-reminder"/);
         assert.match(fileContent, /schedule-reminder-wrapper/);
         assert.match(fileContent, /schedule-reminder-stats/);
-        assert.match(fileContent, /noteEditorStatsWordsChars/);
-        assert.match(fileContent, /noteStatsTooltipText/);
+        assert.match(fileContent, /charCountLimit/);
     });
 
-    it('locale files have translations for noteEditorStatsWordsChars and noteStatsTooltipText', () => {
+    it('locale files have translations for charCountLimit, noteEditorStatsWordsChars, and noteStatsTooltipText', () => {
         const es = JSON.parse(readFileSync('_locales/es/messages.json', 'utf8'));
         const en = JSON.parse(readFileSync('_locales/en/messages.json', 'utf8'));
 
+        assert.equal(es.charCountLimit.message, '$1/$2 caracteres');
+        assert.equal(en.charCountLimit.message, '$1/$2 characters');
         assert.ok(es.noteEditorStatsWordsChars);
         assert.ok(es.noteStatsTooltipText);
         assert.ok(en.noteEditorStatsWordsChars);
