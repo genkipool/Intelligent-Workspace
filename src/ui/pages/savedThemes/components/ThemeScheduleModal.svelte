@@ -1,6 +1,6 @@
 <script>
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
-    import { t } from '../../../stores/i18nStore.js';
+    import { t, tt } from '../../../stores/i18nStore.js';
     import DateField from '../../../components/common/DateField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
     import ModalHeader from '../../../components/common/ModalHeader.svelte';
@@ -34,6 +34,13 @@
         formatDateTime = (s) => s,
         getDayNames = (d) => d,
     } = $props();
+
+    let stats = $derived.by(() => {
+        const text = scheduleReminder || '';
+        const chars = text.length;
+        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+        return { words, chars };
+    });
 </script>
 
 {#if show}
@@ -217,13 +224,21 @@
 
                         <div class="form-group">
                             <label for="schedule-reminder" data-i18n="scheduleReminderLabel"></label>
-                            <textarea
-                                id="schedule-reminder"
-                                maxlength="200"
-                                data-i18n-placeholder="scheduleReminderPlaceholder"
-                                bind:value={scheduleReminder}
-                                oninput={() => (scheduleError = '')}
-                            ></textarea>
+                            <div class="schedule-reminder-wrapper note-content-wrapper">
+                                <textarea
+                                    id="schedule-reminder"
+                                    maxlength="200"
+                                    data-i18n-placeholder="scheduleReminderPlaceholder"
+                                    bind:value={scheduleReminder}
+                                    oninput={() => (scheduleError = '')}
+                                ></textarea>
+                                <span
+                                    class="schedule-reminder-stats note-editor-stats"
+                                    title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}
+                                >
+                                    {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+                                </span>
+                            </div>
                         </div>
 
                         <p class="schedule-storage-info" data-i18n="scheduleStorageInfo"></p>

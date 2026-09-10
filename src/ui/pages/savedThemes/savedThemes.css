@@ -1116,10 +1116,17 @@ button:focus-visible {
     max-width: 220px;
 }
 
+.schedule-reminder-wrapper,
+.note-content-wrapper {
+    position: relative;
+    width: 100%;
+}
+
 #schedule-reminder {
+    display: block;
     width: 100%;
     min-height: 60px;
-    padding: 8px;
+    padding: 8px 8px 24px 8px;
     background-color: var(--bg-color);
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -1131,6 +1138,29 @@ button:focus-visible {
 
 #schedule-reminder:focus {
     border-color: var(--interactive-color);
+}
+
+.schedule-reminder-stats,
+.note-editor-stats {
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    font-size: 0.75rem;
+    color: var(--text-color);
+    opacity: 0.65;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    user-select: none;
+    pointer-events: none;
+    white-space: nowrap;
+    text-align: right;
+    transition: opacity 0.2s ease;
+    z-index: 2;
+}
+
+.schedule-reminder-stats:hover,
+.note-editor-stats:hover {
+    opacity: 1;
 }
 
 /* --- NEW FOOTER STYLES --- */

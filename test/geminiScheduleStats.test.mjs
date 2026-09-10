@@ -32,6 +32,15 @@ describe('Gemini schedule query stats counter', () => {
         assert.match(fileContent, /noteStatsTooltipText/);
     });
 
+    it('ThemeScheduleModal.svelte includes schedule-reminder-wrapper and stats counter', () => {
+        const fileContent = readFileSync('src/ui/pages/savedThemes/components/ThemeScheduleModal.svelte', 'utf8');
+        assert.match(fileContent, /id="schedule-reminder"/);
+        assert.match(fileContent, /schedule-reminder-wrapper/);
+        assert.match(fileContent, /schedule-reminder-stats/);
+        assert.match(fileContent, /noteEditorStatsWordsChars/);
+        assert.match(fileContent, /noteStatsTooltipText/);
+    });
+
     it('locale files have translations for noteEditorStatsWordsChars and noteStatsTooltipText', () => {
         const es = JSON.parse(readFileSync('_locales/es/messages.json', 'utf8'));
         const en = JSON.parse(readFileSync('_locales/en/messages.json', 'utf8'));
