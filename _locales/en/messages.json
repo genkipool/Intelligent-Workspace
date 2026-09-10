@@ -538,7 +538,7 @@
   },
   "listTabGroups": {
     "message": "List Groups",
-    "description": "List Groups in the Sidebar"
+    "description": "List groups in the sidebar"
   },
   "editTitleModal": {
     "message": "Edit Rule",
@@ -1226,7 +1226,7 @@
   },
   "openRulesPage": {
     "message": "Manage Rules",
-    "description": "Manage Rules in the Sidebar"
+    "description": "Manage rules in the sidebar"
   },
   "selectLangEn": {
     "message": "Select English language",
@@ -3146,7 +3146,7 @@
   },
   "addApiKeyBtn": {
     "message": "Add API Key",
-    "description": "Add a Gemini API key so the assistant can answer."
+    "description": "Add a Gemini API key so the assistant can answer"
   },
   "geminiFreeTier": {
     "message": "Free Tier",
@@ -3301,7 +3301,7 @@
     "description": "Tab of the Gemini key modal for Chrome's built-in AI."
   },
   "localAiIntro": {
-    "message": "Chrome can run Gemini Nano on your own machine. It answers with no key, no quota and no connection, and the assistant falls back to it once every API key has run out of quota.",
+    "message": "Chrome can run Gemini Nano directly on your device. It responds with no API key, no quotas, and no internet connection. The assistant will fall back to Gemini Nano when all API keys run out of quota.",
     "description": "Opening paragraph of the local AI tab."
   },
   "localAiStatusChecking": {
@@ -3385,7 +3385,7 @@
     "description": "Title of the modal requesting the Gemini API key."
   },
   "geminiApiKeyDescription": {
-    "message": "To use AI search, please enter your Google Gemini API Key. Your key will be stored securely in your browser's local storage.",
+    "message": "To use AI search, enter your Google Gemini API key. Your key will be securely stored in your browser's local storage.",
     "description": "Description in the modal explaining why the API key is needed."
   },
   "geminiApiKeyInputLabel": {
@@ -3605,7 +3605,7 @@
     "message": "Welcome to the Gemini Chat"
   },
   "geminiWelcomeBody": {
-    "message": "Start a conversation using the input bar below, or use the main search bar above while the Gemini icon is selected. Important: all conversations are stored in session memory and will be permanently deleted when the browser is closed."
+    "message": "Start a conversation using the input bar below or use the main search bar above while the Gemini icon is selected. Important: all conversations are stored in session memory and will be permanently deleted when the browser is closed."
   },
   "enterReaderView": {
     "message": "Reader View",
@@ -4129,8 +4129,8 @@
     }
   },
   "scheduleGeminiQuery": {
-    "message": "Schedule Gemini Query",
-    "description": "Schedule Gemini Query"
+    "message": "Schedule Gemini query",
+    "description": "Schedule Gemini query"
   },
   "geminiQuery": {
     "message": "AI Assistant",
@@ -12010,6 +12010,38 @@
   "downloadFormatAvifDesc": {
     "message": "The smallest of the three",
     "description": "What choosing AVIF means"
+  },
+  "downloadAsHtml": {
+    "message": "HTML document",
+    "description": "Download format button for HTML"
+  },
+  "downloadFormatHtmlDesc": {
+    "message": "Web page with visual formatting",
+    "description": "What choosing HTML means"
+  },
+  "downloadAsJson": {
+    "message": "JSON file",
+    "description": "Download format button for JSON"
+  },
+  "downloadFormatJsonDesc": {
+    "message": "Structured data for reuse",
+    "description": "What choosing JSON means"
+  },
+  "downloadAsMarkdown": {
+    "message": "Markdown file",
+    "description": "Download format button for Markdown"
+  },
+  "downloadFormatMarkdownDesc": {
+    "message": "Formatted text (.md)",
+    "description": "What choosing Markdown means"
+  },
+  "downloadAsTxt": {
+    "message": "Plain text (.txt)",
+    "description": "Download format button for plain text"
+  },
+  "downloadFormatTxtDesc": {
+    "message": "Simple unformatted text",
+    "description": "What choosing plain text means"
   },
   "captureFullPageSplit": {
     "message": "Capture the full page in parts",

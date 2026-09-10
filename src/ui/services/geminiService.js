@@ -6,7 +6,8 @@
 
 import { get, writable } from 'svelte/store';
 import { isGeminiViewActive, searchToggles } from '../stores/appStore.svelte.js';
-import { openModal, showApiKeyModal as showApiKeyModalStore } from '../stores/modalStore.js';
+import { openModal, showApiKeyModal as showApiKeyModalStore, showDownloadFormatModal } from '../stores/modalStore.js';
+import { downloadConversationFiles } from '../../utils/download/conversationExport.js';
 import {
     geminiStore,
     conversationHistory,
@@ -20,7 +21,6 @@ import '../../lib/marked.js';
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
 import { getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
 import { STORAGE_KEYS } from './constants.js';
-import { sanitizeFilename } from './utils.js';
 import {
     closeUrlInPanel,
     closeBookmarksView,
@@ -72,43 +72,44 @@ export const geminiSessionConversations = {
 };
 export const geminiCurrentSessionConversationIndex = writable(-1);
 
-export async function handleDownloadConversation() {
-    if (get(geminiConversationHistory).length === 0) {
+export const GEMINI_DOWNLOAD_FORMATS = [
+    { value: 'html', labelKey: 'downloadAsHtml', descKey: 'downloadFormatHtmlDesc' },
+    { value: 'json', labelKey: 'downloadAsJson', descKey: 'downloadFormatJsonDesc' },
+    { value: 'markdown', labelKey: 'downloadAsMarkdown', descKey: 'downloadFormatMarkdownDesc' },
+    { value: 'txt', labelKey: 'downloadAsTxt', descKey: 'downloadFormatTxtDesc' },
+];
+
+export function getConversationTitle() {
+    const fromDOM = document.querySelector('#persistent-conversation-display')?.textContent?.trim();
+    const placeholder = chrome.i18n.getMessage('selectConversationPlaceholder');
+    if (fromDOM && fromDOM !== placeholder) {
+        return fromDOM;
+    }
+    const conversations = get(combinedConversations) || [];
+    const index = get(currentCombinedIndex);
+    if (index >= 0 && conversations[index]?.title) {
+        return conversations[index].title;
+    }
+    return chrome.i18n.getMessage('geminiConversationDefaultTitle') || 'Gemini Conversation';
+}
+
+export function handleDownloadConversation() {
+    const entries = get(geminiConversationHistory) || [];
+    if (entries.length === 0) {
         showNotification('errorEmptyConversation', true);
         return;
     }
 
-    const fullConversationTitle =
-        document.querySelector('#persistent-conversation-display')?.textContent || 'Gemini Conversation';
-
-    const entriesHtml = get(geminiConversationHistory)
-        .map(
-            (entry, i) =>
-                `<div style="margin-bottom:16px;padding:12px;border:1px solid #ddd;border-radius:8px">
-          <strong style="color:#1a73e8">Q${i + 1}:</strong>
-          <p>${entry.query || ''}</p>
-          <strong style="color:#1a73e8">A:</strong>
-          <div>${entry.data?.answer || ''}</div>
-        </div>`,
-        )
-        .join('');
-
-    const htmlContent = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>${fullConversationTitle}</title></head>
-<body style="font-family:sans-serif;max-width:800px;margin:auto;padding:20px">
-<h1>${fullConversationTitle}</h1>
-${entriesHtml}
-</body></html>`;
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${sanitizeFilename(fullConversationTitle)}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    openModal(showDownloadFormatModal, {
+        titleKey: 'downloadFormatTitle',
+        formats: GEMINI_DOWNLOAD_FORMATS,
+        defaultFormat: 'html',
+        count: 1,
+        onConfirm: async (formats) => {
+            const title = getConversationTitle();
+            await downloadConversationFiles(title, entries, formats);
+        },
+    });
 }
 
 /**

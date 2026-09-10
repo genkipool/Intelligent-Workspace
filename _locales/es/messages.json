@@ -542,7 +542,7 @@
     },
     "listTabGroups": {
         "message": "Listar Grupos",
-        "description": "Listar Grupos En el Panel Lateral"
+        "description": "Listar grupos en el panel lateral"
     },
     "editTitleModal": {
         "message": "Editar Regla",
@@ -1198,7 +1198,7 @@
     },
     "openRulesPage": {
         "message": "Gestionar Reglas",
-        "description": "Gestionar Reglas En El Panel Lateral"
+        "description": "Gestionar reglas en el panel lateral"
     },
     "selectLangEn": {
         "message": "Seleccionar inglés",
@@ -3115,7 +3115,7 @@
     },
     "addApiKeyBtn": {
         "message": "Añadir Clave API",
-        "description": "Añade una clave de la API de Gemini para que el asistente pueda responder."
+        "description": "Añade una clave de la API de Gemini para que el asistente pueda responder"
     },
     "geminiFreeTier": {
         "message": "Nivel Gratuito",
@@ -3270,7 +3270,7 @@
         "description": "Pestaña del modal de la clave de Gemini para la IA integrada de Chrome."
     },
     "localAiIntro": {
-        "message": "Chrome puede ejecutar Gemini Nano en tu propio equipo. Responde sin clave, sin cuota y sin conexión, y el asistente recurre a él cuando todas las claves API se quedan sin cuota.",
+        "message": "Chrome puede ejecutar Gemini Nano directamente en tu equipo. Responde sin clave, sin cuota y sin conexión a Internet. El asistente recurrirá a Gemini Nano cuando todas las claves de API se queden sin cuota.",
         "description": "Párrafo inicial de la pestaña de IA local."
     },
     "localAiStatusChecking": {
@@ -3354,7 +3354,7 @@
         "description": "Título del modal que solicita la clave API de Gemini."
     },
     "geminiApiKeyDescription": {
-        "message": "Para usar la búsqueda con IA, por favor introduce tu clave API de Google Gemini. Tu clave se guardará de forma segura en el almacenamiento local de tu navegador.",
+        "message": "Para utilizar la búsqueda con IA, introduce tu clave de API de Google Gemini. Tu clave se guardará de forma segura en el almacenamiento local de tu navegador.",
         "description": "Descripción en el modal que explica por qué se necesita la clave API."
     },
     "geminiApiKeyInputLabel": {
@@ -3565,7 +3565,7 @@
         "message": "Bienvenido al Chat de Gemini"
     },
     "geminiWelcomeBody": {
-        "message": "Inicia una conversación usando la barra de entrada de abajo, o utiliza la barra de búsqueda principal de arriba mientras el icono de Gemini esté seleccionado. Importante: todas las conversaciones se guardan en la memoria de sesión y se borrarán de forma permanente cuando se cierre el navegador."
+        "message": "Inicia una conversación usando la barra de entrada de abajo o utiliza la barra de búsqueda principal de arriba mientras el icono de Gemini esté seleccionado. Importante: todas las conversaciones se guardan en la memoria de sesión y se borrarán de forma permanente cuando se cierre el navegador."
     },
     "enterReaderView": {
         "message": "Modo Lectura",
@@ -4132,8 +4132,8 @@
         }
     },
     "scheduleGeminiQuery": {
-        "message": "Programar Consulta de Gemini",
-        "description": "Programar Consulta de Gemini"
+        "message": "Programar consulta de Gemini",
+        "description": "Programar consulta de Gemini"
     },
     "geminiQuery": {
         "message": "Asistente IA",
@@ -11988,6 +11988,38 @@
     "downloadFormatAvifDesc": {
         "message": "La más pequeña de las tres",
         "description": "Qué significa elegir AVIF"
+    },
+    "downloadAsHtml": {
+        "message": "Documento HTML",
+        "description": "Botón de formato de descarga como HTML"
+    },
+    "downloadFormatHtmlDesc": {
+        "message": "Página web con formato visual",
+        "description": "Qué significa elegir HTML"
+    },
+    "downloadAsJson": {
+        "message": "Archivo JSON",
+        "description": "Botón de formato de descarga como JSON"
+    },
+    "downloadFormatJsonDesc": {
+        "message": "Datos estructurados reutilizables",
+        "description": "Qué significa elegir JSON"
+    },
+    "downloadAsMarkdown": {
+        "message": "Archivo Markdown",
+        "description": "Botón de formato de descarga como Markdown"
+    },
+    "downloadFormatMarkdownDesc": {
+        "message": "Texto formateado (.md)",
+        "description": "Qué significa elegir Markdown"
+    },
+    "downloadAsTxt": {
+        "message": "Texto plano (.txt)",
+        "description": "Botón de formato de descarga como texto plano"
+    },
+    "downloadFormatTxtDesc": {
+        "message": "Texto simple sin formato",
+        "description": "Qué significa elegir TXT"
     },
     "captureFullPageSplit": {
         "message": "Capturar la web completa por partes",

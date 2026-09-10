@@ -7,11 +7,20 @@
     let textareaValue = $state('');
     let attachments = $derived($pendingAttachments);
 
-    function autoResize() {
+    function resetTextareaHeight() {
         if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${textarea.scrollHeight}px`;
+            textarea.style.height = '';
         }
+    }
+
+    function autoResize() {
+        if (!textarea) return;
+        if (!textarea.value.trim()) {
+            resetTextareaHeight();
+            return;
+        }
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
     }
 
     async function handleSend() {
@@ -20,8 +29,17 @@
 
         onsend?.({ query });
         textareaValue = '';
-        autoResize();
+        if (textarea) {
+            textarea.value = '';
+            resetTextareaHeight();
+        }
     }
+
+    $effect(() => {
+        if (!textareaValue.trim()) {
+            resetTextareaHeight();
+        }
+    });
 
     function handleKeydown(e) {
         if (e.key === 'Enter' && !e.shiftKey) {

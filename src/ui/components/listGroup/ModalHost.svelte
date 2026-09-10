@@ -11,7 +11,7 @@
     import DeleteAllBookmarksConfirmModal from './DeleteAllBookmarksConfirmModal.svelte';
     import AddToBookmarkModal from './AddToBookmarkModal.svelte';
     import DeleteHistoryConfirmModal from './DeleteHistoryConfirmModal.svelte';
-    import DownloadFormatModal from '../screenshots/DownloadFormatModal.svelte';
+    import DownloadFormatModal from '../common/DownloadFormatModal.svelte';
     import { t } from '../../stores/i18nStore.js';
 
     import {
@@ -220,8 +220,15 @@
 {#if $showDownloadFormatModal}
     <DownloadFormatModal
         show={$showDownloadFormatModal}
-        count={$modalData?.screenshots?.length || 1}
-        onConfirm={(format) => $modalData?.onConfirm?.(format)}
+        title={$modalData?.title}
+        titleKey={$modalData?.titleKey}
+        formats={$modalData?.formats}
+        defaultFormat={$modalData?.defaultFormat}
+        hint={$modalData?.hint}
+        hintKey={$modalData?.hintKey}
+        count={$modalData?.count ?? ($modalData?.screenshots?.length || 1)}
+        confirmLabel={$modalData?.confirmLabel}
+        onConfirm={(formats) => $modalData?.onConfirm?.(formats)}
         onClose={() => closeModal(showDownloadFormatModal)}
     />
 {/if}

@@ -9,6 +9,9 @@ body {
     width: 100%;
     max-width: 800px;
     margin: 0 auto;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .entry {
@@ -16,18 +19,26 @@ body {
     border-bottom: 1px solid #eee;
     padding-bottom: 16px;
     page-break-inside: avoid; /* Prevents breaks in the middle of an entry when printing */
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .query {
     font-weight: bold;
     font-size: 1.1em;
-    color: #1a0dab;
+    color: var(--text-on-color, #1a73e8);
     margin-bottom: 8px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 
 .answer {
     font-size: 1em;
     color: #4d5156;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 /* --- IMPROVED STYLES --- */
