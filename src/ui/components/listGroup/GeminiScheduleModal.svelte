@@ -27,6 +27,12 @@
     // ─── Derived ─────────────────────────────────────────────────────────────
     let isRepeating = $derived(selectedDays.length > 0);
     let canAddTime = $derived(formTimes.length < MAX_TIMES);
+    let stats = $derived.by(() => {
+        const text = formQuery || '';
+        const chars = text.length;
+        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+        return { words, chars };
+    });
 
     // Day name translation keys (JS Date.getDay(): 0=Sunday)
     const dayKeys = ['daySun', 'dayMon', 'dayTue', 'dayWed', 'dayThu', 'dayFri', 'daySat'];
@@ -261,12 +267,20 @@
 
                         <div class="form-group">
                             <label for="gemini-schedule-query">{$t('geminiQuery')}</label>
-                            <textarea
-                                id="gemini-schedule-query"
-                                bind:value={formQuery}
-                                maxlength="1000"
-                                placeholder={$t('geminiQueryPlaceholder')}
-                            ></textarea>
+                            <div class="note-content-wrapper">
+                                <textarea
+                                    id="gemini-schedule-query"
+                                    bind:value={formQuery}
+                                    maxlength="1000"
+                                    placeholder={$t('geminiQueryPlaceholder')}
+                                ></textarea>
+                                <span
+                                    class="note-editor-stats"
+                                    title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}
+                                >
+                                    {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+                                </span>
+                            </div>
                         </div>
 
                         <div class="form-group">
