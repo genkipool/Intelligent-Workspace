@@ -1915,6 +1915,11 @@ export function updateCounters(tabItemEl) {
         if (subGroupCountEl) {
             subGroupCountEl.textContent = `${seenInSubgroup}/${subGroupTabs.length}`;
             subGroupCountEl.classList.toggle('all-seen', seenInSubgroup === subGroupTabs.length);
+            const msg = chrome.i18n?.getMessage('groupTabCountTooltip', [
+                String(seenInSubgroup),
+                String(subGroupTabs.length),
+            ]);
+            if (msg) subGroupCountEl.title = msg;
         }
     }
 
@@ -1926,6 +1931,11 @@ export function updateCounters(tabItemEl) {
         if (groupCountEl) {
             groupCountEl.textContent = `${seenInGroup}/${allTabsInGroup.length}`;
             groupCountEl.classList.toggle('all-seen', seenInGroup === allTabsInGroup.length);
+            const msg = chrome.i18n?.getMessage('groupTabCountTooltip', [
+                String(seenInGroup),
+                String(allTabsInGroup.length),
+            ]);
+            if (msg) groupCountEl.title = msg;
         }
     }
 }

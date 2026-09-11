@@ -91,7 +91,12 @@
 <details bind:this={subgroupEl} class="domain-subgroup" data-domain={domain} open={isOpen} ontoggle={handleToggled}>
     <summary class="domain-header" onclick={toggleOpen}>
         <span class="domain-title">{domain}</span>
-        <span class="tab-count" class:all-seen={isAllSeen}>{seenSubgroupTabsCount}/{totalSubgroupTabs}</span>
+        <span
+            class="tab-count"
+            class:all-seen={isAllSeen}
+            title={$tt('groupTabCountTooltip', [seenSubgroupTabsCount, totalSubgroupTabs])}
+            >{seenSubgroupTabsCount}/{totalSubgroupTabs}</span
+        >
 
         <div class="subgroup-actions" draggable="false" bind:this={subgroupActionsEl}>
             <div class="create-rule-btn action-btn" role="button" tabindex="0" title={$tt('createRuleFromSubgroup')}>

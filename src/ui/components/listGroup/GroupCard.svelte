@@ -411,9 +411,17 @@
             {displayTitle}
         </h3>
         {#if isBackup}
-            <span class="group-tab-count">{backupCount}</span>
+            <span
+                class="group-tab-count"
+                title={$tt('backupTabCountTooltip', [liveTabs.length, liveTabs.length + tabs.length])}
+                >{backupCount}</span
+            >
         {:else}
-            <span class="group-tab-count" class:all-seen={isAllSeen}>{seenCount}/{tabCount}</span>
+            <span
+                class="group-tab-count"
+                class:all-seen={isAllSeen}
+                title={$tt('groupTabCountTooltip', [seenCount, tabCount])}>{seenCount}/{tabCount}</span
+            >
         {/if}
 
         <GroupActions

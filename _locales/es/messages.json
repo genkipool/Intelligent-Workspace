@@ -12366,5 +12366,29 @@
     "popupPrivacyPolicyLink": {
         "message": "Política de privacidad",
         "description": "Popup footer: link to the privacy policy on the website."
+    },
+    "groupTabCountTooltip": {
+        "message": "$1 de $2 pestañas vistas",
+        "description": "$1 de $2 pestañas vistas",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "backupTabCountTooltip": {
+        "message": "$1 de $2 pestañas restauradas",
+        "description": "$1 de $2 pestañas restauradas",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
     }
 }

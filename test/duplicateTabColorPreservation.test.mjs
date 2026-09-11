@@ -169,5 +169,16 @@ describe('Duplicate Tab Color Preservation', () => {
                 'TabItem.svelte must set title.style.color to var(--error-color) during activateTab',
             );
         });
+
+        it('GroupCard.svelte binds title tooltip on .group-tab-count', () => {
+            const groupCardPath = path.resolve(__dirname, '../src/ui/components/listGroup/GroupCard.svelte');
+            const groupCardContent = fs.readFileSync(groupCardPath, 'utf8');
+
+            assert.match(
+                groupCardContent,
+                /<span\s+class="group-tab-count"[^>]*title=\{[^}]*groupTabCountTooltip/,
+                'GroupCard.svelte must bind a title attribute to .group-tab-count with groupTabCountTooltip',
+            );
+        });
     });
 });
