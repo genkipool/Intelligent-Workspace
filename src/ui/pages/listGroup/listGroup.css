@@ -938,6 +938,10 @@ body.show-domain-headers .subgroup-tab-list {
     opacity: 1;
 }
 
+.tab-item.duplicate-tab .tab-title {
+    color: var(--error-color) !important;
+}
+
 .tab-actions {
     display: none;
     align-items: center;

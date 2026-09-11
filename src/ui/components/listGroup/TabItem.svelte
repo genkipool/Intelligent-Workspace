@@ -104,7 +104,10 @@
             currentActive.classList.remove('active');
             if (duplicateUrlSet.has(currentActive.dataset.url)) {
                 const title = currentActive.querySelector('.tab-title');
-                if (title) title.style.opacity = '0.6';
+                if (title) {
+                    title.style.color = 'var(--error-color)';
+                    title.style.opacity = '0.6';
+                }
             }
         }
         if (tabEl) {
@@ -112,7 +115,10 @@
             tabEl.classList.add('seen');
             if (isDuplicate) {
                 const title = tabEl.querySelector('.tab-title');
-                if (title) title.style.opacity = '1';
+                if (title) {
+                    title.style.color = 'var(--error-color)';
+                    title.style.opacity = '1';
+                }
             }
             updateCounters(tabEl);
         }

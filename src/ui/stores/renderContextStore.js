@@ -1,7 +1,7 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { STORAGE_KEYS } from '../services/constants.js';
 import { getGroupInfoMap, getGroupPrefixState } from '../services/utils.js';
-import { getCurrentWindowId } from '../services/windowsService.js';
+import { getCurrentWindowId, isCurrentWindow } from '../services/windowsService.js';
 
 /**
  * renderContextStore — Provides the shared "render context" data
@@ -39,7 +39,8 @@ let loading = null;
  * Called once on init and then periodically or on tab events.
  */
 export function loadRenderContext(windowId = null) {
-    loading ??= doLoadRenderContext(windowId).finally(() => {
+    const validWinId = typeof windowId === 'number' && Number.isFinite(windowId) ? windowId : null;
+    loading ??= doLoadRenderContext(validWinId).finally(() => {
         loading = null;
     });
     return loading;
@@ -91,7 +92,8 @@ async function doLoadRenderContext(windowId = null) {
         // 6. Compute duplicate URLs
         let duplicateUrlSet = new Set();
         try {
-            const targetWinId = windowId ?? (await getCurrentWindowId());
+            const targetWinId =
+                typeof windowId === 'number' && Number.isFinite(windowId) ? windowId : await getCurrentWindowId();
             const queryOpts = targetWinId !== null && targetWinId !== undefined ? { windowId: targetWinId } : {};
             const allTabs = await chrome.tabs.query(queryOpts);
             const filteredTabs =
@@ -110,7 +112,13 @@ async function doLoadRenderContext(windowId = null) {
                     duplicateUrlSet.add(url);
                 }
             }
-        } catch {}
+        } catch (err) {
+            console.warn('[renderContextStore] Error computing duplicate URLs:', err);
+            const prev = get(_renderContext);
+            if (prev?.duplicateUrlSet?.size > 0) {
+                duplicateUrlSet = prev.duplicateUrlSet;
+            }
+        }
 
         _renderContext.set({
             seenTabIds,
@@ -141,23 +149,38 @@ export function initRenderContextListeners() {
         };
     };
 
-    const debouncedLoad = debounce(loadRenderContext, 300);
+    const debouncedLoad = debounce(() => {
+        loadRenderContext();
+    }, 300);
 
-    chrome.tabs.onUpdated.addListener(debouncedLoad);
-    chrome.tabs.onRemoved.addListener(debouncedLoad);
-    chrome.tabs.onActivated.addListener(debouncedLoad);
+    if (typeof chrome !== 'undefined' && chrome.tabs) {
+        chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+            if (!isCurrentWindow(tab?.windowId)) return;
+            debouncedLoad();
+        });
+        chrome.tabs.onRemoved?.addListener((tabId, removeInfo) => {
+            if (!isCurrentWindow(removeInfo?.windowId)) return;
+            debouncedLoad();
+        });
+        chrome.tabs.onActivated?.addListener((activeInfo) => {
+            if (!isCurrentWindow(activeInfo?.windowId)) return;
+            debouncedLoad();
+        });
+    }
 
     // Listen for storage changes that affect our context
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName === 'session') {
-            if (changes.tabsEverActive || changes[STORAGE_KEYS.SCREENSHOTS] || changes[STORAGE_KEYS.NOTES]) {
-                debouncedLoad();
+    if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+        chrome.storage.onChanged.addListener((changes, areaName) => {
+            if (areaName === 'session') {
+                if (changes.tabsEverActive || changes[STORAGE_KEYS.SCREENSHOTS] || changes[STORAGE_KEYS.NOTES]) {
+                    debouncedLoad();
+                }
             }
-        }
-        if (areaName === 'local') {
-            if (changes.customTabGroupingRules) {
-                debouncedLoad();
+            if (areaName === 'local') {
+                if (changes.customTabGroupingRules) {
+                    debouncedLoad();
+                }
             }
-        }
-    });
+        });
+    }
 }
