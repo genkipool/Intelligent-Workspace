@@ -37,7 +37,7 @@
  *     # .env.local
  *     VITE_PAYMENT_ORIGIN=http://localhost:4321
  */
-export const PAYMENT_ORIGIN = import.meta.env.VITE_PAYMENT_ORIGIN || 'https://intelligentworkspace.genkipool.com';
+export const PAYMENT_ORIGIN = import.meta.env?.VITE_PAYMENT_ORIGIN || 'https://intelligentworkspace.genkipool.com';
 
 /**
  * `/pay` is a route of the marketing site, not a subdomain of its own, and the site

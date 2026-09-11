@@ -303,11 +303,15 @@ export const listGroupStore = {
             }
         },
         deleteAllUngroupedTabs: async (tabs) => {
-            if (!tabs) return;
-            const tabIds = tabs.map((t) => t.id);
-            if (tabIds.length > 0) {
-                await chrome.tabs.remove(tabIds);
+            if (Array.isArray(tabs) && tabs.length > 0) {
+                const tabIds = tabs.map((t) => t.id).filter(Boolean);
+                if (tabIds.length > 0) {
+                    await chrome.tabs.remove(tabIds);
+                }
+                return;
             }
+            const { deleteAllUngroupedTabs: deleteUngrouped } = await import('../services/groupsService.js');
+            await deleteUngrouped();
         },
         handleTabActivation: async (tab) => {
             try {

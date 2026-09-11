@@ -11,13 +11,13 @@
 
 import { get, writable } from 'svelte/store';
 
-import { applyTranslations, showNotification, getCurrentLang, loadMessages } from '@/utils/i18n.js';
+import { applyTranslations, showNotification, getCurrentLang, loadMessages } from '../../utils/i18n.js';
 
 import {
     openModal,
     showQrCodeModal as showQrCodeModalStore,
     showCookieEditorModal as showCookieEditorModalStore,
-} from '@/ui/stores/modalStore.js';
+} from '../stores/modalStore.js';
 
 import { saveBackupToDb, deleteBackupFromDb } from '../../utils/db.js';
 
@@ -35,6 +35,7 @@ import { closeDownloadModal } from './downloadsService.js';
 import { getReadAloudReadings, setAllReadAloudPaused } from './readAloudService.js';
 import { closeOverflowMenu } from './contextMenuService.js';
 import { positionSmartPopup, forwardWheelToScrollParent } from './popupPositioning.js';
+import { getCurrentWindowId } from './windowsService.js';
 
 // Store imports from appStore (replacing state.X)
 import {
@@ -300,7 +301,37 @@ export function isLikelyDomain(str) {
     return !str.includes(' ') && str.includes('.');
 }
 
-export async function getValidStandardTabs() {
+export async function getValidStandardTabs(targetWindowId = null) {
+    if (targetWindowId !== null && targetWindowId !== undefined) {
+        try {
+            if (typeof chrome !== 'undefined' && chrome.windows?.get) {
+                const win = await chrome.windows.get(targetWindowId, { populate: true });
+                if (win && win.type === 'normal' && !win.alwaysOnTop && Array.isArray(win.tabs)) {
+                    return win.tabs.filter((t) => t.windowId === undefined || t.windowId === targetWindowId);
+                }
+            }
+        } catch {}
+        try {
+            if (typeof chrome !== 'undefined' && chrome.tabs?.query) {
+                const tabs = await chrome.tabs.query({ windowId: targetWindowId });
+                if (Array.isArray(tabs) && tabs.length > 0) {
+                    return tabs.filter((t) => t.windowId === undefined || t.windowId === targetWindowId);
+                }
+            }
+        } catch {}
+        try {
+            if (typeof chrome !== 'undefined' && chrome.windows?.getAll) {
+                const allWindows = await chrome.windows.getAll({ populate: true });
+                const matchingWindow = allWindows.find(
+                    (w) => w.id === targetWindowId && w.type === 'normal' && !w.alwaysOnTop,
+                );
+                if (matchingWindow && Array.isArray(matchingWindow.tabs)) {
+                    return matchingWindow.tabs;
+                }
+            }
+        } catch {}
+        return [];
+    }
     const allWindows = await chrome.windows.getAll({ populate: true });
     const validWindows = allWindows.filter((win) => win.type === 'normal' && !win.alwaysOnTop);
     return validWindows.flatMap((win) => win.tabs || []);
@@ -618,12 +649,22 @@ export async function saveCookieChanges(url, originalCookies, modalBody) {
     }
 }
 
-export async function deleteAllUngroupedTabs() {
+export async function deleteAllUngroupedTabs(windowId = null) {
     try {
-        const ungroupedTabs = await chrome.tabs.query({
-            groupId: chrome.tabGroups.TAB_GROUP_ID_NONE,
+        const targetWindowId = windowId ?? (await getCurrentWindowId());
+        const noneId = chrome.tabGroups?.TAB_GROUP_ID_NONE ?? -1;
+        const queryOptions = {
+            groupId: noneId,
+        };
+        if (targetWindowId !== null && targetWindowId !== undefined) {
+            queryOptions.windowId = targetWindowId;
+        }
+        const ungroupedTabs = await chrome.tabs.query(queryOptions);
+        const tabsToClose = ungroupedTabs.filter((tab) => {
+            const matchesWin =
+                targetWindowId === null || targetWindowId === undefined || tab.windowId === targetWindowId;
+            return matchesWin && !tab.url.startsWith('chrome-extension://');
         });
-        const tabsToClose = ungroupedTabs.filter((tab) => !tab.url.startsWith('chrome-extension://'));
 
         if (tabsToClose.length > 0) {
             const tabIds = tabsToClose.map((t) => t.id);
@@ -713,8 +754,14 @@ export async function updateDuplicateCountBadge() {
                     break;
                 }
             }
-            const tabs = await chrome.tabs.query({});
-            const tabsForDuplicateCheck = tabs.filter((tab) => tab.groupId !== splitGroupId);
+            const targetWinId = await getCurrentWindowId();
+            const tabQueryOpts = targetWinId !== null && targetWinId !== undefined ? { windowId: targetWinId } : {};
+            const tabs = await chrome.tabs.query(tabQueryOpts);
+            const filteredTabs =
+                targetWinId !== null && targetWinId !== undefined
+                    ? tabs.filter((t) => t.windowId === targetWinId)
+                    : tabs;
+            const tabsForDuplicateCheck = filteredTabs.filter((tab) => tab.groupId !== splitGroupId);
             const urlCounts = tabsForDuplicateCheck.reduce((acc, tab) => {
                 if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
                     acc[tab.url] = (acc[tab.url] || 0) + 1;
@@ -1128,11 +1175,18 @@ function buildBackupObject(groupData, title, index) {
     };
 }
 
-export async function handleBackupAllGroups() {
-    const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+export async function handleBackupAllGroups(windowId = null) {
+    const targetWinId = windowId ?? (await getCurrentWindowId());
+    const tabQueryOpts = { active: true };
+    if (targetWinId !== null && targetWinId !== undefined) {
+        tabQueryOpts.windowId = targetWinId;
+    } else {
+        tabQueryOpts.lastFocusedWindow = true;
+    }
+    const [activeTab] = await chrome.tabs.query(tabQueryOpts);
     const activeGroupId = activeTab ? activeTab.groupId : -1;
 
-    const allGroupDataRaw = await fetchData();
+    const allGroupDataRaw = await fetchData(targetWinId);
     const $backedUpGroupData = get(backedUpGroupData);
     // A group linked to a backup is already listed inside that backup's card, so it is
     // not a separate group to put away.
@@ -1318,17 +1372,22 @@ export async function handleBackupGroup(groupId) {
     }
 }
 
-export async function createTabsInBatches(tabsToCreate, batchSize = 4, delay = 100) {
+export async function createTabsInBatches(tabsToCreate, batchSize = 4, delay = 100, windowId = null) {
+    const targetWinId = windowId ?? (await getCurrentWindowId());
     const createdTabs = [];
     for (let i = 0; i < tabsToCreate.length; i += batchSize) {
         const batch = tabsToCreate.slice(i, i + batchSize);
-        const creationPromises = batch.map((tabInfo) =>
-            chrome.tabs.create({
+        const creationPromises = batch.map((tabInfo) => {
+            const createProps = {
                 url: tabInfo.url,
                 active: false,
                 pinned: tabInfo.pinned || false,
-            }),
-        );
+            };
+            if (targetWinId !== null && targetWinId !== undefined) {
+                createProps.windowId = targetWinId;
+            }
+            return chrome.tabs.create(createProps);
+        });
         const newTabs = await Promise.all(creationPromises);
         createdTabs.push(...newTabs);
         if (i + batchSize < tabsToCreate.length) {
@@ -1391,7 +1450,7 @@ let renderDebounceTimer = null;
 let isRendering = false;
 let pendingRender = false;
 
-export async function renderGroups() {
+export async function renderGroups(windowId = null) {
     await whenStateLoaded();
     // Components own the rendering; this refreshes the stores that feed them,
     // debounced to coalesce bursts.
@@ -1408,7 +1467,7 @@ export async function renderGroups() {
                 import('../stores/groupStore.js'),
                 import('../stores/renderContextStore.js'),
             ]);
-            await Promise.all([groupStore.fetchGroups(), loadRenderContext()]);
+            await Promise.all([groupStore.fetchGroups(windowId), loadRenderContext(windowId)]);
             updateDuplicateCountBadge();
         } catch (e) {
             console.error('[renderGroups] refresh error:', e);
@@ -1416,7 +1475,7 @@ export async function renderGroups() {
             isRendering = false;
             if (pendingRender) {
                 pendingRender = false;
-                renderGroups();
+                renderGroups(windowId);
             }
         }
     }, 150);
@@ -1438,7 +1497,9 @@ export async function unGroupAndRemoveAllTabsInGroup(groupId) {
     }
 }
 
-export async function fetchData() {
+export async function fetchData(windowId = null) {
+    const targetWindowId = windowId ?? (await getCurrentWindowId());
+
     const storage = await getStorage();
     const {
         clusterConfig = {
@@ -1451,8 +1512,12 @@ export async function fetchData() {
     } = await storage.get('clusterConfig');
     const isMiscEnabled = clusterConfig?.specialGroups?.misc?.enabled ?? false;
 
-    const allGroupsRaw = await chrome.tabGroups.query({});
-    const allTabs = await getValidStandardTabs();
+    const queryOptions = targetWindowId !== null && targetWindowId !== undefined ? { windowId: targetWindowId } : {};
+    let allGroupsRaw = await chrome.tabGroups.query(queryOptions);
+    if (targetWindowId !== null && targetWindowId !== undefined) {
+        allGroupsRaw = allGroupsRaw.filter((g) => g.windowId === targetWindowId);
+    }
+    const allTabs = await getValidStandardTabs(targetWindowId);
 
     // Groups holding tabs restored from a backup are not filtered out here: the list
     // needs their tabs to show them inside the backup card they came from, which is
@@ -1462,8 +1527,10 @@ export async function fetchData() {
     const tabsByGroupId = {};
     const ungroupedTabs = [];
 
+    const tabGroupNoneId = chrome.tabGroups?.TAB_GROUP_ID_NONE ?? -1;
+
     allTabs.forEach((tab) => {
-        if (tab.groupId !== chrome.tabGroups.TAB_GROUP_ID_NONE) {
+        if (tab.groupId !== tabGroupNoneId) {
             (tabsByGroupId[tab.groupId] = tabsByGroupId[tab.groupId] || []).push(tab);
         } else {
             const isNewTab = tab.url === 'chrome://newtab/';
@@ -1492,6 +1559,7 @@ export async function fetchData() {
                 title: ungroupedTitle,
                 color: 'grey',
                 collapsed: false,
+                ...(targetWindowId !== null && targetWindowId !== undefined ? { windowId: targetWindowId } : {}),
             },
             tabs: ungroupedTabs,
         };

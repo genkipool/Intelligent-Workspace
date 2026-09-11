@@ -1,29 +1,6 @@
 <script module>
-    /**
-     * THE PAIR OF SCROLL BUTTONS
-     *
-     * The round "up" and "down" buttons that float over a long page. Four copies of
-     * this used to live in the tree — the rules page, the side panel, the hints page
-     * and the about page — each with its own listeners, its own rAF and its own way
-     * of hiding an arrow that points nowhere. What differed between them was never
-     * the behaviour: it was which element scrolls, how much slack counts as
-     * scrollable, and the look. Those are the props.
-     *
-     * The look is deliberately not here. Each page already dresses `.scroll-buttons`
-     * in its own stylesheet — centred at the bottom on the rules page, in the corner
-     * on the about page — and a scoped style block would outrank all of it. The
-     * wrapper takes the class the page asks for and the page's CSS stands.
-     *
-     * Page code outside Svelte asks for a refresh through the module-level
-     * `updateScrollButtons()` below, which is what `viewsService` re-exports to its
-     * two dozen callers.
-     */
-    const instances = [];
-
-    /** Makes every mounted pair look at its target again. */
-    export function updateScrollButtons() {
-        for (const update of instances) update();
-    }
+    import { scrollButtonInstances, updateScrollButtons } from './scrollButtonsBridge.js';
+    export { updateScrollButtons };
 </script>
 
 <script>
@@ -147,7 +124,7 @@
     });
 
     onMount(() => {
-        instances.push(update);
+        scrollButtonInstances.push(update);
         const handler = () => update();
         window.addEventListener('scroll', handler, { passive: true });
         window.addEventListener('resize', handler, { passive: true });
@@ -196,7 +173,8 @@
         const settling = [setTimeout(update, 100), setTimeout(update, 300)];
 
         return () => {
-            instances.splice(instances.indexOf(update), 1);
+            const idx = scrollButtonInstances.indexOf(update);
+            if (idx !== -1) scrollButtonInstances.splice(idx, 1);
             window.removeEventListener('scroll', handler);
             window.removeEventListener('resize', handler);
             document.removeEventListener('scroll', handler, { capture: true });

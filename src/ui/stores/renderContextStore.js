@@ -1,6 +1,7 @@
 import { writable } from 'svelte/store';
 import { STORAGE_KEYS } from '../services/constants.js';
 import { getGroupInfoMap, getGroupPrefixState } from '../services/utils.js';
+import { getCurrentWindowId } from '../services/windowsService.js';
 
 /**
  * renderContextStore — Provides the shared "render context" data
@@ -37,14 +38,14 @@ let loading = null;
  * Fetch all contextual data needed for group/tab rendering.
  * Called once on init and then periodically or on tab events.
  */
-export function loadRenderContext() {
-    loading ??= doLoadRenderContext().finally(() => {
+export function loadRenderContext(windowId = null) {
+    loading ??= doLoadRenderContext(windowId).finally(() => {
         loading = null;
     });
     return loading;
 }
 
-async function doLoadRenderContext() {
+async function doLoadRenderContext(windowId = null) {
     try {
         // 1. Page modes
         let pageModes = {};
@@ -90,9 +91,15 @@ async function doLoadRenderContext() {
         // 6. Compute duplicate URLs
         let duplicateUrlSet = new Set();
         try {
-            const allTabs = await chrome.tabs.query({});
+            const targetWinId = windowId ?? (await getCurrentWindowId());
+            const queryOpts = targetWinId !== null && targetWinId !== undefined ? { windowId: targetWinId } : {};
+            const allTabs = await chrome.tabs.query(queryOpts);
+            const filteredTabs =
+                targetWinId !== null && targetWinId !== undefined
+                    ? allTabs.filter((t) => t.windowId === targetWinId)
+                    : allTabs;
             const urlCounts = {};
-            for (const tab of allTabs) {
+            for (const tab of filteredTabs) {
                 const url = tab.url || tab.pendingUrl || '';
                 if (url && !url.startsWith('chrome://') && !url.startsWith('chrome-extension://')) {
                     urlCounts[url] = (urlCounts[url] || 0) + 1;

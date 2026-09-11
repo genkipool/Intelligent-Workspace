@@ -8,11 +8,12 @@
  * - Testable: swap implementation for testing
  */
 
-const STORAGE_AREAS = {
-    local: chrome.storage.local,
-    sync: chrome.storage.sync,
-    session: chrome.storage.session,
-};
+function getStorageBackend(area) {
+    if (typeof chrome !== 'undefined' && chrome?.storage) {
+        return chrome.storage[area];
+    }
+    return undefined;
+}
 
 // Which area holds the rules (or the themes) is consulted before almost every read,
 // so resolving it from chrome.storage each time doubled the round-trips. The lookup
@@ -22,31 +23,41 @@ const areaNameCache = new Map();
 export function getStorageAreaName(ruleKey = 'ruleStorageArea') {
     let pending = areaNameCache.get(ruleKey);
     if (!pending) {
-        pending = chrome.storage.local.get(ruleKey).then(({ [ruleKey]: area = 'sync' }) => area);
-        areaNameCache.set(ruleKey, pending);
+        const local = getStorageBackend('local');
+        if (local) {
+            pending = local.get(ruleKey).then(({ [ruleKey]: area = 'sync' }) => area);
+            areaNameCache.set(ruleKey, pending);
+        } else {
+            return Promise.resolve('sync');
+        }
     }
     return pending;
 }
 
 export async function getStorageArea(ruleKey = 'ruleStorageArea') {
-    return STORAGE_AREAS[await getStorageAreaName(ruleKey)] || chrome.storage.sync;
+    const areaName = await getStorageAreaName(ruleKey);
+    return getStorageBackend(areaName) || getStorageBackend('sync');
 }
 
-chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== 'local') return;
-    for (const key of [...areaNameCache.keys()]) {
-        if (changes[key]) areaNameCache.delete(key);
-    }
-});
+if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== 'local') return;
+        for (const key of [...areaNameCache.keys()]) {
+            if (changes[key]) areaNameCache.delete(key);
+        }
+    });
+}
 
 // Warmed on import: every page resolves the rule area during boot, and doing it here
 // overlaps the round-trip with module evaluation instead of stalling the first read.
-getStorageAreaName('ruleStorageArea');
+if (typeof chrome !== 'undefined' && chrome?.storage?.local) {
+    getStorageAreaName('ruleStorageArea');
+}
 
 export const storageService = {
     get: async (keys, area = 'local') => {
         try {
-            const storage = STORAGE_AREAS[area];
+            const storage = getStorageBackend(area);
             return await storage.get(keys);
         } catch (err) {
             console.error(`[StorageService] get failed (${area}):`, err);
@@ -56,7 +67,7 @@ export const storageService = {
 
     set: async (items, area = 'local') => {
         try {
-            const storage = STORAGE_AREAS[area];
+            const storage = getStorageBackend(area);
             await storage.set(items);
         } catch (err) {
             console.error(`[StorageService] set failed (${area}):`, err);
@@ -65,7 +76,7 @@ export const storageService = {
 
     remove: async (keys, area = 'local') => {
         try {
-            const storage = STORAGE_AREAS[area];
+            const storage = getStorageBackend(area);
             await storage.remove(keys);
         } catch (err) {
             console.error(`[StorageService] remove failed (${area}):`, err);

@@ -8,7 +8,7 @@ import {
     resolveMessage,
 } from '../../../utils/i18n.js';
 import { exportHintsConfig, importHintsConfig } from '../../../utils/importExport.js';
-import { updateScrollButtons } from '../../components/common/ScrollButtons.svelte';
+import { updateScrollButtons } from '../../components/common/scrollButtonsBridge.js';
 
 // Resolved when the page initialises: `hint_common.js` publishes window.HintCommon
 // as a side effect, so reading it at module scope would depend on import order.

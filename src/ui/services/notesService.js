@@ -23,7 +23,7 @@ async function waitForElement(selector, attempts = 30) {
 }
 
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
-import { openModal, showNoteModal } from '@/ui/stores/modalStore.js';
+import { openModal, showNoteModal } from '../stores/modalStore.js';
 import { renderNoteEntry as renderNoteEntryFromModule } from '../content-renderer/content-renderer.js';
 
 import {

@@ -328,7 +328,7 @@
             backedUpGroupData.set(remaining);
             await deleteBackupFromDb(group.id);
         } else if (isUngrouped) {
-            await listGroupStore.actions.deleteAllUngroupedTabs();
+            await listGroupStore.actions.deleteAllUngroupedTabs(tabs);
         } else {
             await listGroupStore.actions.deleteAllTabsInGroup(group.id, tabs);
         }

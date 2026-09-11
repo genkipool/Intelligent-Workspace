@@ -5,7 +5,7 @@
  */
 
 import { get } from 'svelte/store';
-import { updateScrollButtons } from '../components/common/ScrollButtons.svelte';
+import { updateScrollButtons } from '../components/common/scrollButtonsBridge.js';
 
 import { applyTranslations, showNotification } from '../../utils/i18n.js';
 

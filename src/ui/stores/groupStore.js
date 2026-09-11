@@ -4,6 +4,14 @@ import { backedUpGroupData } from './appStore.svelte.js';
 import { writable, derived, get } from 'svelte/store';
 import { fetchData } from '../services/groupsService.js';
 import { linkedGroupIds } from '../services/utils.js';
+import {
+    getCurrentWindowId,
+    setCurrentWindowId,
+    isCurrentWindow,
+    currentWindowIdStore,
+    openWindowIdsStore,
+    syncOpenWindows,
+} from '../services/windowsService.js';
 
 /**
  * The search filter hides cards by adding a class to them by hand, and rebuilding the
@@ -44,29 +52,76 @@ function registerChromeListeners() {
     if (listenersRegistered) return;
     listenersRegistered = true;
 
-    chrome.tabGroups.onCreated.addListener(scheduleRefetch);
-    chrome.tabGroups.onUpdated.addListener(scheduleRefetch);
-    chrome.tabGroups.onRemoved.addListener(scheduleRefetch);
-    chrome.tabGroups.onMoved.addListener(scheduleRefetch);
-    chrome.tabs.onCreated.addListener(scheduleRefetch);
-    chrome.tabs.onRemoved.addListener(scheduleRefetch);
-    // Which tab is the active one is part of what the list draws, and it is what the
-    // scroll follows.
-    chrome.tabs.onActivated.addListener(scheduleRefetch);
-    chrome.tabs.onMoved.addListener(scheduleRefetch);
-    chrome.tabs.onAttached.addListener(scheduleRefetch);
-    chrome.tabs.onDetached.addListener(scheduleRefetch);
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-        if (
-            changeInfo.groupId !== undefined ||
-            changeInfo.url ||
-            changeInfo.title ||
-            changeInfo.pinned !== undefined ||
-            changeInfo.status === 'complete'
-        ) {
+    if (typeof chrome === 'undefined') return;
+
+    if (chrome.tabGroups) {
+        chrome.tabGroups.onCreated?.addListener((group) => {
+            if (!isCurrentWindow(group?.windowId)) return;
             scheduleRefetch();
-        }
-    });
+        });
+        chrome.tabGroups.onUpdated?.addListener((group) => {
+            if (!isCurrentWindow(group?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabGroups.onRemoved?.addListener((group) => {
+            if (!isCurrentWindow(group?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabGroups.onMoved?.addListener((group) => {
+            if (!isCurrentWindow(group?.windowId)) return;
+            scheduleRefetch();
+        });
+    }
+
+    if (chrome.tabs) {
+        chrome.tabs.onCreated?.addListener((tab) => {
+            if (!isCurrentWindow(tab?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onRemoved?.addListener((tabId, removeInfo) => {
+            if (!isCurrentWindow(removeInfo?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onActivated?.addListener((activeInfo) => {
+            if (!isCurrentWindow(activeInfo?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onMoved?.addListener((tabId, moveInfo) => {
+            if (!isCurrentWindow(moveInfo?.windowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onAttached?.addListener((tabId, attachInfo) => {
+            if (!isCurrentWindow(attachInfo?.newWindowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onDetached?.addListener((tabId, detachInfo) => {
+            if (!isCurrentWindow(detachInfo?.oldWindowId)) return;
+            scheduleRefetch();
+        });
+        chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
+            if (!isCurrentWindow(tab?.windowId)) return;
+            if (
+                changeInfo.groupId !== undefined ||
+                changeInfo.url ||
+                changeInfo.title ||
+                changeInfo.pinned !== undefined ||
+                changeInfo.status === 'complete'
+            ) {
+                scheduleRefetch();
+            }
+        });
+    }
+
+    if (chrome.windows) {
+        chrome.windows.onCreated?.addListener(async () => {
+            await syncOpenWindows();
+            scheduleRefetch();
+        });
+        chrome.windows.onRemoved?.addListener(async () => {
+            await syncOpenWindows();
+            scheduleRefetch();
+        });
+    }
 }
 
 /**
@@ -102,7 +157,7 @@ function applyUserOrder(groups) {
  * @param {Record<string, object>} backups
  * @returns {Array}
  */
-function withBackups(liveGroups, backups) {
+export function withBackups(liveGroups, backups, currentWindowId = null, openWindowIds = null) {
     const stored = Object.values(backups || {}).filter((data) => data?.group);
     if (stored.length === 0) return liveGroups;
 
@@ -111,7 +166,25 @@ function withBackups(liveGroups, backups) {
     const merged = liveGroups.filter((item) => !linked.has(item.group?.id));
 
     const pending = stored
-        .filter((data) => !liveById.has(data.group.id))
+        .filter((data) => {
+            if (liveById.has(data.group.id)) return false;
+
+            // If this backup is linked to a group live in this window, show it here
+            if (data.linkedGroupId && liveById.has(data.linkedGroupId)) {
+                return true;
+            }
+
+            // If a windowId was recorded on the backup and we know the current window
+            const backupWinId = data.group?.windowId;
+            if (currentWindowId !== null && backupWinId !== undefined && backupWinId !== null) {
+                // If it was backed up in another window that is still open, let that other window show it
+                if (backupWinId !== currentWindowId && openWindowIds && openWindowIds.has(backupWinId)) {
+                    return false;
+                }
+            }
+
+            return true;
+        })
         .map((data) => {
             const liveTabs = liveById.get(data.linkedGroupId)?.tabs ?? [];
             return { ...data, isBackup: true, liveTabs, rows: backupRows(data, liveTabs) };
@@ -167,15 +240,22 @@ function backupRows(data, liveTabs) {
 // The rendered list is the live groups plus the backed-up ones. Deriving it means a
 // backup that is created, restored or read from the database reaches the list on its
 // own, with no extra fetch and no chance of arriving before the list is first built.
-export const groupsStore = derived([liveGroupsStore, backedUpGroupData], ([$live, $backups]) =>
-    withBackups($live, $backups),
+export const groupsStore = derived(
+    [liveGroupsStore, backedUpGroupData, currentWindowIdStore, openWindowIdsStore],
+    ([$live, $backups, $currentWinId, $openWins]) => withBackups($live, $backups, $currentWinId, $openWins),
 );
 
 export const groupStore = {
     subscribe: groupsStore.subscribe,
-    init: async () => {
+    init: async (windowId = null) => {
+        if (windowId !== null && windowId !== undefined) {
+            setCurrentWindowId(windowId);
+        } else {
+            await getCurrentWindowId();
+        }
+        await syncOpenWindows();
         registerChromeListeners();
-        await groupStore.fetchGroups();
+        await groupStore.fetchGroups(windowId);
     },
     /**
      * Puts a tab just restored from a backup into its group, without waiting for the
@@ -194,9 +274,10 @@ export const groupStore = {
             return next;
         });
     },
-    fetchGroups: async () => {
+    fetchGroups: async (windowId = null) => {
         try {
-            const result = await fetchData();
+            const targetWinId = windowId ?? (await getCurrentWindowId());
+            const result = await fetchData(targetWinId);
             if (Array.isArray(result)) {
                 // Deleting a group leaves its notes and screenshots without a home, and
                 // the indicators at the top are how they are reached; re-creating the
@@ -207,10 +288,10 @@ export const groupStore = {
                 // them show up on the card again instead of staying up top as orphans.
                 // It runs before the cards are drawn, because the notes and gallery
                 // buttons on them are built from that same index.
-                await syncContentSessionKeys();
+                await syncContentSessionKeys(targetWinId);
                 liveGroupsStore.set(applyUserOrder(result));
                 await reapplyActiveSearch();
-                await updateOrphanIndicators();
+                await updateOrphanIndicators(targetWinId);
                 // Switching tabs in the browser re-renders this list; bringing the
                 // active one into view is what the original does at the end of a render.
                 // The row it looks for is the one Svelte is about to paint, so the scroll
@@ -219,7 +300,7 @@ export const groupStore = {
                 await tick();
                 const { scrollToActiveGroupIfNeeded } = await import('../services/groupsService.js');
                 scrollToActiveGroupIfNeeded();
-                const { updateScrollButtons } = await import('../components/common/ScrollButtons.svelte');
+                const { updateScrollButtons } = await import('../components/common/scrollButtonsBridge.js');
                 updateScrollButtons();
             }
         } catch (err) {

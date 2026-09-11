@@ -16,7 +16,7 @@ import {
     showAddToBookmarkModal,
     modalData,
     closeModal as closeModalStore,
-} from '@/ui/stores/modalStore.js';
+} from '../stores/modalStore.js';
 import { get } from 'svelte/store';
 
 import {

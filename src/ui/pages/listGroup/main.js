@@ -10,11 +10,13 @@ import '../../../utils/hint_common.js';
 import '../../../utils/snippet-panel.js';
 import { listGroupStore } from '../../stores/listGroupStore.js';
 import { isBareFramedView, isFramedView } from '../../services/panelViews.js';
+import { getCurrentWindowId } from '../../services/windowsService.js';
 
 // Kicked off here rather than on mount: it is the page's first chrome.storage read
 // and pays the subsystem's warm-up cost, so starting it now overlaps that with the
 // translation fetch and the Svelte mount instead of running after them.
 listGroupStore.init();
+getCurrentWindowId().catch(() => {});
 
 // The search bar and the group toolbar are hidden by these view classes, which the boot
 // only applies once it has switched views. Setting them from the URL first means both are
