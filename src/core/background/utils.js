@@ -557,13 +557,24 @@ const setupContextMenus = async () => {
         });
 
         // --- GROUP 2: Tab cleanup actions ---
+        let splitGroupId = -1;
+        if (typeof groupInfoMap !== 'undefined' && groupInfoMap) {
+            for (const [id, info] of groupInfoMap.entries()) {
+                if (info && info.type === 'manual' && info.key === 'Split') {
+                    splitGroupId = id;
+                    break;
+                }
+            }
+        }
         const duplicateUrlMap = new Map();
         for (const tab of allTabs) {
-            if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('file'))) {
-                if (!duplicateUrlMap.has(tab.url)) {
-                    duplicateUrlMap.set(tab.url, []);
+            if (splitGroupId !== -1 && tab.groupId === splitGroupId) continue;
+            if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
+                const key = `${tab.windowId}:::${tab.url}`;
+                if (!duplicateUrlMap.has(key)) {
+                    duplicateUrlMap.set(key, []);
                 }
-                duplicateUrlMap.get(tab.url).push(tab);
+                duplicateUrlMap.get(key).push(tab);
             }
         }
         let duplicatesFoundCount = 0;
@@ -1929,46 +1940,74 @@ async function closeTabsForUrlCommand(urlToClose, originatingRuleName, groupId) 
     }
 }
 
-async function removeDuplicateTabsCommand() {
-    logMessage('[removeDuplicateTabsCommand] Starting process to remove duplicate tabs.');
+async function removeDuplicateTabsCommand(targetWindowId = null) {
+    logMessage(
+        `[removeDuplicateTabsCommand] Starting process to remove duplicate tabs${targetWindowId != null ? ` for window ${targetWindowId}` : ''}.`,
+    );
 
-    // 1. Get all tabs from all windows.
-    const allTabs = await chrome.tabs.query({});
-
-    // 2. Group tabs by their exact URL.
-    const urlMap = new Map();
-    for (const tab of allTabs) {
-        // We only process tabs with valid URLs to avoid closing internal or blank tabs.
-        if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('file'))) {
-            if (!urlMap.has(tab.url)) {
-                urlMap.set(tab.url, []);
+    let resolvedWinId = typeof targetWindowId === 'number' ? targetWindowId : null;
+    if (resolvedWinId === null) {
+        try {
+            const currentWin = await chrome.windows.getLastFocused({ windowTypes: ['normal'] }).catch(() => null);
+            if (currentWin && typeof currentWin.id === 'number') {
+                resolvedWinId = currentWin.id;
             }
-            urlMap.get(tab.url).push(tab);
+        } catch {}
+    }
+
+    // 1. Get tabs from the target window (or all tabs if window cannot be determined).
+    const queryOpts = typeof resolvedWinId === 'number' ? { windowId: resolvedWinId } : {};
+    const allTabs = await chrome.tabs.query(queryOpts);
+    const tabsForWindow =
+        typeof resolvedWinId === 'number' ? allTabs.filter((tab) => tab.windowId === resolvedWinId) : allTabs;
+
+    // Check for split screen group to exclude
+    let splitGroupId = -1;
+    if (typeof groupInfoMap !== 'undefined' && groupInfoMap) {
+        for (const [id, info] of groupInfoMap.entries()) {
+            if (info && info.type === 'manual' && info.key === 'Split') {
+                splitGroupId = id;
+                break;
+            }
         }
     }
 
-    // 3. Identify and collect the IDs of the tabs to be closed.
+    // 2. Group tabs by URL, scoped strictly per window to prevent cross-window closing
+    const urlMap = new Map();
+    for (const tab of tabsForWindow) {
+        if (splitGroupId !== -1 && tab.groupId === splitGroupId) {
+            continue;
+        }
+        if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
+            const groupKey = typeof resolvedWinId === 'number' ? tab.url : `${tab.windowId}:::${tab.url}`;
+            if (!urlMap.has(groupKey)) {
+                urlMap.set(groupKey, []);
+            }
+            urlMap.get(groupKey).push(tab);
+        }
+    }
+
+    // 3. Identify and collect the IDs of the tabs to be closed, preserving active tab or first tab
     const tabIdsToRemove = [];
     let duplicatesFoundCount = 0;
 
     for (const tabs of urlMap.values()) {
-        // If there is more than one tab for the same URL, they are duplicates.
         if (tabs.length > 1) {
-            // We keep the first tab found (tabs[0]) and prepare to close the rest.
-            const tabsToClose = tabs.slice(1);
+            const activeIndex = tabs.findIndex((tab) => tab.active);
+            const keepIndex = activeIndex >= 0 ? activeIndex : 0;
+            const tabsToClose = tabs.filter((_, idx) => idx !== keepIndex);
             const idsToClose = tabsToClose.map((tab) => tab.id);
             tabIdsToRemove.push(...idsToClose);
             duplicatesFoundCount += idsToClose.length;
         }
     }
 
-    // 4. Close all duplicate tabs at once.
+    // 4. Close duplicate tabs
     if (tabIdsToRemove.length > 0) {
         logMessage(`[removeDuplicateTabsCommand] Found ${duplicatesFoundCount} duplicate tabs. Closing them.`);
         await chrome.tabs.remove(tabIdsToRemove);
 
-        // 5. Notify the user about the action taken.
-        chrome.notifications.create({
+        chrome.notifications?.create?.({
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
             title: getI18nMsg('removeDuplicatesSuccessTitle'),
@@ -1976,13 +2015,19 @@ async function removeDuplicateTabsCommand() {
         });
     } else {
         logMessage('[removeDuplicateTabsCommand] No duplicate tabs found.');
-        chrome.notifications.create({
+        chrome.notifications?.create?.({
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
             title: getI18nMsg('removeDuplicatesNoneFoundTitle'),
             message: getI18nMsg('removeDuplicatesNoneFoundMessage'),
         });
     }
+
+    return {
+        success: true,
+        count: duplicatesFoundCount,
+        removedIds: tabIdsToRemove,
+    };
 }
 
 async function removeTabsByDomainCommand(domain) {

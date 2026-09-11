@@ -589,7 +589,13 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             // which matches nothing, so the active group was closed along with the
             // rest. When the active tab is in no group there is nothing to spare and
             // every group goes, which is what the entry then means.
-            await handleDeleteOtherGroups({ groupId: tab?.groupId ?? chrome.tabGroups.TAB_GROUP_ID_NONE }, () => {});
+            await handleDeleteOtherGroups(
+                {
+                    groupId: tab?.groupId ?? chrome.tabGroups.TAB_GROUP_ID_NONE,
+                    windowId: tab?.windowId,
+                },
+                () => {},
+            );
             break;
         case 'regroup-all-tabs':
             await regroupAllTabsCommand();
@@ -629,7 +635,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
             }
             break;
         case 'remove-duplicate-tabs':
-            await removeDuplicateTabsCommand();
+            await removeDuplicateTabsCommand(tab?.windowId ?? null);
             break;
         case 'toggle-sort-alpha':
             await toggleSortGroupsAlpha();

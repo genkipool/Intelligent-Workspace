@@ -74,6 +74,7 @@ import {
     toggleColorPopup,
     closeColorPopup,
     initGroupsEvents,
+    handleDeleteOtherGroupsUI,
 } from '../../services/groupsService.js';
 import { initSearchEvents } from '../../services/searchService.js';
 import {
@@ -384,14 +385,7 @@ function initDeleteAllContextButton() {
         } else if (get(isNotesViewActive)) {
             clearAllContextDataUI(get(currentNotesContext), noteConfig);
         } else if (view === 'groups') {
-            if (await confirmAction({ messageKey: 'confirmDeleteOtherGroups' })) {
-                chrome.runtime.sendMessage({ action: 'deleteOtherGroups' }, (response) => {
-                    if (response.success) {
-                        showNotification('otherGroupsDeleted');
-                        renderGroups();
-                    }
-                });
-            }
+            await handleDeleteOtherGroupsUI();
         } else if (view === 'bookmarks') {
             const visibilityPanel = document.getElementById('visibility-controls-panel');
             if (visibilityPanel) {

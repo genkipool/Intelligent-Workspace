@@ -14,7 +14,11 @@ export const currentWindowIdStore = writable(null);
 // Reactive store holding the Set of all currently open normal window IDs
 export const openWindowIdsStore = writable(new Set());
 
+// Reactive store holding the associated split window ID (if current window originated an active split session)
+export const associatedSplitWindowIdStore = writable(null);
+
 let cachedWindowId = null;
+let cachedSplitWindowId = null;
 
 /**
  * Resolves the window ID that hosts this extension page.
@@ -112,7 +116,53 @@ export function setCurrentWindowId(windowId) {
  */
 export function resetCurrentWindowId() {
     cachedWindowId = null;
+    cachedSplitWindowId = null;
     currentWindowIdStore.set(null);
+    associatedSplitWindowIdStore.set(null);
+}
+
+/**
+ * Returns the currently associated split window ID (if any).
+ * @returns {number|null}
+ */
+export function getAssociatedSplitWindowId() {
+    return cachedSplitWindowId ?? get(associatedSplitWindowIdStore);
+}
+
+/**
+ * Explicitly sets the associated split window ID.
+ * @param {number|null} splitWinId
+ */
+export function setAssociatedSplitWindowId(splitWinId) {
+    cachedSplitWindowId = splitWinId;
+    associatedSplitWindowIdStore.set(splitWinId);
+}
+
+/**
+ * Reads split-screen state from session storage and synchronizes
+ * the associated split window ID if the current window is the originator.
+ *
+ * @param {number|null} [currentWinId=null]
+ * @returns {Promise<number|null>}
+ */
+export async function syncAssociatedSplitWindow(currentWinId = null) {
+    try {
+        if (typeof chrome !== 'undefined' && chrome.storage?.session) {
+            const current = currentWinId ?? cachedWindowId ?? (await getCurrentWindowId());
+            const data = await chrome.storage.session.get('splitScreenState').catch(() => ({}));
+            const state = data?.splitScreenState;
+            if (state && state.isActive && state.splitWindowId) {
+                if (current !== null && current !== undefined && state.originalWindowId === current) {
+                    cachedSplitWindowId = state.splitWindowId;
+                    associatedSplitWindowIdStore.set(state.splitWindowId);
+                    return state.splitWindowId;
+                }
+            }
+        }
+    } catch {}
+    cachedSplitWindowId = null;
+    associatedSplitWindowIdStore.set(null);
+    return null;
 }
 
 /**
@@ -130,6 +180,24 @@ export function isCurrentWindow(targetWindowId) {
         return true;
     }
     return current === targetWindowId;
+}
+
+/**
+ * Checks whether a given windowId belongs to the current window
+ * OR to the associated split-screen window originated by this window.
+ *
+ * @param {number|null|undefined} targetWindowId
+ * @returns {boolean}
+ */
+export function isCurrentOrSplitWindow(targetWindowId) {
+    if (isCurrentWindow(targetWindowId)) {
+        return true;
+    }
+    const splitWinId = cachedSplitWindowId ?? get(associatedSplitWindowIdStore);
+    if (splitWinId !== null && splitWinId !== undefined && targetWindowId === splitWinId) {
+        return true;
+    }
+    return false;
 }
 
 /**

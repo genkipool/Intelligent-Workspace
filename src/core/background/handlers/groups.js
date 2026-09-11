@@ -283,33 +283,48 @@ async function handleDeleteCurrentTabGroup(sender) {
 
 /** Closes every group except the one named in the message. */
 /**
- * Closes every group but one — the active tab's, unless the caller names another.
- *
- * Callers that left `groupId` out got `NaN`, which no group id ever equals, so the
- * group the user was working in was closed along with the rest. Resolving the active
- * tab here covers both the context-menu entry and the toolbar button, which are the
- * two ways in and both promise to spare the active group.
+ * Closes every group in the target window except one — the active tab's, unless the caller names another.
+ * Scoped strictly to targetWindowId so groups in other windows are never touched.
  */
-async function handleDeleteOtherGroups(message, sendResponse) {
+async function handleDeleteOtherGroups(message, sendResponse, sender = null) {
     try {
+        let targetWindowId = typeof message?.windowId === 'number' ? message.windowId : sender?.tab?.windowId;
         let keepId = Number.parseInt(message?.groupId, 10);
         if (!Number.isFinite(keepId)) {
-            const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            keepId = activeTab?.groupId ?? chrome.tabGroups.TAB_GROUP_ID_NONE;
+            const queryInfo = { active: true };
+            if (typeof targetWindowId === 'number') {
+                queryInfo.windowId = targetWindowId;
+            } else {
+                queryInfo.currentWindow = true;
+            }
+            const [activeTab] = await chrome.tabs.query(queryInfo);
+            keepId = activeTab?.groupId ?? chrome.tabGroups?.TAB_GROUP_ID_NONE ?? -1;
+            if (typeof targetWindowId !== 'number' && typeof activeTab?.windowId === 'number') {
+                targetWindowId = activeTab.windowId;
+            }
         }
-        const groups = await chrome.tabGroups.query({});
+        const groupQuery = typeof targetWindowId === 'number' ? { windowId: targetWindowId } : {};
+        let groups = await chrome.tabGroups.query(groupQuery);
+        if (typeof targetWindowId === 'number') {
+            groups = groups.filter((group) => group.windowId === targetWindowId);
+        }
         const others = groups.map((group) => group.id).filter((id) => id !== keepId);
         const closed = await closeGroups(others);
-        sendResponse({
-            success: true,
-            closed,
-        });
+        if (sendResponse) {
+            sendResponse({
+                success: true,
+                closed,
+                count: others.length,
+            });
+        }
     } catch (error) {
         console.error('Error deleting the other groups:', error);
-        sendResponse({
-            success: false,
-            error: error.message,
-        });
+        if (sendResponse) {
+            sendResponse({
+                success: false,
+                error: error.message,
+            });
+        }
     }
 }
 

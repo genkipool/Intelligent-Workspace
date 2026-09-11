@@ -529,7 +529,7 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     removeDuplicateTabs: (message, sender, sendResponse) => {
-        handleRemoveDuplicateTabs(sendResponse);
+        handleRemoveDuplicateTabs(message, sender, sendResponse);
         return true;
     },
     openFileUrl: (message, sender, sendResponse) => {
@@ -700,7 +700,7 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     deleteOtherGroups: (message, sender, sendResponse) => {
-        handleDeleteOtherGroups(message, sendResponse);
+        handleDeleteOtherGroups(message, sendResponse, sender);
         return true;
     },
     updateOmnibarNote: (message, sender, sendResponse) => {

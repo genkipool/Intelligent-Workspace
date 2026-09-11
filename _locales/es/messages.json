@@ -8952,7 +8952,63 @@
         "message": "Otros grupos cerrados con éxito"
     },
     "confirmDeleteOtherGroups": {
-        "message": "¿Confirmas que quieres cerrar todos los grupos excepto el seleccionado?"
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
+        "description": "Confirmación para cerrar los demás grupos en la ventana actual informando del grupo que se mantendrá.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            },
+            "keepGroup": {
+                "content": "$2",
+                "example": "Trabajo"
+            }
+        }
+    },
+    "confirmDeleteOtherGroupsSingle": {
+        "message": "¿Confirmas que quieres cerrar 1 grupo de esta ventana excepto el grupo \"$2\"?",
+        "description": "Confirmación para cerrar 1 grupo en la ventana actual informando del grupo que se mantendrá.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "1"
+            },
+            "keepGroup": {
+                "content": "$2",
+                "example": "Trabajo"
+            }
+        }
+    },
+    "confirmDeleteOtherGroupsMultiple": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
+        "description": "Confirmación para cerrar múltiples grupos en la ventana actual informando del grupo que se mantendrá.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            },
+            "keepGroup": {
+                "content": "$2",
+                "example": "Trabajo"
+            }
+        }
+    },
+    "confirmDeleteAllGroupsInWindow": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
+        "description": "Confirmación para cerrar todos los grupos en la ventana actual cuando no hay grupo activo.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
+    "confirmDeleteAllGroupsInWindowSingle": {
+        "message": "¿Confirmas que quieres cerrar 1 grupo de esta ventana?",
+        "description": "Confirmación para cerrar 1 grupo en la ventana actual cuando no hay grupo activo."
+    },
+    "noOtherGroupsToClose": {
+        "message": "No hay otros grupos que cerrar en esta ventana"
     },
     "closeAllButThisGroup": {
         "message": "Cerrar otros excepto este grupo"

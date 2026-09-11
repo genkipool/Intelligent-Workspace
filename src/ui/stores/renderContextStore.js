@@ -1,7 +1,7 @@
 import { writable, get } from 'svelte/store';
 import { STORAGE_KEYS } from '../services/constants.js';
 import { getGroupInfoMap, getGroupPrefixState } from '../services/utils.js';
-import { getCurrentWindowId, isCurrentWindow } from '../services/windowsService.js';
+import { getCurrentWindowId, isCurrentOrSplitWindow } from '../services/windowsService.js';
 
 /**
  * renderContextStore — Provides the shared "render context" data
@@ -155,15 +155,15 @@ export function initRenderContextListeners() {
 
     if (typeof chrome !== 'undefined' && chrome.tabs) {
         chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
-            if (!isCurrentWindow(tab?.windowId)) return;
+            if (!isCurrentOrSplitWindow(tab?.windowId)) return;
             debouncedLoad();
         });
         chrome.tabs.onRemoved?.addListener((tabId, removeInfo) => {
-            if (!isCurrentWindow(removeInfo?.windowId)) return;
+            if (!isCurrentOrSplitWindow(removeInfo?.windowId)) return;
             debouncedLoad();
         });
         chrome.tabs.onActivated?.addListener((activeInfo) => {
-            if (!isCurrentWindow(activeInfo?.windowId)) return;
+            if (!isCurrentOrSplitWindow(activeInfo?.windowId)) return;
             debouncedLoad();
         });
     }
@@ -172,7 +172,12 @@ export function initRenderContextListeners() {
     if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
         chrome.storage.onChanged.addListener((changes, areaName) => {
             if (areaName === 'session') {
-                if (changes.tabsEverActive || changes[STORAGE_KEYS.SCREENSHOTS] || changes[STORAGE_KEYS.NOTES]) {
+                if (
+                    changes.tabsEverActive ||
+                    changes[STORAGE_KEYS.SCREENSHOTS] ||
+                    changes[STORAGE_KEYS.NOTES] ||
+                    changes[STORAGE_KEYS.SPLIT_SCREEN]
+                ) {
                     debouncedLoad();
                 }
             }

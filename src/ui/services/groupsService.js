@@ -18,10 +18,11 @@ import {
     showQrCodeModal as showQrCodeModalStore,
     showCookieEditorModal as showCookieEditorModalStore,
 } from '../stores/modalStore.js';
+import { confirmAction } from '../stores/confirmStore.js';
 
 import { saveBackupToDb, deleteBackupFromDb } from '../../utils/db.js';
 
-import { colors, noteConfig, screenshotConfig, PAGE_MODES } from './constants.js';
+import { colors, noteConfig, screenshotConfig, PAGE_MODES, STORAGE_KEYS } from './constants.js';
 import { getGroupInfoMap, animateAndRemove, linkedGroupIds } from './utils.js';
 import { exportCookies, processCookieFile } from '../../utils/importExport.js';
 
@@ -677,6 +678,277 @@ export async function deleteAllUngroupedTabs(windowId = null) {
 }
 
 /**
+ * Resolves the groups in targetWindowId that should be closed (all groups except keepGroupId,
+ * or except the active tab's group if keepGroupId is not specified).
+ *
+ * @param {number|null} [windowId=null]
+ * @param {number|null} [keepGroupId=null]
+ * @returns {Promise<{ targetWindowId: number, keepId: number, otherGroups: Array<chrome.tabGroups.TabGroup>, count: number }>}
+ */
+export async function getOtherGroupsInWindow(windowId = null, keepGroupId = null) {
+    try {
+        const targetWindowId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
+        const groupQuery = typeof targetWindowId === 'number' ? { windowId: targetWindowId } : {};
+        let groups = await chrome.tabGroups.query(groupQuery);
+        if (typeof targetWindowId === 'number') {
+            groups = groups.filter((g) => g.windowId === targetWindowId);
+        }
+
+        let keepId = Number.parseInt(keepGroupId, 10);
+        if (!Number.isFinite(keepId)) {
+            const tabQuery =
+                typeof targetWindowId === 'number'
+                    ? { active: true, windowId: targetWindowId }
+                    : { active: true, currentWindow: true };
+            const [activeTab] = await chrome.tabs.query(tabQuery);
+            keepId = activeTab?.groupId ?? chrome.tabGroups?.TAB_GROUP_ID_NONE ?? -1;
+        }
+
+        const keepGroup = groups.find((g) => g.id === keepId) || null;
+        const otherGroups = groups.filter((g) => g.id !== keepId);
+        return {
+            targetWindowId,
+            keepId,
+            keepGroup,
+            otherGroups,
+            count: otherGroups.length,
+        };
+    } catch (error) {
+        console.error('Error calculating other groups in window:', error);
+        return {
+            targetWindowId: windowId,
+            keepId: -1,
+            keepGroup: null,
+            otherGroups: [],
+            count: 0,
+        };
+    }
+}
+
+/**
+ * Closes all groups in targetWindowId except the specified group (or active group).
+ * Only touches groups strictly belonging to targetWindowId.
+ *
+ * @param {number|null} [windowId=null]
+ * @param {number|null} [keepGroupId=null]
+ * @returns {Promise<{ success: boolean, count: number, closedGroups: number[], closedTabs: number, error?: string }>}
+ */
+export async function deleteOtherGroups(windowId = null, keepGroupId = null) {
+    try {
+        const { targetWindowId, otherGroups } = await getOtherGroupsInWindow(windowId, keepGroupId);
+        if (otherGroups.length === 0) {
+            return { success: true, count: 0, closedGroups: [], closedTabs: 0 };
+        }
+
+        let totalClosedTabs = 0;
+        const closedGroupIds = [];
+
+        for (const group of otherGroups) {
+            const queryOpts = { groupId: group.id };
+            if (typeof targetWindowId === 'number') {
+                queryOpts.windowId = targetWindowId;
+            }
+            const tabsInGroup = await chrome.tabs.query(queryOpts);
+            const tabIds = tabsInGroup
+                .filter((t) => typeof targetWindowId !== 'number' || t.windowId === targetWindowId)
+                .map((t) => t.id)
+                .filter((id) => id !== undefined);
+
+            if (tabIds.length > 0) {
+                await chrome.tabs.remove(tabIds);
+                totalClosedTabs += tabIds.length;
+            }
+            closedGroupIds.push(group.id);
+        }
+
+        return {
+            success: true,
+            count: closedGroupIds.length,
+            closedGroups: closedGroupIds,
+            closedTabs: totalClosedTabs,
+        };
+    } catch (error) {
+        console.error('Error closing other groups in window:', error);
+        return {
+            success: false,
+            count: 0,
+            closedGroups: [],
+            closedTabs: 0,
+            error: error.message,
+        };
+    }
+}
+
+/**
+ * Handles the "delete other groups" action from the UI button.
+ * Prompts a confirmation modal showing the exact number of groups in this window to close
+ * and explicitly informing which group will not be deleted (the active group).
+ * Upon confirmation, closes only groups belonging to targetWindowId.
+ *
+ * @param {number|null} [windowId=null]
+ * @returns {Promise<{ success: boolean, count?: number, closed?: boolean, cancelled?: boolean, error?: string }>}
+ */
+export async function handleDeleteOtherGroupsUI(windowId = null) {
+    try {
+        const targetWindowId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
+        const { count, keepId, keepGroup } = await getOtherGroupsInWindow(targetWindowId);
+
+        if (count === 0) {
+            showNotification('noOtherGroupsToClose');
+            return { success: true, count: 0, closed: false };
+        }
+
+        const hasActiveGroup =
+            Number.isFinite(keepId) && keepId !== -1 && keepId !== (chrome.tabGroups?.TAB_GROUP_ID_NONE ?? -1);
+
+        let messageKey;
+        let params;
+        if (hasActiveGroup) {
+            messageKey = count === 1 ? 'confirmDeleteOtherGroupsSingle' : 'confirmDeleteOtherGroups';
+            const untitledLabel =
+                (typeof chrome !== 'undefined' && chrome.i18n?.getMessage?.('untitled')) || 'Sin título';
+            const rawTitle = keepGroup?.title ? keepGroup.title.replace(/\u200B/g, '').trim() : '';
+            const keepGroupName = rawTitle || untitledLabel;
+            params = [String(count), keepGroupName];
+        } else {
+            messageKey = count === 1 ? 'confirmDeleteAllGroupsInWindowSingle' : 'confirmDeleteAllGroupsInWindow';
+            params = [String(count)];
+        }
+
+        const confirmed = await confirmAction({ messageKey, params });
+        if (!confirmed) {
+            return { success: false, cancelled: true };
+        }
+
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage(
+                {
+                    action: 'deleteOtherGroups',
+                    windowId: targetWindowId,
+                    groupId: keepId,
+                },
+                async (response) => {
+                    try {
+                        if (chrome.runtime.lastError) {
+                            console.warn(
+                                '[handleDeleteOtherGroupsUI] Message send failed, falling back to direct removal:',
+                                chrome.runtime.lastError.message,
+                            );
+                            const fallback = await deleteOtherGroups(targetWindowId, keepId);
+                            if (fallback && fallback.success) {
+                                showNotification('otherGroupsDeleted');
+                                await renderGroups(targetWindowId);
+                            }
+                            resolve(fallback);
+                            return;
+                        }
+                        if (response && response.success) {
+                            showNotification('otherGroupsDeleted');
+                            await renderGroups(targetWindowId);
+                        }
+                        resolve(response);
+                    } catch (err) {
+                        console.error('Error in handleDeleteOtherGroupsUI response handler:', err);
+                        resolve({ success: false, error: err?.message });
+                    }
+                },
+            );
+        });
+    } catch (error) {
+        console.error('Error in handleDeleteOtherGroupsUI:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Detects duplicate tabs in a tab collection, excluding any split screen group.
+ * Preserves the active tab if one exists in the duplicate set, otherwise preserves the first tab.
+ * Returns the list of duplicate tabs to be closed and the count.
+ *
+ * @param {Array<chrome.tabs.Tab>} tabs
+ * @param {number} [splitGroupId=-1]
+ * @returns {{ duplicateTabs: Array<chrome.tabs.Tab>, count: number }}
+ */
+export function findDuplicateTabs(tabs, splitGroupId = -1) {
+    const tabsForDuplicateCheck = (tabs || []).filter((tab) => {
+        if (splitGroupId !== -1 && tab.groupId === splitGroupId) return false;
+        return tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'));
+    });
+
+    const urlMap = new Map();
+    for (const tab of tabsForDuplicateCheck) {
+        if (!urlMap.has(tab.url)) {
+            urlMap.set(tab.url, []);
+        }
+        urlMap.get(tab.url).push(tab);
+    }
+
+    const duplicateTabs = [];
+    for (const urlTabs of urlMap.values()) {
+        if (urlTabs.length > 1) {
+            const activeIndex = urlTabs.findIndex((t) => t.active);
+            const keepIndex = activeIndex >= 0 ? activeIndex : 0;
+            const tabsToClose = urlTabs.filter((_, idx) => idx !== keepIndex);
+            duplicateTabs.push(...tabsToClose);
+        }
+    }
+
+    return {
+        duplicateTabs,
+        count: duplicateTabs.length,
+    };
+}
+
+/**
+ * Removes duplicate tabs scoped strictly to targetWindowId (or the current window if omitted).
+ * Preserves the active tab or the first occurrence of each URL, and ignores split screen tabs.
+ *
+ * @param {number|null} [windowId=null]
+ * @returns {Promise<{ success: boolean, count: number, removedIds: Array<number>, error?: string }>}
+ */
+export async function removeDuplicateTabs(windowId = null) {
+    try {
+        const targetWindowId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
+        const groupInfoMap = await getGroupInfoMap();
+        let splitGroupId = -1;
+        if (groupInfoMap && typeof groupInfoMap.entries === 'function') {
+            for (const [id, info] of groupInfoMap.entries()) {
+                if (info && info.type === 'manual' && info.key === 'Split') {
+                    splitGroupId = id;
+                    break;
+                }
+            }
+        }
+        const queryOpts = targetWindowId !== null && targetWindowId !== undefined ? { windowId: targetWindowId } : {};
+        const tabs = await chrome.tabs.query(queryOpts);
+        const filteredTabs =
+            targetWindowId !== null && targetWindowId !== undefined
+                ? tabs.filter((t) => t.windowId === targetWindowId)
+                : tabs;
+        const { duplicateTabs, count } = findDuplicateTabs(filteredTabs, splitGroupId);
+        const tabIdsToRemove = duplicateTabs.map((t) => t.id);
+
+        if (tabIdsToRemove.length > 0) {
+            await chrome.tabs.remove(tabIdsToRemove);
+        }
+
+        return {
+            success: true,
+            count,
+            removedIds: tabIdsToRemove,
+        };
+    } catch (error) {
+        console.error('Error removing duplicate tabs:', error);
+        return {
+            success: false,
+            count: 0,
+            removedIds: [],
+            error: error?.message,
+        };
+    }
+}
+
+/**
  * Counts how many runs of `updateDuplicateCountBadge` have started.
  *
  * Both branches of that function reach their number asynchronously — the bookmark
@@ -748,10 +1020,12 @@ export async function updateDuplicateCountBadge() {
         try {
             const groupInfoMap = await getGroupInfoMap();
             let splitGroupId = -1;
-            for (const [id, info] of groupInfoMap.entries()) {
-                if (info.type === 'manual' && info.key === 'Split') {
-                    splitGroupId = id;
-                    break;
+            if (groupInfoMap && typeof groupInfoMap.entries === 'function') {
+                for (const [id, info] of groupInfoMap.entries()) {
+                    if (info && info.type === 'manual' && info.key === 'Split') {
+                        splitGroupId = id;
+                        break;
+                    }
                 }
             }
             const targetWinId = await getCurrentWindowId();
@@ -761,17 +1035,7 @@ export async function updateDuplicateCountBadge() {
                 targetWinId !== null && targetWinId !== undefined
                     ? tabs.filter((t) => t.windowId === targetWinId)
                     : tabs;
-            const tabsForDuplicateCheck = filteredTabs.filter((tab) => tab.groupId !== splitGroupId);
-            const urlCounts = tabsForDuplicateCheck.reduce((acc, tab) => {
-                if (tab.url && (tab.url.startsWith('http:') || tab.url.startsWith('https:'))) {
-                    acc[tab.url] = (acc[tab.url] || 0) + 1;
-                }
-                return acc;
-            }, {});
-
-            const duplicateCount = Object.values(urlCounts).reduce((sum, count) => {
-                return sum + (count > 1 ? count - 1 : 0);
-            }, 0);
+            const { count: duplicateCount } = findDuplicateTabs(filteredTabs, splitGroupId);
 
             if (isStale() || !checkIsRelevantView()) {
                 if (!checkIsRelevantView()) {
@@ -1497,6 +1761,87 @@ export async function unGroupAndRemoveAllTabsInGroup(groupId) {
     }
 }
 
+/**
+ * Retrieves the active split-screen group and its tabs if targetWindowId
+ * is the originating window of the active split-screen session.
+ *
+ * @param {number|null} targetWindowId
+ * @returns {Promise<{ group: object, tabs: Array<object> } | null>}
+ */
+export async function fetchOriginatingSplitGroupData(targetWindowId = null) {
+    try {
+        if (typeof chrome === 'undefined' || !chrome.storage?.session) {
+            return null;
+        }
+
+        const sessionData = await chrome.storage.session.get(STORAGE_KEYS.SPLIT_SCREEN).catch(() => ({}));
+        const splitState = sessionData?.[STORAGE_KEYS.SPLIT_SCREEN];
+
+        if (!splitState || !splitState.isActive || !splitState.splitGroupId) {
+            return null;
+        }
+
+        const originWinId = splitState.originalWindowId;
+        if (targetWindowId !== null && targetWindowId !== undefined) {
+            if (originWinId !== null && originWinId !== undefined && targetWindowId !== originWinId) {
+                return null;
+            }
+            if (
+                splitState.splitWindowId !== null &&
+                splitState.splitWindowId !== undefined &&
+                targetWindowId === splitState.splitWindowId
+            ) {
+                return null;
+            }
+        }
+
+        let splitGroup = null;
+        if (chrome.tabGroups?.get) {
+            splitGroup = await chrome.tabGroups.get(splitState.splitGroupId).catch(() => null);
+        }
+        if (!splitGroup && chrome.tabGroups?.query) {
+            const queryOpts = splitState.splitWindowId ? { windowId: splitState.splitWindowId } : {};
+            const groupsInSplit = await chrome.tabGroups.query(queryOpts).catch(() => []);
+            splitGroup = groupsInSplit.find((g) => g.id === splitState.splitGroupId) || null;
+        }
+
+        if (!splitGroup) {
+            return null;
+        }
+
+        let splitTabs = [];
+        if (chrome.tabs?.query) {
+            const queryOpts = splitState.splitWindowId ? { windowId: splitState.splitWindowId } : {};
+            const candidateTabs = await chrome.tabs.query(queryOpts).catch(() => []);
+            splitTabs = candidateTabs.filter((t) => t.groupId === splitState.splitGroupId);
+            if (splitTabs.length === 0) {
+                const byGroup = await chrome.tabs.query({ groupId: splitState.splitGroupId }).catch(() => []);
+                if (Array.isArray(byGroup) && byGroup.length > 0) {
+                    splitTabs = byGroup;
+                }
+            }
+        }
+        if (splitTabs.length === 0 && splitState.splitWindowId && chrome.windows?.get) {
+            const splitWin = await chrome.windows.get(splitState.splitWindowId, { populate: true }).catch(() => null);
+            if (splitWin && Array.isArray(splitWin.tabs)) {
+                splitTabs = splitWin.tabs.filter((t) => t.groupId === splitState.splitGroupId);
+            }
+        }
+
+        if (splitTabs.length === 0) {
+            return null;
+        }
+
+        return {
+            group: splitGroup,
+            tabs: splitTabs,
+        };
+    } catch (err) {
+        console.warn('[fetchOriginatingSplitGroupData] Error:', err);
+        return null;
+    }
+}
+
 export async function fetchData(windowId = null) {
     const targetWindowId = windowId ?? (await getCurrentWindowId());
 
@@ -1550,6 +1895,12 @@ export async function fetchData(windowId = null) {
             tabs: tabsByGroupId[group.id] || [],
         }))
         .filter((item) => item.tabs.length > 0);
+
+    // Include the split group if targetWindowId is the originating window of the split session
+    const splitGroupData = await fetchOriginatingSplitGroupData(targetWindowId);
+    if (splitGroupData && !groupData.some((item) => item.group?.id === splitGroupData.group.id)) {
+        groupData.push(splitGroupData);
+    }
 
     if (ungroupedTabs.length > 0) {
         const ungroupedTitle = chrome.i18n.getMessage('ungroupedTabsTitle');
@@ -2071,13 +2422,25 @@ export function closeColorPopup() {
 }
 
 export async function moveSplitGroup(sourceGroupId) {
-    const groupInfoMap = await getGroupInfoMap();
     let splitGroupId = null;
 
-    for (const [id, info] of groupInfoMap.entries()) {
-        if (info.type === 'manual' && info.key === 'Split') {
-            splitGroupId = id;
-            break;
+    try {
+        if (typeof chrome !== 'undefined' && chrome.storage?.session) {
+            const sessionData = await chrome.storage.session.get(STORAGE_KEYS.SPLIT_SCREEN).catch(() => ({}));
+            const splitState = sessionData?.[STORAGE_KEYS.SPLIT_SCREEN];
+            if (splitState?.splitGroupId) {
+                splitGroupId = splitState.splitGroupId;
+            }
+        }
+    } catch {}
+
+    if (!splitGroupId) {
+        const groupInfoMap = await getGroupInfoMap();
+        for (const [id, info] of groupInfoMap.entries()) {
+            if (info.type === 'manual' && info.key === 'Split') {
+                splitGroupId = id;
+                break;
+            }
         }
     }
 
@@ -2134,46 +2497,72 @@ export async function changeGroupColor(groupId, newColor) {
     closeColorPopup();
 }
 
-export async function handleRemoveDuplicates() {
+export async function handleRemoveDuplicates(windowId = null) {
     if (get(isBookmarksViewActive)) {
-        chrome.runtime.sendMessage({ action: 'removeDuplicateBookmarks' }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.error("Error sending 'removeDuplicateBookmarks' message:", chrome.runtime.lastError.message);
-                showNotification('errorCommunicatingWithService', true);
-                return;
-            }
-            if (response && response.success && response.count > 0) {
-                showNotification('duplicateBookmarksRemoved', false, [response.count]);
-
-                if (response.removedIds && response.removedIds.length > 0) {
-                    response.removedIds.forEach((id) => {
-                        const bookmarkElement = document.querySelector(`.bookmark-item[data-bookmark-id="${id}"]`);
-                        if (bookmarkElement) {
-                            animateAndRemove(bookmarkElement, false);
-                        }
-                    });
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage({ action: 'removeDuplicateBookmarks' }, (response) => {
+                if (chrome.runtime.lastError) {
+                    console.error(
+                        "Error sending 'removeDuplicateBookmarks' message:",
+                        chrome.runtime.lastError.message,
+                    );
+                    showNotification('errorCommunicatingWithService', true);
+                    resolve({ success: false });
+                    return;
                 }
-                updateDuplicateCountBadge();
-            } else {
-                showNotification('noDuplicateBookmarksFound');
-            }
+                if (response && response.success && response.count > 0) {
+                    showNotification('duplicateBookmarksRemoved', false, [response.count]);
+
+                    if (response.removedIds && response.removedIds.length > 0) {
+                        response.removedIds.forEach((id) => {
+                            const bookmarkElement = document.querySelector(`.bookmark-item[data-bookmark-id="${id}"]`);
+                            if (bookmarkElement) {
+                                animateAndRemove(bookmarkElement, false);
+                            }
+                        });
+                    }
+                    updateDuplicateCountBadge();
+                } else {
+                    showNotification('noDuplicateBookmarksFound');
+                }
+                resolve(response);
+            });
         });
     } else {
-        chrome.runtime.sendMessage(
-            {
-                action: 'removeDuplicateTabs',
-            },
-            (response) => {
-                if (chrome.runtime.lastError) {
-                    console.error(`Error sending 'removeDuplicateTabs' message: ${chrome.runtime.lastError.message}`);
-                    showNotification('errorCommunicatingWithService', true);
-                } else {
-                    if (response && response.count > 0) {
-                        showNotification('duplicateTabsRemovedMessage', false, [response.count]);
+        const targetWindowId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
+        return new Promise((resolve) => {
+            chrome.runtime.sendMessage(
+                {
+                    action: 'removeDuplicateTabs',
+                    windowId: targetWindowId,
+                },
+                async (response) => {
+                    try {
+                        if (chrome.runtime.lastError) {
+                            console.warn(
+                                `[handleRemoveDuplicates] Message send failed, falling back to direct removal:`,
+                                chrome.runtime.lastError.message,
+                            );
+                            const fallback = await removeDuplicateTabs(targetWindowId);
+                            if (fallback && fallback.count > 0) {
+                                showNotification('duplicateTabsRemovedMessage', false, [fallback.count]);
+                            }
+                            await updateDuplicateCountBadge();
+                            resolve(fallback);
+                            return;
+                        }
+                        if (response && response.count > 0) {
+                            showNotification('duplicateTabsRemovedMessage', false, [response.count]);
+                        }
+                        await updateDuplicateCountBadge();
+                        resolve(response);
+                    } catch (err) {
+                        console.error('Error in handleRemoveDuplicates response handler:', err);
+                        resolve({ success: false, error: err?.message });
                     }
-                }
-            },
-        );
+                },
+            );
+        });
     }
 }
 

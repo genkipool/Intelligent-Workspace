@@ -211,19 +211,45 @@ async function handleDeactivateAllPageModes(sendResponse) {
     logMessage('[Page Mode] All page modes have been deactivated globally.');
 }
 
-function handleRemoveDuplicateTabs(sendResponse) {
+function handleRemoveDuplicateTabs(arg1, arg2, arg3) {
+    let message = null;
+    let sender = null;
+    let sendResponse = null;
+
+    if (typeof arg1 === 'function') {
+        sendResponse = arg1;
+    } else if (typeof arg2 === 'function') {
+        message = arg1;
+        sendResponse = arg2;
+    } else {
+        message = arg1;
+        sender = arg2;
+        sendResponse = arg3;
+    }
+
     (async () => {
         try {
-            await removeDuplicateTabsCommand();
-            sendResponse({
-                status: 'done',
-            });
+            const rawWinId = message?.windowId ?? sender?.tab?.windowId ?? null;
+            const targetWindowId = typeof rawWinId === 'number' ? rawWinId : null;
+            const result = await removeDuplicateTabsCommand(targetWindowId);
+            if (sendResponse) {
+                sendResponse({
+                    status: 'done',
+                    success: true,
+                    count: result?.count ?? 0,
+                    removedIds: result?.removedIds ?? [],
+                });
+            }
         } catch (error) {
             console.error(`[onMessage] Error during removeDuplicateTabs:`, error);
-            sendResponse({
-                status: 'error',
-                error: error.message,
-            });
+            if (sendResponse) {
+                sendResponse({
+                    status: 'error',
+                    success: false,
+                    count: 0,
+                    error: error.message,
+                });
+            }
         }
     })();
 }

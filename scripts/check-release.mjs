@@ -19,7 +19,7 @@ const problems = [];
 // release would ship a contribution frame that loads nothing, with nothing to say so.
 {
     const source = readFileSync('src/config/payments.js', 'utf8');
-    const fallback = source.match(/PAYMENT_ORIGIN\s*=\s*import\.meta\.env\.\w+\s*\|\|\s*['"]([^'"]+)['"]/);
+    const fallback = source.match(/PAYMENT_ORIGIN\s*=\s*import\.meta\.env(?:\?\.)?\w+\s*\|\|\s*['"]([^'"]+)['"]/);
     if (!fallback) {
         problems.push(
             'src/config/payments.js: PAYMENT_ORIGIN is no longer an env var with a hardcoded\n' +

@@ -17,7 +17,14 @@ import {
 } from '../src/ui/services/windowsService.js';
 
 import { withBackups } from '../src/ui/stores/groupStore.js';
-import { fetchData, getValidStandardTabs, deleteAllUngroupedTabs } from '../src/ui/services/groupsService.js';
+import {
+    fetchData,
+    getValidStandardTabs,
+    deleteAllUngroupedTabs,
+    removeDuplicateTabs,
+    deleteOtherGroups,
+    getOtherGroupsInWindow,
+} from '../src/ui/services/groupsService.js';
 
 describe('Window Group Isolation', () => {
     beforeEach(() => {
@@ -363,6 +370,131 @@ describe('Window Group Isolation', () => {
             await deleteAllUngroupedTabs(100);
             assert.deepEqual(removedIds, [1, 2]);
             assert.equal(removedIds.includes(3), false);
+        });
+    });
+
+    describe('removeDuplicateTabs: window-scoped removal', () => {
+        it('closes only duplicate tabs belonging to targetWindowId without touching duplicates in other windows', async () => {
+            const tabsInChrome = [
+                // Window 100: duplicates of https://dup.com and unique https://a.com
+                { id: 10, windowId: 100, groupId: -1, url: 'https://dup.com', active: false },
+                { id: 11, windowId: 100, groupId: -1, url: 'https://dup.com', active: true },
+                { id: 12, windowId: 100, groupId: -1, url: 'https://a.com', active: false },
+                // Window 200: also has duplicates of https://dup.com and https://b.com
+                { id: 20, windowId: 200, groupId: -1, url: 'https://dup.com', active: false },
+                { id: 21, windowId: 200, groupId: -1, url: 'https://dup.com', active: false },
+                { id: 22, windowId: 200, groupId: -1, url: 'https://b.com', active: false },
+            ];
+
+            const removedIds = [];
+            global.chrome = {
+                storage: {
+                    session: {
+                        get: async () => ({ groupInfoMap: {} }),
+                    },
+                },
+                tabs: {
+                    query: async (opts) => {
+                        return tabsInChrome.filter((t) => {
+                            if (opts.windowId !== undefined && t.windowId !== opts.windowId) return false;
+                            return true;
+                        });
+                    },
+                    remove: async (ids) => {
+                        removedIds.push(...ids);
+                    },
+                },
+            };
+
+            const result = await removeDuplicateTabs(100);
+            // Window 100 has 2 tabs with https://dup.com (ids: 10, 11).
+            // Tab 11 is active, so tab 10 is the duplicate to close.
+            assert.equal(result.success, true);
+            assert.equal(result.count, 1);
+            assert.deepEqual(removedIds, [10]);
+
+            // Window 200 tabs (20, 21, 22) must be completely untouched!
+            assert.equal(removedIds.includes(20), false);
+            assert.equal(removedIds.includes(21), false);
+            assert.equal(removedIds.includes(22), false);
+        });
+    });
+
+    describe('deleteOtherGroups: window-scoped removal', () => {
+        it('identifies and closes only other groups belonging to targetWindowId without touching other windows', async () => {
+            const groupsInChrome = [
+                // Window 100 groups: Group 1 (has active tab), Group 2 (inactive)
+                { id: 1, windowId: 100, title: 'Work 1' },
+                { id: 2, windowId: 100, title: 'Work 2' },
+                // Window 200 groups: Group 3, Group 4
+                { id: 3, windowId: 200, title: 'Personal 1' },
+                { id: 4, windowId: 200, title: 'Personal 2' },
+            ];
+
+            const tabsInChrome = [
+                // Window 100 tabs
+                { id: 101, windowId: 100, groupId: 1, active: true },
+                { id: 102, windowId: 100, groupId: 1, active: false },
+                { id: 103, windowId: 100, groupId: 2, active: false },
+                { id: 104, windowId: 100, groupId: 2, active: false },
+                // Window 200 tabs
+                { id: 201, windowId: 200, groupId: 3, active: true },
+                { id: 202, windowId: 200, groupId: 4, active: false },
+            ];
+
+            const removedTabIds = [];
+            global.chrome = {
+                tabGroups: {
+                    TAB_GROUP_ID_NONE: -1,
+                    query: async (opts) => {
+                        return groupsInChrome.filter((g) => {
+                            if (opts.windowId !== undefined && g.windowId !== opts.windowId) return false;
+                            return true;
+                        });
+                    },
+                },
+                tabs: {
+                    query: async (opts) => {
+                        return tabsInChrome.filter((t) => {
+                            if (opts.windowId !== undefined && t.windowId !== opts.windowId) return false;
+                            if (opts.groupId !== undefined && t.groupId !== opts.groupId) return false;
+                            if (opts.active !== undefined && t.active !== opts.active) return false;
+                            return true;
+                        });
+                    },
+                    remove: async (ids) => {
+                        removedTabIds.push(...ids);
+                    },
+                },
+            };
+
+            // Test getOtherGroupsInWindow for Window 100
+            const preview = await getOtherGroupsInWindow(100);
+            assert.equal(preview.targetWindowId, 100);
+            assert.equal(preview.keepId, 1);
+            assert.equal(preview.count, 1);
+            assert.deepEqual(
+                preview.otherGroups.map((g) => g.id),
+                [2],
+            );
+
+            // Execute deleteOtherGroups for Window 100
+            const result = await deleteOtherGroups(100);
+            assert.equal(result.success, true);
+            assert.equal(result.count, 1);
+            assert.deepEqual(result.closedGroups, [2]);
+            assert.equal(result.closedTabs, 2);
+
+            // Verify only tabs 103 and 104 (belonging to Group 2 in Window 100) were removed
+            assert.deepEqual(removedTabIds, [103, 104]);
+
+            // Window 100 active group tabs (101, 102) must NOT be removed
+            assert.equal(removedTabIds.includes(101), false);
+            assert.equal(removedTabIds.includes(102), false);
+
+            // Window 200 tabs (201, 202) must NOT be removed
+            assert.equal(removedTabIds.includes(201), false);
+            assert.equal(removedTabIds.includes(202), false);
         });
     });
 });

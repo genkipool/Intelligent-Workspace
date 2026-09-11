@@ -7,10 +7,11 @@ import { linkedGroupIds } from '../services/utils.js';
 import {
     getCurrentWindowId,
     setCurrentWindowId,
-    isCurrentWindow,
+    isCurrentOrSplitWindow,
     currentWindowIdStore,
     openWindowIdsStore,
     syncOpenWindows,
+    syncAssociatedSplitWindow,
 } from '../services/windowsService.js';
 
 /**
@@ -56,50 +57,50 @@ function registerChromeListeners() {
 
     if (chrome.tabGroups) {
         chrome.tabGroups.onCreated?.addListener((group) => {
-            if (!isCurrentWindow(group?.windowId)) return;
+            if (!isCurrentOrSplitWindow(group?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabGroups.onUpdated?.addListener((group) => {
-            if (!isCurrentWindow(group?.windowId)) return;
+            if (!isCurrentOrSplitWindow(group?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabGroups.onRemoved?.addListener((group) => {
-            if (!isCurrentWindow(group?.windowId)) return;
+            if (!isCurrentOrSplitWindow(group?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabGroups.onMoved?.addListener((group) => {
-            if (!isCurrentWindow(group?.windowId)) return;
+            if (!isCurrentOrSplitWindow(group?.windowId)) return;
             scheduleRefetch();
         });
     }
 
     if (chrome.tabs) {
         chrome.tabs.onCreated?.addListener((tab) => {
-            if (!isCurrentWindow(tab?.windowId)) return;
+            if (!isCurrentOrSplitWindow(tab?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onRemoved?.addListener((tabId, removeInfo) => {
-            if (!isCurrentWindow(removeInfo?.windowId)) return;
+            if (!isCurrentOrSplitWindow(removeInfo?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onActivated?.addListener((activeInfo) => {
-            if (!isCurrentWindow(activeInfo?.windowId)) return;
+            if (!isCurrentOrSplitWindow(activeInfo?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onMoved?.addListener((tabId, moveInfo) => {
-            if (!isCurrentWindow(moveInfo?.windowId)) return;
+            if (!isCurrentOrSplitWindow(moveInfo?.windowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onAttached?.addListener((tabId, attachInfo) => {
-            if (!isCurrentWindow(attachInfo?.newWindowId)) return;
+            if (!isCurrentOrSplitWindow(attachInfo?.newWindowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onDetached?.addListener((tabId, detachInfo) => {
-            if (!isCurrentWindow(detachInfo?.oldWindowId)) return;
+            if (!isCurrentOrSplitWindow(detachInfo?.oldWindowId)) return;
             scheduleRefetch();
         });
         chrome.tabs.onUpdated?.addListener((tabId, changeInfo, tab) => {
-            if (!isCurrentWindow(tab?.windowId)) return;
+            if (!isCurrentOrSplitWindow(tab?.windowId)) return;
             if (
                 changeInfo.groupId !== undefined ||
                 changeInfo.url ||
@@ -119,7 +120,19 @@ function registerChromeListeners() {
         });
         chrome.windows.onRemoved?.addListener(async () => {
             await syncOpenWindows();
+            await syncAssociatedSplitWindow();
             scheduleRefetch();
+        });
+    }
+
+    if (chrome.storage?.onChanged) {
+        chrome.storage.onChanged.addListener(async (changes, areaName) => {
+            if (areaName === 'session' && changes.splitScreenState) {
+                await syncAssociatedSplitWindow();
+                const { loadSplitScreenState } = await import('../services/settingsService.js');
+                await loadSplitScreenState();
+                scheduleRefetch();
+            }
         });
     }
 }
@@ -248,14 +261,15 @@ export const groupsStore = derived(
 export const groupStore = {
     subscribe: groupsStore.subscribe,
     init: async (windowId = null) => {
-        if (windowId !== null && windowId !== undefined) {
-            setCurrentWindowId(windowId);
+        let winId = windowId;
+        if (winId !== null && winId !== undefined) {
+            setCurrentWindowId(winId);
         } else {
-            await getCurrentWindowId();
+            winId = await getCurrentWindowId();
         }
-        await syncOpenWindows();
+        await Promise.all([syncOpenWindows(), syncAssociatedSplitWindow(winId)]);
         registerChromeListeners();
-        await groupStore.fetchGroups(windowId);
+        await groupStore.fetchGroups(winId);
     },
     /**
      * Puts a tab just restored from a backup into its group, without waiting for the
@@ -277,6 +291,7 @@ export const groupStore = {
     fetchGroups: async (windowId = null) => {
         try {
             const targetWinId = windowId ?? (await getCurrentWindowId());
+            await syncAssociatedSplitWindow(targetWinId);
             const result = await fetchData(targetWinId);
             if (Array.isArray(result)) {
                 // Deleting a group leaves its notes and screenshots without a home, and

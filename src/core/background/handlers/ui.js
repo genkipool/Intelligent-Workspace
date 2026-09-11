@@ -205,19 +205,33 @@ function handleToggleSplitScreen(message, sender, sendResponse) {
                 }
             }
 
-            const isSingleTabAlreadySplit =
-                tabDetailsList.length === 1 && state.isActive && state.splitTabs[tabDetailsList[0].id];
+            const targetTab = tabDetailsList[0];
+            let originalTabId = null;
+            let splitTabId = null;
+            if (state.isActive && state.splitTabs && targetTab) {
+                if (state.splitTabs[targetTab.id]) {
+                    originalTabId = targetTab.id;
+                    splitTabId = state.splitTabs[targetTab.id];
+                } else {
+                    const foundKey = Object.keys(state.splitTabs).find((key) => state.splitTabs[key] === targetTab.id);
+                    if (foundKey) {
+                        originalTabId = parseInt(foundKey, 10);
+                        splitTabId = targetTab.id;
+                    }
+                }
+            }
+
+            const isSingleTabAlreadySplit = tabDetailsList.length === 1 && originalTabId !== null;
             if (isSingleTabAlreadySplit) {
-                const targetTabId = tabDetailsList[0].id;
                 const tabsInSplitGroup = await chrome.tabs.query({
                     groupId: state.splitGroupId,
                 });
-                const tabToCloseId = state.splitTabs[targetTabId];
+                const tabToCloseId = splitTabId;
                 if (tabsInSplitGroup.length === 1 && tabsInSplitGroup[0].id === tabToCloseId) {
                     await handleSplitScreenClosure(state);
                 } else {
                     await chrome.tabs.remove(tabToCloseId);
-                    delete state.splitTabs[targetTabId];
+                    delete state.splitTabs[originalTabId];
                     await chrome.storage.session.set({
                         [SPLIT_SCREEN_STATE_KEY]: state,
                     });

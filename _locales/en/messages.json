@@ -9049,7 +9049,63 @@
     "message": "Other groups closed successfully"
   },
   "confirmDeleteOtherGroups": {
-    "message": "Are you sure you want to close all groups except the selected one?"
+    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
+    "description": "Confirmation message asking user if they want to close other groups in this window and stating the group to keep.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "keepGroup": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
+  "confirmDeleteOtherGroupsSingle": {
+    "message": "Are you sure you want to close 1 group in this window except the group \"$2\"?",
+    "description": "Confirmation message asking user if they want to close 1 group in this window and stating the group to keep.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "1"
+      },
+      "keepGroup": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
+  "confirmDeleteOtherGroupsMultiple": {
+    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
+    "description": "Confirmation message asking user if they want to close multiple groups in this window and stating the group to keep.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "keepGroup": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
+  "confirmDeleteAllGroupsInWindow": {
+    "message": "Are you sure you want to close $1 groups in this window?",
+    "description": "Confirmation message asking user if they want to close all groups in this window when there is no active group.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmDeleteAllGroupsInWindowSingle": {
+    "message": "Are you sure you want to close 1 group in this window?",
+    "description": "Confirmation message asking user if they want to close 1 group in this window when there is no active group."
+  },
+  "noOtherGroupsToClose": {
+    "message": "No other groups to close in this window"
   },
   "closeAllButThisGroup": {
     "message": "Close all but this group"
