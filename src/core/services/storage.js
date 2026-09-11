@@ -7,12 +7,21 @@
 
 const StorageService = {
     /**
-     * Gets the active storage area for themes and rules based on user settings.
+     * Gets the active storage area for themes based on user settings.
      * @returns {Promise<chrome.storage.StorageArea>}
      */
     async getThemeStorageArea() {
         const { themeStorageArea = 'sync' } = await chrome.storage.local.get('themeStorageArea');
-        return chrome.storage[themeStorageArea];
+        return chrome.storage[themeStorageArea] || chrome.storage.sync;
+    },
+
+    /**
+     * Gets the active storage area for rules based on user settings.
+     * @returns {Promise<chrome.storage.StorageArea>}
+     */
+    async getRuleStorageArea() {
+        const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+        return chrome.storage[ruleStorageArea] || chrome.storage.sync;
     },
 
     /**
@@ -38,7 +47,7 @@ const StorageService = {
      * @returns {Promise<Array>} Array of custom rules
      */
     async getCustomRules() {
-        const storage = await this.getThemeStorageArea();
+        const storage = await this.getRuleStorageArea();
         const data = await storage.get('customRules');
         return data.customRules || [];
     },
@@ -49,7 +58,7 @@ const StorageService = {
      * @returns {Promise<void>}
      */
     async saveCustomRules(rules) {
-        const storage = await this.getThemeStorageArea();
+        const storage = await this.getRuleStorageArea();
         return await storage.set({ customRules: rules });
     },
 
@@ -112,4 +121,7 @@ const StorageService = {
 // Make it available globally in Service Worker context
 if (typeof self !== 'undefined') {
     self.StorageService = StorageService;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.StorageService = StorageService;
 }

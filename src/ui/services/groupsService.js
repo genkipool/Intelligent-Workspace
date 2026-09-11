@@ -2167,8 +2167,10 @@ export function initGroupsEvents() {
         // A reading starting, pausing or ending changes nothing Chrome reports about
         // the tab, so none of the listeners above would hear it. The worker's record
         // of which tabs are reading is the only thing that moves.
-        chrome.storage.session.onChanged?.addListener((changes) => {
-            if (changes.readAloudTabs) updateMuteButtonState();
+        chrome.storage?.onChanged?.addListener((changes, areaName) => {
+            if (areaName === 'session' && changes.readAloudTabs) {
+                updateMuteButtonState();
+            }
         });
     }
 

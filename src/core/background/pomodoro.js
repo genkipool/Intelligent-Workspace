@@ -104,8 +104,10 @@ async function ensureOffscreenDocument(justification = 'Play audio in the backgr
 /** Is the offscreen document playing music right now? */
 async function isMusicPlayingOffscreen() {
     try {
-        const answer = await chrome.runtime.sendMessage({ action: 'musicIsBusy' });
-        return Boolean(answer?.busy);
+        const hasDoc = await chrome.offscreen?.hasDocument?.().catch(() => false);
+        if (hasDoc === false) return false;
+        const res = await chrome.runtime.sendMessage({ action: 'musicIsBusy' });
+        return Boolean(res?.busy);
     } catch {
         return false;
     }
@@ -119,8 +121,13 @@ async function playPomodoroSoundBackground(soundType) {
         // document, in which case closing it would cut the track off.
         setTimeout(async () => {
             try {
-                if (await isMusicPlayingOffscreen()) return;
-                await chrome.offscreen.closeDocument();
+                const isPlaying = await isMusicPlayingOffscreen();
+                if (!isPlaying) {
+                    const hasDoc = await chrome.offscreen?.hasDocument?.().catch(() => false);
+                    if (hasDoc !== false) {
+                        await chrome.offscreen.closeDocument();
+                    }
+                }
             } catch {}
         }, 3500);
     } catch (e) {

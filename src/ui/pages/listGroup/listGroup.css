@@ -1444,10 +1444,25 @@ body.show-domain-headers .subgroup-tab-list {
     color: var(--text-color);
 }
 
-.modal-btn-save:hover {
+.modal-btn-save:hover:not(:disabled) {
     background-color: var(--bg-color);
     color: var(--text-on-color);
     box-shadow: 0 0 5px 1px var(--interactive-color);
+}
+
+.modal-btn-save:focus-visible:not(:disabled) {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+}
+
+.modal-btn-save:disabled,
+.modal-btn-save:disabled:hover {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--border-color);
+    color: var(--text-color);
+    box-shadow: none;
+    filter: none;
 }
 
 .get-api-key-link-container {
@@ -2430,7 +2445,7 @@ body.show-domain-headers .subgroup-tab-list {
 
 .modal-content.add-to-rule-modal {
     background-color: var(--bg-panel-color);
-    padding: 16px;
+    padding: 0;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     width: 90%;
@@ -2439,6 +2454,14 @@ body.show-domain-headers .subgroup-tab-list {
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.modal-content.add-to-rule-modal .modal-body {
+    display: flex;
+    flex-direction: column;
+    padding-top: 12px;
+    overflow-y: auto;
 }
 
 /* Rules list container (the most important part) */
@@ -2484,52 +2507,22 @@ body.show-domain-headers .subgroup-tab-list {
         transform 0.1s ease;
 }
 
-.rule-selection-btn:hover,
+.rule-selection-btn:hover {
+    background-color: var(--bg-color);
+    border-color: var(--interactive-color);
+    color: var(--text-on-color);
+}
+
 .rule-selection-btn:focus-visible {
     background-color: var(--bg-color);
     border-color: var(--interactive-color);
     color: var(--text-on-color);
-    outline: none;
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
 }
 
 .rule-selection-btn.hidden {
     display: none;
-}
-
-/* The rest of the modal styles (header, search, etc.) are kept the same */
-.add-to-rule-modal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-    padding: 0px 0px 8px 0px;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.add-to-rule-modal h2 {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-on-color);
-}
-
-.add-to-rule-modal .close-modal-btn {
-    background: none;
-    border: none;
-    font-size: 1.8rem;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--text-color);
-    padding: 0 4px;
-    opacity: 0.7;
-    transition:
-        color 0.2s,
-        opacity 0.2s;
-}
-
-.add-to-rule-modal .close-modal-btn:hover {
-    color: var(--error-color);
-    opacity: 1;
 }
 
 .add-to-rule-modal .search-container-modal {
@@ -2606,6 +2599,17 @@ body.show-domain-headers .subgroup-tab-list {
     font-weight: bold;
     box-shadow: 0 0 5px 1px var(--interactive-color);
     transform: translateY(0);
+}
+
+.add-to-rule-modal .modal-actions {
+    margin-top: 14px;
+    padding: 0 16px 16px 16px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.add-to-rule-modal .modal-actions .modal-btn-save {
+    width: 100%;
 }
 
 .modal-content {
@@ -5633,13 +5637,7 @@ body.bookmarks-view-active #view-toggle-panel {
     padding: 6px;
     border-radius: 4px;
     cursor: pointer;
-    list-style: none;
     border: 1px solid transparent;
-    /* Hide the default <details> marker */
-}
-
-.bookmark-folder-summary::-webkit-details-marker {
-    display: none;
 }
 
 .bookmark-folder-summary:hover,
@@ -5657,12 +5655,12 @@ body.bookmarks-view-active #view-toggle-panel {
     /* or inline-block if necessary */
 }
 
-/* When <details> is open, we invert visibility. */
-.bookmark-folder-item[open] > .bookmark-folder-summary .folder-icon-open {
+/* When folder is expanded, we invert icon visibility. */
+.bookmark-folder-item.open > .bookmark-folder-summary .folder-icon-open {
     display: block;
 }
 
-.bookmark-folder-item[open] > .bookmark-folder-summary .folder-icon-closed {
+.bookmark-folder-item.open > .bookmark-folder-summary .folder-icon-closed {
     display: none;
 }
 
@@ -5835,7 +5833,8 @@ body.bookmarks-view-active #view-toggle-panel {
     border-left: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
     background-color: var(--bg-panel-color);
-    /* A bit more prominent */
+    cursor: default;
+    pointer-events: none;
 }
 
 /* Container for the action button inside each folder */
@@ -8319,13 +8318,16 @@ body:not(.groups-view-active) .pomodoro-panel,
    against the panel edge. Padding is added here rather than on each element so the
    modal keeps a single rhythm, and everything stays on the theme variables. */
 .modal-content.add-to-bookmark-modal .modal-header,
+.modal-content.add-to-rule-modal .modal-header,
 .modal-content.add-to-bookmark-modal .modal-body,
+.modal-content.add-to-rule-modal .modal-body,
 .add-to-bookmark-modal .modal-actions {
     padding-left: 16px;
     padding-right: 16px;
 }
 
-.modal-content.add-to-bookmark-modal .modal-header h2 {
+.modal-content.add-to-bookmark-modal .modal-header h2,
+.modal-content.add-to-rule-modal .modal-header h2 {
     padding: 2px 0;
 }
 
@@ -8336,6 +8338,12 @@ body:not(.groups-view-active) .pomodoro-panel,
 
 .add-to-bookmark-modal .folder-name {
     padding: 0 6px;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+}
+
+.add-to-bookmark-modal .bookmark-folder-summary:hover .folder-name {
+    opacity: 1;
 }
 
 .add-to-bookmark-modal .bookmark-folder-summary {

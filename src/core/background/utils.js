@@ -27,6 +27,78 @@ function foldForSearch(str) {
     return deaccent(str).toLowerCase();
 }
 
+function matchesRule(tabUrl, ruleUrl) {
+    if (!tabUrl || typeof tabUrl !== 'string' || !ruleUrl || typeof ruleUrl !== 'string') {
+        return false;
+    }
+
+    const trimmedTab = tabUrl.trim();
+    const trimmedRule = ruleUrl.trim();
+    if (!trimmedTab || !trimmedRule) {
+        return false;
+    }
+
+    const hasSchemeRegex = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
+    const fullTab = hasSchemeRegex.test(trimmedTab) ? trimmedTab : 'https://' + trimmedTab;
+    const fullRule = hasSchemeRegex.test(trimmedRule) ? trimmedRule : 'https://' + trimmedRule;
+
+    let parsedTab, parsedRule;
+    try {
+        parsedTab = new URL(fullTab);
+        parsedRule = new URL(fullRule);
+    } catch {
+        return false;
+    }
+
+    const isTabHttp = parsedTab.protocol === 'http:' || parsedTab.protocol === 'https:';
+    const isRuleHttp = parsedRule.protocol === 'http:' || parsedRule.protocol === 'https:';
+
+    if (isTabHttp && isRuleHttp) {
+        // Both are standard web URLs: protocol differences ignored
+    } else if (parsedTab.protocol !== parsedRule.protocol) {
+        return false;
+    }
+
+    const tabHost = parsedTab.hostname.toLowerCase();
+    const ruleHost = parsedRule.hostname.toLowerCase();
+
+    const cleanTabHost = tabHost.startsWith('www.') ? tabHost.slice(4) : tabHost;
+    const cleanRuleHost = ruleHost.startsWith('www.') ? ruleHost.slice(4) : ruleHost;
+
+    if (cleanTabHost !== cleanRuleHost) {
+        return false;
+    }
+
+    if (parsedRule.port && parsedTab.port !== parsedRule.port) {
+        return false;
+    }
+
+    const normalizedRulePath = (parsedRule.pathname || '').replace(/\/+$/, '');
+    if (normalizedRulePath && normalizedRulePath !== '/') {
+        const tabPath = (parsedTab.pathname || '').replace(/\/+$/, '');
+        const rPathLower = normalizedRulePath.toLowerCase();
+        const tPathLower = tabPath.toLowerCase();
+        const tabFullPathLower = (parsedTab.pathname || '').toLowerCase();
+
+        const exactMatch = tPathLower === rPathLower;
+        const subPathMatch = tabFullPathLower.startsWith(rPathLower + '/');
+
+        if (!exactMatch && !subPathMatch) {
+            return false;
+        }
+    }
+
+    if (parsedRule.search && parsedTab.search !== parsedRule.search) {
+        return false;
+    }
+
+    if (parsedRule.hash && parsedTab.hash !== parsedRule.hash) {
+        return false;
+    }
+
+    return true;
+}
+
 function logMessage(...args) {
     if (isModeDebug) {
         console.log(...args);
@@ -446,7 +518,7 @@ const setupContextMenus = async () => {
                     for (const [index, url] of rule.urls.entries()) {
                         const cleanUrl = cleanUrlForDisplay(url);
 
-                        const tabCount = tabsInThisGroup.filter((t) => t.url && t.url.includes(url)).length;
+                        const tabCount = tabsInThisGroup.filter((t) => t.url && matchesRule(t.url, url)).length;
 
                         const displayUrl = cleanUrl.length > 50 ? cleanUrl.substring(0, 50) + '...' : cleanUrl;
 
@@ -1381,18 +1453,333 @@ function loadUserDefinedPrefixes() {
     logMessage('[loadUserDefinedPrefixes] Prefixes loaded and rebuilt successfully.');
 }
 
+/**
+ * Second-level compound TLDs and registry suffixes across international ccTLDs.
+ */
 const COMPOUND_TLDS_SET = new Set([
+    // United Kingdom
     'co.uk',
-    'com.br',
-    'co.jp',
-    'co.za',
-    'gov.ar',
-    'edu.es',
-    'ac.uk',
-    'net.au',
     'org.uk',
+    'me.uk',
+    'ac.uk',
+    'gov.uk',
+    'net.uk',
+    'sch.uk',
+    'ltd.uk',
+    'plc.uk',
+    // Australia & New Zealand
     'com.au',
+    'net.au',
+    'org.au',
+    'edu.au',
+    'gov.au',
+    'co.nz',
+    'net.nz',
+    'org.nz',
+    'govt.nz',
+    'ac.nz',
+    'school.nz',
+    // Japan & Korea
+    'co.jp',
+    'or.jp',
+    'ne.jp',
+    'ac.jp',
+    'go.jp',
+    'ed.jp',
+    'lg.jp',
+    'co.kr',
+    'or.kr',
+    'ne.kr',
+    're.kr',
+    'go.kr',
+    'ac.kr',
+    // South Asia, Africa & Middle East
+    'co.in',
+    'net.in',
+    'org.in',
+    'gen.in',
+    'firm.in',
+    'ind.in',
+    'edu.in',
+    'gov.in',
+    'res.in',
+    'ac.in',
+    'co.za',
+    'org.za',
+    'net.za',
+    'gov.za',
+    'edu.za',
+    'web.za',
+    'co.il',
+    'org.il',
+    'net.il',
+    'k12.il',
+    'gov.il',
+    'muni.il',
+    'ac.il',
+    // Latin America
+    'com.ar',
+    'gob.ar',
+    'gov.ar',
+    'org.ar',
+    'net.ar',
+    'edu.ar',
+    'int.ar',
+    'mil.ar',
+    'com.mx',
+    'gob.mx',
+    'org.mx',
+    'edu.mx',
+    'net.mx',
+    'com.br',
+    'net.br',
+    'org.br',
+    'gov.br',
+    'edu.br',
+    'art.br',
+    'eco.br',
+    'emp.br',
+    'esp.br',
+    'etc.br',
+    'far.br',
+    'imb.br',
+    'ind.br',
+    'inf.br',
+    'jus.br',
+    'leg.br',
+    'med.br',
+    'mil.br',
+    'mp.br',
+    'mus.br',
+    'not.br',
+    'ntr.br',
+    'odo.br',
+    'ppg.br',
+    'pro.br',
+    'psc.br',
+    'psi.br',
+    'rec.br',
+    'srv.br',
+    'tmp.br',
+    'tur.br',
+    'tv.br',
+    'vet.br',
+    'zlg.br',
+    'com.co',
+    'org.co',
+    'edu.co',
+    'gov.co',
+    'net.co',
+    'com.pe',
+    'org.pe',
+    'edu.pe',
+    'gob.pe',
+    'net.pe',
+    'com.uy',
+    'org.uy',
+    'net.uy',
+    'edu.uy',
+    'gub.uy',
+    'com.ve',
+    've.com',
+    'net.ve',
+    'org.ve',
+    'edu.ve',
+    'gob.ve',
+    'com.cl',
+    'gob.cl',
+    'com.ec',
+    'org.ec',
+    'net.ec',
+    'edu.ec',
+    'gob.ec',
+    'com.py',
+    'org.py',
+    'net.py',
+    'edu.py',
+    'gov.py',
+    'com.bo',
+    'org.bo',
+    'net.bo',
+    'edu.bo',
+    'gob.bo',
+    'com.do',
+    'org.do',
+    'net.do',
+    'edu.do',
+    'gob.do',
+    'com.gt',
+    'org.gt',
+    'net.gt',
+    'edu.gt',
+    'gob.gt',
+    'com.pa',
+    'org.pa',
+    'net.pa',
+    'edu.pa',
+    'gob.pa',
+    'com.sv',
+    'org.sv',
+    'net.sv',
+    'edu.sv',
+    'gob.sv',
+    'com.cr',
+    'fi.cr',
+    'cr.cr',
+    'ed.cr',
+    'sa.cr',
+    'com.ni',
+    'org.ni',
+    'net.ni',
+    'edu.ni',
+    'gob.ni',
+    'com.hn',
+    'org.hn',
+    'net.hn',
+    'edu.hn',
+    'gob.hn',
+    'com.pr',
+    'org.pr',
+    'net.pr',
+    'edu.pr',
+    'gov.pr',
+    // Europe & Mediterranean
+    'com.es',
+    'org.es',
+    'gob.es',
+    'nom.es',
+    'edu.es',
+    'com.pt',
+    'org.pt',
+    'gov.pt',
+    'edu.pt',
+    'com.gr',
+    'org.gr',
+    'net.gr',
+    'edu.gr',
+    'gov.gr',
+    'com.ua',
+    'org.ua',
+    'net.ua',
+    'edu.ua',
+    'gov.ua',
+    'in.ua',
+    'com.ru',
+    'net.ru',
+    'org.ru',
+    'pp.ru',
+    'com.pl',
+    'net.pl',
+    'org.pl',
+    'com.tr',
+    'org.tr',
+    'net.tr',
+    'edu.tr',
+    'gov.tr',
+    'av.tr',
+    'bel.tr',
+    'dr.tr',
+    'gen.tr',
+    'info.tr',
+    'k12.tr',
+    'name.tr',
+    'pol.tr',
+    'tv.tr',
+    'web.tr',
+    // Asia & Others
+    'com.cn',
+    'net.cn',
+    'org.cn',
+    'gov.cn',
+    'edu.cn',
+    'com.hk',
+    'org.hk',
+    'net.hk',
+    'edu.hk',
+    'gov.hk',
+    'idv.hk',
+    'com.tw',
+    'org.tw',
+    'net.tw',
+    'edu.tw',
+    'gov.tw',
+    'idv.tw',
+    'club.tw',
+    'ebiz.tw',
+    'game.tw',
+    'com.sg',
+    'org.sg',
+    'net.sg',
+    'edu.sg',
+    'gov.sg',
+    'per.sg',
+    'com.my',
+    'org.my',
+    'net.my',
+    'edu.my',
+    'gov.my',
+    'mil.my',
+    'name.my',
+    'com.ph',
+    'org.ph',
+    'net.ph',
+    'edu.ph',
+    'gov.ph',
+    'ngo.ph',
+    'i.ph',
+    'com.vn',
+    'net.vn',
+    'org.vn',
+    'edu.vn',
+    'gov.vn',
+    'com.pk',
+    'org.pk',
+    'net.pk',
+    'edu.pk',
+    'gov.pk',
+    'com.ng',
+    'org.ng',
+    'net.ng',
+    'edu.ng',
+    'gov.ng',
+    'com.eg',
+    'org.eg',
+    'net.eg',
+    'edu.eg',
+    'gov.eg',
+    'com.sa',
+    'org.sa',
+    'net.sa',
+    'edu.sa',
+    'gov.sa',
+    'co.id',
+    'web.id',
+    'or.id',
+    'go.id',
+    'ac.id',
+    'my.id',
+    'co.th',
+    'ac.th',
+    'go.th',
+    'or.th',
+    'net.th',
+    'co.ke',
+    'or.ke',
+    'go.ke',
+    'ac.ke',
+    'ne.ke',
 ]);
+
+const GENERIC_SLD_PREFIXES = /^(?:com|co|org|net|edu|gov|gob|mil|nom|ac|or|ne|go|sch|gub|jus|leg)$/i;
+
+function isCompoundSuffix(parts) {
+    if (!parts || parts.length < 2) return false;
+    const lastTwo = parts.slice(-2).join('.').toLowerCase();
+    if (COMPOUND_TLDS_SET.has(lastTwo)) return true;
+    const tld = parts[parts.length - 1].toLowerCase();
+    const sld = parts[parts.length - 2].toLowerCase();
+    return /^[a-z]{2}$/.test(tld) && GENERIC_SLD_PREFIXES.test(sld);
+}
 
 function getDomain(url, useSubdomain = false) {
     try {
@@ -1406,7 +1793,7 @@ function getDomain(url, useSubdomain = false) {
 
         // First, try to get the subdomain if the option is enabled.
         if (useSubdomain) {
-            const isCompound = parts.length > 2 && COMPOUND_TLDS_SET.has(parts.slice(-2).join('.'));
+            const isCompound = parts.length > 2 && isCompoundSuffix(parts);
             const minPartsForSubdomain = isCompound ? 4 : 3;
 
             if (parts.length >= minPartsForSubdomain) {
@@ -1422,8 +1809,7 @@ function getDomain(url, useSubdomain = false) {
 
         // Main domain logic (used if useSubdomain is false OR if no subdomain was found).
         if (parts.length > 2) {
-            const possibleCompoundTLD = parts.slice(-2).join('.');
-            if (COMPOUND_TLDS_SET.has(possibleCompoundTLD)) {
+            if (isCompoundSuffix(parts)) {
                 return capitalizeFirstLetter(parts.slice(-3, -2)[0]) + '\u200B';
             }
         }
@@ -1523,7 +1909,7 @@ async function closeTabsForUrlCommand(urlToClose, originatingRuleName, groupId) 
     const tabsInGroup = await chrome.tabs.query({ groupId: groupId });
 
     // 2. Filter those tabs to find the ones that match the URL to close.
-    const tabsToClose = tabsInGroup.filter((tab) => tab.url && tab.url.includes(urlToClose));
+    const tabsToClose = tabsInGroup.filter((tab) => tab.url && matchesRule(tab.url, urlToClose));
     const tabIdsToClose = tabsToClose.map((tab) => tab.id);
 
     if (tabIdsToClose.length > 0) {

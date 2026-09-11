@@ -15,11 +15,23 @@
     let showImportPanel = $state(false);
     let importError = $state('');
 
+    let cookieUidCounter = 0;
+    function withCookieUid(cookie) {
+        if (cookie._uid) return cookie;
+        return { ...cookie, _uid: ++cookieUidCounter };
+    }
+
+    function cleanCookie(cookie) {
+        const copy = { ...cookie };
+        delete copy._uid;
+        return copy;
+    }
+
     // Sync workingCookies with the cookies prop when the modal opens
     let wasPreviouslyShown = false;
     $effect(() => {
         if (show && !wasPreviouslyShown) {
-            workingCookies = cookies.map((c) => ({ ...c }));
+            workingCookies = cookies.map((c) => withCookieUid({ ...c }));
             searchQuery = '';
             showImportPanel = false;
             importError = '';
@@ -40,7 +52,7 @@
     function addCookie() {
         workingCookies = [
             ...workingCookies,
-            {
+            withCookieUid({
                 name: '',
                 value: '',
                 domain: '',
@@ -49,7 +61,7 @@
                 httpOnly: false,
                 secure: false,
                 sameSite: 'lax',
-            },
+            }),
         ];
     }
 
@@ -62,12 +74,12 @@
     }
 
     function resetCookies() {
-        workingCookies = cookies.map((c) => ({ ...c }));
+        workingCookies = cookies.map((c) => withCookieUid({ ...c }));
         searchQuery = '';
     }
 
     function handleSave() {
-        onSave(workingCookies);
+        onSave(workingCookies.map(cleanCookie));
     }
 
     /** Cookie expiry is a unix timestamp; the shared fields work in date and time. */
@@ -140,7 +152,7 @@
 
             // Merge imported over existing (keyed by name+domain+path)
             const mergedMap = new SvelteMap(workingCookies.map((c) => [c.name + c.domain + c.path, c]));
-            validated.forEach((c) => mergedMap.set(c.name + c.domain + c.path, c));
+            validated.forEach((c) => mergedMap.set(c.name + c.domain + c.path, withCookieUid(c)));
             workingCookies = Array.from(mergedMap.values());
             closeImportPanel();
         } catch (err) {
@@ -156,7 +168,7 @@
         } else {
             // Default export via callback to parent
             try {
-                const json = JSON.stringify(workingCookies, null, 2);
+                const json = JSON.stringify(workingCookies.map(cleanCookie), null, 2);
                 const blob = new Blob([json], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -219,7 +231,7 @@
                         </p>
                     {:else}
                         <div class="cookie-entries">
-                            {#each filteredCookies as cookie, i (cookie.name + cookie.domain + cookie.path)}
+                            {#each filteredCookies as cookie, i (cookie._uid ?? i)}
                                 <details class="cookie-entry-card" open>
                                     <summary>
                                         <span class="cookie-name">{cookie.name}</span>

@@ -1,8 +1,31 @@
 // offscreen.js -- runs in an offscreen document, plays Pomodoro sounds via Web Audio
 
-chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.action === 'pomodoroPlaySound') {
+let isMusicActive = false;
+
+/**
+ * Checks whether any audio or background music is actively playing in this offscreen document.
+ */
+function isMusicPlaying() {
+    if (isMusicActive) return true;
+    const audioElements = typeof document !== 'undefined' ? document.querySelectorAll('audio') : [];
+    for (const audio of audioElements) {
+        if (!audio.paused && !audio.ended && audio.currentTime > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg?.action === 'pomodoroPlaySound') {
         playSound(msg.soundType);
+    } else if (msg?.action === 'musicIsBusy') {
+        sendResponse({ busy: isMusicPlaying() });
+        return true;
+    } else if (msg?.action === 'setMusicBusy') {
+        isMusicActive = Boolean(msg.busy);
+        sendResponse({ success: true, busy: isMusicActive });
+        return true;
     }
 });
 

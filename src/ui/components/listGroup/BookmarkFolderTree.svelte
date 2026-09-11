@@ -25,6 +25,7 @@
     let currentActionIndex = $state(0);
     /** @type {import('svelte/reactivity').SvelteSet<string>} */
     let expandedFolders = new SvelteSet();
+    let hasInitializedExpanded = false;
     let newFolderParentId = $state(null);
     let newFolderName = $state('');
     let editingFolderId = $state(null);
@@ -37,7 +38,7 @@
     let filteredTree = $derived.by(() => annotateTree(folderTree, searchTerm));
 
     $effect(() => {
-        if (folderTree && folderTree.length > 0) {
+        if (folderTree && folderTree.length > 0 && !hasInitializedExpanded) {
             function collectAllFolders(nodes) {
                 for (const node of nodes) {
                     if (node.id) expandedFolders.add(node.id);
@@ -45,6 +46,7 @@
                 }
             }
             collectAllFolders(folderTree);
+            hasInitializedExpanded = true;
         }
     });
 
@@ -53,7 +55,9 @@
             const matching = new SvelteSet();
             function collectMatching(nodes) {
                 for (const node of nodes) {
-                    if (node._matched) matching.add(node.id);
+                    if (node._matched || (node.children && node.children.some((c) => c._visible))) {
+                        matching.add(node.id);
+                    }
                     if (node.children) collectMatching(node.children);
                 }
             }
@@ -93,6 +97,7 @@
     }
 
     function getExpandableFolders(nodes) {
+        if (!nodes || !Array.isArray(nodes)) return [];
         let ids = [];
         for (const n of nodes) {
             if (n.children && n.children.some((c) => c.children)) {
@@ -118,17 +123,72 @@
         currentActionIndex = (currentActionIndex + 1) % FOLDER_ACTIONS.length;
     }
 
-    function handleFolderClick(folderId, e) {
-        e?.stopPropagation();
+    function selectFolder(folderId) {
         selectedFolderId = folderId;
         toggleExpand(folderId);
         onSelectFolder(folderId);
+    }
+
+    /**
+     * Svelte action that attaches direct click/keydown listeners via addEventListener.
+     * Svelte 5 delegates onclick to the document root, which can be silently blocked
+     * by ancestor stopPropagation handlers (e.g. the modal-content div).
+     * Direct listeners fire at the element level during normal bubble phase,
+     * guaranteeing the handler always executes.
+     */
+    function folderClickAction(element, folderId) {
+        function onClick(e) {
+            if (e.target.closest('button') || e.target.closest('input')) return;
+            e.stopPropagation();
+            selectFolder(folderId);
+        }
+        function onKeydown(e) {
+            if (e.target.closest('button') || e.target.closest('input')) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                selectFolder(folderId);
+            }
+        }
+        element.addEventListener('click', onClick);
+        element.addEventListener('keydown', onKeydown);
+        return {
+            update(newId) {
+                folderId = newId;
+            },
+            destroy() {
+                element.removeEventListener('click', onClick);
+                element.removeEventListener('keydown', onKeydown);
+            },
+        };
+    }
+
+    function expandFolderAndAncestors(targetId) {
+        if (!targetId) return;
+        function findPath(nodes, id, path = []) {
+            if (!nodes || !Array.isArray(nodes)) return null;
+            for (const n of nodes) {
+                if (n.id === id) return [...path, n.id];
+                if (n.children) {
+                    const sub = findPath(n.children, id, [...path, n.id]);
+                    if (sub) return sub;
+                }
+            }
+            return null;
+        }
+        const path = findPath(folderTree, targetId);
+        if (path) {
+            path.forEach((id) => expandedFolders.add(id));
+        } else {
+            expandedFolders.add(targetId);
+        }
     }
 
     function startCreateFolder(parentId) {
         newFolderParentId = parentId;
         newFolderName = '';
         expandedFolders.add(parentId);
+        expandFolderAndAncestors(parentId);
     }
 
     function cancelCreateFolder() {
@@ -136,15 +196,36 @@
         newFolderName = '';
     }
 
+    let isCreatingFolder = false;
     async function handleNewFolderKeydown(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
-            if (newFolderName.trim() && newFolderParentId) {
-                await onCreateFolder(newFolderParentId, newFolderName.trim());
-                newFolderParentId = null;
-                newFolderName = '';
+            e.stopPropagation();
+            if (isCreatingFolder) return;
+            const parentId = newFolderParentId;
+            const trimmedName = newFolderName.trim();
+            if (trimmedName && parentId) {
+                isCreatingFolder = true;
+                expandedFolders.add(parentId);
+                expandFolderAndAncestors(parentId);
+                try {
+                    const createdFolder = await onCreateFolder(parentId, trimmedName);
+                    expandedFolders.add(parentId);
+                    expandFolderAndAncestors(parentId);
+                    if (createdFolder?.id) {
+                        selectedFolderId = createdFolder.id;
+                        expandedFolders.add(createdFolder.id);
+                        expandFolderAndAncestors(createdFolder.id);
+                        onSelectFolder(createdFolder.id);
+                    }
+                    newFolderParentId = null;
+                    newFolderName = '';
+                } finally {
+                    isCreatingFolder = false;
+                }
             }
         } else if (e.key === 'Escape') {
+            e.stopPropagation();
             cancelCreateFolder();
         }
     }
@@ -154,21 +235,35 @@
         editFolderNameInput = node.title || '';
     }
 
+    let isRenaming = false;
     async function confirmEditFolder() {
-        if (!editingFolderId) return;
+        if (!editingFolderId || isRenaming) return;
+        const targetId = editingFolderId;
         const trimmed = editFolderNameInput.trim();
-        if (trimmed) {
-            await onRenameFolder(editingFolderId, trimmed);
-        }
         editingFolderId = null;
+        editFolderNameInput = '';
+        const currentNode = findNodeById(folderTree, targetId);
+        if (trimmed && (!currentNode || currentNode.title !== trimmed)) {
+            isRenaming = true;
+            try {
+                await onRenameFolder(targetId, trimmed);
+            } finally {
+                isRenaming = false;
+            }
+        }
     }
 
     function handleEditKeydown(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
+            e.stopPropagation();
             confirmEditFolder();
         } else if (e.key === 'Escape') {
+            e.stopPropagation();
             editingFolderId = null;
+            editFolderNameInput = '';
+        } else if (e.key === ' ') {
+            e.stopPropagation();
         }
     }
 
@@ -183,6 +278,22 @@
         } else if (currentAction.name === 'edit') {
             startEditFolder(node);
         } else if (currentAction.name === 'delete') {
+            function removeSubtreeIds(n) {
+                if (n.id) expandedFolders.delete(n.id);
+                if (n.children) n.children.forEach(removeSubtreeIds);
+            }
+            function isIdInSubtree(n, targetId) {
+                if (!targetId || !n) return false;
+                if (n.id === targetId) return true;
+                if (n.children) return n.children.some((c) => isIdInSubtree(c, targetId));
+                return false;
+            }
+            removeSubtreeIds(node);
+            if (isIdInSubtree(node, newFolderParentId)) cancelCreateFolder();
+            if (isIdInSubtree(node, editingFolderId)) {
+                editingFolderId = null;
+                editFolderNameInput = '';
+            }
             onDeleteFolder(node);
         }
     }
@@ -196,6 +307,7 @@
     }
 
     function findNodeById(nodes, id) {
+        if (!id || !nodes || !Array.isArray(nodes)) return null;
         for (const n of nodes) {
             if (n.id === id) return n;
             if (n.children) {
@@ -313,6 +425,7 @@
             placeholder={$t('enterFolderNamePlaceholder')}
             maxlength="100"
             autocomplete="off"
+            autofocus
             bind:value={newFolderName}
             onkeydown={handleNewFolderKeydown}
         />
@@ -325,34 +438,31 @@
 {/if}
 
 <div id="bookmark-folders-container" class="bookmark-folders-container">
-    {#if isLoading}
+    {#if isLoading && folderTree.length === 0}
         <p class="loading-message">{$t('loading') || 'Loading...'}</p>
     {:else if filteredTree.length === 0}
         <p class="no-folders-found-modal">{$t('noFoldersFound')}</p>
     {:else}
         {#snippet renderFolder(node)}
             {#if node._visible}
-                <details
+                <div
                     class="bookmark-folder-item"
                     class:no-children={!node.children?.some((c) => c.children)}
-                    open={isExpanded(node.id)}
+                    class:open={isExpanded(node.id)}
                 >
-                    <summary
+                    <div
                         class="bookmark-folder-summary"
                         data-folder-id={node.id}
                         class:selected={selectedFolderId === node.id}
                         class:current-folder={mode === 'edit' && bookmarkData?.parentId === node.id}
+                        role="treeitem"
+                        aria-selected={selectedFolderId === node.id}
+                        aria-expanded={isExpanded(node.id)}
                         tabindex="0"
-                        onclick={(e) => handleFolderClick(node.id, e)}
-                        onkeydown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                handleFolderClick(node.id, e);
-                            }
-                        }}
+                        use:folderClickAction={node.id}
                     >
                         <span class="folder-icon-wrapper">
-                            {#if hasSearch && node._matched}
+                            {#if isExpanded(node.id) || (hasSearch && node._matched)}
                                 <svg width="16" height="16" aria-hidden="true" focusable="false">
                                     <use href="#icon-folder-open"></use>
                                 </svg>
@@ -368,7 +478,10 @@
                                 type="text"
                                 class="folder-name-input"
                                 autocomplete="off"
+                                autofocus
                                 bind:value={editFolderNameInput}
+                                onclick={(e) => e.stopPropagation()}
+                                ondblclick={(e) => e.stopPropagation()}
                                 onkeydown={handleEditKeydown}
                                 onblur={confirmEditFolder}
                             />
@@ -406,8 +519,8 @@
                                 </svg>
                             </button>
                         </div>
-                    </summary>
-                    {#if node.children?.length}
+                    </div>
+                    {#if isExpanded(node.id) && node.children?.length}
                         <div class="bookmark-folder-children">
                             {#each node.children as child (child.id)}
                                 {#if child.children}
@@ -416,7 +529,7 @@
                             {/each}
                         </div>
                     {/if}
-                </details>
+                </div>
             {/if}
         {/snippet}
 

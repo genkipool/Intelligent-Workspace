@@ -18,9 +18,11 @@
 
     function handleKeydown(e) {
         if (e.key === 'Escape') {
+            e.stopPropagation();
             handleClose();
         } else if (e.key === 'Enter') {
             e.preventDefault();
+            e.stopPropagation();
             handleSave();
         }
     }
@@ -32,6 +34,8 @@
     }
 
     async function handleSave() {
+        if (saving) return;
+
         const trimmed = title.trim();
         if (!trimmed) {
             error = $t('errorEmptyTitle');

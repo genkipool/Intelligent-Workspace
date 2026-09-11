@@ -709,7 +709,7 @@ function getMatchingRule(tabs, customRules) {
         const allTabsMatchThisRule = tabs.every((tab) => {
             if (!tab.url) return false; // A tab without URL cannot match
             // The condition is that AT LEAST ONE ('some') of the rule's URLs is included in the tab's URL
-            return rule.urls.some((url) => tab.url.includes(url));
+            return rule.urls.some((url) => matchesRule(tab.url, url));
         });
 
         // Record the check result for this specific rule

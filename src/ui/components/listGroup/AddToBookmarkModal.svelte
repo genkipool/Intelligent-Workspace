@@ -2,6 +2,7 @@
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { notificationStore } from '../../stores/notificationStore.js';
+    import { untrack } from 'svelte';
     import BookmarkFolderTree from './BookmarkFolderTree.svelte';
 
     /**
@@ -25,16 +26,23 @@
 
     $effect(() => {
         if (show) {
-            title = mode === 'edit' && bookmarkData ? bookmarkData.title || '' : tab.title || '';
-            url = mode === 'edit' && bookmarkData ? bookmarkData.url || '' : tab.url || '';
-            selectedFolderId = mode === 'edit' && bookmarkData?.parentId ? bookmarkData.parentId : null;
-            saving = false;
-            loadBookmarks();
+            // Read non-show props inside untrack to prevent this effect from
+            // re-running when tab properties change in the background (e.g. page
+            // title finishes loading), which would reset selectedFolderId to null.
+            untrack(() => {
+                title = mode === 'edit' && bookmarkData ? bookmarkData.title || '' : tab?.title || '';
+                url = mode === 'edit' && bookmarkData ? bookmarkData.url || '' : tab?.url || '';
+                selectedFolderId = mode === 'edit' && bookmarkData?.parentId ? bookmarkData.parentId : null;
+                saving = false;
+                loadBookmarks(true);
+            });
         }
     });
 
-    async function loadBookmarks() {
-        isLoading = true;
+    async function loadBookmarks(isInitial = false) {
+        if (isInitial && folderTree.length === 0) {
+            isLoading = true;
+        }
         try {
             const response = await chrome.runtime.sendMessage({ action: 'getBookmarks' });
             if (response.success && response.bookmarks) {
@@ -59,7 +67,7 @@
                 payload: { parentId, title: folderName },
             });
             if (response.success && response.folder) {
-                await loadBookmarks();
+                await loadBookmarks(false);
                 selectedFolderId = response.folder.id;
                 notificationStore.show($t('folderCreated'), 'success');
                 return response.folder;
@@ -79,7 +87,7 @@
                 payload: { id: folderId, changes: { title: newTitle } },
             });
             if (response.success) {
-                await loadBookmarks();
+                await loadBookmarks(false);
                 notificationStore.show($t('folderRenamed'), 'success');
             } else {
                 throw new Error(response.error);
@@ -90,12 +98,23 @@
         }
     }
 
+    function folderExists(nodes, id) {
+        if (!id || !nodes || !Array.isArray(nodes)) return false;
+        for (const n of nodes) {
+            if (n.id === id) return true;
+            if (n.children && folderExists(n.children, id)) return true;
+        }
+        return false;
+    }
+
     async function handleDeleteFolder(node) {
         if (!node) return;
         try {
             await chrome.runtime.sendMessage({ action: 'deleteBookmarkTree', payload: { id: node.id } });
-            await loadBookmarks();
-            if (selectedFolderId === node.id) selectedFolderId = null;
+            await loadBookmarks(false);
+            if (selectedFolderId && (selectedFolderId === node.id || !folderExists(folderTree, selectedFolderId))) {
+                selectedFolderId = null;
+            }
             notificationStore.show($t('folderDeleted'), 'success');
         } catch (err) {
             console.error('Error deleting folder:', err);
@@ -104,6 +123,7 @@
     }
 
     async function handleSave() {
+        if (saving) return false;
         const titleVal = title.trim();
         const urlVal = url.trim();
         if (!titleVal || !urlVal) {

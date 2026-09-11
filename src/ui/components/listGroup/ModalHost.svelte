@@ -125,8 +125,8 @@
         url={$modalData?.url || ''}
         rules={$modalData?.rules || []}
         onClose={() => closeModal(showAddToRuleModal)}
-        onSelect={async (ruleName) => {
-            await saveAddToRule($modalData?.url, ruleName);
+        onSelect={async (ruleName, editedUrl) => {
+            await saveAddToRule(editedUrl || $modalData?.url, ruleName);
             closeModal(showAddToRuleModal);
         }}
     />

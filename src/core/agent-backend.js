@@ -47,14 +47,14 @@ async function resolveGroup(params) {
 
 /**
  * [AI INSTRUCTION]
- * Utility function to get the current storage area for rules and themes.
+ * Utility function to get the current storage area for themes.
  * Always use this instead of repeating the storage area fetch logic.
  */
 async function getThemeStorage() {
     const { themeStorageArea = 'sync' } = await chrome.storage.local.get('themeStorageArea');
     return {
         areaName: themeStorageArea,
-        storage: chrome.storage[themeStorageArea],
+        storage: chrome.storage[themeStorageArea] || chrome.storage.sync,
     };
 }
 
@@ -192,10 +192,7 @@ const AGENT_TOOLS = {
         });
     },
     getRules: async (params) => {
-        const { storage } = await getThemeStorage();
-        // Was `return JSON.stringify(customRules)`, a name that does not exist: the
-        // tool threw ReferenceError instead of returning the rules.
-        const { customRules = [] } = await storage.get('customRules');
+        const customRules = await StorageService.getCustomRules();
         return JSON.stringify(customRules);
     },
     getSavedThemes: async (params) => {
@@ -254,8 +251,7 @@ const AGENT_TOOLS = {
     },
     createRule: async (params) => {
         if (!params.name) return 'Error: name required';
-        const { storage } = await getThemeStorage();
-        const { customRules = [] } = await storage.get('customRules');
+        const customRules = await StorageService.getCustomRules();
         if (customRules.find((r) => r.name.toLowerCase() === params.name.toLowerCase())) {
             return `Error: rule "${params.name}" already exists`;
         }

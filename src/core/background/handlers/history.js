@@ -354,7 +354,7 @@ async function printHtmlAsPdf(message, sendResponse) {
             };
 
             const onPrintingComplete = (message, sender) => {
-                if (message.action === 'printingComplete' && sender.tab.id === printTab.id) {
+                if (message.action === 'printingComplete' && sender.tab?.id === printTab?.id) {
                     chrome.tabs
                         .remove(printTab.id)
                         .catch((e) => console.warn(`Failed to close temporary print tab: ${e.message} `));

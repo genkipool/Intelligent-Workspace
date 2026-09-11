@@ -394,13 +394,7 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
     );
     tabsEverActive.delete(tabId);
     logMessage(`[tabs.onRemoved] REMOVED Tab ${tabId}. New size: ${tabsEverActive.size}.`);
-    if (tabsEverActive.has(tabId)) {
-        // Extra check for security
-        logMessage(`%c[tabs.onRemoved] REMOVING Tab ${tabId}...`, 'color: orange; font-weight: bold;');
-        tabsEverActive.delete(tabId);
-        logMessage(`[tabs.onRemoved] REMOVED Tab ${tabId}. New size: ${tabsEverActive.size}.`);
-        await saveSessionState(); // Now we save valid data minus 1, not empty data
-    }
+    await saveSessionState();
     debounceGroupTabs();
     debounceUpdateAllGroupPrefixes(removeInfo.windowId, {
         targetGroupId: null,
@@ -1185,50 +1179,58 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
     logMessage(`Window ${windowId} removed. Syncing states.`);
     windowsRemove = true;
     try {
-        // Get current split-screen state from session
-        const data = await chrome.storage.session.get(SPLIT_SCREEN_STATE_KEY);
-        const state = data[SPLIT_SCREEN_STATE_KEY];
+        try {
+            // Get current split-screen state from session
+            const data = await chrome.storage.session.get(SPLIT_SCREEN_STATE_KEY);
+            const state = data[SPLIT_SCREEN_STATE_KEY];
 
-        // If no active state, do nothing
-        if (!state || !state.isActive) {
-            return;
-        }
-
-        // Check if the removed window is the split window
-        if (state.splitWindowId === windowId) {
-            logMessage(`Split-screen window closed. Restoring original window and cleaning state.`);
-            const { originalWindowId, originalWindowState } = state;
-
-            // Try to restore original window to its saved state
-            if (originalWindowId && originalWindowState) {
-                try {
-                    // If it was maximized, restore it as maximized
-                    if (originalWindowState.state === 'maximized') {
-                        await chrome.windows.update(originalWindowId, {
-                            state: 'maximized',
-                            focused: true,
-                        });
-                    } else {
-                        // Otherwise, restore its dimensions and position
-                        await chrome.windows.update(originalWindowId, {
-                            left: originalWindowState.left,
-                            top: originalWindowState.top,
-                            width: originalWindowState.width,
-                            height: originalWindowState.height,
-                            focused: true,
-                        });
-                    }
-                } catch (e) {
-                    // This error is normal if the user closed the original window first
-                    console.warn('Could not restore original window, it might have been already closed:', e.message);
-                }
+            // If no active state, do nothing
+            if (!state || !state.isActive) {
+                return;
             }
 
-            // CRITICAL: Clean session state to "remove" the split group
-            await chrome.storage.session.remove(SPLIT_SCREEN_STATE_KEY);
+            // Check if the removed window is the split window
+            if (state.splitWindowId === windowId) {
+                logMessage(`Split-screen window closed. Restoring original window and cleaning state.`);
+                const { originalWindowId, originalWindowState } = state;
+
+                // Try to restore original window to its saved state
+                if (originalWindowId && originalWindowState) {
+                    try {
+                        // If it was maximized, restore it as maximized
+                        if (originalWindowState.state === 'maximized') {
+                            await chrome.windows.update(originalWindowId, {
+                                state: 'maximized',
+                                focused: true,
+                            });
+                        } else {
+                            // Otherwise, restore its dimensions and position
+                            await chrome.windows.update(originalWindowId, {
+                                left: originalWindowState.left,
+                                top: originalWindowState.top,
+                                width: originalWindowState.width,
+                                height: originalWindowState.height,
+                                focused: true,
+                            });
+                        }
+                    } catch (e) {
+                        // This error is normal if the user closed the original window first
+                        console.warn(
+                            'Could not restore original window, it might have been already closed:',
+                            e.message,
+                        );
+                    }
+                }
+
+                // CRITICAL: Clean session state to "remove" the split group
+                await chrome.storage.session.remove(SPLIT_SCREEN_STATE_KEY);
+            }
+        } catch (error) {
+            console.error('Error cleaning split-screen state on window removal:', error);
         }
-    } catch (error) {
-        console.error('Error cleaning split-screen state on window removal:', error);
+    } finally {
+        windowsRemove = false;
+        logMessage(`[windows.onRemoved] Window ${windowId} removal sync complete. windowsRemove reset to false.`);
     }
 });
 chrome.storage.onChanged.addListener(async (changes, area) => {

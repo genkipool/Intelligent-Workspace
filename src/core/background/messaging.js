@@ -953,6 +953,25 @@ const MESSAGE_HANDLERS = {
         handleCreateBookmark(message.payload, sendResponse);
         return true;
     },
+    createBookmarkFolder: (message, sender, sendResponse) => {
+        (async () => {
+            try {
+                const { parentId, title } = message.payload || {};
+                if (!title) {
+                    throw new Error('Title is mandatory to create a bookmark folder.');
+                }
+                const folder = await chrome.bookmarks.create({
+                    parentId: parentId || undefined,
+                    title,
+                });
+                sendResponse({ success: true, folder });
+            } catch (error) {
+                console.error('Error creating bookmark folder:', error);
+                sendResponse({ success: false, error: error.message });
+            }
+        })();
+        return true;
+    },
     getHistory: (message, sender, sendResponse) => {
         handleGetHistory(message, sendResponse);
         return true;
@@ -1290,6 +1309,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         'snippetsUpdated',
         'noteUpdatedFromOmnibar',
         'pomodoroPlaySound',
+        'musicIsBusy',
         'toggleAllExpand',
         'linkPreviewStatusChanged',
         'linkPreviewBlacklistUpdated',

@@ -1,7 +1,7 @@
 <script>
     import '../../../core/services/dbSchema.js';
     import { compareNames } from '../../services/utils.js';
-    import { onMount, onDestroy, mount } from 'svelte';
+    import { onMount, onDestroy, mount, unmount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
     import { showNotification } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
@@ -75,6 +75,23 @@
         timeline: null,
         webPhases: null,
     };
+
+    function unmountApp(key) {
+        if (apps[key]) {
+            try {
+                unmount(apps[key]);
+            } catch (e) {
+                console.error(`Error unmounting ${key}:`, e);
+            }
+            apps[key] = null;
+        }
+    }
+
+    function unmountAllApps() {
+        for (const key of Object.keys(apps)) {
+            unmountApp(key);
+        }
+    }
 
     // --- i18n ---------------------------------------------------------
     // Loads the active language messages and exposes the i18n(key) helper
@@ -404,6 +421,7 @@
         const sel = document.getElementById('tag-filter');
         if (!sel) return;
 
+        unmountApp('tagFilter');
         // Keep the trigger button and drop only the stale options
         const props = { tags, activeTag, allTagsLabel: i18n('dashboardAllTags') };
         sel.querySelectorAll('option').forEach((o) => o.remove());
@@ -415,6 +433,7 @@
         const kpis = computeKpis(filteredData, allData, i18n, _lang);
         const props = { kpis };
         const el = document.getElementById('kpi-grid');
+        unmountApp('kpiGrid');
         if (el) {
             el.replaceChildren();
             apps.kpiGrid = mount(KpiGrid, { target: el, props });
@@ -447,6 +466,7 @@
 
         const props = { hours, cnts, maxH, fmtH, i18n };
         const el = document.getElementById('hour-grid');
+        unmountApp('hourGrid');
         el.replaceChildren();
         apps.hourGrid = mount(HourGrid, { target: el, props });
     }
@@ -534,6 +554,7 @@
         // doesn't shift things horizontally. We align the label to the column
         // that contains day 1, so spans transition precisely at the boundary.
         const props = { cells, monthPositions, locale, i18n, fmtDur, tooltipEl: tooltip };
+        unmountApp('heatmap');
         wrap.replaceChildren();
         apps.heatmap = mount(Heatmap, { target: wrap, props });
     }
@@ -918,6 +939,7 @@
             { label: i18n('dashboardInterruption'), val: fmtDur(tI), color: c3 },
         ];
         const el = document.getElementById('donut-stats');
+        unmountApp('donutStats');
         el.replaceChildren();
         apps.donutStats = mount(DonutStats, { target: el, props: { stats } });
     }
@@ -1014,6 +1036,7 @@
         const tbody = document.getElementById('project-table-body');
         const empty = document.getElementById('table-empty');
 
+        unmountApp('projectTable');
         if (!sorted.length) {
             tbody.replaceChildren();
             apps.projectTable = mount(ProjectTable, { target: tbody, props: { sorted: [] } });
@@ -1036,6 +1059,7 @@
         const n = filteredData.length;
         document.getElementById('sessions-count').textContent = `${n} ${i18n('dashboardInTotal')}`;
 
+        unmountApp('timeline');
         if (!sorted.length) {
             tl.replaceChildren();
             apps.timeline = mount(Timeline, { target: tl, props: { sorted: [] } });
@@ -1120,8 +1144,9 @@
         if (!has) {
             const waRow = document.getElementById('wa-phases-row');
             if (waRow) waRow.style.display = 'none';
+            unmountAllApps();
+            return;
         }
-        if (!has) return;
         renderKPIs();
         renderStreak();
         renderHeatmap();
@@ -1259,6 +1284,7 @@
         // empty cards would only be three ways of saying so.
         const hasAny = cards.some((card) => card.rows.length);
         section.style.display = hasAny ? '' : 'none';
+        unmountApp('webPhases');
         if (!hasAny) return;
 
         host.replaceChildren();
@@ -1301,6 +1327,7 @@
                 });
         } catch (err) {
             console.error('Dashboard error:', err);
+            unmountAllApps();
             const es = document.getElementById('empty-state');
             es.style.display = 'flex';
             es.querySelector('.empty-title').textContent = i18n('dashboardErrorLoad');
@@ -1422,6 +1449,7 @@
     onDestroy(() => {
         for (const handle of sortableGrids.values()) handle.destroy?.();
         sortableGrids.clear();
+        unmountAllApps();
     });
 
     onDestroy(() => {

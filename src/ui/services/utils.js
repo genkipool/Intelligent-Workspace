@@ -24,11 +24,83 @@ export function normalizeUrl(url) {
         .replace(/\/$/, '');
 }
 
+export function matchesRule(tabUrl, ruleUrl) {
+    if (!tabUrl || typeof tabUrl !== 'string' || !ruleUrl || typeof ruleUrl !== 'string') {
+        return false;
+    }
+
+    const trimmedTab = tabUrl.trim();
+    const trimmedRule = ruleUrl.trim();
+    if (!trimmedTab || !trimmedRule) {
+        return false;
+    }
+
+    const hasSchemeRegex = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//;
+    const fullTab = hasSchemeRegex.test(trimmedTab) ? trimmedTab : 'https://' + trimmedTab;
+    const fullRule = hasSchemeRegex.test(trimmedRule) ? trimmedRule : 'https://' + trimmedRule;
+
+    let parsedTab, parsedRule;
+    try {
+        parsedTab = new URL(fullTab);
+        parsedRule = new URL(fullRule);
+    } catch {
+        return false;
+    }
+
+    const isTabHttp = parsedTab.protocol === 'http:' || parsedTab.protocol === 'https:';
+    const isRuleHttp = parsedRule.protocol === 'http:' || parsedRule.protocol === 'https:';
+
+    if (isTabHttp && isRuleHttp) {
+        // Both are standard web URLs: protocol differences ignored
+    } else if (parsedTab.protocol !== parsedRule.protocol) {
+        return false;
+    }
+
+    const tabHost = parsedTab.hostname.toLowerCase();
+    const ruleHost = parsedRule.hostname.toLowerCase();
+
+    const cleanTabHost = tabHost.startsWith('www.') ? tabHost.slice(4) : tabHost;
+    const cleanRuleHost = ruleHost.startsWith('www.') ? ruleHost.slice(4) : ruleHost;
+
+    if (cleanTabHost !== cleanRuleHost) {
+        return false;
+    }
+
+    if (parsedRule.port && parsedTab.port !== parsedRule.port) {
+        return false;
+    }
+
+    const normalizedRulePath = (parsedRule.pathname || '').replace(/\/+$/, '');
+    if (normalizedRulePath && normalizedRulePath !== '/') {
+        const tabPath = (parsedTab.pathname || '').replace(/\/+$/, '');
+        const rPathLower = normalizedRulePath.toLowerCase();
+        const tPathLower = tabPath.toLowerCase();
+        const tabFullPathLower = (parsedTab.pathname || '').toLowerCase();
+
+        const exactMatch = tPathLower === rPathLower;
+        const subPathMatch = tabFullPathLower.startsWith(rPathLower + '/');
+
+        if (!exactMatch && !subPathMatch) {
+            return false;
+        }
+    }
+
+    if (parsedRule.search && parsedTab.search !== parsedRule.search) {
+        return false;
+    }
+
+    if (parsedRule.hash && parsedTab.hash !== parsedRule.hash) {
+        return false;
+    }
+
+    return true;
+}
+
 export function isDomainInAnyRule(domain, rules) {
     if (!domain || !rules || rules.length === 0) {
         return false;
     }
-    return rules.some((rule) => rule.urls.some((url) => url.includes(domain)));
+    return rules.some((rule) => rule.urls.some((url) => matchesRule(domain, url)));
 }
 
 export function correctFaviconUrl(faviconUrl) {

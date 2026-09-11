@@ -313,7 +313,7 @@ function applyCustomRules(tabs, customRules) {
             if (tab.pinned || groupedTabIds.has(tab.id) || !tab.url || tab.url === 'chrome://newtab/') {
                 continue;
             }
-            if (rule.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim()))) {
+            if (rule.urls.some((u) => matchesRule(tab.url, u))) {
                 matchingTabs.push(tab);
                 groupedTabIds.add(tab.id);
             }
@@ -1263,7 +1263,7 @@ function ejectMisplacedTabsFromGroups(tabs, existingGroups, groupInfoMap, custom
                             rule &&
                             rule.active !== false &&
                             Array.isArray(rule.urls) &&
-                            rule.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim()))
+                            rule.urls.some((u) => matchesRule(tab.url, u))
                         ) {
                             belongs = true;
                         }
@@ -1275,7 +1275,7 @@ function ejectMisplacedTabsFromGroups(tabs, existingGroups, groupInfoMap, custom
                                 (r) =>
                                     r.active !== false &&
                                     Array.isArray(r.urls) &&
-                                    r.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim())),
+                                    r.urls.some((u) => matchesRule(tab.url, u)),
                             );
                         if (tabMatchesRule) {
                             belongs = false;
@@ -1293,7 +1293,7 @@ function ejectMisplacedTabsFromGroups(tabs, existingGroups, groupInfoMap, custom
                                 (r) =>
                                     r.active !== false &&
                                     Array.isArray(r.urls) &&
-                                    r.urls.some((u) => u && tab.url.toLowerCase().includes(u.toLowerCase().trim())),
+                                    r.urls.some((u) => matchesRule(tab.url, u)),
                             );
                         if (tabMatchesRuleSpecial) {
                             belongs = false;
@@ -1404,10 +1404,13 @@ function dissolveEmptyOrInvalidGroups(tabs, existingGroups, groupInfoMap, localC
             logMessage(
                 `[dissolveGroups] Proactively cleaning all state for dissolved group ${groupId} ("${info.key}").`,
             );
+            const identifier = groupIdentifierMap.get(groupId);
+            if (identifier) {
+                groupPrefixState.delete(identifier);
+            }
             groupInfoMap.delete(groupId);
             groupIdentifierMap.delete(groupId);
             groupExpandedEver.delete(groupId);
-            groupPrefixState.delete(groupIdentifierMap.get(groupId)); // Clean persistent state just in case
             delete lastActivity[groupId];
         }
     }

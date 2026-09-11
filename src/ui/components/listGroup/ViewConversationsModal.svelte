@@ -189,7 +189,7 @@
                 </ul>
 
                 {#if !hasConversations || filteredConversations.length === 0}
-                    <p class="no-conversations-msg">{$t(noResultsMessage)}</p>
+                    <p class="no-conversations-msg">{noResultsMessage}</p>
                 {/if}
             </div>
         </div>
