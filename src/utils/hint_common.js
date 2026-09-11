@@ -107,6 +107,7 @@ var HintCommon = {
         LINK_PREVIEW_BLACKLIST: 'linkPreviewBlacklist',
         LINK_PREVIEW_TRIGGER_KEY: 'linkPreviewTriggerKey',
         SNIPPET_POPUP_TRIGGER_KEY: 'snippetPopupTriggerKey',
+        APPEND_CLIPBOARD_ENABLED: 'appendClipboardEnabled',
     },
 
     // The Single Source of Truth for Built-in Commands
@@ -126,6 +127,7 @@ var HintCommon = {
             L: 'hintDesc_l_tab_page',
             at: 'hintDesc_at',
             c: 'hintDesc_c',
+            y: 'hintDesc_y',
             vs: 'hintDesc_vs',
             vp: 'hintDesc_vp',
             bg: 'hintDesc_bg',
@@ -325,6 +327,137 @@ var HintCommon = {
         const tmp = document.createElement('DIV');
         tmp.innerHTML = html;
         return tmp.textContent || tmp.innerText || '';
+    },
+
+    /**
+     * Shared logic for Cumulative Clipboard (Append Selection)
+     */
+    Clipboard: {
+        _lastCopiedText: '',
+
+        async getLastCopied() {
+            let text = '';
+            try {
+                if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+                    text = await navigator.clipboard.readText();
+                }
+            } catch {
+                // Clipboard read permission or document focus restriction
+            }
+
+            if (!text) {
+                text = this._lastCopiedText || '';
+                if (!text && typeof chrome !== 'undefined' && chrome.storage?.local) {
+                    try {
+                        const data = await chrome.storage.local.get('itg_last_clipboard_text');
+                        text = data?.itg_last_clipboard_text || '';
+                    } catch {}
+                }
+            }
+            return text;
+        },
+
+        async appendSelection(selection) {
+            if (!selection && typeof window !== 'undefined') {
+                selection = window.getSelection();
+            }
+            if (!selection) return false;
+            const selectedText = selection.toString();
+            if (!selectedText) return false;
+
+            const existingText = await this.getLastCopied();
+            const delimiter = existingText
+                ? existingText.endsWith('\n\n') || existingText.endsWith('\r\n\r\n')
+                    ? ''
+                    : existingText.endsWith('\n')
+                      ? '\n'
+                      : '\n\n'
+                : '';
+            const combinedText = existingText ? `${existingText}${delimiter}${selectedText}` : selectedText;
+
+            let success = false;
+            try {
+                if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(combinedText);
+                    success = true;
+                }
+            } catch {}
+
+            if (!success && typeof document !== 'undefined') {
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = combinedText;
+                    textarea.setAttribute('readonly', '');
+                    textarea.style.contain = 'strict';
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    textarea.style.left = '-9999px';
+                    const curSel = window.getSelection();
+                    const originalRange = curSel && curSel.rangeCount > 0 ? curSel.getRangeAt(0) : null;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    textarea.setSelectionRange(0, combinedText.length);
+                    success = document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    if (originalRange && curSel) {
+                        curSel.removeAllRanges();
+                        curSel.addRange(originalRange);
+                    }
+                } catch {}
+            }
+
+            this._lastCopiedText = combinedText;
+            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                try {
+                    chrome.storage.local.set({ itg_last_clipboard_text: combinedText });
+                } catch {}
+            }
+            return success;
+        },
+
+        async isEnabled() {
+            if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+                try {
+                    const data = await chrome.storage.sync.get(HintCommon.STORAGE_KEYS.APPEND_CLIPBOARD_ENABLED);
+                    return data?.[HintCommon.STORAGE_KEYS.APPEND_CLIPBOARD_ENABLED] !== false;
+                } catch {}
+            }
+            return true;
+        },
+
+        async setEnabled(enabled) {
+            const val = enabled !== false;
+            if (typeof chrome !== 'undefined') {
+                if (chrome.storage?.sync) {
+                    await chrome.storage.sync.set({ [HintCommon.STORAGE_KEYS.APPEND_CLIPBOARD_ENABLED]: val });
+                }
+                if (chrome.storage?.local) {
+                    await chrome.storage.local.set({ [HintCommon.STORAGE_KEYS.APPEND_CLIPBOARD_ENABLED]: val });
+                }
+                if (chrome.runtime?.sendMessage) {
+                    try {
+                        chrome.runtime.sendMessage({
+                            action: 'appendClipboardEnabledUpdated',
+                            enabled: val,
+                        });
+                    } catch {}
+                }
+            }
+            return val;
+        },
+
+        async getAssignedKey() {
+            if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+                try {
+                    const data = await chrome.storage.sync.get(HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS);
+                    const overrides = data?.[HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS] || {};
+                    if (overrides['hintDesc_y']) {
+                        return overrides['hintDesc_y'];
+                    }
+                } catch {}
+            }
+            return 'y';
+        },
     },
 
     /**

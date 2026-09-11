@@ -33,6 +33,7 @@
     "bookmarks",
     "readingList",
     "clipboardWrite",
+    "clipboardRead",
     "alarms",
     "offscreen",
     "idle"

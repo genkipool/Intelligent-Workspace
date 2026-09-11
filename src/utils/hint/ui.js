@@ -146,7 +146,19 @@ var HelpModal = class HelpModal {
                         }
                     });
                 }
+                if ((area === 'sync' || area === 'local') && changes.appendClipboardEnabled && this.visible) {
+                    this.updateAppendClipboardToggle(changes.appendClipboardEnabled.newValue !== false);
+                }
             });
+        }
+    }
+    updateAppendClipboardToggle(enabled) {
+        if (!this.visible) return;
+        const shadowRoot = this.shadowUI.getContainer();
+        if (!shadowRoot) return;
+        const toggleInput = shadowRoot.querySelector('#itg-modal-append-clipboard-toggle');
+        if (toggleInput && toggleInput.checked !== (enabled !== false)) {
+            toggleInput.checked = enabled !== false;
         }
     }
     updateLinkPreviewToggle(enabled) {
@@ -436,6 +448,8 @@ var HelpModal = class HelpModal {
                             ),
                         ],
                     );
+                } else if (descKey === 'hintDesc_y') {
+                    cellContentNode = h('span', { 'data-i18n': descKey }, description);
                 } else {
                     cellContentNode = document.createTextNode(description);
                 }
@@ -454,10 +468,54 @@ var HelpModal = class HelpModal {
                 const descAttrs = {
                     className: 'itg-description-cell',
                 };
-                if (currentKey !== 'f' && currentKey !== 'cf') {
+                if (currentKey !== 'f' && currentKey !== 'cf' && descKey !== 'hintDesc_y') {
                     descAttrs['data-i18n'] = descKey;
                 }
                 const tdDesc = h('td', descAttrs, cellContentNode);
+                if (descKey === 'hintDesc_y') {
+                    const toggleWrapper = h('div', {
+                        className: 'itg-help-preview-toggle',
+                        style: 'display: inline-flex; align-items: center; margin-left: 12px; vertical-align: middle;',
+                    });
+                    const toggleLabel = h('label', {
+                        className: 'switch',
+                        'data-i18n-title': 'appendClipboardToggleEnable',
+                        title: getMsg('appendClipboardToggleEnable', 'Enable cumulative clipboard copy'),
+                    });
+                    const toggleInput = h('input', {
+                        type: 'checkbox',
+                        id: 'itg-modal-append-clipboard-toggle',
+                        'data-i18n-aria-label': 'appendClipboardSectionTitle',
+                        'aria-label': getMsg('appendClipboardSectionTitle', 'Cumulative clipboard copy'),
+                    });
+                    const toggleSlider = h('span', { className: 'slider' }, [h('span', { className: 'slider-dot' })]);
+                    toggleLabel.appendChild(toggleInput);
+                    toggleLabel.appendChild(toggleSlider);
+                    toggleWrapper.appendChild(toggleLabel);
+                    tdDesc.appendChild(toggleWrapper);
+
+                    if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+                        chrome.storage.sync.get(['appendClipboardEnabled'], (data) => {
+                            toggleInput.checked = data?.appendClipboardEnabled !== false;
+                        });
+                    }
+
+                    toggleInput.addEventListener('change', (e) => {
+                        const val = e.target.checked;
+                        if (typeof chrome !== 'undefined') {
+                            if (chrome.storage?.sync) chrome.storage.sync.set({ appendClipboardEnabled: val });
+                            if (chrome.storage?.local) chrome.storage.local.set({ appendClipboardEnabled: val });
+                            if (chrome.runtime?.sendMessage) {
+                                try {
+                                    chrome.runtime.sendMessage({
+                                        action: 'appendClipboardEnabledUpdated',
+                                        enabled: val,
+                                    });
+                                } catch {}
+                            }
+                        }
+                    });
+                }
                 table.appendChild(h('tr', {}, [tdKey, tdDesc]));
                 if (descKey === 'hintDesc_vp') {
                     const trTrigger = h('tr', {
@@ -1148,6 +1206,16 @@ var HelpModal = class HelpModal {
         if (resetBtn) {
             resetBtn.addEventListener('click', async () => {
                 await this.registry.resetToDefaults();
+                if (typeof chrome !== 'undefined') {
+                    if (chrome.storage?.sync) await chrome.storage.sync.set({ appendClipboardEnabled: true });
+                    if (chrome.storage?.local) await chrome.storage.local.set({ appendClipboardEnabled: true });
+                    if (chrome.runtime?.sendMessage) {
+                        try {
+                            chrome.runtime.sendMessage({ action: 'appendClipboardEnabledUpdated', enabled: true });
+                        } catch {}
+                    }
+                }
+                this.updateAppendClipboardToggle(true);
                 // REPLACED: We use smart rendering instead of toggle()
                 this._refreshUI();
             });

@@ -4696,6 +4696,23 @@
         "message": "Desactivar el clic derecho y el copiado",
         "description": "Tooltip del interruptor de desbloqueo del clic derecho cuando está activado"
     },
+    "appendClipboardSectionTitle": {
+        "message": "Copia acumulativa al portapapeles"
+    },
+    "appendClipboardDesc": {
+        "message": "Al pulsar la tecla asignada con texto seleccionado, se copia la selección y se añade con un salto de línea al último contenido del portapapeles."
+    },
+    "appendClipboardToggleEnable": {
+        "message": "Activar la copia acumulativa al portapapeles",
+        "description": "Tooltip del interruptor de copia acumulativa al portapapeles cuando está desactivado"
+    },
+    "appendClipboardToggleDisable": {
+        "message": "Desactivar la copia acumulativa al portapapeles",
+        "description": "Tooltip del interruptor de copia acumulativa al portapapeles cuando está activado"
+    },
+    "appendClipboardAssignedKey": {
+        "message": "Tecla de atajo"
+    },
     "videoPipSectionTitle": {
         "message": "Picture-in-Picture (Vídeo)"
     },
@@ -4918,6 +4935,9 @@
     },
     "hintDesc_c": {
         "message": "Copiar URL actual"
+    },
+    "hintDesc_y": {
+        "message": "Copiar texto seleccionado y añadir al portapapeles con salto de línea"
     },
     "hintDesc_vs": {
         "message": "Ver código fuente"

@@ -133,6 +133,15 @@ var CommandRegistry = class CommandRegistry {
                 action: () => navigator.clipboard.writeText(window.location.href),
                 description: 'hintDesc_c',
             },
+            y: {
+                action: () => {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+                        HintCommon.Clipboard?.appendSelection(sel);
+                    }
+                },
+                description: 'hintDesc_y',
+            },
             vs: {
                 action: () =>
                     this._send('openUrl', {

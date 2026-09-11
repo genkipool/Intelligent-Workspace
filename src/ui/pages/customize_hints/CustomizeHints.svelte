@@ -18,6 +18,7 @@
     import VideoPipSection from './components/VideoPipSection.svelte';
     import YoutubeLoopSection from './components/YoutubeLoopSection.svelte';
     import AllowRightClickSection from './components/AllowRightClickSection.svelte';
+    import AppendClipboardSection from './components/AppendClipboardSection.svelte';
     import ReaderSection from './components/ReaderSection.svelte';
     import VoiceSection from './components/VoiceSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
@@ -185,6 +186,9 @@
 
         <!-- Right-click and copying -->
         <AllowRightClickSection />
+
+        <!-- Cumulative clipboard copy -->
+        <AppendClipboardSection />
 
         <!-- Page reader -->
         <ReaderSection />

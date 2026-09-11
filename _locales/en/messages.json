@@ -4693,6 +4693,23 @@
     "message": "Disable right-click and copying",
     "description": "Tooltip for the right-click unblocker switch when it is on"
   },
+  "appendClipboardSectionTitle": {
+    "message": "Cumulative clipboard copy"
+  },
+  "appendClipboardDesc": {
+    "message": "When text is selected and the assigned key is pressed, copies the selection and appends it with a newline to the previous clipboard content."
+  },
+  "appendClipboardToggleEnable": {
+    "message": "Enable cumulative clipboard copy",
+    "description": "Tooltip for the cumulative clipboard copy switch when it is off"
+  },
+  "appendClipboardToggleDisable": {
+    "message": "Disable cumulative clipboard copy",
+    "description": "Tooltip for the cumulative clipboard copy switch when it is on"
+  },
+  "appendClipboardAssignedKey": {
+    "message": "Shortcut key"
+  },
   "videoPipSectionTitle": {
     "message": "Picture-in-Picture (Video)"
   },
@@ -4919,6 +4936,9 @@
   "hintDesc_c": {
     "message": "Copy URL",
     "description": "Copy current URL"
+  },
+  "hintDesc_y": {
+    "message": "Copy selected text and append to clipboard with newline"
   },
   "hintDesc_vs": {
     "message": "View page source"

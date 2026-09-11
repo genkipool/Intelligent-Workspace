@@ -54,6 +54,7 @@ var Main = class Main {
         this._isAltHeld = false;
         this.videoPipEnabled = true;
         this.youtubeLoopEnabled = true;
+        this.appendClipboardEnabled = true;
         this._setupMediaFeaturesStorageListener();
     }
     async init() {
@@ -76,10 +77,16 @@ var Main = class Main {
                 if (res.globalPageMode) document.documentElement.setAttribute('itg-global-mode', res.globalPageMode);
                 if (res.activeTheme) this.shadowUI.applyTheme(res.activeTheme);
             });
-            const data = await chrome.storage.sync.get(['hintsEnabled', 'videoPipEnabled', 'youtubeLoopEnabled']);
+            const data = await chrome.storage.sync.get([
+                'hintsEnabled',
+                'videoPipEnabled',
+                'youtubeLoopEnabled',
+                'appendClipboardEnabled',
+            ]);
             this.hintsGloballyEnabled = data.hintsEnabled !== false;
             this.videoPipEnabled = data.videoPipEnabled !== false;
             this.youtubeLoopEnabled = data.youtubeLoopEnabled !== false;
+            this.appendClipboardEnabled = data.appendClipboardEnabled !== false;
             await this.commands.loadUserCommands();
 
             // * NEW: Synchronize hint letters with current commands
@@ -398,6 +405,10 @@ var Main = class Main {
                 if (msg.action === 'linkPreviewTriggerKeyUpdated') {
                     if (this.linkPreviewManager) this.linkPreviewManager.setTriggerKey(msg.triggerKey);
                     if (this.helpModal) this.helpModal.updateLinkPreviewTriggerKey(msg.triggerKey);
+                }
+                if (msg.action === 'appendClipboardEnabledUpdated') {
+                    this.appendClipboardEnabled = msg.enabled !== false;
+                    if (this.helpModal) this.helpModal.updateAppendClipboardToggle(msg.enabled);
                 }
                 if (msg.action === 'hintCommandsUpdated') {
                     (async () => {
@@ -940,10 +951,22 @@ var Main = class Main {
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
         this._boundMainKeyUpHandler = (e) => this._handleKeyUp(e);
+        this._boundCopyHandler = () => {
+            try {
+                const sel = window.getSelection()?.toString();
+                if (sel && window.HintCommon?.Clipboard) {
+                    window.HintCommon.Clipboard._lastCopiedText = sel;
+                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                        chrome.storage.local.set({ itg_last_clipboard_text: sel });
+                    }
+                }
+            } catch {}
+        };
         document.addEventListener('focusin', this._boundFocusInHandler);
         document.addEventListener('focusout', this._boundFocusOutHandler);
         document.addEventListener('keydown', this._boundMainKeyDownHandler, true);
         document.addEventListener('keyup', this._boundMainKeyUpHandler, true);
+        document.addEventListener('copy', this._boundCopyHandler, true);
     }
     _handleKeyUp(event) {
         if (event.key === 'Alt') {
@@ -1819,6 +1842,10 @@ var Main = class Main {
                 this.youtubeLoopEnabled = changes.youtubeLoopEnabled.newValue !== false;
                 this._updateYoutubeLoopState();
             }
+            if (changes.appendClipboardEnabled !== undefined) {
+                this.appendClipboardEnabled = changes.appendClipboardEnabled.newValue !== false;
+                if (this.helpModal) this.helpModal.updateAppendClipboardToggle(this.appendClipboardEnabled);
+            }
         };
         try {
             chrome.storage.onChanged.addListener(this._mediaStorageListener);
@@ -1882,6 +1909,7 @@ var Main = class Main {
         if (this._boundFocusInHandler) document.removeEventListener('focusin', this._boundFocusInHandler);
         if (this._boundFocusOutHandler) document.removeEventListener('focusout', this._boundFocusOutHandler);
         if (this._boundMainKeyDownHandler) document.removeEventListener('keydown', this._boundMainKeyDownHandler, true);
+        if (this._boundCopyHandler) document.removeEventListener('copy', this._boundCopyHandler, true);
         if (this._boundMessageHandler) {
             try {
                 chrome.runtime.onMessage.removeListener(this._boundMessageHandler);
@@ -2198,44 +2226,52 @@ var Main = class Main {
         }
         return false;
     }
-    _handleSelectionKeys(event, selection) {
-        let handled = true;
-        switch (event.key) {
-            case 'j':
-                selection.modify('extend', 'forward', 'line');
-                break;
-            case 'k':
-                selection.modify('extend', 'backward', 'line');
-                break;
-            case 'h':
-                selection.modify('extend', 'backward', 'character');
-                break;
-            case 'l':
-                selection.modify('extend', 'forward', 'character');
-                break;
-            case 'e':
-                selection.modify('extend', 'forward', 'word');
-                break;
-            case 'u':
-                selection.modify('extend', 'backward', 'documentboundary');
-                break;
-            case 'd':
-                selection.modify('extend', 'forward', 'documentboundary');
-                break;
-            case 'n':
-                selection.modify('extend', 'forward', 'paragraph');
-                break;
-            case 'p':
-                selection.modify('extend', 'backward', 'paragraph');
-                break;
-            case 'c':
-                document.execCommand('copy');
-                break;
-            default:
-                handled = false;
-                break;
+    _getAppendClipboardKey() {
+        const mappings = this.commands?.getMappings?.() || {};
+        for (const [key, val] of Object.entries(mappings)) {
+            if (val?.description === 'hintDesc_y') {
+                return key;
+            }
         }
-        return handled;
+        return 'y';
+    }
+    _handleSelectionKeys(event, selection) {
+        const appendKey = this._getAppendClipboardKey();
+        if (event.key === appendKey) {
+            if (this.appendClipboardEnabled !== false && window.HintCommon?.Clipboard) {
+                window.HintCommon.Clipboard.appendSelection(selection);
+                return true;
+            }
+            return false;
+        }
+
+        const actions = {
+            j: () => selection.modify('extend', 'forward', 'line'),
+            k: () => selection.modify('extend', 'backward', 'line'),
+            h: () => selection.modify('extend', 'backward', 'character'),
+            l: () => selection.modify('extend', 'forward', 'character'),
+            e: () => selection.modify('extend', 'forward', 'word'),
+            u: () => selection.modify('extend', 'backward', 'documentboundary'),
+            d: () => selection.modify('extend', 'forward', 'documentboundary'),
+            n: () => selection.modify('extend', 'forward', 'paragraph'),
+            p: () => selection.modify('extend', 'backward', 'paragraph'),
+            c: () => {
+                const text = selection.toString();
+                if (text && window.HintCommon?.Clipboard) {
+                    window.HintCommon.Clipboard._lastCopiedText = text;
+                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                        chrome.storage.local.set({ itg_last_clipboard_text: text });
+                    }
+                }
+                document.execCommand('copy');
+            },
+        };
+
+        if (actions[event.key]) {
+            actions[event.key]();
+            return true;
+        }
+        return false;
     }
     _findAllTextOccurrences(term) {
         if (!term) return [];

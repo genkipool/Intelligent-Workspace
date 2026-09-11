@@ -1901,6 +1901,11 @@ export async function initCustomizeHints() {
         snippetPopupTriggerKey = '$$';
         await chrome.runtime.sendMessage({ action: 'setLinkPreviewTriggerKey', triggerKey: '' });
         await chrome.runtime.sendMessage({ action: 'setSnippetPopupTriggerKey', triggerKey: '$$' });
+        await chrome.storage.sync.set({ appendClipboardEnabled: true });
+        await chrome.storage.local.set({ appendClipboardEnabled: true });
+        try {
+            chrome.runtime.sendMessage({ action: 'appendClipboardEnabledUpdated', enabled: true });
+        } catch {}
         syncTriggerKeyInputs('', false, null);
         updateSnippetTriggerDisplays('$$');
         const snippetInput = document.getElementById('snippet-menu-trigger-key');
