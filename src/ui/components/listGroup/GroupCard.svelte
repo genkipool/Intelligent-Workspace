@@ -336,12 +336,12 @@
 
     function handleBackup(e) {
         e.stopPropagation();
-        handleBackupGroup(group.id);
+        handleBackupGroup(group.id, group.windowId);
     }
 
     function handleRestore(e) {
         e.stopPropagation();
-        handleRestoreGroup(group.id, false);
+        handleRestoreGroup(group.id, false, false, group.windowId);
     }
 
     function handleHide(e) {

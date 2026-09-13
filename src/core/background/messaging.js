@@ -609,11 +609,11 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     backupAllGroupsFromKey: (message, sender, sendResponse) => {
-        handleBackupAllGroupsFromKey(message, sendResponse);
+        handleBackupAllGroupsFromKey(message, sendResponse, sender);
         return true;
     },
     restoreAllGroupsFromKey: (message, sender, sendResponse) => {
-        handleRestoreAllGroupsFromKey(message, sendResponse);
+        handleRestoreAllGroupsFromKey(message, sendResponse, sender);
         return true;
     },
     getBackups: (message, sender, sendResponse) => {

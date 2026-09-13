@@ -223,3 +223,34 @@ export async function syncOpenWindows() {
     openWindowIdsStore.set(openSet);
     return openSet;
 }
+
+/**
+ * Determines whether a backup belongs to (or should be shown/restored in) the given target window.
+ *
+ * @param {object} backupData - Stored backup object.
+ * @param {number|null} targetWindowId - Window ID for which backups are evaluated.
+ * @param {Set<number>|null} [openWindowIds=null] - Currently open normal window IDs.
+ * @param {Set<number>|null} [liveGroupIds=null] - Live group IDs in the target window.
+ * @returns {boolean}
+ */
+export function isBackupForWindow(backupData, targetWindowId, openWindowIds = null, liveGroupIds = null) {
+    if (!backupData) return false;
+
+    // If this backup is linked to a live group in targetWindowId, it belongs here
+    if (backupData.linkedGroupId && liveGroupIds && liveGroupIds.has(backupData.linkedGroupId)) {
+        return true;
+    }
+
+    const backupWinId = backupData.windowId ?? backupData.group?.windowId;
+    if (targetWindowId !== null && targetWindowId !== undefined && backupWinId !== undefined && backupWinId !== null) {
+        // If it was backed up in another window that is still open, let that other window show/restore it
+        if (backupWinId !== targetWindowId && openWindowIds && openWindowIds.has(backupWinId)) {
+            return false;
+        }
+        if (backupWinId === targetWindowId) {
+            return true;
+        }
+    }
+
+    return true;
+}

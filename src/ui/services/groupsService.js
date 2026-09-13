@@ -36,7 +36,7 @@ import { closeDownloadModal } from './downloadsService.js';
 import { getReadAloudReadings, setAllReadAloudPaused } from './readAloudService.js';
 import { closeOverflowMenu } from './contextMenuService.js';
 import { positionSmartPopup, forwardWheelToScrollParent } from './popupPositioning.js';
-import { getCurrentWindowId } from './windowsService.js';
+import { getCurrentWindowId, syncOpenWindows, isBackupForWindow } from './windowsService.js';
 
 // Store imports from appStore (replacing state.X)
 import {
@@ -1423,15 +1423,21 @@ export function exportCookiesFromModal() {
  * back one by one leave `tabs`, so this is what lets the card keep showing them in
  * their place instead of moving them.
  */
-function buildBackupObject(groupData, title, index) {
+function buildBackupObject(groupData, title, index, windowId = null) {
     const tabs = groupData.tabs.map((t) => ({
         url: t.url,
         title: t.title,
         favIconUrl: t.favIconUrl,
         pinned: t.pinned,
     }));
+    const resolvedWinId = (typeof windowId === 'number' ? windowId : null) ?? groupData.group?.windowId ?? null;
     return {
-        group: { ...groupData.group, title },
+        group: {
+            ...groupData.group,
+            title,
+            ...(resolvedWinId !== null ? { windowId: resolvedWinId } : {}),
+        },
+        windowId: resolvedWinId,
         tabs,
         order: tabs.map((t) => t.url),
         index: index >= 0 ? index : Infinity,
@@ -1440,9 +1446,9 @@ function buildBackupObject(groupData, title, index) {
 }
 
 export async function handleBackupAllGroups(windowId = null) {
-    const targetWinId = windowId ?? (await getCurrentWindowId());
+    const targetWinId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
     const tabQueryOpts = { active: true };
-    if (targetWinId !== null && targetWinId !== undefined) {
+    if (typeof targetWinId === 'number') {
         tabQueryOpts.windowId = targetWinId;
     } else {
         tabQueryOpts.lastFocusedWindow = true;
@@ -1469,7 +1475,8 @@ export async function handleBackupAllGroups(windowId = null) {
     }
 
     const allTabIdsToRemove = [];
-    const allGroupEls = [...document.querySelectorAll('#groups-list .group-item')];
+    const allGroupEls =
+        typeof document !== 'undefined' ? [...document.querySelectorAll('#groups-list .group-item')] : [];
 
     const backupPromises = groupsToBackup.map(async (item) => {
         const groupData = item;
@@ -1479,7 +1486,7 @@ export async function handleBackupAllGroups(windowId = null) {
         const groupTitleEl = groupEl ? groupEl.querySelector('.group-title') : null;
         const originalTitle = groupTitleEl ? groupTitleEl.dataset.baseName : groupData.group.title;
 
-        const backupObject = buildBackupObject(groupData, originalTitle, originalIndex);
+        const backupObject = buildBackupObject(groupData, originalTitle, originalIndex, targetWinId);
 
         const currentBackedUp = get(backedUpGroupData);
         currentBackedUp[groupData.group.id] = backupObject;
@@ -1499,30 +1506,41 @@ export async function handleBackupAllGroups(windowId = null) {
             console.error('Error removing tabs during bulk backup:', e);
             showNotification('errorBackupGroup', true);
             await loadState();
-            await renderGroups();
+            await renderGroups(targetWinId);
         }
     }
 }
 
-export async function handleRestoreAllGroups() {
+export async function handleRestoreAllGroups(windowId = null) {
+    const targetWinId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
     const $backedUpGroupData = get(backedUpGroupData);
-    const groupIdsToRestore = Object.keys($backedUpGroupData).map((id) => parseInt(id, 10));
+    const openWins = await syncOpenWindows();
 
-    if (groupIdsToRestore.length === 0) {
+    let liveById = new Set();
+    try {
+        const liveGroups = await fetchData(targetWinId);
+        liveById = new Set((liveGroups || []).map((item) => item.group?.id).filter((id) => id !== undefined));
+    } catch {}
+
+    const eligibleBackups = Object.values($backedUpGroupData).filter((data) =>
+        isBackupForWindow(data, targetWinId, openWins, liveById),
+    );
+
+    if (eligibleBackups.length === 0) {
         showNotification('noGroupsToRestore', true);
         return;
     }
 
-    for (const groupId of groupIdsToRestore) {
-        await handleRestoreGroup(groupId, true, true);
+    for (const backup of eligibleBackups) {
+        await handleRestoreGroup(backup.group.id, true, true, targetWinId);
     }
 
-    showNotification('allGroupsRestored', false, [groupIdsToRestore.length]);
+    showNotification('allGroupsRestored', false, [eligibleBackups.length]);
 
-    await renderGroups();
+    await renderGroups(targetWinId);
 }
 
-export async function handleRestoreSingleTab(groupId, tabToRestore) {
+export async function handleRestoreSingleTab(groupId, tabToRestore, windowId = null) {
     const $backedUpGroupData = get(backedUpGroupData);
     const backupData = $backedUpGroupData[groupId];
     if (!backupData) {
@@ -1538,9 +1556,18 @@ export async function handleRestoreSingleTab(groupId, tabToRestore) {
     }, 1000);
     isPerformingProgrammaticUpdate.set(true);
 
+    let targetWinId = typeof windowId === 'number' ? windowId : null;
+    if (targetWinId === null) {
+        targetWinId = (await getCurrentWindowId()) ?? backupData.windowId ?? backupData.group?.windowId ?? null;
+    }
+
     try {
         let targetGroupId = backupData.linkedGroupId;
-        const newTab = await chrome.tabs.create({ url: tabToRestore.url, active: true });
+        const createProps = { url: tabToRestore.url, active: true };
+        if (typeof targetWinId === 'number') {
+            createProps.windowId = targetWinId;
+        }
+        const newTab = await chrome.tabs.create(createProps);
 
         if (!targetGroupId) {
             const newGroupId = await chrome.tabs.group({ tabIds: [newTab.id] });
@@ -1580,7 +1607,12 @@ export async function handleRestoreSingleTab(groupId, tabToRestore) {
         } else {
             // The card follows the store, so the remaining tabs and the counter update
             // themselves once the new value lands.
-            const updated = { ...backupData, tabs: remaining, linkedGroupId: targetGroupId };
+            const updated = {
+                ...backupData,
+                tabs: remaining,
+                linkedGroupId: targetGroupId,
+                ...(typeof targetWinId === 'number' ? { windowId: targetWinId } : {}),
+            };
             backedUpGroupData.update((all) => ({ ...all, [groupId]: updated }));
             await saveBackupToDb(updated);
             showNotification('singleTabRestored', false, [tabToRestore.title]);
@@ -1588,14 +1620,15 @@ export async function handleRestoreSingleTab(groupId, tabToRestore) {
     } catch (error) {
         console.error('Error during restoration of a single tab:', error);
         showNotification('errorRestoreTab', true);
-        await renderGroups();
+        await renderGroups(targetWinId);
     } finally {
         isPerformingProgrammaticUpdate.set(false);
     }
 }
 
-export async function handleBackupGroup(groupId) {
-    const allGroupDataRaw = await fetchData();
+export async function handleBackupGroup(groupId, windowId = null) {
+    const targetWinId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
+    const allGroupDataRaw = await fetchData(targetWinId);
     const groupData = allGroupDataRaw.find((item) => item.group.id === groupId);
 
     if (!groupData) {
@@ -1604,14 +1637,15 @@ export async function handleBackupGroup(groupId) {
         return;
     }
 
-    const allGroupEls = [...document.querySelectorAll('#groups-list .group-item')];
+    const allGroupEls =
+        typeof document !== 'undefined' ? [...document.querySelectorAll('#groups-list .group-item')] : [];
     const originalIndex = allGroupEls.findIndex((el) => parseInt(el.dataset.groupId, 10) === groupId);
 
     const groupEl = allGroupEls.find((el) => parseInt(el.dataset.groupId, 10) === groupId);
     const groupTitleEl = groupEl ? groupEl.querySelector('.group-title') : null;
     const originalTitle = groupTitleEl ? groupTitleEl.dataset.baseName : groupData.group.title;
 
-    const backupObject = buildBackupObject(groupData, originalTitle, originalIndex);
+    const backupObject = buildBackupObject(groupData, originalTitle, originalIndex, targetWinId);
 
     const currentBackedUp = get(backedUpGroupData);
     currentBackedUp[groupId] = backupObject;
@@ -1632,12 +1666,12 @@ export async function handleBackupGroup(groupId) {
         }
     } else {
         await saveBackupToDb(backupObject);
-        await renderGroups();
+        await renderGroups(targetWinId);
     }
 }
 
 export async function createTabsInBatches(tabsToCreate, batchSize = 4, delay = 100, windowId = null) {
-    const targetWinId = windowId ?? (await getCurrentWindowId());
+    const targetWinId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
     const createdTabs = [];
     for (let i = 0; i < tabsToCreate.length; i += batchSize) {
         const batch = tabsToCreate.slice(i, i + batchSize);
@@ -1647,7 +1681,7 @@ export async function createTabsInBatches(tabsToCreate, batchSize = 4, delay = 1
                 active: false,
                 pinned: tabInfo.pinned || false,
             };
-            if (targetWinId !== null && targetWinId !== undefined) {
+            if (typeof targetWinId === 'number') {
                 createProps.windowId = targetWinId;
             }
             return chrome.tabs.create(createProps);
@@ -1661,7 +1695,7 @@ export async function createTabsInBatches(tabsToCreate, batchSize = 4, delay = 1
     return createdTabs;
 }
 
-export async function handleRestoreGroup(groupId, suppressNotification = false, skipRender = false) {
+export async function handleRestoreGroup(groupId, suppressNotification = false, skipRender = false, windowId = null) {
     const $backedUpGroupData = get(backedUpGroupData);
     const backupData = $backedUpGroupData[groupId];
 
@@ -1675,8 +1709,13 @@ export async function handleRestoreGroup(groupId, suppressNotification = false, 
     isProgrammaticActivation.set(true);
     isPerformingProgrammaticUpdate.set(true);
 
+    let targetWinId = typeof windowId === 'number' ? windowId : null;
+    if (targetWinId === null) {
+        targetWinId = (await getCurrentWindowId()) ?? backupData.windowId ?? backupData.group?.windowId ?? null;
+    }
+
     try {
-        const createdTabs = await createTabsInBatches(backupData.tabs);
+        const createdTabs = await createTabsInBatches(backupData.tabs, 4, 100, targetWinId);
 
         const newTabIds = createdTabs.map((t) => t.id);
         const newGroupId = await chrome.tabs.group({ tabIds: newTabIds });
@@ -1705,7 +1744,7 @@ export async function handleRestoreGroup(groupId, suppressNotification = false, 
         isProgrammaticActivation.set(false);
         isPerformingProgrammaticUpdate.set(false);
         if (!skipRender) {
-            await renderGroups();
+            await renderGroups(targetWinId);
         }
     }
 }
@@ -1715,6 +1754,7 @@ let isRendering = false;
 let pendingRender = false;
 
 export async function renderGroups(windowId = null) {
+    const targetWin = typeof windowId === 'number' ? windowId : null;
     await whenStateLoaded();
     // Components own the rendering; this refreshes the stores that feed them,
     // debounced to coalesce bursts.
@@ -1725,13 +1765,16 @@ export async function renderGroups(windowId = null) {
             pendingRender = true;
             return;
         }
+        if (typeof chrome === 'undefined') {
+            return;
+        }
         isRendering = true;
         try {
             const [{ groupStore }, { loadRenderContext }] = await Promise.all([
                 import('../stores/groupStore.js'),
                 import('../stores/renderContextStore.js'),
             ]);
-            await Promise.all([groupStore.fetchGroups(windowId), loadRenderContext(windowId)]);
+            await Promise.all([groupStore.fetchGroups(targetWin), loadRenderContext(targetWin)]);
             updateDuplicateCountBadge();
         } catch (e) {
             console.error('[renderGroups] refresh error:', e);
@@ -1739,7 +1782,7 @@ export async function renderGroups(windowId = null) {
             isRendering = false;
             if (pendingRender) {
                 pendingRender = false;
-                renderGroups(windowId);
+                renderGroups(targetWin);
             }
         }
     }, 150);
@@ -1846,6 +1889,7 @@ export async function fetchData(windowId = null) {
     const targetWindowId = windowId ?? (await getCurrentWindowId());
 
     const storage = await getStorage();
+    const storageData = storage && typeof storage.get === 'function' ? await storage.get('clusterConfig') : {};
     const {
         clusterConfig = {
             specialGroups: {
@@ -1854,7 +1898,7 @@ export async function fetchData(windowId = null) {
                 },
             },
         },
-    } = await storage.get('clusterConfig');
+    } = storageData || {};
     const isMiscEnabled = clusterConfig?.specialGroups?.misc?.enabled ?? false;
 
     const queryOptions = targetWindowId !== null && targetWindowId !== undefined ? { windowId: targetWindowId } : {};
@@ -2573,13 +2617,13 @@ export async function handleRemoveDuplicates(windowId = null) {
 
 export function initGroupsEvents() {
     const backupAllBtn = document.getElementById('backup-all-btn');
-    if (backupAllBtn) backupAllBtn.addEventListener('click', handleBackupAllGroups);
+    if (backupAllBtn) backupAllBtn.addEventListener('click', () => handleBackupAllGroups());
 
     const restoreAllBtn = document.getElementById('restore-all-btn');
-    if (restoreAllBtn) restoreAllBtn.addEventListener('click', handleRestoreAllGroups);
+    if (restoreAllBtn) restoreAllBtn.addEventListener('click', () => handleRestoreAllGroups());
 
     const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
-    if (removeDuplicatesBtn) removeDuplicatesBtn.addEventListener('click', handleRemoveDuplicates);
+    if (removeDuplicatesBtn) removeDuplicatesBtn.addEventListener('click', () => handleRemoveDuplicates());
 
     const regroupBtn = document.getElementById('regroup-btn');
     if (regroupBtn) {
@@ -2611,30 +2655,33 @@ export function initGroupsEvents() {
     if (muteAllTabsBtn) {
         muteAllTabsBtn.addEventListener('click', () => toggleMuteAllSources());
 
-        chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
-            if (changeInfo.audible !== undefined || changeInfo.mutedInfo !== undefined) {
-                updateMuteButtonState();
-                const tabEl = document.querySelector(`.tab-item[data-tab-id="${tabId}"]`);
-                if (tabEl) {
-                    const indicator = tabEl.querySelector('.audible-indicator');
-                    if (indicator) {
-                        if (changeInfo.audible !== undefined) indicator.classList.toggle('hidden', !changeInfo.audible);
-                        if (changeInfo.mutedInfo !== undefined) {
-                            const isMuted = changeInfo.mutedInfo.muted;
-                            indicator.classList.toggle('muted', isMuted);
-                            updateAudibleIndicatorTooltip(indicator, isMuted);
+        if (typeof chrome !== 'undefined' && chrome.tabs?.onUpdated) {
+            chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+                if (changeInfo.audible !== undefined || changeInfo.mutedInfo !== undefined) {
+                    updateMuteButtonState();
+                    const tabEl = document.querySelector(`.tab-item[data-tab-id="${tabId}"]`);
+                    if (tabEl) {
+                        const indicator = tabEl.querySelector('.audible-indicator');
+                        if (indicator) {
+                            if (changeInfo.audible !== undefined)
+                                indicator.classList.toggle('hidden', !changeInfo.audible);
+                            if (changeInfo.mutedInfo !== undefined) {
+                                const isMuted = changeInfo.mutedInfo.muted;
+                                indicator.classList.toggle('muted', isMuted);
+                                updateAudibleIndicatorTooltip(indicator, isMuted);
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+        }
 
-        chrome.tabs.onRemoved.addListener(() => updateMuteButtonState());
+        chrome.tabs?.onRemoved?.addListener?.(() => updateMuteButtonState());
 
         // A reading starting, pausing or ending changes nothing Chrome reports about
         // the tab, so none of the listeners above would hear it. The worker's record
         // of which tabs are reading is the only thing that moves.
-        chrome.storage?.onChanged?.addListener((changes, areaName) => {
+        chrome.storage?.onChanged?.addListener?.((changes, areaName) => {
             if (areaName === 'session' && changes.readAloudTabs) {
                 updateMuteButtonState();
             }
@@ -2675,80 +2722,84 @@ export function initGroupsEvents() {
         true,
     );
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.action === 'restoreBackupTabFromOmnibar') {
-            const { groupId, tabUrl, tabTitle } = message;
-            const backupData = get(backedUpGroupData)[groupId];
-            if (backupData) {
-                const tabToRestore =
-                    backupData.tabs.find((t) => t.url === tabUrl && t.title === tabTitle) || backupData.tabs[0];
-                if (tabToRestore) {
-                    handleRestoreSingleTab(groupId, tabToRestore);
-                    sendResponse({ success: true });
-                } else sendResponse({ success: false, error: 'Tab not found in backup' });
-            } else sendResponse({ success: false, error: 'Backup not found' });
-            return true;
-        }
-
-        if (message.action === 'backupAllGroupsFromBackground') {
-            (async () => {
-                try {
-                    await handleBackupAllGroups();
-                    sendResponse({ success: true });
-                } catch (e) {
-                    sendResponse({ success: false, error: e.message });
-                }
-            })();
-            return true;
-        }
-
-        if (message.action === 'backupGroupsById') {
-            (async () => {
-                try {
-                    await Promise.all((message.groupIds || []).map((id) => handleBackupGroup(id)));
-                    sendResponse({ success: true, count: (message.groupIds || []).length });
-                } catch (e) {
-                    sendResponse({ success: false, error: e.message });
-                }
-            })();
-            return true;
-        }
-
-        if (message.action === 'restoreAllGroupsFromBackground') {
-            (async () => {
-                try {
-                    await handleRestoreAllGroups();
-                    sendResponse({ success: true });
-                } catch (e) {
-                    sendResponse({ success: false, error: e.message });
-                }
-            })();
-            return true;
-        }
-
-        if (message.action === 'groupsUpdatedFromBackground') renderGroups();
-
-        if (message.action === 'pageModeChanged') renderGroups();
-
-        // A note written from a page lands straight in the database, so the panel only
-        // hears about it here: the counts on the cards and the list, if it is open.
-        if (message.action === 'noteCreatedFromPage') {
-            renderGroups();
-            if (get(isNotesViewActive) && get(currentNotesContext)) {
-                showNotesView(get(currentNotesContext));
+    if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
+        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+            if (message.action === 'restoreBackupTabFromOmnibar') {
+                const { groupId, tabUrl, tabTitle } = message;
+                const backupData = get(backedUpGroupData)[groupId];
+                if (backupData) {
+                    const tabToRestore =
+                        backupData.tabs.find((t) => t.url === tabUrl && t.title === tabTitle) || backupData.tabs[0];
+                    if (tabToRestore) {
+                        handleRestoreSingleTab(groupId, tabToRestore);
+                        sendResponse({ success: true });
+                    } else sendResponse({ success: false, error: 'Tab not found in backup' });
+                } else sendResponse({ success: false, error: 'Backup not found' });
+                return true;
             }
-            return true;
-        }
 
-        if (message.action === 'areaScreenshotProcessFinished' || message.action === 'fullPageScreenshotFinished') {
-            if (message.success) {
+            if (message.action === 'backupAllGroupsFromBackground') {
+                (async () => {
+                    try {
+                        await handleBackupAllGroups(message.windowId);
+                        sendResponse({ success: true });
+                    } catch (e) {
+                        sendResponse({ success: false, error: e.message });
+                    }
+                })();
+                return true;
+            }
+
+            if (message.action === 'backupGroupsById') {
+                (async () => {
+                    try {
+                        await Promise.all(
+                            (message.groupIds || []).map((id) => handleBackupGroup(id, message.windowId)),
+                        );
+                        sendResponse({ success: true, count: (message.groupIds || []).length });
+                    } catch (e) {
+                        sendResponse({ success: false, error: e.message });
+                    }
+                })();
+                return true;
+            }
+
+            if (message.action === 'restoreAllGroupsFromBackground') {
+                (async () => {
+                    try {
+                        await handleRestoreAllGroups(message.windowId);
+                        sendResponse({ success: true });
+                    } catch (e) {
+                        sendResponse({ success: false, error: e.message });
+                    }
+                })();
+                return true;
+            }
+
+            if (message.action === 'groupsUpdatedFromBackground') renderGroups();
+
+            if (message.action === 'pageModeChanged') renderGroups();
+
+            // A note written from a page lands straight in the database, so the panel only
+            // hears about it here: the counts on the cards and the list, if it is open.
+            if (message.action === 'noteCreatedFromPage') {
                 renderGroups();
-                if (get(isGalleryViewActive) && get(currentGalleryContext)) {
-                    const ctx = get(currentGalleryContext);
-                    showScreenshotGallery(ctx.type, ctx.id, ctx.secondaryId);
+                if (get(isNotesViewActive) && get(currentNotesContext)) {
+                    showNotesView(get(currentNotesContext));
                 }
+                return true;
             }
-            return true;
-        }
-    });
+
+            if (message.action === 'areaScreenshotProcessFinished' || message.action === 'fullPageScreenshotFinished') {
+                if (message.success) {
+                    renderGroups();
+                    if (get(isGalleryViewActive) && get(currentGalleryContext)) {
+                        const ctx = get(currentGalleryContext);
+                        showScreenshotGallery(ctx.type, ctx.id, ctx.secondaryId);
+                    }
+                }
+                return true;
+            }
+        });
+    }
 }

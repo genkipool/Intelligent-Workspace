@@ -2,12 +2,29 @@
  * Backs up all inactive tab groups into IndexedDB and closes their tabs.
  * Delegates to side panel first for superior title-cleaning and in-memory state management.
  */
-async function handleBackupAllGroupsFromKey(message, sendResponse) {
-    const { groupIds } = message || {};
+async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
+    const { groupIds, windowId } = message || {};
     try {
+        let targetWinId =
+            typeof windowId === 'number'
+                ? windowId
+                : typeof sender?.tab?.windowId === 'number'
+                  ? sender.tab.windowId
+                  : null;
+        if (targetWinId === null) {
+            const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true }).catch(() => []);
+            if (activeTab && typeof activeTab.windowId === 'number') {
+                targetWinId = activeTab.windowId;
+            }
+        }
+
         // Try delegating to the side panel first (it handles baseName extraction, DOM index, and state.backedUpGroupData)
         const delegatedAction = groupIds ? 'backupGroupsById' : 'backupAllGroupsFromBackground';
-        const delegatedMessage = groupIds ? { action: delegatedAction, groupIds } : { action: delegatedAction };
+        const delegatedMessage = {
+            action: delegatedAction,
+            ...(groupIds ? { groupIds } : {}),
+            ...(targetWinId !== null ? { windowId: targetWinId } : {}),
+        };
         const delegated = await new Promise((resolve) => {
             chrome.runtime.sendMessage(delegatedMessage, (res) => {
                 if (chrome.runtime.lastError || !res || !res.success) {
@@ -24,19 +41,32 @@ async function handleBackupAllGroupsFromKey(message, sendResponse) {
         }
 
         // Fallback: side panel is closed or specific groups requested, execute natively in background
-        const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        const queryActiveOpts = { active: true };
+        if (targetWinId !== null) {
+            queryActiveOpts.windowId = targetWinId;
+        } else {
+            queryActiveOpts.lastFocusedWindow = true;
+        }
+        const [activeTab] = await chrome.tabs.query(queryActiveOpts);
         const activeGroupId = activeTab ? activeTab.groupId : -1;
 
-        const rawGroups = await chrome.tabGroups.query({});
+        const queryGroupsOpts = targetWinId !== null ? { windowId: targetWinId } : {};
+        const rawGroups = await chrome.tabGroups.query(queryGroupsOpts);
         const allGroups = enhanceGroupsWithRealTitles(rawGroups);
-        const allTabs = await chrome.tabs.query({});
+        const queryTabsOpts = targetWinId !== null ? { windowId: targetWinId } : {};
+        const allTabs = await chrome.tabs.query(queryTabsOpts);
 
         const groupsMap = new Map();
         const targetGroupIds = groupIds ? new Set(groupIds) : null;
         allGroups.forEach((g) => {
             if (!targetGroupIds || targetGroupIds.has(g.id)) {
                 groupsMap.set(g.id, {
-                    group: { id: g.id, title: g.title, color: g.color },
+                    group: {
+                        id: g.id,
+                        title: g.title,
+                        color: g.color,
+                        ...(targetWinId !== null ? { windowId: targetWinId } : {}),
+                    },
                     tabs: [],
                 });
             }
@@ -81,7 +111,9 @@ async function handleBackupAllGroupsFromKey(message, sendResponse) {
             const backupObject = {
                 group: {
                     ...item.group,
+                    ...(targetWinId !== null ? { windowId: targetWinId } : {}),
                 },
+                windowId: targetWinId ?? item.group?.windowId ?? null,
                 tabs: item.tabs.map((t) => ({
                     url: t.url,
                     title: t.title,
@@ -124,20 +156,39 @@ async function handleBackupAllGroupsFromKey(message, sendResponse) {
 /**
  * Restores all group backups from IndexedDB.
  */
-async function handleRestoreAllGroupsFromKey(message, sendResponse) {
-    const { groupIds } = message || {};
+async function handleRestoreAllGroupsFromKey(message, sendResponse, sender) {
+    const { groupIds, windowId } = message || {};
     try {
+        let targetWinId =
+            typeof windowId === 'number'
+                ? windowId
+                : typeof sender?.tab?.windowId === 'number'
+                  ? sender.tab.windowId
+                  : null;
+        if (targetWinId === null) {
+            const [activeTab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true }).catch(() => []);
+            if (activeTab && typeof activeTab.windowId === 'number') {
+                targetWinId = activeTab.windowId;
+            }
+        }
+
         // If specific groupIds are provided, skip delegation (omnibar use case)
         if (!groupIds) {
             // Try delegating to the side panel first (it handles state cleanup and optimistic UI)
             const delegated = await new Promise((resolve) => {
-                chrome.runtime.sendMessage({ action: 'restoreAllGroupsFromBackground' }, (res) => {
-                    if (chrome.runtime.lastError || !res || !res.success) {
-                        resolve(false);
-                    } else {
-                        resolve(res);
-                    }
-                });
+                chrome.runtime.sendMessage(
+                    {
+                        action: 'restoreAllGroupsFromBackground',
+                        ...(targetWinId !== null ? { windowId: targetWinId } : {}),
+                    },
+                    (res) => {
+                        if (chrome.runtime.lastError || !res || !res.success) {
+                            resolve(false);
+                        } else {
+                            resolve(res);
+                        }
+                    },
+                );
             });
 
             if (delegated) {
@@ -148,7 +199,26 @@ async function handleRestoreAllGroupsFromKey(message, sendResponse) {
 
         // Fallback: side panel is closed or specific groups requested, execute natively in background
         const allBackups = await getAllBackupsFromDb();
-        const backups = groupIds ? allBackups.filter((b) => groupIds.includes(b.group?.id)) : allBackups;
+        const openWins =
+            typeof chrome !== 'undefined' && chrome.windows?.getAll
+                ? new Set((await chrome.windows.getAll({ windowTypes: ['normal'] }).catch(() => [])).map((w) => w.id))
+                : new Set();
+
+        let backups = groupIds ? allBackups.filter((b) => groupIds.includes(b.group?.id)) : allBackups;
+        if (!groupIds && targetWinId !== null) {
+            backups = backups.filter((b) => {
+                const bWinId = b.windowId ?? b.group?.windowId;
+                if (bWinId !== undefined && bWinId !== null) {
+                    if (bWinId !== targetWinId && openWins.has(bWinId)) {
+                        return false;
+                    }
+                    if (bWinId === targetWinId) {
+                        return true;
+                    }
+                }
+                return true;
+            });
+        }
 
         if (backups.length === 0) {
             const noBackupsMsg = getI18nMsg('noGroupsToRestore', [], 'No hay grupos respaldados para restaurar.');
@@ -167,11 +237,15 @@ async function handleRestoreAllGroupsFromKey(message, sendResponse) {
 
             const createdTabs = [];
             for (const tabInfo of backup.tabs) {
-                const newTab = await chrome.tabs.create({
+                const createProps = {
                     url: tabInfo.url,
                     active: false,
                     pinned: tabInfo.pinned || false,
-                });
+                };
+                if (targetWinId !== null) {
+                    createProps.windowId = targetWinId;
+                }
+                const newTab = await chrome.tabs.create(createProps);
                 createdTabs.push(newTab);
             }
 

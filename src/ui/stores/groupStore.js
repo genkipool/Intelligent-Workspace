@@ -8,6 +8,7 @@ import {
     getCurrentWindowId,
     setCurrentWindowId,
     isCurrentOrSplitWindow,
+    isBackupForWindow,
     currentWindowIdStore,
     openWindowIdsStore,
     syncOpenWindows,
@@ -180,23 +181,8 @@ export function withBackups(liveGroups, backups, currentWindowId = null, openWin
 
     const pending = stored
         .filter((data) => {
-            if (liveById.has(data.group.id)) return false;
-
-            // If this backup is linked to a group live in this window, show it here
-            if (data.linkedGroupId && liveById.has(data.linkedGroupId)) {
-                return true;
-            }
-
-            // If a windowId was recorded on the backup and we know the current window
-            const backupWinId = data.group?.windowId;
-            if (currentWindowId !== null && backupWinId !== undefined && backupWinId !== null) {
-                // If it was backed up in another window that is still open, let that other window show it
-                if (backupWinId !== currentWindowId && openWindowIds && openWindowIds.has(backupWinId)) {
-                    return false;
-                }
-            }
-
-            return true;
+            if (liveById.has(data.group?.id)) return false;
+            return isBackupForWindow(data, currentWindowId, openWindowIds, new Set(liveById.keys()));
         })
         .map((data) => {
             const liveTabs = liveById.get(data.linkedGroupId)?.tabs ?? [];
@@ -290,7 +276,7 @@ export const groupStore = {
     },
     fetchGroups: async (windowId = null) => {
         try {
-            const targetWinId = windowId ?? (await getCurrentWindowId());
+            const targetWinId = typeof windowId === 'number' ? windowId : await getCurrentWindowId();
             await syncAssociatedSplitWindow(targetWinId);
             const result = await fetchData(targetWinId);
             if (Array.isArray(result)) {
