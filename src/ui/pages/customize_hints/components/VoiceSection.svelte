@@ -15,7 +15,11 @@
     import { onMount } from 'svelte';
     import SelectField from '../../../components/common/SelectField.svelte';
     import { showNotification } from '../../../../utils/i18n.js';
-    import { DEFAULT_SPEECH_SETTINGS, SPEECH_SETTINGS_KEY } from '../../../services/speechService.js';
+    import {
+        DEFAULT_SPEECH_SETTINGS,
+        SPEECH_SETTINGS_KEY,
+        applySpeechSettings,
+    } from '../../../services/speechService.js';
 
     /** What each slider may be set to, in the order the markup lays them out. */
     const SLIDERS = [
@@ -80,9 +84,8 @@
         } else {
             utterance.lang = chrome.i18n.getUILanguage() || 'en-US';
         }
-        utterance.rate = settings.rate;
-        utterance.pitch = settings.pitch;
-        utterance.volume = settings.volume;
+        // The same conversion every reader uses, so the test sounds like the reading will.
+        applySpeechSettings(utterance, settings);
         speechSynthesis.speak(utterance);
     }
 

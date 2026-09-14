@@ -58,18 +58,17 @@
     // it simply never fires. A reader that depends on it shows no word at all there.
     //
     // So the mark is driven by a clock instead, the way a reader driven by an audio
-    // file would be: the words of the paragraph are measured out in characters, and a
-    // timer converts elapsed time into a position in that text. Boundary events, when
-    // they do arrive, are treated as anchors that correct the clock rather than as the
-    // only source of truth. Every finished paragraph then re-measures the speaking
-    // speed from what it actually took, so the estimate converges after the first one.
+    // file would be. The paragraph is laid out in time the way the voice actually says
+    // it (speechTuning.js, `timingOf`): each word takes time for its letters, and every
+    // comma, full stop and quotation mark adds the pause the voice makes there. Spreading
+    // the paragraph evenly over its characters instead, as this used to, ran the mark up
+    // to three words ahead of the voice at a pause and left it six behind at the end.
+    // Boundary events, when they do arrive, are anchors that correct the clock rather
+    // than the only source of truth, and every finished paragraph teaches the clock the
+    // voice's speed.
 
-    /** Characters a voice gets through in a second at rate 1, before any measuring. */
-    const BASE_CHARS_PER_SECOND = 15.5;
     /** How often the mark is moved. Not rAF: a background tab stops running those. */
     const WORD_TICK_MS = 80;
-    /** A measurement further out than this is noise, not a speaking speed. */
-    const CPS_BOUNDS = [4, 60];
 
     /**
      * What counts as a title.
@@ -179,14 +178,15 @@
      * that has to be right whether or not the voice reports anything.
      */
     let charOffset = 0;
-    /** Character the current utterance began at, so the clock can be offset by it. */
-    let utteranceStart = 0;
+    /** The word the clock last knew for certain, and how many seconds of speech in that was. */
+    let anchorWord = 0;
+    let anchorSeconds = 0;
     /** `performance.now()` when the current utterance started making sound. */
     let spokenAt = 0;
     /** Seconds of speech already accounted for before the current utterance. */
     let elapsedBefore = 0;
-    /** The measured speaking speed at rate 1, refined by every paragraph that ends. */
-    let charsPerSecondAtRate1 = BASE_CHARS_PER_SECOND;
+    /** The voice's speed at speed 1, learnt from every paragraph that ends. */
+    const speedLearner = globalThis.ItgSpeechTuning.createSpeedLearner();
     let tickTimer = null;
     /** The word the mark is on, so it is only redrawn when it actually moves. */
     let markedWord = -1;
@@ -334,7 +334,9 @@
             pieces.push({ ...piece, start: text.length, end: text.length + slice.length });
             text += slice;
         });
-        return { pieces, text, words: wordsOf(text) };
+        const words = wordsOf(text);
+        const timing = globalThis.ItgSpeechTuning.timingOf(words.map((word) => text.slice(word.start, word.end)));
+        return { pieces, text, words, timing };
     }
 
     /**
@@ -389,9 +391,11 @@
 
         const found = [];
         groups.forEach(({ owner, pieces }) => {
-            const { pieces: mapped, text, words } = buildBlockText(pieces);
-            if (text.trim().length < 2) return;
-            found.push({ element: owner, pieces: mapped, text, words });
+            // The whole built block, not a copy of some of its fields: the word timing the
+            // clock reads was added to it later, and listing fields here dropped it.
+            const block = buildBlockText(pieces);
+            if (block.text.trim().length < 2) return;
+            found.push({ element: owner, ...block });
         });
         return found.length > 0 ? found : null;
     }
@@ -419,10 +423,10 @@
             if (isPageFurniture(element)) return;
             if (!isVisible(element)) return;
 
-            const { pieces, text, words } = textPiecesOf(element);
-            if (text.trim().length < 2) return;
+            const block = textPiecesOf(element);
+            if (block.text.trim().length < 2) return;
             seen.add(element);
-            found.push({ element, pieces, text, words });
+            found.push({ element, ...block });
         };
 
         // The headline and the standfirst usually sit in the article's own header, and
@@ -654,9 +658,9 @@
 
     // ── The clock that follows the word ─────────────────────────────────────
 
-    /** Characters per second at the rate now in force. */
-    function currentCps() {
-        return charsPerSecondAtRate1 * effectiveRate();
+    /** How many times the voice's own speed the reading is at (×2 in the settings is 1.7). */
+    function realSpeed() {
+        return globalThis.ItgSpeechTuning.realSpeed(effectiveRate());
     }
 
     /** Seconds of speech since the current paragraph began. */
@@ -665,9 +669,37 @@
         return elapsedBefore + (performance.now() - spokenAt) / 1000;
     }
 
-    /** Where in the paragraph the voice is, by the clock. */
-    function spokenChars() {
-        return utteranceStart + Math.max(0, elapsedSeconds() - elapsedBefore) * currentCps();
+    /** When, in seconds of speech, the voice reaches word `wordIndex` of the block. */
+    function secondsToWord(block, wordIndex) {
+        return (
+            anchorSeconds +
+            globalThis.ItgSpeechTuning.secondsBetween(
+                block.timing,
+                anchorWord,
+                wordIndex,
+                realSpeed(),
+                speedLearner.lettersPerSecond,
+            )
+        );
+    }
+
+    /** The word the voice is on, by the clock: the last one it has reached. */
+    function spokenWordIndex(block) {
+        if (!block.words.length) return -1;
+        const seconds = elapsedSeconds();
+        let low = anchorWord;
+        let high = block.words.length - 1;
+        let found = Math.min(anchorWord, high);
+        while (low <= high) {
+            const middle = (low + high) >> 1;
+            if (secondsToWord(block, middle) <= seconds) {
+                found = middle;
+                low = middle + 1;
+            } else {
+                high = middle - 1;
+            }
+        }
+        return found;
     }
 
     function startTicking() {
@@ -677,8 +709,7 @@
             const block = blocks[index];
             if (!block) return;
 
-            const position = Math.min(spokenChars(), block.text.length - 1);
-            const wordIndex = wordIndexAt(block, position);
+            const wordIndex = spokenWordIndex(block);
             if (wordIndex >= 0) {
                 charOffset = block.words[wordIndex].start;
                 markWord(block, wordIndex);
@@ -692,16 +723,14 @@
     }
 
     /**
-     * Folds a measurement into the speaking speed.
-     *
-     * Smoothed rather than replaced: one paragraph that happened to be short, or one
-     * boundary event that arrived late, should nudge the estimate, not become it.
+     * Teaches the clock the voice's speed from the words `from` to `to`, which took
+     * `seconds`; the pauses in between, and the silence after the last word when the
+     * stretch ends the paragraph, are not speech and are left out.
      */
-    function learnCps(chars, seconds) {
-        if (seconds < 0.4 || chars < 12) return;
-        const measured = chars / seconds / Math.max(0.1, effectiveRate());
-        if (measured < CPS_BOUNDS[0] || measured > CPS_BOUNDS[1]) return;
-        charsPerSecondAtRate1 = charsPerSecondAtRate1 * 0.6 + measured * 0.4;
+    function learnSpeed(block, from, to, seconds, endsParagraph) {
+        const { units, pauses, trailing } = block.timing;
+        const silent = pauses[to] - pauses[from] + (endsParagraph ? trailing : 0);
+        speedLearner.learn(units[to] - units[from], seconds, realSpeed(), silent);
     }
 
     // ── Speaking ────────────────────────────────────────────────────────────
@@ -764,7 +793,9 @@
         const mine = generation;
         const offset = Math.min(Math.max(0, charOffset), Math.max(0, block.text.length - 1));
 
-        utteranceStart = offset;
+        anchorWord = Math.max(0, wordIndexAt(block, offset));
+        // The voice is heard a moment after the start event (0.06–0.13s measured).
+        anchorSeconds = globalThis.ItgSpeechTuning.TIMING.startLead;
         elapsedBefore = 0;
         spokenAt = 0;
         markedWord = -1;
@@ -782,11 +813,10 @@
         } else {
             utterance.lang = document.documentElement.lang || chrome.i18n.getUILanguage() || 'en-US';
         }
-        utterance.rate = effectiveRate();
-        // `?? 1` and not `|| 1`: the lowest pitch there is happens to be zero, and
-        // `0 || 1` quietly turned the bottom of the slider back into the middle.
-        utterance.pitch = clamp(voiceSettings.pitch ?? 1, 0, 2);
-        utterance.volume = clamp(voiceSettings.volume ?? 1, 0, 1);
+        // What the engine gets is not the setting as it stands: see speechTuning.js, which
+        // is injected before this file. ×2 has to mean twice as fast, and a pitch of zero
+        // has to reach the voice.
+        globalThis.ItgSpeechTuning.applyToUtterance(utterance, { ...voiceSettings, rate: effectiveRate() });
 
         utterance.onstart = () => {
             if (mine !== generation) return;
@@ -804,21 +834,20 @@
             // to match and the speaking speed is re-measured from it. Systems that
             // never send these are read by the clock alone, which is the whole point
             // of having one.
-            const position = offset + event.charIndex;
+            const wordIndex = Math.max(anchorWord, wordIndexAt(block, offset + event.charIndex));
             const seconds = elapsedSeconds();
-            learnCps(position - offset, seconds);
-            utteranceStart = position;
-            elapsedBefore = seconds;
-            spokenAt = performance.now();
+            learnSpeed(block, anchorWord, wordIndex, seconds - anchorSeconds, false);
+            anchorWord = wordIndex;
+            anchorSeconds = seconds;
 
-            charOffset = position;
-            markWord(block, wordIndexAt(block, position));
+            charOffset = block.words[wordIndex].start;
+            markWord(block, wordIndex);
         };
         utterance.onend = () => {
             if (mine !== generation || destroyed || paused) return;
             consecutiveErrors = 0;
             // A paragraph that has just been read is the best measurement there is.
-            learnCps(block.text.length - offset, elapsedSeconds());
+            learnSpeed(block, anchorWord, block.words.length, elapsedSeconds() - anchorSeconds, true);
             stopTicking();
             advance(1);
         };
@@ -914,7 +943,7 @@
         // Whatever the clock says now is where the reading is; freeze it there.
         const block = blocks[index];
         if (block) {
-            const wordIndex = wordIndexAt(block, Math.min(spokenChars(), block.text.length - 1));
+            const wordIndex = spokenWordIndex(block);
             if (wordIndex >= 0) {
                 charOffset = block.words[wordIndex].start;
                 markWord(block, wordIndex);
@@ -1079,7 +1108,7 @@
         }
         const block = blocks[index];
         if (block) {
-            const wordIndex = wordIndexAt(block, Math.min(spokenChars(), block.text.length - 1));
+            const wordIndex = spokenWordIndex(block);
             if (wordIndex >= 0) charOffset = block.words[wordIndex].start;
         }
         cancelSpeech();

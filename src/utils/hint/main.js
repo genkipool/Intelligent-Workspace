@@ -95,6 +95,8 @@ var Main = class Main {
                 this.insertMode = true;
             }
             this._attachListeners();
+            // The omnibar's frame loads ahead so `o` opens it at once; not with the hints off.
+            if (this.hintsGloballyEnabled) this.omniBar.preload();
             this.linkPreviewManager.init();
             const checkForVideo = () => {
                 if (document.querySelector('video')) {
@@ -393,7 +395,11 @@ var Main = class Main {
         }
         if (!isPipMode) {
             this._boundMessageHandler = (msg) => {
-                if (msg.action === 'updateHintStatus') this.hintsGloballyEnabled = msg.enabled;
+                if (msg.action === 'updateHintStatus') {
+                    this.hintsGloballyEnabled = msg.enabled;
+                    if (msg.enabled) this.omniBar.preload();
+                    else this.omniBar.cleanup();
+                }
                 if (msg.action === 'linkPreviewStatusChanged') {
                     if (this.linkPreviewManager) this.linkPreviewManager.setEnabled(msg.enabled);
                     if (this.helpModal) this.helpModal.updateLinkPreviewToggle(msg.enabled);

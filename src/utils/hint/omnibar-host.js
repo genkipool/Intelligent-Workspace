@@ -19,44 +19,96 @@
  * extension port. The port is named with a nonce made for that one opening, and the
  * frame takes only the first port that carries it.
  *
- * Same surface the in-page omnibar had for main.js and registry.js: `active`, `open`,
- * `close`, `recoverFocus`, `cleanup`, `setRegistry`.
+ * Same surface the in-page omnibar had for main.js and registry.js (`active`, `open`,
+ * `close`, `recoverFocus`, `cleanup`, `setRegistry`), plus `preload` and `release`.
  */
+/** Nothing painted and nothing hit: how the frame waits between openings. */
+var OMNIBAR_HIDDEN_CLIP = 'inset(0 0 100% 0)';
+/** How long a tab can sit in the background before its frame is let go. */
+var OMNIBAR_RELEASE_AFTER_HIDDEN_MS = 60000;
+
 var OmniBarHost = class OmniBarHost {
     constructor() {
         this.active = false;
         this.registry = null;
+        this.host = null;
+        this.shadow = null;
         this.frame = null;
         this.port = null;
         this.nonce = null;
         this.matches = [];
         this.filterObserver = null;
+        this._preload = false;
         this._readyTimer = null;
+        this._releaseTimer = null;
         // The frame is clipped to the bar, so a mousedown that reaches the page is one
         // outside the omnibar.
         this._onPageMouseDown = () => this.close();
         this._onResize = () => {
-            if (this.port) this.port.postMessage({ type: 'layout', layoutWidth: this._layoutWidth() });
+            if (this.port && this.active) this.port.postMessage({ type: 'layout', layoutWidth: this._layoutWidth() });
         };
+        this._onVisibility = () => this._followVisibility();
     }
     setRegistry(registry) {
         this.registry = registry;
     }
-    open() {
-        if (this.active || !document.body) return;
-        if (!chrome.runtime || !chrome.runtime.id) {
-            console.warn('[Hint] Cannot open OmniBar: Extension context invalidated.');
-            return;
+    /**
+     * [AI INSTRUCTION]
+     * THE FRAME IS LOADED BEFORE IT IS ASKED FOR, AND KEPT BETWEEN OPENINGS.
+     *
+     * Loading the frame on the key cost about 100ms before the bar could be typed into,
+     * against 3ms when the omnibar was drawn in the page. So the frame is loaded ahead,
+     * once the page is idle, and reused: closing hides it (clipped to nothing, `inert`
+     * so Tab cannot walk into it) instead of removing it.
+     *
+     * Only for the top frame of a tab that is visible, because every frame of every tab
+     * holding one would be memory spent on frames nobody opens the omnibar in. A tab left
+     * in the background lets its frame go after a minute and loads it again when it
+     * comes back; a subframe loads one the first time it is used and keeps it the same
+     * way.
+     */
+    preload() {
+        this._preload = window.top === window;
+        document.removeEventListener('visibilitychange', this._onVisibility);
+        document.addEventListener('visibilitychange', this._onVisibility);
+        this._followVisibility();
+    }
+    _followVisibility() {
+        clearTimeout(this._releaseTimer);
+        if (document.visibilityState === 'visible') {
+            if (!this._preload || this.frame) return;
+            const load = () => {
+                if (document.visibilityState === 'visible' && this._preload) this._ensureFrame();
+            };
+            if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 2000 });
+            else setTimeout(load, 200);
+        } else if (!this.active && this.frame) {
+            this._releaseTimer = setTimeout(() => {
+                if (!this.active && document.visibilityState !== 'visible') this.release();
+            }, OMNIBAR_RELEASE_AFTER_HIDDEN_MS);
         }
-        this.active = true;
+    }
+    /**
+     * Creates the frame if there is none. It lives in a closed shadow root, so the page
+     * can neither find it nor read its address — the per-session extension URL and the
+     * nonce are in there, and a frame that stays in every page would otherwise hand both
+     * to any script that looks.
+     */
+    _ensureFrame() {
+        if (this.frame) return true;
+        if (!document.body || !chrome.runtime || !chrome.runtime.id) return false;
         // `crypto.randomUUID` only exists in secure contexts, and plenty of pages are not.
         this.nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
             b.toString(16).padStart(2, '0'),
         ).join('');
         const nonce = this.nonce;
 
+        const host = document.createElement('div');
+        host.style.setProperty('display', 'contents', 'important');
+        const shadow = host.attachShadow({ mode: 'closed' });
+
         const frame = document.createElement('iframe');
-        frame.setAttribute('data-itg-omnibar', '');
+        frame.tabIndex = -1;
         // The origin has to be named. Without one `allow` delegates to the origin of `src`,
         // and with `use_dynamic_url` that is a per-session GUID while the document it
         // loads is the extension's own origin: nothing was delegated and every copy from
@@ -85,14 +137,39 @@ var OmniBarHost = class OmniBarHost {
             background: 'transparent',
             'pointer-events': 'auto',
             // Nothing is hit or painted until the omnibar reports where it is drawn.
-            'clip-path': 'inset(0 0 100% 0)',
+            'clip-path': OMNIBAR_HIDDEN_CLIP,
         };
         for (const [property, value] of Object.entries(style)) frame.style.setProperty(property, value, 'important');
+        this._setIdle(frame, true);
         frame.addEventListener('load', (event) => {
             if (event.isTrusted && this.frame === frame && this.nonce === nonce) this._connect(nonce);
         });
-        document.body.appendChild(frame);
+        shadow.appendChild(frame);
+        document.body.appendChild(host);
+        this.host = host;
+        this.shadow = shadow;
         this.frame = frame;
+        return true;
+    }
+    _setIdle(frame, idle) {
+        frame.inert = idle;
+        if (idle) frame.setAttribute('aria-hidden', 'true');
+        else frame.removeAttribute('aria-hidden');
+    }
+    open() {
+        if (this.active) return;
+        if (!chrome.runtime || !chrome.runtime.id) {
+            console.warn('[Hint] Cannot open OmniBar: Extension context invalidated.');
+            return;
+        }
+        if (!this._ensureFrame()) return;
+        this.active = true;
+        clearTimeout(this._releaseTimer);
+        this._setIdle(this.frame, false);
+        if (!this._preload) {
+            document.removeEventListener('visibilitychange', this._onVisibility);
+            document.addEventListener('visibilitychange', this._onVisibility);
+        }
 
         this._syncFilter();
         this.filterObserver = new MutationObserver(() => this._syncFilter());
@@ -102,6 +179,8 @@ var OmniBarHost = class OmniBarHost {
         });
         document.addEventListener('mousedown', this._onPageMouseDown, true);
         window.addEventListener('resize', this._onResize);
+        // A frame still loading is told once it connects.
+        if (this.port) this._sendOpen();
     }
     /** The width a fixed `width: 100%` gets on this page: its layout, without the scrollbar. */
     _layoutWidth() {
@@ -118,21 +197,24 @@ var OmniBarHost = class OmniBarHost {
             port = chrome.runtime.connect({ name: `itg-omnibar:${nonce}` });
         } catch (e) {
             console.warn('[Hint] Could not reach the omnibar frame', e);
-            this._teardown();
+            this.release();
             return;
         }
         this.port = port;
         port.onMessage.addListener((msg) => this._onFrameMessage(port, msg));
         port.onDisconnect.addListener(() => {
-            if (this.port === port) this._teardown();
+            if (this.port === port) this.release();
         });
         // Every extension page hears a runtime port, so a frame that never answers would
         // leave it open and the page's keys held by an omnibar that is not there.
         this._readyTimer = setTimeout(() => {
-            if (this.port === port) this._teardown();
+            if (this.port === port) this.release();
         }, 3000);
+        if (this.active) this._sendOpen();
+    }
+    _sendOpen() {
         this.frame.focus();
-        port.postMessage({
+        this.port.postMessage({
             type: 'open',
             pageMode: document.documentElement.getAttribute('data-itg-page-mode'),
             rawShortcuts: this.registry ? this.registry.getRawShortcuts() : {},
@@ -153,10 +235,10 @@ var OmniBarHost = class OmniBarHost {
                 clearTimeout(this._readyTimer);
                 break;
             case 'clip':
-                if (this.frame) this.frame.style.setProperty('clip-path', String(msg.clip), 'important');
+                if (this.frame && this.active) this.frame.style.setProperty('clip-path', String(msg.clip), 'important');
                 break;
             case 'closed':
-                this._teardown();
+                this._hide();
                 break;
             case 'request': {
                 const result = await this._handleRequest(msg.op, msg.args || {});
@@ -188,43 +270,49 @@ var OmniBarHost = class OmniBarHost {
         // The omnibar has the last word — Ctrl+Enter keeps it open for a moment — and
         // answers `closed` when it really goes.
         if (this.port) this.port.postMessage({ type: 'close' });
-        else this._teardown();
+        else this._hide();
     }
     recoverFocus() {
         const sel = window.getSelection();
         if (sel) sel.removeAllRanges();
-        if (!this.frame) return;
+        if (!this.frame || !this.active) return;
         this.frame.focus();
         if (this.port) this.port.postMessage({ type: 'focus' });
     }
-    cleanup() {
-        this._teardown();
-    }
-    _teardown() {
-        const port = this.port;
-        const frame = this.frame;
-        this.port = null;
-        this.frame = null;
-        this.nonce = null;
+    /** Hides the frame and keeps it for the next opening. */
+    _hide() {
         this.active = false;
         this.matches = [];
-        clearTimeout(this._readyTimer);
         if (this.filterObserver) {
             this.filterObserver.disconnect();
             this.filterObserver = null;
         }
         document.removeEventListener('mousedown', this._onPageMouseDown, true);
         window.removeEventListener('resize', this._onResize);
-        if (frame) {
-            // Focus is in the frame while the omnibar is open, and removing a focused
-            // frame leaves the page's document without focus (`document.hasFocus()`
-            // false, measured), which the in-page omnibar never did. `blur()` hands it
-            // back to this document. Not `window.focus()`: that can bring this tab to the
-            // front, and did — choosing another tab in the omnibar switched to it and
-            // straight back.
-            if (document.activeElement === frame) frame.blur();
-            frame.remove();
-        }
+        const frame = this.frame;
+        if (!frame) return;
+        // Focus is in the frame while the omnibar is open, and leaving it there leaves the
+        // page's document without focus (`document.hasFocus()` false, measured), which the
+        // in-page omnibar never did. `blur()` hands it back to this document. Not
+        // `window.focus()`: that can bring this tab to the front, and did — choosing
+        // another tab in the omnibar switched to it and straight back.
+        if (this.shadow && this.shadow.activeElement === frame) frame.blur();
+        frame.style.setProperty('clip-path', OMNIBAR_HIDDEN_CLIP, 'important');
+        this._setIdle(frame, true);
+        if (document.visibilityState !== 'visible') this._followVisibility();
+    }
+    /** Lets the frame go entirely; the next opening loads a new one. */
+    release() {
+        clearTimeout(this._releaseTimer);
+        clearTimeout(this._readyTimer);
+        this._hide();
+        const port = this.port;
+        this.port = null;
+        this.nonce = null;
+        if (this.host) this.host.remove();
+        this.host = null;
+        this.shadow = null;
+        this.frame = null;
         if (port) {
             try {
                 port.disconnect();
@@ -232,6 +320,11 @@ var OmniBarHost = class OmniBarHost {
                 // Already gone with the frame.
             }
         }
+    }
+    cleanup() {
+        this._preload = false;
+        document.removeEventListener('visibilitychange', this._onVisibility);
+        this.release();
     }
     _syncFilter() {
         if (!this.frame) return;

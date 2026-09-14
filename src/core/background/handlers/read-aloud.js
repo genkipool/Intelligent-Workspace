@@ -163,7 +163,8 @@ async function injectReader(tabId) {
     try {
         const [injection] = await chrome.scripting.executeScript({
             target: { tabId },
-            files: ['src/utils/readAloud.js'],
+            // speechTuning.js first: the reader hands its rate and pitch through it.
+            files: ['src/utils/speechTuning.js', 'src/utils/readAloud.js'],
             world: 'ISOLATED',
         });
         // The whole answer, not just its state: the reader also says whether it took a

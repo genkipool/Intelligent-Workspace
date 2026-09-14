@@ -1,4 +1,5 @@
 /* global chrome, speechSynthesis, SpeechSynthesisUtterance */
+import '../../utils/speechTuning.js';
 
 /**
  * Single entry point for text-to-speech.
@@ -62,10 +63,12 @@ export function resolveVoice() {
     return speechSynthesis.getVoices().find((voice) => voice.voiceURI === speechSettings.voiceURI) || null;
 }
 
-function clampSpeech(value, low, high, fallback) {
-    const number = Number(value);
-    if (!Number.isFinite(number)) return fallback;
-    return Math.min(high, Math.max(low, number));
+/**
+ * Rate, pitch and volume as the engine has to receive them for the settings to mean what
+ * they say (see src/utils/speechTuning.js). The utterance's voice and lang go first.
+ */
+export function applySpeechSettings(utterance, settings = speechSettings) {
+    return globalThis.ItgSpeechTuning.applyToUtterance(utterance, settings);
 }
 
 export function createUtterance(text) {
@@ -81,13 +84,7 @@ export function createUtterance(text) {
         utterance.lang = getSpeechLang();
     }
 
-    // Clamped rather than trusted, and with `??` rather than `||`: the lowest pitch
-    // there is happens to be zero, and `0 || 1` quietly turns the bottom of the slider
-    // back into the middle — which is why the low end sounded like no change at all.
-    utterance.rate = clampSpeech(speechSettings.rate, 0.25, 4, 1);
-    utterance.pitch = clampSpeech(speechSettings.pitch, 0, 2, 1);
-    utterance.volume = clampSpeech(speechSettings.volume, 0, 1, 1);
-    return utterance;
+    return applySpeechSettings(utterance);
 }
 
 /**

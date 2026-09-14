@@ -1,0 +1,162 @@
+{
+ "voice": "Google español",
+ "chrome": "151.0.7922.137",
+ "speed": 1.35,
+ "note": "Audio captured from Chrome's network log while the page reader read it; pauses are [start, end] seconds into each paragraph's audio. Held out: the timing constants were fitted on speeds 1 and 1.7.",
+ "paragraphs": [
+  {
+   "text": "La vida frente a la pantalla",
+   "speed": 1.35,
+   "eventSeconds": 1.545,
+   "audioSeconds": 1.46,
+   "trailingSilence": 0.354,
+   "pauses": []
+  },
+  {
+   "text": "¿Cuánto tiempo pasamos cada día delante de una pantalla? Según un estudio publicado en 2023, la media supera las siete horas; en los jóvenes, llega casi a diez.",
+   "speed": 1.35,
+   "eventSeconds": 7.936,
+   "audioSeconds": 7.82,
+   "trailingSilence": 0.515,
+   "pauses": [
+    [
+     2.003,
+     2.276
+    ],
+    [
+     4.094,
+     4.392
+    ],
+    [
+     5.566,
+     5.851
+    ],
+    [
+     6.408,
+     6.6
+    ]
+   ]
+  },
+  {
+   "text": "Los investigadores entrevistaron a 1.200 personas de cinco países distintos.",
+   "speed": 1.35,
+   "eventSeconds": 3.705,
+   "audioSeconds": 3.62,
+   "trailingSilence": 0.265,
+   "pauses": []
+  },
+  {
+   "text": "Muchos dijeron que \"no tenían tiempo\" para leer, pero reconocieron que revisaban el móvil más de cien veces al día, a menudo sin ningún motivo concreto.",
+   "speed": 1.35,
+   "eventSeconds": 7.806,
+   "audioSeconds": 7.7,
+   "trailingSilence": 0.496,
+   "pauses": [
+    [
+     0.976,
+     1.195
+    ],
+    [
+     2.016,
+     2.293
+    ],
+    [
+     2.68,
+     3.014
+    ],
+    [
+     5.546,
+     5.82
+    ]
+   ]
+  },
+  {
+   "text": "La recomendación de los expertos es sencilla: desactivar las notificaciones que no sean urgentes, dejar el teléfono fuera del dormitorio y reservar al menos una hora sin dispositivos antes de dormir.",
+   "speed": 1.35,
+   "eventSeconds": 8.755,
+   "audioSeconds": 8.68,
+   "trailingSilence": 0.519,
+   "pauses": [
+    [
+     1.813,
+     2.168
+    ],
+    [
+     4.206,
+     4.523
+    ]
+   ]
+  },
+  {
+   "text": "Parece poco. Sin embargo, quienes lo probaron durante un mes aseguraron dormir mejor, concentrarse más en el trabajo y, sobre todo, sentirse menos cansados al final de la jornada.",
+   "speed": 1.35,
+   "eventSeconds": 8.882,
+   "audioSeconds": 8.8,
+   "trailingSilence": 0.497,
+   "pauses": [
+    [
+     0.605,
+     0.759
+    ],
+    [
+     1.283,
+     1.537
+    ],
+    [
+     3.691,
+     4.007
+    ],
+    [
+     5.407,
+     5.768
+    ],
+    [
+     6.268,
+     6.489
+    ]
+   ]
+  },
+  {
+   "text": "Otros participantes, en cambio, abandonaron el experimento a la segunda semana.",
+   "speed": 1.35,
+   "eventSeconds": 4.274,
+   "audioSeconds": 4.2,
+   "trailingSilence": 0.503,
+   "pauses": [
+    [
+     0.983,
+     1.163
+    ],
+    [
+     1.614,
+     1.983
+    ]
+   ]
+  },
+  {
+   "text": "El informe concluye que no se trata de renunciar a la tecnología, sino de recuperar el control sobre cuándo y cómo la usamos, algo que, según los autores, está al alcance de cualquiera.",
+   "speed": 1.35,
+   "eventSeconds": 8.658,
+   "audioSeconds": 8.56,
+   "trailingSilence": 0.499,
+   "pauses": [
+    [
+     2.467,
+     2.81
+    ],
+    [
+     5.057,
+     5.335
+    ],
+    [
+     5.867,
+     6.06
+    ],
+    [
+     6.831,
+     7.057
+    ]
+   ]
+  }
+ ]
+}
