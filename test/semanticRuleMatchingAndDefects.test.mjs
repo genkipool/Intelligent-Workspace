@@ -377,12 +377,12 @@ describe('Quarantine checks: Defect #3 and Defect #4 remain untouched', () => {
         );
     });
 
-    it('verifies Defect #4 quarantine: Rules.svelte retains chrome.tabGroups.query({ title: deleted.name })', () => {
+    it('verifies Defect #4 / DEF-10 fix: Rules.svelte queries all tabGroups and matches stripped group titles', () => {
         const rulesCode = readFileSync('src/ui/pages/rules/Rules.svelte', 'utf8');
         assert.match(
             rulesCode,
-            /chrome\.tabGroups\.query\(\{\s*title:\s*deleted\.name\s*\}\)/,
-            'Defect #4 quarantine: Rules.svelte must query tabGroups using title: deleted.name',
+            /chrome\.tabGroups\.query\(\{\s*\}\)/,
+            'Rules.svelte must query all tabGroups to match stripped group titles',
         );
     });
 });

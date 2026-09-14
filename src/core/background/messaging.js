@@ -233,7 +233,76 @@ chrome.commands.onCommand.addListener(async (command) => {
             console.warn(`[onCommand] Unhandled command: ${command}.`);
     }
 });
+function isExtensionPageSender(sender) {
+    if (!sender || sender.id !== chrome.runtime.id) return false;
+    const extensionOrigin = chrome.runtime.getURL('');
+    if (typeof sender.url !== 'string' || !sender.url.startsWith(extensionOrigin)) {
+        return false;
+    }
+    if (sender.tab && sender.tab.url && !sender.tab.url.startsWith(extensionOrigin)) {
+        return false;
+    }
+    const expectedOrigin = extensionOrigin.endsWith('/') ? extensionOrigin.slice(0, -1) : extensionOrigin;
+    if (sender.origin && sender.origin !== expectedOrigin) {
+        return false;
+    }
+    return true;
+}
+
+const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
+    'backupAllGroupsFromKey',
+    'restoreAllGroupsFromKey',
+    'createRuleFromShortcut',
+    'openAddToRuleFromShortcut',
+    'openPopupWindow',
+    'openSidePanel',
+    'toggleLinkPreviewFromKey',
+    'toggleAutoPipFromKey',
+    'captureFromShortcut',
+    'captureGroupFromShortcut',
+    'captureAreaFromShortcut',
+    'previousTab',
+    'nextTab',
+    'createNewTab',
+    'closeCurrentTab',
+    'duplicateTab',
+    'swapToPreviousTab',
+    'deleteCurrentTabGroup',
+    'setPageMode',
+    'cancelTabPageMode',
+    'muteAllTabs',
+    'toggleMuteCurrentTab',
+    'toggleSplitScreen',
+    'openUrl',
+    'navigateToGroupTab',
+    'pauseMedia',
+    'createNoteFromSelection',
+    'startReadAloud',
+    'fullscreenChanged',
+    'hintStatusChanged',
+    'readAloudStateChanged',
+    'screenColorPicked',
+    'screenColorPickCanceled',
+    'captureForColorPicker',
+    'areaSelectionCancelled',
+    'prepareVideoUrlForPip',
+    'getFaviconDataUrl',
+    'printingComplete',
+    'getActiveTheme',
+    'getExtensionFileContent',
+    'prepareYouTubeEmbed',
+    'hintCommandsUpdated',
+    'snippetsUpdated',
+    'getI18nMessages',
+]);
+
 chrome.runtime.onConnect.addListener((port) => {
+    if (!isExtensionPageSender(port?.sender)) {
+        try {
+            port.disconnect();
+        } catch {}
+        return;
+    }
     if (port.name === 'popup-connection') {
         isPopupCurrentlyOpen = true;
         port.onDisconnect.addListener(() => {
@@ -1231,54 +1300,12 @@ const MESSAGE_HANDLERS = {
  * (side panel, popup, settings) and must NEVER be invoked by content scripts
  * in arbitrary webpages.
  */
-const SENSITIVE_UI_ACTIONS = new Set([
-    'getCookiesForUrl',
-    'setCookie',
-    'removeCookie',
-    'prepareUrlForSidePanel',
-    /*
-     * An unrestricted `fetch` from the worker, which runs with `<all_urls>` host
-     * permissions and therefore reads across origins with no CORS to answer to —
-     * an intranet address or a device on the LAN included. Its only caller is
-     * `viewsService.js`, an extension page, so naming it here costs nothing and
-     * takes the reach of a compromised content script down by a long way.
-     */
-    'fetchPageContent',
-    'downloadFilesBatch',
-    'openDownload',
-    'eraseDownload',
-    'eraseAllDownloads',
-    'pauseDownload',
-    'resumeDownload',
-    'cancelDownload',
-    'openDownloadsFolder',
-    'retryDownload',
-    'showDownloadFile',
-]);
-
-function isExtensionPageSender(sender) {
-    if (!sender) return false;
-    const extensionOrigin = chrome.runtime.getURL('');
-    // Sender URL must belong to the extension
-    if (sender.url && !sender.url.startsWith(extensionOrigin)) {
-        return false;
-    }
-    // Content scripts running in web tabs have sender.tab defined pointing to a non-extension URL
-    if (sender.tab && sender.url && !sender.url.startsWith(extensionOrigin)) {
-        return false;
-    }
-    // Origin, if provided, must match our extension
-    if (sender.origin && sender.origin !== extensionOrigin.slice(0, -1)) {
-        return false;
-    }
-    return true;
-}
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message?.action && SENSITIVE_UI_ACTIONS.has(message.action)) {
-        if (!isExtensionPageSender(sender)) {
+    const isExtension = isExtensionPageSender(sender);
+    if (!isExtension) {
+        if (!message?.action || !ALLOWED_CONTENT_SCRIPT_ACTIONS.has(message.action)) {
             console.warn(
-                `[Security] Blocked unauthorized content script attempt to call "${message.action}" from`,
+                `[Security] Blocked unauthorized message action "${message?.action}" from sender:`,
                 sender?.url || 'unknown',
             );
             sendResponse({ success: false, error: 'Unauthorized sender' });

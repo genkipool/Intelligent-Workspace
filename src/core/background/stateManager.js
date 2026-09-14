@@ -468,8 +468,8 @@ async function loadOrRebuildGroupInfoMap() {
 }
 async function loadExtensionSettings() {
     try {
-        const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
-        const storage = ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
+        const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
+        const storage = ruleStorageArea === 'sync' ? chrome.storage.sync : chrome.storage.local;
         const settingsKeys = [
             'userPrefixes',
             'sortGroupsAlphabetically',
@@ -562,11 +562,9 @@ async function initializeExtensionStates(isFirstInstall = false) {
     } catch (error) {
         console.error('Error during extension state initialization:', error);
     } finally {
-        setTimeout(async () => {
-            isInitializing = false;
-            logMessage('States synchronized.');
-            groupTabs();
-        }, 1000);
+        isInitializing = false;
+        logMessage('States synchronized.');
+        await groupTabs();
     }
 }
 async function setupDefaultSettings() {
@@ -597,7 +595,7 @@ async function setupDefaultSettings() {
         await chrome.storage.sync.set(defaultSettings);
         await chrome.storage.local.set(defaultSettings);
         await chrome.storage.local.set({
-            ruleStorageArea: 'sync',
+            ruleStorageArea: 'local',
         });
         logMessage('Default settings have been successfully saved.');
     } catch (error) {
@@ -780,8 +778,7 @@ async function executeWithRetries(action, operationDescription, maxRetries = MAX
         } catch (error) {
             const errorMessage = error.message || '';
             // Retry if a user is dragging tabs, as this locks the UI.
-            // Retry if a user is dragging tabs, as this locks the UI.
-            if (errorMessage.includes('dragging')) {
+            if (errorMessage.toLowerCase().includes('drag')) {
                 retries++;
                 logMessage(
                     `[executeWithRetries] Attempt ${retries}/${maxRetries} for "${operationDescription}" failed due to dragging. Retrying...`,

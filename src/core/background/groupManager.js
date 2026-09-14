@@ -64,7 +64,22 @@ async function updateGroupProperties(
 
     if (tabIdsToAdd.length > 0) {
         logMessage(`[updateGroupProperties] Adding ${tabIdsToAdd.length} tabs to existing group ${group.id}.`);
-        await chrome.tabs.group({ groupId: group.id, tabIds: tabIdsToAdd });
+        const validTabs = await Promise.all(
+            tabIdsToAdd.map(async (id) => {
+                try {
+                    return await chrome.tabs.get(id);
+                } catch {
+                    return null;
+                }
+            }),
+        );
+        const activeTabIds = validTabs.filter(Boolean).map((t) => t.id);
+        if (activeTabIds.length > 0) {
+            await executeWithRetries(
+                async () => await chrome.tabs.group({ groupId: group.id, tabIds: activeTabIds }),
+                `add tabs to group ${group.id}`,
+            );
+        }
     } else {
         logMessage(
             `[updateGroupProperties] Group ${group.id} already holds its ${tabIds.length} tabs; nothing to add.`,
@@ -163,10 +178,28 @@ async function createAndConfigureGroup(
     willBeCompact = false,
     colorPending = false,
 ) {
-    logMessage(`[createAndConfigureGroup] Creating and IMMEDIATELY registering a NEW group for key '${groupKey}'.`);
+    // 1. Verify tab existence and create the tab group.
+    const validTabs = await Promise.all(
+        tabIds.map(async (id) => {
+            try {
+                return await chrome.tabs.get(id);
+            } catch {
+                return null;
+            }
+        }),
+    );
+    const activeTabIds = validTabs.filter(Boolean).map((t) => t.id);
+    if (activeTabIds.length === 0) {
+        logMessage(`[createAndConfigureGroup] No active tabs remaining for key '${groupKey}'.`);
+        return null;
+    }
 
-    // 1. Create the tab group.
-    const groupId = await chrome.tabs.group({ tabIds });
+    const groupId = await executeWithRetries(
+        async () => await chrome.tabs.group({ tabIds: activeTabIds }),
+        `create tab group for ${groupKey}`,
+    );
+
+    if (!groupId) return null;
 
     // 2. Determine the base title.
     const specialConfig = Object.values(clusterConfig.specialGroups).find((c) => c.key === groupKey);
@@ -248,6 +281,7 @@ async function manageGroup(
             willBeCompact,
             colorPending,
         );
+        if (!groupId) return null;
         groupFinalTitle = groupInfoMap.get(groupId)?.title;
     }
 
@@ -319,14 +353,14 @@ function applyCustomRules(tabs, customRules) {
             }
         }
         if (matchingTabs.length > 0) {
-            customGroupTabs[rule.name] = matchingTabs;
+            customGroupTabs[rule.name] = (customGroupTabs[rule.name] || []).concat(matchingTabs);
         }
     }
     return { customGroupTabs, groupedTabIds };
 }
 
 function isLocalhost(hostname) {
-    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1';
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.replace(/^\[|\]$/g, '') === '::1';
 }
 
 function isIPAddress(hostname) {
@@ -867,19 +901,25 @@ async function executeGroupingPlan(groupingPlan, existingGroups, windowId, curre
         const batch = groupingPlan.slice(i, i + GROUP_CREATION_BATCH_SIZE);
         const batchResults = await Promise.all(
             batch.map(async (plan) => {
-                const groupId = await manageGroup(
-                    plan.type,
-                    plan.key,
-                    plan.color,
-                    plan.tabIds,
-                    existingGroups,
-                    windowId,
-                    willBeCompact,
-                    currentGroupIdByTabId,
-                    plan.colorPending === true,
-                );
-                if (plan.name) {
-                    return [plan.name, groupId];
+                try {
+                    const groupId = await manageGroup(
+                        plan.type,
+                        plan.key,
+                        plan.color,
+                        plan.tabIds,
+                        existingGroups,
+                        windowId,
+                        willBeCompact,
+                        currentGroupIdByTabId,
+                        plan.colorPending === true,
+                    );
+                    if (plan.name && groupId) {
+                        return [plan.name, groupId];
+                    }
+                    return null;
+                } catch (error) {
+                    console.warn(`[executeGroupingPlan] Error managing group for ${plan.key}:`, error);
+                    return null;
                 }
             }),
         );

@@ -239,3 +239,18 @@ export function sanitizeNoteHtml(html) {
     for (const child of Array.from(doc.body.children)) cleanElement(child);
     return doc.body.innerHTML;
 }
+
+/**
+ * Escapes HTML entities in untrusted strings for safe interpolation into HTML.
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}

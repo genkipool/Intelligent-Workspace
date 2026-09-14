@@ -62,48 +62,60 @@ importScripts('/background/events.js');
 importScripts('/background/pomodoro.js');
 
 (async () => {
-    logMessage('[Service Worker Startup] Initializing extension...');
+    try {
+        logMessage('[Service Worker Startup] Initializing extension...');
 
-    // The side panel keeps whatever page it was showing.
-    //
-    // This used to force the rules page on every startup, to shake off a legacy path
-    // Chrome might have cached. But in MV3 the worker starts again on any event — an
-    // alarm, a tab change, a message — so that reset fired over and over and dragged
-    // the panel back to the rules page on its own while someone was reading the group
-    // list or the assistant. Now the configured path is only touched when it does not
-    // belong to this build, which is the case the reset was written for.
-    if (chrome.sidePanel && chrome.sidePanel.setOptions) {
-        const KNOWN_PANEL_PAGES = [
-            'src/ui/pages/rules/rules.html',
-            'src/ui/pages/listGroup/listGroup.html',
-            'src/ui/pages/savedThemes/savedThemes.html',
-            'src/ui/pages/customize_hints/customize_hints.html',
-            'src/ui/pages/popup/popup.html',
-        ];
-        try {
-            const options = await chrome.sidePanel.getOptions({});
-            const current = options?.path || '';
-            const isKnown = KNOWN_PANEL_PAGES.some((page) => current.startsWith(page));
-            if (!isKnown) {
-                await chrome.sidePanel.setOptions({ path: 'src/ui/pages/rules/rules.html', enabled: true });
-            } else if (options.enabled === false) {
-                await chrome.sidePanel.setOptions({ enabled: true });
+        if (chrome.storage && chrome.storage.session && chrome.storage.session.setAccessLevel) {
+            try {
+                await chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+            } catch (err) {
+                console.warn('[Service Worker Startup] Could not set session storage access level:', err);
             }
-        } catch (e) {
-            console.warn('Could not read the side panel options:', e);
         }
+
+        // The side panel keeps whatever page it was showing.
+        //
+        // This used to force the rules page on every startup, to shake off a legacy path
+        // Chrome might have cached. But in MV3 the worker starts again on any event — an
+        // alarm, a tab change, a message — so that reset fired over and over and dragged
+        // the panel back to the rules page on its own while someone was reading the group
+        // list or the assistant. Now the configured path is only touched when it does not
+        // belong to this build, which is the case the reset was written for.
+        if (chrome.sidePanel && chrome.sidePanel.setOptions) {
+            const KNOWN_PANEL_PAGES = [
+                'src/ui/pages/rules/rules.html',
+                'src/ui/pages/listGroup/listGroup.html',
+                'src/ui/pages/savedThemes/savedThemes.html',
+                'src/ui/pages/customize_hints/customize_hints.html',
+                'src/ui/pages/popup/popup.html',
+            ];
+            try {
+                const options = await chrome.sidePanel.getOptions({});
+                const current = options?.path || '';
+                const isKnown = KNOWN_PANEL_PAGES.some((page) => current.startsWith(page));
+                if (!isKnown) {
+                    await chrome.sidePanel.setOptions({ path: 'src/ui/pages/rules/rules.html', enabled: true });
+                } else if (options.enabled === false) {
+                    await chrome.sidePanel.setOptions({ enabled: true });
+                }
+            } catch (e) {
+                console.warn('Could not read the side panel options:', e);
+            }
+        }
+        await initializeExtensionStates();
+
+        // The idle threshold is not persisted across worker starts, and a blocking
+        // schedule may have opened while nothing was running.
+        await initWebActivity();
+
+        // Inject content scripts into open tabs upon reload / startup so changes apply immediately without manual refresh
+        logMessage('[Service Worker Startup] Injecting content scripts into open tabs.');
+        await injectContentScriptsInAllTabs();
+
+        logMessage('[Service Worker Startup] Initialization complete.');
+    } catch (error) {
+        console.error('[Service Worker Startup] Error during extension startup initialization:', error);
     }
-    await initializeExtensionStates();
-
-    // The idle threshold is not persisted across worker starts, and a blocking
-    // schedule may have opened while nothing was running.
-    await initWebActivity();
-
-    // Inject content scripts into open tabs upon reload / startup so changes apply immediately without manual refresh
-    logMessage('[Service Worker Startup] Injecting content scripts into open tabs.');
-    await injectContentScriptsInAllTabs();
-
-    logMessage('[Service Worker Startup] Initialization complete.');
 })();
 
 // --- Omnibox AI-Powered Tab Finder ---

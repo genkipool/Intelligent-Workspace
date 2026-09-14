@@ -190,10 +190,12 @@
         }
     }
 
+    let _themeMessageListener = null;
+
     async function initTheme() {
         await applyTheme();
         try {
-            chrome.runtime.onMessage.addListener((msg) => {
+            _themeMessageListener = (msg) => {
                 if (msg.action === 'themeChanged') {
                     // Debounce: cancel previous pending refresh, wait 300ms after last change
                     if (_themeChangeTimer) clearTimeout(_themeChangeTimer);
@@ -216,7 +218,8 @@
                         renderAll();
                     });
                 }
-            });
+            };
+            chrome.runtime.onMessage.addListener(_themeMessageListener);
         } catch {}
     }
 
@@ -1467,6 +1470,12 @@
             try {
                 chrome.runtime.onMessage.removeListener(_onMessageListener);
             } catch {}
+        }
+        if (_themeMessageListener) {
+            try {
+                chrome.runtime.onMessage.removeListener(_themeMessageListener);
+            } catch {}
+            _themeMessageListener = null;
         }
         if (_visibilityHandler) {
             document.removeEventListener('visibilitychange', _visibilityHandler);

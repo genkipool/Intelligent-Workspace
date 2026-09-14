@@ -13,7 +13,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         }
     }
     if (shouldIgnoreEventDuringInitialization('tabs.onUpdated', tabId)) return;
-    if (isGrouping) return;
+    if (isGrouping) {
+        debounceGroupTabs();
+        return;
+    }
 
     // Which group a tab belongs to is decided by its URL, so only these can change
     // it. A title or an audible change cannot: a page that updates its title (an
@@ -446,6 +449,7 @@ chrome.tabs.onAttached.addListener(async (tabId, attachInfo) => {
     if (shouldIgnoreEventDuringInitialization('tabs.onAttached', tabId)) return;
     getTypeGroup = false;
     logMessage(`[onAttached] Tab ${tabId} attached to window ${attachInfo.newWindowId}.`);
+    debounceGroupTabs();
     await updateAllGroupPrefixes(attachInfo.newWindowId, null);
 });
 chrome.tabs.onDetached.addListener(async (tabId, detachInfo) => {
@@ -1281,13 +1285,13 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     }
     let configuredArea = cachedConfiguredRuleStorageArea;
     if (!configuredArea) {
-        const { ruleStorageArea: currentArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+        const { ruleStorageArea: currentArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
         cachedConfiguredRuleStorageArea = currentArea;
         configuredArea = currentArea;
     }
     if (changes.ruleStorageArea && area === 'local') {
-        const oldValue = changes.ruleStorageArea.oldValue || 'sync';
-        const newValue = changes.ruleStorageArea.newValue || 'sync';
+        const oldValue = changes.ruleStorageArea.oldValue || 'local';
+        const newValue = changes.ruleStorageArea.newValue || 'local';
         cachedConfiguredRuleStorageArea = newValue;
         logMessage(`[Storage Changed] Storage area switched from '${oldValue}' to '${newValue}'. Re-initializing...`);
         if (!isInstallActive) {

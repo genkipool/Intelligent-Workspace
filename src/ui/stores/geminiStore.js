@@ -26,6 +26,26 @@ const STORAGE_KEYS = {
     GEMINI_SESSION_CONVERSATIONS: 'geminiSessionConversations',
 };
 
+function encodeKey(str) {
+    if (!str || typeof str !== 'string') return str;
+    if (str.startsWith('enc_')) return str;
+    try {
+        return 'enc_' + btoa(unescape(encodeURIComponent(str)));
+    } catch {
+        return str;
+    }
+}
+
+function decodeKey(str) {
+    if (!str || typeof str !== 'string') return str;
+    if (!str.startsWith('enc_')) return str;
+    try {
+        return decodeURIComponent(escape(atob(str.slice(4))));
+    } catch {
+        return str;
+    }
+}
+
 export const MAX_GEMINI_SCHEDULES = 7;
 
 /** Speaker id used when the controls bar reads the whole conversation instead of one entry. */
@@ -1369,8 +1389,22 @@ function createGeminiStore() {
             try {
                 const response = await chrome.runtime.sendMessage({ action: 'validateApiKey', apiKey });
                 if (response && response.success) {
-                    const storageData = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
-                    let keysList = storageData.geminiApiKeysList || [];
+                    let keysList = [];
+                    if (chrome.storage && chrome.storage.session) {
+                        try {
+                            const sess = await chrome.storage.session.get(['geminiApiKeysList']);
+                            if (sess.geminiApiKeysList && sess.geminiApiKeysList.length > 0) {
+                                keysList = sess.geminiApiKeysList;
+                            }
+                        } catch {}
+                    }
+                    if (keysList.length === 0) {
+                        const storageData = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
+                        keysList = (storageData.geminiApiKeysList || []).map((k) => ({
+                            ...k,
+                            key: decodeKey(k.key),
+                        }));
+                    }
                     const existingIndex = keysList.findIndex((k) => k.key === apiKey);
                     if (existingIndex !== -1) {
                         if (errorMsg) {
@@ -1402,7 +1436,24 @@ function createGeminiStore() {
                         name: t('geminiApiKeyNameDefault'),
                         tier: t('geminiFreeTier'),
                     });
-                    await chrome.storage.local.set({ [STORAGE_KEYS.API_KEY]: apiKey, geminiApiKeysList: keysList });
+                    if (chrome.storage && chrome.storage.session) {
+                        try {
+                            if (chrome.storage.session.setAccessLevel) {
+                                await chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
+                            }
+                            await chrome.storage.session.set({
+                                [STORAGE_KEYS.API_KEY]: apiKey,
+                                geminiApiKeysList: keysList,
+                            });
+                        } catch (e) {
+                            console.warn('Could not set session storage for gemini keys:', e);
+                        }
+                    }
+                    const encodedKeysList = keysList.map((k) => ({ ...k, key: encodeKey(k.key) }));
+                    await chrome.storage.local.set({
+                        [STORAGE_KEYS.API_KEY]: encodeKey(apiKey),
+                        geminiApiKeysList: encodedKeysList,
+                    });
                     update((st) => ({ ...st, apiKeys: keysList }));
                     showNotification('apiKeySaved');
                     saveBtn.disabled = false;
@@ -1433,8 +1484,24 @@ function createGeminiStore() {
         },
 
         deleteApiKey: async (target) => {
-            const storageData = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
-            let keysList = storageData.geminiApiKeysList || [];
+            let keysList = [];
+            let storageData = {};
+            if (chrome.storage && chrome.storage.session) {
+                try {
+                    const sess = await chrome.storage.session.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
+                    if (sess.geminiApiKeysList && sess.geminiApiKeysList.length > 0) {
+                        keysList = sess.geminiApiKeysList;
+                        storageData = sess;
+                    }
+                } catch {}
+            }
+            if (keysList.length === 0) {
+                storageData = await chrome.storage.local.get(['geminiApiKeysList', STORAGE_KEYS.API_KEY]);
+                keysList = (storageData.geminiApiKeysList || []).map((k) => ({
+                    ...k,
+                    key: decodeKey(k.key),
+                }));
+            }
             let index = -1;
             if (typeof target === 'number') {
                 index = target;
@@ -1447,9 +1514,23 @@ function createGeminiStore() {
 
             const keyString = keysList[index]?.key;
             keysList.splice(index, 1);
-            const updateData = { geminiApiKeysList: keysList };
-            if (storageData[STORAGE_KEYS.API_KEY] === keyString) {
-                updateData[STORAGE_KEYS.API_KEY] = keysList.length > 0 ? keysList[0].key : '';
+            if (chrome.storage && chrome.storage.session) {
+                try {
+                    await chrome.storage.session.set({
+                        [STORAGE_KEYS.API_KEY]: keysList.length > 0 ? keysList[0].key : '',
+                        geminiApiKeysList: keysList,
+                    });
+                } catch (e) {
+                    console.warn('Could not update session storage on key delete:', e);
+                }
+            }
+            const encodedKeysList = keysList.map((k) => ({ ...k, key: encodeKey(k.key) }));
+            const updateData = { geminiApiKeysList: encodedKeysList };
+            if (
+                storageData[STORAGE_KEYS.API_KEY] === encodeKey(keyString) ||
+                storageData[STORAGE_KEYS.API_KEY] === keyString
+            ) {
+                updateData[STORAGE_KEYS.API_KEY] = keysList.length > 0 ? encodeKey(keysList[0].key) : '';
             }
             await chrome.storage.local.set(updateData);
             update((st) => ({ ...st, apiKeys: keysList }));

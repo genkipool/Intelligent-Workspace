@@ -1,6 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
-    import { sanitizeNoteHtml } from '../../../../utils/noteHtml.js';
+    import { sanitizeNoteHtml, escapeHtml } from '../../../../utils/noteHtml.js';
 
     let { contentHTML = $bindable(''), showValidation = false, noteType = 'text' } = $props();
 
@@ -50,20 +50,21 @@
             reader.onload = (ev) => {
                 const dataUrl = ev.target.result;
                 let htmlInsert = '';
+                const safeName = escapeHtml(file.name);
 
                 if (file.type.startsWith('image/')) {
-                    htmlInsert = `<img src="${dataUrl}" alt="${file.name}" />`;
+                    htmlInsert = `<img src="${dataUrl}" alt="${safeName}" />`;
                 } else if (file.type.startsWith('audio/')) {
                     htmlInsert = `<audio controls src="${dataUrl}"></audio>`;
                 } else if (file.type.startsWith('video/')) {
                     htmlInsert = `<video controls src="${dataUrl}"></video>`;
                 } else if (file.type === 'application/pdf') {
-                    htmlInsert = `<a href="${dataUrl}" target="_blank" rel="noopener noreferrer">${file.name}</a>`;
+                    htmlInsert = `<a href="${dataUrl}" target="_blank" rel="noopener noreferrer">${safeName}</a>`;
                 } else {
                     return;
                 }
 
-                contentHTML += htmlInsert + '\u00A0';
+                contentHTML += sanitizeNoteHtml(htmlInsert) + '\u00A0';
             };
 
             reader.readAsDataURL(file);

@@ -265,7 +265,23 @@ async function loadI18nMessages(force = false) {
             const url = chrome.runtime.getURL(`_locales/${currentLang}/messages.json`);
             const response = await fetch(url);
             if (response.ok) {
-                currentLangMessages = await response.json();
+                const data = await response.json();
+                if (currentLang !== 'en') {
+                    try {
+                        const enUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                        const enResp = await fetch(enUrl);
+                        if (enResp.ok) {
+                            const enData = await enResp.json();
+                            currentLangMessages = { ...enData, ...data };
+                        } else {
+                            currentLangMessages = data;
+                        }
+                    } catch {
+                        currentLangMessages = data;
+                    }
+                } else {
+                    currentLangMessages = data;
+                }
                 loadedI18nLang = currentLang;
                 logMessage(`[i18n] Loaded messages for: ${currentLang}`);
             } else {
@@ -283,11 +299,23 @@ async function loadI18nMessages(force = false) {
 
 function getI18nMsg(key, params = []) {
     const msgObj = currentLangMessages[key];
-    let message = msgObj ? msgObj.message : chrome.i18n.getMessage(key, params);
+    if (!msgObj) {
+        const i18nVal = chrome.i18n.getMessage(key, params);
+        if (i18nVal) return i18nVal;
+        return key;
+    }
 
+    let message = msgObj.message || '';
     if (!message) return key;
 
-    if (params.length > 0) {
+    if (msgObj.placeholders) {
+        for (const [name, config] of Object.entries(msgObj.placeholders)) {
+            const placeholderRegex = new RegExp(`\\$${name}\\$`, 'gi');
+            message = message.replace(placeholderRegex, config.content || '');
+        }
+    }
+
+    if (Array.isArray(params) && params.length > 0) {
         message = message.replace(/\$(\d+)/g, (match, indexStr) => {
             const index = parseInt(indexStr, 10) - 1;
             return params[index] !== undefined ? params[index] : match;
@@ -1296,7 +1324,7 @@ async function getSortAlphabeticallySetting() {
 }
 
 async function getSettingsStorage() {
-    const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+    const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
     return ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
 }
 

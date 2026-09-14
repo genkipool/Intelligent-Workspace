@@ -24,19 +24,21 @@ export function getStorageAreaName(ruleKey = 'ruleStorageArea') {
     let pending = areaNameCache.get(ruleKey);
     if (!pending) {
         const local = getStorageBackend('local');
+        const defaultArea = ruleKey === 'themeStorageArea' ? 'sync' : 'local';
         if (local) {
-            pending = local.get(ruleKey).then(({ [ruleKey]: area = 'sync' }) => area);
+            pending = local.get(ruleKey).then(({ [ruleKey]: area = defaultArea }) => area || defaultArea);
             areaNameCache.set(ruleKey, pending);
         } else {
-            return Promise.resolve('sync');
+            return Promise.resolve(defaultArea);
         }
     }
     return pending;
 }
 
 export async function getStorageArea(ruleKey = 'ruleStorageArea') {
+    const defaultArea = ruleKey === 'themeStorageArea' ? 'sync' : 'local';
     const areaName = await getStorageAreaName(ruleKey);
-    return getStorageBackend(areaName) || getStorageBackend('sync');
+    return getStorageBackend(areaName) || getStorageBackend(defaultArea);
 }
 
 if (typeof chrome !== 'undefined' && chrome?.storage?.onChanged) {
@@ -68,9 +70,10 @@ export const storageService = {
     set: async (items, area = 'local') => {
         try {
             const storage = getStorageBackend(area);
-            await storage.set(items);
+            return await storage.set(items);
         } catch (err) {
             console.error(`[StorageService] set failed (${area}):`, err);
+            throw err;
         }
     },
 

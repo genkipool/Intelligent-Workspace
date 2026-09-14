@@ -35,10 +35,48 @@ function geminiRequestInit(apiKey, init = {}) {
 /** The one endpoint used to list models — and, because it is the cheapest call there is, to check a key. */
 const GEMINI_MODELS_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
+function _obfuscateKey(str) {
+    if (!str || typeof str !== 'string') return str;
+    if (str.startsWith('enc_')) return str;
+    try {
+        return 'enc_' + btoa(unescape(encodeURIComponent(str)));
+    } catch {
+        return str;
+    }
+}
+
+function _deobfuscateKey(str) {
+    if (!str || typeof str !== 'string') return str;
+    if (!str.startsWith('enc_')) return str;
+    try {
+        return decodeURIComponent(escape(atob(str.slice(4))));
+    } catch {
+        return str;
+    }
+}
+
 async function fetchAvailableModels() {
-    const { geminiApiKey, geminiApiKeysList } = await chrome.storage.local.get(['geminiApiKey', 'geminiApiKeysList']);
-    const apiKey =
-        geminiApiKey || (geminiApiKeysList && geminiApiKeysList.length > 0 ? geminiApiKeysList[0].key : null);
+    let apiKey = null;
+    if (chrome.storage && chrome.storage.session) {
+        try {
+            const sess = await chrome.storage.session.get(['geminiApiKey', 'geminiApiKeysList']);
+            apiKey =
+                sess.geminiApiKey ||
+                (sess.geminiApiKeysList && sess.geminiApiKeysList.length > 0 ? sess.geminiApiKeysList[0].key : null);
+        } catch {}
+    }
+    if (!apiKey) {
+        const { geminiApiKey, geminiApiKeysList } = await chrome.storage.local.get([
+            'geminiApiKey',
+            'geminiApiKeysList',
+        ]);
+        apiKey =
+            _deobfuscateKey(geminiApiKey) ||
+            (geminiApiKeysList && geminiApiKeysList.length > 0 ? _deobfuscateKey(geminiApiKeysList[0].key) : null);
+        if (apiKey && chrome.storage && chrome.storage.session) {
+            chrome.storage.session.set({ geminiApiKey: apiKey }).catch(() => {});
+        }
+    }
 
     if (!apiKey) {
         console.warn('[Gemini] API Key not found for fetching models.');
@@ -77,7 +115,34 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
     const { isAgent = false, useSearchTool = false } = options;
     const logPrefix = isAgent ? '[Agent Gemini]' : '[Gemini]';
 
-    const storageData = await chrome.storage.local.get(['geminiApiKeysList', 'geminiApiKey', 'selectedGeminiModel']);
+    let storageData = null;
+    if (chrome.storage && chrome.storage.session) {
+        try {
+            const sess = await chrome.storage.session.get(['geminiApiKeysList', 'geminiApiKey', 'selectedGeminiModel']);
+            if (sess.geminiApiKey || (sess.geminiApiKeysList && sess.geminiApiKeysList.length > 0)) {
+                storageData = sess;
+            }
+        } catch {}
+    }
+    if (!storageData) {
+        const localData = await chrome.storage.local.get(['geminiApiKeysList', 'geminiApiKey', 'selectedGeminiModel']);
+        storageData = {
+            selectedGeminiModel: localData.selectedGeminiModel,
+            geminiApiKey: _deobfuscateKey(localData.geminiApiKey),
+            geminiApiKeysList: (localData.geminiApiKeysList || []).map((k) => ({
+                ...k,
+                key: _deobfuscateKey(k.key),
+            })),
+        };
+        if (chrome.storage && chrome.storage.session) {
+            chrome.storage.session
+                .set({
+                    geminiApiKey: storageData.geminiApiKey,
+                    geminiApiKeysList: storageData.geminiApiKeysList,
+                })
+                .catch(() => {});
+        }
+    }
     const activeKey = storageData.geminiApiKey;
     let keysList = storageData.geminiApiKeysList || [];
 
@@ -195,7 +260,7 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
                     const updatedStorageData = await chrome.storage.local.get(['geminiApiKeysList']);
                     let updatedKeysList = updatedStorageData.geminiApiKeysList || [];
 
-                    const existingIndex = updatedKeysList.findIndex((k) => k.key === currentKey);
+                    const existingIndex = updatedKeysList.findIndex((k) => _deobfuscateKey(k.key) === currentKey);
                     if (existingIndex !== -1) {
                         if (tokensConsumed > 0) {
                             updatedKeysList[existingIndex].tokensUsed =
@@ -212,7 +277,12 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
                         updatedKeysList[existingIndex].lastUsedAt = now;
                         updatedKeysList[existingIndex].hasQuotaError = false;
 
-                        await chrome.storage.local.set({ geminiApiKeysList: updatedKeysList });
+                        const encodedKeysList = updatedKeysList.map((k) => ({ ...k, key: _obfuscateKey(k.key) }));
+                        await chrome.storage.local.set({ geminiApiKeysList: encodedKeysList });
+                        if (chrome.storage && chrome.storage.session) {
+                            const sessionKeysList = updatedKeysList.map((k) => ({ ...k, key: _deobfuscateKey(k.key) }));
+                            await chrome.storage.session.set({ geminiApiKeysList: sessionKeysList }).catch(() => {});
+                        }
                     }
                 } catch (err) {
                     console.error(`${logPrefix} Error tracking token/query usage:`, err);
@@ -251,7 +321,10 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
         try {
             if (attempt > 0) {
                 console.warn(`${logPrefix} Switched active key to index ${currentIndex} due to previous key failure.`);
-                await chrome.storage.local.set({ geminiApiKey: currentKey });
+                await chrome.storage.local.set({ geminiApiKey: _obfuscateKey(currentKey) });
+                if (chrome.storage && chrome.storage.session) {
+                    await chrome.storage.session.set({ geminiApiKey: currentKey }).catch(() => {});
+                }
             }
 
             // First attempt
@@ -273,10 +346,15 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
                 try {
                     const qeStorage = await chrome.storage.local.get(['geminiApiKeysList']);
                     let qeList = qeStorage.geminiApiKeysList || [];
-                    const qeIdx = qeList.findIndex((k) => k.key === currentKey);
+                    const qeIdx = qeList.findIndex((k) => _deobfuscateKey(k.key) === currentKey);
                     if (qeIdx !== -1) {
                         qeList[qeIdx].hasQuotaError = true;
-                        await chrome.storage.local.set({ geminiApiKeysList: qeList });
+                        const encodedQeList = qeList.map((k) => ({ ...k, key: _obfuscateKey(k.key) }));
+                        await chrome.storage.local.set({ geminiApiKeysList: encodedQeList });
+                        if (chrome.storage && chrome.storage.session) {
+                            const sessionQeList = qeList.map((k) => ({ ...k, key: _deobfuscateKey(k.key) }));
+                            await chrome.storage.session.set({ geminiApiKeysList: sessionQeList }).catch(() => {});
+                        }
                     }
                 } catch (storageErr) {
                     console.error(`${logPrefix} Failed to update API key quota status in storage:`, storageErr);

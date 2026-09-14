@@ -32,8 +32,7 @@
     } = $props();
 
     let isStarred = $derived(rule.isStarred || false);
-    const _themeColors = getThemeColors();
-    let groupColorHex = $derived(_themeColors[rule.color] || _themeColors.blue);
+    let groupColorHex = $derived(getThemeColors()[rule.color] || getThemeColors().blue);
 
     /**
      * Whether the card itself is a control, and so a stop on the way round with Tab.

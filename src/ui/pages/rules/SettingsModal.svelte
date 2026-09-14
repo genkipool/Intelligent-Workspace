@@ -34,7 +34,7 @@
     let isDiscardingEnabled = $state(true);
     let discardingTime = $state(60);
     let allRulesActive = $state(false);
-    let ruleStorageArea = $state('sync');
+    let ruleStorageArea = $state('local');
 
     let loaded = $state(false);
 
@@ -90,7 +90,7 @@
         ]);
         isDiscardingEnabled = localData.discardingEnabled !== false;
         discardingTime = Math.min(1440, Math.max(1, localData.discardingTimeMinutes ?? 60));
-        ruleStorageArea = localData.ruleStorageArea || 'sync';
+        ruleStorageArea = localData.ruleStorageArea || 'local';
 
         const { customRules = [] } = await getRuleStorage();
         allRulesActive = customRules.length > 0 && customRules.every((r) => r.active);
@@ -111,7 +111,7 @@
 
     function handleStorageChanged(changes) {
         if (changes.ruleStorageArea) {
-            const newArea = changes.ruleStorageArea.newValue || 'sync';
+            const newArea = changes.ruleStorageArea.newValue || 'local';
             if (newArea !== ruleStorageArea) {
                 ruleStorageArea = newArea;
                 getRuleStorage().then(({ customRules = [] }) => {

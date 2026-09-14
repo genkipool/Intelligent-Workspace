@@ -145,7 +145,7 @@
             miscSortOption = settings.miscGroupSortOption || 'start';
             // ruleStorageArea and discardingTimeMinutes live in chrome.storage.local
             const localData = await chrome.storage.local.get(['ruleStorageArea', 'discardingTimeMinutes']);
-            storageMode = localData.ruleStorageArea || 'sync';
+            storageMode = localData.ruleStorageArea || 'local';
             discardingTime = Math.min(1440, Math.max(1, localData.discardingTimeMinutes ?? 60));
             // The quick guide opens by itself only while there are no rules yet; from
             // then on it is the Rules title and the "Rules" heading that summon it.
@@ -160,7 +160,7 @@
         }
         // Any button click other than the Rules title, the header, the scroll buttons
         // or the tutorial itself dismisses the tutorial.
-        document.addEventListener('click', (event) => {
+        handleDocClick = (event) => {
             if (!showTutorial) return;
             const isButtonClick = event.target.closest('button');
             if (!isButtonClick) return;
@@ -172,10 +172,11 @@
                 return;
             }
             hideTutorial();
-        });
+        };
+        document.addEventListener('click', handleDocClick);
 
         chrome.storage.onChanged.addListener(handleStorageChanged);
-        chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        handleRuntimeMessage = (request, sender, sendResponse) => {
             if (request.action === 'themeChanged' || request.action === 'languageChanged') {
                 initializeActiveTheme();
                 initializeRules();
@@ -207,7 +208,8 @@
                     sortStatesStore.set(updated);
                 }
             }
-        });
+        };
+        chrome.runtime.onMessage.addListener(handleRuntimeMessage);
 
         if (typeof ResizeObserver !== 'undefined') {
             resizeObserver = new ResizeObserver(() => {
@@ -219,6 +221,9 @@
 
     onDestroy(() => {
         if (resizeObserver) resizeObserver.disconnect();
+        if (handleDocClick) document.removeEventListener('click', handleDocClick);
+        chrome.storage.onChanged.removeListener(handleStorageChanged);
+        if (handleRuntimeMessage) chrome.runtime.onMessage.removeListener(handleRuntimeMessage);
     });
 
     $effect(() => {
@@ -269,7 +274,8 @@
         showNotification('storageChangeWarning', true, [], true);
     }
 
-    function handleStorageChanged(changes) {
+    function handleStorageChanged(changes, areaName) {
+        if (areaName && areaName !== storageMode) return;
         if (changes.customRules) {
             const newRules = changes.customRules.newValue || [];
             rulesStore.set(newRules);
@@ -317,7 +323,7 @@
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
         if (changes.ruleStorageArea) {
-            const newArea = changes.ruleStorageArea.newValue || 'sync';
+            const newArea = changes.ruleStorageArea.newValue || 'local';
             if (newArea !== storageMode) {
                 storageMode = newArea;
                 initialRestoredRules.clear();
@@ -463,7 +469,13 @@
         // The rule is gone, so the group it kept together stops being a group: its tabs
         // are released, exactly as the original does before saying goodbye to the rule.
         try {
-            const groups = await chrome.tabGroups.query({ title: deleted.name });
+            const allGroups = await chrome.tabGroups.query({});
+            const stripMarkers = (title) =>
+                (title || '')
+                    .replace(/^\u200B+/, '')
+                    .replace(/^\[\d+\/\d+\]\s*/, '')
+                    .trim();
+            const groups = allGroups.filter((g) => stripMarkers(g.title) === deleted.name);
             for (const group of groups) {
                 const tabs = await chrome.tabs.query({ groupId: group.id });
                 if (tabs.length) await chrome.tabs.ungroup(tabs.map((tab) => tab.id));
@@ -1039,6 +1051,8 @@
     }
 
     let resizeObserver = null;
+    let handleDocClick = null;
+    let handleRuntimeMessage = null;
 
     /**
      * What scrolls: the list itself once the layout stacks and it has grown past its

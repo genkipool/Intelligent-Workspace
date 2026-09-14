@@ -417,7 +417,7 @@
                 onfile={processImportFile}
             />
             {#if importError}
-                <p class="import-error">{$t(importError)}</p>
+                <p class="import-error">{importError}</p>
             {/if}
         {/if}
     </div>

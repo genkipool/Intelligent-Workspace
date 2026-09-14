@@ -11,6 +11,7 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import { getStorageAreaName } from '../src/ui/services/storage.js';
 
 describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
     let mockLocalStorage;
@@ -67,6 +68,7 @@ describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
                 query: async () => [],
             },
         };
+        globalThis.chrome = mockChrome;
 
         context = {
             console,
@@ -97,10 +99,10 @@ describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
             assert.equal(area, mockChrome.storage.sync);
         });
 
-        it('defaults getRuleStorageArea to sync when ruleStorageArea is undefined', async () => {
+        it('defaults getRuleStorageArea to local when ruleStorageArea is undefined', async () => {
             delete mockLocalStorage.ruleStorageArea;
             const area = await storageService.getRuleStorageArea();
-            assert.equal(area, mockChrome.storage.sync);
+            assert.equal(area, mockChrome.storage.local);
         });
 
         it('resolves getThemeStorageArea independently of ruleStorageArea', async () => {
@@ -112,6 +114,18 @@ describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
 
             assert.equal(themeArea, mockChrome.storage.sync, 'Theme area should resolve to sync');
             assert.equal(ruleArea, mockChrome.storage.local, 'Rule area should resolve to local');
+        });
+
+        it('getStorageAreaName defaults ruleStorageArea to local when unset', async () => {
+            delete mockLocalStorage.ruleStorageArea;
+            const areaName = await getStorageAreaName('ruleStorageArea');
+            assert.equal(areaName, 'local');
+        });
+
+        it('getStorageAreaName defaults themeStorageArea to sync when unset', async () => {
+            delete mockLocalStorage.themeStorageArea;
+            const areaName = await getStorageAreaName('themeStorageArea');
+            assert.equal(areaName, 'sync');
         });
     });
 

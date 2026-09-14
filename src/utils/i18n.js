@@ -65,12 +65,21 @@ export function loadMessages(lang) {
             const response = await fetch(url);
             if (!response.ok) return lang === 'en' ? {} : await loadMessages('en');
             const data = await response.json();
+            let finalData = data;
+            if (lang !== 'en') {
+                try {
+                    const enMessages = await loadMessages('en');
+                    finalData = { ...enMessages, ...data };
+                } catch {
+                    finalData = data;
+                }
+            }
 
             // Keep the synchronous cache in sync for the next language swap.
-            localStorage.setItem('i18n-cache-messages', JSON.stringify(data));
+            localStorage.setItem('i18n-cache-messages', JSON.stringify(finalData));
             localStorage.setItem('i18n-cache-lang', lang);
 
-            return data;
+            return finalData;
         } catch (error) {
             console.error(`Error fetching messages for ${lang}:`, error);
             messagesCache.delete(lang);

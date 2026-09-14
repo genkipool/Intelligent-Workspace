@@ -20,8 +20,8 @@ const StorageService = {
      * @returns {Promise<chrome.storage.StorageArea>}
      */
     async getRuleStorageArea() {
-        const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
-        return chrome.storage[ruleStorageArea] || chrome.storage.sync;
+        const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
+        return chrome.storage[ruleStorageArea] || chrome.storage.local;
     },
 
     /**

@@ -252,6 +252,7 @@ async function waAudibleContext(settings) {
     } catch {
         /* No tab is playing anything. */
     }
+    if (!tab || tab.incognito) return null;
     const domain = ITG_WEB_ACTIVITY.domainOf(tab?.url);
     if (!domain || settings.ignoredDomains.includes(domain)) return null;
     return { domain, tabId: tab.id, url: tab.url, title: tab.title || '' };
@@ -287,6 +288,7 @@ async function waResolveActiveContext(settings) {
     } catch {
         // No window at all, e.g. everything minimised.
     }
+    if (!tab || tab.incognito) return null;
 
     // Nothing browsable is in front — the browser is in the background, or the front
     // tab is a settings page — but something may still be playing. A video left running
@@ -970,6 +972,7 @@ chrome.windows.onFocusChanged.addListener(() => waSync());
 chrome.tabs.onRemoved.addListener(() => waSync());
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    if (tab?.incognito) return;
     // A navigation is the only thing that counts as a visit; a title or favicon
     // landing later is the same visit.
     if (changeInfo.url) {
