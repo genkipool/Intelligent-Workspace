@@ -1955,23 +1955,33 @@ export async function initCustomizeHints() {
     const searchInput = document.getElementById('commands-search-input');
     const searchBarContainer = searchInput?.closest('.search-bar-container');
 
+    const SECTION_SELECTOR = '.category-container, .omnibar-section-container, .itg-manage-section';
+
+    /**
+     * A category rendered inside another section (the reader's keys, inside the reader's
+     * settings; see READER_COMMAND_CONTAINERS) is a group of that section, not a section
+     * of its own. Listed on its own it was both redundant — the section above already
+     * names it — and broken: choosing it hid the section that contains it, since that
+     * title does not contain the group's, and the group went with it, so nothing showed.
+     */
+    const isNestedGroup = (el) => !!el.parentElement?.closest(SECTION_SELECTOR);
+
     // Build section list for @ dropdown
     const getSectionList = () => {
         const sections = [];
-        document
-            .querySelectorAll('.category-container, .omnibar-section-container, .itg-manage-section')
-            .forEach((section) => {
-                const titleEl = section.querySelector('.category-title, .section-title');
-                if (titleEl) {
-                    const name = titleEl.textContent.trim();
-                    if (name) {
-                        const count = section.querySelectorAll('.command-item').length;
-                        // What is inside it, so the menu's own box can find a section
-                        // by something one of its commands says.
-                        sections.push({ name, count, el: section, text: section.textContent || '' });
-                    }
+        document.querySelectorAll(SECTION_SELECTOR).forEach((section) => {
+            if (isNestedGroup(section)) return;
+            const titleEl = section.querySelector('.category-title, .section-title');
+            if (titleEl) {
+                const name = titleEl.textContent.trim();
+                if (name) {
+                    const count = section.querySelectorAll('.command-item').length;
+                    // What is inside it, so the menu's own box can find a section
+                    // by something one of its commands says.
+                    sections.push({ name, count, el: section, text: section.textContent || '' });
                 }
-            });
+            }
+        });
         return sections;
     };
 
@@ -2062,33 +2072,48 @@ export async function initCustomizeHints() {
 
         HintCommon.filterItems(words, document.querySelectorAll('.command-item'), {
             onComplete: () => {
-                document
-                    .querySelectorAll('.category-container, .omnibar-section-container, .itg-manage-section')
-                    .forEach((section) => {
-                        const items = section.querySelectorAll('.command-item');
-                        const titleEl = section.querySelector('.category-title, .section-title');
-                        const title = titleEl ? titleEl.textContent : '';
+                const all = Array.from(document.querySelectorAll(SECTION_SELECTOR));
 
-                        // Out of the chosen sections: nothing in it can show, whatever
-                        // it says.
-                        if (!HintCommon.sectionIsSelected(title, chosen)) {
-                            section.style.display = 'none';
-                            return;
-                        }
+                // Groups first: a word in a group's title reveals its commands, and the
+                // section around it has to see them as visible when its turn comes.
+                all.filter(isNestedGroup).forEach((group) => {
+                    const items = group.querySelectorAll('.command-item');
+                    const titleEl = group.querySelector('.category-title, .section-title');
+                    const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+                    if (lowerQuery && title.includes(lowerQuery)) {
+                        items.forEach((item) => {
+                            item.style.display = '';
+                        });
+                    }
+                    const hasVisible = Array.from(items).some((el) => el.style.display !== 'none');
+                    group.style.display = !lowerQuery || hasVisible ? '' : 'none';
+                });
 
-                        const titleMatch = !!lowerQuery && title.toLowerCase().includes(lowerQuery);
-                        const hasVisible = Array.from(items).some((el) => el.style.display !== 'none');
-                        const show = !lowerQuery || hasVisible || titleMatch;
-                        section.style.display = show ? '' : 'none';
+                all.filter((section) => !isNestedGroup(section)).forEach((section) => {
+                    const items = section.querySelectorAll('.command-item');
+                    const titleEl = section.querySelector('.category-title, .section-title');
+                    const title = titleEl ? titleEl.textContent : '';
 
-                        // A section named by its title holds nothing that is not about
-                        // it, so all of it shows.
-                        if (show && titleMatch) {
-                            items.forEach((item) => {
-                                item.style.display = '';
-                            });
-                        }
-                    });
+                    // Out of the chosen sections: nothing in it can show, whatever
+                    // it says.
+                    if (!HintCommon.sectionIsSelected(title, chosen)) {
+                        section.style.display = 'none';
+                        return;
+                    }
+
+                    const titleMatch = !!lowerQuery && title.toLowerCase().includes(lowerQuery);
+                    const hasVisible = Array.from(items).some((el) => el.style.display !== 'none');
+                    const show = !lowerQuery || hasVisible || titleMatch;
+                    section.style.display = show ? '' : 'none';
+
+                    // A section named by its title holds nothing that is not about
+                    // it, so all of it shows.
+                    if (show && titleMatch) {
+                        items.forEach((item) => {
+                            item.style.display = '';
+                        });
+                    }
+                });
             },
         });
 

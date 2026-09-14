@@ -44,5 +44,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             copyBtn.innerText = '¡URL Copiada!';
             setTimeout(() => (copyBtn.innerText = 'Copiar URL'), 2000);
         };
+    } else if (data.type === 'screenshot') {
+        // A gallery capture: only its id was stored, the image itself is too big for
+        // the session area and is asked for here.
+        const res = await chrome.runtime.sendMessage({ action: 'getOmnibarImageById', id: data.id });
+        if (!res?.dataUrl) {
+            document.getElementById('loading').innerText = 'No se encontró la captura.';
+            return;
+        }
+        headerTitle.innerText = '🖼️ Visor de Imagen';
+        mainContent.innerHTML = '';
+        mainContent.className = 'image-container';
+
+        const img = document.createElement('img');
+        img.src = res.dataUrl;
+        mainContent.appendChild(img);
+
+        copyBtn.innerText = 'Copiar';
+        copyBtn.onclick = async () => {
+            const blob = await (await fetch(res.dataUrl)).blob();
+            await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+            copyBtn.innerText = '¡Copiado!';
+            setTimeout(() => (copyBtn.innerText = 'Copiar'), 2000);
+        };
     }
 });

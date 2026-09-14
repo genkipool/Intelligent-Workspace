@@ -18,87 +18,46 @@ var TAB_ACTION_TYPES = new Set(['dt', 'ts', 'capture']);
 
 /**
  * [AI INSTRUCTION]
- * SITE ICONS COME FROM CHROME, NOT FROM THE NETWORK.
+ * SITE ICONS COME FROM CHROME'S FAVICON STORE, NEVER FROM THE ICON'S OWN ADDRESS.
  *
- * These rows used to draw their icon from
- * `https://www.google.com/s2/favicons?domain_url=<the row's url>`, which meant that
- * merely listing a bookmark, a history entry or a rule sent that address to Google —
- * for a picture the browser already has. Under the Chrome Web Store's Limited Use
- * rules, data collected has to be strictly necessary to the extension's purpose, and
- * an avoidable request that names a page the reader is looking at is not.
+ * Tab rows (and the backup and rule rows that keep a tab's icon) used to put
+ * `favIconUrl` straight into an `<img>`. That address is wherever the site keeps its
+ * icon, so listing the open tabs made a request to each of those servers — and when one
+ * was a local development server, a router page or anything else on this machine or the
+ * LAN, Chrome's Local Network Access check stopped the load and asked the reader to let
+ * the page they were on "access other apps and services on this device". Measured: a
+ * public page, one tab open on 127.0.0.1, and pressing `o` was enough.
  *
- * `_favicon/` is Chrome's own store and needs no network at all. A content script
- * cannot reach it — measured: neither `fetch` nor an `<img>` resolves it, because it
- * is not a web-accessible resource, and making it one would hand every page on the
- * web a way to ask what the reader has visited. The worker can, so it fetches and
- * answers with a data URL.
+ * `_favicon/` is Chrome's own store — the icon it already saved for that site, with no
+ * network at all. The omnibar is an extension page now and reads it directly; as a
+ * content script it could not, which is why it used to go through the worker. Before
+ * that it was `google.com/s2/favicons`, which sent every listed address to Google.
  *
- * Cached by ORIGIN, not by URL: the omnibar re-renders on every keystroke and a site's
- * icon is the same for all of its pages, so a list of twenty rows across four sites
- * costs four lookups once, and none after that.
+ * Only an address that loads nothing from the network is used as it is: a `data:` URL,
+ * or one of this extension's own files.
  */
-/*
- * `var`, and reusing whatever is already there, because THIS FILE GETS RUN MORE THAN
- * ONCE IN THE SAME ISOLATED WORLD. Every top-level name in the hint bundle is a `var`
- * or a `function` for that reason: those redeclare silently, while a `const` throws
- * `Identifier '…' has already been declared` and takes the whole script down with it —
- * which is exactly what this line did on its first outing, killing the omnibar on any
- * page where the bundle ran twice.
- *
- * Reusing the existing map rather than replacing it also keeps the icons already
- * resolved, so a re-injection does not send the reader back to a blank list.
- */
-var _omniFaviconCache = _omniFaviconCache || new Map();
-
-function _omniPaintLocalFavicon(img, pageUrl) {
-    let origin;
+function _omniFaviconSource(favIconUrl, pageUrl) {
+    if (favIconUrl && (favIconUrl.startsWith('data:') || favIconUrl.startsWith(chrome.runtime.getURL('')))) {
+        return favIconUrl;
+    }
     try {
-        origin = new URL(pageUrl).origin;
+        const url = new URL(pageUrl);
+        if (!['http:', 'https:'].includes(url.protocol)) return '';
     } catch {
-        return;
+        return '';
     }
-    if (!origin || origin === 'null') return;
-
-    const show = (dataUrl) => {
-        if (!dataUrl || !img.isConnected) return;
-        img.src = dataUrl;
-        img.style.display = '';
-    };
-
-    /*
-     * The cache holds one of three things per origin: the data URL, `null` for a site
-     * Chrome has no icon for, or the in-flight promise. Keeping the promise is what
-     * makes twenty rows of the same site cost one lookup instead of twenty, and it is
-     * why a miss is stored rather than left absent — otherwise a site with no icon
-     * would be asked for again on every keystroke.
-     */
-    const cached = _omniFaviconCache.get(origin);
-    if (cached !== undefined) {
-        if (cached && typeof cached.then === 'function') cached.then(show);
-        else if (cached) show(cached);
-        return;
-    }
-
-    const pending = new Promise((resolve) => {
-        try {
-            chrome.runtime.sendMessage({ action: 'getFaviconDataUrl', pageUrl: origin }, (res) => {
-                if (chrome.runtime.lastError) return resolve(null);
-                resolve(res?.dataUrl || null);
-            });
-        } catch {
-            resolve(null);
-        }
-    }).then((dataUrl) => {
-        _omniFaviconCache.set(origin, dataUrl);
-        return dataUrl;
-    });
-
-    _omniFaviconCache.set(origin, pending);
-    pending.then(show);
+    // The page's own address, not its origin: the store is keyed by page, and asking for
+    // a site's root that was never visited answers with the generic globe (measured).
+    return chrome.runtime.getURL(`_favicon/?pageUrl=${encodeURIComponent(pageUrl)}&size=16`);
 }
 
 var OmniBar = class OmniBar {
-    constructor() {
+    /**
+     * @param {object} page What the omnibar can still ask of the page it floats over,
+     *   through the frame's port to OmniBarHost (see omnibar-frame.js).
+     */
+    constructor(page) {
+        this.page = page;
         this.active = false;
         this.host = null;
         this.shadow = null;
@@ -106,7 +65,6 @@ var OmniBar = class OmniBar {
         this.matches = [];
         this.tabs = [];
         this.selectedIndex = 0;
-        this.filterObserver = null;
         this.debouncedSearch = null;
         this.selectedActionItems = new Set();
         this.lastSelectedActionIdx = null;
@@ -116,6 +74,7 @@ var OmniBar = class OmniBar {
         this.crSelectingTabsFor = null;
         this.hasNavigated = false;
         this._inputSeq = 0;
+        this._findSeq = 0;
         this._keyboardNav = false;
     }
     setRegistry(registry) {
@@ -127,8 +86,6 @@ var OmniBar = class OmniBar {
         return this.shadow.activeElement === input;
     }
     recoverFocus() {
-        const sel = window.getSelection();
-        if (sel) sel.removeAllRanges();
         if (this.shadow) {
             const input = this.shadow.getElementById('hint-omni-input');
             if (input) {
@@ -169,20 +126,14 @@ var OmniBar = class OmniBar {
         this.host.style.cssText =
             'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2147483647; pointer-events: none; opacity: 0; display: flex; justify-content: center; align-items: flex-start;';
         document.body.appendChild(this.host);
-        this._syncFilter();
-        this.filterObserver = new MutationObserver(() => this._syncFilter());
-        this.filterObserver.observe(document.documentElement, {
-            attributes: true,
-            attributeFilter: ['style', 'itg-mode-applied'],
-        });
+        this.applyLayoutWidth();
         this.shadow = this.host.attachShadow({
             mode: 'open',
         });
         await Utils.loadThemes(this.shadow);
 
-        // Apply initial theme/mode
-        const pageMode = document.documentElement.getAttribute('data-itg-page-mode');
-        Utils.applyThemeToHost(this.host, currentTheme, pageMode);
+        // Apply initial theme/mode. The mode is the page's, handed over with the opening.
+        Utils.applyThemeToHost(this.host, currentTheme, this.page.pageMode);
         try {
             await Utils.loadStyle(this.shadow, chrome.runtime.getURL('src/styles/hint_content.css'));
         } catch (e) {
@@ -283,13 +234,19 @@ var OmniBar = class OmniBar {
             if (this.host && !e.composedPath().includes(this.host)) this.close();
         };
         document.addEventListener('mousedown', this._boundOutsideClick, true);
+        this._watchClip(bar);
         requestAnimationFrame(() => {
             this.host.style.transition = 'opacity 150ms ease-in';
             this.host.style.opacity = '1';
         });
-        this.debouncedSearch = Utils.debounce((query) => {
+        this.debouncedSearch = Utils.debounce(async (query) => {
+            const seq = ++this._findSeq;
             if (query) {
-                this.matches = this._findTextInPage(query);
+                // The text is the page's, so the page searches it.
+                const matches = await this.page.find(query);
+                // A later keystroke asked again, or the omnibar was closed meanwhile.
+                if (seq !== this._findSeq || !this.active) return;
+                this.matches = matches;
                 this._renderResults(this.matches, 'inpage');
             } else {
                 this.matches = [];
@@ -308,21 +265,13 @@ var OmniBar = class OmniBar {
             },
         );
     }
-    cleanup() {
-        this.close();
-        // Just in case it was closed but the host still existed or there were other unbound listeners
-        if (this._boundOutsideClick) {
-            document.removeEventListener('mousedown', this._boundOutsideClick, true);
-            this._boundOutsideClick = null;
-        }
-    }
     close() {
         if (this._keepOpenOnClose) return;
         if (!this.active) return;
         this.active = false;
-        if (this.filterObserver) {
-            this.filterObserver.disconnect();
-            this.filterObserver = null;
+        if (this._clipObservers) {
+            this._clipObservers.forEach((observer) => observer.disconnect());
+            this._clipObservers = null;
         }
         if (this.host) this.host.remove();
         document.removeEventListener('mousedown', this._boundOutsideClick, true);
@@ -333,11 +282,51 @@ var OmniBar = class OmniBar {
         this.atrSelectingRule = false;
         this.atrPendingUrls = [];
         this.crSelectingTabsFor = null;
+        // The frame is the host's to remove; an empty one left behind would still sit
+        // over the page.
+        this.page.closed();
     }
-    _syncFilter() {
-        if (!this.host) return;
-        const pf = window.getComputedStyle(document.documentElement).filter;
-        this.host.style.filter = pf !== 'none' ? pf : 'none';
+    /**
+     * The frame is as wide as the page's viewport *with* its scrollbar, so the bar's
+     * `80vw` measures what it measured on the page; the host inside is as wide as the
+     * page's layout, scrollbar left out, so the bar is centred where it was. Measured on
+     * a page with a scrollbar: without this the bar came out 12px narrower and 6px off.
+     */
+    applyLayoutWidth() {
+        if (this.host && this.page.layoutWidth) this.host.style.width = `${this.page.layoutWidth}px`;
+    }
+    /**
+     * [AI INSTRUCTION]
+     * THE FRAME COVERS THE WHOLE VIEWPORT, SO IT IS CLIPPED TO WHAT IS DRAWN.
+     *
+     * The frame is the size of the page's viewport so the bar's `vw`/`vh` layout comes
+     * out exactly as it did on the page. A frame that size would also take every click
+     * meant for the page, and a click outside the omnibar has always gone through to it.
+     * `clip-path` limits hit testing as well as painting, so the host clips the frame to
+     * the bar, the colour popup that can hang off it, and a margin for the bar's shadow;
+     * anything outside reaches the page. A click inside the margin lands here and closes
+     * the omnibar, like any other click outside the bar.
+     */
+    _watchClip(bar) {
+        const report = () => {
+            if (!this.shadow) return;
+            const rects = [bar, ...this.shadow.querySelectorAll('.hint-omni-color-popup')].map((el) =>
+                el.getBoundingClientRect(),
+            );
+            const margin = 32;
+            const top = Math.max(0, Math.min(...rects.map((r) => r.top)) - margin);
+            const left = Math.max(0, Math.min(...rects.map((r) => r.left)) - margin);
+            const right = Math.max(0, window.innerWidth - Math.max(...rects.map((r) => r.right)) - margin);
+            const bottom = Math.max(0, window.innerHeight - Math.max(...rects.map((r) => r.bottom)) - margin);
+            this.page.setClip(`inset(${top}px ${right}px ${bottom}px ${left}px)`);
+        };
+        const resize = new ResizeObserver(report);
+        resize.observe(bar);
+        const mutations = new MutationObserver(report);
+        mutations.observe(bar, { childList: true, subtree: true });
+        window.addEventListener('resize', report);
+        this._clipObservers = [resize, mutations, { disconnect: () => window.removeEventListener('resize', report) }];
+        report();
     }
     _handleInput(event) {
         if (!chrome.runtime || !chrome.runtime.id) {
@@ -4149,11 +4138,9 @@ IMPORTANT RULES:
                 // and the renderer hides the image for it.
                 favIcon = '',
                 /*
-                 * Set instead of `favIcon` by the rows whose icon has to come from
-                 * Chrome's own favicon store rather than from a URL we already hold.
-                 * The renderer at the bottom resolves it through the worker, because a
-                 * content script cannot reach `_favicon/` itself — measured: the fetch
-                 * and the <img> both fail, since it is not a web-accessible resource.
+                 * The page a row stands for, set by the rows that have no favicon
+                 * address of their own. Either way the renderer draws the icon from
+                 * Chrome's favicon store (see _omniFaviconSource), never from an address.
                  */
                 faviconPageUrl = '';
             if (data.isSpecialAction) {
@@ -4648,17 +4635,16 @@ IMPORTANT RULES:
             li.dataset.title = title;
             const img = document.createElement('img');
             img.className = 'hint-omni-favicon';
-            if (favIcon) {
-                img.src = favIcon;
+            const iconSource =
+                favIcon || faviconPageUrl
+                    ? _omniFaviconSource(favIcon, faviconPageUrl || li.dataset.url || li.dataset.tabUrl)
+                    : '';
+            if (iconSource) {
+                img.src = iconSource;
                 img.onerror = () => {
                     img.onerror = null; // prevent infinite loop
                     img.style.display = 'none';
                 };
-            } else if (faviconPageUrl) {
-                // Hidden until it arrives: a row that ends up without an icon should
-                // look like the rows that never had one, not like a broken image.
-                img.style.display = 'none';
-                _omniPaintLocalFavicon(img, faviconPageUrl);
             } else {
                 img.style.display = 'none';
             }
@@ -4702,7 +4688,7 @@ IMPORTANT RULES:
                 this.hasNavigated = true;
                 Array.from(container.children).forEach((el) => el.classList.toggle('selected', el === li));
                 if (type === 'inpage' && li.dataset.matchIndex) {
-                    this._selectMatchInPage(this.matches[parseInt(li.dataset.matchIndex)]);
+                    this._selectMatchInPage(parseInt(li.dataset.matchIndex));
                 }
             });
             li.addEventListener('click', async (e) => {
@@ -4747,123 +4733,14 @@ IMPORTANT RULES:
                         this.close();
                         return;
                     }
-                    if (!isVideoSite && 'documentPictureInPicture' in window) {
-                        try {
-                            if (window.documentPictureInPicture.window) {
-                                window.documentPictureInPicture.window.close();
-                            }
-                            let targetUrl = url;
-                            try {
-                                const currentCleanUrl = window.location.href.split('#')[0].split('?')[0];
-                                const urlObj = new URL(url);
-                                const targetCleanUrl = urlObj.href.split('#')[0].split('?')[0];
-                                if (currentCleanUrl === targetCleanUrl) {
-                                    const video = document.querySelector('video');
-                                    if (video && video.currentTime > 0) {
-                                        const secs = Math.floor(video.currentTime);
-                                        urlObj.searchParams.set('t', secs);
-                                        targetUrl = urlObj.toString();
-                                    }
-                                }
-                            } catch (e) {
-                                console.warn('Failed to append current video time:', e);
-                            }
-                            document.querySelectorAll('video').forEach((v) => {
-                                try {
-                                    v.pause();
-                                } catch {}
-                            });
-                            const pipWindow = await requestItgPipWindow(targetUrl, 450, 600);
+                    // The floating player belongs to the page — it pauses the page's
+                    // video and carries its time over — so the page opens it.
+                    if (!isVideoSite && this.page.documentPip) {
+                        if (await this.page.openDocumentPip(url)) {
                             this.close();
-                            pipWindow.document.body.style.margin = '0';
-                            pipWindow.document.body.style.padding = '0';
-                            pipWindow.document.body.style.overflow = 'hidden';
-                            pipWindow.document.body.style.backgroundColor = '#1e1e1e';
-                            /*
-                             * AWAIT, and not for tidiness.
-                             *
-                             * This installs the rules that take `X-Frame-Options` and the
-                             * site's CSP off. Without waiting for them, the `iframe` below
-                             * is appended first and its request goes out with no rule to
-                             * touch it: the site refuses the frame and the floating window
-                             * comes up blank. It is not a race that is sometimes won —
-                             * measured in a real browser, 0 of 5 without the `await` and 5
-                             * of 5 with it — so opening a page in the floating player from
-                             * the omnibar never worked on a site that refuses to be framed,
-                             * which is exactly the kind of site the rule exists for.
-                             * `utils.js`, the other way to the floating player, always
-                             * awaited it.
-                             */
-                            await chrome.runtime.sendMessage({
-                                action: 'prepareVideoUrlForPip',
-                                url: targetUrl,
-                            });
-                            const iframe = document.createElement('iframe');
-                            iframe.name = 'itg-page-pip-iframe';
-                            iframe.src = targetUrl;
-                            iframe.style.width = '100vw';
-                            iframe.style.height = '100vh';
-                            iframe.style.border = 'none';
-                            iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
-                            pipWindow.document.body.appendChild(iframe);
-                            let lastKnownTime = 0;
-                            const timeTrackerInterval = setInterval(() => {
-                                try {
-                                    if (!pipWindow || pipWindow.closed) {
-                                        clearInterval(timeTrackerInterval);
-                                        return;
-                                    }
-                                    const pipIframe = pipWindow.document.querySelector('iframe');
-                                    if (pipIframe) {
-                                        const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
-                                        const pipVideo = innerDoc?.querySelector('video');
-                                        if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
-                                            lastKnownTime = pipVideo.currentTime;
-                                        }
-                                    }
-                                } catch {}
-                            }, 250);
-                            let didResume = false;
-                            const resumeOriginalVideo = (shouldPlay) => {
-                                if (didResume) return;
-                                didResume = true;
-                                clearInterval(timeTrackerInterval);
-                                try {
-                                    const localVideo = document.querySelector('video');
-                                    if (localVideo) {
-                                        if (lastKnownTime > 0) {
-                                            localVideo.currentTime = lastKnownTime;
-                                        }
-                                        if (shouldPlay) {
-                                            localVideo.play().catch((e) => {
-                                                console.warn('Failed to autoplay original video on PiP close:', e);
-                                            });
-                                        } else {
-                                            localVideo.pause();
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.warn('Error resuming original video:', e);
-                                }
-                            };
-                            // The framing rules asked for above are session rules and
-                            // outlive this window unless somebody takes them down.
-                            const releasePipNetworkRules = () => {
-                                chrome.runtime.sendMessage({ action: 'cleanupVideoPipRules' }).catch(() => {});
-                            };
-                            pipWindow.addEventListener('pagehide', () => {
-                                resumeOriginalVideo(!document.hidden);
-                                releasePipNetworkRules();
-                            });
-                            pipWindow.addEventListener('unload', () => {
-                                resumeOriginalVideo(!document.hidden);
-                                releasePipNetworkRules();
-                            });
                             return;
-                        } catch (err) {
-                            console.warn('Omnibar direct PiP failed, attempting background fallback:', err);
-                            this.close();
                         }
+                        this.close();
                     }
                     chrome.runtime.sendMessage({
                         action: 'openPipWindow',
@@ -4883,7 +4760,7 @@ IMPORTANT RULES:
                             url: url,
                         });
                     } else {
-                        await openVideoPip(url);
+                        await this.page.openVideoPip(url);
                     }
                     this.close();
                 } else if (type === 'read-aloud-tab') {
@@ -4903,7 +4780,7 @@ IMPORTANT RULES:
                         target: input,
                     });
                 } else if (type === 'inpage') {
-                    this._selectMatchInPage(this.matches[parseInt(li.dataset.matchIndex)]);
+                    this._selectMatchInPage(parseInt(li.dataset.matchIndex));
                     this.close();
                 } else if (type === 'ae-tab') {
                     chrome.runtime.sendMessage({
@@ -5548,59 +5425,18 @@ IMPORTANT RULES:
                         this.matches.length.toString(),
                     ]) || `${this.selectedIndex + 1}/${this.matches.length}`;
             if (selectInPage) {
-                this._selectMatchInPage(this.matches[parseInt(selected.dataset.matchIndex)]);
+                this._selectMatchInPage(parseInt(selected.dataset.matchIndex));
             }
         }
     }
-    _findTextInPage(term) {
-        if (!term) return [];
-        const matches = [];
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-            acceptNode: (node) => {
-                const pTag = node.parentNode.tagName.toUpperCase();
-                if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'HEAD', 'SVG', 'IFRAME'].includes(pTag))
-                    return NodeFilter.FILTER_REJECT;
-                if (!Utils.isVisible(node.parentNode)) return NodeFilter.FILTER_REJECT;
-                return NodeFilter.FILTER_ACCEPT;
-            },
-        });
-        const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        let node;
-        while ((node = walker.nextNode())) {
-            let match;
-            regex.lastIndex = 0;
-            while ((match = regex.exec(node.textContent)) !== null) {
-                const start = match.index;
-                const end = start + term.length;
-                const snippet = `...${node.textContent.substring(Math.max(0, start - 20), start)}${match[0]}${node.textContent.substring(end, end + 20)}...`;
-                matches.push({
-                    snippet,
-                    node,
-                    start,
-                    end,
-                });
-            }
-        }
-        return matches;
-    }
-    _selectMatchInPage(match) {
-        if (!match) return;
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        const range = document.createRange();
-        range.setStart(match.node, match.start);
-        range.setEnd(match.node, match.end);
-        sel.addRange(range);
-        const rect = range.getBoundingClientRect();
-        let targetY = window.scrollY + rect.top - window.innerHeight * 0.3 + rect.height / 2;
-        if (this.shadow) {
-            const barEl = this.shadow.getElementById('hint-omni-bar');
-            if (barEl) targetY -= barEl.getBoundingClientRect().height + 40;
-        }
-        window.scrollTo({
-            top: targetY,
-            behavior: 'smooth',
-        });
+    /**
+     * The match is in the page, and only the page can select it and scroll to it. The
+     * bar's height goes along so the match does not end up underneath the bar.
+     */
+    _selectMatchInPage(index) {
+        if (!Number.isInteger(index) || !this.matches[index]) return;
+        const barEl = this.shadow && this.shadow.getElementById('hint-omni-bar');
+        this.page.selectMatch(index, barEl ? barEl.getBoundingClientRect().height : 0);
     }
 };
 

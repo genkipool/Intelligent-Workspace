@@ -206,6 +206,35 @@ function handleGetOmnibarImageById(message, sendResponse) {
     })();
 }
 
+/**
+ * Opens a gallery screenshot on its own, in the same preview window the context menu
+ * uses for images.
+ *
+ * Only the id travels through `storage.session`: a full-page capture is a data URL of
+ * several megabytes and the session area holds ten in total, so the preview page asks
+ * for the image itself with `getOmnibarImageById`.
+ */
+function handleOpenImageFromOmnibar(message, sender, sendResponse) {
+    (async () => {
+        try {
+            const id = Number(message.id);
+            if (!Number.isFinite(id) || id <= 0) throw new Error('Invalid screenshot id');
+            const previewId = Date.now().toString();
+            await chrome.storage.session.set({ [`preview_${previewId}`]: { type: 'screenshot', id } });
+            const tab = sender?.tab;
+            await chrome.windows.create({
+                url: chrome.runtime.getURL(`src/ui/pages/selection-preview/preview.html?id=${previewId}`),
+                type: 'popup',
+                width: Math.round((tab?.width || 1000) * 0.7) || 800,
+                height: Math.round((tab?.height || 800) * 0.7) || 600,
+            });
+            sendResponse({ success: true });
+        } catch (error) {
+            sendResponse({ success: false, error: error.message });
+        }
+    })();
+}
+
 function handleGetOmnibarAllMessages(sendResponse) {
     (async () => {
         try {

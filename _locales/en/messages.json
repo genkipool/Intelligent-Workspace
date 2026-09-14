@@ -12138,7 +12138,7 @@
     "description": "One image per screenful instead of one tall image"
   },
   "categoryReadAloudControls": {
-    "message": "Page reader (while open)",
+    "message": "Read-aloud page reader (while open)",
     "description": "Section title for the reader controls"
   },
   "categoryReadAloudMarks": {
@@ -12167,7 +12167,7 @@
     "message": "Turn the highlight over the text being read on or off"
   },
   "readerSectionTitle": {
-    "message": "Page reader",
+    "message": "Read-aloud page reader",
     "description": "Settings section for the reader"
   },
   "readerSectionDesc": {

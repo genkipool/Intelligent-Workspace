@@ -79,7 +79,7 @@
 <section class="section itg-manage-section" id="read-aloud-settings">
     <div class="section-header">
         <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="readerSectionTitle">Page reader</h2>
+            <h2 class="section-title" data-i18n="readerSectionTitle">Read-aloud page reader</h2>
         </div>
     </div>
     <p class="section-desc" data-i18n="readerSectionDesc"></p>

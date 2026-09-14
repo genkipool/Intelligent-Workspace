@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Omnibar</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                background: transparent;
+                overflow: hidden;
+            }
+            /* On the page the bar inherited whatever font the site had; here there is no
+               site, and the default would be a serif. This is the hints' own stack. */
+            body {
+                font-family: 'Segoe UI', system-ui, sans-serif;
+            }
+        </style>
+    </head>
+    <body>
+        <script src="../hint_common.js"></script>
+        <script src="utils.js"></script>
+        <script src="omnibar.js"></script>
+        <script src="omnibar-frame.js"></script>
+    </body>
+</html>

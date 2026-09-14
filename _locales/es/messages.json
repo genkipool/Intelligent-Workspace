@@ -12116,7 +12116,7 @@
         "description": "Una imagen por pantalla en vez de una imagen larga"
     },
     "categoryReadAloudControls": {
-        "message": "Lector de páginas (mientras está abierto)",
+        "message": "Lector de páginas en voz alta (mientras está abierto)",
         "description": "Título de la sección de controles del lector"
     },
     "categoryReadAloudMarks": {
@@ -12145,7 +12145,7 @@
         "message": "Activar o desactivar el resaltado del texto que se lee"
     },
     "readerSectionTitle": {
-        "message": "Lector de páginas",
+        "message": "Lector de páginas en voz alta",
         "description": "Sección de ajustes del lector"
     },
     "readerSectionDesc": {

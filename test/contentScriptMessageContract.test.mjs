@@ -1,12 +1,13 @@
 /**
  * The worker refuses messages from content scripts unless their action is in
  * ALLOWED_CONTENT_SCRIPT_ACTIONS. That list was once written by hand from the keyboard
- * shortcuts, and the omnibar — a content script as well — opened empty because every
- * list it asks for was refused.
+ * shortcuts, and the omnibar — a content script at the time — opened empty because
+ * every list it asks for was refused.
  *
  * These tests take the actions from the scripts that really run inside web pages (the
  * manifest's content scripts plus the overlays the worker injects) and hold the list
- * to exactly that set, in both directions.
+ * to exactly that set, in both directions. They also hold the omnibar where it now
+ * lives: in an extension frame, out of the content scripts and out of this list.
  */
 
 import { describe, it } from 'node:test';
@@ -41,8 +42,8 @@ function contentScriptFiles() {
 
 /**
  * The actions a source sends: `runtime.sendMessage({ action: 'x' … })`, the registry's
- * `this._send('x')`, and the omnibar's prefix tables (`prefixes[…] = 'x'`), whose value
- * is sent as `{ action }`.
+ * `this._send('x')`, and prefix tables (`prefixes[…] = 'x'`), whose value is sent as
+ * `{ action }`.
  */
 function sentActions(source) {
     const actions = new Set();
@@ -80,19 +81,27 @@ describe('Content script message contract (messaging.js)', () => {
     }
     const { allowed, handlers } = loadMessaging();
 
-    it('finds the omnibar and the injected overlays among the content scripts', () => {
+    it('reads the injected overlays as content scripts', () => {
         for (const file of [
-            'src/utils/hint/omnibar.js',
             'src/utils/area-selector.js',
             'src/utils/screen-color-picker.js',
+            'src/utils/readAloud.js',
         ]) {
             assert.ok(files.includes(file), `${file} must be read as a content script`);
         }
-        // The prefix tables are what the omnibar lists with; missing them would let the
-        // history, bookmark and search actions drop out of the check unnoticed.
-        for (const action of ['getOpenTabs', 'getHistory', 'searchBookmarks', 'getRecentlyClosed', 'searchYoutube']) {
-            assert.ok(sent.has(action), `"${action}" must be found in the content scripts`);
+    });
+
+    it('runs the omnibar in its extension frame, with only its host in the page', () => {
+        assert.equal(files.includes('src/utils/hint/omnibar.js'), false, 'omnibar.js must not be a content script');
+        assert.ok(files.includes('src/utils/hint/omnibar-host.js'), 'omnibar-host.js must be a content script');
+        const frame = readFileSync('src/utils/hint/omnibar-frame.html', 'utf8');
+        for (const script of ['../hint_common.js', 'utils.js', 'omnibar.js', 'omnibar-frame.js']) {
+            assert.ok(frame.includes(`<script src="${script}"></script>`), `the frame must load ${script}`);
         }
+        const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+        const exposed = manifest.web_accessible_resources.flatMap((entry) => entry.resources);
+        assert.ok(exposed.includes('src/utils/hint/omnibar-frame.html'), 'pages must be able to frame the omnibar');
+        assert.equal(exposed.includes('src/utils/hint/omnibar.js'), false, 'omnibar.js has no reason to be exposed');
     });
 
     it('allows every action a content script sends', () => {
@@ -111,6 +120,7 @@ describe('Content script message contract (messaging.js)', () => {
 
     it('keeps what only extension pages ask for out of reach of a web page', () => {
         for (const action of [
+            // Extension pages.
             'getCookiesForUrl',
             'setCookie',
             'removeCookie',
@@ -121,6 +131,18 @@ describe('Content script message contract (messaging.js)', () => {
             'getBookmarks',
             'deleteAllBookmarks',
             'openFileUrl',
+            // The omnibar, now that it is one.
+            'getOpenTabs',
+            'getHistory',
+            'searchBookmarks',
+            'getRules',
+            'getOmnibarNotes',
+            'getOmnibarConversations',
+            'getOmnibarAllMessages',
+            'getOmnibarScreenshots',
+            'searchGemini',
+            'geminiAgentToolCall',
+            'deleteTabs',
         ]) {
             assert.ok(handlers.has(action), `"${action}" must still be a handler`);
             assert.equal(allowed.has(action), false, `"${action}" must not be open to content scripts`);

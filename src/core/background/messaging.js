@@ -21,47 +21,6 @@ async function handleGetExtensionFileContent(message, sendResponse) {
             });
     }
 }
-/**
- * Answers with a site's icon from Chrome's own favicon store, as a data URL.
- *
- * The omnibar runs as a content script and cannot read `_favicon/` itself: it is not a
- * web-accessible resource, and measured from a page both `fetch` and an `<img>` fail.
- * Making it web-accessible is not the answer — that would let any site on the web ask
- * the browser which icons the reader has, which is a history oracle. The worker has the
- * extension's own origin and the `favicon` permission, so the lookup happens here.
- *
- * This exists to stop the omnibar drawing its icons from
- * `google.com/s2/favicons?domain_url=…`, which sent the address of every listed
- * bookmark, history entry and rule to Google for a picture the browser already had.
- *
- * Answers `{ dataUrl: null }` rather than an error when there is no icon: a missing
- * favicon is an ordinary outcome, not a failure, and the caller hides the image.
- */
-async function handleGetFaviconDataUrl(message, sendResponse) {
-    try {
-        const pageUrl = String(message?.pageUrl || '');
-        // A same-origin `_favicon` lookup takes any URL of the site; an origin is
-        // enough, and is what the caller caches by.
-        const target = new URL(pageUrl);
-        if (!['http:', 'https:'].includes(target.protocol)) return sendResponse({ dataUrl: null });
-
-        const url = chrome.runtime.getURL(`_favicon/?pageUrl=${encodeURIComponent(target.origin)}&size=16`);
-        const response = await fetch(url);
-        if (!response.ok) return sendResponse({ dataUrl: null });
-
-        const blob = await response.blob();
-        const dataUrl = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(blob);
-        });
-        sendResponse({ dataUrl });
-    } catch {
-        sendResponse({ dataUrl: null });
-    }
-}
-
 chrome.commands.onCommand.addListener(async (command) => {
     logMessage(`[onCommand] Received command: ${command}.`);
     switch (command) {
@@ -233,13 +192,19 @@ chrome.commands.onCommand.addListener(async (command) => {
             console.warn(`[onCommand] Unhandled command: ${command}.`);
     }
 });
+/**
+ * Whether a message comes from one of the extension's own pages.
+ *
+ * Decided by the sending frame's own URL and origin, which the browser fills in and a
+ * page cannot forge. The URL of the tab says nothing about it: the omnibar is an
+ * extension frame inside a web tab, and refusing it for the tab it sits in refused the
+ * very sender this check is there to trust. A content script is still told apart, since
+ * its URL is the web page's.
+ */
 function isExtensionPageSender(sender) {
     if (!sender || sender.id !== chrome.runtime.id) return false;
     const extensionOrigin = chrome.runtime.getURL('');
     if (typeof sender.url !== 'string' || !sender.url.startsWith(extensionOrigin)) {
-        return false;
-    }
-    if (sender.tab && sender.tab.url && !sender.tab.url.startsWith(extensionOrigin)) {
         return false;
     }
     const expectedOrigin = extensionOrigin.endsWith('/') ? extensionOrigin.slice(0, -1) : extensionOrigin;
@@ -255,19 +220,18 @@ function isExtensionPageSender(sender) {
  *
  * Messages from anything that is not an extension page are refused unless their action
  * is here. That makes this list the contract of the scripts that run inside web pages
- * — the hints, the omnibar, link preview, video PiP and the overlays the worker injects
- * — so it has to be taken from what those scripts send, not from what they are
- * expected to need.
+ * — the hints, link preview, video PiP and the overlays the worker injects — so it has
+ * to be taken from what those scripts send, not from what they are expected to need.
  *
- * The first version was written from the keyboard shortcuts alone, and the omnibar,
- * which is a content script too, lost 59 actions at once: every list it draws came
- * back as `Unauthorized sender`, which it reads as "nothing to show", so the bar
- * opened empty with no error anywhere but the worker's console.
+ * The omnibar is not here on purpose. It runs in an extension frame (omnibar-frame.html)
+ * and reaches the worker as an extension page, so none of what it lists — tabs,
+ * history, bookmarks, notes, conversations, screenshots, rules — is open to a content
+ * script. Only its foothold in the page, omnibar-host.js, is one, and it sends nothing
+ * the rest of the hints do not.
  *
  * test/contentScriptMessageContract.test.mjs reads the content scripts and fails when
  * an action they send is missing here, or when an entry here is no longer sent by any
- * of them. Whatever only extension pages ask for (cookies, downloads, page fetches,
- * full-page captures, the bookmark tree…) stays out.
+ * of them.
  */
 const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     // Hint commands and keyboard shortcuts (registry.js, main.js, hint_common.js).
@@ -303,62 +267,8 @@ const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     'snippetsUpdated',
     'appendClipboardEnabledUpdated',
 
-    // Omnibar: what it lists.
-    'getOpenTabs',
-    'getTabGroups',
-    'getActiveTab',
-    'getRules',
-    'getClusterConfig',
-    'getBackups',
-    'getHistory',
-    'searchBookmarks',
-    'getRecentlyClosed',
-    'getOmnibarNotes',
-    'getOmnibarConversations',
-    'getOmnibarConversationContent',
-    'getOmnibarAllMessages',
-    'getOmnibarScreenshots',
-    'getOmnibarImageById',
-    'getFaviconDataUrl',
-
-    // Omnibar: what it does with a result.
-    'switchToTab',
-    'openMultipleUrls',
-    'openUrlInSidePanel',
-    'openPipWindow',
-    'openVideoPipWindow',
-    'captureTabs',
-    'deleteTabs',
-    'deleteTabGroup',
-    'deleteTabGroups',
-    'updateGroupColor',
-    'restoreBackupTab',
-    'createRuleFromOmnibar',
-    'openAddToRuleFromOmnibar',
-    'addUrlsToRule',
-    'deleteRulesFromOmnibar',
-    'updateRuleName',
-    'updateRuleDomain',
-    'updateRuleColor',
-    'updateOmnibarNote',
-    'openImageFromOmnibar',
-    'showOmnibarNotification',
-    'searchGoogle',
-    'searchYoutube',
-    'searchDuckDuckGo',
-    'searchWikipedia',
-    'searchGoogleMaps',
-    'searchX',
-    'searchAmazon',
-    'searchAmazonEs',
-
-    // Omnibar: the assistant and its agent loop.
-    'searchGemini',
-    'geminiAgentStep',
-    'geminiAgentToolCall',
-    'geminiAgentRunFinished',
-
-    // Link preview and video PiP (preview.js, ui.js, videoPip.js, utils.js).
+    // Link preview and the floating players (preview.js, ui.js, videoPip.js, utils.js,
+    // and omnibar-host.js for the page's own Document Picture-in-Picture).
     'toggleLinkPreview',
     'addLinkPreviewBlacklist',
     'removeLinkPreviewBlacklist',
@@ -383,8 +293,18 @@ const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     'getI18nMessages',
 ]);
 
+/** The ports the worker itself answers; anything else is addressed to someone else. */
+const WORKER_PORT_NAMES = new Set(['popup-connection', 'sidepanel-connection']);
+
 chrome.runtime.onConnect.addListener((port) => {
-    if (!isExtensionPageSender(port?.sender)) {
+    if (!WORKER_PORT_NAMES.has(port?.name)) {
+        // Not the worker's port, so not the worker's to close. A runtime port reaches
+        // every extension context at once, and closing it from here closes it for all of
+        // them: the omnibar's host opens one to its own frame, and disconnecting every
+        // port from a content script cut that link before the frame could answer.
+        return;
+    }
+    if (!isExtensionPageSender(port.sender)) {
         try {
             port.disconnect();
         } catch {}
@@ -784,12 +704,6 @@ const MESSAGE_HANDLERS = {
         handleRestoreBackupTab(message, sendResponse);
         return true;
     },
-    // The omnibar's site icons. In ALLOWED_CONTENT_SCRIPT_ACTIONS on purpose: the
-    // omnibar is a content script and this is what keeps it from asking Google instead.
-    getFaviconDataUrl: (message, sender, sendResponse) => {
-        handleGetFaviconDataUrl(message, sendResponse);
-        return true;
-    },
     getExtensionFileContent: (message, sender, sendResponse) => {
         handleGetExtensionFileContent(message, sendResponse);
         return true;
@@ -845,6 +759,10 @@ const MESSAGE_HANDLERS = {
     },
     getOmnibarImageById: (message, sender, sendResponse) => {
         handleGetOmnibarImageById(message, sendResponse);
+        return true;
+    },
+    openImageFromOmnibar: (message, sender, sendResponse) => {
+        handleOpenImageFromOmnibar(message, sender, sendResponse);
         return true;
     },
     getOmnibarAllMessages: (message, sender, sendResponse) => {

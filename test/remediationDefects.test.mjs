@@ -137,6 +137,36 @@ describe('Remediation Defects & Defenses Test Suite', () => {
             assert.equal(vm.runInContext('globalThis.__testInternalExecuted', context), true);
         });
 
+        it('authorizes an extension frame embedded in a web tab (the omnibar)', () => {
+            const omnibarFrameSender = {
+                id: 'mock-ext-id',
+                url: 'chrome-extension://mock-ext-id/src/utils/hint/omnibar-frame.html?n=abc',
+                origin: 'chrome-extension://mock-ext-id',
+                tab: { id: 31, url: 'https://example.com/' },
+            };
+
+            vm.runInContext('globalThis.__testInternalExecuted = false;', context);
+            onMessageListener({ action: 'testInternalAction' }, omnibarFrameSender, () => {});
+
+            assert.equal(vm.runInContext('globalThis.__testInternalExecuted', context), true);
+        });
+
+        it('still refuses a content script in that same tab', () => {
+            let capturedResponse = null;
+            const contentScriptSender = {
+                id: 'mock-ext-id',
+                url: 'https://example.com/',
+                origin: 'https://example.com',
+                tab: { id: 31, url: 'https://example.com/' },
+            };
+
+            onMessageListener({ action: 'getHistory' }, contentScriptSender, (res) => {
+                capturedResponse = res;
+            });
+
+            assert.equal(capturedResponse?.error, 'Unauthorized sender');
+        });
+
         it('authorizes content scripts for allowed shortcut and hint actions', () => {
             const shortcutActions = [
                 'backupAllGroupsFromKey',
@@ -178,6 +208,27 @@ describe('Remediation Defects & Defenses Test Suite', () => {
 
             onConnectListener(unauthorizedPort);
             assert.equal(disconnected, true, 'Port from untrusted sender must be immediately disconnected');
+        });
+
+        it('leaves alone a content script port addressed to another extension context', () => {
+            let disconnected = false;
+            // The omnibar's host opens this one to its own frame; it is not the worker's.
+            const omnibarPort = {
+                name: 'itg-omnibar:0f2abd8cb86bf6a5',
+                sender: {
+                    id: 'mock-ext-id',
+                    url: 'https://example.com/',
+                    tab: { id: 8, url: 'https://example.com/' },
+                },
+                disconnect: () => {
+                    disconnected = true;
+                },
+                onMessage: { addListener: () => {} },
+                onDisconnect: { addListener: () => {} },
+            };
+
+            onConnectListener(omnibarPort);
+            assert.equal(disconnected, false, 'A port the worker does not answer must not be closed by it');
         });
     });
 
