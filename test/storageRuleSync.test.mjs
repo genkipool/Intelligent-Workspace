@@ -99,10 +99,10 @@ describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
             assert.equal(area, mockChrome.storage.sync);
         });
 
-        it('defaults getRuleStorageArea to local when ruleStorageArea is undefined', async () => {
+        it('defaults getRuleStorageArea to sync when ruleStorageArea is undefined', async () => {
             delete mockLocalStorage.ruleStorageArea;
             const area = await storageService.getRuleStorageArea();
-            assert.equal(area, mockChrome.storage.local);
+            assert.equal(area, mockChrome.storage.sync);
         });
 
         it('resolves getThemeStorageArea independently of ruleStorageArea', async () => {
@@ -116,10 +116,10 @@ describe('Defect #9: StorageService ruleStorageArea synchronization', () => {
             assert.equal(ruleArea, mockChrome.storage.local, 'Rule area should resolve to local');
         });
 
-        it('getStorageAreaName defaults ruleStorageArea to local when unset', async () => {
+        it('getStorageAreaName defaults ruleStorageArea to sync when unset', async () => {
             delete mockLocalStorage.ruleStorageArea;
             const areaName = await getStorageAreaName('ruleStorageArea');
-            assert.equal(areaName, 'local');
+            assert.equal(areaName, 'sync');
         });
 
         it('getStorageAreaName defaults themeStorageArea to sync when unset', async () => {

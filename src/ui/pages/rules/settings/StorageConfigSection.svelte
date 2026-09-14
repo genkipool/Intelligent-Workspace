@@ -5,7 +5,7 @@
 
     let {
         allRulesActive = $bindable(false),
-        ruleStorageArea = $bindable('local'),
+        ruleStorageArea = $bindable('sync'),
         ontoggleall = () => {},
         onsetstorage = () => {},
     } = $props();

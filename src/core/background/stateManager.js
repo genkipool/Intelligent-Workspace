@@ -468,8 +468,8 @@ async function loadOrRebuildGroupInfoMap() {
 }
 async function loadExtensionSettings() {
     try {
-        const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
-        const storage = ruleStorageArea === 'sync' ? chrome.storage.sync : chrome.storage.local;
+        const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+        const storage = ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
         const settingsKeys = [
             'userPrefixes',
             'sortGroupsAlphabetically',
@@ -595,7 +595,7 @@ async function setupDefaultSettings() {
         await chrome.storage.sync.set(defaultSettings);
         await chrome.storage.local.set(defaultSettings);
         await chrome.storage.local.set({
-            ruleStorageArea: 'local',
+            ruleStorageArea: 'sync',
         });
         logMessage('Default settings have been successfully saved.');
     } catch (error) {

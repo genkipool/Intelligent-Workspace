@@ -1285,13 +1285,13 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     }
     let configuredArea = cachedConfiguredRuleStorageArea;
     if (!configuredArea) {
-        const { ruleStorageArea: currentArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
+        const { ruleStorageArea: currentArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
         cachedConfiguredRuleStorageArea = currentArea;
         configuredArea = currentArea;
     }
     if (changes.ruleStorageArea && area === 'local') {
-        const oldValue = changes.ruleStorageArea.oldValue || 'local';
-        const newValue = changes.ruleStorageArea.newValue || 'local';
+        const oldValue = changes.ruleStorageArea.oldValue || 'sync';
+        const newValue = changes.ruleStorageArea.newValue || 'sync';
         cachedConfiguredRuleStorageArea = newValue;
         logMessage(`[Storage Changed] Storage area switched from '${oldValue}' to '${newValue}'. Re-initializing...`);
         if (!isInstallActive) {

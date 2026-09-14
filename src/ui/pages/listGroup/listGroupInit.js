@@ -603,7 +603,7 @@ export async function initializeAllEvents() {
         if (area === 'local' && (changes.isListGroupPinned || changes.isGeminiPinned)) {
             refreshPinUI();
         }
-        if (changes.ruleStorageArea) ruleStorageArea = changes.ruleStorageArea.newValue || 'local';
+        if (changes.ruleStorageArea) ruleStorageArea = changes.ruleStorageArea.newValue || 'sync';
         const rulesArea = await ruleStorageArea;
         if (area !== rulesArea && !(area === 'local' && changes.ruleStorageArea)) return;
         if (changes.enablePrefixes || changes.ruleStorageArea) {

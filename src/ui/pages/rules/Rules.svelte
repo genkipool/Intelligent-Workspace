@@ -145,7 +145,7 @@
             miscSortOption = settings.miscGroupSortOption || 'start';
             // ruleStorageArea and discardingTimeMinutes live in chrome.storage.local
             const localData = await chrome.storage.local.get(['ruleStorageArea', 'discardingTimeMinutes']);
-            storageMode = localData.ruleStorageArea || 'local';
+            storageMode = localData.ruleStorageArea || 'sync';
             discardingTime = Math.min(1440, Math.max(1, localData.discardingTimeMinutes ?? 60));
             // The quick guide opens by itself only while there are no rules yet; from
             // then on it is the Rules title and the "Rules" heading that summon it.
@@ -323,7 +323,7 @@
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
         if (changes.ruleStorageArea) {
-            const newArea = changes.ruleStorageArea.newValue || 'local';
+            const newArea = changes.ruleStorageArea.newValue || 'sync';
             if (newArea !== storageMode) {
                 storageMode = newArea;
                 initialRestoredRules.clear();

@@ -12,7 +12,7 @@ let cachedStorageArea = null;
 
 export async function getSettingsStorage() {
     if (cachedStorageArea) return cachedStorageArea;
-    const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
+    const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
     cachedStorageArea = ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
     return cachedStorageArea;
 }

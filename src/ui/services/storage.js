@@ -24,7 +24,7 @@ export function getStorageAreaName(ruleKey = 'ruleStorageArea') {
     let pending = areaNameCache.get(ruleKey);
     if (!pending) {
         const local = getStorageBackend('local');
-        const defaultArea = ruleKey === 'themeStorageArea' ? 'sync' : 'local';
+        const defaultArea = 'sync';
         if (local) {
             pending = local.get(ruleKey).then(({ [ruleKey]: area = defaultArea }) => area || defaultArea);
             areaNameCache.set(ruleKey, pending);
@@ -36,7 +36,7 @@ export function getStorageAreaName(ruleKey = 'ruleStorageArea') {
 }
 
 export async function getStorageArea(ruleKey = 'ruleStorageArea') {
-    const defaultArea = ruleKey === 'themeStorageArea' ? 'sync' : 'local';
+    const defaultArea = 'sync';
     const areaName = await getStorageAreaName(ruleKey);
     return getStorageBackend(areaName) || getStorageBackend(defaultArea);
 }

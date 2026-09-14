@@ -12,8 +12,8 @@ const HINTS_KEY = 'hintsEnabled';
 // Rules live in sync or local storage depending on what the rules page has configured,
 // so every read and write has to resolve the area first.
 async function getRulesStorage() {
-    const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
-    return ruleStorageArea === 'sync' ? chrome.storage.sync : chrome.storage.local;
+    const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
+    return ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
 }
 
 /** The master switch is on only when every rule is active, exactly as in the rules page. */

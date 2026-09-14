@@ -1324,7 +1324,7 @@ async function getSortAlphabeticallySetting() {
 }
 
 async function getSettingsStorage() {
-    const { ruleStorageArea = 'local' } = await chrome.storage.local.get('ruleStorageArea');
+    const { ruleStorageArea = 'sync' } = await chrome.storage.local.get('ruleStorageArea');
     return ruleStorageArea === 'local' ? chrome.storage.local : chrome.storage.sync;
 }
 
