@@ -249,18 +249,39 @@ function isExtensionPageSender(sender) {
     return true;
 }
 
+/**
+ * [AI INSTRUCTION]
+ * EVERY ACTION A CONTENT SCRIPT SENDS, AND NOTHING ELSE.
+ *
+ * Messages from anything that is not an extension page are refused unless their action
+ * is here. That makes this list the contract of the scripts that run inside web pages
+ * — the hints, the omnibar, link preview, video PiP and the overlays the worker injects
+ * — so it has to be taken from what those scripts send, not from what they are
+ * expected to need.
+ *
+ * The first version was written from the keyboard shortcuts alone, and the omnibar,
+ * which is a content script too, lost 59 actions at once: every list it draws came
+ * back as `Unauthorized sender`, which it reads as "nothing to show", so the bar
+ * opened empty with no error anywhere but the worker's console.
+ *
+ * test/contentScriptMessageContract.test.mjs reads the content scripts and fails when
+ * an action they send is missing here, or when an entry here is no longer sent by any
+ * of them. Whatever only extension pages ask for (cookies, downloads, page fetches,
+ * full-page captures, the bookmark tree…) stays out.
+ */
 const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
+    // Hint commands and keyboard shortcuts (registry.js, main.js, hint_common.js).
     'backupAllGroupsFromKey',
     'restoreAllGroupsFromKey',
     'createRuleFromShortcut',
     'openAddToRuleFromShortcut',
-    'openPopupWindow',
-    'openSidePanel',
     'toggleLinkPreviewFromKey',
     'toggleAutoPipFromKey',
     'captureFromShortcut',
     'captureGroupFromShortcut',
     'captureAreaFromShortcut',
+    'createNoteFromSelection',
+    'startReadAloud',
     'previousTab',
     'nextTab',
     'createNewTab',
@@ -270,29 +291,95 @@ const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     'deleteCurrentTabGroup',
     'setPageMode',
     'cancelTabPageMode',
+    'deactivateAllPageModes',
     'muteAllTabs',
     'toggleMuteCurrentTab',
     'toggleSplitScreen',
     'openUrl',
+    'openSidePanel',
+    'openPopupWindow',
     'navigateToGroupTab',
-    'pauseMedia',
-    'createNoteFromSelection',
-    'startReadAloud',
-    'fullscreenChanged',
-    'hintStatusChanged',
-    'readAloudStateChanged',
-    'screenColorPicked',
-    'screenColorPickCanceled',
-    'captureForColorPicker',
-    'areaSelectionCancelled',
-    'prepareVideoUrlForPip',
-    'getFaviconDataUrl',
-    'printingComplete',
-    'getActiveTheme',
-    'getExtensionFileContent',
-    'prepareYouTubeEmbed',
     'hintCommandsUpdated',
     'snippetsUpdated',
+    'appendClipboardEnabledUpdated',
+
+    // Omnibar: what it lists.
+    'getOpenTabs',
+    'getTabGroups',
+    'getActiveTab',
+    'getRules',
+    'getClusterConfig',
+    'getBackups',
+    'getHistory',
+    'searchBookmarks',
+    'getRecentlyClosed',
+    'getOmnibarNotes',
+    'getOmnibarConversations',
+    'getOmnibarConversationContent',
+    'getOmnibarAllMessages',
+    'getOmnibarScreenshots',
+    'getOmnibarImageById',
+    'getFaviconDataUrl',
+
+    // Omnibar: what it does with a result.
+    'switchToTab',
+    'openMultipleUrls',
+    'openUrlInSidePanel',
+    'openPipWindow',
+    'openVideoPipWindow',
+    'captureTabs',
+    'deleteTabs',
+    'deleteTabGroup',
+    'deleteTabGroups',
+    'updateGroupColor',
+    'restoreBackupTab',
+    'createRuleFromOmnibar',
+    'openAddToRuleFromOmnibar',
+    'addUrlsToRule',
+    'deleteRulesFromOmnibar',
+    'updateRuleName',
+    'updateRuleDomain',
+    'updateRuleColor',
+    'updateOmnibarNote',
+    'openImageFromOmnibar',
+    'showOmnibarNotification',
+    'searchGoogle',
+    'searchYoutube',
+    'searchDuckDuckGo',
+    'searchWikipedia',
+    'searchGoogleMaps',
+    'searchX',
+    'searchAmazon',
+    'searchAmazonEs',
+
+    // Omnibar: the assistant and its agent loop.
+    'searchGemini',
+    'geminiAgentStep',
+    'geminiAgentToolCall',
+    'geminiAgentRunFinished',
+
+    // Link preview and video PiP (preview.js, ui.js, videoPip.js, utils.js).
+    'toggleLinkPreview',
+    'addLinkPreviewBlacklist',
+    'removeLinkPreviewBlacklist',
+    'editLinkPreviewBlacklist',
+    'setLinkPreviewTriggerKey',
+    'prepareVideoUrlForPip',
+    'cleanupVideoPipRules',
+    'registerPipWindow',
+    'playYouTubeVideoInPage',
+
+    // Page observers and the overlays the worker injects (area selector, colour
+    // picker, read aloud), plus the resources every one of them loads.
+    'fullscreenChanged',
+    'captureAreaScreenshot',
+    'areaSelectionCancelled',
+    'captureForColorPicker',
+    'screenColorPicked',
+    'screenColorPickCanceled',
+    'readAloudStateChanged',
+    'getActiveTheme',
+    'getExtensionFileContent',
     'getI18nMessages',
 ]);
 
@@ -697,8 +784,8 @@ const MESSAGE_HANDLERS = {
         handleRestoreBackupTab(message, sendResponse);
         return true;
     },
-    // The omnibar's site icons. Deliberately NOT in SENSITIVE_UI_ACTIONS: the omnibar
-    // is a content script and this is what keeps it from asking Google instead.
+    // The omnibar's site icons. In ALLOWED_CONTENT_SCRIPT_ACTIONS on purpose: the
+    // omnibar is a content script and this is what keeps it from asking Google instead.
     getFaviconDataUrl: (message, sender, sendResponse) => {
         handleGetFaviconDataUrl(message, sendResponse);
         return true;
@@ -1296,9 +1383,9 @@ const MESSAGE_HANDLERS = {
 };
 
 /**
- * Sensitive operations that belong strictly to internal extension UI pages
- * (side panel, popup, settings) and must NEVER be invoked by content scripts
- * in arbitrary webpages.
+ * Extension pages (side panel, popup, settings, pages opened in a tab) may call any
+ * handler. Everything else — the content scripts inside web pages — only reaches the
+ * actions in ALLOWED_CONTENT_SCRIPT_ACTIONS.
  */
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const isExtension = isExtensionPageSender(sender);
