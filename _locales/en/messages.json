@@ -3601,6 +3601,10 @@
     "message": "Close Split Screen",
     "description": "Close Split Screen"
   },
+  "splitScreenPlacementIgnored": {
+    "message": "On Wayland, Chrome can't position windows. Snap them to each side with Super+← and Super+→.",
+    "description": "Notice when opening split screen and the window manager won't let Chrome position windows"
+  },
   "geminiWelcomeTitle": {
     "message": "Welcome to the Gemini Chat"
   },

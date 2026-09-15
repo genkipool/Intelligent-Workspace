@@ -3561,6 +3561,10 @@
         "message": "Cerrar Pantalla Dividida",
         "description": "Cerrar Pantalla Dividida"
     },
+    "splitScreenPlacementIgnored": {
+        "message": "Con Wayland, Chrome no puede colocar las ventanas. Ajústalas a cada lado con Super+← y Super+→.",
+        "description": "Aviso al abrir la pantalla dividida cuando el gestor de ventanas no deja colocarlas"
+    },
     "geminiWelcomeTitle": {
         "message": "Bienvenido al Chat de Gemini"
     },

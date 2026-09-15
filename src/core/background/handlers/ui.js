@@ -138,6 +138,47 @@ function handleFullscreenChanged(message, sender, sendResponse) {
     }
 }
 
+// Wayland compositors place windows themselves, so Chrome drops left/top there. Updates on
+// an existing window still echo the requested position back, but a new window settles at
+// (0, 0) within ~30 ms whatever was asked; on X11 it keeps the requested position.
+const SPLIT_PLACEMENT_SETTLE_MS = 400;
+
+async function isWindowPlacementIgnored(windowId, requested) {
+    // A request for (0, 0) looks the same either way.
+    if (!requested.left && !requested.top) return null;
+    const deadline = Date.now() + SPLIT_PLACEMENT_SETTLE_MS;
+    try {
+        while (Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            const win = await chrome.windows.get(windowId);
+            if (win.left === 0 && win.top === 0) return true;
+        }
+        return false;
+    } catch {
+        return null;
+    }
+}
+
+// Without placement the compositor decides where each window goes; halves are what the
+// Super+Left / Super+Right snap gives them anyway.
+function getUnplacedSplitSizes(display) {
+    const { width, height } = display.workArea || display.bounds;
+    const splitWidth = Math.floor(width / 2);
+    return {
+        original: { width: width - splitWidth, height },
+        split: { width: splitWidth, height },
+    };
+}
+
+function notifySplitScreenPlacementIgnored() {
+    chrome.notifications.create('split-screen-placement-ignored', {
+        type: 'basic',
+        iconUrl: '/assets/icons/icon128.png',
+        title: 'Intelligent Tab Group',
+        message: getI18nMsg('splitScreenPlacementIgnored'),
+    });
+}
+
 function handleToggleSplitScreen(message, sender, sendResponse) {
     if (typeof sender === 'function') {
         sendResponse = sender;
@@ -288,23 +329,53 @@ function handleToggleSplitScreen(message, sender, sendResponse) {
                         width: displayWidth,
                         height: displayHeight,
                     } = activeDisplay.bounds;
-                    const newWindowWidth = Math.floor(displayWidth * 0.45); // 45% for the new window
-                    const originalWindowWidth = displayWidth - newWindowWidth; // 55% for the original window
-
                     const platformInfo = await chrome.runtime.getPlatformInfo();
-                    let addsize = 0;
-                    if (platformInfo.os === 'win' || platformInfo.os === 'mac') {
-                        addsize = Math.round(displayWidth * 0.01);
-                    } else if (platformInfo.os === 'linux') {
-                        addsize = Math.round(displayWidth * 0.02);
-                    } else {
-                        // Default value for other systems (ChromeOS, etc.)
-                        addsize = Math.round(displayWidth * 0.01);
+                    // Only Linux can run Chrome on Wayland; elsewhere placement always works.
+                    let placement = 'honored';
+                    if (platformInfo.os === 'linux') {
+                        const stored = await chrome.storage.session.get(SPLIT_SCREEN_PLACEMENT_KEY);
+                        placement = stored[SPLIT_SCREEN_PLACEMENT_KEY] || 'unknown';
                     }
-                    logMessage(`[Split Screen LOG] OS: ${platformInfo.os}, Calculated addsize: ${addsize}`);
-                    logMessage(
-                        `[Split Screen LOG] Calculated values: newWidth=${newWindowWidth}, originalWidth=${originalWindowWidth}, displayLeft=${displayLeft}, displayTop=${displayTop}, displayHeight=${displayHeight}`,
-                    );
+                    logMessage(`[Split Screen LOG] Window placement: ${placement}`);
+
+                    let originalWindowUpdate;
+                    let newWindowCreate;
+                    if (placement === 'ignored') {
+                        const sizes = getUnplacedSplitSizes(activeDisplay);
+                        originalWindowUpdate = sizes.original;
+                        newWindowCreate = { url: firstTab.url, type: 'normal', ...sizes.split };
+                    } else {
+                        const newWindowWidth = Math.floor(displayWidth * 0.45); // 45% for the new window
+                        const originalWindowWidth = displayWidth - newWindowWidth; // 55% for the original window
+
+                        let addsize = 0;
+                        if (platformInfo.os === 'win' || platformInfo.os === 'mac') {
+                            addsize = Math.round(displayWidth * 0.01);
+                        } else if (platformInfo.os === 'linux') {
+                            addsize = Math.round(displayWidth * 0.02);
+                        } else {
+                            // Default value for other systems (ChromeOS, etc.)
+                            addsize = Math.round(displayWidth * 0.01);
+                        }
+                        logMessage(`[Split Screen LOG] OS: ${platformInfo.os}, Calculated addsize: ${addsize}`);
+                        logMessage(
+                            `[Split Screen LOG] Calculated values: newWidth=${newWindowWidth}, originalWidth=${originalWindowWidth}, displayLeft=${displayLeft}, displayTop=${displayTop}, displayHeight=${displayHeight}`,
+                        );
+                        originalWindowUpdate = {
+                            left: displayLeft + newWindowWidth,
+                            top: displayTop,
+                            width: originalWindowWidth,
+                            height: displayHeight,
+                        };
+                        newWindowCreate = {
+                            url: firstTab.url,
+                            left: displayLeft - addsize,
+                            top: displayTop - addsize,
+                            width: newWindowWidth + addsize,
+                            height: displayHeight + addsize * 3,
+                            type: 'normal',
+                        };
+                    }
                     state.originalWindowId = windowDetails.id;
                     state.originalWindowState = {
                         left: windowDetails.left,
@@ -318,24 +389,13 @@ function handleToggleSplitScreen(message, sender, sendResponse) {
                             state: 'normal',
                         });
                     }
-                    const originalWindowUpdate = {
-                        left: displayLeft + newWindowWidth,
-                        top: displayTop,
-                        width: originalWindowWidth,
-                        height: displayHeight,
-                    };
                     logMessage(`[Split Screen LOG] Updating original window with:`, originalWindowUpdate);
                     await chrome.windows.update(windowDetails.id, originalWindowUpdate);
-                    const newWindowCreate = {
-                        url: firstTab.url,
-                        left: displayLeft - addsize,
-                        top: displayTop - addsize,
-                        width: newWindowWidth + addsize,
-                        height: displayHeight + addsize * 3,
-                        type: 'normal',
-                    };
                     logMessage(`[Split Screen LOG] Creating new window with:`, newWindowCreate);
                     const newWindow = await chrome.windows.create(newWindowCreate);
+                    // Runs while the tabs are created, so X11 does not wait for it.
+                    const placementCheck =
+                        placement === 'unknown' ? isWindowPlacementIgnored(newWindow.id, newWindowCreate) : null;
                     const firstNewTab = newWindow.tabs[0];
                     const createdTabIds = [firstNewTab.id];
                     state.splitTabs[firstTab.id] = firstNewTab.id;
@@ -369,6 +429,18 @@ function handleToggleSplitScreen(message, sender, sendResponse) {
                         isCompact: false,
                     });
                     await saveGroupInfoMap();
+                    const placementIgnored = placementCheck ? await placementCheck : null;
+                    if (placementIgnored !== null) {
+                        await chrome.storage.session.set({
+                            [SPLIT_SCREEN_PLACEMENT_KEY]: placementIgnored ? 'ignored' : 'honored',
+                        });
+                    }
+                    if (placementIgnored) {
+                        const sizes = getUnplacedSplitSizes(activeDisplay);
+                        await chrome.windows.update(windowDetails.id, sizes.original);
+                        await chrome.windows.update(newWindow.id, sizes.split);
+                        notifySplitScreenPlacementIgnored();
+                    }
                     state.isActive = true;
                     state.splitWindowId = newWindow.id;
                     state.splitGroupId = newGroupId;

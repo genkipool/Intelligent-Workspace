@@ -136,6 +136,8 @@ let duplicateUrlSetCache = null;
 // --- Constants ---
 const SIDEPANEL_RULE_ID = 1;
 const SPLIT_SCREEN_STATE_KEY = 'splitScreenState';
+// 'honored' | 'ignored': whether the window manager lets Chrome place windows (not on Wayland).
+const SPLIT_SCREEN_PLACEMENT_KEY = 'splitScreenPlacement';
 const SCREENSHOT_STORAGE_KEY = 'groupScreenshots';
 const NOTES_STORAGE_KEY = 'groupNotes';
 const INACTIVITY_THRESHOLD_INACTIVE_GROUP = 1;

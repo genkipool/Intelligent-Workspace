@@ -392,7 +392,7 @@ a,
     outline: none;
 }
 .rate-store-btn .material-icons-sharp {
-    color: #ffd700;
+    color: var(--text-on-color);
     font-size: var(--h2-size);
 }
 .github-link-wrapper,
@@ -847,6 +847,8 @@ ul {
     color: var(--text-color);
     padding: var(--spacing-sm);
     border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    user-select: none;
     transition:
         background-color var(--transition-duration) ease,
         transform var(--transition-duration) ease;
@@ -860,6 +862,10 @@ ul {
     @media (max-width: 420px) {
         padding: 2px;
     }
+}
+
+.contribution-link * {
+    cursor: pointer;
 }
 
 .contribution-link:hover,

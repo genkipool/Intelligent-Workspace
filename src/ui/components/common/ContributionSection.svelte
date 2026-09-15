@@ -34,6 +34,7 @@
                 id="contribution-{provider.id}"
                 role="button"
                 tabindex="0"
+                style="cursor: pointer;"
                 aria-label={$t(provider.ariaLabelKey)}
                 title={$tt(provider.titleKey)}
                 onclick={(e) => activate(provider, e)}
