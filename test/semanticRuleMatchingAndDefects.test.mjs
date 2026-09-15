@@ -219,7 +219,7 @@ describe('R2: Defect #1 - Tab removal session state persistence', () => {
     it('unconditionally invokes saveSessionState() upon tab removal', () => {
         assert.match(
             eventsCode,
-            /tabsEverActive\.delete\(tabId\);[\s\S]*?await\s+saveSessionState\(\);/,
+            /tabsEverActive\.delete\(tabId\);[\s\S]*?await\s+(?:saveSessionState\(\)|Promise\.all\(\[\s*requestSaveSessionState\(\))/,
             'Must call await saveSessionState() following tabsEverActive.delete(tabId)',
         );
     });

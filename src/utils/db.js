@@ -33,6 +33,7 @@ function openDb() {
 }
 
 export async function saveScreenshotToDb(screenshot) {
+    screenshotContextKeys.delete(screenshot?.id);
     const db = await openDb();
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([STORE_NAME], 'readwrite');
@@ -90,6 +91,31 @@ export async function getScreenshotsFromDb(ids, onEach) {
         transaction.oncomplete = () => resolve(found);
         transaction.onerror = () => reject(transaction.error);
     });
+}
+
+/**
+ * The id and context key of every screenshot, without holding on to the pictures.
+ *
+ * The group list asks on every refresh which group owns each capture, and each record
+ * carries the whole image as a data URL: reading every record to look at one field
+ * loaded the entire archive again on every tab switch. The keys are remembered by id,
+ * so only captures this page has not seen are read, and ids gone from the store are
+ * dropped. Saves made from this page forget the id, so a capture filed again is read
+ * again.
+ */
+const screenshotContextKeys = new Map();
+export async function getScreenshotContextKeysFromDb() {
+    const ids = await getAllScreenshotIdsFromDb();
+    const present = new Set(ids);
+    for (const id of screenshotContextKeys.keys()) {
+        if (!present.has(id)) screenshotContextKeys.delete(id);
+    }
+    const unknown = ids.filter((id) => !screenshotContextKeys.has(id));
+    if (unknown.length > 0) {
+        const records = await getScreenshotsFromDb(unknown);
+        for (const id of unknown) screenshotContextKeys.set(id, records.get(id)?.contextKey ?? null);
+    }
+    return ids.map((id) => ({ id, contextKey: screenshotContextKeys.get(id) }));
 }
 
 export async function deleteScreenshotFromDb(id) {
@@ -223,6 +249,16 @@ export async function clearNotesForContext(contextKey, numericContextKey = null)
                 resolve({ deletedCount, deletedPersistentIds });
             }
         };
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+/** Every note in one transaction, rather than one transaction per note. */
+export async function getAllNotesFromDb() {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const request = db.transaction([NOTES_STORE_NAME], 'readonly').objectStore(NOTES_STORE_NAME).getAll();
+        request.onsuccess = (event) => resolve(event.target.result || []);
         request.onerror = (event) => reject(event.target.error);
     });
 }

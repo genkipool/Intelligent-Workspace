@@ -53,12 +53,35 @@ async function waMarkWarned(stamp) {
 
 /** The rule set currently installed, as a string, so identical rebuilds are skipped. */
 let waInstalledRuleSignature = null;
+/** Where that string outlives the worker, which forgets it every time it stops. */
+const WA_RULE_SIGNATURE_KEY = 'wa:installedRuleSignature';
 
 // ---------------------------------------------------------------- storage access
 
+/**
+ * The stored preferences, read once per worker start. Every tab switch, navigation and
+ * minute tick asks for them, often several times over. A write from anywhere drops the
+ * copy through storage.onChanged; this worker's own writes drop it at once as well,
+ * because onChanged arrives after the write has returned.
+ */
+let waStoredSettings = null;
+let waStoredSettingsGeneration = 0;
+function waForgetSettings() {
+    waStoredSettingsGeneration++;
+    waStoredSettings = null;
+}
 async function waGetSettings() {
-    const { [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(ITG_WEB_ACTIVITY.KEYS.SETTINGS);
-    return { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...(stored || {}) };
+    if (waStoredSettings === null) {
+        const generation = waStoredSettingsGeneration;
+        const { [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(
+            ITG_WEB_ACTIVITY.KEYS.SETTINGS,
+        );
+        // A write that landed while this read was out makes what it brought back stale.
+        if (generation !== waStoredSettingsGeneration)
+            return { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...(stored || {}) };
+        waStoredSettings = stored || {};
+    }
+    return { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...waStoredSettings };
 }
 
 async function waGetLimits() {
@@ -91,11 +114,18 @@ async function waGetDayIndex() {
  * be to read the whole storage area, which also holds the rules, the themes and the
  * group backups.
  */
+/** The days this worker has already found on the index, so a counter bump does not re-read it. */
+const waIndexedDays = new Set();
 async function waIndexDay(dayKey, index = null) {
+    if (!index && waIndexedDays.has(dayKey)) return null;
     const days = index || (await waGetDayIndex());
-    if (days.includes(dayKey)) return days;
+    if (days.includes(dayKey)) {
+        waIndexedDays.add(dayKey);
+        return days;
+    }
     const updated = [...days, dayKey].sort();
     await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.DAY_INDEX]: updated });
+    waIndexedDays.add(dayKey);
     return updated;
 }
 
@@ -230,13 +260,25 @@ async function waBumpCounter(domain, field, now = Date.now()) {
     await waIndexDay(dayKey);
 }
 
-/** Newest first, capped, so the timeline never grows without bound. */
-async function waPushRecent(visit) {
-    const { [ITG_WEB_ACTIVITY.KEYS.RECENT]: stored } = await chrome.storage.local.get(ITG_WEB_ACTIVITY.KEYS.RECENT);
-    const recent = Array.isArray(stored) ? stored : [];
+/**
+ * A visit: the day's counter and the timeline (newest first, capped so it never grows
+ * without bound), read in one go and written in one go instead of two of each.
+ */
+async function waRecordVisit(domain, visit, now = Date.now()) {
+    const dayKey = ITG_WEB_ACTIVITY.dayKey(now);
+    const dayStorageKey = ITG_WEB_ACTIVITY.dayStorageKey(dayKey);
+    const { [dayStorageKey]: storedDay, [ITG_WEB_ACTIVITY.KEYS.RECENT]: storedRecent } = await chrome.storage.local.get(
+        [dayStorageKey, ITG_WEB_ACTIVITY.KEYS.RECENT],
+    );
+    const record = storedDay || { domains: {} };
+    record.domains ||= {};
+    const entry = (record.domains[domain] ||= ITG_WEB_ACTIVITY.emptyDomainDay());
+    entry.v = (entry.v || 0) + 1;
+    const recent = Array.isArray(storedRecent) ? storedRecent : [];
     recent.unshift(visit);
     recent.length = Math.min(recent.length, ITG_WEB_ACTIVITY.MAX_RECENT);
-    await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.RECENT]: recent });
+    await chrome.storage.local.set({ [dayStorageKey]: record, [ITG_WEB_ACTIVITY.KEYS.RECENT]: recent });
+    await waIndexDay(dayKey);
 }
 
 // ---------------------------------------------------------------- what is in front
@@ -321,6 +363,21 @@ function waSync(options) {
 }
 
 /**
+ * A sync that has not started yet already answers whoever asks next, since it reads
+ * what is in front when it runs. Closing forty tabs queued forty of them.
+ */
+let waQueuedSync = null;
+function waSyncSoon() {
+    if (!waQueuedSync) {
+        waQueuedSync = waSerial(() => {
+            waQueuedSync = null;
+            return waSyncNow();
+        });
+    }
+    return waQueuedSync;
+}
+
+/**
  * Banks whatever the open segment is worth and opens one for whatever is in front now.
  * Every event funnels through `waSync`; nothing else moves the clock.
  *
@@ -399,6 +456,13 @@ function escapeForRegexFilter(domain) {
 async function waRebuildBlockRules() {
     const domains = await waBlockedDomains();
     const signature = domains.join('|');
+    if (waInstalledRuleSignature === null) {
+        // The rules outlive the worker, so without this every worker start rewrote them.
+        // A browser restart empties session storage, which is right: the block page's
+        // address changes with the session and the rules have to be written again then.
+        const { [WA_RULE_SIGNATURE_KEY]: installed } = await chrome.storage.session.get(WA_RULE_SIGNATURE_KEY);
+        if (typeof installed === 'string') waInstalledRuleSignature = installed;
+    }
     if (signature === waInstalledRuleSignature) return domains;
 
     const blockedPage = chrome.runtime.getURL('src/ui/pages/web-activity/blocked.html');
@@ -427,6 +491,7 @@ async function waRebuildBlockRules() {
             .map((rule) => rule.id);
         await chrome.declarativeNetRequest.updateDynamicRules({ removeRuleIds, addRules });
         waInstalledRuleSignature = signature;
+        await chrome.storage.session.set({ [WA_RULE_SIGNATURE_KEY]: signature });
         logMessage(`[webActivity] Blocking ${domains.length} site(s).`);
     } catch (error) {
         console.error('[webActivity] Could not update the blocking rules:', error);
@@ -723,6 +788,7 @@ async function waSyncPull() {
                     syncEnabled: true,
                 },
             });
+            waForgetSettings();
         }
         if (remoteLimits?.limits) {
             await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.LIMITS]: remoteLimits.limits });
@@ -743,6 +809,12 @@ async function waSyncWipe() {
  * Another browser wrote something. Only the shared config is worth reacting to; a day
  * record landing there changes nothing until the dashboard asks for the days again.
  */
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes[ITG_WEB_ACTIVITY.KEYS.SETTINGS]) waForgetSettings();
+    if (changes[ITG_WEB_ACTIVITY.KEYS.DAY_INDEX]) waIndexedDays.clear();
+});
+
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'sync') return;
     if (!changes[ITG_WEB_ACTIVITY.SYNC.SETTINGS] && !changes[ITG_WEB_ACTIVITY.SYNC.LIMITS]) return;
@@ -877,6 +949,7 @@ function handleWebActivitySaveSettings(message, sendResponse) {
         const previous = await waGetSettings();
         const settings = { ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS, ...(message.settings || {}) };
         await chrome.storage.local.set({ [ITG_WEB_ACTIVITY.KEYS.SETTINGS]: settings });
+        waForgetSettings();
         // Turning the switch off has to take the copy with it. Leaving the records in
         // the shared area would keep them travelling to every other browser on the
         // profile long after the user said to stop.
@@ -953,6 +1026,7 @@ function handleWebActivityImport(message, sendResponse) {
                 };
             }
             await chrome.storage.local.set(writes);
+            waForgetSettings();
             await waRebuildBlockRules();
             sendResponse({ success: true });
         } catch (error) {
@@ -967,9 +1041,9 @@ function handleWebActivityImport(message, sendResponse) {
  * Anything that can change which site is in front. They all do the same thing, so
  * they share one handler rather than each growing its own logic.
  */
-chrome.tabs.onActivated.addListener(() => waSync());
-chrome.windows.onFocusChanged.addListener(() => waSync());
-chrome.tabs.onRemoved.addListener(() => waSync());
+chrome.tabs.onActivated.addListener(() => waSyncSoon());
+chrome.windows.onFocusChanged.addListener(() => waSyncSoon());
+chrome.tabs.onRemoved.addListener(() => waSyncSoon());
 
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (tab?.incognito) return;
@@ -979,11 +1053,10 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const settings = await waGetSettings();
         const domain = ITG_WEB_ACTIVITY.domainOf(changeInfo.url);
         if (settings.enabled && domain && !settings.ignoredDomains.includes(domain)) {
-            await waBumpCounter(domain, 'v');
-            await waPushRecent({ d: domain, u: changeInfo.url, t: tab?.title || '', at: Date.now() });
+            await waRecordVisit(domain, { d: domain, u: changeInfo.url, t: tab?.title || '', at: Date.now() });
         }
     }
-    if (changeInfo.url || changeInfo.audible !== undefined) await waSync();
+    if (changeInfo.url || changeInfo.audible !== undefined) await waSyncSoon();
 });
 
 chrome.idle.onStateChanged.addListener(async (state) => {

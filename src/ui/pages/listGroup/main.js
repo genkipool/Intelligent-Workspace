@@ -11,6 +11,11 @@ import '../../../utils/snippet-panel.js';
 import { listGroupStore } from '../../stores/listGroupStore.js';
 import { isBareFramedView, isFramedView } from '../../services/panelViews.js';
 import { getCurrentWindowId } from '../../services/windowsService.js';
+import { captureEarlyViewClicks } from '../../services/earlyViewClicks.js';
+
+// Before anything else: a click on a view button while the page is still starting would
+// otherwise be lost (see earlyViewClicks.js).
+captureEarlyViewClicks();
 
 // Kicked off here rather than on mount: it is the page's first chrome.storage read
 // and pays the subsystem's warm-up cost, so starting it now overlaps that with the

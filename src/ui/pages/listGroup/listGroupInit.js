@@ -36,6 +36,7 @@ import {
     initViewEvents,
     registerViewService,
 } from '../../services/viewsService.js';
+import { markViewControlsWired, replayEarlyViewClick } from '../../services/earlyViewClicks.js';
 import { openAddToBookmarkModal, showAddToRuleModal, initBookmarkEvents } from '../../services/bookmarksService.js';
 import {
     updateCombinedConversationDisplay,
@@ -105,7 +106,6 @@ import {
     previousIframeUrl,
     navigationHistory,
     prefetchCache,
-    isHandlingBookmarkChange,
     currentBookmarkSort,
     viewExpandStates,
     isProgrammaticActivation,
@@ -441,6 +441,57 @@ function initDeleteAllContextButton() {
 /**
  * Messages the side panel reacts to (75 lines inline).
  */
+/**
+ * Repaints the bookmarks view once a run of changes has settled.
+ *
+ * A synced account applies its changes one bookmark at a time, and each of them repainted
+ * the whole view: some 30,000 elements for 1,200 bookmarks, 150-200 ms of main thread
+ * every time. The old guard let one repaint through every 300 ms and dropped whatever
+ * arrived in between, so the view could be left on a tree that had already moved on. A
+ * change now restarts a short wait, with a ceiling so a steady trickle still repaints.
+ */
+const BOOKMARKS_REFRESH_SETTLE_MS = 400;
+const BOOKMARKS_REFRESH_MAX_WAIT_MS = 2000;
+let bookmarksRefreshTimer = null;
+let bookmarksRefreshFirstAskedAt = 0;
+
+function scheduleBookmarksRefresh() {
+    const now = Date.now();
+    if (!bookmarksRefreshTimer) bookmarksRefreshFirstAskedAt = now;
+    clearTimeout(bookmarksRefreshTimer);
+    const waited = now - bookmarksRefreshFirstAskedAt;
+    bookmarksRefreshTimer = setTimeout(
+        refreshBookmarksView,
+        waited >= BOOKMARKS_REFRESH_MAX_WAIT_MS ? 0 : BOOKMARKS_REFRESH_SETTLE_MS,
+    );
+}
+
+function refreshBookmarksView() {
+    bookmarksRefreshTimer = null;
+    chrome.runtime.sendMessage({ action: 'forceClearBookmarkCache' }, async () => {
+        if (!get(isBookmarksViewActive)) return;
+        const bookmarksList = document.getElementById('bookmarks-list');
+        if (bookmarksList) {
+            await initializeBookmarksView(
+                bookmarksList,
+                {
+                    applyTranslations,
+                    updateScrollButtons,
+                    updateExpandAllButtonState,
+                    createOverflowMenu,
+                    showAddToRuleModal,
+                    exportBookmarkFolder,
+                    showNotification,
+                    openAddToBookmarkModal,
+                },
+                get(currentBookmarkSort),
+                get(viewExpandStates).bookmarks,
+            );
+        }
+        updateDuplicateCountBadge();
+    });
+}
+
 function initRuntimeMessageListener() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         /**
@@ -496,41 +547,13 @@ function initRuntimeMessageListener() {
         }
 
         if (message.action === 'bookmarksChanged') {
-            if (get(isHandlingBookmarkChange)) return;
-            isHandlingBookmarkChange.set(true);
             // This page keeps its own copy of the bookmark tree for a fast first paint,
             // and the view prefers it over asking the browser. Clearing the copy in the
             // background was not enough: a deleted bookmark came straight back on the
             // next repaint, and only reloading the page got rid of it.
             prefetchCache.update((c) => ({ ...c, bookmarks: null }));
-            chrome.runtime.sendMessage({ action: 'forceClearBookmarkCache' }, () => {
-                if (get(isBookmarksViewActive)) {
-                    (async () => {
-                        await new Promise((r) => setTimeout(r, 50));
-                        const bookmarksList = document.getElementById('bookmarks-list');
-                        if (bookmarksList) {
-                            await initializeBookmarksView(
-                                bookmarksList,
-                                {
-                                    applyTranslations,
-                                    updateScrollButtons,
-                                    updateExpandAllButtonState,
-                                    createOverflowMenu,
-                                    showAddToRuleModal,
-                                    exportBookmarkFolder,
-                                    showNotification,
-                                    openAddToBookmarkModal,
-                                },
-                                get(currentBookmarkSort),
-                                get(viewExpandStates).bookmarks,
-                            );
-                        }
-                        updateDuplicateCountBadge();
-                    })();
-                }
-            });
             if (message.notification?.key) showNotification(message.notification.key);
-            setTimeout(() => isHandlingBookmarkChange.set(false), 300);
+            scheduleBookmarksRefresh();
         }
 
         if (message.action === 'noteUpdatedFromOmnibar') {
@@ -579,6 +602,8 @@ export async function initializeAllEvents() {
     initGeminiEvents();
     initGroupsEvents();
     initSettingsEvents();
+    // The header buttons have their handlers from here; see earlyViewClicks.js.
+    markViewControlsWired();
 
     const port = chrome.runtime.connect({ name: 'sidepanel-connection' });
     port.onMessage.addListener((message) => {
@@ -644,6 +669,8 @@ export async function initializeAllEvents() {
     } else {
         await switchMainView(requestedView, false);
     }
+    // After the start-up switch, which would otherwise undo a click made while it ran.
+    replayEarlyViewClick();
     // The conversation controls (new, save, download, copy) are revealed by the header
     // routine according to whether there is a conversation, and that is imperative:
     // without this the buttons stayed hidden after the assistant answered.

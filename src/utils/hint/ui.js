@@ -136,7 +136,9 @@ var HelpModal = class HelpModal {
         this.visible = false;
 
         if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
-            chrome.storage.onChanged.addListener((changes, area) => {
+            // Kept so cleanup() can take it off again; a replaced instance left it
+            // behind, holding the whole modal.
+            this._storageListener = (changes, area) => {
                 if (area === 'local' && changes['preferred-language'] && this.visible) {
                     HintCommon?.i18n?.loadMessages(true).then(() => {
                         const container = this.shadowUI.getContainer();
@@ -149,7 +151,8 @@ var HelpModal = class HelpModal {
                 if ((area === 'sync' || area === 'local') && changes.appendClipboardEnabled && this.visible) {
                     this.updateAppendClipboardToggle(changes.appendClipboardEnabled.newValue !== false);
                 }
-            });
+            };
+            chrome.storage.onChanged.addListener(this._storageListener);
         }
     }
     updateAppendClipboardToggle(enabled) {
@@ -2580,6 +2583,12 @@ var HelpModal = class HelpModal {
         if (this._modalKeyHandler) {
             window.removeEventListener('keydown', this._modalKeyHandler);
             this._modalKeyHandler = null;
+        }
+        if (this._storageListener) {
+            try {
+                chrome.storage.onChanged.removeListener(this._storageListener);
+            } catch {}
+            this._storageListener = null;
         }
     }
 };

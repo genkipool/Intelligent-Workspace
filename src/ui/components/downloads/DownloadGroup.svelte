@@ -25,23 +25,26 @@
     }
 </script>
 
-<details class="downloads-group group-item" data-group-key={group.timestamp} open>
+<details class="downloads-group group-item header-with-controls" data-group-key={group.timestamp} open>
     <summary class="downloads-group-header group-header">
-        <h3 class="downloads-group-title group-title">{group.label}</h3>
-        <span class="downloads-group-count group-tab-count">{group.items.length}</span>
-        <span
-            class="delete-downloads-group-btn action-btn"
-            role="button"
-            tabindex="0"
-            title={$tt('deleteDownloadsForDate')}
-            onclick={deleteGroup}
-            onkeydown={(e) => e.key === 'Enter' && deleteGroup(e)}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-trash"></use>
-            </svg>
+        <span class="header-main">
+            <h3 class="downloads-group-title group-title">{group.label}</h3>
+            <span class="downloads-group-count group-tab-count">{group.items.length}</span>
         </span>
     </summary>
+    <!-- Controls follow the <summary> rather than sit in it: see header-with-controls. -->
+    <span
+        class="delete-downloads-group-btn action-btn header-controls"
+        role="button"
+        tabindex="0"
+        title={$tt('deleteDownloadsForDate')}
+        onclick={deleteGroup}
+        onkeydown={(e) => e.key === 'Enter' && deleteGroup(e)}
+    >
+        <svg width="20" height="20" aria-hidden="true" focusable="false">
+            <use href="#icon-trash"></use>
+        </svg>
+    </span>
     <div class="downloads-list-container tab-list-container">
         {#each group.items as item (item.id)}
             <DownloadItem {item} />

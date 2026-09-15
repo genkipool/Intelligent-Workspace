@@ -50,6 +50,33 @@ function scheduleRefetch() {
     }, 250);
 }
 
+/**
+ * A new title or favicon changes one row, not which groups exist or what is in them.
+ * Pages that retitle themselves (an inbox counter, a clock, a player) used to refetch
+ * the whole list, with every note and screenshot index behind it, once a second for as
+ * long as they stayed open.
+ */
+function patchTab(tabId, changeInfo) {
+    const changes = {};
+    if (changeInfo.title !== undefined) changes.title = changeInfo.title;
+    if (changeInfo.favIconUrl !== undefined) changes.favIconUrl = changeInfo.favIconUrl;
+    let found = false;
+    liveGroupsStore.update((groups) => {
+        const next = groups.map((item) => {
+            const index = item.tabs?.findIndex((t) => t.id === tabId) ?? -1;
+            if (index === -1) return item;
+            found = true;
+            const tabs = [...item.tabs];
+            tabs[index] = { ...tabs[index], ...changes };
+            return { ...item, tabs };
+        });
+        return found ? next : groups;
+    });
+    // A tab this list does not hold yet comes in with the next full refresh.
+    if (!found) scheduleRefetch();
+    else if (changes.title !== undefined) reapplyActiveSearch();
+}
+
 function registerChromeListeners() {
     if (listenersRegistered) return;
     listenersRegistered = true;
@@ -105,11 +132,12 @@ function registerChromeListeners() {
             if (
                 changeInfo.groupId !== undefined ||
                 changeInfo.url ||
-                changeInfo.title ||
                 changeInfo.pinned !== undefined ||
                 changeInfo.status === 'complete'
             ) {
                 scheduleRefetch();
+            } else if (changeInfo.title !== undefined || changeInfo.favIconUrl !== undefined) {
+                patchTab(tabId, changeInfo);
             }
         });
     }
@@ -289,7 +317,7 @@ export const groupStore = {
                 // them show up on the card again instead of staying up top as orphans.
                 // It runs before the cards are drawn, because the notes and gallery
                 // buttons on them are built from that same index.
-                await syncContentSessionKeys(targetWinId);
+                await syncContentSessionKeys(result);
                 liveGroupsStore.set(applyUserOrder(result));
                 await reapplyActiveSearch();
                 await updateOrphanIndicators(targetWinId);

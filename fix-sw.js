@@ -191,3 +191,52 @@ try {
   console.error('❌ Error fixing service worker files:', err);
   process.exit(1);
 }
+
+// 5. Minify the content scripts.
+//
+// They are injected into every frame of every page the browser loads, so the browser
+// parses them once per frame: some 1 MB of source, mostly comments, for each iframe on
+// every page. They are plain scripts that share one global scope, so top-level names are
+// left alone (`mangle.toplevel: false`); the build step checks that every top-level
+// declaration survives with its name and kind. Set ITG_NO_MINIFY=1 to keep them readable.
+if (!process.env.ITG_NO_MINIFY && fs.existsSync(manifestPath)) {
+  const { minify, parseSync } = await import('vite');
+  const topLevel = (code, filename) => {
+    const { program, errors } = parseSync(filename, code, { sourceType: 'script' });
+    if (errors?.length) throw new Error(`${filename}: ${errors[0].message}`);
+    const names = new Map();
+    for (const node of program.body) {
+      if (node.type === 'VariableDeclaration') {
+        for (const d of node.declarations) if (d.id.type === 'Identifier') names.set(d.id.name, node.kind);
+      } else if ((node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') && node.id) {
+        names.set(node.id.name, 'function-or-class');
+      }
+    }
+    return names;
+  };
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const files = [...new Set((manifest.content_scripts || []).flatMap((c) => c.js || []))];
+  let before = 0;
+  let after = 0;
+  for (const file of files) {
+    const filePath = path.join(distPath, file);
+    const source = fs.readFileSync(filePath, 'utf8');
+    const { code, errors } = await minify(file, source, {
+      compress: true,
+      mangle: { toplevel: false },
+      codegen: { removeWhitespace: true },
+    });
+    if (errors?.length) throw new Error(`Minifying ${file}: ${errors[0].message}`);
+    const original = topLevel(source, file);
+    const minified = topLevel(code, `${file}.min`);
+    for (const [name, kind] of original) {
+      const now = minified.get(name);
+      const lost = !now || (kind === 'var' && now !== 'var') || ((kind === 'let' || kind === 'const') && now === 'var');
+      if (lost) throw new Error(`Minifying ${file} changed its top-level "${name}" (${kind} -> ${now ?? 'missing'})`);
+    }
+    fs.writeFileSync(filePath, code);
+    before += source.length;
+    after += code.length;
+  }
+  console.log(`✅ Minified ${files.length} content scripts: ${Math.round(before / 1024)} KB -> ${Math.round(after / 1024)} KB`);
+}

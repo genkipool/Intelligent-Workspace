@@ -385,6 +385,9 @@ async function addToContentSessionIndex(storageKey, keys, id) {
     await chrome.storage.session.set({ [storageKey]: index });
 }
 
+const CONTEXT_MENUS_SIGNATURE_KEY = 'contextMenusSignature';
+let lastContextMenusSignature = null;
+
 const setupContextMenus = async () => {
     if (isCreatingMenus) {
         logMessage('[ContextMenu] Creation already in progress. Skipping.');
@@ -394,7 +397,7 @@ const setupContextMenus = async () => {
 
     try {
         await loadI18nMessages();
-        await chrome.contextMenus.removeAll();
+        const menuItems = [];
         const customRules = extensionSettings.customRules || [];
 
         // --- Pre-calculations for optimal performance ---
@@ -420,18 +423,18 @@ const setupContextMenus = async () => {
         }
 
         // --- GROUP 1: Rules Management ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'create-rule-parent',
             title: getI18nMsg('contextMenuCreateRuleForPage'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'create-rule-root',
             parentId: 'create-rule-parent',
             title: getI18nMsg('contextMenuAddSiteRoot'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'create-rule-full',
             parentId: 'create-rule-parent',
             title: getI18nMsg('contextMenuAddFullUrl'),
@@ -440,26 +443,26 @@ const setupContextMenus = async () => {
 
         const activeRulesForAdding = customRules.filter((rule) => rule.active);
         if (activeRulesForAdding.length > 0) {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'add-to-rule-parent',
                 title: getI18nMsg('contextMenuAddToRule'),
                 contexts: ['page'],
             });
             for (const rule of activeRulesForAdding) {
                 const ruleParentId = `add-to-rule-parent_${rule.name}`;
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: ruleParentId,
                     parentId: 'add-to-rule-parent',
                     title: rule.name,
                     contexts: ['page'],
                 });
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `add-site-root_${rule.name}`,
                     parentId: ruleParentId,
                     title: getI18nMsg('contextMenuAddSiteRoot'),
                     contexts: ['page'],
                 });
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `add-full-url_${rule.name}`,
                     parentId: ruleParentId,
                     title: getI18nMsg('contextMenuAddFullUrl'),
@@ -469,7 +472,7 @@ const setupContextMenus = async () => {
         }
 
         if (customRules.length > 0) {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'separator-before-rules-menu',
                 type: 'separator',
                 contexts: ['page'],
@@ -477,13 +480,13 @@ const setupContextMenus = async () => {
         }
 
         if (customRules.length > 0) {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'manage-rules-parent',
                 title: getI18nMsg('rules'),
                 contexts: ['page'],
             });
 
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'toggle-all-rules',
                 parentId: 'manage-rules-parent',
                 title: getI18nMsg('toggleAllRules'),
@@ -492,7 +495,7 @@ const setupContextMenus = async () => {
                 contexts: ['page'],
             });
 
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'rules-separator-after-toggle-all',
                 parentId: 'manage-rules-parent',
                 type: 'separator',
@@ -501,7 +504,7 @@ const setupContextMenus = async () => {
 
             for (const rule of customRules) {
                 const ruleSubMenuId = `rule-submenu_${rule.name}`;
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: ruleSubMenuId,
                     parentId: 'manage-rules-parent',
                     title: rule.name,
@@ -509,7 +512,7 @@ const setupContextMenus = async () => {
                 });
 
                 // Option: Enable/Disable Rule
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `toggle-rule-active_${rule.name}`,
                     parentId: ruleSubMenuId,
                     title: getI18nMsg('contextMenuToggleRule'),
@@ -518,14 +521,14 @@ const setupContextMenus = async () => {
                     contexts: ['page'],
                 });
 
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `separator-after-toggle_${rule.name}`,
                     parentId: ruleSubMenuId,
                     type: 'separator',
                     contexts: ['page'],
                 });
 
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `open-all-urls_${rule.name}`,
                     parentId: ruleSubMenuId,
                     title: getI18nMsg('openAllUrls'),
@@ -533,7 +536,7 @@ const setupContextMenus = async () => {
                 });
 
                 if (rule.urls && rule.urls.length > 0) {
-                    chrome.contextMenus.create({
+                    menuItems.push({
                         id: `separator-for-rule-urls-${rule.name}`,
                         parentId: ruleSubMenuId,
                         type: 'separator',
@@ -551,21 +554,21 @@ const setupContextMenus = async () => {
                         const displayUrl = cleanUrl.length > 50 ? cleanUrl.substring(0, 50) + '...' : cleanUrl;
 
                         const urlActionParentId = `url-actions_${rule.name}_${index}`;
-                        chrome.contextMenus.create({
+                        menuItems.push({
                             id: urlActionParentId,
                             parentId: ruleSubMenuId,
                             title: displayUrl,
                             contexts: ['page'],
                         });
 
-                        chrome.contextMenus.create({
+                        menuItems.push({
                             id: `open-url_${rule.name}_${index}`,
                             parentId: urlActionParentId,
                             title: getI18nMsg('contextMenuOpenUrl'),
                             contexts: ['page'],
                         });
 
-                        chrome.contextMenus.create({
+                        menuItems.push({
                             id: `close-tabs-for-url_${rule.name}_${index}`,
                             parentId: urlActionParentId,
                             title: getI18nMsg('contextMenuCloseTabsForUrl', [tabCount.toString()]),
@@ -578,7 +581,7 @@ const setupContextMenus = async () => {
         }
 
         // --- SEPARATOR 1 ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'separator-1',
             type: 'separator',
             contexts: ['page'],
@@ -613,7 +616,7 @@ const setupContextMenus = async () => {
         }
 
         const duplicateTitle = `${getI18nMsg('contextMenuRemoveDuplicateTabs')} [${duplicatesFoundCount}]`;
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'remove-duplicate-tabs',
             title: duplicateTitle,
             contexts: ['page'],
@@ -635,7 +638,7 @@ const setupContextMenus = async () => {
             }
         }
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'remove-domain-tabs-parent',
             title: getI18nMsg('contextMenuRemoveTabsByDomain'),
             contexts: ['page'],
@@ -649,7 +652,7 @@ const setupContextMenus = async () => {
         if (sortedDomains.length > 0) {
             for (const domain of sortedDomains) {
                 const count = domainCountMap.get(domain);
-                chrome.contextMenus.create({
+                menuItems.push({
                     id: `remove-domain_${domain}`,
                     parentId: 'remove-domain-tabs-parent',
                     title: `${domain} [${count}]`,
@@ -657,7 +660,7 @@ const setupContextMenus = async () => {
                 });
             }
         } else {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'no-domains-to-remove',
                 parentId: 'remove-domain-tabs-parent',
                 title: getI18nMsg('contextMenuNoDomainsToRemove'),
@@ -666,13 +669,13 @@ const setupContextMenus = async () => {
             });
         }
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'delete-other-groups-ctx',
             title: getI18nMsg('closeAllButActiveGroup'),
             contexts: ['page'],
         });
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'regroup-all-tabs',
             title: getI18nMsg('contextMenuRegroupAll'),
             contexts: ['page'],
@@ -682,7 +685,7 @@ const setupContextMenus = async () => {
         const explicitlyMuted = allTabs.filter((t) => t.mutedInfo && t.mutedInfo.muted);
 
         if (audibleUnmuted.length > 0) {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'mute-all-tabs-ctx',
                 title: getI18nMsg('muteAllTabs'),
                 contexts: ['page'],
@@ -690,7 +693,7 @@ const setupContextMenus = async () => {
         }
 
         if (explicitlyMuted.length > 0) {
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'unmute-all-tabs-ctx',
                 title: getI18nMsg('unmuteAllTabs'),
                 contexts: ['page'],
@@ -698,7 +701,7 @@ const setupContextMenus = async () => {
         }
 
         // --- SEPARATOR 2 ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'separator-2',
             type: 'separator',
             contexts: ['page'],
@@ -714,111 +717,111 @@ const setupContextMenus = async () => {
         // be lying if it said "the page". Both do the very same thing; only the title
         // differs, and Chrome shows whichever matches the context the menu was opened
         // in.
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'read-page-aloud',
             title: getI18nMsg('readPageAloud'),
             contexts: ['page', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'read-selection-aloud',
             title: getI18nMsg('readSelectionAloud'),
             contexts: ['selection'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'note-from-selection',
             title: getI18nMsg('contextMenuNoteFromSelection'),
             contexts: ['selection'],
         });
 
         // --- GROUP 3: Open Extension ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-extension-parent',
             title: getI18nMsg('contextOpenActions'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-page-in-pip',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openAsPipTitle'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-page-in-popup',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openAsPopupTitle'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-selection-in-pip',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openSelectionInPip'),
             contexts: ['selection'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-selection-in-popup',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openSelectionInPopup'),
             contexts: ['selection'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-image-in-pip',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openImageInPip'),
             contexts: ['image'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-image-in-popup',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openImageInPopup'),
             contexts: ['image'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'separator-open-actions',
             parentId: 'open-extension-parent',
             type: 'separator',
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-extension-popup',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openPopup'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-extension-web',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openSettingsRules'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-extension-sidepanel',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openSidePanel'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-list-group-sidepanel',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openListGroupSidePanel'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-themes-sidepanel',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openThemesSidePanel'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-gemini-sidepanel',
             parentId: 'open-extension-parent',
             title: getI18nMsg('contextMenuOpenGeminiSidePanel'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
 
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'open-customize-hints-sidepanel',
             parentId: 'open-extension-parent',
             title: getI18nMsg('openCustomizeHintsSidePanel'),
@@ -826,33 +829,33 @@ const setupContextMenus = async () => {
         });
 
         // --- SEPARATOR 3 ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'separator-3',
             type: 'separator',
             contexts: ['page'],
         });
 
         // --- GROUP 4: Settings ---
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'main-actions-parent',
             title: getI18nMsg('contextMenuSettings'),
             contexts: ['page'],
         });
 
         // Settings Submenu: Group Management
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'group-management-parent',
             parentId: 'main-actions-parent',
             title: getI18nMsg('contextMenuGroupManagement'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-current-group',
             parentId: 'group-management-parent',
             title: getI18nMsg('toggleCurrentGroup'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-all-groups',
             parentId: 'group-management-parent',
             title: getI18nMsg('toggleAllGroups'),
@@ -861,13 +864,13 @@ const setupContextMenus = async () => {
 
         // Settings Submenu: Grouping Options
         const config = extensionSettings.clusterConfig || DEFAULT_CLUSTER_CONFIG;
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'grouping-options-parent',
             parentId: 'main-actions-parent',
             title: getI18nMsg('contextGroupingOptions'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-clustering',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleClustering'),
@@ -875,13 +878,13 @@ const setupContextMenus = async () => {
             checked: extensionSettings.clusteringEnabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'grouping-separator-1',
             parentId: 'grouping-options-parent',
             type: 'separator',
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-compact-mode',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleCompactMode'),
@@ -889,7 +892,7 @@ const setupContextMenus = async () => {
             checked: config.compactMode?.enabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-domain-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleDomainGrouping'),
@@ -897,7 +900,7 @@ const setupContextMenus = async () => {
             checked: config.domainsEnabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-subdomain-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleSubdomainGrouping'),
@@ -905,14 +908,14 @@ const setupContextMenus = async () => {
             checked: config.subdomainsEnabled ?? false,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'grouping-separator-2',
             parentId: 'grouping-options-parent',
             type: 'separator',
             contexts: ['page'],
         });
         const specialGroups = config.specialGroups || {};
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-chrome-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleChromeGrouping'),
@@ -920,7 +923,7 @@ const setupContextMenus = async () => {
             checked: specialGroups.chrome?.enabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-files-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleFilesGrouping'),
@@ -928,7 +931,7 @@ const setupContextMenus = async () => {
             checked: specialGroups.files?.enabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-extensions-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleExtensionsGrouping'),
@@ -936,7 +939,7 @@ const setupContextMenus = async () => {
             checked: specialGroups.extensions?.enabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-misc-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleMiscGrouping'),
@@ -944,7 +947,7 @@ const setupContextMenus = async () => {
             checked: specialGroups.misc?.enabled ?? true,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-ip-address-grouping',
             parentId: 'grouping-options-parent',
             title: getI18nMsg('toggleIpAddressGrouping'),
@@ -954,13 +957,13 @@ const setupContextMenus = async () => {
         });
 
         // Settings Submenu: General Options
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'general-options-parent',
             parentId: 'main-actions-parent',
             title: getI18nMsg('contextGeneralOptions'),
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-sort-alpha',
             parentId: 'general-options-parent',
             title: getI18nMsg('toggleSortAlpha'),
@@ -970,13 +973,13 @@ const setupContextMenus = async () => {
         });
         if (extensionSettings.sortGroupsAlphabetically ?? true) {
             const miscSortOption = extensionSettings.miscGroupSortOption || 'start';
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'misc-group-placement-parent',
                 parentId: 'general-options-parent',
                 title: getI18nMsg('contextMenuMiscGroupPlacement'),
                 contexts: ['page'],
             });
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'misc-sort-start',
                 parentId: 'misc-group-placement-parent',
                 title: getI18nMsg('miscGroupSortStart'),
@@ -984,7 +987,7 @@ const setupContextMenus = async () => {
                 checked: miscSortOption === 'start',
                 contexts: ['page'],
             });
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'misc-sort-end',
                 parentId: 'misc-group-placement-parent',
                 title: getI18nMsg('miscGroupSortEnd'),
@@ -992,7 +995,7 @@ const setupContextMenus = async () => {
                 checked: miscSortOption === 'end',
                 contexts: ['page'],
             });
-            chrome.contextMenus.create({
+            menuItems.push({
                 id: 'misc-sort-alpha',
                 parentId: 'misc-group-placement-parent',
                 title: getI18nMsg('miscGroupSortAlpha'),
@@ -1001,7 +1004,7 @@ const setupContextMenus = async () => {
                 contexts: ['page'],
             });
         }
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-collapse-timer',
             parentId: 'general-options-parent',
             title: getI18nMsg('toggleCollapseTimer'),
@@ -1009,7 +1012,7 @@ const setupContextMenus = async () => {
             checked: extensionSettings.enableCollapseTimer ?? false,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-prefixes',
             parentId: 'general-options-parent',
             title: getI18nMsg('togglePrefixes'),
@@ -1017,7 +1020,7 @@ const setupContextMenus = async () => {
             checked: extensionSettings.enablePrefixes ?? false,
             contexts: ['page'],
         });
-        chrome.contextMenus.create({
+        menuItems.push({
             id: 'toggle-link-preview',
             parentId: 'general-options-parent',
             title: getI18nMsg('enableLinkPreview'),
@@ -1026,6 +1029,25 @@ const setupContextMenus = async () => {
             contexts: ['page'],
         });
         // "Toggle All Rules" has been moved. It's no longer here.
+
+        // Rebuilding is one removeAll and some eighty creates, and most calls change
+        // nothing: they come from every group update, every closed group and every worker
+        // start. The menus outlive the worker, so what was built is remembered in session
+        // storage as well; an update or a reload clears both together.
+        const signature = JSON.stringify(menuItems);
+        if (lastContextMenusSignature === null) {
+            const { [CONTEXT_MENUS_SIGNATURE_KEY]: stored } =
+                await chrome.storage.session.get(CONTEXT_MENUS_SIGNATURE_KEY);
+            lastContextMenusSignature = stored ?? null;
+        }
+        if (signature === lastContextMenusSignature) {
+            logMessage('[ContextMenu] Nothing changed; the menus stay as they are.');
+            return;
+        }
+        await chrome.contextMenus.removeAll();
+        for (const item of menuItems) chrome.contextMenus.create(item);
+        lastContextMenusSignature = signature;
+        await chrome.storage.session.set({ [CONTEXT_MENUS_SIGNATURE_KEY]: signature });
     } catch (error) {
         console.error('Error setting up context menus:', error);
     } finally {

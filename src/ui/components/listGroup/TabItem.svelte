@@ -375,6 +375,8 @@
         src={faviconUrl}
         alt=""
         class="favicon"
+        loading="lazy"
+        decoding="async"
         onerror={(e) => {
             const fallback = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(tab.url || '')}&size=16`;
             if (e.currentTarget.src !== fallback) {

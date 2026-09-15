@@ -1,3 +1,4 @@
+let lastSavedGroupPrefixState = null;
 async function saveGroupPrefixState() {
     if (isInitializing) {
         logMessage('[saveGroupPrefixState] State save deferred: Extension is currently initializing.');
@@ -19,11 +20,15 @@ async function saveGroupPrefixState() {
                 userNamed: value.userNamed || false,
             };
         }
-        // The following line determines whether to use chrome.storage.local or chrome.storage.sync
-
+        // Most calls change nothing: updateAllGroupPrefixes saves after every pass, and a
+        // tab switch rewrote the whole map three times. Only a map that differs from the
+        // last one written goes to storage.
+        const serialized = JSON.stringify(prefixStateObj);
+        if (serialized === lastSavedGroupPrefixState) return;
         await chrome.storage.local.set({
             groupPrefixState: prefixStateObj,
         });
+        lastSavedGroupPrefixState = serialized;
     } catch (error) {
         console.error('Error saving group prefix state to local storage:', error);
     }
@@ -63,10 +68,12 @@ async function saveSessionState() {
     try {
         const tabsEverActiveArray = [...tabsEverActive];
         const groupExpandedEverObject = Object.fromEntries(groupExpandedEver);
-        logMessage(
-            `%c[saveSessionState] SAVING tabsEverActive to session storage. Size: ${tabsEverActiveArray.length}. Content: [${tabsEverActiveArray.join(', ')}]`,
-            'color: blue;',
-        );
+        if (isModeDebug) {
+            logMessage(
+                `%c[saveSessionState] SAVING tabsEverActive to session storage. Size: ${tabsEverActiveArray.length}. Content: [${tabsEverActiveArray.join(', ')}]`,
+                'color: blue;',
+            );
+        }
         await chrome.storage.session.set({
             tabsEverActive: tabsEverActiveArray,
             groupExpandedEver: groupExpandedEverObject,
@@ -381,6 +388,35 @@ async function groupsHaveSettledAfterStartup() {
     }
 }
 
+/**
+ * Coalesces the whole-browser re-sync. A page finishing its load and a tab closing each
+ * asked for one, and it reads every group and every tab, so a restore loading a hundred
+ * tabs or a burst of closes ran it once per tab. Awaited by the callers so the worker
+ * stays up until it has run.
+ */
+let pendingExistingGroupsSync = null;
+function requestSyncWithExistingGroups(delay = 250) {
+    if (pendingExistingGroupsSync) return pendingExistingGroupsSync;
+    pendingExistingGroupsSync = (async () => {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        pendingExistingGroupsSync = null;
+        await syncWithExistingGroups();
+    })();
+    return pendingExistingGroupsSync;
+}
+
+/** The same for the session state: a burst of closed tabs shares one write. */
+let pendingSessionStateSave = null;
+function requestSaveSessionState(delay = 100) {
+    if (pendingSessionStateSave) return pendingSessionStateSave;
+    pendingSessionStateSave = (async () => {
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        pendingSessionStateSave = null;
+        await saveSessionState();
+    })();
+    return pendingSessionStateSave;
+}
+
 async function syncWithExistingGroups() {
     try {
         const allCurrentGroups = await chrome.tabGroups.query({});
@@ -443,8 +479,12 @@ async function syncWithExistingGroups() {
         console.error('Error syncing states with existing groups:', error);
     }
 }
+// Whether an event was thrown away while the state was loading; the initialization
+// makes up for it with a grouping pass at the end.
+let eventIgnoredDuringInitialization = false;
 function shouldIgnoreEventDuringInitialization(listenerName, itemId) {
     if (isInitializing) {
+        eventIgnoredDuringInitialization = true;
         logMessage(`[shouldIgnoreEvent] Event in ${listenerName} for item ${itemId} ignored during initialization.`);
         return true;
     }
@@ -530,11 +570,44 @@ async function ensureSessionStateLoaded() {
     logMessage('[Safety Check] Memory state empty inside event handler. Forcing load.');
     await loadSessionState();
 }
-async function initializeExtensionStates(isFirstInstall = false) {
+const STATES_SETTLED_THIS_SESSION_KEY = 'statesSettledThisSession';
+
+/**
+ * A plain request joins an initialization already in flight. The startup code and
+ * onStartup both ask for one when the browser starts, and each used to load every
+ * setting and run a grouping pass of its own.
+ */
+let pendingExtensionStatesInitialization = null;
+function initializeExtensionStates(isFirstInstall = false, { forceFull = false } = {}) {
+    const firstInstall = isFirstInstall === true;
+    if (pendingExtensionStatesInitialization && !firstInstall && !forceFull) {
+        return pendingExtensionStatesInitialization;
+    }
+    const run = runExtensionStatesInitialization(firstInstall, forceFull).finally(() => {
+        if (pendingExtensionStatesInitialization === run) pendingExtensionStatesInitialization = null;
+    });
+    pendingExtensionStatesInitialization = run;
+    return run;
+}
+
+/**
+ * Loads the state the handlers work from, and regroups only when something may have
+ * been missed.
+ *
+ * This runs on every worker start, and the worker starts again on every alarm and on
+ * every event after half a minute idle. Nothing in the tab strip changes while the
+ * worker is stopped without an event saying so, and the events that arrive while this
+ * is loading are the ones shouldIgnoreEventDuringInitialization throws away. So the
+ * grouping pass runs on the first start of a browser session, when asked to, or when
+ * one of those events was dropped; on the minute tick it was a full pass every minute
+ * for nothing.
+ */
+async function runExtensionStatesInitialization(isFirstInstall, forceFull) {
     logMessage('Initializing extension states...');
     isInitializing = true;
+    eventIgnoredDuringInitialization = false;
+    let needsGroupingPass = true;
     try {
-        //await injectContentScriptsInAllTabs();
         // Loading all configuration.
         await loadTabModes();
         checkSchedules();
@@ -554,17 +627,28 @@ async function initializeExtensionStates(isFirstInstall = false) {
             logMessage('First install: triggering full regroup command.');
             await regroupAllTabsCommand(); // Destructive function call
         }
+        // Rebuilds the menus only when what they show has changed; they outlive the worker.
         await setupContextMenus();
-        const windows = await chrome.windows.getAll();
-        for (const window of windows) {
-            await updateAllGroupPrefixes(window.id, null);
-        }
+        // A per-window prefix pass used to follow here. It never did anything:
+        // isInitializing is still set at this point, and updateAllGroupPrefixes returns
+        // straight away while it is.
+        const { [STATES_SETTLED_THIS_SESSION_KEY]: settled } = await chrome.storage.session.get(
+            STATES_SETTLED_THIS_SESSION_KEY,
+        );
+        needsGroupingPass = !settled || isFirstInstall || forceFull;
     } catch (error) {
         console.error('Error during extension state initialization:', error);
     } finally {
         isInitializing = false;
         logMessage('States synchronized.');
-        await groupTabs();
+        if (needsGroupingPass || eventIgnoredDuringInitialization) {
+            await groupTabs();
+            try {
+                await chrome.storage.session.set({ [STATES_SETTLED_THIS_SESSION_KEY]: true });
+            } catch {}
+        } else {
+            logMessage('Nothing was missed while the worker was stopped; no grouping pass.');
+        }
     }
 }
 async function setupDefaultSettings() {

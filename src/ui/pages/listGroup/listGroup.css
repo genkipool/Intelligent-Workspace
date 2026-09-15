@@ -5352,7 +5352,7 @@ body.bookmarks-view-active #view-toggle-panel {
 }
 
 .bookmark-item:has(.overflow-actions-container.active) .bookmark-actions .action-btn,
-.bookmark-folder-title:has(.overflow-actions-container.active) .folder-actions .action-btn {
+.bookmark-folder:has(> .folder-actions .overflow-actions-container.active) > .folder-actions .action-btn {
     display: flex;
 }
 
@@ -5363,7 +5363,7 @@ body.bookmarks-view-active #view-toggle-panel {
 }
 
 .bookmark-item:has(.overflow-actions-container.active),
-.bookmark-folder-title:has(.overflow-actions-container.active) {
+.bookmark-folder:has(> .folder-actions .overflow-actions-container.active) > .bookmark-folder-title {
     background-color: var(--bg-panel-color) !important;
 }
 
@@ -6041,12 +6041,13 @@ body.bookmarks-view-active #view-toggle-panel {
     filter: brightness(1.1);
 }
 
-.group-item.backed-up .group-header {
+.group-item.backed-up > :is(.group-header, .color-indicator, .group-actions) {
     opacity: 0.6;
 }
 
-.group-item.backed-up .group-header:has(.overflow-popup),
-.group-item.backed-up .group-header:has(.overflow-actions-container.active) {
+.group-item.backed-up:has(> .group-actions .overflow-popup) > :is(.group-header, .color-indicator, .group-actions),
+.group-item.backed-up:has(> .group-actions .overflow-actions-container.active)
+    > :is(.group-header, .color-indicator, .group-actions) {
     opacity: 1;
 }
 
@@ -6402,8 +6403,10 @@ body.bookmarks-view-active #view-toggle-panel {
 /* On hover and focus-within, ALL buttons are shown (that are not explicitly hidden) */
 .bookmark-item:hover .bookmark-actions .action-btn,
 .bookmark-item:focus-within .bookmark-actions .action-btn,
-.bookmark-folder-title:hover .folder-actions .action-btn,
-.bookmark-folder-title:focus-within .folder-actions .action-btn {
+.bookmark-folder > .bookmark-folder-title:hover + .folder-actions .action-btn,
+.bookmark-folder > .bookmark-folder-title:focus + .folder-actions .action-btn,
+.bookmark-folder > .folder-actions:hover .action-btn,
+.bookmark-folder > .folder-actions:focus-within .action-btn {
     display: flex;
 }
 
@@ -6439,12 +6442,16 @@ body.bookmarks-view-active #view-toggle-panel {
 /* Removed hover opacity change as it is now 1 by default */
 
 .bookmark-folder-title:hover,
-.bookmark-folder-title:focus-within {
+.bookmark-folder-title:focus-within,
+.bookmark-folder:has(> .folder-actions:hover) > .bookmark-folder-title,
+.bookmark-folder:has(> .folder-actions:focus-within) > .bookmark-folder-title {
     background-color: var(--bg-panel-color);
 }
 
-.bookmark-folder-title:hover:has(.action-btn) .folder-counters,
-.bookmark-folder-title:focus-within:has(.action-btn) .folder-counters {
+.bookmark-folder:has(> .folder-actions .action-btn) > .bookmark-folder-title:hover .folder-counters,
+.bookmark-folder:has(> .folder-actions .action-btn) > .bookmark-folder-title:focus .folder-counters,
+.bookmark-folder:has(> .folder-actions:hover) > .bookmark-folder-title .folder-counters,
+.bookmark-folder:has(> .folder-actions:focus-within) > .bookmark-folder-title .folder-counters {
     display: none;
 }
 
@@ -6489,7 +6496,7 @@ body.show-bookmark-actions .bookmark-item .bookmark-actions .action-btn {
 }
 
 /* Shows root folder actions (direct in #bookmarks-list) */
-body.show-folder-actions #bookmarks-list > .bookmark-folder > .bookmark-folder-title .folder-actions .action-btn {
+body.show-folder-actions #bookmarks-list > .bookmark-folder > .folder-actions .action-btn {
     display: flex;
 }
 
@@ -6498,7 +6505,7 @@ body.show-bookmark-actions .bookmark-item .bookmark-actions .action-btn {
 }
 
 /* Shows root folder actions (direct in #bookmarks-list) */
-body.show-folder-actions #bookmarks-list > .bookmark-folder > .bookmark-folder-title .folder-actions .action-btn {
+body.show-folder-actions #bookmarks-list > .bookmark-folder > .folder-actions .action-btn {
     display: flex;
 }
 
@@ -6507,12 +6514,7 @@ body.show-folder-actions #bookmarks-list > .bookmark-folder > .bookmark-folder-t
  * This selector navigates correctly: looks for a child folder (.bookmark-folder) inside the children container (.bookmark-folder-content),
  * then its title (.bookmark-folder-title), and finally the action buttons (.action-btn) inside that title.
  */
-body.show-child-folder-actions
-    .bookmark-folder-content
-    .bookmark-folder
-    > .bookmark-folder-title
-    .folder-actions
-    .action-btn {
+body.show-child-folder-actions .bookmark-folder-content .bookmark-folder > .folder-actions .action-btn {
     display: flex;
 }
 
@@ -7131,7 +7133,8 @@ a.delete-item-title:hover {
 }
 
 /* The button appears when hovering over the header */
-.history-group-header:hover .delete-history-group-btn,
+.history-group:has(> .history-group-header:hover) > .delete-history-group-btn,
+.delete-history-group-btn:hover,
 .delete-history-group-btn:focus-visible {
     opacity: 1;
     pointer-events: auto;
@@ -7383,7 +7386,8 @@ a.delete-item-title:hover {
     justify-content: center;
 }
 
-.downloads-group-header:hover .delete-downloads-group-btn,
+.downloads-group:has(> .downloads-group-header:hover) > .delete-downloads-group-btn,
+.delete-downloads-group-btn:hover,
 .delete-downloads-group-btn:focus-visible {
     opacity: 1;
     pointer-events: auto;
@@ -8477,4 +8481,117 @@ body:not(.groups-view-active) .pomodoro-panel,
         background-image: none;
         background-color: var(--bg-panel-color);
     }
+}
+
+/*
+ * Header controls sit next to <summary>, not inside it.
+ *
+ * Chrome reports a focusable element inside <summary> as "interactive element inside of
+ * a <summary> element": people moving by keyboard or with assistive technology cannot
+ * rely on reaching it, and every group header carried a dozen of them. The colour dot
+ * and the actions of group, subgroup, bookmark folder, history and download headers are
+ * siblings that follow the <summary> instead, and this grid lays them over the header
+ * row. The summary spans the row and hands its column tracks to its own content through
+ * subgrid, so the title still gives way when the actions appear, as it did when they
+ * shared one flex row.
+ */
+.header-with-controls {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0;
+}
+
+/* The controls and the body take part in that grid whether the card is open or not. */
+.header-with-controls::details-content {
+    display: contents;
+}
+
+/*
+ * The summary fills the whole row, however tall the controls make it, so its background
+ * and border still cover the header. Its own gap is dropped: in a subgrid it would push
+ * the title away from the edge; the spacing comes from the header's variables instead.
+ */
+.header-with-controls > summary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    align-self: stretch;
+    grid-template-columns: subgrid;
+    align-items: center;
+    column-gap: 0;
+    min-width: 0;
+}
+
+.group-item.header-with-controls > .group-header,
+.bookmark-folder.header-with-controls > .bookmark-folder-title,
+body.show-domain-headers .domain-subgroup.header-with-controls > .domain-header {
+    display: grid;
+}
+
+.header-with-controls > summary > .header-main {
+    grid-column: 2;
+    display: flex;
+    align-items: center;
+    gap: var(--header-gap, 6px);
+    min-width: 0;
+}
+
+/*
+ * The controls take the header's vertical padding as margin: inside the summary they
+ * counted towards its height, and the row has to stay as tall as it was.
+ */
+.header-with-controls > .header-lead {
+    grid-column: 1;
+    grid-row: 1;
+    margin-block: var(--header-pad-block, 12px);
+    margin-inline: var(--header-pad-start, 12px) var(--header-gap, 6px);
+}
+
+.header-with-controls > .header-controls {
+    grid-column: 3;
+    grid-row: 1;
+    margin-block: var(--header-pad-block, 12px);
+    margin-inline: var(--header-gap, 6px) var(--header-pad-end, 12px);
+}
+
+.header-with-controls > :not(summary, .header-lead, .header-controls) {
+    grid-column: 1 / -1;
+}
+
+.header-with-controls:not([open]) > :not(summary, .header-lead, .header-controls) {
+    display: none;
+}
+
+.domain-subgroup.header-with-controls {
+    --header-pad-block: 6px;
+    --header-gap: 0px;
+    --header-pad-start: 4px;
+    --header-pad-end: 4px;
+}
+
+.domain-subgroup.header-with-controls > .domain-header > .header-main {
+    justify-content: space-between;
+}
+
+/* A hidden domain header takes its controls with it. */
+body:not(.show-domain-headers) .domain-subgroup.header-with-controls > .subgroup-actions {
+    display: none !important;
+}
+
+.cookie-entry-card.header-with-controls {
+    --header-pad-block: 0px;
+    --header-gap: 16px;
+    --header-pad-start: 0px;
+    --header-pad-end: 0px;
+}
+
+.cookie-entry-card.header-with-controls > summary {
+    display: grid;
+}
+
+.bookmark-folder.header-with-controls {
+    --header-pad-block: 8px;
+    --header-gap: 8px;
+    --header-pad-start: 4px;
+    --header-pad-end: 4px;
 }

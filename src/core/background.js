@@ -108,9 +108,13 @@ importScripts('/background/pomodoro.js');
         // schedule may have opened while nothing was running.
         await initWebActivity();
 
-        // Inject content scripts into open tabs upon reload / startup so changes apply immediately without manual refresh
-        logMessage('[Service Worker Startup] Injecting content scripts into open tabs.');
-        await injectContentScriptsInAllTabs();
+        // The open tabs get the content scripts re-run at most once per extension
+        // session: after an install, update, reload or re-enable, when they hold stale
+        // copies or none. This block runs on every worker start, and the worker starts
+        // again on every alarm and on every event after half a minute idle; injecting
+        // here each time re-ran ~1 MB of scripts into every frame of every tab once a
+        // minute, 16.5% of a core with the browser untouched (120 tabs).
+        await injectContentScriptsOncePerSession({ browserJustStarted: startedWithBrowser });
 
         logMessage('[Service Worker Startup] Initialization complete.');
     } catch (error) {

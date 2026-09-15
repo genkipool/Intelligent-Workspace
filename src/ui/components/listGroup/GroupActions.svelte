@@ -21,6 +21,7 @@
         oncopyurls = () => {},
         ondelete = () => {},
         oncapture = () => {},
+        class: className = '',
     } = $props();
 
     let groupActionsEl = $state(null);
@@ -61,7 +62,7 @@
     });
 </script>
 
-<div class="group-actions" bind:this={groupActionsEl}>
+<div class="group-actions {className}" bind:this={groupActionsEl}>
     <div
         class="backup-btn action-btn"
         class:hidden={isBackup}

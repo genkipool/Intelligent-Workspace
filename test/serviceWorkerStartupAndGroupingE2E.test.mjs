@@ -169,6 +169,119 @@ function createBackgroundVM(customChrome = {}) {
     return { context, listeners, storageData };
 }
 
+/**
+ * A one-window browser whose grouping calls raise the tabs.onUpdated events Chrome
+ * raises for them, delivered while the pass that caused them is still running.
+ * `passes` holds the tabs each real pass started from.
+ */
+function createEchoingBrowser() {
+    const tabs = [
+        { id: 101, url: 'https://github.com/a', title: 'GH a' },
+        { id: 102, url: 'https://github.com/b', title: 'GH b' },
+        { id: 103, url: 'https://docs.google.com/1', title: 'Doc 1' },
+        { id: 104, url: 'https://docs.google.com/2', title: 'Doc 2' },
+    ].map((t, index) => ({ windowId: 1, index, pinned: false, groupId: -1, status: 'complete', ...t }));
+    const groups = new Map();
+    let nextGroupId = 900;
+    const snapshot = () => tabs.map((t) => ({ ...t }));
+    const findTab = (id) => tabs.find((t) => t.id === id);
+
+    const browser = {
+        passes: [],
+        firedWhileGrouping: [],
+        listeners: {},
+        context: null,
+        duringGroupCall: () => {},
+        fire(tabId, changeInfo) {
+            const tab = findTab(tabId);
+            if (!tab) return;
+            if (vm.runInContext('isGrouping', browser.context)) browser.firedWhileGrouping.push(changeInfo);
+            browser.listeners['tabs.onUpdated'](tabId, changeInfo, { ...tab });
+        },
+        navigate(tabId, url) {
+            findTab(tabId).url = url;
+            browser.fire(tabId, { url, status: 'complete' });
+        },
+        async runPass() {
+            await vm.runInContext('groupTabs()', browser.context);
+            // Waits until no pass is running or scheduled for several ticks in a row, so a
+            // queued pass (timers are capped at 50 ms here) gets to start and finish.
+            for (let idle = 0; idle < 6; ) {
+                await new Promise((resolve) => setTimeout(resolve, 50));
+                const busy = vm.runInContext('isGrouping || groupTabsTimer !== null', browser.context);
+                idle = busy ? 0 : idle + 1;
+            }
+        },
+    };
+
+    const { context } = createBackgroundVM({
+        windows: {
+            getAll: async (opts) => {
+                if (!opts?.populate) return [{ id: 1, type: 'normal' }];
+                const tabsAtStart = snapshot();
+                browser.passes.push(tabsAtStart);
+                return [{ id: 1, type: 'normal', tabs: tabsAtStart }];
+            },
+            get: async () => ({ id: 1, type: 'normal', tabs: snapshot() }),
+        },
+        tabs: {
+            onUpdated: {
+                addListener: (fn) => {
+                    browser.listeners['tabs.onUpdated'] = fn;
+                },
+            },
+            query: async (q = {}) =>
+                snapshot().filter(
+                    (t) =>
+                        (q.windowId === undefined || t.windowId === q.windowId) &&
+                        (q.groupId === undefined || t.groupId === q.groupId),
+                ),
+            get: async (id) => {
+                const tab = findTab(id);
+                if (!tab) throw new Error(`No tab with id: ${id}.`);
+                return { ...tab };
+            },
+            group: async ({ groupId, tabIds }) => {
+                const gid = groupId ?? nextGroupId++;
+                if (!groups.has(gid)) {
+                    groups.set(gid, { id: gid, windowId: 1, title: '', color: 'grey', collapsed: false });
+                }
+                for (const id of tabIds) {
+                    findTab(id).groupId = gid;
+                    browser.fire(id, { groupId: gid });
+                }
+                browser.duringGroupCall(tabIds);
+                return gid;
+            },
+            ungroup: async (tabIds) => {
+                for (const id of [].concat(tabIds)) {
+                    const tab = findTab(id);
+                    if (!tab) continue;
+                    tab.groupId = -1;
+                    browser.fire(id, { groupId: -1 });
+                }
+            },
+            move: async () => {},
+        },
+        tabGroups: {
+            query: async () =>
+                [...groups.values()].filter((g) => tabs.some((t) => t.groupId === g.id)).map((g) => ({ ...g })),
+            get: async (gid) => {
+                if (!groups.has(gid)) throw new Error(`No group with id: ${gid}.`);
+                return { ...groups.get(gid) };
+            },
+            update: async (gid, props) => {
+                if (groups.has(gid)) Object.assign(groups.get(gid), props);
+                return { ...groups.get(gid) };
+            },
+            move: async () => {},
+        },
+    });
+    browser.context = context;
+    vm.runInContext('isInitializing = false', context);
+    return browser;
+}
+
 describe('Service Worker Startup and Grouping E2E Suite', () => {
     it('non-blocking SW startup: initializeExtensionStates resolves immediately without deadlock and isInitializing is false', async () => {
         const { context } = createBackgroundVM();
@@ -272,47 +385,77 @@ describe('Service Worker Startup and Grouping E2E Suite', () => {
         }
     });
 
-    it('concurrent tabs.onUpdated during isGrouping sets hasPendingRegroup and triggers deferred regroup', async () => {
-        const { context, listeners } = createBackgroundVM();
-        assert.ok(typeof listeners['tabs.onUpdated'] === 'function', 'tabs.onUpdated listener must be registered');
-
-        vm.runInContext('isInitializing = false', context);
-        vm.runInContext('isGrouping = true', context);
-        vm.runInContext('hasPendingRegroup = false', context);
-
-        await listeners['tabs.onUpdated'](
-            301,
-            { status: 'complete', url: 'https://news.ycombinator.com' },
-            { id: 301, url: 'https://news.ycombinator.com', title: 'Hacker News', windowId: 1 },
-        );
-
-        const pendingAfterUpdate = vm.runInContext('hasPendingRegroup', context);
-        assert.equal(
-            pendingAfterUpdate,
-            true,
-            'tabs.onUpdated while isGrouping is true must set hasPendingRegroup to true',
-        );
-
-        // When groupTabs() finishes its finally block, it consumes hasPendingRegroup
-        let debouncedTriggered = false;
-        context.debounceGroupTabs = (delay) => {
-            debouncedTriggered = true;
+    it('a navigation during a pass queues exactly one more pass, which sees the new URL', async () => {
+        const browser = createEchoingBrowser();
+        let navigated = false;
+        browser.duringGroupCall = () => {
+            if (navigated) return;
+            navigated = true;
+            browser.navigate(103, 'https://news.ycombinator.com/item');
         };
+        await browser.runPass();
 
-        // Simulate groupTabs finally block
-        vm.runInContext(
-            `
-            isGrouping = false;
-            if (typeof hasPendingRegroup !== 'undefined' && hasPendingRegroup) {
-                hasPendingRegroup = false;
-                debounceGroupTabs(50);
-            }
-        `,
-            context,
+        assert.equal(browser.firedWhileGrouping.length > 0, true, 'the navigation must land inside the pass');
+        assert.equal(browser.passes.length, 2, 'the navigation must cause one queued pass, not more');
+        assert.ok(
+            browser.passes[1].some((t) => t.id === 103 && t.url === 'https://news.ycombinator.com/item'),
+            'the queued pass must work from the navigated URL',
         );
+    });
 
-        assert.equal(vm.runInContext('hasPendingRegroup', context), false, 'hasPendingRegroup should be reset');
-        assert.equal(debouncedTriggered, true, 'debounceGroupTabs(50) should be scheduled for deferred regroup');
+    it("the pass's own groupId echoes and title, favicon or sound changes do not queue another pass", async () => {
+        const browser = createEchoingBrowser();
+        browser.duringGroupCall = (tabIds) => {
+            for (const id of tabIds) {
+                browser.fire(id, { title: `(${Math.random()}) inbox` });
+                browser.fire(id, { favIconUrl: 'https://github.com/favicon.ico' });
+                browser.fire(id, { audible: true });
+            }
+        };
+        await browser.runPass();
+
+        assert.ok(browser.firedWhileGrouping.length > 0, 'the echoes must land inside the pass');
+        assert.equal(browser.passes.length, 1, 'no event the pass caused itself may chain another pass');
+        assert.equal(vm.runInContext('hasPendingRegroup', browser.context), false);
+    });
+
+    it('a direct groupTabs() call during a pass is queued instead of dropped', async () => {
+        const browser = createEchoingBrowser();
+        let asked = false;
+        browser.duringGroupCall = () => {
+            if (asked) return;
+            asked = true;
+            vm.runInContext('groupTabs()', browser.context);
+        };
+        await browser.runPass();
+
+        assert.equal(browser.passes.length, 2, 'the request made during the pass must run once it finishes');
+    });
+
+    it('switching grouping off forgets the prefix state of the groups it dissolves', async () => {
+        const browser = createEchoingBrowser();
+        await browser.runPass();
+        const identifiers = JSON.parse(
+            vm.runInContext(
+                `JSON.stringify([...groupIdentifierMap.values()].map((identifier) => {
+                    if (!groupPrefixState.has(identifier)) groupPrefixState.set(identifier, { tabCount: 2 });
+                    return identifier;
+                }))`,
+                browser.context,
+            ),
+        );
+        assert.ok(identifiers.length > 0, 'the first pass must create groups');
+
+        vm.runInContext('extensionSettings.clusteringEnabled = false', browser.context);
+        await browser.runPass();
+
+        const leftover = JSON.parse(
+            vm.runInContext(
+                `JSON.stringify(${JSON.stringify(identifiers)}.filter((id) => groupPrefixState.has(id)))`,
+                browser.context,
+            ),
+        );
+        assert.deepEqual(leftover, [], 'no prefix state may outlive the groups switched off');
     });
 
     it('cross-window tab move: tabs.onAttached triggers debounceGroupTabs()', async () => {

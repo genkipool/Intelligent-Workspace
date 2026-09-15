@@ -1,26 +1,31 @@
 // Global cross-frame media controller listener
 // Injected into all child frames via manifest (all_frames: true) to universally pause media on preview close
-window.addEventListener('message', (event) => {
-    if (event.data && event.data.action === 'pauseMedia') {
-        document.querySelectorAll('video, audio').forEach((media) => {
-            try {
-                if (!media.paused) media.pause();
-            } catch {}
-        });
-        document.querySelectorAll('iframe').forEach((subIframe) => {
-            try {
-                if (subIframe.contentWindow) {
-                    subIframe.contentWindow.postMessage(
-                        {
-                            action: 'pauseMedia',
-                        },
-                        '*',
-                    );
-                }
-            } catch {}
-        });
-    }
-});
+// Registered once per document: the scripts run again in the same world when the
+// extension is updated, and each run used to add another copy of this listener.
+if (!window.__itgPauseMediaListener) {
+    window.__itgPauseMediaListener = true;
+    window.addEventListener('message', (event) => {
+        if (event.data && event.data.action === 'pauseMedia') {
+            document.querySelectorAll('video, audio').forEach((media) => {
+                try {
+                    if (!media.paused) media.pause();
+                } catch {}
+            });
+            document.querySelectorAll('iframe').forEach((subIframe) => {
+                try {
+                    if (subIframe.contentWindow) {
+                        subIframe.contentWindow.postMessage(
+                            {
+                                action: 'pauseMedia',
+                            },
+                            '*',
+                        );
+                    }
+                } catch {}
+            });
+        }
+    });
+}
 
 /**
  * @class LinkPreviewManager
@@ -98,20 +103,24 @@ var Main = class Main {
             // The omnibar's frame loads ahead so `o` opens it at once; not with the hints off.
             if (this.hintsGloballyEnabled) this.omniBar.preload();
             this.linkPreviewManager.init();
-            const checkForVideo = () => {
-                if (document.querySelector('video')) {
-                    if (window.parent && window !== window.parent) {
-                        window.parent.postMessage(
-                            {
-                                action: 'ITG_PREVIEW_HAS_VIDEO',
-                            },
-                            '*',
-                        );
+            // Tells a link preview framing this page that it holds a video. Only a
+            // subframe can be a preview and once told it stays told, so the top frame
+            // does not look at all and a subframe stops at the first video, or after
+            // half a minute. It used to query every frame of every tab once a second for
+            // as long as the page stayed open.
+            if (window.parent && window !== window.parent) {
+                let checksLeft = 30;
+                const checkForVideo = () => {
+                    const found = !!document.querySelector('video');
+                    if (found) window.parent.postMessage({ action: 'ITG_PREVIEW_HAS_VIDEO' }, '*');
+                    if (found || --checksLeft <= 0) {
+                        clearInterval(this._videoCheckInterval);
+                        this._videoCheckInterval = null;
                     }
-                }
-            };
-            this._videoCheckInterval = setInterval(checkForVideo, 1000);
-            checkForVideo();
+                    return found;
+                };
+                if (!checkForVideo()) this._videoCheckInterval = setInterval(checkForVideo, 1000);
+            }
             if (this.videoPipEnabled) {
                 this._injectYoutubePipButton();
                 this._injectTiktokPipButton();

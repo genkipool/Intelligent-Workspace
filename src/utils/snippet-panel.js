@@ -235,6 +235,9 @@
                 let remaining = paramsPart;
                 const markers = [];
                 for (const v of sortedVars) {
+                    // An empty id is found at every position, so indexOf never returns -1
+                    // and the loop below would not end.
+                    if (!v.id) continue;
                     let idx = remaining.indexOf(v.id);
                     while (idx !== -1) {
                         markers.push({ id: v.id, index: idx });

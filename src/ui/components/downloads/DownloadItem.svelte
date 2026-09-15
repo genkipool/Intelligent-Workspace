@@ -249,7 +249,7 @@
     <!-- Left Category / Favicon Badge -->
     <div class="download-icon-wrapper" data-category={category}>
         {#if faviconUrl}
-            <img src={faviconUrl} alt="" class="download-favicon" />
+            <img src={faviconUrl} alt="" class="download-favicon" loading="lazy" decoding="async" />
         {:else}
             <svg class="download-type-svg" width="18" height="18" aria-hidden="true" focusable="false">
                 <use href="#icon-download"></use>

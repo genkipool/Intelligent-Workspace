@@ -960,6 +960,26 @@ export async function removeDuplicateTabs(windowId = null) {
  */
 let duplicateBadgeRun = 0;
 
+/**
+ * The worker's duplicate bookmark count, shared by every run that asks while a request is
+ * already out. A view switch starts the badge update from several places at once, and
+ * each used to send its own request: four per click on the bookmarks view, every one of
+ * them walking the whole bookmark tree in the worker. Stale runs still discard the
+ * answer through `duplicateBadgeRun`; they just no longer pay for their own copy of it.
+ */
+let duplicateBookmarkCountRequest = null;
+
+function requestDuplicateBookmarkCount() {
+    duplicateBookmarkCountRequest ??= new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'getDuplicateBookmarkCount' }, (response) => {
+            resolve({ response, error: chrome.runtime.lastError?.message });
+        });
+    }).finally(() => {
+        duplicateBookmarkCountRequest = null;
+    });
+    return duplicateBookmarkCountRequest;
+}
+
 export async function updateDuplicateCountBadge() {
     const duplicateBadge = document.getElementById('duplicate-badge');
     const removeDuplicatesBtn = document.getElementById('remove-duplicates-btn');
@@ -989,7 +1009,7 @@ export async function updateDuplicateCountBadge() {
     applyTranslations(removeDuplicatesBtn);
 
     if ($isBookmarksViewActive) {
-        chrome.runtime.sendMessage({ action: 'getDuplicateBookmarkCount' }, (response) => {
+        requestDuplicateBookmarkCount().then(({ response, error }) => {
             if (isStale() || !checkIsRelevantView()) {
                 if (!checkIsRelevantView()) {
                     duplicateBadge.classList.add('hidden');
@@ -997,8 +1017,8 @@ export async function updateDuplicateCountBadge() {
                 }
                 return;
             }
-            if (chrome.runtime.lastError) {
-                console.error('Error getting duplicate bookmark count:', chrome.runtime.lastError.message);
+            if (error) {
+                console.error('Error getting duplicate bookmark count:', error);
                 duplicateBadge.classList.add('hidden');
                 removeDuplicatesBtn.classList.add('hidden');
                 return;

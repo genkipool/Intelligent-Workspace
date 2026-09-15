@@ -1224,7 +1224,14 @@ async function collapseInactiveGroups(tabId) {
             ),
         ];
 
+        // Only the groups still open are written to. Writing collapsed to a group that
+        // already is still raises tabGroups.onUpdated, and each of those asks for a
+        // regroup and a menu check: one tab switch made 17 writes and 18 events.
+        const alreadyCollapsed = new Set(
+            (await chrome.tabGroups.query({ windowId: activeTab.windowId, collapsed: true })).map((g) => g.id),
+        );
         for (const groupId of otherGroupIds) {
+            if (alreadyCollapsed.has(groupId)) continue;
             await executeWithRetries(
                 async () => await chrome.tabGroups.update(groupId, { collapsed: true }),
                 `collapsing group ${groupId}`,
@@ -1749,7 +1756,11 @@ function constructFullTitle(type, key, title, config) {
 async function groupTabs() {
     if (shouldIgnoreEventDuringInitialization('groupTabs', 'groupTabs')) return;
     if (isGrouping) {
-        logMessage("[groupTabs] Skipping execution because it's already running.");
+        // Callers that change rules or sorting ask for a pass directly. Dropping the
+        // request left their change unapplied until some unrelated event came along,
+        // so it is queued for the pass that runs when this one finishes.
+        logMessage('[groupTabs] A pass is already running; queuing another for when it finishes.');
+        hasPendingRegroup = true;
         return;
     }
 
@@ -1885,6 +1896,12 @@ async function groupTabs() {
                 });
 
                 for (const groupId of groupIdsToClean) {
+                    // Forgotten here or never: tabGroups.onRemoved finds its state
+                    // through groupIdentifierMap, which is cleared on the next line, so
+                    // every switch-off left one entry per group behind for good, and
+                    // group ids are never reused.
+                    const identifier = groupIdentifierMap.get(groupId);
+                    if (identifier) groupPrefixState.delete(identifier);
                     groupInfoMap.delete(groupId);
                     groupIdentifierMap.delete(groupId);
                     groupExpandedEver.delete(groupId);

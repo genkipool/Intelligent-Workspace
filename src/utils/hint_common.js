@@ -3216,7 +3216,11 @@ var HintCommon = {
     },
 };
 
-if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
+// Registered once per document: the scripts run again in the same world when the
+// extension is updated, and each run used to add another copy. The listener reads the
+// global, so the one registered first reloads whichever HintCommon is current.
+if (typeof chrome !== 'undefined' && chrome.storage?.onChanged && !globalThis.__itgHintCommonLanguageListener) {
+    globalThis.__itgHintCommonLanguageListener = true;
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area === 'local' && changes['preferred-language']) {
             HintCommon.i18n.loadMessages(true);

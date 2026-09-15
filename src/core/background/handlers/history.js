@@ -1,4 +1,59 @@
 /**
+ * One `chrome.history.search` per set of options at a time, and its answer kept briefly.
+ *
+ * A search over the whole history for the latest 1000 entries took 2.4–13 s on a real
+ * profile, and the group list asked for it several times in a row: hovering the history
+ * button prefetches it, opening the view searches again, and the omnibar and the agent
+ * have their own. Chrome runs history queries one after another, so each copy waited for
+ * the one before. Requests with the same options now share the search in flight, and a
+ * finished answer serves the same options for a few seconds.
+ *
+ * Deletions clear it — through `onVisitRemoved`, which fires for every way history can be
+ * deleted, and directly in `handleDeleteHistoryUrls`, whose caller reloads straight
+ * away. New visits do not: listening to `onVisited` would wake the worker on every page
+ * load, and a view opened within the few seconds of the cache missing the very latest
+ * visit is the lesser cost.
+ */
+const HISTORY_SEARCH_TTL_MS = 10000;
+const HISTORY_SEARCH_MAX_ENTRIES = 20;
+const historySearches = new Map();
+
+function searchHistoryShared(searchOptions) {
+    const key = JSON.stringify(searchOptions);
+    const now = Date.now();
+    for (const [k, entry] of historySearches) {
+        if (!entry.pending && now - entry.at >= HISTORY_SEARCH_TTL_MS) historySearches.delete(k);
+    }
+    const hit = historySearches.get(key);
+    if (hit) return hit.promise;
+
+    const entry = { pending: true, at: 0, promise: null };
+    entry.promise = chrome.history.search(searchOptions).then(
+        (items) => {
+            entry.pending = false;
+            entry.at = Date.now();
+            return items;
+        },
+        (error) => {
+            if (historySearches.get(key) === entry) historySearches.delete(key);
+            throw error;
+        },
+    );
+    historySearches.set(key, entry);
+    // The omnibar sends one query per keystroke; keep only the most recent ones.
+    while (historySearches.size > HISTORY_SEARCH_MAX_ENTRIES) {
+        historySearches.delete(historySearches.keys().next().value);
+    }
+    return entry.promise;
+}
+
+function forgetHistorySearches() {
+    historySearches.clear();
+}
+
+chrome.history?.onVisitRemoved?.addListener(forgetHistorySearches);
+
+/**
  * Searches browsing history.
  */
 async function handleGetHistory(message, sendResponse) {
@@ -20,7 +75,7 @@ async function handleGetHistory(message, sendResponse) {
             searchOptions.startTime = 0;
         }
 
-        const historyItems = await chrome.history.search(searchOptions);
+        const historyItems = await searchHistoryShared(searchOptions);
         sendResponse({ success: true, results: historyItems });
     } catch (e) {
         sendResponse({ success: false, error: e.message });
@@ -527,6 +582,8 @@ async function handleDeleteHistoryUrls(message, sendResponse) {
         }
         const deletePromises = urls.map((url) => chrome.history.deleteUrl({ url: url }));
         await Promise.all(deletePromises);
+        // The caller reloads the list at once, before onVisitRemoved may have arrived.
+        forgetHistorySearches();
         sendResponse({ success: true });
     } catch (error) {
         console.error('Error deleting history URLs:', error);

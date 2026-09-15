@@ -88,43 +88,51 @@
     });
 </script>
 
-<details bind:this={subgroupEl} class="domain-subgroup" data-domain={domain} open={isOpen} ontoggle={handleToggled}>
+<details
+    bind:this={subgroupEl}
+    class="domain-subgroup header-with-controls"
+    data-domain={domain}
+    open={isOpen}
+    ontoggle={handleToggled}
+>
     <summary class="domain-header" onclick={toggleOpen}>
-        <span class="domain-title">{domain}</span>
-        <span
-            class="tab-count"
-            class:all-seen={isAllSeen}
-            title={$tt('groupTabCountTooltip', [seenSubgroupTabsCount, totalSubgroupTabs])}
-            >{seenSubgroupTabsCount}/{totalSubgroupTabs}</span
-        >
-
-        <div class="subgroup-actions" draggable="false" bind:this={subgroupActionsEl}>
-            <div class="create-rule-btn action-btn" role="button" tabindex="0" title={$tt('createRuleFromSubgroup')}>
-                <svg width="14" height="14"><use href="#icon-create-rule"></use></svg>
-            </div>
-            <div class="add-to-rule-btn action-btn" role="button" tabindex="0" title={$tt('addSubgroupToExistingRule')}>
-                <svg width="14" height="14"><use href="#icon-add-to-rule"></use></svg>
-            </div>
-            <div
-                class="copy-subgroup-urls-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('copySubGroupAllUrls')}
-                onclick={copyUrls}
+        <span class="header-main">
+            <span class="domain-title">{domain}</span>
+            <span
+                class="tab-count"
+                class:all-seen={isAllSeen}
+                title={$tt('groupTabCountTooltip', [seenSubgroupTabsCount, totalSubgroupTabs])}
+                >{seenSubgroupTabsCount}/{totalSubgroupTabs}</span
             >
-                <svg width="14" height="14"><use href="#icon-copy"></use></svg>
-            </div>
-            <div
-                class="delete-subgroup-btn action-btn"
-                role="button"
-                tabindex="0"
-                title={$tt('deleteSubgroupTabs')}
-                onclick={deleteSubgroup}
-            >
-                <svg width="14" height="14"><use href="#icon-trash"></use></svg>
-            </div>
-        </div>
+        </span>
     </summary>
+    <!-- Controls follow the <summary> rather than sit in it: see header-with-controls. -->
+    <div class="subgroup-actions header-controls" draggable="false" bind:this={subgroupActionsEl}>
+        <div class="create-rule-btn action-btn" role="button" tabindex="0" title={$tt('createRuleFromSubgroup')}>
+            <svg width="14" height="14"><use href="#icon-create-rule"></use></svg>
+        </div>
+        <div class="add-to-rule-btn action-btn" role="button" tabindex="0" title={$tt('addSubgroupToExistingRule')}>
+            <svg width="14" height="14"><use href="#icon-add-to-rule"></use></svg>
+        </div>
+        <div
+            class="copy-subgroup-urls-btn action-btn"
+            role="button"
+            tabindex="0"
+            title={$tt('copySubGroupAllUrls')}
+            onclick={copyUrls}
+        >
+            <svg width="14" height="14"><use href="#icon-copy"></use></svg>
+        </div>
+        <div
+            class="delete-subgroup-btn action-btn"
+            role="button"
+            tabindex="0"
+            title={$tt('deleteSubgroupTabs')}
+            onclick={deleteSubgroup}
+        >
+            <svg width="14" height="14"><use href="#icon-trash"></use></svg>
+        </div>
+    </div>
     <div class="subgroup-tab-list">
         {#each tabs as tab (tab.id)}
             <TabItem {tab} {renderContext} subgroupContext={{ type: 'subgroup', id: domain, secondaryId: groupId }} />

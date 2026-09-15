@@ -110,6 +110,8 @@ let lastAppliedClusterConfig = {}; // Stores the last cluster config to detect c
 let tabsEverActive = new Set(); // Tracks tabs that have been active in the session.
 let groupExpandedEver = new Map(); // Tracks groups that have been expanded in the session.
 let isCreatingMenus = false;
+// Set by runtime.onStartup: this worker was started by the browser starting.
+let startedWithBrowser = false;
 let setupContextMenusTimer = null;
 let isSidePanelActive = false;
 let isInstallActive = false;
@@ -350,6 +352,31 @@ function matchesPattern(url, pattern) {
         console.error(`[matchesPattern] Invalid regex pattern provided from manifest: "${pattern}"`, e);
         return false;
     }
+}
+const CONTENT_SCRIPTS_INJECTED_KEY = 'contentScriptsInjectedThisSession';
+
+/**
+ * Re-runs the content scripts into the open tabs at most once per extension session.
+ *
+ * Session storage is emptied when the extension is installed, updated, reloaded or
+ * re-enabled, which is exactly when the open tabs hold stale copies of the scripts or
+ * none, and it survives the worker stopping, which it does every half minute. A
+ * browser start empties it too, but there every page loads with the declared scripts
+ * already, so that start only records that nothing is owed.
+ */
+let contentScriptInjectionThisSession = null;
+function injectContentScriptsOncePerSession({ browserJustStarted = false } = {}) {
+    if (!contentScriptInjectionThisSession) {
+        contentScriptInjectionThisSession = (async () => {
+            const { [CONTENT_SCRIPTS_INJECTED_KEY]: done } =
+                await chrome.storage.session.get(CONTENT_SCRIPTS_INJECTED_KEY);
+            if (done) return;
+            await chrome.storage.session.set({ [CONTENT_SCRIPTS_INJECTED_KEY]: true });
+            if (browserJustStarted) return;
+            await injectContentScriptsInAllTabs();
+        })().catch((error) => console.error('[Injector] Could not re-run the content scripts:', error));
+    }
+    return contentScriptInjectionThisSession;
 }
 async function injectContentScriptsInAllTabs() {
     logMessage('======================================================================');

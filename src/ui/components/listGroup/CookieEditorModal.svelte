@@ -232,20 +232,21 @@
                     {:else}
                         <div class="cookie-entries">
                             {#each filteredCookies as cookie, i (cookie._uid ?? i)}
-                                <details class="cookie-entry-card" open>
+                                <details class="cookie-entry-card header-with-controls" open>
                                     <summary>
-                                        <span class="cookie-name">{cookie.name}</span>
-                                        <button
-                                            type="button"
-                                            class="delete-cookie-btn action-btn"
-                                            title={$tt('deleteCookie')}
-                                            onclick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                deleteCookie(workingCookies.indexOf(cookie));
-                                            }}>&times;</button
-                                        >
+                                        <span class="header-main cookie-name">{cookie.name}</span>
                                     </summary>
+                                    <!-- Controls follow the <summary> rather than sit in it: see header-with-controls. -->
+                                    <button
+                                        type="button"
+                                        class="delete-cookie-btn action-btn header-controls"
+                                        title={$tt('deleteCookie')}
+                                        onclick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            deleteCookie(workingCookies.indexOf(cookie));
+                                        }}>&times;</button
+                                    >
                                     <div class="cookie-form-grid">
                                         <div class="form-group full-width">
                                             <div class="field-label">{$t('cookieValue')}</div>

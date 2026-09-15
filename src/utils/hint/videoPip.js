@@ -86,6 +86,19 @@ function itgPipMsg(key, fallback, substitutions) {
 }
 window.itgPipMsg = itgPipMsg;
 
+/** The messages hint_common.js already loaded for `lang`, or null when it has none. */
+async function itgSharedHintMessages(lang, force) {
+    const i18n = window.HintCommon?.i18n;
+    if (typeof i18n?.loadMessages !== 'function') return null;
+    try {
+        const messages = await i18n.loadMessages(force);
+        if (!messages || Object.keys(messages).length === 0) return null;
+        return itgNormalizePipLang(i18n._lang) === lang ? messages : null;
+    } catch {
+        return null;
+    }
+}
+
 function itgLoadPipMessages(lang, force = false) {
     if (!lang) {
         try {
@@ -114,36 +127,46 @@ function itgLoadPipMessages(lang, force = false) {
                 stored?.['preferred-language'] ||
                 (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
             const normalized = itgNormalizePipLang(langVal);
-            try {
-                const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
-                const res = await fetch(url);
-                if (res.ok) {
-                    itgPipMessages = await res.json();
-                    itgPipLang = normalized;
-                    window.__itgPipMessages = itgPipMessages;
-                    window.__itgPipLang = itgPipLang;
-                } else if (normalized !== 'en') {
-                    const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
-                    const fallbackRes = await fetch(fallbackUrl);
-                    if (fallbackRes.ok) {
-                        itgPipMessages = await fallbackRes.json();
-                        itgPipLang = 'en';
+            // hint_common.js loads this same file into this same world. Reusing its copy
+            // spares every frame a second fetch and parse of some 400 KB of JSON.
+            const shared = await itgSharedHintMessages(normalized, force);
+            if (shared) {
+                itgPipMessages = shared;
+                itgPipLang = normalized;
+                window.__itgPipMessages = itgPipMessages;
+                window.__itgPipLang = itgPipLang;
+            } else {
+                try {
+                    const url = chrome.runtime.getURL(`_locales/${normalized}/messages.json`);
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        itgPipMessages = await res.json();
+                        itgPipLang = normalized;
                         window.__itgPipMessages = itgPipMessages;
                         window.__itgPipLang = itgPipLang;
+                    } else if (normalized !== 'en') {
+                        const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                        const fallbackRes = await fetch(fallbackUrl);
+                        if (fallbackRes.ok) {
+                            itgPipMessages = await fallbackRes.json();
+                            itgPipLang = 'en';
+                            window.__itgPipMessages = itgPipMessages;
+                            window.__itgPipLang = itgPipLang;
+                        }
                     }
-                }
-            } catch {
-                // If direct fetch fails in content script, request via background
-                if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-                    const bgResponse = await chrome.runtime.sendMessage({
-                        action: 'getI18nMessages',
-                        lang: normalized,
-                    });
-                    if (bgResponse?.success && bgResponse.messages) {
-                        itgPipMessages = bgResponse.messages;
-                        itgPipLang = bgResponse.lang || normalized;
-                        window.__itgPipMessages = itgPipMessages;
-                        window.__itgPipLang = itgPipLang;
+                } catch {
+                    // If direct fetch fails in content script, request via background
+                    if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
+                        const bgResponse = await chrome.runtime.sendMessage({
+                            action: 'getI18nMessages',
+                            lang: normalized,
+                        });
+                        if (bgResponse?.success && bgResponse.messages) {
+                            itgPipMessages = bgResponse.messages;
+                            itgPipLang = bgResponse.lang || normalized;
+                            window.__itgPipMessages = itgPipMessages;
+                            window.__itgPipLang = itgPipLang;
+                        }
                     }
                 }
             }
@@ -2083,20 +2106,24 @@ function itgPreloadPipDims() {
                 itgLoadPipMessages(lang);
             },
         );
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area !== 'local') return;
-            if (changes.activeTheme) {
-                itgPipTheme = changes.activeTheme.newValue ?? null;
-                window.__itgPipTheme = itgPipTheme;
-                ItgVideoPip.current?.applyTheme();
-            }
-            if (changes['preferred-language']) {
-                const newLang =
-                    changes['preferred-language'].newValue ||
-                    (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
-                itgLoadPipMessages(newLang, true);
-            }
-        });
+        // Once per document; the scripts run again in the same world after an update.
+        if (!window.__itgPipDimsListener) {
+            window.__itgPipDimsListener = true;
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area !== 'local') return;
+                if (changes.activeTheme) {
+                    itgPipTheme = changes.activeTheme.newValue ?? null;
+                    window.__itgPipTheme = itgPipTheme;
+                    ItgVideoPip.current?.applyTheme();
+                }
+                if (changes['preferred-language']) {
+                    const newLang =
+                        changes['preferred-language'].newValue ||
+                        (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                    itgLoadPipMessages(newLang, true);
+                }
+            });
+        }
     } catch {}
 }
 
@@ -5668,11 +5695,15 @@ function itgLoadPipFrame() {
             itgPipFrame = res?.itgPipFrame ?? null;
             window.__itgPipFrame = itgPipFrame;
         });
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area !== 'local' || !changes.itgPipFrame) return;
-            itgPipFrame = changes.itgPipFrame.newValue ?? null;
-            window.__itgPipFrame = itgPipFrame;
-        });
+        // Once per document; the scripts run again in the same world after an update.
+        if (!window.__itgPipFrameListener) {
+            window.__itgPipFrameListener = true;
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area !== 'local' || !changes.itgPipFrame) return;
+                itgPipFrame = changes.itgPipFrame.newValue ?? null;
+                window.__itgPipFrame = itgPipFrame;
+            });
+        }
     } catch {}
 }
 
@@ -5841,46 +5872,50 @@ function itgLoadAutoPipSettings() {
             }
             itgWatchAutoPipTriggers();
         });
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (changes.videoPipEnabled !== undefined) {
-                itgVideoPipGloballyEnabled = changes.videoPipEnabled.newValue !== false;
-                itgWatchAutoPipTriggers();
-            }
-            if (changes.youtubeLoopEnabled !== undefined) {
-                const loopEnabled = changes.youtubeLoopEnabled.newValue !== false;
-                if (!loopEnabled) {
-                    document
-                        .querySelectorAll(
-                            '#itg-yt-loop-button, #itg-yt-shorts-loop-wrapper, #itg-yt-shorts-loop-button, #itg-yt-loop-menu, #itg-pip-loop-popup, .itg-yt-loop-menu, .ytp-loop-active',
-                        )
-                        .forEach((el) => el.remove());
-                    if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
-                        itgVideoLoop.setLoop(false);
+        // Once per document; the scripts run again in the same world after an update.
+        if (!window.__itgAutoPipListener) {
+            window.__itgAutoPipListener = true;
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (changes.videoPipEnabled !== undefined) {
+                    itgVideoPipGloballyEnabled = changes.videoPipEnabled.newValue !== false;
+                    itgWatchAutoPipTriggers();
+                }
+                if (changes.youtubeLoopEnabled !== undefined) {
+                    const loopEnabled = changes.youtubeLoopEnabled.newValue !== false;
+                    if (!loopEnabled) {
+                        document
+                            .querySelectorAll(
+                                '#itg-yt-loop-button, #itg-yt-shorts-loop-wrapper, #itg-yt-shorts-loop-button, #itg-yt-loop-menu, #itg-pip-loop-popup, .itg-yt-loop-menu, .ytp-loop-active',
+                            )
+                            .forEach((el) => el.remove());
+                        if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
+                            itgVideoLoop.setLoop(false);
+                        }
                     }
                 }
-            }
-            if (area !== 'local') return;
-            let changed = false;
-            if (changes[ITG_AUTO_PIP_KEYS.scroll] !== undefined) {
-                itgAutoPipSettings.scroll = changes[ITG_AUTO_PIP_KEYS.scroll].newValue === true;
-                changed = true;
-            }
-            if (changes[ITG_AUTO_PIP_KEYS.hidden] !== undefined) {
-                itgAutoPipSettings.hidden = changes[ITG_AUTO_PIP_KEYS.hidden].newValue === true;
-                changed = true;
-            }
-            if (changed) {
-                window.__itgAutoPipSettings = itgAutoPipSettings;
-                const menu = document.getElementById('itg-autopip-menu');
-                if (menu) {
-                    for (const name of ['scroll', 'hidden']) {
-                        const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
-                        opt?.itgPaint?.(itgAutoPipSettings[name] === true);
-                    }
+                if (area !== 'local') return;
+                let changed = false;
+                if (changes[ITG_AUTO_PIP_KEYS.scroll] !== undefined) {
+                    itgAutoPipSettings.scroll = changes[ITG_AUTO_PIP_KEYS.scroll].newValue === true;
+                    changed = true;
                 }
-                itgWatchAutoPipTriggers();
-            }
-        });
+                if (changes[ITG_AUTO_PIP_KEYS.hidden] !== undefined) {
+                    itgAutoPipSettings.hidden = changes[ITG_AUTO_PIP_KEYS.hidden].newValue === true;
+                    changed = true;
+                }
+                if (changed) {
+                    window.__itgAutoPipSettings = itgAutoPipSettings;
+                    const menu = document.getElementById('itg-autopip-menu');
+                    if (menu) {
+                        for (const name of ['scroll', 'hidden']) {
+                            const opt = menu.querySelector(`[data-itg-auto-pip-option='${name}']`);
+                            opt?.itgPaint?.(itgAutoPipSettings[name] === true);
+                        }
+                    }
+                    itgWatchAutoPipTriggers();
+                }
+            });
+        }
     } catch {}
 }
 
@@ -6131,9 +6166,13 @@ function itgSyncNativePipHookFlag() {
     };
     try {
         chrome.storage.local.get('itgHijackNativePip', (res) => apply(res?.itgHijackNativePip));
-        chrome.storage.onChanged.addListener((changes, area) => {
-            if (area === 'local' && changes.itgHijackNativePip) apply(changes.itgHijackNativePip.newValue);
-        });
+        // Once per document; the scripts run again in the same world after an update.
+        if (!window.__itgNativePipHookListener) {
+            window.__itgNativePipHookListener = true;
+            chrome.storage.onChanged.addListener((changes, area) => {
+                if (area === 'local' && changes.itgHijackNativePip) apply(changes.itgHijackNativePip.newValue);
+            });
+        }
     } catch {}
 }
 

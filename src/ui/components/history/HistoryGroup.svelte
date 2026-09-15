@@ -23,23 +23,26 @@
     }
 </script>
 
-<details class="history-group group-item" data-group-key={group.timestamp} open>
+<details class="history-group group-item header-with-controls" data-group-key={group.timestamp} open>
     <summary class="history-group-header group-header">
-        <h3 class="history-group-title group-title">{group.label}</h3>
-        <span class="history-group-count group-tab-count">{group.items.length}</span>
-        <span
-            class="delete-history-group-btn action-btn"
-            role="button"
-            tabindex="0"
-            title={$tt('deleteHistoryForDate')}
-            onclick={deleteGroup}
-            onkeydown={(e) => e.key === 'Enter' && deleteGroup(e)}
-        >
-            <svg width="20" height="20" aria-hidden="true" focusable="false">
-                <use href="#icon-trash"></use>
-            </svg>
+        <span class="header-main">
+            <h3 class="history-group-title group-title">{group.label}</h3>
+            <span class="history-group-count group-tab-count">{group.items.length}</span>
         </span>
     </summary>
+    <!-- Controls follow the <summary> rather than sit in it: see header-with-controls. -->
+    <span
+        class="delete-history-group-btn action-btn header-controls"
+        role="button"
+        tabindex="0"
+        title={$tt('deleteHistoryForDate')}
+        onclick={deleteGroup}
+        onkeydown={(e) => e.key === 'Enter' && deleteGroup(e)}
+    >
+        <svg width="20" height="20" aria-hidden="true" focusable="false">
+            <use href="#icon-trash"></use>
+        </svg>
+    </span>
     <div class="history-list-container tab-list-container">
         {#each group.items as item (item.id || item.url + item.lastVisitTime)}
             <GenericItem {item} type="history" ondelete={deleteItem} />

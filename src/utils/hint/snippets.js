@@ -43,14 +43,13 @@ var SnippetManager = class SnippetManager {
         this.initialized = true;
 
         // * CRITICAL: Register input event listener
-        document.addEventListener(
-            'input',
-            (e) => {
-                if (!Utils.isInputLikeElement(e.target)) return;
-                this._handleInput(e.target, e);
-            },
-            true,
-        );
+        // Kept, like the runtime listener below, so cleanup() can take them off again: an
+        // instance replaced after an update went on handling every keystroke on the page.
+        this._boundInputHandler = (e) => {
+            if (!Utils.isInputLikeElement(e.target)) return;
+            this._handleInput(e.target, e);
+        };
+        document.addEventListener('input', this._boundInputHandler, true);
 
         // Initialize key buffer (now global to support $$ and popup navigation)
         this.initKeyBuffer();
@@ -59,14 +58,15 @@ var SnippetManager = class SnippetManager {
         this._setupGDocsMonitor();
 
         // Snippet update listener
-        chrome.runtime.onMessage.addListener((msg) => {
+        this._runtimeMessageListener = (msg) => {
             if (msg.action === 'snippetsUpdated') {
                 this._reloadSnippets();
             }
             if (msg.action === 'snippetPopupTriggerKeyUpdated') {
                 this.popupTriggerKey = msg.triggerKey || '$$';
             }
-        });
+        };
+        chrome.runtime.onMessage.addListener(this._runtimeMessageListener);
     }
 
     /**
@@ -802,6 +802,13 @@ var SnippetManager = class SnippetManager {
     }
     cleanup() {
         this._isCleanedUp = true;
+        if (this._boundInputHandler) document.removeEventListener('input', this._boundInputHandler, true);
+        if (this._runtimeMessageListener) {
+            try {
+                chrome.runtime.onMessage.removeListener(this._runtimeMessageListener);
+            } catch {}
+            this._runtimeMessageListener = null;
+        }
         if (this._boundKeyDownHandler) document.removeEventListener('keydown', this._boundKeyDownHandler, true);
         if (this._boundPasteHandler) document.removeEventListener('paste', this._boundPasteHandler, true);
         if (this._boundMouseDownHandler) document.removeEventListener('mousedown', this._boundMouseDownHandler, true);

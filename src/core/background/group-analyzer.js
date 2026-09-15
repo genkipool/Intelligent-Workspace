@@ -474,9 +474,11 @@ async function updateAllGroupPrefixes(
     logMessage(`[updateAllGroupPrefixes] Compact mode is ${isCompactActive ? 'ACTIVE' : 'INACTIVE'} for this window.`);
 
     const needsWarningMap = determineWarningStatesForGroupsInWindow(allGroupsInWindow, isCompactActive);
-    logMessage(
-        `[updateAllGroupPrefixes] Warning states calculated: ${JSON.stringify(Object.fromEntries(Object.entries(needsWarningMap).filter(([k, v]) => v)))}.`,
-    );
+    if (isModeDebug) {
+        logMessage(
+            `[updateAllGroupPrefixes] Warning states calculated: ${JSON.stringify(Object.fromEntries(Object.entries(needsWarningMap).filter(([k, v]) => v)))}.`,
+        );
+    }
 
     const updatePromises = allGroupsInWindow.map(async (group) => {
         if (targetGroupId && group.id !== targetGroupId) return;

@@ -202,6 +202,11 @@ function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
     bookmarkEl.dataset.bookmarkId = bookmark.id;
 
     const favicon = bookmarkEl.querySelector('.favicon');
+    // Lazy, and set before `src`: the view builds every bookmark at once, and eager
+    // favicons meant one `_favicon` request per bookmark in the same instant (1209 on a
+    // real profile) — including the ones inside closed folders nobody is looking at.
+    favicon.loading = 'lazy';
+    favicon.decoding = 'async';
     favicon.src = `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(bookmark.url)}&size=16`;
     favicon.onerror = () => {
         favicon.src = '../../../../assets/icons/icon16.png';
@@ -318,7 +323,16 @@ function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
     return bookmarkEl;
 }
 
+/**
+ * The view can be asked to draw again while an earlier call is still waiting for the
+ * tree (the button, a change to the bookmarks, a new sort order), and both used to empty
+ * the list and fill it, leaving every bookmark on screen twice. Each call takes a number,
+ * and only the latest one writes.
+ */
+let bookmarksRenderRun = 0;
+
 export async function initializeBookmarksView(container, utils, sortBy = 'dateAdded', isAllExpanded) {
+    const run = ++bookmarksRenderRun;
     const bookmarkItemTemplate = document.getElementById('bookmark-item-template');
     const bookmarkFolderTemplate = document.getElementById('bookmark-folder-template');
 
@@ -372,6 +386,8 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
             return;
         }
     }
+
+    if (run !== bookmarksRenderRun) return;
 
     container.innerHTML = '';
 

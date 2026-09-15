@@ -27,12 +27,13 @@ import { openModal, showNoteModal } from '../stores/modalStore.js';
 import { renderNoteEntry as renderNoteEntryFromModule } from '../content-renderer/content-renderer.js';
 
 import {
-    getScreenshotFromDb,
     getAllScreenshotIdsFromDb,
     getNoteFromDb,
     saveNoteToDb,
     deleteNoteFromDb,
     getAllNoteIdsFromDb,
+    getAllNotesFromDb,
+    getScreenshotContextKeysFromDb,
 } from '../../utils/db.js';
 
 import { STORAGE_KEYS } from './constants.js';
@@ -124,17 +125,15 @@ export async function getOrphanContent() {
         }
     }
 
-    const allNoteIds = await getAllNoteIdsFromDb();
-    const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
-    const allNotes = (await Promise.all(notePromises)).filter(Boolean);
+    const allNotes = await getAllNotesFromDb();
 
     existingContextKeys.add('g_pomodoro');
 
     const orphanNotes = allNotes.filter((note) => note.contextKey && !existingContextKeys.has(note.contextKey));
 
-    const allScreenshotIds = await getAllScreenshotIdsFromDb();
-    const screenshotPromises = allScreenshotIds.map((id) => getScreenshotFromDb(id));
-    const allScreenshots = (await Promise.all(screenshotPromises)).filter(Boolean);
+    // The id and context key of each capture, not the capture: callers count them or hand
+    // the ids to the gallery, which loads the pictures it shows.
+    const allScreenshots = await getScreenshotContextKeysFromDb();
 
     const orphanScreenshots = allScreenshots.filter(
         (screenshot) => screenshot.contextKey && !existingContextKeys.has(screenshot.contextKey),
@@ -153,8 +152,10 @@ export async function getOrphanContent() {
  * from the card even though it was never lost. The original rebuilt this map on every
  * render; this is that pass.
  */
-export async function syncContentSessionKeys() {
-    const allGroupData = await fetchData();
+export async function syncContentSessionKeys(groupData = null) {
+    // The list refresh that calls this has just fetched the very same groups; fetching
+    // them again read every tab of the window a second time on every refresh.
+    const allGroupData = Array.isArray(groupData) ? groupData : await fetchData();
     const groupInfoMap = await getGroupInfoMap();
 
     const normalizeText = (text) =>
@@ -198,10 +199,9 @@ export async function syncContentSessionKeys() {
         return null;
     };
 
-    const { [STORAGE_KEYS.NOTES]: notesData = {} } = await chrome.storage.session.get(STORAGE_KEYS.NOTES);
-    const { [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } = await chrome.storage.session.get(
-        STORAGE_KEYS.SCREENSHOTS,
-    );
+    const { [STORAGE_KEYS.NOTES]: notesData = {}, [STORAGE_KEYS.SCREENSHOTS]: screenshotData = {} } =
+        await chrome.storage.session.get([STORAGE_KEYS.NOTES, STORAGE_KEYS.SCREENSHOTS]);
+    const indexBefore = JSON.stringify([notesData, screenshotData]);
 
     const fileUnderSessionKey = (index, item) => {
         const sessionKey = resolveSessionKeyFromDbKey(item.contextKey);
@@ -210,14 +210,16 @@ export async function syncContentSessionKeys() {
         if (!index[sessionKey].includes(item.id)) index[sessionKey].push(item.id);
     };
 
-    const noteIds = await getAllNoteIdsFromDb();
-    const notes = (await Promise.all(noteIds.map((id) => getNoteFromDb(id)))).filter(Boolean);
+    const notes = await getAllNotesFromDb();
     notes.forEach((note) => fileUnderSessionKey(notesData, note));
 
-    const screenshotIds = await getAllScreenshotIdsFromDb();
-    const screenshots = (await Promise.all(screenshotIds.map((id) => getScreenshotFromDb(id)))).filter(Boolean);
+    // Only the id and the context key are needed, not the picture each record carries.
+    const screenshots = await getScreenshotContextKeysFromDb();
     screenshots.forEach((screenshot) => fileUnderSessionKey(screenshotData, screenshot));
 
+    // Written only when something was filed anew. Every write reaches each open page and
+    // the worker as a storage change, and on most refreshes nothing moves.
+    if (JSON.stringify([notesData, screenshotData]) === indexBefore) return;
     await chrome.storage.session.set({
         [STORAGE_KEYS.NOTES]: notesData,
         [STORAGE_KEYS.SCREENSHOTS]: screenshotData,
@@ -244,13 +246,10 @@ export async function updateOrphanIndicators() {
     let screenshotsToShow = [];
 
     if (displayMode === 'always') {
-        const allNoteIds = await getAllNoteIdsFromDb();
-        const notePromises = allNoteIds.map((id) => getNoteFromDb(id));
-        notesToShow = (await Promise.all(notePromises)).filter(Boolean);
-
-        const allScreenshotIds = await getAllScreenshotIdsFromDb();
-        const screenshotPromises = allScreenshotIds.map((id) => getScreenshotFromDb(id));
-        screenshotsToShow = (await Promise.all(screenshotPromises)).filter(Boolean);
+        notesToShow = await getAllNotesFromDb();
+        // Counted and opened by id: the gallery loads the pictures it shows. Reading them
+        // here loaded the whole archive on every refresh of the list.
+        screenshotsToShow = (await getAllScreenshotIdsFromDb()).map((id) => ({ id }));
     } else {
         const { orphanNotes, orphanScreenshots } = await getOrphanContent();
         notesToShow = orphanNotes;

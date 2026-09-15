@@ -124,7 +124,7 @@
     onkeydown={(e) => e.key === 'Enter' && handleClick(e)}
     onmouseenter={handleHover}
 >
-    <img src={faviconUrl} alt="" class="favicon" />
+    <img src={faviconUrl} alt="" class="favicon" loading="lazy" decoding="async" />
     <div class="item-info">
         <span class="item-title" style:font-weight={isUnread ? 'bold' : null}>{title}</span>
         <span class="item-url">{subtitle}</span>

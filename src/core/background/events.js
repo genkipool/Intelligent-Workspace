@@ -13,10 +13,6 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         }
     }
     if (shouldIgnoreEventDuringInitialization('tabs.onUpdated', tabId)) return;
-    if (isGrouping) {
-        debounceGroupTabs();
-        return;
-    }
 
     // Which group a tab belongs to is decided by its URL, so only these can change
     // it. A title or an audible change cannot: a page that updates its title (an
@@ -24,11 +20,20 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // every couple of seconds, one full pass per title change, for as long as the
     // page kept ticking. Measured with pages that retitle themselves: a single
     // click on the grouping switch chained 11 regroups; with static pages, 1.
-    const affectsGrouping =
-        changeInfo.url ||
-        changeInfo.pinned !== undefined ||
-        changeInfo.groupId !== undefined ||
-        changeInfo.status === 'complete';
+    const decidesGroup = changeInfo.url || changeInfo.pinned !== undefined || changeInfo.status === 'complete';
+    const affectsGrouping = decidesGroup || changeInfo.groupId !== undefined;
+
+    // A pass works from a snapshot taken when it started, so a navigation that
+    // arrives while it runs is queued for one more pass instead of being lost. Only
+    // what decides the group queues it. A groupId change at this point is the echo of
+    // the pass's own chrome.tabs.group calls, and queuing on it forced a second full
+    // pass after every pass that moved a tab. A title, favicon or sound change never
+    // decides the group, and queuing on those let a page that retitles itself more
+    // often than a pass lasts chain passes for as long as it stayed open.
+    if (isGrouping) {
+        if (decidesGroup && tab.url) debounceGroupTabs();
+        return;
+    }
 
     // A title or sound change is deliberately ignored here. Routing it to the prefix
     // update instead was worse than useless: updateAllGroupPrefixes writes group
@@ -43,7 +48,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         debounceUpdateAllGroupPrefixes(tab.windowId, {
             targetGroupId: null,
         });
-        await syncWithExistingGroups();
+        await requestSyncWithExistingGroups();
     }
     // The favicon almost always arrives after the page reports itself loaded, so the
     // regroup that created the group ran without it. It does not change which group
@@ -107,17 +112,12 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
         return;
     }
     if (tab.groupId !== -1 && tab.groupId !== undefined) {
-        const groupsInWindow = await chrome.tabGroups.query({
-            windowId: tab.windowId,
-        });
-        const tabsInWindow = await chrome.tabs.query({
-            windowId: tab.windowId,
-        });
+        // The update is debounced and reads what it needs when it runs. Querying every
+        // group and tab of the window here to hand over cost two round trips per switch,
+        // and that snapshot was older than what the update reads for itself.
         debounceUpdateAllGroupPrefixes(tab.windowId, {
             targetGroupId: tab.groupId,
             isEdit: false,
-            cachedGroups: groupsInWindow,
-            cachedTabs: tabsInWindow,
         });
     }
     setTimeout(async () => {
@@ -397,16 +397,19 @@ chrome.tabs.onRemoved.addListener(async (tabId, removeInfo) => {
     );
     tabsEverActive.delete(tabId);
     logMessage(`[tabs.onRemoved] REMOVED Tab ${tabId}. New size: ${tabsEverActive.size}.`);
-    await saveSessionState();
-    debounceGroupTabs();
-    debounceUpdateAllGroupPrefixes(removeInfo.windowId, {
-        targetGroupId: null,
-    });
-    await syncWithExistingGroups();
+    // Raised before the writes below are awaited: the activation of the tab that takes
+    // this one's place reads it 50 ms later.
     justClosedTab = true;
     setTimeout(() => {
         justClosedTab = false;
     }, 500);
+    debounceGroupTabs();
+    debounceUpdateAllGroupPrefixes(removeInfo.windowId, {
+        targetGroupId: null,
+    });
+    // Closing forty tabs used to write the session and re-read every group and tab forty
+    // times; the burst now shares one of each.
+    await Promise.all([requestSaveSessionState(), requestSyncWithExistingGroups()]);
     if (removeInfo.isWindowClosing) {
         logMessage(`[onRemoved] Tab ${tabId} removed because window is closing. Skipping split-screen logic.`);
         return;
@@ -1129,9 +1132,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
  */
 const PERIODIC_TASKS_ALARM = 'itg-periodic-tasks';
 
-chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
+// Created only when it is missing. This line runs on every worker start, and creating an
+// alarm that already exists pushes its next run a full period back.
+Promise.resolve(chrome.alarms.get?.(PERIODIC_TASKS_ALARM))
+    .then((alarm) => {
+        if (!alarm) chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
+    })
+    .catch(() => chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 }));
 
 chrome.runtime.onStartup.addListener(() => {
+    startedWithBrowser = true;
     chrome.alarms.create(PERIODIC_TASKS_ALARM, { periodInMinutes: 1 });
     /*
      * The blocker's redirect rules name `blocked.html` by URL, and that URL is a
@@ -1181,9 +1191,9 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'update') {
         logMessage('Extension updated. Initializing states.');
         isInstallActive = false;
-        await initializeExtensionStates(false);
+        await initializeExtensionStates(false, { forceFull: true });
     }
-    await injectContentScriptsInAllTabs();
+    await injectContentScriptsOncePerSession();
 });
 chrome.windows.onRemoved.addListener(async (windowId) => {
     logMessage(`Window ${windowId} removed. Syncing states.`);
@@ -1295,7 +1305,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         cachedConfiguredRuleStorageArea = newValue;
         logMessage(`[Storage Changed] Storage area switched from '${oldValue}' to '${newValue}'. Re-initializing...`);
         if (!isInstallActive) {
-            await initializeExtensionStates();
+            await initializeExtensionStates(false, { forceFull: true });
         }
         isInstallActive = false;
         return;

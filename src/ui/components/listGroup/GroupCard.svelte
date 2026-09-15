@@ -382,7 +382,7 @@
 <details
     bind:this={groupEl}
     use:useDraggable
-    class="group-item"
+    class="group-item header-with-controls"
     class:backed-up={isBackup}
     draggable="true"
     open={isExpanded}
@@ -390,59 +390,64 @@
     data-group-id={group.id}
 >
     <summary class="group-header" onclick={handleToggleOpen}>
-        <span
-            class="color-indicator"
-            class:hidden={isUngrouped}
-            role="button"
-            tabindex="0"
-            title={isBackup ? $tt('restoreGroupTooltip') : null}
-            style="background-color: {$listGroupState.themeColors[group.color] || 'grey'};"
-            onclick={colorIndicatorClick}
-        >
-            {isBackup ? 'B' : ''}
+        <span class="header-main">
+            <h3
+                class="group-title"
+                data-base-name={displayTitle}
+                data-prefix=""
+                style:cursor={isUngrouped ? 'default' : null}
+                ondblclick={handleTitleDblClick}
+            >
+                {displayTitle}
+            </h3>
+            {#if isBackup}
+                <span
+                    class="group-tab-count"
+                    title={$tt('backupTabCountTooltip', [liveTabs.length, liveTabs.length + tabs.length])}
+                    >{backupCount}</span
+                >
+            {:else}
+                <span
+                    class="group-tab-count"
+                    class:all-seen={isAllSeen}
+                    title={$tt('groupTabCountTooltip', [seenCount, tabCount])}>{seenCount}/{tabCount}</span
+                >
+            {/if}
         </span>
-        <h3
-            class="group-title"
-            data-base-name={displayTitle}
-            data-prefix=""
-            style:cursor={isUngrouped ? 'default' : null}
-            ondblclick={handleTitleDblClick}
-        >
-            {displayTitle}
-        </h3>
-        {#if isBackup}
-            <span
-                class="group-tab-count"
-                title={$tt('backupTabCountTooltip', [liveTabs.length, liveTabs.length + tabs.length])}
-                >{backupCount}</span
-            >
-        {:else}
-            <span
-                class="group-tab-count"
-                class:all-seen={isAllSeen}
-                title={$tt('groupTabCountTooltip', [seenCount, tabCount])}>{seenCount}/{tabCount}</span
-            >
-        {/if}
-
-        <GroupActions
-            {group}
-            {groupEl}
-            {isBackup}
-            {isUngrouped}
-            {isPinned}
-            {info}
-            {noteContext}
-            {notesData}
-            {screenshotData}
-            onbackup={handleBackup}
-            onrestore={handleRestore}
-            ontogglepin={togglePin}
-            onhide={handleHide}
-            oncopyurls={copyUrls}
-            ondelete={deleteGroupAction}
-            oncapture={captureTabs}
-        />
     </summary>
+    <!-- The colour dot and the actions are controls, and a control inside <summary> is not
+         reliably reachable by keyboard or assistive technology. They follow it instead and the
+         header-with-controls grid lays them over the header row. -->
+    <span
+        class="color-indicator header-lead"
+        class:hidden={isUngrouped}
+        role="button"
+        tabindex="0"
+        title={isBackup ? $tt('restoreGroupTooltip') : null}
+        style="background-color: {$listGroupState.themeColors[group.color] || 'grey'};"
+        onclick={colorIndicatorClick}
+    >
+        {isBackup ? 'B' : ''}
+    </span>
+    <GroupActions
+        class="header-controls"
+        {group}
+        {groupEl}
+        {isBackup}
+        {isUngrouped}
+        {isPinned}
+        {info}
+        {noteContext}
+        {notesData}
+        {screenshotData}
+        onbackup={handleBackup}
+        onrestore={handleRestore}
+        ontogglepin={togglePin}
+        onhide={handleHide}
+        oncopyurls={copyUrls}
+        ondelete={deleteGroupAction}
+        oncapture={captureTabs}
+    />
 
     <div class="tab-list-container">
         {#if isBackup}
