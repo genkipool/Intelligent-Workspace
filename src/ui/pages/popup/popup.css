@@ -464,14 +464,17 @@ button:active {
 .contribution-icon-container {
     width: 48px;
     height: 48px;
-    border-radius: 6px;
+    border-radius: 9px;
     margin-bottom: 4px;
-    border: 2px solid transparent;
-    transition: all 0.2s ease;
+    box-shadow: 0 0 0 0 var(--interactive-color);
+    transition:
+        scale 0.2s ease,
+        box-shadow 0.2s ease;
     display: flex;
     justify-content: center;
     align-items: center;
     background-color: var(--bg-panel-color);
+    overflow: hidden;
 }
 
 .contribution-label {
@@ -486,7 +489,7 @@ button:active {
 .contribution-option:hover .contribution-icon-container,
 .contribution-option:focus-visible .contribution-icon-container {
     scale: 1.1;
-    border-color: var(--interactive-color);
+    box-shadow: 0 0 0 2px var(--interactive-color);
 }
 
 .contribution-icon-container img {
