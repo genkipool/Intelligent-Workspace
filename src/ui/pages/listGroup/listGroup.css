@@ -8547,6 +8547,15 @@ body.show-domain-headers .domain-subgroup.header-with-controls > .domain-header 
     margin-inline: var(--header-pad-start, 12px) var(--header-gap, 6px);
 }
 
+/*
+ * A group header's 2px bottom border belongs to the row, so centring the dot on it left
+ * the dot 1px below the title. On top of that the title's glyphs sit about 1px above the
+ * centre of its line box. The uneven margins lift the dot 2px without making the row taller.
+ */
+.group-item.header-with-controls > .header-lead {
+    margin-block: calc(var(--header-pad-block, 12px) - 1px) calc(var(--header-pad-block, 12px) + 3px);
+}
+
 .header-with-controls > .header-controls {
     grid-column: 3;
     grid-row: 1;
