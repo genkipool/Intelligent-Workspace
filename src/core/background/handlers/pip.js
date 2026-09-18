@@ -307,7 +307,12 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                     try {
                         let targetUrlWithTime = targetUrl || window.location.href;
                         try {
-                            const video = document.querySelector('video');
+                            const isGenericFeedOrApp =
+                                targetUrlWithTime.includes('x.com') ||
+                                targetUrlWithTime.includes('twitter.com') ||
+                                targetUrlWithTime.includes('whatsapp.com') ||
+                                targetUrlWithTime.includes('telegram.org');
+                            const video = !isGenericFeedOrApp ? document.querySelector('video') : null;
                             if (video && video.currentTime > 0) {
                                 const urlObj = new URL(targetUrlWithTime);
                                 const secs = Math.floor(video.currentTime);

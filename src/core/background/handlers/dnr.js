@@ -693,8 +693,6 @@ async function getCookiesHeaderForDomain(url) {
 const PIP_FRAMING_REQUEST_HEADERS = [
     { header: 'sec-fetch-dest', operation: 'set', value: 'document' },
     { header: 'sec-fetch-mode', operation: 'set', value: 'navigate' },
-    { header: 'sec-fetch-site', operation: 'set', value: 'same-origin' },
-    { header: 'sec-fetch-user', operation: 'set', value: '?1' },
     { header: 'if-none-match', operation: 'remove' },
     { header: 'if-modified-since', operation: 'remove' },
 ];
@@ -741,6 +739,13 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                 : `[DNR] PiP rules scoped to tab ${pipTabId}`,
         );
 
+        const isX =
+            target.hostname === 'x.com' ||
+            target.hostname.endsWith('.x.com') ||
+            target.hostname === 'twitter.com' ||
+            target.hostname.endsWith('.twitter.com');
+        const pipRequestDomains = isX ? ['x.com', 'twitter.com'] : [registrableDomain(target.hostname)];
+
         const ruleId = SIDEPANEL_RULE_ID + 2;
         const rule = {
             id: ruleId,
@@ -752,7 +757,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             },
             condition: {
                 ...onlyPipTab,
-                requestDomains: [registrableDomain(target.hostname)],
+                requestDomains: pipRequestDomains,
                 // Belt to the `isPaymentHost` braces above, for the same reason the side
                 // panel's rules carry it: a guard that runs once cannot bind a rule that
                 // stands afterwards.
@@ -770,11 +775,13 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             const isMessaging = urlObj.hostname.includes('whatsapp.com') || urlObj.hostname.includes('telegram.org');
             // Messaging web apps (WhatsApp, Telegram) maintain dynamic sessions via
             // WebSockets and IndexedDB. Overriding their Cookie header corrupts active sessions.
-            // Furthermore, never inject cookies browser-wide when pipTabId could not be identified.
-            if (!isYouTube && !isMessaging && pipTabId !== null) {
+            // Other sites (like x.com) require their cookies (ct0 CSRF token, auth_token)
+            // on both the document sub_frame and subsequent XMLHttpRequest/Fetch API calls,
+            // otherwise the SPA shell loads but the timeline and APIs fail to authenticate.
+            if (!isYouTube && !isMessaging) {
                 const cookieString = await getCookiesHeaderForDomain(message.url);
                 if (cookieString) {
-                    const targetDomain = urlObj.hostname;
+                    const targetDomain = urlObj.hostname.replace(/^www\./, '');
                     rules.push({
                         id: rule2Id,
                         priority: 9999,
@@ -791,7 +798,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                         condition: {
                             ...onlyPipTab,
                             urlFilter: `|https://${targetDomain}/`,
-                            resourceTypes: ['sub_frame'],
+                            resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'other'],
                         },
                     });
                 }

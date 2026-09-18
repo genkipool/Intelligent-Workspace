@@ -198,6 +198,92 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
             assert.equal(executedScripts[0].args[2], 'https://web.telegram.org/k/');
             assert.equal(responsePayload?.success, true);
         });
+
+        it('does not append ?t= timestamp to x.com/home even if video element exists in DOM', async () => {
+            executedScripts = [];
+
+            await pipSandbox.handleOpenPipWindow(
+                {
+                    url: 'https://x.com/home',
+                    width: 450,
+                    height: 600,
+                    tabId: 10,
+                    windowId: 1,
+                    originalWindowId: 1,
+                    originalTabId: 10,
+                },
+                { tab: { id: 10, windowId: 1 } },
+                () => {},
+            );
+
+            assert.equal(executedScripts.length, 1);
+            const script = executedScripts[0];
+            assert.equal(script.args[2], 'https://x.com/home');
+
+            let preparedUrl = null;
+            const mockWindow = {
+                location: { href: 'https://x.com/home' },
+                documentPictureInPicture: {
+                    requestWindow: async () => ({
+                        document: { body: { style: {}, appendChild: () => {} } },
+                        addEventListener: () => {},
+                    }),
+                },
+            };
+            const mockDocument = {
+                readyState: 'complete',
+                querySelector: (sel) => {
+                    if (sel === 'video') {
+                        return { currentTime: 25.5 };
+                    }
+                    return null;
+                },
+                querySelectorAll: () => [],
+                createElement: () => ({ style: {} }),
+            };
+            const mockChrome = {
+                runtime: {
+                    sendMessage: async (msg) => {
+                        if (msg.action === 'prepareVideoUrlForPip') {
+                            preparedUrl = msg.url;
+                        }
+                    },
+                },
+            };
+
+            const runFunc = new Function(
+                'w',
+                'h',
+                'targetUrl',
+                'window',
+                'document',
+                'chrome',
+                'URL',
+                'console',
+                'setTimeout',
+                'clearTimeout',
+                'setInterval',
+                'clearInterval',
+                `return (${script.func.toString()})(w, h, targetUrl);`,
+            );
+
+            await runFunc(
+                450,
+                600,
+                'https://x.com/home',
+                mockWindow,
+                mockDocument,
+                mockChrome,
+                globalThis.URL,
+                console,
+                setTimeout,
+                clearTimeout,
+                () => 1,
+                () => {},
+            );
+
+            assert.equal(preparedUrl, 'https://x.com/home', 'Timestamp ?t= should NOT be added to x.com/home');
+        });
     });
 
     describe('3. Background dnr.js Framing Header Management', () => {
@@ -356,6 +442,95 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
             }));
             assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-dest' && h.value === 'document'));
             assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-mode' && h.value === 'navigate'));
+        });
+
+        it('handlePrepareVideoUrlForPip configures dual domain x.com/twitter.com and injects cookies on sub_frame and XHR for x.com', async () => {
+            const dnrCode = readFileSync('src/core/background/handlers/dnr.js', 'utf8');
+            let updatedRules = null;
+
+            const sandbox = {
+                console,
+                URL,
+                Set,
+                SIDEPANEL_RULE_ID: 1,
+                chrome: {
+                    declarativeNetRequest: {
+                        updateSessionRules: async (options) => {
+                            updatedRules = options;
+                        },
+                    },
+                    cookies: {
+                        getAll: async () => [
+                            { name: 'ct0', value: 'csrf_token_123' },
+                            { name: 'auth_token', value: 'secret_auth_token' },
+                        ],
+                    },
+                    tabs: {
+                        get: async () => ({ windowId: 1 }),
+                        query: async () => [],
+                    },
+                },
+                logMessage: () => {},
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(
+                dnrCode + '\nglobalThis.__handlePrepareVideoUrlForPip = handlePrepareVideoUrlForPip;',
+                sandbox,
+            );
+
+            await new Promise((resolve) => {
+                sandbox.__handlePrepareVideoUrlForPip({ url: 'https://x.com/home' }, resolve, 10);
+            });
+
+            assert.ok(updatedRules);
+            assert.ok(Array.isArray(updatedRules.addRules));
+            assert.equal(
+                updatedRules.addRules.length,
+                2,
+                'x.com must have both framing rule and cookie injection rule',
+            );
+
+            // Rule 1: Framing and Sec-Fetch navigation hints
+            const rule1 = updatedRules.addRules[0];
+            assert.ok(rule1.condition.requestDomains.includes('x.com'));
+            assert.ok(rule1.condition.requestDomains.includes('twitter.com'));
+            assert.equal(rule1.condition.resourceTypes.length, 1);
+            assert.equal(rule1.condition.resourceTypes[0], 'sub_frame');
+            assert.equal(rule1.action.type, 'modifyHeaders');
+
+            const removedHeaders = rule1.action.responseHeaders.map((h) => h.header.toLowerCase());
+            assert.ok(removedHeaders.includes('x-frame-options'));
+            assert.ok(removedHeaders.includes('content-security-policy'));
+            assert.ok(removedHeaders.includes('cross-origin-opener-policy'));
+            assert.ok(removedHeaders.includes('cross-origin-resource-policy'));
+
+            const setReqHeaders = rule1.action.requestHeaders.map((h) => ({
+                header: h.header.toLowerCase(),
+                value: h.value,
+            }));
+            assert.ok(setReqHeaders.some((h) => h.header === 'sec-fetch-dest' && h.value === 'document'));
+            assert.ok(setReqHeaders.some((h) => h.header === 'sec-fetch-mode' && h.value === 'navigate'));
+            // Must NOT include spoofed sec-fetch-site or sec-fetch-user that triggers Cloudflare/Envoy WAF 403
+            assert.equal(
+                setReqHeaders.some((h) => h.header === 'sec-fetch-site'),
+                false,
+            );
+            assert.equal(
+                setReqHeaders.some((h) => h.header === 'sec-fetch-user'),
+                false,
+            );
+
+            // Rule 2: Cookie injection on sub_frame, xmlhttprequest, script, image, other
+            const rule2 = updatedRules.addRules[1];
+            assert.equal(rule2.condition.urlFilter, '|https://x.com/');
+            assert.ok(rule2.condition.resourceTypes.includes('sub_frame'));
+            assert.ok(rule2.condition.resourceTypes.includes('xmlhttprequest'));
+            assert.ok(rule2.condition.resourceTypes.includes('script'));
+
+            const cookieHeader = rule2.action.requestHeaders.find((h) => h.header.toLowerCase() === 'cookie');
+            assert.ok(cookieHeader);
+            assert.ok(cookieHeader.value.includes('ct0=csrf_token_123'));
+            assert.ok(cookieHeader.value.includes('auth_token=secret_auth_token'));
         });
 
         it('handleCleanupVideoPipRules removes the installed PiP session rules', async () => {
