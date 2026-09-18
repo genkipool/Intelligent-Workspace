@@ -7028,6 +7028,12 @@
   "pipRecommended": {
     "message": "Recommended"
   },
+  "pipShortsFeed": {
+    "message": "Shorts feed"
+  },
+  "pipShortUntitled": {
+    "message": "Short"
+  },
   "pipSearch": {
     "message": "Search videos"
   },

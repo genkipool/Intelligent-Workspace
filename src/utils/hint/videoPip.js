@@ -389,6 +389,10 @@ var ItgVideoLoopController =
             this.currentLoopRepetition = 0;
             this.currentSequenceCycle = 0;
             this.video = null;
+            // Whether the site itself asked the element to repeat, and whether anyone
+            // has asked us to hold that off. See `_applyNativeLoop`.
+            this._nativeLoop = false;
+            this._suppressNativeLoop = false;
             this.currentVideoKey = this.getVideoKey();
             this.listeners = new Set();
             this._boundTimeUpdate = () => this.handleTimeUpdate();
@@ -588,10 +592,17 @@ var ItgVideoLoopController =
             this.video = video;
             if (!video) return;
 
-            video.loop = false;
-            if (video.hasAttribute('loop')) {
-                video.removeAttribute('loop');
+            // YouTube plays Shorts with `loop` on the element itself: that is how the
+            // page repeats them, and why `ended` never fires there. The flag is
+            // remembered rather than cleared, because clearing it here would stop
+            // Shorts repeating on the page the moment the loop button was injected.
+            // It is only held off while our own loop runs, or while the floating
+            // player asks for it. Re-reading it while it is held off would read back
+            // our own zero and lose the site's setting for good.
+            if (!this._suppressNativeLoop && !this.isLooping) {
+                this._nativeLoop = video.loop || video.hasAttribute('loop');
             }
+            this._applyNativeLoop();
 
             video.addEventListener('timeupdate', this._boundTimeUpdate);
             video.addEventListener('ended', this._boundEnded);
@@ -613,6 +624,43 @@ var ItgVideoLoopController =
             this.video.removeEventListener('loadstart', this._boundVideoChange);
             this.video.removeEventListener('emptied', this._boundVideoChange);
             this.video = null;
+        }
+
+        /**
+         * Puts the element's own `loop` back to whatever it should be right now.
+         *
+         * An element that loops by itself never fires `ended` and never reaches its
+         * own duration on `timeupdate`, so our loop cannot see the end of the video
+         * while it is on; neither can the floating player, which needs that end to
+         * move on to the next Short. Both take it off through here, and the site's
+         * setting comes back as soon as neither of them needs it.
+         */
+        _applyNativeLoop() {
+            const v = this.video;
+            if (!v) return;
+            const wanted = this._nativeLoop && !this._suppressNativeLoop && !this.isLooping;
+            if (v.loop !== wanted) v.loop = wanted;
+            if (!wanted && v.hasAttribute('loop')) v.removeAttribute('loop');
+        }
+
+        /** Holds the site's own repeat off (the floating player, on Shorts). */
+        setNativeLoopSuppressed(suppressed) {
+            this._suppressNativeLoop = !!suppressed;
+            this._applyNativeLoop();
+        }
+
+        /**
+         * The video the loop belongs to.
+         *
+         * While the floating player is open it is that window's video, not the page's:
+         * the page keeps a video element of its own behind it -- YouTube builds a fresh
+         * one, and a Shorts page has the emptied watch player on top of that -- and the
+         * loop would be seeking that one while the user watched the other.
+         */
+        preferredVideo() {
+            const floating = typeof ItgVideoPip !== 'undefined' ? ItgVideoPip.current?.video : null;
+            if (floating && floating.isConnected) return floating;
+            return document.querySelector('video');
         }
 
         getVideo() {
@@ -775,14 +823,12 @@ var ItgVideoLoopController =
 
         setLooping(active) {
             this.isLooping = !!active;
+            const v = this.getVideo();
+            this._applyNativeLoop();
             if (this.isLooping) {
                 this.currentLoopRepetition = 0;
                 this.currentSequenceCycle = 0;
-                const v = this.getVideo();
                 if (v) {
-                    v.loop = false;
-                    if (v.hasAttribute('loop')) v.removeAttribute('loop');
-
                     const start = this.getEffectiveStartTime();
                     const end = this.getEffectiveEndTime();
                     if (v.currentTime < start || (end > 0 && v.currentTime >= end)) {
@@ -799,6 +845,7 @@ var ItgVideoLoopController =
 
         handleDurationChange() {
             this.checkVideoChange();
+            this._applyNativeLoop();
             const dur = this.getDuration();
             if (dur > 0) {
                 for (const loop of this.loops) {
@@ -812,6 +859,10 @@ var ItgVideoLoopController =
 
         handleTimeUpdate() {
             this.checkVideoChange();
+            // YouTube puts `loop` back on the element every time it loads a Short into
+            // it, and it reuses the same element for the whole feed, so the only way to
+            // stay ahead of it is to check here. It is a comparison, not a write.
+            this._applyNativeLoop();
             if (!this.isLooping || this._isSeeking) return;
             const v = this.getVideo();
             if (!v) return;
@@ -2291,6 +2342,18 @@ function itgIsYouTubeShorts() {
     return itgIsYouTube() && location.pathname.startsWith('/shorts/');
 }
 
+/**
+ * The right-hand side of the Shorts control bar, in both of the markups YouTube runs.
+ *
+ * The current rollout renamed the host element from `ytd-shorts-player-controls` to
+ * `ytd-shorts-player-controls-cow` and moved its styling to camelCase classes. The
+ * ids inside it (`#right-controls`, `#menu-button`, `#fullscreen-button-shape`)
+ * survived the rename, so matching the host by either name is enough; matching only
+ * the old one is what left the loop and picture-in-picture buttons out of Shorts.
+ */
+var ITG_SHORTS_RIGHT_CONTROLS =
+    'ytd-shorts-player-controls #right-controls, ytd-shorts-player-controls-cow #right-controls, .ytdShortsPlayerControlsRightControls';
+
 /** Text of the first matching child, trimmed, or ''. */
 function itgText(root, selectors) {
     for (const selector of selectors) {
@@ -2362,6 +2425,75 @@ function itgYouTubeCover(el, link) {
     return '';
 }
 
+/** videoId -> { title, user }, so a Short is only ever asked about once. */
+var itgShortsTitleCache = window.__itgShortsTitleCache || new Map();
+window.__itgShortsTitleCache = itgShortsTitleCache;
+
+/**
+ * The Shorts feed, as the page itself holds it.
+ *
+ * A Shorts page has no watch-next sidebar to read: what comes after this video is the
+ * rest of the feed, and YouTube keeps that as a plain property on `ytd-shorts`, which
+ * a content script cannot see. `youtubeShortsFeedHook.js` runs in the page's own world
+ * and answers with it. Nobody answers when the hook did not run -- the extension may
+ * be switched off for the site -- so the wait is bounded and the panel simply stays
+ * empty in that case.
+ */
+function itgRequestShortsFeed(timeout = 1500) {
+    return new Promise((resolve) => {
+        const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const onMessage = (event) => {
+            if (event.source !== window) return;
+            const data = event.data;
+            if (!data || data.__itgShortsFeed !== 'response' || data.id !== id) return;
+            window.removeEventListener('message', onMessage);
+            clearTimeout(timer);
+            resolve(Array.isArray(data.items) ? data : null);
+        };
+        const timer = setTimeout(() => {
+            window.removeEventListener('message', onMessage);
+            resolve(null);
+        }, timeout);
+        window.addEventListener('message', onMessage);
+        window.postMessage({ __itgShortsFeed: 'request', id }, '*');
+    });
+}
+
+/** Moves the feed to a Short, through the page's own routing. */
+function itgGoToShort(videoId) {
+    window.postMessage({ __itgShortsFeed: 'go', videoId }, '*');
+}
+
+/**
+ * Names for the Shorts in the feed.
+ *
+ * The sequence carries ids and thumbnails and no titles at all -- YouTube does not
+ * know them either until it loads each video. Its own oEmbed endpoint answers with
+ * one per video, is same-origin from here and needs no key, so the panel asks it
+ * once per Short and keeps the answer. A few at a time: nine of them at once on
+ * every navigation is a burst for nothing.
+ */
+async function itgLoadShortsTitles(videoIds) {
+    const missing = videoIds.filter((id) => id && !itgShortsTitleCache.has(id));
+    for (let i = 0; i < missing.length; i += 4) {
+        await Promise.all(
+            missing.slice(i, i + 4).map(async (id) => {
+                try {
+                    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+                    const res = await fetch(`/oembed?url=${encodeURIComponent(url)}&format=json`);
+                    if (!res.ok) throw new Error(String(res.status));
+                    const data = await res.json();
+                    itgShortsTitleCache.set(id, { title: data.title || '', user: data.author_name || '' });
+                } catch {
+                    // A private or removed Short answers 401/404; remembering the failure
+                    // is what stops the panel asking again on every refresh.
+                    itgShortsTitleCache.set(id, { title: '', user: '' });
+                }
+            }),
+        );
+    }
+}
+
 /**
  * The lists YouTube already has in the page: the playlist panel, when a playlist is
  * open, and the watch-next sidebar. Both markups are read because YouTube has been
@@ -2400,6 +2532,51 @@ function itgReadYouTubeLists() {
     }
 
     return lists;
+}
+
+/**
+ * The Shorts comments live in an engagement panel, closed until it is asked for.
+ *
+ * It hangs off `#shorts-panel-container`, one at a time for the whole feed rather
+ * than one per reel, and -- measured -- it does not follow the feed: left open while
+ * the feed moves on, it goes on showing the previous video's thread indefinitely.
+ * Closing it and pressing the page's button again is what makes YouTube fetch the
+ * current one, which is why `loadShortsComments` tracks which video the panel was
+ * opened for.
+ */
+function itgShortsCommentsPanel() {
+    return document.querySelector(
+        '#shorts-panel-container ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]',
+    );
+}
+
+function itgShortsCommentsAreOpen() {
+    return itgShortsCommentsPanel()?.getAttribute('visibility') === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED';
+}
+
+function itgCloseShortsComments() {
+    itgShortsCommentsPanel()?.querySelector('#visibility-button button')?.click();
+}
+
+/**
+ * Presses the page's own comments button.
+ *
+ * Nothing in the Shorts action bar is named: its buttons are anonymous
+ * `button-view-model`s whose only label is the localised aria-label. The comments
+ * one is the one showing a count, which is a number in every language, and the
+ * first of them otherwise -- the bar has been like, comments, share, remix for
+ * years.
+ */
+function itgOpenShortsComments() {
+    const bar = document.querySelector('reel-action-bar-view-model');
+    if (!bar) return false;
+    const candidates = [...bar.querySelectorAll(':scope > button-view-model')];
+    const button = (candidates.find((el) => /^\d/.test(el.textContent?.trim() || '')) || candidates[0])?.querySelector(
+        'button',
+    );
+    if (!button) return false;
+    button.click();
+    return true;
 }
 
 /**
@@ -2494,6 +2671,10 @@ function itgReadYouTubeReplies(thread) {
 function itgYouTubeVoteRoot() {
     return (
         document.querySelector('ytd-reel-video-renderer[is-active]') ||
+        // The current rollout keeps a single reel in the document and dropped the
+        // `is-active` marker along with the others, so on Shorts the only reel there
+        // is the one being watched.
+        (itgIsYouTubeShorts() ? document.querySelector('ytd-reel-video-renderer') : null) ||
         document.querySelector('ytd-watch-metadata') ||
         document
     );
@@ -2872,6 +3053,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (this.video && !this.initialYouTubeVideoId) {
             this.bindVideo();
         }
+        if (this.isShorts) this.keepShortsMovingOn();
         this.bindWindow();
         if (!this.initialYouTubeVideoId) {
             this.watchForVideoSwap();
@@ -3151,10 +3333,30 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             };
             window.addEventListener('yt-navigate-finish', onNavigate);
             this.disposers.push(() => window.removeEventListener('yt-navigate-finish', onNavigate));
+
+            // Moving through the Shorts feed changes the address without firing that
+            // event, and the video element is the same one throughout, so neither
+            // signal above notices. Watching the address is what is left; it costs a
+            // string comparison and stops with the window.
+            let lastHref = location.href;
+            const poll = setInterval(() => {
+                if (location.href === lastHref) return;
+                lastHref = location.href;
+                onNavigate();
+            }, 1000);
+            this.disposers.push(() => clearInterval(poll));
         }
     }
 
     youtubePlayerVideo() {
+        // A Shorts page keeps the watch player in the document, emptied and zero-sized.
+        // Asking for `#movie_player video` first there hands back that dead node, and
+        // the window would adopt it the next time the feed moved on.
+        if (itgIsYouTubeShorts()) {
+            return (
+                document.querySelector('#shorts-player video') || document.querySelector('.html5-video-container video')
+            );
+        }
         return document.querySelector('#movie_player video, #shorts-player video, .html5-video-container video');
     }
 
@@ -3438,7 +3640,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
         if (this.sideArea && !this.sideArea.hidden && this.lists) {
             const hasLists = this.lists.some((list) => list.items.length);
-            const canComment = this.isYouTube && !this.isShorts;
+            const canComment = this.isYouTube;
             this.renderSideTabs(hasLists, canComment);
         }
     }
@@ -3661,6 +3863,15 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         for (const [act, btn] of Object.entries(this.buttons)) {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                // The loop, speed and size panels open on `:hover` or `:focus-within`,
+                // and clicking their button leaves the focus on it -- which held the
+                // panel on screen with the pointer nowhere near it. A click made with
+                // the pointer gives the focus back; one made from the keyboard
+                // (`detail === 0`) keeps it, since focus is the only way to reach
+                // those panels without a mouse.
+                if (e.detail > 0 && btn.closest('.itg-pip-loop-wrap, .itg-pip-rate-wrap, .itg-pip-size-wrap')) {
+                    btn.blur();
+                }
                 this.runAction(act);
             });
         }
@@ -3830,14 +4041,18 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     updateVideoVotes(status = null) {
         if (!this.buttons?.like || !this.buttons?.dislike) return;
         const canVote = this.isYouTube;
+        // The Shorts action bar has no dislike at all in the current layout, and a
+        // button that cannot do anything is worse than no button: it is asked about
+        // the page rather than assumed, so it comes back if YouTube brings it back.
+        const canDislike = canVote && (!this.isShorts || !!itgGetYouTubeVideoDislikeButton());
         this.buttons.like.hidden = !canVote;
-        this.buttons.dislike.hidden = !canVote;
+        this.buttons.dislike.hidden = !canDislike;
 
         const doc = this.pipWindow?.document;
         const moreLike = doc?.querySelector('.itg-pip-more-item[data-act="like"]');
         const moreDislike = doc?.querySelector('.itg-pip-more-item[data-act="dislike"]');
         if (moreLike) moreLike.hidden = !canVote;
-        if (moreDislike) moreDislike.hidden = !canVote;
+        if (moreDislike) moreDislike.hidden = !canDislike;
 
         if (!canVote) return;
 
@@ -4342,6 +4557,21 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     /**
+     * Turns the end of a Short into the next one.
+     *
+     * Shorts repeat because YouTube sets `loop` on the video element itself, so the
+     * element never reaches `ended` and nothing ever asks for the next one. That flag
+     * is held off while this window is open and handed back when it closes, which
+     * leaves the page behaving exactly as it did. The loop button still wins: it takes
+     * the same flag over for its own repeat, and `handleEnded` checks it first.
+     */
+    keepShortsMovingOn() {
+        if (typeof itgVideoLoop === 'undefined') return;
+        itgVideoLoop.setNativeLoopSuppressed(true);
+        this.disposers.push(() => itgVideoLoop.setNativeLoopSuppressed(false));
+    }
+
+    /**
      * Plays the next video when this one runs out, or restarts it when loop
      * mode is active.
      *
@@ -4360,7 +4590,13 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             return;
         }
         if (!this.isYouTube) return;
-        if (!this.isShorts && !this.siblingItem(1)) return;
+        if (this.isShorts) {
+            // Nothing else is going to move a Short on -- YouTube repeats them rather
+            // than advancing -- so there is no autoplay of its own to wait for here.
+            this.goToSibling(1);
+            return;
+        }
+        if (!this.siblingItem(1)) return;
         const endedAt = this.video.currentTime;
         setTimeout(() => {
             if (!this.pipWindow || this.pipWindow.closed) return;
@@ -4399,7 +4635,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * the language and styling the user already chose are the ones that show up.
      */
     toggleCaptions() {
-        const player = document.getElementById('movie_player') || document.querySelector('.html5-video-player');
+        const player = itgIsYouTubeShorts()
+            ? document.getElementById('shorts-player')
+            : document.getElementById('movie_player') || document.querySelector('.html5-video-player');
         if (player && typeof player.toggleSubtitles === 'function') {
             try {
                 player.toggleSubtitles();
@@ -4418,6 +4656,14 @@ var ItgVideoPipSession = class ItgVideoPipSession {
     }
 
     captionsControl() {
+        if (itgIsYouTubeShorts()) {
+            // Shorts carries its own captions button, and the watch player left behind
+            // in the document answers the selector below with one nothing is wired to.
+            const shortsControl = document.querySelector(
+                'ytm-closed-captioning-button button, #closed-captioning-button-container button',
+            );
+            if (shortsControl) return shortsControl;
+        }
         return document.querySelector('#movie_player .ytp-subtitles-button, #shorts-player .ytp-subtitles-button');
     }
 
@@ -4547,11 +4793,72 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
     refreshLists() {
         if (!this.pipWindow || this.pipWindow.closed) return;
-        this.lists = this.isYouTube && !this.isShorts ? itgReadYouTubeLists() : [];
+        if (this.isShorts) {
+            this.refreshShortsList();
+            return;
+        }
+        this.lists = this.isYouTube ? itgReadYouTubeLists() : [];
         // Rebuilding the panel while comments are open would wipe a reply half
         // written in it, and the sidebar mutates constantly on YouTube.
         if (this.sideTab !== 'comments') this.renderSide();
         this.renderNavButtons();
+    }
+
+    /**
+     * The side list on Shorts: the feed itself.
+     *
+     * It is drawn twice -- once with the thumbnails, which are in the feed, and again
+     * once the titles have been fetched -- so the panel fills in straight away instead
+     * of staying blank until the last request comes back. The token drops the answer
+     * of a feed that has already been navigated away from.
+     */
+    refreshShortsList() {
+        const token = Symbol('shorts-feed');
+        this.shortsListToken = token;
+        const stale = () => this.shortsListToken !== token || !this.pipWindow || this.pipWindow.closed;
+
+        itgRequestShortsFeed().then(async (feed) => {
+            if (stale()) return;
+            if (!feed || !feed.items.length) {
+                this.lists = [];
+                if (this.sideTab !== 'comments') this.renderSide();
+                this.renderNavButtons();
+                return;
+            }
+
+            const draw = () => {
+                const current = location.pathname.slice('/shorts/'.length);
+                this.lists = [
+                    {
+                        category: itgPipMsg('pipShortsFeed', 'Shorts feed'),
+                        mainList: true,
+                        items: feed.items.map((item) => {
+                            const named = itgShortsTitleCache.get(item.videoId);
+                            return {
+                                title: named?.title || itgPipMsg('pipShortUntitled', 'Short'),
+                                user: named?.user || '',
+                                cover:
+                                    item.cover ||
+                                    `https://i.ytimg.com/vi/${encodeURIComponent(item.videoId)}/mqdefault.jpg`,
+                                duration: '',
+                                isActive: item.videoId === current,
+                                open: () => {
+                                    itgGoToShort(item.videoId);
+                                    this.markVideoVoteStale();
+                                },
+                            };
+                        }),
+                    },
+                ];
+                if (this.sideTab !== 'comments') this.renderSide();
+                this.renderNavButtons();
+            };
+
+            draw();
+            await itgLoadShortsTitles(feed.items.map((item) => item.videoId));
+            if (stale()) return;
+            draw();
+        });
     }
 
     /**
@@ -4565,6 +4872,9 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         if (showing) {
             this.sideArea.dataset.pinned = 'false';
             this.sideTab = 'videos';
+            // Reading them on Shorts meant opening a panel over the page; closing the
+            // tab puts the page back the way it was found.
+            if (this.isShorts) itgCloseShortsComments();
         } else {
             this.sideArea.dataset.pinned = 'true';
             this.sideTab = 'comments';
@@ -4583,6 +4893,10 @@ var ItgVideoPipSession = class ItgVideoPipSession {
      * page is nudged down to make it render them, then watched for the result.
      */
     loadComments() {
+        if (this.isShorts) {
+            this.loadShortsComments();
+            return;
+        }
         this.comments = itgReadYouTubeComments();
         if (this.comments.length) return;
 
@@ -4603,6 +4917,69 @@ var ItgVideoPipSession = class ItgVideoPipSession {
         this.disposers.push(() => {
             this.commentsObserver?.disconnect();
             this.commentsObserver = null;
+        });
+    }
+
+    /**
+     * The comments of the Short being watched.
+     *
+     * The threads of a Short that has been left behind stay in the document with the
+     * panel closed, so what is already there is only trusted while the panel is open
+     * on this same video. Otherwise the panel is closed and pressed open again, which
+     * is what makes YouTube fetch the current thread, and the result is picked up by
+     * the observer rather than waited for.
+     */
+    loadShortsComments() {
+        const videoId = itgExtractYouTubeVideoId(window.location.href);
+        const current = itgShortsCommentsAreOpen() && this.shortsCommentsVideoId === videoId;
+        this.comments = current ? itgReadYouTubeComments() : [];
+        if (this.sideTab === 'comments') this.renderSide();
+        this.watchShortsComments();
+        if (current && this.comments.length) return;
+
+        this.shortsCommentsVideoId = videoId;
+        if (itgShortsCommentsAreOpen()) {
+            itgCloseShortsComments();
+            // The page's button toggles the panel, so pressing it before the close has
+            // landed would put the previous video's thread straight back on screen.
+            setTimeout(() => {
+                if (this.pipWindow && !this.pipWindow.closed) itgOpenShortsComments();
+            }, 250);
+            return;
+        }
+        itgOpenShortsComments();
+    }
+
+    /** Follows the panel, which fills in well after the button that opened it. */
+    watchShortsComments() {
+        if (this.shortsCommentsObserver) return;
+        const container = document.querySelector('#shorts-panel-container');
+        if (!container) return;
+        let timer;
+        this.shortsCommentsObserver = new MutationObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                if (!this.pipWindow || this.pipWindow.closed) return;
+                if (!itgShortsCommentsAreOpen()) return;
+                if (this.shortsCommentsVideoId !== itgExtractYouTubeVideoId(window.location.href)) return;
+                const found = itgReadYouTubeComments();
+                // Two videos can have the same number of threads; the node is what says
+                // whether this is the same list as the one already on screen.
+                if (!found.length || found[0].el === this.comments[0]?.el) return;
+                this.comments = found;
+                if (this.sideTab === 'comments') this.renderSide();
+            }, 300);
+        });
+        this.shortsCommentsObserver.observe(container, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['visibility'],
+        });
+        this.disposers.push(() => {
+            clearTimeout(timer);
+            this.shortsCommentsObserver?.disconnect();
+            this.shortsCommentsObserver = null;
         });
     }
 
@@ -4677,7 +5054,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
 
     renderSide() {
         const hasLists = this.lists.some((list) => list.items.length);
-        const canComment = this.isYouTube && !this.isShorts;
+        const canComment = this.isYouTube;
         this.buttons.comments.hidden = !canComment;
         this.sideArea.hidden = !hasLists && !canComment;
         if (this.sideArea.hidden) return;
@@ -5128,7 +5505,7 @@ var ItgVideoPipSession = class ItgVideoPipSession {
             this.buttons.next.disabled = !this.isShorts && !this.siblingItem(1);
             this.buttons.prev.disabled = !this.isShorts && !this.siblingItem(-1);
         }
-        const canComment = this.isYouTube && !this.isShorts;
+        const canComment = this.isYouTube;
         const doc = this.pipWindow?.document;
         const moreComments = doc?.querySelector('.itg-pip-more-item[data-act="comments"]');
         if (moreComments) {
@@ -5399,6 +5776,7 @@ html[data-itg-autopip-open='true'] .ytp-chrome-bottom,
 html[data-itg-autopip-open='true'] .ytp-gradient-bottom,
 html[data-itg-autopip-open='true'] .ytp-chrome-top,
 html[data-itg-autopip-open='true'] ytd-shorts-player-controls,
+html[data-itg-autopip-open='true'] ytd-shorts-player-controls-cow,
 html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="DivBottom"],
 html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="DivButtonContainer"],
 html[data-itg-autopip-open='true'] div[class*="DivPlayerContainer"] div[class*="ControlMask"] {
@@ -5889,7 +6267,7 @@ function itgLoadAutoPipSettings() {
                             )
                             .forEach((el) => el.remove());
                         if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
-                            itgVideoLoop.setLoop(false);
+                            itgVideoLoop.setLooping(false);
                         }
                     }
                 }

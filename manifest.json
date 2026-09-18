@@ -86,7 +86,8 @@
         "*://*.youtube.com/*"
       ],
       "js": [
-        "src/utils/hint/youtubePreviewAudioHook.js"
+        "src/utils/hint/youtubePreviewAudioHook.js",
+        "src/utils/hint/youtubeShortsFeedHook.js"
       ],
       "all_frames": false,
       "run_at": "document_start",

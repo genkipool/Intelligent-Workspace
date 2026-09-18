@@ -7084,6 +7084,12 @@
     "pipRecommended": {
         "message": "Recomendados"
     },
+    "pipShortsFeed": {
+        "message": "Feed de Shorts"
+    },
+    "pipShortUntitled": {
+        "message": "Short"
+    },
     "pipSearch": {
         "message": "Buscar vídeos"
     },

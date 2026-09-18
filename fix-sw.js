@@ -49,9 +49,10 @@ try {
       },
       {
         // Main world as well: YouTube's hover-preview player exposes mute/unMute/setVolume
-        // as page properties on the element, which the isolated world cannot see.
+        // as page properties on the element, and the Shorts feed is a property on
+        // `ytd-shorts` -- neither of which the isolated world can see.
         "matches": ["*://*.youtube.com/*"],
-        "js": ["src/utils/hint/youtubePreviewAudioHook.js"],
+        "js": ["src/utils/hint/youtubePreviewAudioHook.js", "src/utils/hint/youtubeShortsFeedHook.js"],
         "all_frames": false,
         "run_at": "document_start",
         "world": "MAIN"

@@ -28,6 +28,15 @@ if (!window.__itgPauseMediaListener) {
 }
 
 /**
+ * Where our buttons go inside the Shorts control bar: immediately left of the
+ * three-dot menu, which leaves the menu and the fullscreen button where the user
+ * expects them at the end of the row. Older markup has no `#menu-button`, so the
+ * fullscreen button is the fallback anchor there.
+ */
+var itgShortsControlsAnchor = (rightControls) =>
+    rightControls.querySelector('#menu-button') || rightControls.querySelector('#fullscreen-button-shape');
+
+/**
  * @class LinkPreviewManager
  * @description Manages floating, debounced, glassmorphic link previews with iframes.
  */
@@ -1044,23 +1053,23 @@ var Main = class Main {
         // --- YouTube Shorts button ---
         const addShortsButton = () => {
             if (document.getElementById('itg-yt-shorts-pip-button')) return;
-            const shortsRightControls = document.querySelector('ytd-shorts-player-controls #right-controls');
+            const shortsRightControls = document.querySelector(ITG_SHORTS_RIGHT_CONTROLS);
             if (!shortsRightControls) return;
-            const fullscreenShape = shortsRightControls.querySelector('#fullscreen-button-shape');
-            if (!fullscreenShape) return;
+            const anchor = itgShortsControlsAnchor(shortsRightControls);
+            if (!anchor) return;
             const wrapper = document.createElement('div');
             wrapper.id = 'itg-yt-shorts-pip-button';
             wrapper.style.cssText =
                 'display: flex; align-items: center; justify-content: center; position: relative; z-index: 2147483647; pointer-events: auto;';
             const btn = document.createElement('button');
             btn.className =
-                'ytSpecButtonShapeNextHost ytSpecButtonShapeNextTonal ytSpecButtonShapeNextOverlayDark ytSpecButtonShapeNextSizeL ytSpecButtonShapeNextIconButton';
+                'ytSpecButtonShapeNextHost ytSpecButtonShapeNextTonal ytSpecButtonShapeNextOverlayDark ytSpecButtonShapeNextSizeL ytSpecButtonShapeNextIconButton ytSpecButtonShapeNextMainstageIconSize ytSpecButtonShapeNextMainstagePadding';
             btn.setAttribute('title', pipTitle);
             btn.setAttribute('aria-label', pipTitle);
             btn.style.cssText =
                 'color: rgb(255, 255, 255); background-color: transparent; position: relative; z-index: 2147483647; pointer-events: auto; cursor: pointer;';
             btn.innerHTML = `
-                    <div aria-hidden="true" class="ytSpecButtonShapeNextIcon">
+                    <div aria-hidden="true" class="ytSpecButtonShapeNextIcon ytSpecButtonShapeNextElevatedContent">
                         <span class="ytIconWrapperHost" style="width: 24px; height: 24px;">
                             <span class="yt-icon-shape ytSpecIconShapeHost">
                                 <div style="width: 100%; height: 100%; display: block; filter: drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3)); fill: currentcolor;">
@@ -1073,7 +1082,7 @@ var Main = class Main {
             btn.addEventListener('click', handlePipClick);
             itgAttachAutoPipMenu(btn);
             wrapper.appendChild(btn);
-            shortsRightControls.insertBefore(wrapper, fullscreenShape);
+            shortsRightControls.insertBefore(wrapper, anchor);
         };
         const addAllButtons = () => {
             if (this.videoPipEnabled === false) return;
@@ -1132,7 +1141,7 @@ var Main = class Main {
 
         // --- Regular YouTube player loop button ---
         const addLoopButton = () => {
-            const video = document.querySelector('video');
+            const video = typeof itgVideoLoop !== 'undefined' ? itgVideoLoop.preferredVideo() : null;
             if (video && typeof itgVideoLoop !== 'undefined') {
                 itgVideoLoop.attachVideo(video);
             }
@@ -1177,10 +1186,10 @@ var Main = class Main {
         // --- YouTube Shorts loop button ---
         const addShortsLoopButton = () => {
             if (document.getElementById('itg-yt-shorts-loop-button')) return;
-            const shortsRightControls = document.querySelector('ytd-shorts-player-controls #right-controls');
+            const shortsRightControls = document.querySelector(ITG_SHORTS_RIGHT_CONTROLS);
             if (!shortsRightControls) return;
-            const fullscreenShape = shortsRightControls.querySelector('#fullscreen-button-shape');
-            if (!fullscreenShape) return;
+            const anchor = itgShortsControlsAnchor(shortsRightControls);
+            if (!anchor) return;
 
             const wrapper = document.createElement('div');
             wrapper.id = 'itg-yt-shorts-loop-wrapper';
@@ -1189,13 +1198,13 @@ var Main = class Main {
             const btn = document.createElement('button');
             btn.id = 'itg-yt-shorts-loop-button';
             btn.className =
-                'ytSpecButtonShapeNextHost ytSpecButtonShapeNextTonal ytSpecButtonShapeNextOverlayDark ytSpecButtonShapeNextSizeL ytSpecButtonShapeNextIconButton';
+                'ytSpecButtonShapeNextHost ytSpecButtonShapeNextTonal ytSpecButtonShapeNextOverlayDark ytSpecButtonShapeNextSizeL ytSpecButtonShapeNextIconButton ytSpecButtonShapeNextMainstageIconSize ytSpecButtonShapeNextMainstagePadding';
             btn.setAttribute('title', loopTitle);
             btn.setAttribute('aria-label', loopTitle);
             btn.style.cssText =
                 'color: rgb(255, 255, 255); background-color: transparent; position: relative; z-index: 2147483647; pointer-events: auto; cursor: pointer;';
             btn.innerHTML = `
-                    <div aria-hidden="true" class="ytSpecButtonShapeNextIcon">
+                    <div aria-hidden="true" class="ytSpecButtonShapeNextIcon ytSpecButtonShapeNextElevatedContent">
                         <span class="ytIconWrapperHost" style="width: 24px; height: 24px;">
                             <span class="yt-icon-shape ytSpecIconShapeHost">
                                 <div style="width: 100%; height: 100%; display: block; filter: drop-shadow(0px 1px 4px rgba(0, 0, 0, 0.3)); fill: currentcolor;">
@@ -1219,9 +1228,10 @@ var Main = class Main {
             }
 
             wrapper.appendChild(btn);
+            // Left of the picture-in-picture button when that one is already there, so
+            // the pair keeps the same order as on the regular player.
             const pipWrapper = document.getElementById('itg-yt-shorts-pip-button');
-            const targetBefore = pipWrapper || fullscreenShape;
-            shortsRightControls.insertBefore(wrapper, targetBefore);
+            shortsRightControls.insertBefore(wrapper, pipWrapper ?? anchor);
             updateLoopVisual();
         };
 
@@ -1907,7 +1917,7 @@ var Main = class Main {
                 )
                 .forEach((el) => el.remove());
             if (typeof itgVideoLoop !== 'undefined' && itgVideoLoop.isLooping) {
-                itgVideoLoop.setLoop(false);
+                itgVideoLoop.setLooping(false);
             }
         }
     }
