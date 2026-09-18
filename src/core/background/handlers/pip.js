@@ -357,21 +357,25 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         // - Page PiP does NOT handle resize persistence
                         // - Page PiP does NOT handle TikTok native PiP
                         let lastKnownTime = 0;
-                        const originalPauseInterval = setInterval(() => {
-                            document.querySelectorAll('video').forEach((v) => {
-                                try {
-                                    if (!v.paused) {
-                                        v.pause();
-                                    }
-                                } catch {}
-                            });
-                        }, 100);
+                        let originalPauseInterval = null;
+                        const localVideo = document.querySelector('video');
+                        if (localVideo) {
+                            originalPauseInterval = setInterval(() => {
+                                document.querySelectorAll('video').forEach((v) => {
+                                    try {
+                                        if (!v.paused) {
+                                            v.pause();
+                                        }
+                                    } catch {}
+                                });
+                            }, 100);
+                        }
 
                         const timeTrackerInterval = setInterval(() => {
                             try {
                                 if (!pipWindow || pipWindow.closed) {
                                     clearInterval(timeTrackerInterval);
-                                    clearInterval(originalPauseInterval);
+                                    if (originalPauseInterval) clearInterval(originalPauseInterval);
                                     return;
                                 }
                                 const pipIframe = pipWindow.document.querySelector('iframe');
@@ -393,20 +397,20 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                             if (didResume) return;
                             didResume = true;
                             releasePipNetworkRules();
-                            clearInterval(timeTrackerInterval);
-                            clearInterval(originalPauseInterval);
+                            if (timeTrackerInterval) clearInterval(timeTrackerInterval);
+                            if (originalPauseInterval) clearInterval(originalPauseInterval);
                             try {
-                                const localVideo = document.querySelector('video');
-                                if (localVideo) {
+                                const currentVideo = document.querySelector('video');
+                                if (currentVideo) {
                                     if (lastKnownTime > 0) {
-                                        localVideo.currentTime = lastKnownTime;
+                                        currentVideo.currentTime = lastKnownTime;
                                     }
                                     if (shouldPlay) {
-                                        localVideo.play().catch((e) => {
+                                        currentVideo.play().catch((e) => {
                                             console.warn('Failed to autoplay original video on PiP close:', e);
                                         });
                                     } else {
-                                        localVideo.pause();
+                                        currentVideo.pause();
                                     }
                                 }
                             } catch (e) {
@@ -441,7 +445,9 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
         sendResponse({ success: false });
     } finally {
         chrome.runtime.onMessage.removeListener(messageListener);
-        await restoreOriginalFocus(originalWindowId, originalTabId);
+        if (originalTabId && tabId && originalTabId !== tabId) {
+            await restoreOriginalFocus(originalWindowId, originalTabId);
+        }
     }
 }
 

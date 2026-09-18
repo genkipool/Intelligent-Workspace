@@ -276,10 +276,86 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
 
             const rule = updatedRules.addRules[0];
             assert.equal(rule.condition.requestDomains[0], 'telegram.org');
+            assert.equal(rule.condition.resourceTypes.length, 1);
+            assert.equal(rule.condition.resourceTypes[0], 'sub_frame');
             assert.equal(rule.action.type, 'modifyHeaders');
             const removedHeaders = rule.action.responseHeaders.map((h) => h.header.toLowerCase());
             assert.ok(removedHeaders.includes('x-frame-options'));
             assert.ok(removedHeaders.includes('content-security-policy'));
+
+            // Must include Sec-Fetch headers on sub_frame
+            const setHeaders = rule.action.requestHeaders.map((h) => ({
+                header: h.header.toLowerCase(),
+                value: h.value,
+            }));
+            assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-dest' && h.value === 'document'));
+            assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-mode' && h.value === 'navigate'));
+
+            // No destructive Cookie injection for messaging apps
+            assert.equal(updatedRules.addRules.length, 1, 'Telegram should not have rule2Id (cookie injection)');
+        });
+
+        it('handlePrepareVideoUrlForPip preserves COOP/COEP and rewrites Sec-Fetch for WhatsApp', async () => {
+            const dnrCode = readFileSync('src/core/background/handlers/dnr.js', 'utf8');
+            let updatedRules = null;
+
+            const sandbox = {
+                console,
+                URL,
+                Set,
+                SIDEPANEL_RULE_ID: 1,
+                chrome: {
+                    declarativeNetRequest: {
+                        updateSessionRules: async (options) => {
+                            updatedRules = options;
+                        },
+                    },
+                    cookies: {
+                        getAll: async () => [{ name: 'wa_ul', value: 'secret' }],
+                    },
+                    tabs: {
+                        get: async () => ({ windowId: 1 }),
+                        query: async () => [],
+                    },
+                },
+                logMessage: () => {},
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(
+                dnrCode + '\nglobalThis.__handlePrepareVideoUrlForPip = handlePrepareVideoUrlForPip;',
+                sandbox,
+            );
+
+            await new Promise((resolve) => {
+                sandbox.__handlePrepareVideoUrlForPip({ url: 'https://web.whatsapp.com/' }, resolve, 10);
+            });
+
+            assert.ok(updatedRules);
+            assert.ok(Array.isArray(updatedRules.addRules));
+            assert.equal(updatedRules.addRules.length, 1, 'WhatsApp must not have rule2Id (cookie injection)');
+
+            const rule = updatedRules.addRules[0];
+            assert.equal(rule.condition.requestDomains[0], 'whatsapp.com');
+            assert.equal(rule.condition.resourceTypes.length, 1);
+            assert.equal(rule.condition.resourceTypes[0], 'sub_frame');
+            assert.equal(rule.action.type, 'modifyHeaders');
+
+            const removedHeaders = rule.action.responseHeaders.map((h) => h.header.toLowerCase());
+            assert.ok(removedHeaders.includes('x-frame-options'));
+            assert.ok(removedHeaders.includes('content-security-policy'));
+
+            // WhatsApp Web requires SharedArrayBuffer / WebAssembly cryptography;
+            // cross-origin-opener-policy and cross-origin-embedder-policy MUST NOT be removed!
+            assert.equal(removedHeaders.includes('cross-origin-opener-policy'), false);
+            assert.equal(removedHeaders.includes('cross-origin-embedder-policy'), false);
+
+            // Must include Sec-Fetch headers so web.whatsapp.com does not reject the frame
+            const setHeaders = rule.action.requestHeaders.map((h) => ({
+                header: h.header.toLowerCase(),
+                value: h.value,
+            }));
+            assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-dest' && h.value === 'document'));
+            assert.ok(setHeaders.some((h) => h.header === 'sec-fetch-mode' && h.value === 'navigate'));
         });
 
         it('handleCleanupVideoPipRules removes the installed PiP session rules', async () => {

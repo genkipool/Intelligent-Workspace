@@ -28,10 +28,29 @@ const FRAMING_HEADERS_TO_REMOVE = [
 /**
  * Builds the responseHeaders array for DNR rules that remove framing restrictions.
  * Also adds a permissions-policy override.
+ *
+ * NOTE: WhatsApp Web strictly requires cross-origin-opener-policy and
+ * cross-origin-embedder-policy (require-corp) for SharedArrayBuffer / WebAssembly
+ * cryptography (libsignal). Stripping COOP/COEP breaks WhatsApp Web, so they are
+ * preserved when framing WhatsApp.
+ *
+ * @param {string} [hostname] Optional hostname being framed
  * @returns {Array} Array of header modification operations
  */
-function buildFramingResponseHeaders() {
-    const headers = FRAMING_HEADERS_TO_REMOVE.map((h) => ({ header: h, operation: 'remove' }));
+function buildFramingResponseHeaders(hostname) {
+    const host = (hostname || '').toLowerCase();
+    const isWhatsApp = host.includes('whatsapp.com');
+    const headersToRemove = isWhatsApp
+        ? [
+              'x-frame-options',
+              'frame-options',
+              'content-security-policy',
+              'content-security-policy-report-only',
+              'x-webkit-csp',
+          ]
+        : FRAMING_HEADERS_TO_REMOVE;
+
+    const headers = headersToRemove.map((h) => ({ header: h, operation: 'remove' }));
     headers.push({ header: 'permissions-policy', operation: 'set', value: 'browsing-topics=()' });
     return headers;
 }
@@ -612,8 +631,13 @@ async function findPipTabId(senderTabId) {
         const sender = await chrome.tabs.get(senderTabId);
         const tabs = await chrome.tabs.query({});
         const candidates = tabs.filter(
-            (t) => t.openerTabId === senderTabId && t.windowId !== sender.windowId && t.url === 'about:blank',
+            (t) =>
+                t.windowId !== sender.windowId &&
+                (t.openerTabId === senderTabId || !t.openerTabId) &&
+                (t.url === 'about:blank' || t.url === ''),
         );
+        const exact = candidates.filter((t) => t.openerTabId === senderTabId);
+        if (exact.length === 1) return exact[0].id;
         // More than one match means the guess is not identifying anything; widening the
         // rule is safer than pointing it at the wrong tab.
         return candidates.length === 1 ? candidates[0].id : null;
@@ -661,32 +685,27 @@ async function getCookiesHeaderForDomain(url) {
 }
 
 /**
+ * Request headers to rewrite for Document PiP sub_frame requests.
+ * Sites like x.com and web.whatsapp.com reject requests with Sec-Fetch-Dest: iframe.
+ * Setting document navigation hints and removing conditional cache headers allows
+ * web apps to load inside Document PiP frames.
+ */
+const PIP_FRAMING_REQUEST_HEADERS = [
+    { header: 'sec-fetch-dest', operation: 'set', value: 'document' },
+    { header: 'sec-fetch-mode', operation: 'set', value: 'navigate' },
+    { header: 'sec-fetch-site', operation: 'set', value: 'same-origin' },
+    { header: 'sec-fetch-user', operation: 'set', value: '?1' },
+    { header: 'if-none-match', operation: 'remove' },
+    { header: 'if-modified-since', operation: 'remove' },
+];
+
+/**
  * Prepares a URL for embedding inside a Document PiP iframe by removing
  * framing-restriction headers WITHOUT altering the User-Agent.
  * This ensures the site serves its desktop version with native video controls intact.
  */
 function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
     (async () => {
-        const responseHeaders = buildFramingResponseHeaders();
-
-        /*
-         * THE RULE HAS TO NAME A DOMAIN, and this is not a tidiness point.
-         *
-         * It used to carry `resourceTypes` and nothing else. A DNR condition with no
-         * host and no tab matches every request the extension has permission for, and
-         * this extension has `<all_urls>` — so floating one video took
-         * X-Frame-Options, CSP, COOP, COEP and CORP off *every iframe, XHR and script
-         * in the browser*, in every tab, for as long as the rule stood. That is
-         * universal clickjacking and a CSP bypass on sites that have nothing to do
-         * with the video, handed out by a feature that only ever needed to frame one
-         * page. `handlePrepareUrlForSidePanel` above already scopes its rules for
-         * exactly this reason; this one did not.
-         *
-         * Scoping to the target's registrable domain is what the PiP frame actually
-         * needs: the document it loads and the same-site frames and requests that
-         * document makes. Headers on a third-party subresource were never what let
-         * the frame open.
-         */
         let target = null;
         if (message.url) {
             try {
@@ -707,6 +726,8 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             return;
         }
 
+        const responseHeaders = buildFramingResponseHeaders(target.hostname);
+
         /*
          * The float's own tab, when it can be identified — see `findPipTabId`. Adding it
          * to both conditions is what stops these rules from reaching the rest of the
@@ -726,6 +747,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             priority: 9999,
             action: {
                 type: 'modifyHeaders',
+                requestHeaders: PIP_FRAMING_REQUEST_HEADERS,
                 responseHeaders: responseHeaders,
             },
             condition: {
@@ -735,7 +757,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                 // panel's rules carry it: a guard that runs once cannot bind a rule that
                 // stands afterwards.
                 excludedRequestDomains: NEVER_STRIP_FRAMING_HOSTS,
-                resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'other'],
+                resourceTypes: ['sub_frame'],
             },
         };
 
@@ -745,7 +767,11 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
         {
             const urlObj = target;
             const isYouTube = urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be');
-            if (!isYouTube) {
+            const isMessaging = urlObj.hostname.includes('whatsapp.com') || urlObj.hostname.includes('telegram.org');
+            // Messaging web apps (WhatsApp, Telegram) maintain dynamic sessions via
+            // WebSockets and IndexedDB. Overriding their Cookie header corrupts active sessions.
+            // Furthermore, never inject cookies browser-wide when pipTabId could not be identified.
+            if (!isYouTube && !isMessaging && pipTabId !== null) {
                 const cookieString = await getCookiesHeaderForDomain(message.url);
                 if (cookieString) {
                     const targetDomain = urlObj.hostname;
@@ -763,24 +789,9 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                             ],
                         },
                         condition: {
-                            /*
-                             * The float's own tab. Without it this rule replayed the
-                             * user's session cookie into *any* frame of this domain
-                             * anywhere in the browser — measured, including a
-                             * third-party `<iframe>` in another tab, where the browser
-                             * had deliberately withheld it.
-                             */
                             ...onlyPipTab,
-                            /*
-                             * `https` only. The filter used to be `*://`, and the header
-                             * it sets carries the site's session cookies — httpOnly and
-                             * Secure ones included, because that is the point of copying
-                             * them into a frame that would not receive them. Over `http://`
-                             * that is the whole session in cleartext, for a scheme the
-                             * framed page is never loaded on anyway.
-                             */
                             urlFilter: `|https://${targetDomain}/`,
-                            resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'stylesheet', 'other'],
+                            resourceTypes: ['sub_frame'],
                         },
                     });
                 }
