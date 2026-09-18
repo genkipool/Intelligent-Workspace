@@ -225,34 +225,10 @@ async function restoreOriginalFocus(originalWindowId, originalTabId, delayMs = 2
 
 // --- Page PiP Handler ---
 
-const UNFRAMABLE_PIP_HOSTS = [
-    'web.telegram.org',
-    'telegram.org',
-    't.me',
-    'genkipool.com',
-    'stripe.com',
-    'stripe.network',
-    'paypal.com',
-    'paypalobjects.com',
-    'pay.google.com',
-    'payments.google.com',
-];
-
-function isUnframablePipHost(urlStr) {
-    if (!urlStr || typeof urlStr !== 'string') return false;
-    try {
-        const hostname = new URL(urlStr).hostname.toLowerCase();
-        return UNFRAMABLE_PIP_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
-    } catch {
-        return false;
-    }
-}
-
 /**
  * Opens a page in a Document PiP window (wp: command).
- * The injected script creates an iframe with the page URL inside the PiP window.
- * For hosts that prohibit framing (e.g. Telegram Web), smoothly routes to a
- * standalone floating popup window ensuring 100% functionality and Chrome Web Store compliance.
+ * Prepares DNR framing rules to strip framing restrictions (X-Frame-Options, CSP)
+ * and creates an iframe inside the Document PiP window.
  */
 async function handleOpenPipWindow(message, sender, sendResponse) {
     const {
@@ -268,37 +244,11 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
     const originalTabId = msgTabId || sender?.tab?.id;
 
     let targetUrl = url;
-    if (!targetUrl && (originalTabId || tabId)) {
+    if (!targetUrl && (tabId || originalTabId)) {
         try {
-            const tab = await chrome.tabs.get(originalTabId || tabId);
+            const tab = await chrome.tabs.get(tabId || originalTabId);
             targetUrl = tab?.url;
         } catch {}
-    }
-
-    if (isUnframablePipHost(targetUrl)) {
-        try {
-            const targetWinId = originalWindowId || windowId;
-            const win = targetWinId ? await chrome.windows.get(targetWinId).catch(() => null) : null;
-            const left =
-                win && typeof win.left === 'number' ? Math.round(win.left + (win.width - width) / 2) : undefined;
-            const top =
-                win && typeof win.top === 'number' ? Math.round(win.top + (win.height - height) / 2) : undefined;
-            await chrome.windows.create({
-                url: targetUrl,
-                type: 'popup',
-                width,
-                height,
-                left,
-                top,
-                focused: true,
-            });
-            sendResponse({ success: true, openedAsPopup: true });
-            return;
-        } catch (popupErr) {
-            logMessage('Failed to open popup fallback for unframable host: ' + popupErr.message);
-            sendResponse({ success: false, error: popupErr.message });
-            return;
-        }
     }
 
     const isVideoSite =
@@ -318,7 +268,7 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
         );
     }
 
-    const execTabId = originalTabId;
+    const execTabId = tabId || originalTabId;
 
     const { promise: pipOpenedPromise, listener: messageListener } = createPipListenerPair(
         'ITG_PIP_STARTED',
@@ -326,10 +276,18 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
     );
 
     try {
+        if (windowId && tabId) {
+            try {
+                chrome.windows.update(windowId, { focused: true });
+                chrome.tabs.update(tabId, { active: true });
+            } catch (focusErr) {
+                logMessage('Could not focus target tab: ' + focusErr.message);
+            }
+        }
         chrome.scripting.executeScript({
             target: { tabId: execTabId },
             injectImmediately: true,
-            args: [width, height, url],
+            args: [width, height, targetUrl],
             func: async (w, h, targetUrl) => {
                 if ('documentPictureInPicture' in window) {
                     if (window.documentPictureInPicture.window) {
@@ -375,13 +333,22 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         pipWindow.document.body.style.overflow = 'hidden';
                         pipWindow.document.body.style.backgroundColor = '#1e1e1e';
 
+                        try {
+                            await chrome.runtime.sendMessage({
+                                action: 'prepareVideoUrlForPip',
+                                url: targetUrlWithTime,
+                            });
+                        } catch (dnrErr) {
+                            console.warn('Failed to prepare DNR framing rules for PiP:', dnrErr);
+                        }
+
                         const iframe = document.createElement('iframe');
                         iframe.name = 'itg-page-pip-iframe';
                         iframe.src = targetUrlWithTime;
                         iframe.style.width = '100vw';
                         iframe.style.height = '100vh';
-                        iframe.style.border = 'none';
-                        iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
+                        iframe.allow =
+                            'autoplay; camera; microphone; clipboard-write; clipboard-read; display-capture; fullscreen; encrypted-media; picture-in-picture;';
                         pipWindow.document.body.appendChild(iframe);
 
                         // [AI NOTE] Video time tracking + resume logic for PiP close.
@@ -419,9 +386,13 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         }, 250);
 
                         let didResume = false;
+                        const releasePipNetworkRules = () => {
+                            chrome.runtime.sendMessage({ action: 'cleanupVideoPipRules' }).catch(() => {});
+                        };
                         const resumeOriginalVideo = (shouldPlay) => {
                             if (didResume) return;
                             didResume = true;
+                            releasePipNetworkRules();
                             clearInterval(timeTrackerInterval);
                             clearInterval(originalPauseInterval);
                             try {
@@ -444,9 +415,11 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         };
 
                         pipWindow.addEventListener('pagehide', () => {
+                            releasePipNetworkRules();
                             resumeOriginalVideo(!document.hidden);
                         });
                         pipWindow.addEventListener('unload', () => {
+                            releasePipNetworkRules();
                             resumeOriginalVideo(!document.hidden);
                         });
 
@@ -468,6 +441,7 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
         sendResponse({ success: false });
     } finally {
         chrome.runtime.onMessage.removeListener(messageListener);
+        await restoreOriginalFocus(originalWindowId, originalTabId);
     }
 }
 

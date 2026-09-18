@@ -13,7 +13,7 @@ import { extractYouTubeVideoId, createYouTubeEmbed } from '../../utils/youtubeEm
 
 import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
-import { linkifyHtml, isUnframablePipHost } from './utils.js';
+import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
 import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
 import { SITE_DOCUMENT_TITLES, siteUrl } from '../../config/site.js';
@@ -1245,12 +1245,32 @@ export function handleIframeMessage(event) {
 }
 
 export async function openUrlInPip(url, defaultWidth = 450, defaultHeight = 600, tabId = null, windowId = null) {
-    if (isUnframablePipHost(url)) {
-        openUrlInPopup(url, defaultWidth, defaultHeight);
-        return true;
+    let targetTabId = tabId && !isNaN(tabId) ? Number(tabId) : null;
+    let targetWinId = windowId && !isNaN(windowId) ? Number(windowId) : null;
+
+    if (!targetTabId || !targetWinId) {
+        try {
+            if (url) {
+                const cleanUrl = url.split('#')[0];
+                const matchingTabs = await chrome.tabs.query({ url: cleanUrl + '*' });
+                if (matchingTabs && matchingTabs.length > 0) {
+                    targetTabId = matchingTabs[0].id;
+                    targetWinId = matchingTabs[0].windowId;
+                }
+            }
+            if (!targetTabId) {
+                const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (activeTab) {
+                    targetTabId = activeTab.id;
+                    targetWinId = activeTab.windowId;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not resolve tab for PiP:', e);
+        }
     }
 
-    if (tabId && windowId && !isNaN(tabId) && !isNaN(windowId)) {
+    if (targetTabId && targetWinId) {
         let originalWindowId = null;
         let originalTabId = null;
         try {
@@ -1267,8 +1287,8 @@ export async function openUrlInPip(url, defaultWidth = 450, defaultHeight = 600,
                 chrome.runtime.sendMessage(
                     {
                         action: 'openPipWindow',
-                        tabId: Number(tabId),
-                        windowId: Number(windowId),
+                        tabId: targetTabId,
+                        windowId: targetWinId,
                         url: url,
                         width: defaultWidth,
                         height: defaultHeight,
