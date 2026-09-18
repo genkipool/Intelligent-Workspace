@@ -1964,16 +1964,18 @@ export async function closeUrlInPanel(isSwitchingView = false) {
     // frame. Left behind, it sits under whatever the panel shows next.
     _container?.querySelector('.pay-skeleton')?.remove();
 
-    chrome.runtime.sendMessage(
-        {
-            action: 'cleanupSidePanelRules',
-        },
-        (response) => {
-            if (chrome.runtime.lastError) {
-                console.warn('Error sending cleanup message:', chrome.runtime.lastError.message);
-            }
-        },
-    );
+    if (!isSwitchingView) {
+        chrome.runtime.sendMessage(
+            {
+                action: 'cleanupSidePanelRules',
+            },
+            (response) => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Error sending cleanup message:', chrome.runtime.lastError.message);
+                }
+            },
+        );
+    }
 
     discardYoutubeView();
 

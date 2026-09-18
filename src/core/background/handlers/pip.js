@@ -291,9 +291,9 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
             func: async (w, h, targetUrl) => {
                 if ('documentPictureInPicture' in window) {
                     if (window.documentPictureInPicture.window) {
-                        window.documentPictureInPicture.window.close();
-                        chrome.runtime.sendMessage({ action: 'ITG_PIP_STARTED' });
-                        return true;
+                        try {
+                            window.documentPictureInPicture.window.close();
+                        } catch {}
                     }
 
                     // If the document is still loading, wait a maximum of 600ms for DOMContentLoaded to protect user gesture
@@ -423,14 +423,22 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                             }
                         };
 
-                        pipWindow.addEventListener('pagehide', () => {
-                            releasePipNetworkRules();
-                            resumeOriginalVideo(!document.hidden);
-                        });
-                        pipWindow.addEventListener('unload', () => {
-                            releasePipNetworkRules();
-                            resumeOriginalVideo(!document.hidden);
-                        });
+                        pipWindow.addEventListener(
+                            'pagehide',
+                            () => {
+                                releasePipNetworkRules();
+                                resumeOriginalVideo(!document.hidden);
+                            },
+                            { once: true },
+                        );
+                        pipWindow.addEventListener(
+                            'unload',
+                            () => {
+                                releasePipNetworkRules();
+                                resumeOriginalVideo(!document.hidden);
+                            },
+                            { once: true },
+                        );
 
                         chrome.runtime.sendMessage({ action: 'ITG_PIP_STARTED' });
                         return true;

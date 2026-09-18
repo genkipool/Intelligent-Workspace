@@ -62,7 +62,7 @@ function buildFramingResponseHeaders(hostname) {
  * arrives, and a cached 304 would replay the original framing headers, so
  * If-None-Match has to go too. These are sent alongside the User-Agent.
  */
-function buildFramingRequestHeaders(userAgent, mobile) {
+function buildFramingRequestHeaders(userAgent, mobile, isX = false) {
     /**
      * [AI NOTE] The client hints have to agree with the User-Agent, or the panel
      * gets an error page instead of the site.
@@ -94,13 +94,22 @@ function buildFramingRequestHeaders(userAgent, mobile) {
           ]
         : [];
 
+    const secFetchHeaders = isX
+        ? [
+              { header: 'sec-fetch-dest', operation: 'set', value: 'document' },
+              { header: 'sec-fetch-mode', operation: 'set', value: 'navigate' },
+          ]
+        : [
+              { header: 'sec-fetch-dest', operation: 'set', value: 'document' },
+              { header: 'sec-fetch-mode', operation: 'set', value: 'navigate' },
+              { header: 'sec-fetch-site', operation: 'set', value: 'same-origin' },
+              { header: 'sec-fetch-user', operation: 'set', value: '?1' },
+          ];
+
     return [
         { header: 'user-agent', operation: 'set', value: userAgent },
         ...clientHints,
-        { header: 'sec-fetch-dest', operation: 'set', value: 'document' },
-        { header: 'sec-fetch-mode', operation: 'set', value: 'navigate' },
-        { header: 'sec-fetch-site', operation: 'set', value: 'same-origin' },
-        { header: 'sec-fetch-user', operation: 'set', value: '?1' },
+        ...secFetchHeaders,
         { header: 'if-none-match', operation: 'remove' },
         { header: 'if-modified-since', operation: 'remove' },
     ];
@@ -515,14 +524,27 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
             return;
         }
 
+        const isX =
+            urlObj.hostname === 'x.com' ||
+            urlObj.hostname.endsWith('.x.com') ||
+            urlObj.hostname === 'twitter.com' ||
+            urlObj.hostname.endsWith('.twitter.com');
+        const sidePanelRequestDomains = isX ? ['x.com', 'twitter.com'] : [registrableDomain(urlObj.hostname)];
+
         const userAgent = pickSidePanelUserAgent(urlObj.hostname);
         const isMobileUserAgent = userAgent === SIDEPANEL_MOBILE_UA;
-        const responseHeaders = buildFramingResponseHeaders();
+        const responseHeaders = buildFramingResponseHeaders(urlObj.hostname);
         const tabIds = await getSidePanelRuleTabIds();
 
         await mirrorCookiesIntoExtensionPartition(message.url).catch((e) => {
             logMessage('[DNR] cookie mirroring failed: ' + e.message);
         });
+        if (isX) {
+            const alternateXUrl = message.url.includes('twitter.com') ? 'https://x.com/' : 'https://twitter.com/';
+            await mirrorCookiesIntoExtensionPartition(alternateXUrl).catch((e) => {
+                logMessage('[DNR] alternate X cookie mirroring failed: ' + e.message);
+            });
+        }
 
         const rules = [
             {
@@ -531,12 +553,12 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
                 priority: 9999,
                 action: {
                     type: 'modifyHeaders',
-                    requestHeaders: buildFramingRequestHeaders(userAgent, isMobileUserAgent),
+                    requestHeaders: buildFramingRequestHeaders(userAgent, isMobileUserAgent, isX),
                     responseHeaders: responseHeaders,
                 },
                 condition: {
                     tabIds: tabIds,
-                    requestDomains: [registrableDomain(urlObj.hostname)],
+                    requestDomains: sidePanelRequestDomains,
                     /*
                      * The guarantee that `isPaymentHost` above states, made declarative.
                      *
@@ -588,9 +610,37 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
             },
         ];
 
+        const removeRuleIds = [SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1, SIDEPANEL_RULE_ID + 5];
+
+        if (isX) {
+            const xCookieString = await getXCookiesHeader();
+            if (xCookieString) {
+                rules.push({
+                    id: SIDEPANEL_RULE_ID + 5,
+                    priority: 9999,
+                    action: {
+                        type: 'modifyHeaders',
+                        requestHeaders: [
+                            {
+                                header: 'Cookie',
+                                operation: 'set',
+                                value: xCookieString,
+                            },
+                        ],
+                    },
+                    condition: {
+                        tabIds: tabIds,
+                        requestDomains: ['x.com', 'twitter.com'],
+                        urlFilter: '|https://',
+                        resourceTypes: ['sub_frame', 'xmlhttprequest'],
+                    },
+                });
+            }
+        }
+
         try {
             await chrome.declarativeNetRequest.updateSessionRules({
-                removeRuleIds: [SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1],
+                removeRuleIds: removeRuleIds,
                 addRules: rules,
             });
             logMessage(`[background.js] Side panel framing rules active for: ${urlObj.hostname}`);
@@ -685,6 +735,35 @@ async function getCookiesHeaderForDomain(url) {
 }
 
 /**
+ * Gets merged cookies for X/Twitter across both x.com and twitter.com domains.
+ * Sites like x.com often store auth_token on .twitter.com and ct0 on .x.com,
+ * so combining both domains ensures authenticated requests on the first load.
+ */
+async function getXCookiesHeader() {
+    try {
+        const [xCookies, twitterCookies] = await Promise.all([
+            chrome.cookies.getAll({ url: 'https://x.com/' }).catch(() => []),
+            chrome.cookies.getAll({ url: 'https://twitter.com/' }).catch(() => []),
+        ]);
+        const cookieMap = new Map();
+        for (const c of twitterCookies) {
+            if (c.name && c.value) {
+                cookieMap.set(c.name, `${c.name}=${c.value}`);
+            }
+        }
+        for (const c of xCookies) {
+            if (c.name && c.value) {
+                cookieMap.set(c.name, `${c.name}=${c.value}`);
+            }
+        }
+        return Array.from(cookieMap.values()).join('; ');
+    } catch (e) {
+        logMessage('Error fetching X cookies: ' + e.message);
+        return '';
+    }
+}
+
+/**
  * Request headers to rewrite for Document PiP sub_frame requests.
  * Sites like x.com and web.whatsapp.com reject requests with Sec-Fetch-Dest: iframe.
  * Setting document navigation hints and removing conditional cache headers allows
@@ -732,11 +811,16 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
          * browser while the window is open. `null` keeps the old, domain-only shape.
          */
         const pipTabId = await findPipTabId(senderTabId);
-        const onlyPipTab = pipTabId === null ? {} : { tabIds: [pipTabId] };
+        const pipTabIds = [];
+        if (pipTabId !== null) pipTabIds.push(pipTabId);
+        if (typeof senderTabId === 'number' && !pipTabIds.includes(senderTabId)) {
+            pipTabIds.push(senderTabId);
+        }
+        const onlyPipTab = pipTabIds.length > 0 ? { tabIds: pipTabIds } : {};
         logMessage(
-            pipTabId === null
+            pipTabIds.length === 0
                 ? '[DNR] PiP tab not identified; rules stay scoped to the domain alone'
-                : `[DNR] PiP rules scoped to tab ${pipTabId}`,
+                : `[DNR] PiP rules scoped to tab(s) ${pipTabIds.join(', ')}`,
         );
 
         const isX =
@@ -779,9 +863,20 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             // on both the document sub_frame and subsequent XMLHttpRequest/Fetch API calls,
             // otherwise the SPA shell loads but the timeline and APIs fail to authenticate.
             if (!isYouTube && !isMessaging) {
-                const cookieString = await getCookiesHeaderForDomain(message.url);
+                const cookieString = isX ? await getXCookiesHeader() : await getCookiesHeaderForDomain(message.url);
                 if (cookieString) {
-                    const targetDomain = urlObj.hostname.replace(/^www\./, '');
+                    const ruleCondition = isX
+                        ? {
+                              ...onlyPipTab,
+                              requestDomains: pipRequestDomains,
+                              urlFilter: '|https://',
+                              resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'other'],
+                          }
+                        : {
+                              ...onlyPipTab,
+                              urlFilter: `|https://${urlObj.hostname.replace(/^www\./, '')}/`,
+                              resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'other'],
+                          };
                     rules.push({
                         id: rule2Id,
                         priority: 9999,
@@ -795,11 +890,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                                 },
                             ],
                         },
-                        condition: {
-                            ...onlyPipTab,
-                            urlFilter: `|https://${targetDomain}/`,
-                            resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'other'],
-                        },
+                        condition: ruleCondition,
                     });
                 }
             }
@@ -906,7 +997,7 @@ function handleCleanupSidePanelRules(sendResponse) {
     (async () => {
         try {
             await chrome.declarativeNetRequest.updateSessionRules({
-                removeRuleIds: [SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1],
+                removeRuleIds: [SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1, SIDEPANEL_RULE_ID + 5],
             });
             /*
              * The cookies go with the rules. They were copied so a site could be framed;

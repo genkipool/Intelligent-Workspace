@@ -522,7 +522,9 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
 
             // Rule 2: Cookie injection on sub_frame, xmlhttprequest, script, image, other
             const rule2 = updatedRules.addRules[1];
-            assert.equal(rule2.condition.urlFilter, '|https://x.com/');
+            assert.ok(rule2.condition.requestDomains.includes('x.com'));
+            assert.ok(rule2.condition.requestDomains.includes('twitter.com'));
+            assert.equal(rule2.condition.urlFilter, '|https://');
             assert.ok(rule2.condition.resourceTypes.includes('sub_frame'));
             assert.ok(rule2.condition.resourceTypes.includes('xmlhttprequest'));
             assert.ok(rule2.condition.resourceTypes.includes('script'));
@@ -562,6 +564,124 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
             assert.ok(removedRules);
             assert.ok(Array.isArray(removedRules.removeRuleIds));
             assert.ok(removedRules.removeRuleIds.length >= 2);
+        });
+
+        it('handlePrepareUrlForSidePanel configures dual domain, omits spoofed hints, and injects cookies for x.com', async () => {
+            const dnrCode = readFileSync('src/core/background/handlers/dnr.js', 'utf8');
+            let updatedRules = null;
+
+            const sandbox = {
+                console,
+                URL,
+                Set,
+                Map,
+                Array,
+                Promise,
+                SIDEPANEL_RULE_ID: 1,
+                SIDEPANEL_MOBILE_UA: 'Mobile UA',
+                SIDEPANEL_DESKTOP_UA_HOSTS: ['x.com', 'twitter.com'],
+                navigator: { userAgent: 'Mozilla/5.0 Desktop' },
+                chrome: {
+                    declarativeNetRequest: {
+                        updateSessionRules: async (options) => {
+                            updatedRules = options;
+                        },
+                    },
+                    cookies: {
+                        getAll: async () => [
+                            { name: 'ct0', value: 'csrf_val_side' },
+                            { name: 'auth_token', value: 'auth_val_side' },
+                        ],
+                        set: async () => {},
+                    },
+                    runtime: {
+                        getURL: (path) => `chrome-extension://test${path}`,
+                    },
+                    tabs: {
+                        query: async () => [],
+                    },
+                },
+                logMessage: () => {},
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(
+                dnrCode +
+                    '\nglobalThis.__handlePrepareUrlForSidePanel = handlePrepareUrlForSidePanel;' +
+                    '\nglobalThis.__handleCleanupSidePanelRules = handleCleanupSidePanelRules;',
+                sandbox,
+            );
+
+            await new Promise((resolve) => {
+                sandbox.__handlePrepareUrlForSidePanel({ url: 'https://x.com/home' }, resolve);
+            });
+
+            assert.ok(updatedRules);
+            assert.ok(Array.isArray(updatedRules.addRules));
+            assert.equal(updatedRules.addRules.length, 3, 'Should have frame, child, and cookie injection rules');
+
+            const frameRule = updatedRules.addRules[0];
+            assert.ok(frameRule.condition.requestDomains.includes('x.com'));
+            assert.ok(frameRule.condition.requestDomains.includes('twitter.com'));
+            // Sec-Fetch-Site and Sec-Fetch-User must NOT be set on x.com to avoid Cloudflare/Envoy WAF 403
+            const frameReqHeaders = frameRule.action.requestHeaders.map((h) => h.header.toLowerCase());
+            assert.equal(frameReqHeaders.includes('sec-fetch-site'), false);
+            assert.equal(frameReqHeaders.includes('sec-fetch-user'), false);
+
+            const cookieRule = updatedRules.addRules[2];
+            assert.equal(cookieRule.id, sandbox.SIDEPANEL_RULE_ID + 5);
+            assert.ok(cookieRule.condition.requestDomains.includes('x.com'));
+            assert.ok(cookieRule.condition.requestDomains.includes('twitter.com'));
+            const cHeader = cookieRule.action.requestHeaders.find((h) => h.header.toLowerCase() === 'cookie');
+            assert.ok(cHeader.value.includes('auth_token=auth_val_side'));
+            assert.ok(cHeader.value.includes('ct0=csrf_val_side'));
+
+            // Cleanup removes SIDEPANEL_RULE_ID, SIDEPANEL_RULE_ID + 1, and SIDEPANEL_RULE_ID + 5
+            let cleanedRules = null;
+            sandbox.chrome.declarativeNetRequest.updateSessionRules = async (opts) => {
+                cleanedRules = opts;
+            };
+            await new Promise((resolve) => {
+                sandbox.__handleCleanupSidePanelRules(resolve);
+            });
+            assert.ok(cleanedRules);
+            assert.ok(cleanedRules.removeRuleIds.includes(sandbox.SIDEPANEL_RULE_ID));
+            assert.ok(cleanedRules.removeRuleIds.includes(sandbox.SIDEPANEL_RULE_ID + 1));
+            assert.ok(cleanedRules.removeRuleIds.includes(sandbox.SIDEPANEL_RULE_ID + 5));
+        });
+    });
+
+    describe('4. viewsService View Switching Race Condition Prevention', () => {
+        it('closeUrlInPanel(true) does NOT send cleanupSidePanelRules when switching views', async () => {
+            const sentMessages = [];
+            global.window = {
+                screenX: 100,
+                screenY: 100,
+                outerWidth: 1200,
+                outerHeight: 800,
+            };
+            global.document = {
+                querySelector: () => null,
+                getElementById: () => null,
+                body: {
+                    classList: {
+                        remove: () => {},
+                        add: () => {},
+                    },
+                },
+            };
+            global.chrome = {
+                runtime: {
+                    sendMessage: (msg) => {
+                        sentMessages.push(msg);
+                    },
+                },
+            };
+
+            const { closeUrlInPanel } = await import('../src/ui/services/viewsService.js');
+            await closeUrlInPanel(true);
+
+            const hasCleanup = sentMessages.some((m) => m.action === 'cleanupSidePanelRules');
+            assert.equal(hasCleanup, false, 'closeUrlInPanel(true) must not dispatch cleanupSidePanelRules');
         });
     });
 
