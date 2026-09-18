@@ -1,6 +1,7 @@
 <script>
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import { getDomainOrSubdomainUrl } from '../../services/utils.js';
 
     /** @type {{
         show: boolean,
@@ -23,7 +24,7 @@
         if (show) {
             const urls = (url || '')
                 .split(/[\n,]+/)
-                .map((u) => u.trim())
+                .map((u) => getDomainOrSubdomainUrl(u.trim()))
                 .filter((u) => u.length > 0);
             urlText = [...new Set(urls)].join('\n');
             searchQuery = '';

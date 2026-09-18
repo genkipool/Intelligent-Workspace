@@ -500,3 +500,32 @@ export function linkedGroupIds(backups) {
             .filter(Boolean),
     );
 }
+
+/**
+ * Extracts the origin (protocol + domain/subdomain + port) from a URL string,
+ * or returns the domain/subdomain URL for other schemes, stripping path, query and fragment.
+ *
+ * @param {string} rawUrl
+ * @returns {string}
+ */
+export function getDomainOrSubdomainUrl(rawUrl) {
+    if (!rawUrl || typeof rawUrl !== 'string') return '';
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return '';
+    try {
+        const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed);
+        const parsed = new URL(hasScheme ? trimmed : `https://${trimmed}`);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+            return parsed.origin;
+        }
+        if (parsed.protocol === 'chrome:' || parsed.protocol === 'chrome-extension:') {
+            return `${parsed.protocol}//${parsed.hostname}`;
+        }
+        if (parsed.origin && parsed.origin !== 'null') {
+            return parsed.origin;
+        }
+        return trimmed;
+    } catch {
+        return trimmed;
+    }
+}

@@ -6,8 +6,6 @@
         folderTree = [],
         isLoading = false,
         selectedFolderId = $bindable(null),
-        mode = 'add',
-        bookmarkData = null,
         onSelectFolder = () => {},
         onCreateFolder = () => {},
         onRenameFolder = () => {},
@@ -454,7 +452,6 @@
                         class="bookmark-folder-summary"
                         data-folder-id={node.id}
                         class:selected={selectedFolderId === node.id}
-                        class:current-folder={mode === 'edit' && bookmarkData?.parentId === node.id}
                         role="treeitem"
                         aria-selected={selectedFolderId === node.id}
                         aria-expanded={isExpanded(node.id)}

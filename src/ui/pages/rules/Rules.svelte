@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    import { foldForSearch } from '../../services/utils.js';
+    import { foldForSearch, getDomainOrSubdomainUrl } from '../../services/utils.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
@@ -47,6 +47,8 @@
     let editingIndex = $state(-1);
     let ruleToEdit = $state(null);
     let rulePrefill = $state(null);
+    let returnTo = $state(null);
+    let isNavigatingBack = false;
 
     // Defaults shared with the background rule engine
     let isClusterEnabled = $state(true);
@@ -410,9 +412,26 @@
         isModalOpen = true;
     }
 
+    async function returnToListGroup() {
+        if (isNavigatingBack) return;
+        isNavigatingBack = true;
+        try {
+            const { navSource } = await chrome.storage.local.get('navSource');
+            const target =
+                navSource && navSource.includes('listGroup')
+                    ? navSource
+                    : '../listGroup/listGroup.html?context=sidepanel';
+            window.location.href = target;
+            chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../listGroup/listGroup.html' });
+        } catch {
+            window.location.href = '../listGroup/listGroup.html?context=sidepanel';
+            chrome.runtime.sendMessage({ action: 'sidePanelPathUpdated', path: '../listGroup/listGroup.html' });
+        }
+    }
+
     /** Opens the add-rule form already filled in with a URL from the context menu. */
     function openRuleModalForUrl(url) {
-        openRuleModalPrefilled({ urls: url });
+        openRuleModalPrefilled({ urls: getDomainOrSubdomainUrl(url) });
     }
 
     /**
@@ -428,17 +447,34 @@
         if (params.get('action') !== 'create') return;
         const urls = params.get('url');
         if (!urls) return;
-        openRuleModalPrefilled({ urls, name: params.get('name') || '' });
+        returnTo = params.get('returnTo');
+        const domainUrls = urls
+            .split(/[\n,]+/)
+            .map((u) => getDomainOrSubdomainUrl(u.trim()))
+            .filter(Boolean);
+        const uniqueDomainUrls = [...new Set(domainUrls)].join('\n');
+        openRuleModalPrefilled({ urls: uniqueDomainUrls, name: params.get('name') || '' });
         // Rebuilt rather than mutated: the request is dropped, anything else in the
         // address is kept.
         const rest = [...params.entries()]
-            .filter(([key]) => !['action', 'url', 'name', 't'].includes(key))
+            .filter(([key]) => !['action', 'url', 'name', 't', 'returnTo'].includes(key))
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
             .join('&');
         window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
     }
 
-    function handleSaveRule(detail) {
+    function handleCloseModal() {
+        isModalOpen = false;
+        editingIndex = -1;
+        ruleToEdit = null;
+        rulePrefill = null;
+        if (returnTo === 'listGroup') {
+            returnTo = null;
+            returnToListGroup();
+        }
+    }
+
+    async function handleSaveRule(detail) {
         const newRule = detail;
         let updatedRules = [...$rulesStore];
         if (modalMode === 'add') {
@@ -446,8 +482,15 @@
         } else if (modalMode === 'edit') {
             updatedRules[editingIndex] = newRule;
         }
-        saveRulesToStorage(updatedRules);
+        await saveRulesToStorage(updatedRules);
         isModalOpen = false;
+        editingIndex = -1;
+        ruleToEdit = null;
+        rulePrefill = null;
+        if (returnTo === 'listGroup') {
+            returnTo = null;
+            await returnToListGroup();
+        }
     }
 
     function handleToggleStar(detail) {
@@ -1308,7 +1351,7 @@
         mode={modalMode}
         rule={ruleToEdit}
         prefill={rulePrefill}
-        onclose={() => (isModalOpen = false)}
+        onclose={handleCloseModal}
         onsave={handleSaveRule}
     />
 </div>

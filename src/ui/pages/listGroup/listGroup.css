@@ -5676,11 +5676,6 @@ body.bookmarks-view-active #view-toggle-panel {
     box-shadow: 0 0 4px var(--action-color);
 }
 
-.bookmark-folder-summary.current-folder {
-    border-color: var(--action-color);
-    color: var(--text-on-color);
-}
-
 .folder-icon-wrapper {
     display: inline-flex;
     align-items: center;
@@ -6603,6 +6598,14 @@ body[data-hide-b-copy='true'] .bookmark-actions .copy-btn,
 body[data-hide-b-copy='true'] .folder-actions .copy-all-btn,
 body[data-hide-b-delete='true'] .bookmark-actions .delete-btn,
 body[data-hide-b-delete-folder='true'] .folder-actions .delete-folder-btn {
+    display: none !important;
+}
+
+/* Empty bookmark folders never show rule creation, add-to-rule, export, or open-all buttons */
+.bookmark-folder.is-empty .folder-actions .create-rule-btn,
+.bookmark-folder.is-empty .folder-actions .add-to-rule-btn,
+.bookmark-folder.is-empty .folder-actions .export-folder-btn,
+.bookmark-folder.is-empty .folder-actions .open-all-btn {
     display: none !important;
 }
 

@@ -1332,4 +1332,70 @@ describe('R2: Add-to-Rule Modal Selection and Add Button', () => {
             });
         });
     });
+
+    describe('Bookmark Edit Modal: Folder Selection Deselects Current Folder', () => {
+        const treeCode = readFileSync('src/ui/components/listGroup/BookmarkFolderTree.svelte', 'utf8');
+        const listGroupCss = readFileSync('src/ui/pages/listGroup/listGroup.css', 'utf8');
+
+        it('does not apply class:current-folder in BookmarkFolderTree.svelte', () => {
+            assert.doesNotMatch(
+                treeCode,
+                /class:current-folder/,
+                'BookmarkFolderTree must not apply class:current-folder to avoid lingering selection styles',
+            );
+        });
+
+        it('does not define .bookmark-folder-summary.current-folder in listGroup.css', () => {
+            assert.doesNotMatch(
+                listGroupCss,
+                /\.bookmark-folder-summary\.current-folder/,
+                'listGroup.css must not style current-folder with selection borders/colors',
+            );
+        });
+
+        it('simulates editing bookmark: initial current folder deselects cleanly when selecting a new folder', () => {
+            const dom = new JSDOM(`<!doctype html>
+            <div id="tree">
+                <div class="bookmark-folder-summary selected" data-folder-id="folder-1" role="treeitem" aria-selected="true">
+                    <span class="folder-name">Folder 1 (Current)</span>
+                </div>
+                <div class="bookmark-folder-summary" data-folder-id="folder-2" role="treeitem" aria-selected="false">
+                    <span class="folder-name">Folder 2 (Target)</span>
+                </div>
+            </div>`);
+            const { document } = dom.window;
+
+            let selectedFolderId = 'folder-1';
+            const folder1 = document.querySelector('[data-folder-id="folder-1"]');
+            const folder2 = document.querySelector('[data-folder-id="folder-2"]');
+
+            function updateSelection(newId) {
+                selectedFolderId = newId;
+                [folder1, folder2].forEach((el) => {
+                    const isSelected = el.dataset.folderId === selectedFolderId;
+                    el.classList.toggle('selected', isSelected);
+                    el.setAttribute('aria-selected', String(isSelected));
+                });
+            }
+
+            // Initially Folder 1 is selected
+            assert.ok(folder1.classList.contains('selected'), 'Folder 1 must initially be selected');
+            assert.equal(folder1.getAttribute('aria-selected'), 'true');
+            assert.ok(!folder2.classList.contains('selected'), 'Folder 2 must initially not be selected');
+            assert.equal(folder2.getAttribute('aria-selected'), 'false');
+            assert.ok(!folder1.classList.contains('current-folder'), 'Folder 1 must not have current-folder class');
+
+            // Select Folder 2
+            updateSelection('folder-2');
+
+            // Folder 1 MUST be deselected completely
+            assert.ok(!folder1.classList.contains('selected'), 'Folder 1 must be deselected when selecting Folder 2');
+            assert.equal(folder1.getAttribute('aria-selected'), 'false');
+            assert.ok(!folder1.classList.contains('current-folder'), 'Folder 1 must not have lingering current-folder');
+
+            // Folder 2 MUST be selected
+            assert.ok(folder2.classList.contains('selected'), 'Folder 2 must be selected');
+            assert.equal(folder2.getAttribute('aria-selected'), 'true');
+        });
+    });
 });

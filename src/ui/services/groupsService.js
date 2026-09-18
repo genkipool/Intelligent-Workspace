@@ -23,7 +23,7 @@ import { confirmAction } from '../stores/confirmStore.js';
 import { saveBackupToDb, deleteBackupFromDb } from '../../utils/db.js';
 
 import { colors, noteConfig, screenshotConfig, PAGE_MODES, STORAGE_KEYS } from './constants.js';
-import { getGroupInfoMap, animateAndRemove, linkedGroupIds } from './utils.js';
+import { getGroupInfoMap, animateAndRemove, linkedGroupIds, getDomainOrSubdomainUrl } from './utils.js';
 import { exportCookies, processCookieFile } from '../../utils/importExport.js';
 
 // Direct function imports (replacing fn.X())
@@ -472,23 +472,35 @@ export function handleRuleActionClick(e) {
 
         if (subGroup) {
             const tabs = subGroup.querySelectorAll('.tab-item');
-            urlsArray = Array.from(tabs).map((t) => t.dataset.url);
+            urlsArray = Array.from(tabs).map((t) => getDomainOrSubdomainUrl(t.dataset.url));
             ruleName = subGroup.querySelector('.domain-title').textContent.trim();
         } else if (groupItem) {
             const tabs = groupItem.querySelectorAll('.tab-item');
-            urlsArray = Array.from(tabs).map((t) => t.dataset.url);
+            urlsArray = Array.from(tabs).map((t) => getDomainOrSubdomainUrl(t.dataset.url));
             const titleEl = groupItem.querySelector('.group-title');
             ruleName = titleEl.dataset.baseName || titleEl.textContent.trim();
         } else if (bookmarkItem && !bookmarkItem.classList.contains('bookmark-folder')) {
             // Asked before the folder: a bookmark sits inside its folder's markup, so
             // checking the folder first named every single-bookmark rule after the
             // folder it happened to live in.
-            urlsArray = [bookmarkItem.querySelector('.bookmark-title').title.split('\n')[1] || ''];
+            urlsArray = [
+                getDomainOrSubdomainUrl(
+                    bookmarkItem.dataset?.url ||
+                        bookmarkItem.querySelector('.bookmark-title')?.title?.split('\n').pop() ||
+                        bookmarkItem.querySelector('.bookmark-title')?.title?.split('\n')[1] ||
+                        '',
+                ),
+            ];
             ruleName = bookmarkItem.querySelector('.bookmark-title').textContent.trim();
         } else if (bookmarkFolder) {
             const bookmarks = bookmarkFolder.querySelectorAll('.bookmark-title');
-            urlsArray = Array.from(bookmarks).map(
-                (b) => b.title.split('\n')[1] || b.closest('.bookmark-item').dataset.url || '',
+            urlsArray = Array.from(bookmarks).map((b) =>
+                getDomainOrSubdomainUrl(
+                    b.closest('.bookmark-item')?.dataset?.url ||
+                        b.title?.split('\n').pop() ||
+                        b.title?.split('\n')[1] ||
+                        '',
+                ),
             );
             ruleName = bookmarkFolder.querySelector('.folder-name').textContent.trim();
         }
@@ -504,10 +516,16 @@ export function handleRuleActionClick(e) {
             const encodedUrl = encodeURIComponent(uniqueUrls);
             const encodedName = encodeURIComponent(cleanRuleName);
 
-            const currentPage = window.location.pathname.split('/').pop();
-            chrome.storage.local.set({ navSource: `../listGroup/${currentPage}?view=${get(currentMainView)}` }, () => {
-                window.location.href = `../rules/rules.html?action=create&url=${encodedUrl}&name=${encodedName}&returnTo=listGroup`;
+            const currentPage = window.location.pathname.split('/').pop() || 'listGroup.html';
+            const currentSearch = window.location.search;
+            const isSidePanel = currentSearch.includes('context=sidepanel');
+            const sidepanelParam = isSidePanel ? '&context=sidepanel' : '';
+            const returnPath = `../listGroup/${currentPage}?view=${get(currentMainView)}${sidepanelParam}`;
+            chrome.storage.local.set({ navSource: returnPath }, () => {
+                window.location.href = `../rules/rules.html?action=create&url=${encodedUrl}&name=${encodedName}&returnTo=listGroup${sidepanelParam}`;
             });
+        } else {
+            showNotification('noUrlsToCopy', true);
         }
     }
     const addToRuleTarget = e.target.closest('.add-to-rule-btn');
@@ -525,36 +543,52 @@ export function handleRuleActionClick(e) {
         let title = '';
 
         if (tabItem) {
-            url = tabItem.dataset.url;
-            title = tabItem.querySelector('.tab-title').textContent;
+            url = getDomainOrSubdomainUrl(tabItem.dataset.url);
+            title = tabItem.querySelector('.tab-title')?.textContent?.trim() || '';
         } else if (subGroup) {
             const tabs = subGroup.querySelectorAll('.tab-item');
-            url = Array.from(tabs)
-                .map((t) => t.dataset.url)
-                .join('\n');
-            title = subGroup.querySelector('.domain-title').textContent;
+            const urls = Array.from(tabs)
+                .map((t) => getDomainOrSubdomainUrl(t.dataset.url))
+                .filter(Boolean);
+            url = [...new Set(urls)].join('\n');
+            title = subGroup.querySelector('.domain-title')?.textContent?.trim() || '';
         } else if (groupItem) {
             const tabs = groupItem.querySelectorAll('.tab-item');
-            url = Array.from(tabs)
-                .map((t) => t.dataset.url)
-                .join('\n');
-            title =
-                groupItem.querySelector('.group-title').dataset.baseName ||
-                groupItem.querySelector('.group-title').textContent;
+            const urls = Array.from(tabs)
+                .map((t) => getDomainOrSubdomainUrl(t.dataset.url))
+                .filter(Boolean);
+            url = [...new Set(urls)].join('\n');
+            const titleEl = groupItem.querySelector('.group-title');
+            title = titleEl?.dataset?.baseName || titleEl?.textContent?.trim() || '';
+        } else if (bookmarkItem && !bookmarkItem.classList.contains('bookmark-folder')) {
+            // Check bookmarkItem before bookmarkFolder so clicking add-to-rule on a bookmark inside a folder adds that bookmark, not the folder
+            url = getDomainOrSubdomainUrl(
+                bookmarkItem.dataset?.url ||
+                    bookmarkItem.querySelector('.bookmark-title')?.title?.split('\n').pop() ||
+                    bookmarkItem.querySelector('.bookmark-title')?.title?.split('\n')[1] ||
+                    '',
+            );
+            title = bookmarkItem.querySelector('.bookmark-title')?.textContent?.trim() || '';
         } else if (bookmarkFolder) {
             const bookmarks = bookmarkFolder.querySelectorAll('.bookmark-title');
-            url = Array.from(bookmarks)
-                .map((b) => b.title.split('\n')[1] || '')
-                .filter((u) => u !== '')
-                .join('\n');
-            title = bookmarkFolder.querySelector('.folder-name').textContent;
-        } else if (bookmarkItem && !bookmarkItem.classList.contains('bookmark-folder')) {
-            url = bookmarkItem.querySelector('.bookmark-title').title.split('\n')[1] || '';
-            title = bookmarkItem.querySelector('.bookmark-title').textContent;
+            const urls = Array.from(bookmarks)
+                .map((b) =>
+                    getDomainOrSubdomainUrl(
+                        b.closest('.bookmark-item')?.dataset?.url ||
+                            b.title?.split('\n').pop() ||
+                            b.title?.split('\n')[1] ||
+                            '',
+                    ),
+                )
+                .filter(Boolean);
+            url = [...new Set(urls)].join('\n');
+            title = bookmarkFolder.querySelector('.folder-name')?.textContent?.trim() || '';
         }
 
         if (url) {
             showAddToRuleModal(url, title);
+        } else {
+            showNotification('noUrlsToCopy', true);
         }
     }
 }

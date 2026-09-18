@@ -1,7 +1,30 @@
 import { confirmAction } from '../stores/confirmStore.js';
 import { get } from 'svelte/store';
-import { prefetchCache, isPopupWindow } from '../stores/appStore.svelte.js';
+import { prefetchCache, isPopupWindow, currentMainView } from '../stores/appStore.svelte.js';
 import { prefetchUrl } from '../services/prefetchService.js';
+import { getDomainOrSubdomainUrl } from '../services/utils.js';
+
+function navigateToCreateRule(urls, ruleName) {
+    const uniqueUrls = [...new Set(urls.map((u) => getDomainOrSubdomainUrl(u)).filter(Boolean))].join('\n');
+    const cleanRuleName = (ruleName || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
+
+    if (uniqueUrls.length > 0) {
+        const encodedUrl = encodeURIComponent(uniqueUrls);
+        const encodedName = encodeURIComponent(cleanRuleName);
+        const currentPage = window.location.pathname.split('/').pop() || 'listGroup.html';
+        const currentSearch = window.location.search || '';
+        const isSidePanel = currentSearch.includes('context=sidepanel');
+        const sidepanelParam = isSidePanel ? '&context=sidepanel' : '';
+        const activeView = typeof currentMainView !== 'undefined' && get(currentMainView);
+        const view = activeView && activeView !== 'groups' ? activeView : 'bookmarks';
+        const returnPath = `../listGroup/${currentPage}?view=${view}${sidepanelParam}`;
+        chrome.storage.local.set({ navSource: returnPath }, () => {
+            window.location.href = `../rules/rules.html?action=create&url=${encodedUrl}&name=${encodedName}&returnTo=listGroup${sidepanelParam}`;
+        });
+        return true;
+    }
+    return false;
+}
 
 function attachDragAndDropEvents(el, node, isFolder) {
     const isRootFolder = isFolder && ['0', '1', '2', '3'].includes(node.id);
@@ -200,6 +223,7 @@ function showInlineCreateFolderInput(parentId, folderEl) {
 function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
     const bookmarkEl = itemTemplate.content.cloneNode(true).firstElementChild;
     bookmarkEl.dataset.bookmarkId = bookmark.id;
+    bookmarkEl.dataset.url = bookmark.url;
 
     const favicon = bookmarkEl.querySelector('.favicon');
     // Lazy, and set before `src`: the view builds every bookmark at once, and eager
@@ -249,13 +273,40 @@ function createBookmarkElement(bookmark, itemTemplate, duplicateUrlSet, utils) {
             });
         });
 
+        // Create rule
+        const createRuleBtn = actionsContainer.querySelector('.create-rule-btn');
+        if (createRuleBtn) {
+            createRuleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const domainUrl = getDomainOrSubdomainUrl(bookmark.url);
+                if (domainUrl) {
+                    navigateToCreateRule([domainUrl], bookmark.title);
+                } else if (utils && utils.showNotification) {
+                    utils.showNotification('noUrlsToCopy', true);
+                }
+            });
+        }
+
         // Add to rule
-        actionsContainer.querySelector('.add-to-rule-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (utils && utils.showAddToRuleModal) {
-                utils.showAddToRuleModal(bookmark.url, bookmark.title);
-            }
-        });
+        const addToRuleBtn = actionsContainer.querySelector('.add-to-rule-btn');
+        if (addToRuleBtn) {
+            addToRuleBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const domainUrl = getDomainOrSubdomainUrl(bookmark.url);
+                if (domainUrl) {
+                    if (utils && utils.showAddToRuleModal) {
+                        utils.showAddToRuleModal(domainUrl, bookmark.title);
+                    } else {
+                        const { showAddToRuleModal } = await import('../services/bookmarksService.js');
+                        showAddToRuleModal(domainUrl, bookmark.title);
+                    }
+                } else if (utils && utils.showNotification) {
+                    utils.showNotification('noUrlsToCopy', true);
+                }
+            });
+        }
 
         // Edit Bookmark
         actionsContainer.querySelector('.edit-btn').addEventListener('click', (e) => {
@@ -656,6 +707,76 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                         utils.exportBookmarkFolder(node, utils);
                     }
                 });
+            }
+
+            const createRuleBtn = folderEl.querySelector('.create-rule-btn');
+            if (createRuleBtn) {
+                createRuleBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const urlsToProcess = collectUrlsInternal(node);
+                    const domainUrls = [
+                        ...new Set(urlsToProcess.map((u) => getDomainOrSubdomainUrl(u)).filter(Boolean)),
+                    ];
+
+                    if (domainUrls.length > 0) {
+                        navigateToCreateRule(domainUrls, displayTitle);
+                    } else {
+                        if (utils && utils.showNotification) {
+                            utils.showNotification('noUrlsToCopy', true);
+                        }
+                    }
+                });
+            }
+
+            const addToRuleBtn = folderEl.querySelector('.add-to-rule-btn');
+            if (addToRuleBtn) {
+                addToRuleBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const urlsToProcess = collectUrlsInternal(node);
+                    const domainUrls = [
+                        ...new Set(urlsToProcess.map((u) => getDomainOrSubdomainUrl(u)).filter(Boolean)),
+                    ];
+
+                    if (domainUrls.length > 0) {
+                        const cleanTitle = (displayTitle || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
+                        if (utils && utils.showAddToRuleModal) {
+                            utils.showAddToRuleModal(domainUrls.join('\n'), cleanTitle);
+                        } else {
+                            const { showAddToRuleModal } = await import('../services/bookmarksService.js');
+                            showAddToRuleModal(domainUrls.join('\n'), cleanTitle);
+                        }
+                    } else {
+                        if (utils && utils.showNotification) {
+                            utils.showNotification('noUrlsToCopy', true);
+                        }
+                    }
+                });
+            }
+
+            folderEl.dataset.totalBookmarks = String(totalBookmarks);
+            const isEmptyFolder = totalBookmarks === 0;
+            if (isEmptyFolder) {
+                folderEl.classList.add('is-empty');
+                if (createRuleBtn) {
+                    createRuleBtn.classList.add('hidden');
+                    createRuleBtn.style.display = 'none';
+                }
+                if (addToRuleBtn) {
+                    addToRuleBtn.classList.add('hidden');
+                    addToRuleBtn.style.display = 'none';
+                }
+                if (exportFolderBtn) {
+                    exportFolderBtn.classList.add('hidden');
+                    exportFolderBtn.style.display = 'none';
+                }
+                if (openAllBtn) {
+                    openAllBtn.classList.add('hidden');
+                    openAllBtn.style.display = 'none';
+                }
             }
 
             if (utils && utils.createOverflowMenu) {

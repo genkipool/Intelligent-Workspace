@@ -2593,6 +2593,12 @@ function openCreateRuleModalForUrl(pageUrl, windowId, isFullUrl = false) {
 
 function openAddToRuleModalForUrl(pageUrl, baseTitle, windowId) {
     const listGroupPath = 'src/ui/pages/listGroup/listGroup.html';
+    let targetUrl = pageUrl;
+    try {
+        targetUrl = new URL(pageUrl).origin;
+    } catch {
+        console.warn('Could not parse origin from URL:', pageUrl);
+    }
 
     chrome.sidePanel.setOptions({ path: listGroupPath, enabled: true });
     chrome.sidePanel.open({ windowId: windowId });
@@ -2601,7 +2607,7 @@ function openAddToRuleModalForUrl(pageUrl, baseTitle, windowId) {
     setTimeout(() => {
         chrome.runtime.sendMessage({
             action: 'open-add-to-rule-modal-shortcut',
-            url: pageUrl,
+            url: targetUrl,
             title: baseTitle || '',
         });
     }, 500);

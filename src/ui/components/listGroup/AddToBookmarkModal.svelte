@@ -225,8 +225,6 @@
                     {folderTree}
                     {isLoading}
                     bind:selectedFolderId
-                    {mode}
-                    {bookmarkData}
                     onSelectFolder={(id) => (selectedFolderId = id)}
                     onCreateFolder={handleCreateFolder}
                     onRenameFolder={handleRenameFolder}

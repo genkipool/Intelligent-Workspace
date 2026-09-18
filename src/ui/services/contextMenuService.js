@@ -274,7 +274,16 @@ export async function showContextMenu(event, contextElement) {
 
     if (actionsContainer) {
         actionsContainer.querySelectorAll('.action-btn').forEach((originalButton) => {
-            if (originalButton.classList.contains('hidden')) return;
+            if (originalButton.classList.contains('hidden') || originalButton.style.display === 'none') return;
+
+            const isRestrictedEmptyFolderAction =
+                originalButton.classList.contains('create-rule-btn') ||
+                originalButton.classList.contains('add-to-rule-btn') ||
+                originalButton.classList.contains('export-folder-btn') ||
+                originalButton.classList.contains('open-all-btn');
+            const isEmptyFolder =
+                contextElement.classList.contains('is-empty') || contextElement.dataset.totalBookmarks === '0';
+            if (isEmptyFolder && isRestrictedEmptyFolderAction) return;
 
             if (originalButton.classList.contains('overflow-btn')) return;
 
@@ -783,11 +792,21 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
 
         const isHiddenInSettings = visSettings[actionKey] === false;
 
-        if (isHiddenInSettings && !originalBtn.classList.contains('hidden')) {
+        if (isHiddenInSettings && !originalBtn.classList.contains('hidden') && originalBtn.style.display !== 'none') {
             const isRootFolder = ['1', '2', '3'].includes(contextElement.dataset.folderId);
             const isRestrictedAction = actionKey === 'b-edit' || actionKey === 'b-delete-folder';
 
             if (isRootFolder && isRestrictedAction) return;
+
+            const isEmptyFolder =
+                contextElement.classList.contains('is-empty') || contextElement.dataset.totalBookmarks === '0';
+            const isRestrictedEmptyFolderAction =
+                actionKey === 'b-rules' ||
+                actionKey === 'b-add-to-rule' ||
+                actionKey === 'b-export' ||
+                actionKey === 'b-open-all-bookmarks';
+
+            if (isEmptyFolder && isRestrictedEmptyFolderAction) return;
 
             const btnSelector = actionGroups[actionKey].classes.map((cls) => `.${cls}`).join(', ');
             const templateBtn = actionTemplate.content.querySelector(btnSelector);
@@ -795,7 +814,13 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
             if (templateBtn) {
                 const popupItem = itemTemplate.content.cloneNode(true).firstElementChild;
                 popupItem.querySelector('.overflow-item-icon').innerHTML = templateBtn.innerHTML;
-                popupItem.querySelector('.overflow-item-text').textContent = originalBtn.title;
+                popupItem.querySelector('.overflow-item-text').textContent =
+                    originalBtn.title ||
+                    originalBtn.getAttribute('title') ||
+                    (originalBtn.getAttribute('data-i18n-title')
+                        ? chrome.i18n.getMessage(originalBtn.getAttribute('data-i18n-title'))
+                        : '') ||
+                    '';
 
                 popupItem.addEventListener('click', (e) => {
                     e.stopPropagation();
