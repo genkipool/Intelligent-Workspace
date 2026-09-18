@@ -4735,7 +4735,11 @@ IMPORTANT RULES:
                     }
                     // The floating player belongs to the page — it pauses the page's
                     // video and carries its time over — so the page opens it.
-                    if (!isVideoSite && this.page.documentPip) {
+                    if (
+                        !isVideoSite &&
+                        (typeof isUnframablePipHost !== 'function' || !isUnframablePipHost(url)) &&
+                        this.page.documentPip
+                    ) {
                         if (await this.page.openDocumentPip(url)) {
                             this.close();
                             return;

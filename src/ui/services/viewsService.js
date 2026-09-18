@@ -13,7 +13,7 @@ import { extractYouTubeVideoId, createYouTubeEmbed } from '../../utils/youtubeEm
 
 import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
-import { linkifyHtml } from './utils.js';
+import { linkifyHtml, isUnframablePipHost } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
 import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
 import { SITE_DOCUMENT_TITLES, siteUrl } from '../../config/site.js';
@@ -1245,6 +1245,11 @@ export function handleIframeMessage(event) {
 }
 
 export async function openUrlInPip(url, defaultWidth = 450, defaultHeight = 600, tabId = null, windowId = null) {
+    if (isUnframablePipHost(url)) {
+        openUrlInPopup(url, defaultWidth, defaultHeight);
+        return true;
+    }
+
     if (tabId && windowId && !isNaN(tabId) && !isNaN(windowId)) {
         let originalWindowId = null;
         let originalTabId = null;

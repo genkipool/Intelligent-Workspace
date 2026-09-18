@@ -474,6 +474,12 @@ const NEVER_STRIP_FRAMING_HOSTS = [
     // feature, and listing the parent domain here would silently kill it.
     'pay.google.com',
     'payments.google.com',
+    // Telegram Web explicitly disallows framing (X-Frame-Options: DENY, CSP frame-ancestors: 'none')
+    // and requires first-party storage, Service Workers, and COOP/COEP isolation for MTProto WebAssembly crypto.
+    // Preserves Telegram security and complies with Chrome Web Store policies against circumventing security controls.
+    'web.telegram.org',
+    'telegram.org',
+    't.me',
 ];
 
 function isPaymentHost(hostname) {

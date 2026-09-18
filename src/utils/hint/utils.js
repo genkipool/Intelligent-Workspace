@@ -794,3 +794,26 @@ function _omniSanitizeHtml(html) {
         return html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 }
+
+var UNFRAMABLE_PIP_HOSTS = [
+    'web.telegram.org',
+    'telegram.org',
+    't.me',
+    'genkipool.com',
+    'stripe.com',
+    'stripe.network',
+    'paypal.com',
+    'paypalobjects.com',
+    'pay.google.com',
+    'payments.google.com',
+];
+
+function isUnframablePipHost(urlStr) {
+    if (!urlStr || typeof urlStr !== 'string') return false;
+    try {
+        const hostname = new URL(urlStr).hostname.toLowerCase();
+        return UNFRAMABLE_PIP_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
+    } catch {
+        return false;
+    }
+}

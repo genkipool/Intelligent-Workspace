@@ -390,6 +390,9 @@ var OmniBarHost = class OmniBarHost {
      *   the worker for its own floating window instead.
      */
     async _openDocumentPip(url) {
+        if (isUnframablePipHost(url)) {
+            return false;
+        }
         let targetUrl = url;
         let pipWindow;
         try {

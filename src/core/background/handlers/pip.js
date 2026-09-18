@@ -225,9 +225,34 @@ async function restoreOriginalFocus(originalWindowId, originalTabId, delayMs = 2
 
 // --- Page PiP Handler ---
 
+const UNFRAMABLE_PIP_HOSTS = [
+    'web.telegram.org',
+    'telegram.org',
+    't.me',
+    'genkipool.com',
+    'stripe.com',
+    'stripe.network',
+    'paypal.com',
+    'paypalobjects.com',
+    'pay.google.com',
+    'payments.google.com',
+];
+
+function isUnframablePipHost(urlStr) {
+    if (!urlStr || typeof urlStr !== 'string') return false;
+    try {
+        const hostname = new URL(urlStr).hostname.toLowerCase();
+        return UNFRAMABLE_PIP_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`));
+    } catch {
+        return false;
+    }
+}
+
 /**
  * Opens a page in a Document PiP window (wp: command).
  * The injected script creates an iframe with the page URL inside the PiP window.
+ * For hosts that prohibit framing (e.g. Telegram Web), smoothly routes to a
+ * standalone floating popup window ensuring 100% functionality and Chrome Web Store compliance.
  */
 async function handleOpenPipWindow(message, sender, sendResponse) {
     const {
@@ -242,13 +267,49 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
     const originalWindowId = msgWinId || sender?.tab?.windowId;
     const originalTabId = msgTabId || sender?.tab?.id;
 
-    const isVideoSite = url && (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('tiktok.com'));
+    let targetUrl = url;
+    if (!targetUrl && (originalTabId || tabId)) {
+        try {
+            const tab = await chrome.tabs.get(originalTabId || tabId);
+            targetUrl = tab?.url;
+        } catch {}
+    }
+
+    if (isUnframablePipHost(targetUrl)) {
+        try {
+            const targetWinId = originalWindowId || windowId;
+            const win = targetWinId ? await chrome.windows.get(targetWinId).catch(() => null) : null;
+            const left =
+                win && typeof win.left === 'number' ? Math.round(win.left + (win.width - width) / 2) : undefined;
+            const top =
+                win && typeof win.top === 'number' ? Math.round(win.top + (win.height - height) / 2) : undefined;
+            await chrome.windows.create({
+                url: targetUrl,
+                type: 'popup',
+                width,
+                height,
+                left,
+                top,
+                focused: true,
+            });
+            sendResponse({ success: true, openedAsPopup: true });
+            return;
+        } catch (popupErr) {
+            logMessage('Failed to open popup fallback for unframable host: ' + popupErr.message);
+            sendResponse({ success: false, error: popupErr.message });
+            return;
+        }
+    }
+
+    const isVideoSite =
+        targetUrl &&
+        (targetUrl.includes('youtube.com') || targetUrl.includes('youtu.be') || targetUrl.includes('tiktok.com'));
     if (isVideoSite && tabId && windowId) {
         return handleOpenVideoPipWindow(
             {
                 tabId,
                 windowId,
-                url,
+                url: targetUrl,
                 originalTabId,
                 originalWindowId,
             },
@@ -400,8 +461,8 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
             },
         });
 
-        await waitForPipOrTimeout(pipOpenedPromise);
-        sendResponse({ success: true });
+        const pipStarted = await waitForPipOrTimeout(pipOpenedPromise);
+        sendResponse({ success: Boolean(pipStarted) });
     } catch (e) {
         logMessage('Execution in target tab failed: ' + e.message);
         sendResponse({ success: false });
