@@ -2256,16 +2256,50 @@ function itgDeepElementFromPoint(x, y) {
     return node;
 }
 
-/** The video under the pointer, whether the cursor is on it or on its wrapper. */
+/** The video under the pointer, whether the cursor is on it or on its wrapper/overlay. */
 function itgVideoFromPoint(x, y) {
+    const isPointInside = (el) => {
+        if (!el || typeof el.getBoundingClientRect !== 'function') return false;
+        const rect = el.getBoundingClientRect();
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    };
+
+    // 1. Direct hit or deep shadow root hit
     const node = itgDeepElementFromPoint(x, y);
-    if (!node) return null;
-    if (node.tagName === 'VIDEO') return node;
-    const inside = node.querySelector?.('video');
-    if (inside) return inside;
-    // Overlays sit on top of the player, so look outwards too.
-    const container = node.closest?.('*:has(> video)');
-    return container?.querySelector('video') ?? null;
+    if (node && node.tagName === 'VIDEO' && isPointInside(node)) return node;
+
+    // 2. Check elements stack at point (handles transparent overlays, custom controls, etc.)
+    if (typeof document.elementsFromPoint === 'function') {
+        const elements = document.elementsFromPoint(x, y);
+        for (const el of elements) {
+            if (el.tagName === 'VIDEO' && isPointInside(el)) return el;
+            if (el.shadowRoot && typeof el.shadowRoot.elementsFromPoint === 'function') {
+                const shadowElements = el.shadowRoot.elementsFromPoint(x, y);
+                for (const sel of shadowElements) {
+                    if (sel.tagName === 'VIDEO' && isPointInside(sel)) return sel;
+                }
+            }
+        }
+    }
+
+    // 3. Overlays / player wrappers: if node or its container has video elements,
+    // find the video whose bounding box actually contains (x, y)
+    if (node) {
+        const candidate = node.querySelector?.('video');
+        if (candidate && candidate.tagName === 'VIDEO' && isPointInside(candidate)) {
+            return candidate;
+        }
+
+        const container = node.closest?.('*:has(video)');
+        if (container) {
+            const videos = container.querySelectorAll('video');
+            for (const v of videos) {
+                if (isPointInside(v)) return v;
+            }
+        }
+    }
+
+    return null;
 }
 
 // --- Site adapters -----------------------------------------------------------

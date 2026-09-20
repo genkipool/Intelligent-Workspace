@@ -1770,9 +1770,13 @@ var Main = class Main {
         let button = null;
         let hoveredVideo = null;
         let hideTimer = null;
+        let rafId = null;
+        let pendingPoint = null;
 
         const ensureButton = () => {
             if (button && button.isConnected) return button;
+            button = document.getElementById('itg-generic-pip-button');
+            if (button) return button;
             button = document.createElement('button');
             button.type = 'button';
             button.id = 'itg-generic-pip-button';
@@ -1802,10 +1806,17 @@ var Main = class Main {
                 button.style.transform = 'scale(1.08)';
                 clearTimeout(hideTimer);
             });
-            button.addEventListener('mouseleave', () => {
+            button.addEventListener('mouseleave', (e) => {
                 button.style.opacity = '0.85';
                 button.style.transform = 'scale(1)';
-                scheduleHide();
+                const menu = document.getElementById('itg-autopip-menu');
+                if (menu && (menu === e.relatedTarget || menu.contains(e.relatedTarget))) {
+                    return;
+                }
+                if (hoveredVideo && (hoveredVideo === e.relatedTarget || hoveredVideo.contains(e.relatedTarget))) {
+                    return;
+                }
+                scheduleHide(150);
             });
             button.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1820,13 +1831,32 @@ var Main = class Main {
         };
 
         const hide = () => {
+            clearTimeout(hideTimer);
             if (button) button.style.display = 'none';
             hoveredVideo = null;
         };
 
-        const scheduleHide = () => {
+        const scheduleHide = (delay = 150) => {
             clearTimeout(hideTimer);
-            hideTimer = setTimeout(hide, 1200);
+            hideTimer = setTimeout(hide, delay);
+        };
+
+        const updatePosition = (video) => {
+            if (!button || !video || !video.isConnected) return;
+            const rect = video.getBoundingClientRect();
+            if (
+                rect.bottom < 0 ||
+                rect.top > window.innerHeight ||
+                rect.right < 0 ||
+                rect.left > window.innerWidth ||
+                rect.width < 200 ||
+                rect.height < 140
+            ) {
+                hide();
+                return;
+            }
+            button.style.top = `${Math.max(8, rect.top + 10)}px`;
+            button.style.left = `${Math.min(window.innerWidth - 44, rect.right - 46)}px`;
         };
 
         const showFor = (video) => {
@@ -1839,18 +1869,76 @@ var Main = class Main {
             el.style.top = `${Math.max(8, rect.top + 10)}px`;
             el.style.left = `${Math.min(window.innerWidth - 44, rect.right - 46)}px`;
             clearTimeout(hideTimer);
-            scheduleHide();
         };
 
-        const onMove = Utils.debounce((e) => {
+        const handlePointer = (clientX, clientY, target) => {
             if (ItgVideoPip.current || itgIsInsidePipWindow()) return hide();
-            const video = itgVideoFromPoint(e.clientX, e.clientY);
-            if (video && itgIsUsableVideo(video)) showFor(video);
-        }, 180);
+
+            // 1. Pointer is over the PiP button itself
+            if (button && (button === target || button.contains(target))) {
+                clearTimeout(hideTimer);
+                return;
+            }
+
+            // 2. Pointer is over the auto-pip menu
+            const menu = document.getElementById('itg-autopip-menu');
+            if (menu && (menu === target || menu.contains(target))) {
+                clearTimeout(hideTimer);
+                return;
+            }
+
+            // 3. Pointer is over a usable video
+            const video = itgVideoFromPoint(clientX, clientY);
+            if (video && itgIsUsableVideo(video)) {
+                clearTimeout(hideTimer);
+                showFor(video);
+            } else {
+                scheduleHide(150);
+            }
+        };
+
+        const onMove = (e) => {
+            pendingPoint = { x: e.clientX, y: e.clientY, target: e.target };
+            if (rafId) return;
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                if (!pendingPoint) return;
+                handlePointer(pendingPoint.x, pendingPoint.y, pendingPoint.target);
+                pendingPoint = null;
+            });
+        };
+
+        const onScrollOrResize = () => {
+            if (!hoveredVideo || !button || button.style.display === 'none') return;
+            updatePosition(hoveredVideo);
+        };
+
+        const onMouseLeaveDoc = (e) => {
+            if (!e.relatedTarget && !e.toElement) {
+                scheduleHide(100);
+            }
+        };
+
+        const onVisibilityChange = () => {
+            if (document.hidden) hide();
+        };
 
         window.addEventListener('mousemove', onMove, { passive: true });
+        window.addEventListener('scroll', onScrollOrResize, { capture: true, passive: true });
+        window.addEventListener('resize', onScrollOrResize, { passive: true });
+        document.documentElement.addEventListener('mouseleave', onMouseLeaveDoc);
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
         this._genericPipCleanup = () => {
             window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('scroll', onScrollOrResize, { capture: true });
+            window.removeEventListener('resize', onScrollOrResize);
+            document.documentElement.removeEventListener('mouseleave', onMouseLeaveDoc);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
             clearTimeout(hideTimer);
             button?.remove();
         };
