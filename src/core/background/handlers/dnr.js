@@ -674,9 +674,29 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
  * float as a tab, a caller that ever sends the message first — this returns null and
  * the caller installs the rules the way it always did. A float that still works with a
  * wider rule is a better failure than a float that shows a blank rectangle.
+ *
+ * NEVER THE SENDER'S TAB. The tab that asks is the web page the float was opened from,
+ * and the page chose the URL: a link it put under the reader's pointer is enough. The
+ * float's own requests carry the float's tab id, not the opener's (measured), so the
+ * opener gains nothing from being in the rule except the power to frame that site
+ * itself with its framing headers gone and its cookies replayed. It used to be added
+ * alongside the float's tab, and measured in a real browser a page that refuses to be
+ * framed (`X-Frame-Options: DENY`, `frame-ancestors 'none'`) then rendered inside the
+ * requesting page. The fallback keeps it out too, with `excludedTabIds`.
  */
-async function findPipTabId(senderTabId) {
+async function findPipTabId(senderTabId, { attempts = 6, delayMs = 150 } = {}) {
     if (typeof senderTabId !== 'number') return null;
+    // The float's tab can reach `chrome.tabs` a beat after `requestWindow()` resolves;
+    // a short wait is cheaper than falling back to the wider rule.
+    for (let i = 0; i < attempts; i++) {
+        const found = await findPipTabIdOnce(senderTabId);
+        if (found !== null) return found;
+        if (i < attempts - 1) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return null;
+}
+
+async function findPipTabIdOnce(senderTabId) {
     try {
         const sender = await chrome.tabs.get(senderTabId);
         const tabs = await chrome.tabs.query({});
@@ -811,16 +831,13 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
          * browser while the window is open. `null` keeps the old, domain-only shape.
          */
         const pipTabId = await findPipTabId(senderTabId);
-        const pipTabIds = [];
-        if (pipTabId !== null) pipTabIds.push(pipTabId);
-        if (typeof senderTabId === 'number' && !pipTabIds.includes(senderTabId)) {
-            pipTabIds.push(senderTabId);
-        }
-        const onlyPipTab = pipTabIds.length > 0 ? { tabIds: pipTabIds } : {};
+        let onlyPipTab = {};
+        if (pipTabId !== null) onlyPipTab = { tabIds: [pipTabId] };
+        else if (typeof senderTabId === 'number') onlyPipTab = { excludedTabIds: [senderTabId] };
         logMessage(
-            pipTabIds.length === 0
-                ? '[DNR] PiP tab not identified; rules stay scoped to the domain alone'
-                : `[DNR] PiP rules scoped to tab(s) ${pipTabIds.join(', ')}`,
+            pipTabId === null
+                ? '[DNR] PiP tab not identified; rules scoped to the domain, minus the requesting tab'
+                : `[DNR] PiP rules scoped to tab ${pipTabId}`,
         );
 
         const isX =

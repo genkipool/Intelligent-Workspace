@@ -1,0 +1,3 @@
+overrides:
+    # @crxjs/vite-plugin pins rollup 2.79.2 exactly (GHSA-mw96-cpmx-2vgc); 2.80.0 is the patch release of the same line.
+    'rollup@<2.80.0': '^2.80.0'

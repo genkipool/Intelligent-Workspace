@@ -5,6 +5,8 @@
     import TimeField from '../common/TimeField.svelte';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import ImportPanel from '../common/ImportPanel.svelte';
+    import { showNotification } from '../../../utils/i18n.js';
+    import { tick } from 'svelte';
 
     /** @type {{ show: boolean, cookies: Array<{name: string, value: string, domain: string, path: string, expirationDate?: number, httpOnly: boolean, secure: boolean, sameSite: string}>, onClose: () => void, onSave: (cookies: Array) => void, onImport: () => void, onExport: () => void }} */
     let { show, cookies, onClose, onSave, onImport, onExport } = $props();
@@ -23,7 +25,10 @@
 
     function cleanCookie(cookie) {
         const copy = { ...cookie };
+        // A name typed for a new cookie is sent without stray spaces around it.
+        if (copy._isNew) copy.name = copy.name.trim();
         delete copy._uid;
+        delete copy._isNew;
         return copy;
     }
 
@@ -45,24 +50,32 @@
         return workingCookies.filter((c) => c.name.toLowerCase().includes(q));
     });
 
-    // Complete and ready; what it is still waiting for is the "+" control in the
-    // modal that calls it. Kept deliberately rather than deleted — see the note in
-    // the project memory about the unfinished pieces.
-    // eslint-disable-next-line no-unused-vars
-    function addCookie() {
-        workingCookies = [
-            ...workingCookies,
-            withCookieUid({
-                name: '',
-                value: '',
-                domain: '',
-                path: '/',
-                expirationDate: undefined,
-                httpOnly: false,
-                secure: false,
-                sameSite: 'lax',
-            }),
-        ];
+    /**
+     * A blank cookie at the end of the list, created in the browser on save.
+     *
+     * Only a new cookie gets a name field: the name is part of what identifies a
+     * cookie, so renaming an existing one would really be deleting it and making
+     * another. The domain starts empty, which the worker turns into a host-only cookie
+     * for the tab's own host — what a site setting it itself would get.
+     */
+    async function addCookie() {
+        searchQuery = '';
+        const cookie = withCookieUid({
+            name: '',
+            value: '',
+            domain: '',
+            path: '/',
+            expirationDate: undefined,
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax',
+            _isNew: true,
+        });
+        workingCookies = [...workingCookies, cookie];
+        await tick();
+        const input = document.querySelector(`.cookie-entry-card[data-cookie-uid="${cookie._uid}"] .cookie-name-input`);
+        input?.scrollIntoView({ block: 'nearest' });
+        input?.focus();
     }
 
     function deleteCookie(index) {
@@ -79,6 +92,12 @@
     }
 
     function handleSave() {
+        const unnamed = workingCookies.find((c) => c._isNew && !c.name.trim());
+        if (unnamed) {
+            showNotification('cookieNameRequired', true);
+            document.querySelector(`.cookie-entry-card[data-cookie-uid="${unnamed._uid}"] .cookie-name-input`)?.focus();
+            return;
+        }
         onSave(workingCookies.map(cleanCookie));
     }
 
@@ -204,6 +223,13 @@
                 </div>
                 <div class="modal-body cookie-editor-body">
                     <div class="cookie-modal-actions-header">
+                        <button
+                            type="button"
+                            id="add-cookie-btn"
+                            class="modal-btn-action"
+                            title={$tt('addCookie')}
+                            onclick={addCookie}>{$t('addCookie')}</button
+                        >
                         <button type="button" id="export-cookies-btn" class="modal-btn-action" onclick={handleExport}
                             >{$t('export')}</button
                         >
@@ -232,9 +258,17 @@
                     {:else}
                         <div class="cookie-entries">
                             {#each filteredCookies as cookie, i (cookie._uid ?? i)}
-                                <details class="cookie-entry-card header-with-controls" open>
+                                <details
+                                    class="cookie-entry-card header-with-controls"
+                                    data-cookie-uid={cookie._uid}
+                                    open
+                                >
                                     <summary>
-                                        <span class="header-main cookie-name">{cookie.name}</span>
+                                        <span class="header-main cookie-name"
+                                            >{cookie._isNew && !cookie.name.trim()
+                                                ? $t('newCookie')
+                                                : cookie.name}</span
+                                        >
                                     </summary>
                                     <!-- Controls follow the <summary> rather than sit in it: see header-with-controls. -->
                                     <button
@@ -248,6 +282,24 @@
                                         }}>&times;</button
                                     >
                                     <div class="cookie-form-grid">
+                                        {#if cookie._isNew}
+                                            <div class="form-group full-width">
+                                                <div class="field-label">{$t('cookieName')}</div>
+                                                <input
+                                                    type="text"
+                                                    class="cookie-name-input"
+                                                    spellcheck="false"
+                                                    autocomplete="off"
+                                                    value={cookie.name}
+                                                    oninput={(e) =>
+                                                        updateCookie(
+                                                            workingCookies.indexOf(cookie),
+                                                            'name',
+                                                            e.target.value,
+                                                        )}
+                                                />
+                                            </div>
+                                        {/if}
                                         <div class="form-group full-width">
                                             <div class="field-label">{$t('cookieValue')}</div>
                                             <textarea
@@ -267,6 +319,7 @@
                                             <input
                                                 type="text"
                                                 class="cookie-domain"
+                                                placeholder={cookie._isNew ? $t('cookieDomainHostOnly') : ''}
                                                 value={cookie.domain}
                                                 oninput={(e) =>
                                                     updateCookie(

@@ -17,7 +17,6 @@ import {
     currentCombinedIndex,
 } from '../stores/geminiStore.js';
 import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
-import '../../lib/marked.js';
 import { applyTranslations, showNotification, msg as localizedMsg } from '../../utils/i18n.js';
 import { getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
 import { STORAGE_KEYS } from './constants.js';

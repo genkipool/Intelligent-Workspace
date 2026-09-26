@@ -15,110 +15,39 @@ try {
       console.log('✅ Removed "type": "module" from manifest.json');
     }
 
-    // 2. Inject original content_scripts back
-    manifest.content_scripts = [
-      {
-        "matches": ["<all_urls>"],
-        "css": ["src/styles/prevent_flash.css"],
-        "js": ["src/utils/globalFullscreenObserver.js"],
-        "run_at": "document_start",
-        "all_frames": false
-      },
-      {
-        "matches": ["<all_urls>"],
-        "js": ["src/utils/iframeSearch.js"],
-        "all_frames": false,
-        "run_at": "document_idle"
-      },
-      {
-        // Every frame, because the one it is there for is the web page framed inside
-        // the side panel; it stops at its first line everywhere else.
-        "matches": ["<all_urls>"],
-        "js": ["src/utils/panelScrollbar.js"],
-        "all_frames": true,
-        "run_at": "document_start"
-      },
-      {
-        // Main world, so it can replace HTMLVideoElement.prototype.requestPictureInPicture
-        // and hand a site's own picture-in-picture button to our floating player.
-        "matches": ["<all_urls>"],
-        "js": ["src/utils/hint/videoPipHook.js"],
-        "all_frames": false,
-        "run_at": "document_start",
-        "world": "MAIN"
-      },
-      {
-        // Main world as well: YouTube's hover-preview player exposes mute/unMute/setVolume
-        // as page properties on the element, and the Shorts feed is a property on
-        // `ytd-shorts` -- neither of which the isolated world can see.
-        "matches": ["*://*.youtube.com/*"],
-        "js": ["src/utils/hint/youtubePreviewAudioHook.js", "src/utils/hint/youtubeShortsFeedHook.js"],
-        "all_frames": false,
-        "run_at": "document_start",
-        "world": "MAIN"
-      },
-      {
-        // Main world too: the right-click unblocker has to reach preventDefault,
-        // the on* handler properties and Selection from the page's own context.
-        "matches": ["<all_urls>"],
-        "js": ["src/utils/allowRightClickHook.js"],
-        "all_frames": true,
-        "match_about_blank": true,
-        "run_at": "document_start",
-        "world": "MAIN"
-      },
-      {
-        "matches": ["<all_urls>"],
-        "js": ["src/utils/allowRightClick.js"],
-        "all_frames": true,
-        "match_about_blank": true,
-        "run_at": "document_start"
-      },
-      {
-        "matches": ["<all_urls>"],
-        "js": [
-          "src/utils/languages.js",
-          "src/utils/hint_common.js",
-          "src/utils/hint/utils.js",
-          "src/utils/hint/videoPipUi.js",
-          "src/utils/hint/videoPip.js",
-          "src/utils/hint/ui.js",
-          "src/utils/hint/snippets.js",
-          "src/utils/hint/omnibar-host.js",
-          "src/utils/hint/engine.js",
-          "src/utils/hint/preview.js",
-          "src/utils/hint/registry.js",
-          "src/utils/hint/main.js"
-        ],
-        "all_frames": true,
-        "match_about_blank": true,
-        "run_at": "document_idle"
-      }
-    ];
+    /*
+     * 2. Put the content scripts back exactly as the source manifest.json declares them.
+     *
+     * The bundler rewrites `content_scripts` into loaders of its own, which is not what
+     * these classic scripts need, so they are restored here. They are read from the
+     * source manifest rather than listed a second time in this file: with two copies, a
+     * script added to one and not the other was dropped without a word.
+     *
+     * Why each entry is shaped the way it is (the manifest cannot carry comments):
+     * - panelScrollbar.js runs in every frame because the frame it is there for is the
+     *   web page framed inside the side panel; it stops at its first line elsewhere.
+     * - videoPipHook.js runs in the main world, so it can replace
+     *   HTMLVideoElement.prototype.requestPictureInPicture and hand a site's own
+     *   picture-in-picture button to our floating player.
+     * - The two YouTube hooks run in the main world too: the hover-preview player
+     *   exposes mute/unMute/setVolume as page properties on the element, and the Shorts
+     *   feed is a property on `ytd-shorts` -- neither visible from the isolated world.
+     * - allowRightClickHook.js is main world as well: the right-click unblocker has to
+     *   reach preventDefault, the on* handler properties and Selection from the page's
+     *   own context.
+     */
+    const sourceManifest = JSON.parse(fs.readFileSync(path.resolve('manifest.json'), 'utf8'));
+    manifest.content_scripts = sourceManifest.content_scripts;
 
-    // 3. Inject hint scripts back to web_accessible_resources
+    // 3. Put back the web-accessible resources the source manifest lists for every site.
     if (!manifest.web_accessible_resources) {
         manifest.web_accessible_resources = [];
     }
     const war = manifest.web_accessible_resources.find(w => w.matches.includes("<all_urls>")) || { matches: ["<all_urls>"], resources: [] };
-    const hintScripts = [
-        "_locales/es/messages.json",
-        "_locales/en/messages.json",
-        "src/utils/hint/utils.js",
-        "src/utils/hint/videoPipUi.js",
-        "src/utils/hint/videoPip.js",
-        "src/utils/hint/videoPipHook.js",
-        "src/utils/hint/ui.js",
-        "src/utils/hint/snippets.js",
-        "src/utils/hint/omnibar-frame.html",
-        "src/utils/hint/engine.js",
-        "src/utils/hint/preview.js",
-        "src/utils/hint/registry.js",
-        "src/utils/hint/main.js"
-    ];
-    for (const script of hintScripts) {
-        if (!war.resources.includes(script)) {
-            war.resources.push(script);
+    const sourceWar = sourceManifest.web_accessible_resources.find((w) => w.matches.includes('<all_urls>'));
+    for (const resource of sourceWar?.resources ?? []) {
+        if (!war.resources.includes(resource)) {
+            war.resources.push(resource);
         }
     }
     if (!manifest.web_accessible_resources.includes(war)) {

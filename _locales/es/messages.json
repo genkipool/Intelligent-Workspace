@@ -3164,9 +3164,6 @@
         "message": "Añadir Programación",
         "description": "Text for the button that saves a new schedule."
     },
-    "modalSaveCloseHint": {
-        "message": "Clic para guardar y cerrar. Control+Clic para guardar sin cerrar la ventana."
-    },
     "scheduleAdded": {
         "message": "Programación añadida para el tema $1.",
         "description": "Notification when a schedule is added.",
@@ -4624,6 +4621,30 @@
     "deleteCookie_tooltip": {
         "message": "Elimina esta cookie del sitio.",
         "description": "Texto al pasar el ratón por el control cuya etiqueta es «deleteCookie»."
+    },
+    "addCookie": {
+        "message": "Añadir",
+        "description": "Botón que añade una cookie nueva al editor"
+    },
+    "addCookie_tooltip": {
+        "message": "Añade una cookie nueva a este sitio; se crea al guardar.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «addCookie»."
+    },
+    "newCookie": {
+        "message": "Cookie nueva",
+        "description": "Título de la tarjeta de una cookie que aún no tiene nombre"
+    },
+    "cookieName": {
+        "message": "Nombre",
+        "description": "Etiqueta del campo del nombre de una cookie nueva"
+    },
+    "cookieDomainHostOnly": {
+        "message": "Solo este sitio",
+        "description": "Texto de ejemplo del dominio: vacío crea la cookie solo para el host de la pestaña"
+    },
+    "cookieNameRequired": {
+        "message": "Pon un nombre a la cookie nueva antes de guardar.",
+        "description": "Aviso al guardar una cookie nueva sin nombre"
     },
     "cookieValue": {
         "message": "Valor",

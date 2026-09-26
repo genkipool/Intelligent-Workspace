@@ -45,9 +45,5 @@
         "*.{css,html}": [
             "prettier --write"
         ]
-    },
-    "dependencies": {
-        "dompurify": "^3.4.8",
-        "marked": "^18.0.5"
     }
 }

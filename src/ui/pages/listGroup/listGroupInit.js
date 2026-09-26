@@ -8,7 +8,6 @@ import { renderNoteEntry as renderNoteEntryFromModule } from '../../content-rend
 import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
 import { initAgentUI } from '../../../utils/agent-ui.js';
 import { exportBookmarkFolder } from '../../../utils/importExport.js';
-import '../../../lib/marked.js';
 import { initializeBookmarksView } from '../../bookmarks/bookmarks.js';
 import { getProvider } from '../../../config/contributionProviders.js';
 import { warmPaymentOrigin } from '../../services/paymentService.js';

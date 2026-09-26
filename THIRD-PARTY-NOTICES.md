@@ -23,9 +23,6 @@ application code.
 | [tesseract.js](https://github.com/naptha/tesseract.js) | 5.0.5 | Apache-2.0 | `src/lib/tesseract.min.js` | `c46216a3d1a41a945834c4c901c41fc241434e6e1d2429601acd6ac8a53bd93f` |
 | [jsQR](https://github.com/cozmo/jsQR) | 1.4.0 | Apache-2.0 | `src/lib/jsQR.js` | `7989567794db4d9ecea21aac1feb9da2f4f5176a43bf1159ab81605190365041` |
 | [qr-code-styling](https://github.com/kozakdenys/qr-code-styling) | 1.x (UMD build; the file carries no version string) | MIT | `src/lib/qr-code-styling.js` | `761aa6e4c90f316d5ca6748be2d4c24efc454e69161929cf0d2b0d3c58f3866a` |
-| [marked](https://github.com/markedjs/marked) | 15.0.12 | MIT | `src/lib/marked.js` | `6f5c3edbb710c13b414ac3ce980100bc1715a437291e82f83dc628620e8ba24f` |
-| [marked](https://github.com/markedjs/marked) | 18.0.5 | MIT | npm dependency | — |
-| [DOMPurify](https://github.com/cure53/DOMPurify) | 3.4.8 | MPL-2.0 OR Apache-2.0 | npm dependency | — |
 | [Svelte](https://github.com/sveltejs/svelte) | 5.x runtime | MIT | npm dependency | — |
 
 `src/lib/chart.local.js` is not third-party. It is this project's own charting code, written

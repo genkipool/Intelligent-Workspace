@@ -3208,9 +3208,6 @@
     "message": "Add Schedule",
     "description": "Text for the button that saves a new schedule."
   },
-  "modalSaveCloseHint": {
-    "message": "Click to save and close. Ctrl+Click to save without closing the window."
-  },
   "scheduleAdded": {
     "message": "Schedule added for theme '$1'.",
     "description": "Notification when a schedule is added.",
@@ -4612,6 +4609,30 @@
   "deleteCookie_tooltip": {
     "message": "Delete this cookie from the site.",
     "description": "Hover text of the control whose label is “deleteCookie”."
+  },
+  "addCookie": {
+    "message": "Add",
+    "description": "Button that adds a new cookie to the editor"
+  },
+  "addCookie_tooltip": {
+    "message": "Adds a new cookie to this site; it is created when you save.",
+    "description": "Hover text for the control labelled «addCookie»."
+  },
+  "newCookie": {
+    "message": "New cookie",
+    "description": "Title of the card of a cookie that has no name yet"
+  },
+  "cookieName": {
+    "message": "Name",
+    "description": "Label of the name field of a new cookie"
+  },
+  "cookieDomainHostOnly": {
+    "message": "This site only",
+    "description": "Placeholder for the domain: empty creates a host-only cookie for the tab"
+  },
+  "cookieNameRequired": {
+    "message": "Give the new cookie a name before saving.",
+    "description": "Warning when saving a new cookie without a name"
   },
   "cookieValue": {
     "message": "Value",

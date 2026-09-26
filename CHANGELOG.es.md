@@ -36,6 +36,9 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
+- El editor de cookies puede **añadir cookies**: el botón «Añadir» crea una tarjeta con
+  su propio campo de nombre; con el dominio vacío la cookie es solo para el sitio de la
+  pestaña, y no se guarda sin nombre.
 - **El editor de temas tiene su propio selector de color.** Al pulsar una de las nueve
   cajas de color ya no se abre la ventana del navegador —que no sabe nada del tema y en
   el panel lateral aparecía donde le parecía—, sino un selector de la extensión, pintado
@@ -251,6 +254,10 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- **Seguridad:** al abrir una página en el reproductor flotante, las reglas que le quitan
+  las cabeceras anti-marco y le pasan sus cookies se aplicaban también a la pestaña
+  desde la que se abrió. Esa página podía entonces enmarcar el sitio elegido con sus
+  protecciones quitadas. Ahora las reglas solo alcanzan a la ventana flotante.
 - Las claves de API guardadas mostraban y copiaban una cadena codificada (`enc_…`) en
   vez de la clave, y borrar una desde la lista no hacía nada.
 - El asistente de IA ignoraba el modelo elegido en el selector, y el modo agente pedía

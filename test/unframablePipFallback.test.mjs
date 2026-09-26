@@ -293,6 +293,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
             const sandbox = {
                 console,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 chrome: {
                     declarativeNetRequest: {},
                     cookies: {},
@@ -330,6 +331,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                 URL,
                 Set,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 chrome: {
                     declarativeNetRequest: {
                         updateSessionRules: async (options) => {
@@ -390,6 +392,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                 URL,
                 Set,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 chrome: {
                     declarativeNetRequest: {
                         updateSessionRules: async (options) => {
@@ -453,6 +456,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                 URL,
                 Set,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 chrome: {
                     declarativeNetRequest: {
                         updateSessionRules: async (options) => {
@@ -542,6 +546,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
             const sandbox = {
                 console,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 chrome: {
                     declarativeNetRequest: {
                         updateSessionRules: async (options) => {
@@ -578,6 +583,7 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                 Array,
                 Promise,
                 SIDEPANEL_RULE_ID: 1,
+                setTimeout,
                 SIDEPANEL_MOBILE_UA: 'Mobile UA',
                 SIDEPANEL_DESKTOP_UA_HOSTS: ['x.com', 'twitter.com'],
                 navigator: { userAgent: 'Mozilla/5.0 Desktop' },

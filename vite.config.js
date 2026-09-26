@@ -6,13 +6,39 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
+/**
+ * @crxjs/vite-plugin 2.4 returns the whole build config from its content-scripts
+ * `config` hook with its own `rollupOptions` added, while Vite 8 already carries the
+ * same settings as `rolldownOptions`. Vite keeps `rolldownOptions`, drops the other and
+ * warns on every build. Dropping it here instead leaves the output byte for byte the
+ * same (checked against a full `dist` diff) and keeps real warnings visible.
+ */
+function withoutIgnoredRollupOptions(plugins) {
+    return plugins.map((plugin) => {
+        if (plugin?.name !== 'crx:content-scripts' || typeof plugin.config !== 'function') return plugin;
+        const config = plugin.config;
+        return {
+            ...plugin,
+            async config(...args) {
+                const result = await config.apply(this, args);
+                if (result?.build?.rollupOptions && result.build.rolldownOptions) {
+                    const build = { ...result.build };
+                    delete build.rollupOptions;
+                    return { ...result, build };
+                }
+                return result;
+            },
+        };
+    });
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export default defineConfig({
     plugins: [
         svelte(),
-        crx({ manifest }),
+        withoutIgnoredRollupOptions(crx({ manifest })),
         viteStaticCopy({
             targets: [
                 {

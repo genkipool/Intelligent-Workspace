@@ -36,6 +36,9 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
+- The cookie editor can **add cookies**: the "Add" button creates a card with its own
+  name field; with the domain left empty the cookie is for the tab's site only, and it
+  is not saved without a name.
 - **The theme editor has a colour picker of its own.** Clicking one of the nine colour
   boxes no longer opens the browser's dialog — which knows nothing about the theme and,
   in the side panel, appeared wherever it liked — but the extension's own picker,
@@ -243,6 +246,10 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- **Security:** opening a page in the floating player applied the rules that strip its
+  anti-framing headers and replay its cookies to the tab it was opened from as well.
+  That page could then frame the chosen site with its protections removed. The rules
+  now reach the floating window only.
 - The saved API keys showed and copied an encoded string (`enc_…`) instead of the key,
   and deleting one from the list did nothing.
 - The AI assistant ignored the model chosen in the selector, and agent mode asked for
