@@ -157,8 +157,15 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
         return { success: false, error: 'NO_API_KEY', allKeysExhausted: true };
     }
 
-    let defaultModel = isAgent ? 'gemini-2.0-flash' : 'gemini-2.5-flash';
-    let MODEL_NAME = storageData.selectedGeminiModel || defaultModel;
+    // The session mirror only carries the keys, so the model picked in the selector is
+    // read from local storage; without this every request fell back to the default.
+    let selectedModel = storageData.selectedGeminiModel;
+    if (!selectedModel) {
+        ({ selectedGeminiModel: selectedModel } = await chrome.storage.local.get('selectedGeminiModel'));
+    }
+
+    const defaultModel = 'gemini-2.5-flash';
+    let MODEL_NAME = selectedModel || defaultModel;
 
     if (!MODEL_NAME.includes('gemini')) {
         MODEL_NAME = defaultModel;

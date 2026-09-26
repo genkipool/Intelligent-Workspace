@@ -3161,6 +3161,14 @@
     "message": "No schedules for this theme yet.",
     "description": "Message displayed when a theme has no schedules."
   },
+  "noGeminiSchedulesFound": {
+    "message": "No scheduled queries yet.",
+    "description": "Shown in the AI assistant schedule dialog when no query has been scheduled."
+  },
+  "geminiScheduleQueryLabel": {
+    "message": "Query",
+    "description": "Label of the text box holding the question a scheduled AI query will ask."
+  },
   "addNewSchedule": {
     "message": "Add New Schedule",
     "description": "Header for the new schedule form."
@@ -3209,6 +3217,16 @@
     "placeholders": {
       "themeName": {
         "content": "$1"
+      }
+    }
+  },
+  "geminiScheduleAdded": {
+    "message": "Scheduled query '$1' added.",
+    "description": "Notification when an AI assistant query is scheduled. $1 is the conversation title.",
+    "placeholders": {
+      "title": {
+        "content": "$1",
+        "example": "Morning news"
       }
     }
   },
@@ -4613,15 +4631,27 @@
   },
   "cookieSameSite": {
     "message": "SameSite",
-    "description": "SameSite"
+    "description": "Cookie attribute name, shown as is: it is the term developers know."
+  },
+  "cookieSameSiteUnspecified": {
+    "message": "Unspecified",
+    "description": "SameSite option: the site did not set the attribute, so Chrome applies its default (Lax)."
   },
   "cookieHttpOnly": {
     "message": "HttpOnly",
-    "description": "HttpOnly"
+    "description": "Cookie attribute name, shown as is: it is the term developers know."
+  },
+  "cookieHttpOnly_tooltip": {
+    "message": "Page scripts cannot read it; it only travels to the server",
+    "description": "Hover text of the HttpOnly toggle in the cookie editor."
   },
   "cookieSecure": {
     "message": "Secure",
-    "description": "Secure"
+    "description": "Cookie attribute name, shown as is: it is the term developers know."
+  },
+  "cookieSecure_tooltip": {
+    "message": "Only sent over HTTPS",
+    "description": "Hover text of the Secure toggle in the cookie editor."
   },
   "noCookiesFound": {
     "message": "No cookies were found for this URL.",

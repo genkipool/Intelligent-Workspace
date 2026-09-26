@@ -344,42 +344,46 @@
                                                         <path d="m6 9 6 6 6-6" />
                                                     </svg>
                                                 </button>
+                                                <option value="unspecified">{$t('cookieSameSiteUnspecified')}</option>
                                                 <option value="no_restriction">None</option>
                                                 <option value="lax">Lax</option>
                                                 <option value="strict">Strict</option>
                                             </select>
                                         </div>
-                                        <div class="form-group checkbox-group">
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    class="cookie-httponly"
-                                                    checked={cookie.httpOnly}
-                                                    onchange={(e) =>
-                                                        updateCookie(
-                                                            workingCookies.indexOf(cookie),
-                                                            'httpOnly',
-                                                            e.target.checked,
-                                                        )}
-                                                />
-                                                <span>{$t('cookieHttpOnly')}</span>
-                                            </label>
-                                        </div>
-                                        <div class="form-group checkbox-group">
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    class="cookie-secure"
-                                                    checked={cookie.secure}
-                                                    onchange={(e) =>
-                                                        updateCookie(
-                                                            workingCookies.indexOf(cookie),
-                                                            'secure',
-                                                            e.target.checked,
-                                                        )}
-                                                />
-                                                <span>{$t('cookieSecure')}</span>
-                                            </label>
+                                        <!-- Two toggles styled like the rest of the extension's
+                                             selectable buttons. Each is still a checkbox, so the
+                                             keyboard, screen readers and the save code that reads
+                                             `.checked` all keep working. -->
+                                        <div class="form-group full-width cookie-flags">
+                                            {#each [['httpOnly', 'cookie-httponly', 'cookieHttpOnly'], ['secure', 'cookie-secure', 'cookieSecure']] as [field, inputClass, labelKey] (field)}
+                                                <label class="cookie-flag" title={$tt(labelKey)}>
+                                                    <input
+                                                        type="checkbox"
+                                                        class="{inputClass} visually-hidden"
+                                                        checked={cookie[field]}
+                                                        onchange={(e) =>
+                                                            updateCookie(
+                                                                workingCookies.indexOf(cookie),
+                                                                field,
+                                                                e.target.checked,
+                                                            )}
+                                                    />
+                                                    <span>{$t(labelKey)}</span>
+                                                    <svg
+                                                        class="cookie-flag-check"
+                                                        width="12"
+                                                        height="12"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        stroke-width="3"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        aria-hidden="true"
+                                                        focusable="false"><path d="M20 6 9 17l-5-5" /></svg
+                                                    >
+                                                </label>
+                                            {/each}
                                         </div>
                                     </div>
                                 </details>

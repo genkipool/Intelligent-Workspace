@@ -4,6 +4,7 @@
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
     import { t, tt } from '../../stores/i18nStore.js';
+    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
     let { show = false, schedules = [], onClose = () => {}, onSave = () => {}, onDelete = () => {} } = $props();
 
@@ -178,12 +179,12 @@
         aria-modal="true"
         aria-labelledby="gemini-schedule-modal-title"
         tabindex="-1"
-        onclick={onClose}
+        use:dismissOnBackdrop={onClose}
         onkeydown={(e) => {
             if (e.key === 'Escape') onClose();
         }}
     >
-        <div class="modal-content gemini-schedule-modal" role="none" onclick={(e) => e.stopPropagation()}>
+        <div class="modal-content gemini-schedule-modal">
             <div class="modal-header">
                 <h2 id="gemini-schedule-modal-title">{$t('scheduleGeminiQuery')}</h2>
                 <button
@@ -243,7 +244,7 @@
                     {/if}
                 </ul>
                 {#if schedules.length === 0}
-                    <p id="no-gemini-schedules-message">{$t('noSchedulesFound')}</p>
+                    <p id="no-gemini-schedules-message">{$t('noGeminiSchedulesFound')}</p>
                 {/if}
 
                 {#if schedules.length < 7}
@@ -264,7 +265,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="gemini-schedule-query">{$t('geminiQuery')}</label>
+                            <label for="gemini-schedule-query">{$t('geminiScheduleQueryLabel')}</label>
                             <div class="note-content-wrapper">
                                 <textarea
                                     id="gemini-schedule-query"

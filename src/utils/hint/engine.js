@@ -355,6 +355,9 @@ var HintEngine = class HintEngine {
         for (const el of rawCandidates) {
             const isYtControl = window.location.hostname.includes('youtube.com') && el.closest('.ytp-chrome-bottom');
             if (!Utils.isVisible(el, isYtControl)) continue;
+            // Copying a link needs a link: a label on a button or a checkbox led nowhere,
+            // and picking it closed the hints without copying anything.
+            if (this.mode === 'copyLink' && !el.closest('a[href]')) continue;
             const rect = Utils.getVisibleClientRect(el, true);
             if (!rect) continue;
             candidateHints.push({

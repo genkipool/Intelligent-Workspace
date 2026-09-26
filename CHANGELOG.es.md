@@ -179,6 +179,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Cambiado
 
+- Las barras de búsqueda de las vistas de marcadores, notas, historial, galería, atajos
+  y actividad web ocupan todo el ancho, así que siguen al panel lateral al cambiarlo de
+  tamaño.
+- Las opciones HttpOnly y Secure del editor de cookies son botones seleccionables con
+  los colores del tema y la marca a la derecha, y SameSite puede quedar sin especificar.
+- El botón de añadir clave de API no se mueve mientras se comprueba: la línea de error
+  tiene su hueco reservado, el botón se pone del color de error mientras lo hay y se
+  hunde un poco al pulsarlo, y "Comprobando…" solo sale si la respuesta tarda.
+- La lista de modelos de IA aparece en cuanto responde Gemini, en vez de esperar hasta
+  ocho segundos a que Chrome diga si tiene un modelo local.
+- `cf` solo etiqueta enlaces, que es lo único que puede copiar.
 - **El interruptor de idioma se respeta en todas partes.** Al instalarla, la extensión
   se abre en el idioma de Chrome; en cuanto se usa el interruptor del popup, esa
   elección manda cada vez que se abre. Hasta ahora buena parte de la interfaz —los
@@ -240,6 +251,16 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- Las claves de API guardadas mostraban y copiaban una cadena codificada (`enc_…`) en
+  vez de la clave, y borrar una desde la lista no hacía nada.
+- El asistente de IA ignoraba el modelo elegido en el selector, y el modo agente pedía
+  `gemini-2.0-flash`, que Google ha retirado, así que toda pregunta al agente fallaba.
+- `vs` no abría el código fuente de la página.
+- `i` no hacía nada si el único cuadro de texto de la página había quedado fuera de la
+  vista.
+- La ventana de consultas programadas hablaba de temas ("Aún no hay programaciones para
+  este tema", "Programación añadida para el tema …") y llamaba "Asistente IA" al cuadro
+  de la pregunta.
 - Las búsquedas por sitio de la omnibar (`g:`, `y:`, `w:`…) mostraban "Sin título" y una
   clave en crudo en vez de lo que Enter iba a buscar.
 - `dr:` decía que borraba las reglas filtradas y no borraba ninguna.

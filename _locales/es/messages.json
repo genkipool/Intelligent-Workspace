@@ -3117,6 +3117,14 @@
         "message": "Aún no hay programaciones para este tema.",
         "description": "Message displayed when a theme has no schedules."
     },
+    "noGeminiSchedulesFound": {
+        "message": "Aún no hay consultas programadas.",
+        "description": "Shown in the AI assistant schedule dialog when no query has been scheduled."
+    },
+    "geminiScheduleQueryLabel": {
+        "message": "Consulta",
+        "description": "Label of the text box holding the question a scheduled AI query will ask."
+    },
     "addNewSchedule": {
         "message": "Añadir Nueva Programación",
         "description": "Header for the new schedule form."
@@ -3165,6 +3173,16 @@
         "placeholders": {
             "themeName": {
                 "content": "$1"
+            }
+        }
+    },
+    "geminiScheduleAdded": {
+        "message": "Consulta programada '$1' añadida.",
+        "description": "Notification when an AI assistant query is scheduled. $1 is the conversation title.",
+        "placeholders": {
+            "title": {
+                "content": "$1",
+                "example": "Morning news"
             }
         }
     },
@@ -4624,16 +4642,28 @@
         "description": "Caducidad"
     },
     "cookieSameSite": {
-        "message": "MismoSitio",
-        "description": "MismoSitio"
+        "message": "SameSite",
+        "description": "Nombre del atributo de la cookie, tal cual: es el término que conocen los desarrolladores."
+    },
+    "cookieSameSiteUnspecified": {
+        "message": "Sin especificar",
+        "description": "Opción de SameSite: el sitio no fijó el atributo y Chrome aplica su valor por defecto (Lax)."
     },
     "cookieHttpOnly": {
-        "message": "SoloHTTP",
-        "description": "SoloHTTP"
+        "message": "HttpOnly",
+        "description": "Nombre del atributo de la cookie, tal cual: es el término que conocen los desarrolladores."
+    },
+    "cookieHttpOnly_tooltip": {
+        "message": "Los scripts de la página no pueden leerla; solo viaja al servidor",
+        "description": "Texto al pasar el ratón por el botón HttpOnly del editor de cookies."
     },
     "cookieSecure": {
-        "message": "Seguro",
-        "description": "Seguro"
+        "message": "Secure",
+        "description": "Nombre del atributo de la cookie, tal cual: es el término que conocen los desarrolladores."
+    },
+    "cookieSecure_tooltip": {
+        "message": "Solo se envía por HTTPS",
+        "description": "Texto al pasar el ratón por el botón Secure del editor de cookies."
     },
     "noCookiesFound": {
         "message": "No se encontraron cookies para esta URL.",

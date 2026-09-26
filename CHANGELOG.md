@@ -174,6 +174,16 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Changed
 
+- The search bars of the bookmarks, notes, history, gallery, hints and web activity views
+  take the whole width, so they follow the side panel when it is resized.
+- The cookie editor's HttpOnly and Secure options are toggle buttons in the theme's
+  colours, with the tick on the right, and SameSite can be left unspecified.
+- The Add API key button keeps its place while the key is checked: the error line has
+  room reserved, the button turns the error colour while there is one and sinks slightly
+  when pressed, and "Checking…" only appears if the answer takes a while.
+- The list of AI models appears as soon as Gemini answers, instead of waiting up to
+  eight seconds for Chrome to say whether it has a local model.
+- `cf` only labels links, which is all it can copy.
 - **The language switch is obeyed everywhere.** A fresh install opens in the language
   Chrome is in; once the switch in the popup is used, that choice wins every time the
   extension opens. Until now a good part of the interface — the pomodoro tooltips, the
@@ -233,6 +243,14 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- The saved API keys showed and copied an encoded string (`enc_…`) instead of the key,
+  and deleting one from the list did nothing.
+- The AI assistant ignored the model chosen in the selector, and agent mode asked for
+  `gemini-2.0-flash`, which Google has retired, so every agent question failed.
+- `vs` did not open the page source.
+- `i` did nothing when the page's only text box had been scrolled out of view.
+- The scheduled-query dialog spoke of themes ("No schedules for this theme yet",
+  "Schedule added for theme …") and labelled the question box "AI Assistant".
 - The omnibar's site searches (`g:`, `y:`, `w:`…) showed "Untitled" and a raw key
   instead of what Enter would search for.
 - `dr:` said it deleted the filtered rules and deleted none.

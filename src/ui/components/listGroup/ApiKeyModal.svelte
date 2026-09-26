@@ -2,6 +2,8 @@
     import { activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import { decodeKey } from '../../stores/geminiStore.js';
+    import { untrack } from 'svelte';
     import {
         LOCAL_AI_STATUS,
         localAiStatus,
@@ -24,21 +26,28 @@
     // and synchronized in real time with chrome.storage.local.
     let savedKeys = $state([]);
 
+    // Storage keeps the keys obfuscated; the list shows, copies and deletes the real one.
+    const decodeList = (list = []) => list.map((k) => ({ ...k, key: decodeKey(k.key) }));
+
     $effect(() => {
         if (!show) return;
 
-        // Seed with props if available for immediate render without empty flash
-        if (apiKeys?.length > 0 && savedKeys.length === 0) {
-            savedKeys = [...apiKeys];
-        }
+        // Seed with props if available for immediate render without empty flash. Read
+        // untracked: as a dependency, emptying the list (deleting the last key) re-seeded
+        // it from the props and asked storage again, round and round without end.
+        untrack(() => {
+            if (apiKeys?.length > 0 && savedKeys.length === 0) {
+                savedKeys = decodeList(apiKeys);
+            }
+        });
 
         chrome.storage.local.get('geminiApiKeysList').then(({ geminiApiKeysList = [] }) => {
-            savedKeys = geminiApiKeysList;
+            savedKeys = decodeList(geminiApiKeysList);
         });
 
         const handleStorageChanged = (changes, area) => {
             if (area === 'local' && changes.geminiApiKeysList) {
-                savedKeys = changes.geminiApiKeysList.newValue || [];
+                savedKeys = decodeList(changes.geminiApiKeysList.newValue);
             }
         };
 
@@ -201,6 +210,10 @@
     let showKey = $state(false);
     let error = $state('');
     let saving = $state(false);
+    // "Checking…" only replaces the label when validation is slow enough to need
+    // saying; a quick answer used to flash it on and off in the same instant.
+    let showChecking = $state(false);
+    const CHECKING_LABEL_DELAY_MS = 400;
 
     function handleInput() {
         if (error) {
@@ -219,15 +232,21 @@
             return;
         }
 
+        if (saving) return;
         saving = true;
-        error = '';
+        const checkingTimer = setTimeout(() => (showChecking = true), CHECKING_LABEL_DELAY_MS);
 
         try {
             await onSave({ key });
             apiKeyValue = '';
+            error = '';
         } catch (e) {
+            // Replaced in place, never cleared first: blanking it before the answer came
+            // back made the line blink off and on for every retry.
             error = e.message || $t('errorValidatingApiKey');
         } finally {
+            clearTimeout(checkingTimer);
+            showChecking = false;
             saving = false;
         }
     }
@@ -259,7 +278,7 @@
         } catch (err) {
             console.error('[ApiKeyModal] Failed to delete API key:', err);
             const { geminiApiKeysList = [] } = await chrome.storage.local.get('geminiApiKeysList');
-            savedKeys = geminiApiKeysList;
+            savedKeys = decodeList(geminiApiKeysList);
         }
     }
 
@@ -359,9 +378,15 @@
                                 {/if}
                             </button>
                         </div>
-                        {#if error}
-                            <div id="gemini-api-key-error" class="modal-error-message">{error}</div>
-                        {/if}
+                        <!-- Always in the layout with room for two lines, so a message
+                             appearing or going does not push the rest of the modal. -->
+                        <div
+                            id="gemini-api-key-error"
+                            class="modal-error-message api-key-error-slot"
+                            aria-live="polite"
+                        >
+                            {error}
+                        </div>
                     </div>
 
                     <div class="saved-api-keys-section">
@@ -400,7 +425,7 @@
                                                         const { geminiApiKeysList = [] } =
                                                             await chrome.storage.local.get('geminiApiKeysList');
                                                         const item = geminiApiKeysList.find(
-                                                            (k) => k.key === keyData.key,
+                                                            (k) => decodeKey(k.key) === keyData.key,
                                                         );
                                                         if (item) {
                                                             item.name = newName;
@@ -674,12 +699,12 @@
                 {#if activeTab === 'api'}
                     <button
                         type="button"
-                        class="modal-btn-save"
+                        class="modal-btn-save api-key-add-btn"
                         class:error-state={!!error}
-                        disabled={saving}
+                        aria-busy={saving}
                         onclick={handleSave}
                     >
-                        {saving ? $t('checkingApiKey') : $t('addApiKeyBtn')}
+                        {showChecking ? $t('checkingApiKey') : $t('addApiKeyBtn')}
                     </button>
                 {:else}
                     <!-- The button is the whole decision: it downloads the model and turns
@@ -710,6 +735,36 @@
 {/if}
 
 <style>
+    /* Two lines of the 0.75rem error text, reserved whether or not there is one. */
+    .api-key-error-slot {
+        min-height: calc(2 * 1.4 * 0.75rem);
+        line-height: 1.4;
+    }
+
+    /* The error colour stays while the key is re-checked, so a second failed attempt
+       does not flash back to the theme colour; pressing sinks the button slightly. */
+    .api-key-add-btn {
+        transition:
+            transform 0.08s ease,
+            filter 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .api-key-add-btn:active {
+        transform: translateY(1px) scale(0.97);
+    }
+
+    .api-key-add-btn.error-state,
+    .api-key-add-btn.error-state:hover {
+        background-color: var(--error-color);
+        color: var(--text-color);
+        box-shadow: none;
+    }
+
+    .api-key-add-btn.error-state:hover {
+        filter: brightness(1.1);
+    }
+
     /* The tabs are the group list's, the same shape the QR modal uses: one row under the
        header, the active one underlined in the interactive colour. */
     .api-modal-tabs {

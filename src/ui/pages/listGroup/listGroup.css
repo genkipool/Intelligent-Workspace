@@ -344,6 +344,9 @@ body.ctrl-pressed .rules-title-button {
     position: relative;
     display: flex;
     align-items: center;
+    /* Takes whatever the buttons beside it leave, so the field follows the side panel
+       as it is resized instead of stopping at its content width with a gap after it. */
+    flex: 1 1 auto;
     margin: 6px 0px;
 }
 
@@ -3282,11 +3285,59 @@ body.popup-window {
     display: none;
 }
 
-.cookie-form-grid .checkbox-group {
-    flex-direction: row;
-    align-items: center;
+/* HttpOnly and Secure as a pair of selectable buttons, the same look as the note
+   category buttons: the theme's border at rest, the action colour once chosen. */
+.cookie-form-grid .cookie-flags {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 4px;
+}
+
+.cookie-flag {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s,
+        color 0.2s;
+}
+
+.cookie-flag:hover {
+    border-color: var(--interactive-color);
+}
+
+.cookie-flag:has(input:checked) {
+    background-color: var(--bg-color);
+    border-color: var(--action-color);
+    color: var(--text-on-color);
+    font-weight: bold;
+}
+
+.cookie-flag:has(input:focus-visible) {
+    outline: 2px solid var(--interactive-color);
+    outline-offset: 2px;
+}
+
+/* The tick only says "on"; off, the space stays so the label does not jump. */
+.cookie-flag-check {
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.cookie-flag:has(input:checked) .cookie-flag-check {
+    opacity: 1;
 }
 
 .cookie-form-grid .full-width {
@@ -8606,4 +8657,19 @@ body:not(.show-domain-headers) .domain-subgroup.header-with-controls > .subgroup
     --header-gap: 8px;
     --header-pad-start: 4px;
     --header-pad-end: 4px;
+}
+
+/* The sources a web-grounded answer cites. They had no style of their own and came out
+   in the browser's default link blue, nearly unreadable on the dark themes. */
+.grounding-list a,
+.grounding-list a:visited {
+    color: var(--action-color);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+}
+
+.grounding-list a:hover,
+.grounding-list a:focus-visible {
+    color: var(--interactive-color);
+    text-decoration: underline;
 }

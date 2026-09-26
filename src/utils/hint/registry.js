@@ -793,7 +793,15 @@ var CommandRegistry = class CommandRegistry {
             '[enterkeyhint="search"]',
         ];
         const candidates = Utils.querySelectorAllDeep(selectors.join(', '));
-        const visibleCandidates = candidates.filter((input) => Utils.isVisible(input));
+        // `isVisible` asks whether a hint could be drawn, which means on screen; a search
+        // box scrolled out of view is still the one to focus, and focus() brings it back.
+        const isRendered = (input) => {
+            const rect = input.getBoundingClientRect();
+            if (!rect.width || !rect.height) return false;
+            const style = window.getComputedStyle(input);
+            return style.visibility === 'visible' && style.display !== 'none';
+        };
+        const visibleCandidates = candidates.filter((input) => Utils.isVisible(input) || isRendered(input));
 
         if (visibleCandidates.length === 0) return;
 

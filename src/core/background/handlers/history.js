@@ -195,6 +195,13 @@ async function handleOpenUrl(message, sender = null) {
     const trimmedUrl = rawUrl.trim();
     if (!trimmedUrl) return;
 
+    // `view-source:` has no `//`, so the check below took it for a bare host and made
+    // it `https://view-source:…`, which Chrome refuses; the source always opens anew.
+    if (/^view-source:/i.test(trimmedUrl)) {
+        await chrome.tabs.create({ url: trimmedUrl, active: true });
+        return;
+    }
+
     const fullUrl = /^[a-zA-Z]+:\/\//.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`;
 
     try {

@@ -26,7 +26,7 @@ const STORAGE_KEYS = {
     GEMINI_SESSION_CONVERSATIONS: 'geminiSessionConversations',
 };
 
-function encodeKey(str) {
+export function encodeKey(str) {
     if (!str || typeof str !== 'string') return str;
     if (str.startsWith('enc_')) return str;
     try {
@@ -36,7 +36,7 @@ function encodeKey(str) {
     }
 }
 
-function decodeKey(str) {
+export function decodeKey(str) {
     if (!str || typeof str !== 'string') return str;
     if (!str.startsWith('enc_')) return str;
     try {
@@ -423,7 +423,10 @@ function createGeminiStore() {
             let selectedModel = data.selectedGeminiModel || 'gemini-2.5-flash';
 
             const { checkAvailability, LOCAL_AI_STATUS } = await import('../services/localAiService.js');
-            const localInstalled = (await checkAvailability()) === LOCAL_AI_STATUS.AVAILABLE;
+            // Chrome's availability() can sit unanswered until its timeout on a profile that
+            // has never seen the local model, so it runs alongside the API call instead of
+            // holding the Gemini list back for those seconds.
+            const localCheck = checkAvailability().then((status) => status === LOCAL_AI_STATUS.AVAILABLE);
 
             let remoteModels = null;
             try {
@@ -437,6 +440,18 @@ function createGeminiStore() {
                 remoteModels = null;
             }
 
+            if (remoteModels?.length) {
+                // The list is usable as soon as the API answers; the local model joins it
+                // later if the browser has one.
+                if (!remoteModels.includes(selectedModel) && selectedModel !== LOCAL_AI_MODEL_ID) {
+                    selectedModel = 'gemini-2.5-flash';
+                    await chrome.storage.local.set({ selectedGeminiModel: selectedModel });
+                }
+                update((st) => ({ ...st, selectedModel, availableModels: remoteModels }));
+            }
+
+            const localInstalled = await localCheck;
+
             // The local model is one more line in the list, at the end: it is the one
             // that answers when the others cannot, and that is where the eye ends up.
             const availableModels = [...(remoteModels || []), ...(localInstalled ? [LOCAL_AI_MODEL_ID] : [])];
@@ -448,6 +463,8 @@ function createGeminiStore() {
                 return;
             }
 
+            // Read again: the user may have picked a model while the local check ran.
+            selectedModel = get(state).selectedModel || selectedModel;
             if (!availableModels.includes(selectedModel)) {
                 // With no Gemini model on offer and the local one installed, the local one
                 // is not a fallback any more: it is the only thing that can answer.
@@ -1328,7 +1345,7 @@ function createGeminiStore() {
             }
             await chrome.storage.local.set({ [STORAGE_KEYS.GEMINI_SCHEDULES]: schedules });
             chrome.runtime.sendMessage({ action: 'geminiSchedulesUpdated' });
-            showNotification(mode === 'edit' ? 'scheduleUpdated' : 'scheduleAdded', false, [
+            showNotification(mode === 'edit' ? 'scheduleUpdated' : 'geminiScheduleAdded', false, [
                 scheduleData.schedule.title,
             ]);
         },
