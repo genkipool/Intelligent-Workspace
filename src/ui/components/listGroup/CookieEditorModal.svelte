@@ -343,7 +343,7 @@
                                                     )}
                                             />
                                         </div>
-                                        <div class="form-group">
+                                        <div class="form-group full-width">
                                             <div class="field-label">{$t('cookieExpiration')}</div>
                                             <div class="datetime-row">
                                                 <DateField

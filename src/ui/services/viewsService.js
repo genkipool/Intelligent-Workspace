@@ -15,6 +15,7 @@ import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
 
 import { linkifyHtml } from './utils.js';
 import { attachFrameScrollbar, detachFrameScrollbar } from './frameScrollbar.js';
+import { retryIfFrameRefused } from './frameRetry.js';
 import { dayInRange, isCurrentMonthOrLater, isFutureDay, normalizeRange, startOfDay } from './dateRange.js';
 import { SITE_DOCUMENT_TITLES, siteUrl } from '../../config/site.js';
 import {
@@ -1471,6 +1472,7 @@ export async function openUrlInPanel(url, context = null) {
             // Before the frame is in the document, so the palette is already on offer
             // when the framed page announces itself.
             attachFrameScrollbar(iframe);
+            retryIfFrameRefused(iframe, url);
             container.appendChild(iframe);
             settleFramedView(mainHeaderTitle);
         } else {

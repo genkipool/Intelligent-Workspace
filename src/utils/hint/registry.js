@@ -288,6 +288,18 @@ var CommandRegistry = class CommandRegistry {
                             pipWindow.document.body.style.padding = '0';
                             pipWindow.document.body.style.overflow = 'hidden';
                             pipWindow.document.body.style.backgroundColor = '#1e1e1e';
+                            // The same rules every other way into the float asks for, and
+                            // given back when it closes. Without them the page only showed
+                            // when its own service worker answered from cache, since the
+                            // network copy of x.com carries `X-Frame-Options: DENY`.
+                            pipWindow.addEventListener(
+                                'pagehide',
+                                () => chrome.runtime.sendMessage({ action: 'cleanupVideoPipRules' }).catch(() => {}),
+                                { once: true },
+                            );
+                            await chrome.runtime
+                                .sendMessage({ action: 'prepareVideoUrlForPip', url: targetUrl })
+                                .catch(() => {});
                             const iframe = document.createElement('iframe');
                             iframe.name = 'itg-page-pip-iframe';
                             iframe.src = targetUrl;
@@ -295,6 +307,7 @@ var CommandRegistry = class CommandRegistry {
                             iframe.style.height = '100vh';
                             iframe.style.border = 'none';
                             iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
+                            itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
                             pipWindow.document.body.appendChild(iframe);
                             let lastKnownTime = 0;
                             const originalPauseInterval = setInterval(() => {

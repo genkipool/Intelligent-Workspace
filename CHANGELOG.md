@@ -177,6 +177,10 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Changed
 
+- In the cookie editor, the expiry date and time fill the whole width, both on one row,
+  with the text centred.
+- In the floating window (`wp` and `wp:`), x.com videos start muted; only X's own sound
+  button turns the sound on.
 - The search bars of the bookmarks, notes, history, gallery, hints and web activity views
   take the whole width, so they follow the side panel when it is resized.
 - The cookie editor's HttpOnly and Secure options are toggle buttons in the theme's
@@ -246,6 +250,14 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- x.com came up as "x.com refused to connect" in the side panel and the floating window
+  (`wp`, `wp:`), mostly right after reloading x.com. Its service worker answers with a
+  stored copy that forbids framing; the panel and the window now wait for the refreshed
+  copy and load that.
+- Opening x.com in the floating window from another site (`wp:x.com` on as.com)
+  reloaded the page endlessly.
+- The `wp` keys opened the floating window without the rules that let the page be
+  framed, and never took them down on close.
 - **Security:** opening a page in the floating player applied the rules that strip its
   anti-framing headers and replay its cookies to the tab it was opened from as well.
   That page could then frame the chosen site with its protections removed. The rules

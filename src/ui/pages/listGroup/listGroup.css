@@ -8089,11 +8089,18 @@ summary.stats-toggle-btn::marker {
 }
 
 /* --- COOKIE EDITOR DATETIME (same pattern as Gemini) --- */
+/* Date and time share the row and fill it between them, never wrapping apart. */
 .cookie-editor-modal .datetime-row {
     display: flex;
     gap: 10px;
     align-items: flex-end;
-    flex-wrap: wrap;
+}
+
+.cookie-editor-modal .datetime-row > .custom-input-trigger {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
 }
 
 .cookie-editor-modal .field-container {

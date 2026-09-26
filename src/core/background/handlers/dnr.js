@@ -377,6 +377,17 @@ const SIDEPANEL_NO_COOKIE_MIRROR =
  * with SameSite=None makes the framed site see what a normal tab sees.
  */
 async function mirrorCookiesIntoExtensionPartition(url) {
+    return mirrorCookiesIntoPartition(url, chrome.runtime.getURL('/'), {
+        remember: rememberMirroredCookieUrl,
+        forget: forgetMirroredCookieUrl,
+    });
+}
+
+/**
+ * The same copy into any top-level site's partition. `record` keeps track of what was
+ * written, so whoever opened the frame can take it back when the frame goes.
+ */
+async function mirrorCookiesIntoPartition(url, topLevelSite, record) {
     if (!chrome.cookies) return;
     let target;
     try {
@@ -389,13 +400,12 @@ async function mirrorCookiesIntoExtensionPartition(url) {
     target.protocol = 'https:';
     target.hash = '';
     const cookieUrl = target.toString();
-    const topLevelSite = chrome.runtime.getURL('/');
 
     if (SIDEPANEL_NO_COOKIE_MIRROR.test(target.hostname.toLowerCase())) {
         // Clear anything an earlier version of this code mirrored, so the host
         // is never left holding half a session.
         const dropped = await clearMirroredCookies(cookieUrl, topLevelSite);
-        await forgetMirroredCookieUrl(cookieUrl);
+        await record.forget(cookieUrl);
         logMessage(
             `[DNR] ${target.hostname} cannot complete a session in a frame; mirroring skipped` +
                 (dropped ? ` (${dropped} stale mirrored cookies removed)` : ''),
@@ -440,7 +450,81 @@ async function mirrorCookiesIntoExtensionPartition(url) {
         }),
     );
 
-    if (copyable.length) await rememberMirroredCookieUrl(cookieUrl);
+    if (copyable.length) await record.remember(cookieUrl);
+}
+
+/**
+ * [AI INSTRUCTION]
+ * THE FLOATING PLAYER NEEDS THE SAME COPY, IN THE PARTITION OF THE PAGE THAT OPENED IT.
+ *
+ * The float's document takes the origin of the page that opened it, so a site framed
+ * inside it is a third party of THAT site. Its `SameSite=Lax` cookies never reach the
+ * frame's script. Measured on x.com opened from as.com: the frame arrived with the
+ * session (the Cookie rule below sets it on the request), rendered, and its script,
+ * finding no `ct0` in `document.cookie`, reloaded the page for a fresh one -- which it
+ * could not store either -- about twice a second, forever. Opened from x.com itself
+ * the frame is first party and the problem does not exist.
+ *
+ * Only the readable cookies are copied, never HttpOnly ones: a partition is shared by
+ * every frame of that site under that top-level site, and `auth_token` in it would
+ * log in any x.com frame as.com chose to embed. The session itself still travels only
+ * in the Cookie rule, which is scoped to the float's tab. The copies are session
+ * cookies and are taken back by `handleCleanupVideoPipRules` when the float closes.
+ */
+const PIP_MIRRORED_COOKIES_KEY = 'dnrPipMirroredCookies';
+
+async function readPipMirroredCookies() {
+    try {
+        const stored = await chrome.storage.session.get(PIP_MIRRORED_COOKIES_KEY);
+        return stored[PIP_MIRRORED_COOKIES_KEY] || [];
+    } catch {
+        return [];
+    }
+}
+
+function pipMirrorRecord(site) {
+    return {
+        async remember(url) {
+            try {
+                const list = (await readPipMirroredCookies()).filter((e) => e.url !== url || e.site !== site);
+                list.push({ url, site });
+                await chrome.storage.session.set({ [PIP_MIRRORED_COOKIES_KEY]: list });
+            } catch (e) {
+                logMessage('[DNR] could not record the PiP mirrored host: ' + e.message);
+            }
+        },
+        async forget(url) {
+            try {
+                const list = (await readPipMirroredCookies()).filter((e) => e.url !== url || e.site !== site);
+                await chrome.storage.session.set({ [PIP_MIRRORED_COOKIES_KEY]: list });
+            } catch {}
+        },
+    };
+}
+
+async function clearPipMirroredCookies() {
+    if (!chrome.cookies) return 0;
+    let dropped = 0;
+    for (const { url, site } of await readPipMirroredCookies()) {
+        dropped += await clearMirroredCookies(url, site);
+    }
+    try {
+        await chrome.storage.session.remove(PIP_MIRRORED_COOKIES_KEY);
+    } catch {}
+    return dropped;
+}
+
+/** The site of the page that asked for the float, as a partition key names it. */
+async function pipOpenerSite(senderTabId) {
+    if (typeof senderTabId !== 'number') return null;
+    try {
+        const tab = await chrome.tabs.get(senderTabId);
+        const u = new URL(tab.url || tab.pendingUrl || '');
+        if (!['http:', 'https:'].includes(u.protocol)) return null;
+        return `${u.protocol}//${registrableDomain(u.hostname)}`;
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -847,6 +931,21 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
             target.hostname.endsWith('.twitter.com');
         const pipRequestDomains = isX ? ['x.com', 'twitter.com'] : [registrableDomain(target.hostname)];
 
+        const isYouTube = target.hostname.includes('youtube.com') || target.hostname.includes('youtu.be');
+        const isMessaging = target.hostname.includes('whatsapp.com') || target.hostname.includes('telegram.org');
+        const openerSite = await pipOpenerSite(senderTabId);
+        const framedCrossSite =
+            openerSite !== null && new URL(openerSite).hostname !== registrableDomain(target.hostname);
+        if (framedCrossSite && !isYouTube && !isMessaging) {
+            const record = pipMirrorRecord(openerSite);
+            const urls = isX ? ['https://x.com/', 'https://twitter.com/'] : [message.url];
+            for (const url of urls) {
+                await mirrorCookiesIntoPartition(url, openerSite, record).catch((e) =>
+                    logMessage('[DNR] PiP cookie mirroring failed: ' + e.message),
+                );
+            }
+        }
+
         const ruleId = SIDEPANEL_RULE_ID + 2;
         const rule = {
             id: ruleId,
@@ -870,10 +969,40 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
         const rule2Id = SIDEPANEL_RULE_ID + 3;
         const rules = [rule];
 
+        /*
+         * THE SITE'S OWN SERVICE WORKER, WHEN THE FLOAT IS OPENED FROM THE SAME SITE.
+         *
+         * x.com answers every navigation from a shell its service worker cached, and
+         * refreshes that shell from the network in the background. Those refreshes
+         * belong to no tab (tabId -1), so the rule above never sees them: the cached
+         * shell keeps `X-Frame-Options: DENY` and the float shows "x.com ha rechazado
+         * la conexión" every time, however long it waits. This rule takes the framing
+         * headers off those refreshes while the float is open, so the next answer is
+         * framable and the float's retry (`itgRetryIfPipFrameRefused`) gets it.
+         *
+         * Only when the page that opened the float is the same site. That worker then
+         * lives in the site's own storage, and a shell without the header is only ever
+         * served to the site itself -- top-level, where the header means nothing. Opened
+         * from another site, the worker belongs to THAT site's partition, and a framable
+         * shell left there is exactly what the other site would need to frame this one.
+         */
+        const swRuleId = SIDEPANEL_RULE_ID + 6;
+        if (openerSite !== null && !framedCrossSite) {
+            rules.push({
+                id: swRuleId,
+                priority: 9999,
+                action: { type: 'modifyHeaders', responseHeaders },
+                condition: {
+                    tabIds: [-1],
+                    requestDomains: pipRequestDomains,
+                    excludedRequestDomains: NEVER_STRIP_FRAMING_HOSTS,
+                    resourceTypes: ['xmlhttprequest', 'other'],
+                },
+            });
+        }
+
         {
             const urlObj = target;
-            const isYouTube = urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be');
-            const isMessaging = urlObj.hostname.includes('whatsapp.com') || urlObj.hostname.includes('telegram.org');
             // Messaging web apps (WhatsApp, Telegram) maintain dynamic sessions via
             // WebSockets and IndexedDB. Overriding their Cookie header corrupts active sessions.
             // Other sites (like x.com) require their cookies (ct0 CSRF token, auth_token)
@@ -915,7 +1044,7 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
 
         try {
             await chrome.declarativeNetRequest.updateSessionRules({
-                removeRuleIds: [ruleId, rule2Id],
+                removeRuleIds: [ruleId, rule2Id, swRuleId],
                 addRules: rules,
             });
             logMessage(
@@ -996,9 +1125,19 @@ function handleCleanupVideoPipRules(sendResponse) {
     (async () => {
         try {
             await chrome.declarativeNetRequest.updateSessionRules({
-                removeRuleIds: [SIDEPANEL_RULE_ID + 2, SIDEPANEL_RULE_ID + 3],
+                removeRuleIds: [SIDEPANEL_RULE_ID + 2, SIDEPANEL_RULE_ID + 3, SIDEPANEL_RULE_ID + 6],
             });
-            logMessage('[DNR] Video PiP rules cleaned up.');
+            // After the rules, and caught on its own: the rules are the half with security
+            // consequences, and failing here must not keep them standing.
+            let dropped = 0;
+            try {
+                dropped = await clearPipMirroredCookies();
+            } catch (e) {
+                logMessage('[DNR] PiP mirrored cookie cleanup failed: ' + e.message);
+            }
+            logMessage(
+                '[DNR] Video PiP rules cleaned up.' + (dropped ? ` ${dropped} mirrored cookie(s) removed.` : ''),
+            );
             sendResponse?.({ success: true });
         } catch (error) {
             console.error('[DNR] Error cleaning up video PiP rules:', error);

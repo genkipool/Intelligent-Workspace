@@ -1,3 +1,44 @@
+/**
+ * Tries the floating player's page again, a little later, when its frame came up as
+ * Chrome's "refused to connect" page.
+ *
+ * The frame's document says it arrived (`pipFrame.js`); Chrome's error page says
+ * nothing. x.com answers from a shell its service worker cached, which can carry
+ * `X-Frame-Options: DENY`, and refreshes that shell in the background -- so the page
+ * is hidden and asked for again once the refresh has had time to land, at most twice.
+ * The same wait-and-retry the side browser does (`ui/services/frameRetry.js`); this
+ * copy exists because content scripts cannot import from the extension's pages.
+ */
+function itgRetryIfPipFrameRefused(iframe, url, pipWindow, delays = [1200, 2500]) {
+    if (!pipWindow || !/^https?:/i.test(url)) return;
+    let announced = false;
+    let attempt = 0;
+    const onMessage = (event) => {
+        if (event.source === iframe.contentWindow && event.data?.type === 'itg-pip-frame-ready') announced = true;
+    };
+    const stop = () => {
+        pipWindow.removeEventListener('message', onMessage);
+        iframe.removeEventListener('load', onLoad);
+        iframe.style.visibility = '';
+    };
+    const onLoad = async () => {
+        if (announced || pipWindow.closed || attempt >= delays.length) {
+            stop();
+            return;
+        }
+        iframe.style.visibility = 'hidden';
+        await new Promise((resolve) => setTimeout(resolve, delays[attempt++]));
+        if (pipWindow.closed || !iframe.isConnected) {
+            stop();
+            return;
+        }
+        announced = false;
+        iframe.src = url;
+    };
+    pipWindow.addEventListener('message', onMessage);
+    iframe.addEventListener('load', onLoad);
+}
+
 async function requestItgPipWindow(targetUrl, defaultWidth, defaultHeight) {
     const isShort =
         (typeof targetUrl === 'string' && targetUrl.includes('/shorts/')) ||
@@ -239,6 +280,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
             iframe.setAttribute('fetchpriority', 'high');
             iframe.setAttribute('loading', 'eager');
             iframe.src = targetUrl;
+            itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
             pipWindow.document.body.appendChild(iframe);
 
             return pipWindow;

@@ -452,6 +452,7 @@ var OmniBarHost = class OmniBarHost {
         iframe.style.height = '100vh';
         iframe.style.border = 'none';
         iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
+        itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
         pipWindow.document.body.appendChild(iframe);
         let lastKnownTime = 0;
         const timeTrackerInterval = setInterval(() => {

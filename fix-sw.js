@@ -26,6 +26,8 @@ try {
      * Why each entry is shaped the way it is (the manifest cannot carry comments):
      * - panelScrollbar.js runs in every frame because the frame it is there for is the
      *   web page framed inside the side panel; it stops at its first line elsewhere.
+     * - pipFrame.js runs in every frame for the floating player's page frame, and
+     *   stops at its first line in any frame the float did not name.
      * - videoPipHook.js runs in the main world, so it can replace
      *   HTMLVideoElement.prototype.requestPictureInPicture and hand a site's own
      *   picture-in-picture button to our floating player.

@@ -354,6 +354,12 @@ async function handleOpenPipWindow(message, sender, sendResponse) {
                         iframe.style.height = '100vh';
                         iframe.allow =
                             'autoplay; camera; microphone; clipboard-write; clipboard-read; display-capture; fullscreen; encrypted-media; picture-in-picture;';
+                        // Defined by the content scripts, which share this world; absent
+                        // on a page they could not run in.
+                        const retryIfRefused = globalThis.itgRetryIfPipFrameRefused;
+                        if (typeof retryIfRefused === 'function') {
+                            retryIfRefused(iframe, targetUrlWithTime, pipWindow);
+                        }
                         pipWindow.document.body.appendChild(iframe);
 
                         // [AI NOTE] Video time tracking + resume logic for PiP close.

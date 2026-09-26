@@ -182,6 +182,10 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Cambiado
 
+- En el editor de cookies, la fecha y la hora de caducidad ocupan todo el ancho, las dos
+  en la misma fila y con el texto centrado.
+- En la ventana flotante (`wp` y `wp:`), los vídeos de x.com empiezan sin sonido; lo
+  activa solo el botón de sonido de X.
 - Las barras de búsqueda de las vistas de marcadores, notas, historial, galería, atajos
   y actividad web ocupan todo el ancho, así que siguen al panel lateral al cambiarlo de
   tamaño.
@@ -254,6 +258,14 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- x.com salía como "La página x.com ha rechazado la conexión" en el panel lateral y en
+  la ventana flotante (`wp`, `wp:`), sobre todo justo después de recargar x.com. Su
+  service worker responde con una copia guardada que prohíbe el enmarcado; ahora el
+  panel y la ventana esperan a la copia renovada y la cargan.
+- Abrir x.com en la ventana flotante desde otra web (`wp:x.com` en as.com) recargaba la
+  página sin parar.
+- Las teclas `wp` abrían la ventana flotante sin las reglas que permiten enmarcar la
+  página, y no las retiraban al cerrarla.
 - **Seguridad:** al abrir una página en el reproductor flotante, las reglas que le quitan
   las cabeceras anti-marco y le pasan sus cookies se aplicaban también a la pestaña
   desde la que se abrió. Esa página podía entonces enmarcar el sitio elegido con sus
