@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * WHAT IS BLOCKED RIGHT NOW, AND WHY.
@@ -140,8 +141,10 @@
                         <button
                             class="wa-icon-btn"
                             type="button"
-                            title={$t('webActivitySnoozeWithTime', [String(snoozeMinutes)])}
-                            aria-label={$t('webActivityBlockedSnooze', [String(snoozeMinutes)])}
+                            title={$t(pluralKey('webActivitySnoozeWithTime', snoozeMinutes), [String(snoozeMinutes)])}
+                            aria-label={$t(pluralKey('webActivityBlockedSnooze', snoozeMinutes), [
+                                String(snoozeMinutes),
+                            ])}
                             onclick={() => onSnooze(row.domain)}
                         >
                             <svg width="14" height="14" aria-hidden="true" focusable="false"

@@ -155,12 +155,20 @@ body {
     gap: 7px;
     padding: 0 16px;
     overflow-x: auto;
-    scrollbar-width: none;
+    /* Thin rather than hidden: with no scrollbar a mouse had no way to reach the
+       filters that overflow, and nothing said there were any. */
+    scrollbar-width: thin;
     min-width: 0;
 }
 
-.header-filters::-webkit-scrollbar {
-    display: none;
+/* Below this width the brand, the filters and the actions no longer fit on one row,
+   and the tag filter was the first thing pushed out of reach — at 1280px it sat
+   entirely behind the "updated" stamp. The labels go first: the period chips name
+   themselves and the select says "All tags" and carries its tooltip. */
+@media (max-width: 1440px) {
+    .header-filters .filter-label {
+        display: none;
+    }
 }
 
 /* The row scrolls rather than squeezes. `overflow-x: auto` above exists so a narrow

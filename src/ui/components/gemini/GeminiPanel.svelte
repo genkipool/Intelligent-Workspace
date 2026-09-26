@@ -1,8 +1,8 @@
 <script>
+    import { msg as localizedMsg, applyTranslations } from '../../../utils/i18n.js';
     import { onMount } from 'svelte';
     import { geminiStore, isGeminiViewActive, agentModeEnabled, selectedModel } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { applyTranslations } from '../../../utils/i18n.js';
     import { cancelAgentQuery } from '../../../utils/agent-ui.js';
     import GeminiConversationView from './GeminiConversationView.svelte';
     import GeminiInput from './GeminiInput.svelte';
@@ -101,7 +101,7 @@
         const headerTitle = document.getElementById('main-header-title');
         if (headerTitle) {
             headerTitle.removeAttribute('data-i18n');
-            const originalText = chrome.i18n.getMessage('listGroupViewTitle');
+            const originalText = localizedMsg('listGroupViewTitle');
             if (originalText) headerTitle.textContent = originalText;
         }
 

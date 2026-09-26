@@ -1,5 +1,6 @@
 /* global chrome, speechSynthesis, SpeechSynthesisUtterance */
 import '../../utils/speechTuning.js';
+import { activeLocale } from '../../utils/i18n.js';
 
 /**
  * Single entry point for text-to-speech.
@@ -52,9 +53,9 @@ if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
 // asked for once. This is that first ask.
 if (typeof speechSynthesis !== 'undefined') speechSynthesis.getVoices();
 
-/** Reading language: the extension UI language, as the notes reader has always done. */
+/** Reading language: the extension's UI language, as the notes reader has always done. */
 export function getSpeechLang() {
-    return chrome.i18n.getUILanguage() || 'en-US';
+    return activeLocale();
 }
 
 /** The chosen voice, if it is installed; `null` leaves the choice to the browser. */

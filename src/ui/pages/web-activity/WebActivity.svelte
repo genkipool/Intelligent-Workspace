@@ -1,4 +1,5 @@
 <script>
+    import { localeOf, showNotification } from '../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * THE WEB ACTIVITY DASHBOARD.
@@ -16,7 +17,6 @@
 
     import { t, tt, currentLang, i18nStore, messages } from '../../stores/i18nStore.js';
     import { confirmAction } from '../../stores/confirmStore.js';
-    import { showNotification } from '../../../utils/i18n.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { i18nService } from '../../services/i18nService.js';
 
@@ -1291,12 +1291,11 @@
                                                 cells={heatmap.cells}
                                                 monthPositions={heatmap.monthPositions.map((mp) => ({
                                                     ...mp,
-                                                    label: new Intl.DateTimeFormat(
-                                                        $currentLang === 'es' ? 'es-ES' : 'en-GB',
-                                                        { month: 'short' },
-                                                    ).format(new Date(2024, mp.month, 1)),
+                                                    label: new Intl.DateTimeFormat(localeOf($currentLang), {
+                                                        month: 'short',
+                                                    }).format(new Date(2024, mp.month, 1)),
                                                 }))}
-                                                locale={$currentLang === 'es' ? 'es-ES' : 'en-GB'}
+                                                locale={localeOf($currentLang)}
                                                 {i18n}
                                                 fmtDur={(seconds) => fmtDur(seconds)}
                                                 {tooltipEl}

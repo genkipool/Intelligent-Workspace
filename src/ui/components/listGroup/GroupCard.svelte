@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../utils/i18n.js';
     import { untrack } from 'svelte';
     import { get } from 'svelte/store';
     import { tt } from '../../stores/i18nStore.js';
@@ -403,14 +404,17 @@
             {#if isBackup}
                 <span
                     class="group-tab-count"
-                    title={$tt('backupTabCountTooltip', [liveTabs.length, liveTabs.length + tabs.length])}
-                    >{backupCount}</span
+                    title={$tt(pluralKey('backupTabCountTooltip', liveTabs.length + tabs.length), [
+                        liveTabs.length,
+                        liveTabs.length + tabs.length,
+                    ])}>{backupCount}</span
                 >
             {:else}
                 <span
                     class="group-tab-count"
                     class:all-seen={isAllSeen}
-                    title={$tt('groupTabCountTooltip', [seenCount, tabCount])}>{seenCount}/{tabCount}</span
+                    title={$tt(pluralKey('groupTabCountTooltip', tabCount), [seenCount, tabCount])}
+                    >{seenCount}/{tabCount}</span
                 >
             {/if}
         </span>

@@ -1,6 +1,6 @@
 import { get } from 'svelte/store';
 
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations, showNotification, msg as localizedMsg, pluralKey } from '../../utils/i18n.js';
 
 import { currentDownloadModal, currentColorPopup } from '../stores/appStore.svelte.js';
 
@@ -52,7 +52,7 @@ export async function showDownloadPopup(button, url) {
         ];
 
         const allBtn = _downloadFilterButtonTemplate.content.cloneNode(true).firstElementChild;
-        allBtn.textContent = chrome.i18n.getMessage('all') || 'All';
+        allBtn.textContent = localizedMsg('all') || 'All';
         allBtn.classList.add('active');
         allBtn.dataset.filter = '*';
         filterContainer.appendChild(allBtn);
@@ -162,13 +162,13 @@ export function updateModalUI(modal) {
 
     downloadBtn.disabled = selectedItems.length === 0;
     const downloadTextSpan = downloadBtn.querySelector('span');
-    const downloadText = chrome.i18n.getMessage('download') || 'Download';
+    const downloadText = localizedMsg('download') || 'Download';
     downloadTextSpan.textContent = `${downloadText} (${selectedItems.length})`;
 
     if (visibleItems.length > 0 && selectedItems.length === visibleItems.length) {
-        selectAllBtn.textContent = chrome.i18n.getMessage('deselectAll') || 'Deselect All';
+        selectAllBtn.textContent = localizedMsg('deselectAll') || 'Deselect All';
     } else {
-        selectAllBtn.textContent = chrome.i18n.getMessage('selectAll') || 'Select All';
+        selectAllBtn.textContent = localizedMsg('selectAll') || 'Select All';
     }
 }
 
@@ -186,7 +186,7 @@ export async function handleGeminiSummaryRequest(url) {
         return;
     }
 
-    const promptTemplate = chrome.i18n.getMessage('geminiSummaryPrompt');
+    const promptTemplate = localizedMsg('geminiSummaryPrompt');
 
     const prompt = promptTemplate.replace('{url}', url);
 
@@ -202,7 +202,7 @@ export async function downloadFiles(filesToDownload) {
             files: filesToDownload,
         });
 
-        showNotification('downloadsStarted', false, [filesToDownload.length]);
+        showNotification(pluralKey('downloadsStarted', filesToDownload.length), false, [filesToDownload.length]);
     } catch (error) {
         console.error('Error sending download request to background script:', error);
         showNotification('errorStartingDownload', true);

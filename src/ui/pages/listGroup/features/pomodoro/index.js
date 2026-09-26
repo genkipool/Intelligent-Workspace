@@ -1,4 +1,4 @@
-import { showNotification } from '../../../../../utils/i18n.js';
+import { showNotification, activeLocale, msg as localizedMsg, pluralKey } from '../../../../../utils/i18n.js';
 import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
 import { openDashboard } from '../../../../services/dashboard/dashboardPages.js';
 
@@ -44,10 +44,10 @@ export function initPomodoro({ embedded = false } = {}) {
         return `${s}s`;
     }
     function fmtDate(ts) {
-        return ts ? new Date(ts).toLocaleString() : '—';
+        return ts ? new Date(ts).toLocaleString(activeLocale()) : '—';
     }
     function fmtTime(ts) {
-        return ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+        return ts ? new Date(ts).toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' }) : '—';
     }
 
     function getModeDuration(state) {
@@ -177,10 +177,10 @@ export function initPomodoro({ embedded = false } = {}) {
         tiempo: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     };
     const METHOD_TITLES = {
-        pomodoro: chrome.i18n.getMessage('pomodoroMethodPomodoroTitle') || 'Pomodoro',
-        cronometro: chrome.i18n.getMessage('pomodoroMethodCronometroTitle') || 'Stopwatch',
-        temporizador: chrome.i18n.getMessage('pomodoroMethodTemporizadorTitle') || 'Temporizador',
-        tiempo: chrome.i18n.getMessage('pomodoroMethodTiempoTitle') || 'Tiempo',
+        pomodoro: localizedMsg('pomodoroMethodPomodoroTitle') || 'Pomodoro',
+        cronometro: localizedMsg('pomodoroMethodCronometroTitle') || 'Stopwatch',
+        temporizador: localizedMsg('pomodoroMethodTemporizadorTitle') || 'Temporizador',
+        tiempo: localizedMsg('pomodoroMethodTiempoTitle') || 'Tiempo',
     };
 
     // Save alt timer state to storage for background persistence
@@ -285,15 +285,14 @@ export function initPomodoro({ embedded = false } = {}) {
         if (method === 'tiempo') {
             const endMs = getEndTimeMs();
             if (!endMs || endMs <= Date.now()) {
-                error =
-                    chrome.i18n.getMessage('pomodoroTiempoErrorPast') || 'End time must be greater than current time';
+                error = localizedMsg('pomodoroTiempoErrorPast') || 'End time must be greater than current time';
             }
         }
         // temporizador: error if total == 0
         if (method === 'temporizador') {
             const secs = getTimerInputSecs();
             if (secs <= 0) {
-                error = chrome.i18n.getMessage('pomodoroTemporizadorErrorZero') || 'Time must be greater than 0';
+                error = localizedMsg('pomodoroTemporizadorErrorZero') || 'Time must be greater than 0';
             }
         }
 
@@ -496,7 +495,7 @@ export function initPomodoro({ embedded = false } = {}) {
                     temporizador: 'pomodoroProgressTitleTemporizador',
                     tiempo: 'pomodoroProgressTitleTiempo',
                 }[method] || 'pomodoroProgressTitlePomodoro';
-            progressRow.title = chrome.i18n.getMessage(progressTitleKey) || progressTitleKey;
+            progressRow.title = localizedMsg(progressTitleKey) || progressTitleKey;
 
             if (method === 'cronometro') {
                 progressRow.classList.add('pomo-progress-disabled');
@@ -599,21 +598,21 @@ export function initPomodoro({ embedded = false } = {}) {
         const sessCount = parseInt(endInput?.value) || 8;
         const cycleCount = parseInt(sessInput?.value) || 4;
         if (unitSessions) {
-            const titleMsg = chrome.i18n.getMessage('pomodoroUnitSessionsTitle', [String(sessCount)]);
+            const titleMsg = localizedMsg(pluralKey('pomodoroUnitSessionsTitle', sessCount), [String(sessCount)]);
             unitSessions.title =
                 titleMsg || `With ${sessCount} pomodoros you finish the task. Each finished task counts as a session`;
         }
         if (unitCycleInfo) {
-            const titleMsg = chrome.i18n.getMessage('pomodoroUnitCycleInfoTitle', [String(cycleCount)]);
+            const titleMsg = localizedMsg(pluralKey('pomodoroUnitCycleInfoTitle', cycleCount), [String(cycleCount)]);
             unitCycleInfo.title = titleMsg || `With ${cycleCount} pomodoros you complete a cycle`;
         }
         // Settings cycles label title
         const cyclesLabel = panel.querySelector('[data-i18n="pomodoroSettingsCycles"]');
         if (cyclesLabel) {
-            const titleMsg = chrome.i18n.getMessage('pomodoroSettingsCyclesTitle');
+            const titleMsg = localizedMsg('pomodoroSettingsCyclesTitle');
             cyclesLabel.title =
                 titleMsg ||
-                chrome.i18n.getMessage('pomodoroCyclesSessionTooltip') ||
+                localizedMsg('pomodoroCyclesSessionTooltip') ||
                 'Cycle: group of pomodoros with long break. Session: complete task from start to finish';
         }
     }
@@ -915,15 +914,15 @@ export function initPomodoro({ embedded = false } = {}) {
         if (useStopMode && running) {
             pauseIcon?.classList.add('hidden');
             stopIcon?.classList.remove('hidden');
-            if (startBtn) startBtn.title = chrome.i18n.getMessage('pomodoroStop') || 'Stop';
+            if (startBtn) startBtn.title = localizedMsg('pomodoroStop') || 'Stop';
         } else {
             stopIcon?.classList.add('hidden');
             pauseIcon?.classList.toggle('hidden', !running);
             if (startBtn) {
                 if (running) {
-                    startBtn.title = chrome.i18n.getMessage('pomodoroPause') || 'Pause';
+                    startBtn.title = localizedMsg('pomodoroPause') || 'Pause';
                 } else {
-                    startBtn.title = chrome.i18n.getMessage('pomodoroStart') || 'Start';
+                    startBtn.title = localizedMsg('pomodoroStart') || 'Start';
                 }
             }
         }
@@ -964,8 +963,7 @@ export function initPomodoro({ embedded = false } = {}) {
         // Remove running classes from openBtn
         openBtn?.classList.remove('pomo-task-running', 'pomodoro-running');
         if (!localState) return;
-        const projectN =
-            localState.settings?.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'sin título';
+        const projectN = localState.settings?.projectName || localizedMsg('pomodoroUntitledProject') || 'sin título';
         showNotification('pomodoroTaskCompleted', false, [projectN]);
     }
 
@@ -1035,8 +1033,8 @@ export function initPomodoro({ embedded = false } = {}) {
             pauseIcon?.classList.toggle('hidden', !state.isRunning);
             if (startBtn) {
                 startBtn.title = state.isRunning
-                    ? chrome.i18n.getMessage('pomodoroPause') || 'Pausar'
-                    : chrome.i18n.getMessage('pomodoroStart') || 'Iniciar';
+                    ? localizedMsg('pomodoroPause') || 'Pausar'
+                    : localizedMsg('pomodoroStart') || 'Iniciar';
             }
         }
         startBtn?.classList.toggle('mode-break', isBreak(state.mode));
@@ -1359,12 +1357,11 @@ export function initPomodoro({ embedded = false } = {}) {
         currentItem.className = 'pomo-project-item' + (selectedStatProject === null ? ' active' : '');
         const currentBtn = document.createElement('button');
         currentBtn.type = 'button';
-        currentBtn.textContent = chrome.i18n.getMessage('pomodoroCurrentSessionLabel') || '— current session —';
+        currentBtn.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
         currentBtn.addEventListener('click', () => {
             selectedStatProject = null;
             if (statProjectName)
-                statProjectName.textContent =
-                    chrome.i18n.getMessage('pomodoroCurrentSessionLabel') || '— current session —';
+                statProjectName.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
             closeProjectDropdown();
             if (localState) renderStats(localState);
         });
@@ -1378,11 +1375,10 @@ export function initPomodoro({ embedded = false } = {}) {
             totalsItem.dataset.projectName = '__totals__';
             const totalsBtn = document.createElement('button');
             totalsBtn.type = 'button';
-            totalsBtn.textContent = chrome.i18n.getMessage('pomodoroStatsTotalAll') || 'Totals (all)';
+            totalsBtn.textContent = localizedMsg('pomodoroStatsTotalAll') || 'Totals (all)';
             totalsBtn.addEventListener('click', () => {
                 selectedStatProject = '__totals__';
-                if (statProjectName)
-                    statProjectName.textContent = chrome.i18n.getMessage('pomodoroStatsTotal') || 'Totals';
+                if (statProjectName) statProjectName.textContent = localizedMsg('pomodoroStatsTotal') || 'Totals';
                 closeProjectDropdown();
                 renderTotalsStats();
             });
@@ -1446,10 +1442,7 @@ export function initPomodoro({ embedded = false } = {}) {
         set('stat-total-time', fmtDur(totalTime));
         set('stat-interrupt-time', totalInterrupt > 0 ? fmtDur(totalInterrupt) : '—');
         set('stat-completed-cycles', totalCycles);
-        set(
-            'stat-completed-sessions',
-            `${allEntries.length} ${chrome.i18n.getMessage('pomodoroStatsSessions') || 'sessions'}`,
-        );
+        set('stat-completed-sessions', `${allEntries.length} ${localizedMsg('pomodoroStatsSessions') || 'sessions'}`);
         set('stat-interruptions', totalInterruptions);
         set('stat-avg-focus', avgFocus > 0 ? fmtDur(avgFocus) : '—');
 
@@ -1676,18 +1669,18 @@ export function initPomodoro({ embedded = false } = {}) {
 
         let calCurrentDate = new Date();
         const monthNames = [
-            chrome.i18n.getMessage('monthJanuary') || 'January',
-            chrome.i18n.getMessage('monthFebruary') || 'February',
-            chrome.i18n.getMessage('monthMarch') || 'March',
-            chrome.i18n.getMessage('monthApril') || 'April',
-            chrome.i18n.getMessage('monthMay') || 'May',
-            chrome.i18n.getMessage('monthJune') || 'June',
-            chrome.i18n.getMessage('monthJuly') || 'July',
-            chrome.i18n.getMessage('monthAugust') || 'August',
-            chrome.i18n.getMessage('monthSeptember') || 'September',
-            chrome.i18n.getMessage('monthOctober') || 'October',
-            chrome.i18n.getMessage('monthNovember') || 'November',
-            chrome.i18n.getMessage('monthDecember') || 'December',
+            localizedMsg('monthJanuary') || 'January',
+            localizedMsg('monthFebruary') || 'February',
+            localizedMsg('monthMarch') || 'March',
+            localizedMsg('monthApril') || 'April',
+            localizedMsg('monthMay') || 'May',
+            localizedMsg('monthJune') || 'June',
+            localizedMsg('monthJuly') || 'July',
+            localizedMsg('monthAugust') || 'August',
+            localizedMsg('monthSeptember') || 'September',
+            localizedMsg('monthOctober') || 'October',
+            localizedMsg('monthNovember') || 'November',
+            localizedMsg('monthDecember') || 'December',
         ];
 
         function closeAll() {
@@ -2195,8 +2188,7 @@ export function initPomodoro({ embedded = false } = {}) {
         stopAllAltTimers();
         updateStartPauseUI(false);
         // Log task completion
-        const projectN =
-            localState.settings.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'Untitled';
+        const projectN = localState.settings.projectName || localizedMsg('pomodoroUntitledProject') || 'Untitled';
         const taskEntry = {
             name: projectN,
             startTime: localState.stats?.sessionStarted || Date.now(),
@@ -2270,8 +2262,7 @@ export function initPomodoro({ embedded = false } = {}) {
             await loadSavedProjects();
             selectedStatProject = null;
             if (statProjectName)
-                statProjectName.textContent =
-                    chrome.i18n.getMessage('pomodoroCurrentSessionLabel') || '— current session —';
+                statProjectName.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
             if (localState) renderStats(localState);
         } else {
             taskCompletionLog = [];
@@ -2606,8 +2597,7 @@ export function initPomodoro({ embedded = false } = {}) {
 
             // Auto-finish: when all cycles done and autofinish enabled
             if (event === 'allDone' && state.settings.autofinish) {
-                const projectN =
-                    state.settings.projectName || chrome.i18n.getMessage('pomodoroUntitledProject') || 'sin título';
+                const projectN = state.settings.projectName || localizedMsg('pomodoroUntitledProject') || 'sin título';
                 taskCompletionLog.push({
                     name: projectN,
                     startTime: state.stats?.sessionStarted || Date.now(),

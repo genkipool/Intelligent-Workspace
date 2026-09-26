@@ -725,6 +725,9 @@ var SnippetManager = class SnippetManager {
             const trigger = this.popupTriggerKey || '$$';
             if (
                 trigger &&
+                // With no snippets saved there is no list to open, and swallowing the
+                // keystroke would just eat a character the user meant to type.
+                Object.keys(this.snippets || {}).length > 0 &&
                 this.keyBuffer.length >= trigger.length &&
                 this.keyBuffer.slice(-trigger.length).join('') === trigger
             ) {

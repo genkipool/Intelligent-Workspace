@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg } from '../../../../utils/i18n.js';
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
     import { t, tt } from '../../../stores/i18nStore.js';
     import DateField from '../../../components/common/DateField.svelte';
@@ -66,19 +67,19 @@
                         <li class="schedule-item" tabindex="0">
                             <span class="schedule-type-indicator"
                                 >{sch.type === 'onetime'
-                                    ? chrome.i18n.getMessage('scheduleTypeDate') || 'Date'
-                                    : chrome.i18n.getMessage('scheduleTypeTime') || 'Time'}</span
+                                    ? localizedMsg('scheduleTypeDate') || 'Date'
+                                    : localizedMsg('scheduleTypeTime') || 'Time'}</span
                             >
                             <div class="schedule-details">
                                 <span class="schedule-theme-name">{sch.themeName}</span>
                                 <div class="schedule-time-details">
                                     {#if sch.type === 'onetime'}
                                         <div class="schedule-date-row">
-                                            <span>{chrome.i18n.getMessage('scheduleFrom') || 'From:'}</span>
+                                            <span>{localizedMsg('scheduleFrom') || 'From:'}</span>
                                             <span>{formatDateTime(sch.startDateTime)}</span>
                                         </div>
                                         <div class="schedule-date-row">
-                                            <span>{chrome.i18n.getMessage('scheduleTo') || 'To:'}</span>
+                                            <span>{localizedMsg('scheduleTo') || 'To:'}</span>
                                             <span>{formatDateTime(sch.endDateTime)}</span>
                                         </div>
                                     {:else}

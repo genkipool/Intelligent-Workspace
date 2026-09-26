@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../utils/i18n.js';
     import { tt } from '../../stores/i18nStore.js';
     import TabItem from './TabItem.svelte';
     import { listGroupStore } from '../../stores/listGroupStore.js';
@@ -101,8 +102,10 @@
             <span
                 class="tab-count"
                 class:all-seen={isAllSeen}
-                title={$tt('groupTabCountTooltip', [seenSubgroupTabsCount, totalSubgroupTabs])}
-                >{seenSubgroupTabsCount}/{totalSubgroupTabs}</span
+                title={$tt(pluralKey('groupTabCountTooltip', totalSubgroupTabs), [
+                    seenSubgroupTabsCount,
+                    totalSubgroupTabs,
+                ])}>{seenSubgroupTabsCount}/{totalSubgroupTabs}</span
             >
         </span>
     </summary>

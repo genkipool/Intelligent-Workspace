@@ -209,7 +209,7 @@ async function onPomodoroComplete(state) {
     chrome.notifications.create(`pomo-${Date.now()}`, {
         type: 'basic',
         iconUrl: '/assets/icons/icon48.png',
-        title: 'Pomodoro [POMODORO]',
+        title: getI18nMsg('pomodoroTitle'),
         message: getI18nMsg(notifMessages[msgKey]) || 'Timer complete!',
     });
 }

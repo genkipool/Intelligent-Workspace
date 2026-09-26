@@ -2,6 +2,7 @@
  * agent-ui.js
  * Externalized UI logic for the AI Assistant (Agent Mode).
  */
+import { msg as localizedMsg, pluralKey } from './i18n.js';
 
 let ctx = {};
 let isAgentQueryCancelled = false;
@@ -189,12 +190,12 @@ export function setAgentButtonRunning(running) {
         geminiAgentModeBtn.setAttribute('aria-busy', 'true');
         geminiAgentModeBtn.style.opacity = '0.45';
         geminiAgentModeBtn.style.pointerEvents = 'none';
-        geminiAgentModeBtn.title = chrome.i18n.getMessage('agentRunning') || 'Agent is running…';
+        geminiAgentModeBtn.title = localizedMsg('agentRunning') || 'Agent is running…';
     } else {
         geminiAgentModeBtn.removeAttribute('aria-busy');
         geminiAgentModeBtn.style.opacity = '';
         geminiAgentModeBtn.style.pointerEvents = '';
-        geminiAgentModeBtn.title = chrome.i18n.getMessage('agentModeTooltip') || 'Toggle Agent Mode';
+        geminiAgentModeBtn.title = localizedMsg('agentModeTooltip') || 'Toggle Agent Mode';
     }
     setSendButtonBusy(running);
 }
@@ -207,7 +208,7 @@ export function setSendButtonBusy(busy) {
 }
 
 export function getToolLabel(tool, params) {
-    const i18n = chrome.i18n.getMessage.bind(chrome.i18n);
+    const i18n = localizedMsg;
     try {
         switch (tool) {
             case 'getOpenTabs':
@@ -235,7 +236,9 @@ export function getToolLabel(tool, params) {
             case 'closeTab':
                 return i18n('toolCloseTab', [String(params.tabId || '')]);
             case 'closeTabs':
-                return i18n('toolCloseTabs', [String((params.tabIds || []).length)]);
+                return i18n(pluralKey('toolCloseTabs', (params.tabIds || []).length), [
+                    String((params.tabIds || []).length),
+                ]);
             case 'duplicateTab':
                 return i18n('toolDuplicateTab');
             case 'pinTab':
@@ -546,7 +549,7 @@ export async function handleAgentQuery(userQuery, attachments = []) {
         if (!agentStepsEl || agentStepsEl.querySelector('.agent-thinking')) return;
         const div = document.createElement('div');
         div.className = 'agent-step-indicator agent-thinking';
-        div.innerHTML = `<span class="agent-thinking-dots"><span class="agent-thinking-dot"></span><span class="agent-thinking-dot"></span><span class="agent-thinking-dot"></span></span><span>${chrome.i18n.getMessage('agentThinking') || 'Thinking…'}</span>`;
+        div.innerHTML = `<span class="agent-thinking-dots"><span class="agent-thinking-dot"></span><span class="agent-thinking-dot"></span><span class="agent-thinking-dot"></span></span><span>${localizedMsg('agentThinking') || 'Thinking…'}</span>`;
         agentStepsEl.appendChild(div);
         geminiConversationView.scrollTop = geminiConversationView.scrollHeight;
     };

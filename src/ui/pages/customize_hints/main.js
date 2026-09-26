@@ -1,4 +1,5 @@
 // hint_common.js publishes window.HintCommon, which the page logic needs.
+import '../../../utils/languages.js';
 import '../../../utils/hint_common.js';
 import { mountPage } from '../../mountPage.js';
 import CustomizeHints from './CustomizeHints.svelte';

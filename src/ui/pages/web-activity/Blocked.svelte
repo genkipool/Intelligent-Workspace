@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * THE BLOCK SCREEN — what the user sees instead of a site they limited.
@@ -261,10 +262,14 @@
                     class="btn"
                     type="button"
                     disabled={busy}
-                    title={$t('webActivitySnoozeWithTime', [String(settings.snoozeMinutes)])}
+                    title={$t(pluralKey('webActivitySnoozeWithTime', settings.snoozeMinutes), [
+                        String(settings.snoozeMinutes),
+                    ])}
                     onclick={snooze}
                 >
-                    {$t('webActivityBlockedSnooze', [String(settings.snoozeMinutes)])}
+                    {$t(pluralKey('webActivityBlockedSnooze', settings.snoozeMinutes), [
+                        String(settings.snoozeMinutes),
+                    ])}
                 </button>
             {/if}
         </div>

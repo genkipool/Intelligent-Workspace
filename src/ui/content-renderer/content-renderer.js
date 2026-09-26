@@ -1,5 +1,6 @@
 import { extractYouTubeVideoIdFromUrl, createYouTubeEmbed } from '../../utils/youtubeEmbed.js';
 import { sanitizeNoteHtml } from '../../utils/noteHtml.js';
+import { msg as localizedMsg, activeLocale, plural } from '../../utils/i18n.js';
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -94,17 +95,17 @@ function renderQueryWithExpansion(queryEl, query) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'query-expand-btn';
-        btn.textContent = chrome.i18n.getMessage('expandQuery') || 'Ver más';
+        btn.textContent = localizedMsg('expandQuery') || 'Ver más';
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             isExpanded = !isExpanded;
             if (isExpanded) {
                 textNode.textContent = text + ' ';
-                btn.textContent = chrome.i18n.getMessage('collapseQuery') || 'Ver menos';
+                btn.textContent = localizedMsg('collapseQuery') || 'Ver menos';
             } else {
                 textNode.textContent = text.slice(0, 250) + '... ';
-                btn.textContent = chrome.i18n.getMessage('expandQuery') || 'Ver más';
+                btn.textContent = localizedMsg('expandQuery') || 'Ver más';
             }
         });
         queryEl.appendChild(textNode);
@@ -148,7 +149,7 @@ export function renderGeminiResponse(entryContainer, entry) {
 
     if (isLoading) {
         const loadingP = document.createElement('p');
-        loadingP.textContent = chrome.i18n.getMessage('geminiWaitingForResponse') || "Waiting for Gemini's response...";
+        loadingP.textContent = localizedMsg('geminiWaitingForResponse') || "Waiting for Gemini's response...";
         contentEl.appendChild(loadingP);
         entryContainer.classList.add('loading');
     } else {
@@ -238,11 +239,11 @@ export function renderGeminiResponse(entryContainer, entry) {
         const footer = document.createElement('div');
         footer.className = 'entry-footer gemini-footer';
         const { promptTokenCount, candidatesTokenCount, totalTokenCount } = data.usageMetadata;
-        const modelLabel = chrome.i18n.getMessage('geminiFooterModel') || 'Model';
+        const modelLabel = localizedMsg('geminiFooterModel') || 'Model';
         const modelVersion = data.modelVersion ? data.modelVersion.split('/').pop() : 'N/A';
-        const promptText = chrome.i18n.getMessage('geminiFooterPrompt', [String(promptTokenCount || 0)]);
-        const responseText = chrome.i18n.getMessage('geminiFooterResponse', [String(candidatesTokenCount || 0)]);
-        const totalText = chrome.i18n.getMessage('geminiFooterTotal', [String(totalTokenCount || 0)]);
+        const promptText = localizedMsg('geminiFooterPrompt', [String(promptTokenCount || 0)]);
+        const responseText = localizedMsg('geminiFooterResponse', [String(candidatesTokenCount || 0)]);
+        const totalText = localizedMsg('geminiFooterTotal', [String(totalTokenCount || 0)]);
 
         footer.innerHTML = `
             <span title="${modelLabel}: ${modelVersion}">${modelLabel}: ${modelVersion}</span>
@@ -293,7 +294,7 @@ export function renderNoteEntry(note, context, handlers) {
                 if (totalItems > 0) {
                     const percentage = Math.round((completedItems / totalItems) * 100);
                     statsElement.textContent = `${completedItems}/${totalItems} (${percentage}%)`;
-                    statsTooltipText = chrome.i18n.getMessage('noteStatsTooltipChecklist', [
+                    statsTooltipText = localizedMsg('noteStatsTooltipChecklist', [
                         String(completedItems),
                         String(totalItems),
                     ]);
@@ -307,7 +308,7 @@ export function renderNoteEntry(note, context, handlers) {
                 if (totalCards > 0) {
                     const percentage = Math.round((completedCards / totalCards) * 100);
                     statsElement.textContent = `${completedCards}/${totalCards} (${percentage}%)`;
-                    statsTooltipText = chrome.i18n.getMessage('noteStatsTooltipKanban', [
+                    statsTooltipText = localizedMsg('noteStatsTooltipKanban', [
                         String(completedCards),
                         String(totalCards),
                     ]);
@@ -321,13 +322,13 @@ export function renderNoteEntry(note, context, handlers) {
                     const textContent = tempDiv.textContent || '';
                     const charCount = textContent.length;
                     const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
-                    statsElement.textContent = chrome.i18n.getMessage('noteStatsWordsChars', [
+                    statsElement.textContent = localizedMsg('noteStatsWordsChars', [
                         String(wordCount),
                         String(charCount),
                     ]);
-                    statsTooltipText = chrome.i18n.getMessage('noteStatsTooltipText', [
-                        String(wordCount),
-                        String(charCount),
+                    statsTooltipText = localizedMsg('noteStatsTooltipText', [
+                        plural('noteWordCount', wordCount),
+                        plural('noteCharCount', charCount),
                     ]);
                 }
                 break;
@@ -349,8 +350,8 @@ export function renderNoteEntry(note, context, handlers) {
         const i18nKey = typeI18nKeys[note.type] || 'noteTypeText';
         typeEl.setAttribute('data-i18n', i18nKey);
         typeEl.dataset.type = note.type;
-        const translatedTypeText = chrome.i18n.getMessage(i18nKey) || note.type;
-        const filterTooltip = chrome.i18n.getMessage('filterByTypeTooltip', [translatedTypeText]);
+        const translatedTypeText = localizedMsg(i18nKey) || note.type;
+        const filterTooltip = localizedMsg('filterByTypeTooltip', [translatedTypeText]);
         typeEl.title = filterTooltip;
         if (handlers.onFilter) {
             typeEl.addEventListener('click', (e) => {
@@ -403,9 +404,9 @@ export function renderNoteEntry(note, context, handlers) {
             if (Array.isArray(note.content)) {
                 const states = ['todo', 'inprogress', 'done'];
                 const stateLabels = {
-                    todo: chrome.i18n.getMessage('kanbanDefaultTodo') || 'To Do',
-                    inprogress: chrome.i18n.getMessage('kanbanDefaultInProgress') || 'In Progress',
-                    done: chrome.i18n.getMessage('kanbanDefaultDone') || 'Done',
+                    todo: localizedMsg('kanbanDefaultTodo') || 'To Do',
+                    inprogress: localizedMsg('kanbanDefaultInProgress') || 'In Progress',
+                    done: localizedMsg('kanbanDefaultDone') || 'Done',
                 };
                 note.content.forEach((item, index) => {
                     const itemEl = document.createElement('div');
@@ -463,7 +464,7 @@ export function renderNoteEntry(note, context, handlers) {
     // Add event handlers for PDFs after rendering content.
     if (note.type === 'text' && handlers.onOpenFileInPanel) {
         contentEl.querySelectorAll('a[href^="data:application/pdf"]').forEach((link) => {
-            link.title = chrome.i18n.getMessage('notePdfOpenTooltip');
+            link.title = localizedMsg('notePdfOpenTooltip');
 
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -499,7 +500,7 @@ export function renderNoteEntry(note, context, handlers) {
 
         if (predefinedCategories.includes(note.category)) {
             i18nKey = `noteCat${note.category}`;
-            translatedCategoryName = chrome.i18n.getMessage(i18nKey);
+            translatedCategoryName = localizedMsg(i18nKey);
         } else {
             translatedCategoryName = note.category;
         }
@@ -510,7 +511,7 @@ export function renderNoteEntry(note, context, handlers) {
 
         tagEl.dataset.category = note.category;
         tagEl.textContent = translatedCategoryName;
-        const filterTooltip = chrome.i18n.getMessage('filterByCategoryTooltip', [translatedCategoryName]);
+        const filterTooltip = localizedMsg('filterByCategoryTooltip', [translatedCategoryName]);
         tagEl.title = filterTooltip;
         if (handlers.onFilter) {
             tagEl.addEventListener('click', (e) => {
@@ -524,10 +525,10 @@ export function renderNoteEntry(note, context, handlers) {
         const { contextKey } = note;
         let contextText = '';
         if (context.isOrphan) {
-            contextText = chrome.i18n.getMessage('orphanNoteContext') || 'Context Lost';
+            contextText = localizedMsg('orphanNoteContext') || 'Context Lost';
             if (contextKey) {
                 if (contextKey === 'g_general') {
-                    contextText = chrome.i18n.getMessage('generalNotesContext') || 'General';
+                    contextText = localizedMsg('generalNotesContext') || 'General';
                 } else {
                     const parts = contextKey.split('_');
                     if (contextKey.startsWith('g_') && parts.length > 1) {
@@ -547,7 +548,7 @@ export function renderNoteEntry(note, context, handlers) {
         }
         domainEl.textContent = contextText;
         domainEl.dataset.context = contextText;
-        const filterByContextTooltip = chrome.i18n.getMessage('filterByContextTooltip', [contextText]);
+        const filterByContextTooltip = localizedMsg('filterByContextTooltip', [contextText]);
         domainEl.title = filterByContextTooltip;
         if (handlers.onFilter) {
             domainEl.addEventListener('click', () => {
@@ -573,16 +574,16 @@ export function renderNoteEntry(note, context, handlers) {
     }
 
     if (dateEl) {
-        const creationDate = new Date(note.timestamp).toLocaleString();
+        const creationDate = new Date(note.timestamp).toLocaleString(activeLocale());
         dateEl.textContent = creationDate;
-        const creationDateTooltip = chrome.i18n.getMessage('creationDateTooltip') || 'Creation date:';
+        const creationDateTooltip = localizedMsg('creationDateTooltip') || 'Creation date:';
         dateEl.title = `${creationDateTooltip} ${creationDate}`;
     }
 
     if (modifiedDateEl && note.modifiedTimestamp && note.timestamp !== note.modifiedTimestamp) {
-        const modifiedDate = new Date(note.modifiedTimestamp).toLocaleString();
+        const modifiedDate = new Date(note.modifiedTimestamp).toLocaleString(activeLocale());
         modifiedDateEl.textContent = modifiedDate;
-        const modifiedDateTooltip = chrome.i18n.getMessage('modifiedDateTooltip') || 'Modification date:';
+        const modifiedDateTooltip = localizedMsg('modifiedDateTooltip') || 'Modification date:';
         modifiedDateEl.title = `${modifiedDateTooltip} ${modifiedDate}`;
     }
 

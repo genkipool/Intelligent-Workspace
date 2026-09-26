@@ -829,7 +829,7 @@
             }}
         >
             <footer class="footer">
-                <div>Intelligent Workspace v1.0.0</div>
+                <div>Intelligent Workspace v{chrome.runtime.getManifest().version}</div>
                 <div class="color-dots">
                     {#each ['#5F6368', '#1A73E8', '#D93025', '#F9AB00', '#188038', '#D01884', '#A142F4', '#007B83', '#FA903E'] as color (color)}
                         <div class="color-dot" style="background-color: {color};"></div>

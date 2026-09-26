@@ -1,4 +1,4 @@
-import { showNotification as notify } from './i18n.js';
+import { showNotification as notify, msg as localizedMsg, pluralKey } from './i18n.js';
 
 let elements;
 let globals;
@@ -552,7 +552,7 @@ export async function exportThemes(themes, fileName, utils) {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        utils.showNotification('themesExportedSuccessfully', false, [themes.length], true);
+        utils.showNotification(pluralKey('themesExportedSuccessfully', themes.length), false, [themes.length], true);
     } catch (error) {
         console.error('Error exporting themes:', error);
         utils.showNotification('errorExportingThemes', true);
@@ -881,24 +881,24 @@ export async function exportBookmarkFolder(folderNode, utils) {
  */
 function validateSiteShortcut(site) {
     if (!site || typeof site !== 'object') {
-        return chrome.i18n.getMessage('val_invalid_obj') || 'Invalid object';
+        return localizedMsg('val_invalid_obj') || 'Invalid object';
     }
     if (!site.keys || typeof site.keys !== 'string') {
-        return chrome.i18n.getMessage('val_missing_keys') || 'Missing keys';
+        return localizedMsg('val_missing_keys') || 'Missing keys';
     }
     if (!site.url || typeof site.url !== 'string') {
-        return chrome.i18n.getMessage('val_missing_url') || 'Missing URL';
+        return localizedMsg('val_missing_url') || 'Missing URL';
     }
 
     // Limits
     if (site.keys.length > 20) {
-        return chrome.i18n.getMessage('val_keys_too_long', [site.keys]) || `Key '${site.keys}' too long`;
+        return localizedMsg('val_keys_too_long', [site.keys]) || `Key '${site.keys}' too long`;
     }
     if (site.url.length > 2000) {
-        return chrome.i18n.getMessage('val_url_too_long', [site.keys]) || `URL for '${site.keys}' too long`;
+        return localizedMsg('val_url_too_long', [site.keys]) || `URL for '${site.keys}' too long`;
     }
     if (site.description && site.description.length > 200) {
-        return chrome.i18n.getMessage('val_desc_too_long', [site.keys]) || `Description for '${site.keys}' too long`;
+        return localizedMsg('val_desc_too_long', [site.keys]) || `Description for '${site.keys}' too long`;
     }
 
     return null;
@@ -912,34 +912,34 @@ function validateSiteShortcut(site) {
  */
 function validateSnippet(trigger, expansion) {
     if (!trigger || typeof trigger !== 'string') {
-        return chrome.i18n.getMessage('val_invalid_trigger') || 'Invalid trigger';
+        return localizedMsg('val_invalid_trigger') || 'Invalid trigger';
     }
 
     let expansionText = expansion;
     if (typeof expansion === 'object') {
         if (!expansion.expansion || typeof expansion.expansion !== 'string') {
-            return chrome.i18n.getMessage('val_invalid_expansion') || 'Invalid expansion object';
+            return localizedMsg('val_invalid_expansion') || 'Invalid expansion object';
         }
         expansionText = expansion.expansion;
 
         if (expansion.variables && !Array.isArray(expansion.variables)) {
-            return 'Invalid variables format';
+            return localizedMsg('val_invalid_variables');
         }
     } else if (typeof expansion !== 'string') {
-        return chrome.i18n.getMessage('val_invalid_expansion') || 'Invalid expansion';
+        return localizedMsg('val_invalid_expansion') || 'Invalid expansion';
     }
 
     // Limits
     if (trigger.length > 5) {
-        return chrome.i18n.getMessage('val_trigger_too_long', [trigger]) || `Trigger '${trigger}' too long (Max 5)`;
+        return localizedMsg('val_trigger_too_long', [trigger]);
     }
     if (expansionText.length > 5000) {
-        return chrome.i18n.getMessage('val_expansion_too_long', [trigger]) || `Expansion for '${trigger}' too long`;
+        return localizedMsg('val_expansion_too_long', [trigger]) || `Expansion for '${trigger}' too long`;
     }
 
     if (typeof expansion === 'object' && expansion.variables) {
         if (expansion.variables.length > 50) {
-            return `Snippet '${trigger}' has too many variables (Max 50)`;
+            return localizedMsg('val_too_many_variables', [trigger]);
         }
     }
 
@@ -948,10 +948,10 @@ function validateSnippet(trigger, expansion) {
 
 function validateOverride(key, value) {
     if (!key || typeof key !== 'string') {
-        return chrome.i18n.getMessage('val_invalid_override_key') || 'Invalid override key';
+        return localizedMsg('val_invalid_override_key') || 'Invalid override key';
     }
     if (typeof value !== 'string') {
-        return chrome.i18n.getMessage('val_invalid_override_value') || 'Invalid override value';
+        return localizedMsg('val_invalid_override_value') || 'Invalid override value';
     }
 
     // Determine the limit: Use COMMAND_LIMITS value or 4 by default
@@ -959,7 +959,7 @@ function validateOverride(key, value) {
 
     if (value.length > limit) {
         // Markers: $1 = value, $2 = key, $3 = limit
-        const errorMsg = chrome.i18n.getMessage('val_override_too_long', [value, key, limit.toString()]);
+        const errorMsg = localizedMsg('val_override_too_long', [value, key, limit.toString()]);
 
         return errorMsg || `Override '${value}' too long for key '${key}' (Max ${limit})`;
     }
@@ -1040,15 +1040,14 @@ export async function importHintsConfig(file, utils) {
                     json = JSON.parse(event.target.result);
                 } catch {
                     // Translation: "Invalid JSON format"
-                    const msg = chrome.i18n.getMessage('val_invalid_json_format') || 'Invalid JSON format';
+                    const msg = localizedMsg('val_invalid_json_format') || 'Invalid JSON format';
                     throw new Error(msg);
                 }
 
                 if (!json || json.type !== 'itg-hints-config' || !json.data) {
                     // Translation: "Invalid file type (missing itg-hints-config type)"
                     const msg =
-                        chrome.i18n.getMessage('val_invalid_file_type') ||
-                        'Invalid file type (missing itg-hints-config type)';
+                        localizedMsg('val_invalid_file_type') || 'Invalid file type (missing itg-hints-config type)';
                     throw new Error(msg);
                 }
 
@@ -1065,14 +1064,14 @@ export async function importHintsConfig(file, utils) {
                 if (Array.isArray(sites)) {
                     sites.forEach((site) => {
                         const err = validateSiteShortcut(site);
-                        if (err) errors.push(`Site: ${err}`);
+                        if (err) errors.push(localizedMsg('val_prefix_site', [err]));
                     });
                 }
 
                 if (typeof snippets === 'object') {
                     Object.entries(snippets).forEach(([trigger, expansion]) => {
                         const err = validateSnippet(trigger, expansion);
-                        if (err) errors.push(`Snippet: ${err}`);
+                        if (err) errors.push(localizedMsg('val_prefix_snippet', [err]));
                     });
                 }
 
@@ -1080,7 +1079,7 @@ export async function importHintsConfig(file, utils) {
                 if (typeof overrides === 'object') {
                     Object.entries(overrides).forEach(([key, value]) => {
                         const err = validateOverride(key, value);
-                        if (err) errors.push(`Override: ${err}`);
+                        if (err) errors.push(localizedMsg('val_prefix_override', [err]));
                     });
                 }
 

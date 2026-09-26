@@ -10,6 +10,7 @@
 import { get } from 'svelte/store';
 import { fmtDur, fmtHm } from '../../../services/dashboard/format.js';
 import { t } from '../../../stores/i18nStore.js';
+import { msg as localizedMsg } from '../../../../utils/i18n.js';
 
 let tooltipEl = null;
 let currentTarget = null;
@@ -67,7 +68,7 @@ export function showSiteTooltip(target, data) {
 
     hideSiteTooltip(true);
 
-    const tr = (key, ...params) => get(t)(key, params) || chrome.i18n?.getMessage(key) || key;
+    const tr = (key, ...params) => get(t)(key, params) || localizedMsg(key) || key;
 
     const isBlocked = !!data.blocked;
     const isPaused =

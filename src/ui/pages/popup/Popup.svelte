@@ -469,7 +469,7 @@
                 }}
             >
                 <footer class="footer">
-                    <div>Intelligent Workspace v1.0.0</div>
+                    <div>Intelligent Workspace v{chrome.runtime.getManifest().version}</div>
                     <div>{$t('developedBy')}</div>
                     <div class="color-dots">
                         <div class="color-dot" style="background-color: #5f6368"></div>

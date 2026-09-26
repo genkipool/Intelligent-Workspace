@@ -1,7 +1,7 @@
 import { getStorageArea } from './storage.js';
 import { get } from 'svelte/store';
 
-import { applyTranslations } from '../../utils/i18n.js';
+import { applyTranslations, msg as localizedMsg } from '../../utils/i18n.js';
 
 import {
     deleteScreenshotFromDb,
@@ -804,7 +804,7 @@ export function initSettingsEvents() {
                 historyDateFilterBtn.classList.add('active');
                 historyDateFilterBtn.setAttribute('aria-pressed', 'true');
                 historyDateFilterBtn.title =
-                    chrome.i18n.getMessage('historyDateFilterTooltip', [selectedDate]) || `Filter: ${selectedDate}`;
+                    localizedMsg('historyDateFilterTooltip', [selectedDate]) || `Filter: ${selectedDate}`;
                 await renderHistoryView(startDate.getTime(), endDate.getTime());
             } else {
                 currentHistoryDateFilter.set(null);

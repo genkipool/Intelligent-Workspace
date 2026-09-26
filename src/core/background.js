@@ -29,6 +29,8 @@
     }
 })(/Receiving end does not exist|message port closed|Could not establish connection/i);
 
+// The list of supported languages, shared with the pages and the content scripts.
+importScripts('/src/utils/languages.js');
 importScripts('/background/gemini-api.js');
 importScripts('/agent-backend.js');
 importScripts('/background/state.js');
@@ -256,7 +258,7 @@ function omniboxContains(haystack, word) {
 
 chrome.omnibox.onInputStarted.addListener(() => {
     const suggestion =
-        chrome.i18n.getMessage('omniboxDefaultSuggestion') ||
+        getI18nMsg('omniboxDefaultSuggestion') ||
         'Pregunta a la IA para encontrar cualquier pestaña abierta (ej: ¿Dónde estaba el Excel?)';
     chrome.omnibox.setDefaultSuggestion({ description: suggestion });
 });
@@ -423,9 +425,9 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
                 }
 
                 // Show premium success notification
-                const titleMsg = chrome.i18n.getMessage('omniboxTabFoundTitle') || '¡Pestaña Encontrada!';
+                const titleMsg = getI18nMsg('omniboxTabFoundTitle') || '¡Pestaña Encontrada!';
                 const messageMsg =
-                    chrome.i18n.getMessage('omniboxTabFoundMessage', [matchedTabTitle]) ||
+                    getI18nMsg('omniboxTabFoundMessage', [matchedTabTitle]) ||
                     `Te hemos llevado directamente a: ${matchedTabTitle}`;
 
                 chrome.notifications.create({
@@ -439,9 +441,9 @@ chrome.omnibox.onInputEntered.addListener(async (text) => {
         }
 
         // If we reach here, no tab was matched
-        const titleErr = chrome.i18n.getMessage('omniboxTabNotFoundTitle') || 'No se Encontró la Pestaña';
+        const titleErr = getI18nMsg('omniboxTabNotFoundTitle') || 'No se Encontró la Pestaña';
         const messageErr =
-            chrome.i18n.getMessage('omniboxTabNotFoundMessage', [text]) ||
+            getI18nMsg('omniboxTabNotFoundMessage', [text]) ||
             `No pudimos encontrar ninguna pestaña abierta para: ${text}`;
 
         chrome.notifications.create({

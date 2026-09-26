@@ -49,8 +49,7 @@ window.__itgPipLang = itgPipLang;
 var itgPipLoadPromise = null;
 
 function itgNormalizePipLang(lang) {
-    if (!lang || typeof lang !== 'string') return 'en';
-    return lang.trim().toLowerCase().startsWith('es') ? 'es' : 'en';
+    return ItgLanguages.resolveLanguage(lang);
 }
 
 function itgPipMsg(key, fallback, substitutions) {
@@ -102,13 +101,12 @@ async function itgSharedHintMessages(lang, force) {
 function itgLoadPipMessages(lang, force = false) {
     if (!lang) {
         try {
-            chrome.storage.local.get('preferred-language', (stored) => {
-                const raw = stored?.['preferred-language'] || chrome.i18n.getUILanguage() || 'en';
-                itgLoadPipMessages(itgNormalizePipLang(raw), force);
+            chrome.storage.local.get(ItgLanguages.STORAGE_KEY, (stored) => {
+                itgLoadPipMessages(ItgLanguages.pickLanguage(stored?.[ItgLanguages.STORAGE_KEY]), force);
             });
             return;
         } catch {
-            lang = itgNormalizePipLang(chrome.i18n.getUILanguage());
+            lang = ItgLanguages.detectBrowserLanguage();
         }
     }
     const normalized = itgNormalizePipLang(lang);
@@ -121,11 +119,8 @@ function itgLoadPipMessages(lang, force = false) {
 
     itgPipLoadPromise = (async () => {
         try {
-            const stored = await chrome.storage.local.get('preferred-language');
-            const langVal =
-                lang ||
-                stored?.['preferred-language'] ||
-                (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
+            const stored = await chrome.storage.local.get(ItgLanguages.STORAGE_KEY);
+            const langVal = lang || ItgLanguages.pickLanguage(stored?.[ItgLanguages.STORAGE_KEY]);
             const normalized = itgNormalizePipLang(langVal);
             // hint_common.js loads this same file into this same world. Reusing its copy
             // spares every frame a second fetch and parse of some 400 KB of JSON.
@@ -144,12 +139,14 @@ function itgLoadPipMessages(lang, force = false) {
                         itgPipLang = normalized;
                         window.__itgPipMessages = itgPipMessages;
                         window.__itgPipLang = itgPipLang;
-                    } else if (normalized !== 'en') {
-                        const fallbackUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                    } else if (normalized !== ItgLanguages.DEFAULT_LANGUAGE) {
+                        const fallbackUrl = chrome.runtime.getURL(
+                            `_locales/${ItgLanguages.DEFAULT_LANGUAGE}/messages.json`,
+                        );
                         const fallbackRes = await fetch(fallbackUrl);
                         if (fallbackRes.ok) {
                             itgPipMessages = await fallbackRes.json();
-                            itgPipLang = 'en';
+                            itgPipLang = ItgLanguages.DEFAULT_LANGUAGE;
                             window.__itgPipMessages = itgPipMessages;
                             window.__itgPipLang = itgPipLang;
                         }
@@ -2145,15 +2142,14 @@ function itgPreloadPipDims() {
                 'lastShortPipWidth',
                 'lastShortPipHeight',
                 'activeTheme',
-                'preferred-language',
+                ItgLanguages.STORAGE_KEY,
             ],
             (stored) => {
                 if (!stored) return;
                 Object.assign(itgPipSavedDims, stored);
                 itgPipTheme = stored.activeTheme ?? null;
                 window.__itgPipTheme = itgPipTheme;
-                const lang =
-                    stored['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                const lang = ItgLanguages.pickLanguage(stored[ItgLanguages.STORAGE_KEY]);
                 itgLoadPipMessages(lang);
             },
         );
@@ -2167,10 +2163,8 @@ function itgPreloadPipDims() {
                     window.__itgPipTheme = itgPipTheme;
                     ItgVideoPip.current?.applyTheme();
                 }
-                if (changes['preferred-language']) {
-                    const newLang =
-                        changes['preferred-language'].newValue ||
-                        (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+                if (changes[ItgLanguages.STORAGE_KEY]) {
+                    const newLang = ItgLanguages.pickLanguage(changes[ItgLanguages.STORAGE_KEY].newValue);
                     itgLoadPipMessages(newLang, true);
                 }
             });

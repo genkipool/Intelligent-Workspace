@@ -1,66 +1,18 @@
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
 
 describe('Cumulative Clipboard Copy Feature', () => {
-    let mockLocalStorage;
-    let mockSyncStorage;
-    let sentMessages;
-    let mockChrome;
-
-    beforeEach(() => {
-        mockLocalStorage = {};
-        mockSyncStorage = {};
-        sentMessages = [];
-
-        mockChrome = {
-            storage: {
-                local: {
-                    get: async (keys) => {
-                        if (typeof keys === 'string') return { [keys]: mockLocalStorage[keys] };
-                        if (Array.isArray(keys)) {
-                            const res = {};
-                            for (const k of keys) res[k] = mockLocalStorage[k];
-                            return res;
-                        }
-                        return { ...mockLocalStorage };
-                    },
-                    set: async (items) => {
-                        Object.assign(mockLocalStorage, items);
-                    },
-                },
-                sync: {
-                    get: async (keys) => {
-                        if (typeof keys === 'string') return { [keys]: mockSyncStorage[keys] };
-                        if (Array.isArray(keys)) {
-                            const res = {};
-                            for (const k of keys) res[k] = mockSyncStorage[k];
-                            return res;
-                        }
-                        return { ...mockSyncStorage };
-                    },
-                    set: async (items) => {
-                        Object.assign(mockSyncStorage, items);
-                    },
-                },
-            },
-            runtime: {
-                sendMessage: (msg) => {
-                    sentMessages.push(msg);
-                },
-            },
-        };
-    });
-
-    it('declares clipboardRead and clipboardWrite in manifest.json', () => {
+    it('asks for clipboardWrite only: the collection is kept, never read back', () => {
         const manifest = JSON.parse(readFileSync(resolve(rootDir, 'manifest.json'), 'utf-8'));
-        assert.ok(manifest.permissions.includes('clipboardRead'), 'manifest.json should include clipboardRead');
+        assert.ok(!manifest.permissions.includes('clipboardRead'), 'clipboardRead must not be requested');
         assert.ok(manifest.permissions.includes('clipboardWrite'), 'manifest.json should include clipboardWrite');
     });
 
@@ -96,164 +48,74 @@ describe('Cumulative Clipboard Copy Feature', () => {
         assert.ok(en.appendClipboardToggleDisable?.message, 'en messages should contain appendClipboardToggleDisable');
     });
 
-    it('appends text with double newline correctly via Clipboard logic', async () => {
-        let clipboardText = 'First copied line';
-        globalThis.chrome = mockChrome;
-        const mockClipboardApi = {
-            readText: async () => clipboardText,
-            writeText: async (t) => {
-                clipboardText = t;
+    /** Loads the real languages.js and hint_common.js into a sandbox, the way a page does. */
+    function loadHintCommon(stored = {}) {
+        const written = [];
+        let readCalls = 0;
+        const local = { ...stored };
+        const context = vm.createContext({
+            console,
+            Intl,
+            fetch: async () => ({ ok: false }),
+            navigator: {
+                clipboard: {
+                    writeText: async (text) => {
+                        written.push(text);
+                    },
+                    readText: async () => {
+                        readCalls++;
+                        return '';
+                    },
+                },
             },
-        };
-        Object.defineProperty(globalThis.navigator, 'clipboard', {
-            value: mockClipboardApi,
-            configurable: true,
-            writable: true,
+            chrome: {
+                storage: {
+                    local: {
+                        get: async (key) => (key in local ? { [key]: local[key] } : {}),
+                        set: async (items) => Object.assign(local, items),
+                    },
+                    sync: { get: async () => ({}), set: async () => {} },
+                    onChanged: { addListener() {} },
+                },
+                runtime: { getURL: (p) => p, sendMessage: async () => ({}) },
+                i18n: { getUILanguage: () => 'en', getMessage: () => '' },
+            },
         });
+        context.globalThis = context;
+        for (const file of ['src/utils/languages.js', 'src/utils/hint_common.js']) {
+            vm.runInContext(readFileSync(resolve(rootDir, file), 'utf-8'), context, { filename: file });
+        }
+        return { HintCommon: context.HintCommon, written, local, reads: () => readCalls };
+    }
 
-        const Clipboard = {
-            _lastCopiedText: '',
-            async getLastCopied() {
-                let text = '';
-                try {
-                    text = await globalThis.navigator.clipboard.readText();
-                } catch {}
-                if (!text) {
-                    text = this._lastCopiedText || '';
-                }
-                return text;
-            },
-            async appendSelection(selection) {
-                const selectedText = selection?.toString() || '';
-                if (!selectedText) return false;
+    const selection = (text) => ({ toString: () => text });
 
-                const existingText = await this.getLastCopied();
-                const delimiter = existingText
-                    ? existingText.endsWith('\n\n') || existingText.endsWith('\r\n\r\n')
-                        ? ''
-                        : existingText.endsWith('\n')
-                          ? '\n'
-                          : '\n\n'
-                    : '';
-                const combinedText = existingText ? `${existingText}${delimiter}${selectedText}` : selectedText;
-
-                await globalThis.navigator.clipboard.writeText(combinedText);
-                this._lastCopiedText = combinedText;
-                await globalThis.chrome.storage.local.set({ itg_last_clipboard_text: combinedText });
-                return true;
-            },
-        };
-
-        const selectionMock1 = { toString: () => 'Second copied line' };
-        const res1 = await Clipboard.appendSelection(selectionMock1);
-        assert.equal(res1, true);
-        assert.equal(clipboardText, 'First copied line\n\nSecond copied line');
-        assert.equal(mockLocalStorage.itg_last_clipboard_text, 'First copied line\n\nSecond copied line');
-
-        const selectionMock2 = { toString: () => 'Third copied line' };
-        const res2 = await Clipboard.appendSelection(selectionMock2);
-        assert.equal(res2, true);
-        assert.equal(clipboardText, 'First copied line\n\nSecond copied line\n\nThird copied line');
-        assert.equal(
-            mockLocalStorage.itg_last_clipboard_text,
-            'First copied line\n\nSecond copied line\n\nThird copied line',
-        );
+    it('the first append starts the collection with the selection', async () => {
+        const { HintCommon, written, local, reads } = loadHintCommon();
+        assert.equal(await HintCommon.Clipboard.appendSelection(selection('First')), true);
+        assert.deepEqual(written, ['First']);
+        assert.equal(local.itg_last_clipboard_text, 'First');
+        assert.equal(reads(), 0, 'the system clipboard is never read');
     });
 
-    it('normalizes to double newline if previous clipboard text already ends in single newline', async () => {
-        let clipboardText = 'Line with newline\n';
-        globalThis.chrome = mockChrome;
-        const mockClipboardApi = {
-            readText: async () => clipboardText,
-            writeText: async (t) => {
-                clipboardText = t;
-            },
-        };
-        Object.defineProperty(globalThis.navigator, 'clipboard', {
-            value: mockClipboardApi,
-            configurable: true,
-            writable: true,
-        });
-
-        const Clipboard = {
-            _lastCopiedText: '',
-            async getLastCopied() {
-                return globalThis.navigator.clipboard.readText();
-            },
-            async appendSelection(selection) {
-                const selectedText = selection?.toString() || '';
-                if (!selectedText) return false;
-
-                const existingText = await this.getLastCopied();
-                const delimiter = existingText
-                    ? existingText.endsWith('\n\n') || existingText.endsWith('\r\n\r\n')
-                        ? ''
-                        : existingText.endsWith('\n')
-                          ? '\n'
-                          : '\n\n'
-                    : '';
-                const combinedText = existingText ? `${existingText}${delimiter}${selectedText}` : selectedText;
-
-                await globalThis.navigator.clipboard.writeText(combinedText);
-                return true;
-            },
-        };
-
-        await Clipboard.appendSelection({ toString: () => 'Next line' });
-        assert.equal(clipboardText, 'Line with newline\n\nNext line');
-
-        // And if it already has double newline, it should not add a third
-        await Clipboard.appendSelection({ toString: () => 'After double' });
-        assert.equal(clipboardText, 'Line with newline\n\nNext line\n\nAfter double');
+    it('an ordinary copy starts a collection that the next append extends', async () => {
+        const { HintCommon, written, reads } = loadHintCommon();
+        HintCommon.Clipboard.remember('Copied');
+        await HintCommon.Clipboard.appendSelection(selection('Added'));
+        assert.deepEqual(written, ['Copied\n\nAdded']);
+        assert.equal(reads(), 0);
     });
 
-    it('sets initial content when clipboard was empty', async () => {
-        let clipboardText = '';
-        globalThis.chrome = mockChrome;
-        const mockClipboardApi = {
-            readText: async () => clipboardText,
-            writeText: async (t) => {
-                clipboardText = t;
-            },
-        };
-        Object.defineProperty(globalThis.navigator, 'clipboard', {
-            value: mockClipboardApi,
-            configurable: true,
-            writable: true,
-        });
-
-        const Clipboard = {
-            _lastCopiedText: '',
-            async getLastCopied() {
-                return globalThis.navigator.clipboard.readText();
-            },
-            async appendSelection(selection) {
-                const selectedText = selection?.toString() || '';
-                if (!selectedText) return false;
-
-                const existingText = await this.getLastCopied();
-                const delimiter = existingText ? (existingText.endsWith('\n') ? '' : '\n') : '';
-                const combinedText = existingText ? `${existingText}${delimiter}${selectedText}` : selectedText;
-
-                await globalThis.navigator.clipboard.writeText(combinedText);
-                return true;
-            },
-        };
-
-        await Clipboard.appendSelection({ toString: () => 'First selection ever' });
-        assert.equal(clipboardText, 'First selection ever');
+    it('carries the collection across tabs through storage, one blank line between pieces', async () => {
+        const { HintCommon, written } = loadHintCommon({ itg_last_clipboard_text: 'From another tab\n' });
+        await HintCommon.Clipboard.appendSelection(selection('Here'));
+        assert.deepEqual(written, ['From another tab\n\nHere']);
     });
 
-    it('returns false and does not append when selection is empty', async () => {
-        const Clipboard = {
-            async appendSelection(selection) {
-                const selectedText = selection?.toString() || '';
-                if (!selectedText) return false;
-                return true;
-            },
-        };
-        const res = await Clipboard.appendSelection({ toString: () => '' });
-        assert.equal(res, false);
+    it('does nothing for an empty selection', async () => {
+        const { HintCommon, written } = loadHintCommon();
+        assert.equal(await HintCommon.Clipboard.appendSelection(selection('')), false);
+        assert.deepEqual(written, []);
     });
 
     it('handles custom assigned key in selection key handler and respects enabled flag', () => {

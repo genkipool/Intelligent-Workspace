@@ -11,6 +11,8 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 
 const WORKER_FILES = [
+    // background.js loads it first with importScripts.
+    'src/utils/languages.js',
     'src/core/background/state.js',
     'src/core/background/utils.js',
     'src/core/background/group-analyzer.js',

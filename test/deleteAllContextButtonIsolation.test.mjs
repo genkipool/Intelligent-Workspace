@@ -86,25 +86,25 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
 
         it('resolves Spanish confirmation messages showing exact count and kept group name', () => {
             // Count = 1, Kept Group = "Trabajo"
-            const singleMsg = resolveMessage(esMessages.confirmDeleteOtherGroupsSingle, ['1', 'Trabajo'], 'message');
+            const singleMsg = resolveMessage(esMessages.confirmDeleteOtherGroups_one, ['1', 'Trabajo'], 'message');
             assert.equal(
                 singleMsg,
                 '¿Confirmas que quieres cerrar 1 grupo de esta ventana excepto el grupo "Trabajo"?',
             );
 
             // Count = 3, Kept Group = "Trabajo"
-            const pluralMsg = resolveMessage(esMessages.confirmDeleteOtherGroups, ['3', 'Trabajo'], 'message');
+            const pluralMsg = resolveMessage(esMessages.confirmDeleteOtherGroups_other, ['3', 'Trabajo'], 'message');
             assert.equal(
                 pluralMsg,
                 '¿Confirmas que quieres cerrar 3 grupos de esta ventana excepto el grupo "Trabajo"?',
             );
 
             // No active group in window, Count = 2
-            const allInWinMsg = resolveMessage(esMessages.confirmDeleteAllGroupsInWindow, ['2'], 'message');
+            const allInWinMsg = resolveMessage(esMessages.confirmDeleteAllGroupsInWindow_other, ['2'], 'message');
             assert.equal(allInWinMsg, '¿Confirmas que quieres cerrar 2 grupos de esta ventana?');
 
             // No active group in window, Count = 1
-            const allInWinSingle = resolveMessage(esMessages.confirmDeleteAllGroupsInWindowSingle, ['1'], 'message');
+            const allInWinSingle = resolveMessage(esMessages.confirmDeleteAllGroupsInWindow_one, ['1'], 'message');
             assert.equal(allInWinSingle, '¿Confirmas que quieres cerrar 1 grupo de esta ventana?');
 
             // Empty state notification
@@ -113,15 +113,15 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
 
         it('resolves English confirmation messages showing exact count and kept group name', () => {
             // Count = 1, Kept Group = "Work"
-            const singleMsg = resolveMessage(enMessages.confirmDeleteOtherGroupsSingle, ['1', 'Work'], 'message');
+            const singleMsg = resolveMessage(enMessages.confirmDeleteOtherGroups_one, ['1', 'Work'], 'message');
             assert.equal(singleMsg, 'Are you sure you want to close 1 group in this window except the group "Work"?');
 
             // Count = 3, Kept Group = "Work"
-            const pluralMsg = resolveMessage(enMessages.confirmDeleteOtherGroups, ['3', 'Work'], 'message');
+            const pluralMsg = resolveMessage(enMessages.confirmDeleteOtherGroups_other, ['3', 'Work'], 'message');
             assert.equal(pluralMsg, 'Are you sure you want to close 3 groups in this window except the group "Work"?');
 
             // No active group in window, Count = 2
-            const allInWinMsg = resolveMessage(enMessages.confirmDeleteAllGroupsInWindow, ['2'], 'message');
+            const allInWinMsg = resolveMessage(enMessages.confirmDeleteAllGroupsInWindow_other, ['2'], 'message');
             assert.equal(allInWinMsg, 'Are you sure you want to close 2 groups in this window?');
 
             // Empty state notification
@@ -351,7 +351,7 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
 
             // Verify modal request had the correct messageKey and parameters (count and kept group name)
             assert.ok(observedModalRequest);
-            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroups');
+            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroups_other');
             assert.deepEqual(observedModalRequest.params, ['2', 'Group 1']);
 
             // Verify background message was strictly scoped to window 10 and spared group 1
@@ -398,7 +398,7 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
             unsubscribe();
 
             assert.ok(observedModalRequest);
-            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroupsSingle');
+            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroups_one');
             assert.deepEqual(observedModalRequest.params, ['1', 'Group 1']);
             assert.equal(res.success, false);
             assert.equal(res.cancelled, true);
@@ -434,7 +434,7 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
             unsubscribe();
 
             assert.ok(observedModalRequest);
-            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroupsSingle');
+            assert.equal(observedModalRequest.messageKey, 'confirmDeleteOtherGroups_one');
             assert.deepEqual(observedModalRequest.params, ['1', 'Sin título']);
             assert.equal(res.success, true);
 
@@ -473,7 +473,7 @@ describe('delete-all-context-btn: Window Isolation and Modal Group Count', () =>
             unsubscribe();
 
             assert.ok(observedModalRequest);
-            assert.equal(observedModalRequest.messageKey, 'confirmDeleteAllGroupsInWindow');
+            assert.equal(observedModalRequest.messageKey, 'confirmDeleteAllGroupsInWindow_other');
             assert.deepEqual(observedModalRequest.params, ['2']);
             assert.equal(res.success, true);
 

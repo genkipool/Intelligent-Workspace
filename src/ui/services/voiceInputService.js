@@ -7,7 +7,7 @@
  * makes dictating a long sentence workable.
  */
 import { writable, get } from 'svelte/store';
-import { showNotification, getCurrentLang } from '../../utils/i18n.js';
+import { showNotification, getCurrentLang, localeOf } from '../../utils/i18n.js';
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -100,7 +100,7 @@ async function startRecognition(textarea, { onPermissionDenied } = {}) {
 
     instance.continuous = true;
     instance.interimResults = true;
-    instance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+    instance.lang = localeOf(lang);
     // Ask for alternatives so the engine can settle on the best one rather than the
     // first guess it manages to emit.
     instance.maxAlternatives = 3;

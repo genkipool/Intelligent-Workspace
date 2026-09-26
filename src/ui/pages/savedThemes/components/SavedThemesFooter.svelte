@@ -27,7 +27,7 @@
     </footer>
     <a href="#" id="about-link-saved-themes" class="footer-link" onclick={openAboutPage}>
         <footer class="footer">
-            <div>Intelligent Workspace v1.0.0</div>
+            <div>Intelligent Workspace v{chrome.runtime.getManifest().version}</div>
             <div class="color-dots">
                 {#each COLOR_DOTS as color (color)}
                     <div class="color-dot" style="background-color: {color};"></div>

@@ -6,6 +6,7 @@ import './listGroup.css';
 import '../../../styles/pomodoro-panel.css';
 import '../../content-renderer/content-renderer.css';
 import '../../../styles/hint_content.css';
+import '../../../utils/languages.js';
 import '../../../utils/hint_common.js';
 import '../../../utils/snippet-panel.js';
 import { listGroupStore } from '../../stores/listGroupStore.js';

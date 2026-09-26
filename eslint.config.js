@@ -129,6 +129,8 @@ export default [
             globals: {
                 ...globals.serviceworker,
                 chrome: 'readonly',
+                // Published by src/utils/languages.js, loaded first with importScripts.
+                ItgLanguages: 'readonly',
                 ...sharedGlobalsOf(sharedScriptFiles),
             },
         },
@@ -143,6 +145,8 @@ export default [
             globals: {
                 ...globals.browser,
                 chrome: 'readonly',
+                // Published by src/utils/languages.js, listed ahead of them in the manifest.
+                ItgLanguages: 'readonly',
                 ...sharedGlobalsOf(contentScriptFiles),
             },
         },
@@ -170,6 +174,30 @@ export default [
         // arrives through a side-effect import instead of a named one.
         files: ['src/utils/snippet-panel.js'],
         languageOptions: { globals: { HintCommon: 'readonly' } },
+    },
+    {
+        /**
+         * The pages translate through utils/i18n.js, which follows the language picked
+         * in the extension. `chrome.i18n.getMessage()` only knows the browser's, and
+         * every direct call was a string that ignored the switch. The storage key and
+         * the list of languages have one home each, in utils/languages.js.
+         */
+        files: ['src/ui/**/*.js', 'src/ui/**/*.svelte', 'src/config/**/*.js', 'src/utils/*.js'],
+        ignores: ['src/utils/i18n.js', 'src/utils/languages.js', 'src/utils/hint_common.js', 'src/utils/readAloud.js'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector:
+                        "MemberExpression[object.object.name='chrome'][object.property.name='i18n'][property.name='getMessage']",
+                    message: 'Use msg() from utils/i18n.js: it follows the language picked in the extension.',
+                },
+                {
+                    selector: "Literal[value='preferred-language']",
+                    message: 'Use LANGUAGE_STORAGE_KEY from utils/i18n.js.',
+                },
+            ],
+        },
     },
     {
         // Build-time scripts. They run on Node, not in a page or the worker, so they

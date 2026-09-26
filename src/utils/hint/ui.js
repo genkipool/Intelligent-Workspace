@@ -139,7 +139,7 @@ var HelpModal = class HelpModal {
             // Kept so cleanup() can take it off again; a replaced instance left it
             // behind, holding the whole modal.
             this._storageListener = (changes, area) => {
-                if (area === 'local' && changes['preferred-language'] && this.visible) {
+                if (area === 'local' && changes[ItgLanguages.STORAGE_KEY] && this.visible) {
                     HintCommon?.i18n?.loadMessages(true).then(() => {
                         const container = this.shadowUI.getContainer();
                         if (container) {

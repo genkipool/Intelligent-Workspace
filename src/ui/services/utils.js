@@ -1,3 +1,4 @@
+import { msg as localizedMsg, activeLocale } from '../../utils/i18n.js';
 export const debounce = (func, delay) => {
     let timeout;
     return (...args) => {
@@ -301,11 +302,11 @@ export function fmtDur(sec) {
 }
 
 export function fmtDate(ts) {
-    return ts ? new Date(ts).toLocaleString() : '—';
+    return ts ? new Date(ts).toLocaleString(activeLocale()) : '—';
 }
 
 export function fmtTime(ts) {
-    return ts ? new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+    return ts ? new Date(ts).toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' }) : '—';
 }
 
 export function fmtHMS(secs) {
@@ -478,7 +479,7 @@ export function getRelativeTime(timestamp) {
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
 
-    if (seconds < 60) return chrome.i18n.getMessage('justNow') || 'just now';
+    if (seconds < 60) return localizedMsg('justNow') || 'just now';
     if (minutes < 60) return `${minutes} min ago`;
     if (hours < 24) return `${hours} h ago`;
     return `${days} days ago`;

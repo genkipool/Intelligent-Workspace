@@ -1,6 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
-import { showNotification, getCurrentLang, loadMessages } from '../../utils/i18n.js';
+import { showNotification, getCurrentLang, loadMessages, msg as localizedMsg } from '../../utils/i18n.js';
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
 import { parseMarkdown } from '../content-renderer/content-renderer.js';
 import { LOCAL_AI_MODEL_ID } from '../services/localAiService.js';
@@ -1015,17 +1015,17 @@ function createGeminiStore() {
                     if (node.tagName === 'IMG') {
                         const altText = node.getAttribute('alt') || '';
                         if (altText) {
-                            speechText += `${chrome.i18n.getMessage('ttsImageDescription') || 'Image: '}${altText}. `;
+                            speechText += `${localizedMsg('ttsImageDescription') || 'Image: '}${altText}. `;
                         } else {
-                            speechText += `${chrome.i18n.getMessage('ttsImageWithoutDescription') || 'Image without description.'} `;
+                            speechText += `${localizedMsg('ttsImageWithoutDescription') || 'Image without description.'} `;
                         }
                     } else if (node.tagName === 'A') {
                         const linkText = node.textContent.trim();
                         if (linkText) {
-                            speechText += `${chrome.i18n.getMessage('ttsLinkDescription') || 'Link: '}${linkText}. `;
+                            speechText += `${localizedMsg('ttsLinkDescription') || 'Link: '}${linkText}. `;
                         }
                     } else if (node.tagName === 'LI') {
-                        speechText += `${chrome.i18n.getMessage('ttsListItem') || 'List item: '} `;
+                        speechText += `${localizedMsg('ttsListItem') || 'List item: '} `;
                     }
                     for (let child = node.firstChild; child; child = child.nextSibling) {
                         traverse(child);
@@ -1361,30 +1361,10 @@ function createGeminiStore() {
             const messages = await loadMessages(lang);
             const t = (key) => messages[key]?.message || key;
 
-            const saveBtn = modal.querySelector('.modal-btn-save');
+            // The modal owns its button, its busy label and its error line; this only
+            // validates and stores, and says why when it refuses.
             const apiKey = input.value.trim();
-            const errorMsg = modal.querySelector('#gemini-api-key-error');
-
-            input.classList.remove('input-error');
-            saveBtn?.classList.remove('error-state');
-            if (errorMsg) {
-                errorMsg.textContent = '';
-                errorMsg.classList.add('hidden');
-            }
-
-            if (!apiKey) {
-                if (errorMsg) {
-                    errorMsg.textContent = t('geminiApiKeyEmpty');
-                    errorMsg.classList.remove('hidden');
-                }
-                input.classList.add('input-error');
-                saveBtn?.classList.add('error-state');
-                return { ok: false, errorKey: 'geminiApiKeyEmpty' };
-            }
-
-            saveBtn.disabled = true;
-            const originalText = saveBtn.textContent;
-            saveBtn.textContent = t('checkingApiKey');
+            if (!apiKey) return { ok: false, errorKey: 'geminiApiKeyEmpty' };
 
             try {
                 const response = await chrome.runtime.sendMessage({ action: 'validateApiKey', apiKey });
@@ -1407,25 +1387,9 @@ function createGeminiStore() {
                     }
                     const existingIndex = keysList.findIndex((k) => k.key === apiKey);
                     if (existingIndex !== -1) {
-                        if (errorMsg) {
-                            errorMsg.textContent = t('duplicateApiKeyError');
-                            errorMsg.classList.remove('hidden');
-                        }
-                        input.classList.add('input-error');
-                        saveBtn.classList.add('error-state');
-                        saveBtn.disabled = false;
-                        saveBtn.textContent = originalText;
                         return { ok: false, errorKey: 'duplicateApiKeyError' };
                     }
                     if (keysList.length >= 10) {
-                        if (errorMsg) {
-                            errorMsg.textContent = t('geminiMaxApiKeysReached');
-                            errorMsg.classList.remove('hidden');
-                        }
-                        input.classList.add('input-error');
-                        saveBtn.classList.add('error-state');
-                        saveBtn.disabled = false;
-                        saveBtn.textContent = originalText;
                         return { ok: false, errorKey: 'geminiMaxApiKeysReached' };
                     }
                     keysList.push({
@@ -1456,29 +1420,11 @@ function createGeminiStore() {
                     });
                     update((st) => ({ ...st, apiKeys: keysList }));
                     showNotification('apiKeySaved');
-                    saveBtn.disabled = false;
-                    saveBtn.textContent = originalText;
                     input.value = '';
                     return { ok: true };
                 }
-                if (errorMsg) {
-                    errorMsg.textContent = t('geminiApiKeyInvalid');
-                    errorMsg.classList.remove('hidden');
-                }
-                input.classList.add('input-error');
-                saveBtn.classList.add('error-state');
-                saveBtn.disabled = false;
-                saveBtn.textContent = originalText;
                 return { ok: false, errorKey: 'geminiApiKeyInvalid' };
             } catch {
-                if (errorMsg) {
-                    errorMsg.textContent = t('errorValidatingApiKey');
-                    errorMsg.classList.remove('hidden');
-                }
-                input.classList.add('input-error');
-                saveBtn.classList.add('error-state');
-                saveBtn.disabled = false;
-                saveBtn.textContent = originalText;
                 return { ok: false, errorKey: 'errorValidatingApiKey' };
             }
         },

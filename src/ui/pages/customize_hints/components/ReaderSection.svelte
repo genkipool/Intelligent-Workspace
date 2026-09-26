@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg } from '../../../../utils/i18n.js';
     /**
      * What the page reader puts on the page.
      *
@@ -114,7 +115,7 @@
                         max={item.max}
                         step={item.step}
                         value={settings[item.key]}
-                        aria-label={chrome.i18n.getMessage(item.labelKey) || item.key}
+                        aria-label={localizedMsg(item.labelKey) || item.key}
                         oninput={(event) => setOpacity(item.key, event.currentTarget.value)}
                     />
                     <output class="reader-slider-value">{Math.round(Number(settings[item.key]) * 100)}%</output>

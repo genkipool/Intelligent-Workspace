@@ -11,7 +11,15 @@
 
 import { get, writable } from 'svelte/store';
 
-import { applyTranslations, showNotification, getCurrentLang, loadMessages } from '../../utils/i18n.js';
+import {
+    applyTranslations,
+    showNotification,
+    getCurrentLang,
+    loadMessages,
+    tooltipEntry,
+    msg as localizedMsg,
+    pluralKey,
+} from '../../utils/i18n.js';
 
 import {
     openModal,
@@ -288,7 +296,7 @@ export function applyPageMode(tabId, mode, i18nKey) {
             console.error('Error sending setPageMode message:', chrome.runtime.lastError.message);
             showNotification('errorApplyingMode', true);
         } else if (response && response.success) {
-            showNotification('modeAppliedSuccessfully', false, [chrome.i18n.getMessage(i18nKey) || mode]);
+            showNotification('modeAppliedSuccessfully', false, [localizedMsg(i18nKey) || mode]);
             renderGroups();
         }
     });
@@ -365,7 +373,7 @@ export async function toggleMuteAllSources() {
         await setAllReadAloudPaused(false);
         iconSpeaker.classList.remove('hidden');
         iconMuted.classList.add('hidden');
-        btn.title = chrome.i18n.getMessage('muteAllTabs');
+        btn.title = localizedMsg('muteAllTabs');
         syncAllTabIndicators(false);
     } else {
         const audibleTabs = allTabs.filter((t) => t.audible && !(t.mutedInfo && t.mutedInfo.muted));
@@ -379,7 +387,7 @@ export async function toggleMuteAllSources() {
         for (const tab of audibleTabs) chrome.tabs.update(tab.id, { muted: true });
         iconSpeaker.classList.add('hidden');
         iconMuted.classList.remove('hidden');
-        btn.title = chrome.i18n.getMessage('unmuteAllTabs');
+        btn.title = localizedMsg('unmuteAllTabs');
         syncAllTabIndicators(true);
     }
     setTimeout(() => updateMuteButtonState(), 300);
@@ -432,11 +440,11 @@ export async function updateMuteButtonState() {
     if (!hasAudibleUnmuted && hasMuted) {
         iconSpeaker.classList.add('hidden');
         iconMuted.classList.remove('hidden');
-        btn.title = chrome.i18n.getMessage(hasReading ? 'unmuteAllSources' : 'unmuteAllTabs');
+        btn.title = localizedMsg(hasReading ? 'unmuteAllSources' : 'unmuteAllTabs');
     } else {
         iconSpeaker.classList.remove('hidden');
         iconMuted.classList.add('hidden');
-        btn.title = chrome.i18n.getMessage(hasReading ? 'muteAllSources' : 'muteAllTabs');
+        btn.title = localizedMsg(hasReading ? 'muteAllSources' : 'muteAllTabs');
     }
 }
 
@@ -445,8 +453,8 @@ export async function updateAudibleIndicatorTooltip(indicator, isMuted) {
     indicator.dataset.i18nTitle = key;
     const lang = await getCurrentLang();
     const messages = await loadMessages(lang);
-    const msg = messages[key];
-    if (msg) indicator.title = msg.description || msg.message || '';
+    const msg = tooltipEntry(messages, key);
+    if (msg) indicator.title = msg.message || '';
 }
 
 export function syncAllTabIndicators(forceMuted) {
@@ -838,14 +846,13 @@ export async function handleDeleteOtherGroupsUI(windowId = null) {
         let messageKey;
         let params;
         if (hasActiveGroup) {
-            messageKey = count === 1 ? 'confirmDeleteOtherGroupsSingle' : 'confirmDeleteOtherGroups';
-            const untitledLabel =
-                (typeof chrome !== 'undefined' && chrome.i18n?.getMessage?.('untitled')) || 'Sin título';
+            messageKey = pluralKey('confirmDeleteOtherGroups', count);
+            const untitledLabel = localizedMsg('untitled') || 'Sin título';
             const rawTitle = keepGroup?.title ? keepGroup.title.replace(/\u200B/g, '').trim() : '';
             const keepGroupName = rawTitle || untitledLabel;
             params = [String(count), keepGroupName];
         } else {
-            messageKey = count === 1 ? 'confirmDeleteAllGroupsInWindowSingle' : 'confirmDeleteAllGroupsInWindow';
+            messageKey = pluralKey('confirmDeleteAllGroupsInWindow', count);
             params = [String(count)];
         }
 
@@ -1290,7 +1297,7 @@ export function renderScreenshotButton(actionsContainer, context, screenshotData
             const deleteBtn = document.createElement('span');
             deleteBtn.className = 'delete-screenshots-btn';
             deleteBtn.innerHTML = '&times;';
-            deleteBtn.title = chrome.i18n.getMessage('deleteAllScreenshotsContext') || 'Eliminar todas las capturas';
+            deleteBtn.title = localizedMsg('deleteAllScreenshotsContext') || 'Eliminar todas las capturas';
             deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -1555,7 +1562,7 @@ export async function handleBackupAllGroups(windowId = null) {
     if (allTabIdsToRemove.length > 0) {
         try {
             await chrome.tabs.remove(allTabIdsToRemove);
-            showNotification('allGroupsBackedUp', false, [groupsToBackup.length]);
+            showNotification(pluralKey('allGroupsBackedUp', groupsToBackup.length), false, [groupsToBackup.length]);
         } catch (e) {
             console.error('Error removing tabs during bulk backup:', e);
             showNotification('errorBackupGroup', true);
@@ -2001,7 +2008,7 @@ export async function fetchData(windowId = null) {
     }
 
     if (ungroupedTabs.length > 0) {
-        const ungroupedTitle = chrome.i18n.getMessage('ungroupedTabsTitle');
+        const ungroupedTitle = localizedMsg('ungroupedTabsTitle');
         const ungroupedVirtualGroup = {
             group: {
                 id: -100,
@@ -2364,7 +2371,7 @@ export function updateCounters(tabItemEl) {
         if (subGroupCountEl) {
             subGroupCountEl.textContent = `${seenInSubgroup}/${subGroupTabs.length}`;
             subGroupCountEl.classList.toggle('all-seen', seenInSubgroup === subGroupTabs.length);
-            const msg = chrome.i18n?.getMessage('groupTabCountTooltip', [
+            const msg = localizedMsg(pluralKey('groupTabCountTooltip', subGroupTabs.length), [
                 String(seenInSubgroup),
                 String(subGroupTabs.length),
             ]);
@@ -2380,7 +2387,7 @@ export function updateCounters(tabItemEl) {
         if (groupCountEl) {
             groupCountEl.textContent = `${seenInGroup}/${allTabsInGroup.length}`;
             groupCountEl.classList.toggle('all-seen', seenInGroup === allTabsInGroup.length);
-            const msg = chrome.i18n?.getMessage('groupTabCountTooltip', [
+            const msg = localizedMsg(pluralKey('groupTabCountTooltip', allTabsInGroup.length), [
                 String(seenInGroup),
                 String(allTabsInGroup.length),
             ]);

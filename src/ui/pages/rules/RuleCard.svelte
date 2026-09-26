@@ -561,7 +561,7 @@
             translate="no"
             data-index={index}
             title={$tt(isStarred ? 'unstarRule' : 'starRule')}
-            aria-label={$t(isStarred ? 'unstarRule' : 'starRule')}
+            aria-label={$tt(isStarred ? 'unstarRule' : 'starRule')}
             aria-pressed={isStarred}
         >
             <svg

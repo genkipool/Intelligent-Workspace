@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import {
@@ -475,38 +476,50 @@
                                                     <span class="stat-label">{$t('geminiLastUsed')}:</span>
                                                     <span class="stat-value" style="font-size:0.85em;">
                                                         {keyData.lastUsedAt
-                                                            ? new Date(keyData.lastUsedAt).toLocaleString()
+                                                            ? new Date(keyData.lastUsedAt).toLocaleString(
+                                                                  activeLocale(),
+                                                              )
                                                             : $t('geminiNeverUsed')}
                                                     </span>
                                                 </div>
                                                 <div class="api-stats-row">
                                                     <span class="stat-label">{$t('geminiTotalTokens')}:</span>
                                                     <span class="stat-value"
-                                                        >{(keyData.tokensUsed || 0).toLocaleString()}</span
+                                                        >{(keyData.tokensUsed || 0).toLocaleString(
+                                                            activeLocale(),
+                                                        )}</span
                                                     >
                                                 </div>
                                                 <div class="api-stats-row">
                                                     <span class="stat-label">{$t('tokensConsumedMinute')}:</span>
                                                     <span class="stat-value"
-                                                        >{(keyData.tokensThisMinute || 0).toLocaleString()}</span
+                                                        >{(keyData.tokensThisMinute || 0).toLocaleString(
+                                                            activeLocale(),
+                                                        )}</span
                                                     >
                                                 </div>
                                                 <div class="api-stats-row">
                                                     <span class="stat-label">{$t('tokensConsumedDay')}:</span>
                                                     <span class="stat-value"
-                                                        >{(keyData.tokensToday || 0).toLocaleString()}</span
+                                                        >{(keyData.tokensToday || 0).toLocaleString(
+                                                            activeLocale(),
+                                                        )}</span
                                                     >
                                                 </div>
                                                 <div class="api-stats-row">
                                                     <span class="stat-label">{$t('queriesConsumedMinute')}:</span>
                                                     <span class="stat-value"
-                                                        >{(keyData.queriesThisMinute || 0).toLocaleString()}</span
+                                                        >{(keyData.queriesThisMinute || 0).toLocaleString(
+                                                            activeLocale(),
+                                                        )}</span
                                                     >
                                                 </div>
                                                 <div class="api-stats-row">
                                                     <span class="stat-label">{$t('queriesConsumedDay')}:</span>
                                                     <span class="stat-value"
-                                                        >{(keyData.queriesToday || 0).toLocaleString()}</span
+                                                        >{(keyData.queriesToday || 0).toLocaleString(
+                                                            activeLocale(),
+                                                        )}</span
                                                     >
                                                 </div>
                                             </div>

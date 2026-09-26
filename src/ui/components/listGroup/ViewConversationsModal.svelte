@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
@@ -66,7 +67,7 @@
 
     function formatDate(timestamp) {
         if (!timestamp) return '';
-        return new Date(timestamp).toLocaleString();
+        return new Date(timestamp).toLocaleString(activeLocale());
     }
 
     function getCreationTimestamp(conv) {

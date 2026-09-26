@@ -6,6 +6,8 @@ import {
     getCurrentLang,
     loadMessages,
     resolveMessage,
+    LANGUAGE_STORAGE_KEY,
+    msg as localizedMsg,
 } from '../../../utils/i18n.js';
 import { exportHintsConfig, importHintsConfig } from '../../../utils/importExport.js';
 import { updateScrollButtons } from '../../components/common/scrollButtonsBridge.js';
@@ -89,7 +91,7 @@ export async function initCustomizeHints() {
             const text = resolveMessage(entry, [], 'message');
             if (text) return text;
         }
-        return chrome.i18n.getMessage(key) || fallback || key;
+        return localizedMsg(key) || fallback || key;
     };
 
     await refreshI18nMessages();
@@ -378,7 +380,7 @@ export async function initCustomizeHints() {
             let keyContent = currentKey;
             if (extraData.originalDesc === 'hintDesc_group_tab_nav') {
                 li.classList.add('command-item-group-nav');
-                const groupLabel = chrome.i18n.getUILanguage().startsWith('es') ? '<grupo><n>' : '<group><n>';
+                const groupLabel = localizedMsg('hintGroupTabKeys');
                 keyContent = [
                     HintCommon.DOM.create('span', { className: 'group-nav-part' }, 'Alt'),
                     HintCommon.DOM.create('span', { className: 'group-nav-plus' }, '+'),
@@ -642,20 +644,20 @@ export async function initCustomizeHints() {
                 className: 'var-id',
                 value: v.id,
                 maxlength: '3',
-                title: chrome.i18n.getMessage('varIdLabel') || 'ID',
+                title: localizedMsg('varIdLabel') || 'ID',
             });
             const wordInput = HintCommon.DOM.create('input', {
                 className: 'var-name',
                 value: v.word,
                 maxlength: '50',
-                title: chrome.i18n.getMessage('varWordLabel') || 'Word to replace',
+                title: localizedMsg('varWordLabel') || 'Word to replace',
             });
             const typeSelect = HintCommon.createVarTypeSelect({
                 className: 'var-value tag-select-compact',
                 value: row.dataset.varType,
                 textLabel: row.dataset.varDefault || null,
             });
-            typeSelect.title = chrome.i18n.getMessage('varTypeTooltip') || 'Variable type';
+            typeSelect.title = localizedMsg('varTypeTooltip') || 'Variable type';
 
             const validateRow = () => {
                 const currentExp = li.querySelector('[data-type="expansion"]').innerText;
@@ -670,7 +672,7 @@ export async function initCustomizeHints() {
                 if (!wordInput.value.trim() || !currentExp.includes(wordInput.value.trim())) {
                     wordInput.classList.add('itg-input-error');
                     if (!currentExp.includes(wordInput.value.trim()))
-                        wordInput.title = chrome.i18n.getMessage('errorVarWordNotFound');
+                        wordInput.title = localizedMsg('errorVarWordNotFound');
                 } else {
                     wordInput.classList.remove('itg-input-error');
                     wordInput.title = '';
@@ -729,7 +731,7 @@ export async function initCustomizeHints() {
         const usageText = HintCommon.DOM.create('span', { className: 'usage-text' });
         const copyBtn = HintCommon.DOM.create('button', {
             className: 'snippet-copy-usage-btn',
-            title: chrome.i18n.getMessage('copyButtonTitle') || 'Copy',
+            title: localizedMsg('copyButtonTitle') || 'Copy',
         });
         copyBtn.innerHTML = `<svg width="16" height="16" viewBox="-2.4 -2.4 28.80 28.80" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill-rule="evenodd" clip-rule="evenodd" fill="var(--text-color)"><path d="M6.25 5.25c0-2.747 2.187-5 4.917-5h6.666c2.73 0 4.917 2.253 4.917 5v8.5c0 2.747-2.187 5-4.917 5a.75.75 0 0 1 0-1.5c1.873 0 3.417-1.553 3.417-3.5v-8.5c0-1.947-1.544-3.5-3.417-3.5h-6.666c-1.873 0-3.417 1.553-3.417 3.5a.75.75 0 0 1-1.5 0"></path><path d="M1.25 10.25c0-2.747 2.187-5 4.917-5h6.666c2.73 0 4.917 2.253 4.917 5v8.5c0 2.747-2.187 5-4.917 5H6.167c-2.73 0-4.917-2.253-4.917-5zm4.917-3.5c-1.873 0-3.417 1.553-3.417 3.5v8.5c0 1.947 1.544 3.5 3.417 3.5h6.666c1.873 0 3.417-1.553 3.417-3.5v-8.5c0-1.947-1.544-3.5-3.417-3.5z"></path></g></svg>`;
 
@@ -742,7 +744,7 @@ export async function initCustomizeHints() {
             min: '0',
             max: '50',
             value: variables.length.toString(),
-            title: chrome.i18n.getMessage('variableCountTitle') || 'Number of variables',
+            title: localizedMsg('variableCountTitle') || 'Number of variables',
             style: 'width: 50px; text-align: center; margin-left: 8px;',
         });
 
@@ -1107,7 +1109,7 @@ export async function initCustomizeHints() {
                 const delBtn = document.createElement('button');
                 delBtn.className = 'delete-command-btn';
                 delBtn.innerHTML = `<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-                delBtn.title = chrome.i18n.getMessage('removeBtnTitle') || 'Remove';
+                delBtn.title = localizedMsg('removeBtnTitle') || 'Remove';
                 delBtn.addEventListener('click', () => {
                     chrome.runtime.sendMessage({ action: 'removeLinkPreviewBlacklist', domain: item.dataset.domain });
                 });
@@ -1630,7 +1632,7 @@ export async function initCustomizeHints() {
                 className: 'itg-manage-input itg-var-id itg-var-id-input',
                 maxlength: '3',
                 placeholder: `$${i}`,
-                title: chrome.i18n.getMessage('varIdLabel') || 'ID',
+                title: localizedMsg('varIdLabel') || 'ID',
                 value: prev.id,
             });
 
@@ -1638,7 +1640,7 @@ export async function initCustomizeHints() {
                 type: 'text',
                 className: 'itg-manage-input itg-var-word itg-var-flex-input',
                 maxlength: '50',
-                placeholder: chrome.i18n.getMessage('placeholderVarWord') || 'Word to replace',
+                placeholder: localizedMsg('placeholderVarWord') || 'Word to replace',
                 value: prev.word,
             });
 
@@ -1646,7 +1648,7 @@ export async function initCustomizeHints() {
                 type: 'text',
                 className: 'itg-manage-input itg-var-default itg-var-flex-input',
                 maxlength: '1000',
-                placeholder: chrome.i18n.getMessage('placeholderVarDefault') || 'Default value',
+                placeholder: localizedMsg('placeholderVarDefault') || 'Default value',
                 value: prev.def,
             });
 
@@ -1701,7 +1703,7 @@ export async function initCustomizeHints() {
         const expansionText = HintCommon.stripHtml(currentContent);
         if (!HintCommon.validateSnippetVar(word, expansionText)) {
             input.classList.add('itg-input-error');
-            input.title = chrome.i18n.getMessage('errorVarWordNotFound');
+            input.title = localizedMsg('errorVarWordNotFound');
         } else {
             input.classList.remove('itg-input-error');
             input.title = '';
@@ -1780,7 +1782,7 @@ export async function initCustomizeHints() {
                 if (errorKey) {
                     input.classList.add('itg-input-error');
                     // Get translated message
-                    input.title = chrome.i18n.getMessage(errorKey) || errorKey;
+                    input.title = localizedMsg(errorKey) || errorKey;
                 } else {
                     input.classList.remove('itg-input-error');
                     input.title = '';
@@ -2188,7 +2190,7 @@ export async function initCustomizeHints() {
     renderAll();
 
     chrome.storage.onChanged.addListener(async (changes, area) => {
-        if (area === 'local' && changes['preferred-language']) {
+        if (area === 'local' && changes[LANGUAGE_STORAGE_KEY]) {
             await refreshI18nMessages();
             await renderBuiltInCommands();
             await applyTranslations();

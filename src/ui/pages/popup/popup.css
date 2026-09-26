@@ -156,8 +156,7 @@ main {
     gap: 2px;
 }
 
-#lang-en,
-#lang-es {
+.language-option {
     font-size: 12px;
     font-weight: bold;
     padding: 2px 4px;
@@ -168,10 +167,12 @@ main {
     transition: background-color 0.2s ease;
 }
 
-#lang-en:hover,
-#lang-es:hover,
-#lang-en:focus-visible,
-#lang-es:focus-visible {
+.language-option[aria-pressed='false'] {
+    font-weight: normal;
+}
+
+.language-option:hover,
+.language-option:focus-visible {
     outline: none;
     background-color: var(--action-color);
     box-shadow: 0 0 0 2px var(--interactive-color);

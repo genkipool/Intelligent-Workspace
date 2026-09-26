@@ -995,11 +995,37 @@ function handleWebActivityClear(message, sendResponse) {
     });
 }
 
+/**
+ * Whether a parsed file is a web activity export: at least one of its three parts,
+ * each of the right shape. Anything else — another feature's export, a stray JSON —
+ * used to be "imported" as nothing and reported as a success.
+ */
+function waIsActivityExport(payload) {
+    const isPlainObject = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
+    if (!isPlainObject(payload)) return false;
+    const { days, limits, settings } = payload;
+    if (days === undefined && limits === undefined && settings === undefined) return false;
+    if (days !== undefined) {
+        if (!isPlainObject(days)) return false;
+        for (const [day, record] of Object.entries(days)) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !isPlainObject(record) || !isPlainObject(record.domains))
+                return false;
+        }
+    }
+    if (limits !== undefined && !isPlainObject(limits)) return false;
+    if (settings !== undefined && !isPlainObject(settings)) return false;
+    return true;
+}
+
 /** Restores an exported file, merging days rather than replacing the lot. */
 function handleWebActivityImport(message, sendResponse) {
     waSerial(async () => {
         try {
-            const payload = message.payload || {};
+            const payload = message.payload;
+            if (!waIsActivityExport(payload)) {
+                sendResponse({ success: false, error: 'NOT_AN_ACTIVITY_EXPORT' });
+                return;
+            }
             const writes = {};
             for (const [day, record] of Object.entries(payload.days || {})) {
                 const existing = await waGetDay(day);

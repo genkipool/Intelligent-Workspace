@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../utils/i18n.js';
     /**
      * `countLabel` is what the tooltip says about `c`, because what a cell counts
      * differs by dashboard — pomodoro sessions on one, nothing worth naming on
@@ -8,7 +9,7 @@
     let {
         cells = [],
         monthPositions = [],
-        locale = 'en-GB',
+        locale = activeLocale(),
         i18n = () => '',
         fmtDur = () => '',
         tooltipEl = null,

@@ -31,7 +31,6 @@
     "bookmarks",
     "readingList",
     "clipboardWrite",
-    "clipboardRead",
     "alarms",
     "offscreen",
     "idle"
@@ -121,6 +120,7 @@
         "<all_urls>"
       ],
       "js": [
+        "src/utils/languages.js",
         "src/utils/hint_common.js",
         "src/utils/hint/utils.js",
         "src/utils/hint/videoPipUi.js",
@@ -168,6 +168,7 @@
         "src/styles/hint_content.css",
         "src/styles/section-filter.css",
         "src/styles/prevent_flash.css",
+        "src/utils/languages.js",
         "src/utils/hint_common.js",
         "src/styles/themes.css",
         "src/styles/dashboard.css",
@@ -246,7 +247,7 @@
       "description": "__MSG_openPopup__"
     },
     "rules-manager": {
-      "description": "__MSG_openSettingsRules__"
+      "description": "__MSG_openRulesInTab__"
     },
     "toggle-prefixes": {
       "description": "__MSG_togglePrefixes__"

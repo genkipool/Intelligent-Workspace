@@ -13,7 +13,7 @@
             <span class="tutorial-prompt">{$t('tutorialPrompt') || 'Click to expand'}</span>
         </summary>
         <div class="tutorial-content">
-            <h4>{$t('tutorialWelcomeTitle') || 'Welcome to Intelligent Tab Group!'}</h4>
+            <h4>{$t('tutorialWelcomeTitle') || 'Welcome to Intelligent Workspace!'}</h4>
             <p>{$t('tutorialWelcomeDesc') || 'This tutorial will guide you through the features of the rules page.'}</p>
 
             <h4>{$t('tutorialActionButtonsTitle') || 'Action Buttons'}</h4>

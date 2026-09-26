@@ -22,7 +22,13 @@ async function waitForElement(selector, attempts = 30) {
     return null;
 }
 
-import { applyTranslations, showNotification, showPersistentProgressNotification } from '../../utils/i18n.js';
+import {
+    applyTranslations,
+    showNotification,
+    showPersistentProgressNotification,
+    msg as localizedMsg,
+    pluralKey,
+} from '../../utils/i18n.js';
 import {
     saveScreenshotToDb,
     getScreenshotFromDb,
@@ -797,7 +803,7 @@ export async function captureGroupTabs(tabs, context, options = {}) {
     }
 
     await renderGroups();
-    if (saved > 0) showNotification('groupTabsCaptured', false, [saved]);
+    if (saved > 0) showNotification(pluralKey('groupTabsCaptured', saved), false, [saved]);
 }
 
 /**
@@ -973,7 +979,7 @@ async function renderGalleryGrid(screenshotIds) {
 
     if (screenshotIds.length === 0) {
         const empty = document.createElement('p');
-        empty.textContent = chrome.i18n.getMessage('noScreenshots') || '';
+        empty.textContent = localizedMsg('noScreenshots') || '';
         grid.appendChild(empty);
         return;
     }
@@ -1204,7 +1210,9 @@ export async function clearAllContextDataUI(contextToDelete, config) {
                 await chrome.storage.session.set({ [config.sessionKey]: allIndexes });
             }
 
-            showNotification(config.notificationOrphanSuccess, false, [itemIdsToDelete.length]);
+            showNotification(pluralKey(config.notificationOrphanSuccess, itemIdsToDelete.length), false, [
+                itemIdsToDelete.length,
+            ]);
 
             if (config.name === 'Notes') closeNotesView();
             if (config.name === 'Screenshots') closeScreenshotGallery();
@@ -1642,7 +1650,7 @@ export async function updateScreenshotCountBadge(context, newCount) {
             const deleteBtn = document.createElement('span');
             deleteBtn.className = 'delete-screenshots-btn';
             deleteBtn.innerHTML = '&times;';
-            deleteBtn.title = chrome.i18n.getMessage('deleteAllScreenshotsContext') || 'Eliminar todas las capturas';
+            deleteBtn.title = localizedMsg('deleteAllScreenshotsContext') || 'Eliminar todas las capturas';
             deleteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 await clearAllContextDataUI({ type, id, secondaryId }, screenshotConfig);

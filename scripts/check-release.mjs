@@ -7,7 +7,7 @@
  * and expensive to miss.
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 
 const problems = [];
 
@@ -37,21 +37,42 @@ const problems = [];
 // exists in one language but not the other renders as an empty string, because
 // `i18nService.translate` returns '' for a missing key rather than falling back.
 {
+    // The one list of languages the code knows about; see src/utils/languages.js.
+    await import('../src/utils/languages.js');
+    const { SUPPORTED_LANGUAGES, DEFAULT_LANGUAGE } = globalThis.ItgLanguages;
+    const codes = SUPPORTED_LANGUAGES.map((l) => l.code);
+    const folders = readdirSync('_locales', { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+
+    for (const code of codes.filter((c) => !folders.includes(c))) {
+        problems.push(`src/utils/languages.js lists "${code}" but _locales/${code}/messages.json does not exist.`);
+    }
+    for (const folder of folders.filter((f) => !codes.includes(f))) {
+        problems.push(
+            `_locales/${folder} exists but "${folder}" is not in SUPPORTED_LANGUAGES (src/utils/languages.js).`,
+        );
+    }
+    const manifest = JSON.parse(readFileSync('manifest.json', 'utf8'));
+    if (manifest.default_locale !== DEFAULT_LANGUAGE) {
+        problems.push(
+            `manifest.json default_locale is "${manifest.default_locale}", the code's default is "${DEFAULT_LANGUAGE}".`,
+        );
+    }
+
     const read = (lang) => JSON.parse(readFileSync(`_locales/${lang}/messages.json`, 'utf8'));
-    const en = read('en');
-    const es = read('es');
+    const dicts = Object.fromEntries(codes.filter((c) => folders.includes(c)).map((c) => [c, read(c)]));
+    const reference = dicts[DEFAULT_LANGUAGE] ?? {};
 
-    const onlyIn = (a, b) => Object.keys(a).filter((k) => !(k in b));
-    const missingFromEs = onlyIn(en, es);
-    const missingFromEn = onlyIn(es, en);
+    for (const [lang, dict] of Object.entries(dicts)) {
+        if (lang === DEFAULT_LANGUAGE) continue;
+        const missing = Object.keys(reference).filter((k) => !(k in dict));
+        const extra = Object.keys(dict).filter((k) => !(k in reference));
+        if (missing.length) problems.push(`Keys in ${DEFAULT_LANGUAGE} but not ${lang}: ${missing.join(', ')}`);
+        if (extra.length) problems.push(`Keys in ${lang} but not ${DEFAULT_LANGUAGE}: ${extra.join(', ')}`);
+    }
 
-    if (missingFromEs.length) problems.push(`Keys in en but not es: ${missingFromEs.join(', ')}`);
-    if (missingFromEn.length) problems.push(`Keys in es but not en: ${missingFromEn.join(', ')}`);
-
-    for (const [lang, dict] of [
-        ['en', en],
-        ['es', es],
-    ]) {
+    for (const [lang, dict] of Object.entries(dicts)) {
         for (const [key, entry] of Object.entries(dict)) {
             for (const field of ['message', 'description']) {
                 const text = entry?.[field];

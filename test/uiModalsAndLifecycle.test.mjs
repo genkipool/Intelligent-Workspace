@@ -257,8 +257,8 @@ describe('Defects #14, #15, #16, #17: UI Modals and Lifecycle', () => {
         it('declares apps object for tracking mounted subcomponent instances', () => {
             assert.match(
                 dashboardCode,
-                /let\s+apps\s*=\s*\{[\s\S]*?tagFilter:[\s\S]*?kpiGrid:[\s\S]*?hourGrid:[\s\S]*?heatmap:[\s\S]*?donutStats:[\s\S]*?projectTable:[\s\S]*?timeline:[\s\S]*?webPhases:/,
-                'apps dictionary must define all 8 subcomponents',
+                /let\s+apps\s*=\s*\{[\s\S]*?kpiGrid:[\s\S]*?hourGrid:[\s\S]*?heatmap:[\s\S]*?donutStats:[\s\S]*?projectTable:[\s\S]*?timeline:[\s\S]*?webPhases:/,
+                'apps dictionary must define all 7 subcomponents',
             );
         });
 
@@ -268,7 +268,6 @@ describe('Defects #14, #15, #16, #17: UI Modals and Lifecycle', () => {
         });
 
         it('calls unmountApp before remounting components', () => {
-            assert.match(dashboardCode, /unmountApp\(['"]tagFilter['"]\);/);
             assert.match(dashboardCode, /unmountApp\(['"]kpiGrid['"]\);/);
             assert.match(dashboardCode, /unmountApp\(['"]hourGrid['"]\);/);
             assert.match(dashboardCode, /unmountApp\(['"]heatmap['"]\);/);

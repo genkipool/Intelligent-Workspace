@@ -1,8 +1,7 @@
 # Chrome Web Store Submission & Justifications Dossier: Intelligent Workspace
 
-> **Last Updated:** 2026-09-06 (audit against the Web Store troubleshooting list: full header
-> inventory for DNR, API key out of the query string, contribution page disclosed, third-party
-> notices shipped)  
+> **Last Updated:** 2026-09-26 (`clipboardRead` dropped: the cumulative copy no longer reads the
+> clipboard; the permissions table now lists exactly what manifest.json asks for)  
 > **Extension Name:** Intelligent Workspace  
 > **Version:** 1.0  
 > **Manifest Version:** 3  
@@ -22,9 +21,9 @@
   *(124 characters)*
 - **Spanish:**
   ```text
-  Estación de trabajo que organiza tus pestañas en grupos con actividad web y herramientas básicas que mejoran tu producción y foco.
+  Espacio de trabajo que organiza tus pestañas en grupos, con actividad web y herramientas que mejoran tu productividad y foco.
   ```
-  *(130 characters)*
+  *(125 characters)*
 
 ### Category
 - **Category:** `Productivity` / `Productividad`
@@ -186,7 +185,6 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `tabs` | `permissions` | Reading which tabs are open, and their titles and addresses, so they can be grouped by domain or rule, listed in the panel and the omnibar, measured for the memory a group is holding, discarded to free it, and restored into a session. It also covers capturing the visible tab as an image, which is what the screenshot tool and the group gallery are built on — always on an action the user took on that tab, never on a timer. |
 | `tabGroups` | `permissions` | Core functionality. Allows creating, color-coding, naming, collapsing, and expanding native Chrome tab groups automatically according to user rules and auto-collapse timers. |
 | `storage` | `permissions` | Required to locally persist workspace configurations, custom grouping rules, themes, project notes, and session states across browser restarts. |
-| `commands` | `permissions` | Enables customizable keyboard shortcuts for power-user navigation (e.g., toggling the workspace side panel, collapsing groups, and navigating tabs without mouse interaction). |
 | `favicon` | `permissions` | Displays website favicons in the side panel tab list, search drawer, bookmarks view and the omnibar's rows to provide instant visual identification of saved links and active tabs. It is also what gives an automatic tab group the colour of the site it holds: the icon Chrome already has is read locally and its dominant colour mapped to one of Chrome's nine group colours. |
 | `contextMenus` | `permissions` | Provides quick contextual productivity actions from web pages, such as 'Regroup all tabs', 'Remove duplicate tabs', or 'Add page to workspace rule'. |
 | `notifications` | `permissions` | Delivers desktop notifications when background workspace events complete, such as Pomodoro focus work/break transitions and scheduled reminders. |
@@ -195,14 +193,13 @@ Copy and paste these exact, specific justifications into the **Chrome Developer 
 | `downloads` | `permissions` | **Two uses.** (1) Writing the user's own data out to a file: workspace configurations, session backups, productivity statistics, notes and screenshots. (2) A "files on this page" list: on a page the user asks about, the extension reads the page's HTML and lists the addresses it links to with `<a href>` — documents, archives, images, audio and video — so the user can tick several and save them in one go. **It is not a media downloader**, and the distinction is load-bearing: it reads nothing but `href` attributes, extracts no stream, parses no HLS or DASH manifest, touches no `<video>` element, and defeats no protection. It surfaces links the page already offers, which is what clicking each of them one at a time would do. |
 | `downloads.open` | `permissions` | The panel lists the browser's downloads so a file the session just produced does not cost a trip to another window, and a list of files nobody can open from is a list, not a tool. This opens the entry the user clicks — any of them, the same as clicking it in Chrome's own downloads page, and only on that click. |
 | `system.display` | `permissions` | Queries screen display geometry and multi-monitor setups to optimize split-view layouts and side-by-side workspace positioning across displays. |
-| `windows` | `permissions` | Organizes, moves, and manages browser windows when restoring multi-group project workspaces or segregating workspaces across distinct monitors. |
 | `declarativeNetRequestWithHostAccess` | `permissions` | **Four uses, all user-initiated, described in full below the table because a one-line answer here would understate the second one.** (1) Time limits: a redirect rule sends a top-level request to the extension's own block page when the user opens a site they set a daily or weekly limit on. (2) The side panel's web view and the floating video player: a session rule removes framing headers from the one site the user chose to open there, and makes the request look like the ordinary top-level navigation that site expects. (3) A `Cookie` header carrying the user's own cookies for that one site, back to that same site, so a page opened in the floating player is not signed out. (4) A `Referer` header on YouTube embeds the extension itself creates, which the player refuses to run without. **Every header the rules touch is listed below the table, in full.** |
 | `cookies` | `permissions` | **Two uses.** (1) The side panel's web view opens a site inside an extension frame, and Chrome partitions third-party cookies by top-level site, so that site would load signed out even though the user is signed in; the cookies it has already set are copied into the extension's own partition so the framed page sees the session the user already has. (2) A cookie inspector the user opens for a site from the panel, which lists that site's cookies and lets them edit or delete one. Cookies are never sent anywhere: both uses read and write them inside this browser only. The copies made for (1) are written **without an expiry**, so they are session cookies that the browser drops on close whatever else happens, and they are cleared outright when the view closes. A copy never outlives the frame it was made for, and the user's real cookies are left untouched. |
 | `history` | `permissions` | Searching visited pages from the omnibar and the panel, de-duplicating workspace links, and the history view itself, where the user can delete an entry or clear their history — the latter behind a confirmation, because it is not undoable. Nothing is read on a schedule and nothing derived from it leaves the device. |
 | `sessions` | `permissions` | Restores previously closed tab groups, closed tabs, and window sessions when recovering from unexpected browser crashes or reopening archived workspaces. |
 | `bookmarks` | `permissions` | Integrates the user's bookmarks directly into the workspace side panel, allowing seamless bookmark organization and folder-to-group conversions. |
 | `readingList` | `permissions` | Chrome's own reading list is one of the places a working session leaves things to come back to, so the panel lists it beside the tabs, bookmarks and history rather than making the user go and find it in a different menu. Two calls: reading the entries to show them, and removing one when the user clears it from the panel. Nothing is added behind their back and nothing is read on a schedule. |
-| `clipboardWrite` | `permissions` | Allows users to copy workspace URL lists, research notes, markdown summaries, and color picker hex values to the system clipboard with a single click. |
+| `clipboardWrite` | `permissions` | Allows users to copy workspace URL lists, research notes, markdown summaries, and color picker hex values to the system clipboard with a single click. It is also what the cumulative copy writes with: pressing `y` over a selection adds it to the text collected so far in the browser and puts the whole collection on the clipboard. The extension keeps that collection itself and **never reads the clipboard** — it does not request `clipboardRead`. |
 | `alarms` | `permissions` | Triggers periodic background maintenance tasks, Pomodoro focus interval ticks, and inactive group auto-collapse timers reliably in the Manifest V3 service worker. |
 | `offscreen` | `permissions` | Executes audio chime playback for Pomodoro timer notifications and off-screen canvas operations without interrupting the user's foreground browsing. |
 | `idle` | `permissions` | Stops the clock when the user walks away. The workspace records how long they spend on a site so it can enforce the limits they set and show them where the hours went, and a tab left open while somebody makes coffee is not time spent working — without this, every limit is wrong and the record is worthless. Chrome is asked only whether the machine is active, idle or locked, on a threshold the user sets; it returns no activity, no input and nothing about what they were doing. |
@@ -444,7 +441,7 @@ where it sits, and every moment something crosses the network.
 | **Controller** | Luis Reoyo (GENKI Organización), Spain. |
 | **Purpose** | To run the features of the extension on your own device, and to serve this website. |
 | **Legal basis** | Your consent, given by installing the extension and by switching on each optional feature, and our legitimate interest in serving and securing the website. |
-| **Recipients** | None by default. A feature you trigger yourself can reach Google, YouTube, jsDelivr, Stripe or Vercel, each listed in section 5. |
+| **Recipients** | None by default. A feature you trigger yourself can reach Google, the radio directory, YouTube, jsDelivr, Stripe or Vercel, each listed in section 5. |
 | **Transfers** | Those providers are outside the EEA. The request is made by your browser and only when you ask for it. Section 6 explains the safeguards. |
 | **Your rights** | Access, rectification, erasure, restriction, portability, objection, and the withdrawal of consent. Most of them you exercise yourself, from the panel. Section 14. |
 
@@ -465,7 +462,7 @@ The GDPR asks for a lawful basis per purpose rather than one for the whole produ
 are, one line each.
 
 - Running the features on your device: your consent, given when you install the extension and again when you switch on an optional feature such as the activity record or the assistant. Article 6.1.a.
-- Sending a prompt to Google or loading a YouTube thumbnail: your consent, given by the action itself. Nothing is sent until you ask for it.
+- Sending a prompt to Google, searching the radio directory or loading a YouTube thumbnail: your consent, given by the action itself. Nothing is sent until you ask for it.
 - Serving this website and keeping it up: our legitimate interest in delivering the pages you requested and in aggregate measurement that carries no identifier. Article 6.1.f.
 - Processing a software support contribution: performance of the transaction you started, and the accounting duties that follow it. Articles 6.1.b and 6.1.c.
 
@@ -487,6 +484,7 @@ no part of the extension copies them anywhere.
 | Conversations with the AI assistant | `IndexedDB` | No. The replies arrive from Google; the transcript stays here |
 | Saved sessions and group backups | `IndexedDB` | Only inside a file you export yourself, to the folder you choose |
 | Pomodoro sessions and their history | `IndexedDB` | No |
+| Music you add and your radio favourites | `IndexedDB` | No |
 | Web activity: seconds, visits and sessions per site, per day | `chrome.storage.local` | No, unless you switch on that record’s own sync, which is off by default |
 | Snippets, keyboard overrides and omnibar preferences | `chrome.storage.sync` | Only through Chrome’s own profile sync, if you have it switched on |
 | Your Google AI Studio key | `chrome.storage.local` | Never synced. It travels only as the header of your own request to Google |
@@ -524,7 +522,7 @@ does not sit between you and what is in it.
 ## 6. Transfers outside the European Economic Area
 
 Every provider in that table is a company established in the United States: Google, Vercel, Stripe,
-and the jsDelivr network. A request to any of
+the jsDelivr network, and whichever server hosts the radio station you chose. A request to any of
 them is an international transfer, so it is named here rather than left implied.
 
 Two things limit it. The request is made by your browser, not forwarded by a server of ours, and it
@@ -538,10 +536,10 @@ govern what they do with the request once it arrives.
 Nothing here has a server-side lifetime, because there is no server holding it. What exists on your
 device stays until you delete it, and these are the rules it follows.
 
-- Notes, screenshots, backups, conversations and Pomodoro history: kept until you delete them or remove the extension.
+- Notes, screenshots, backups, conversations, Pomodoro history and the music library: kept until you delete them or remove the extension.
 - The web activity record: kept for the number of days you set in its own settings, and older days are dropped automatically.
 - Settings, rules and snippets: kept while the extension is installed. If Chrome sync carried a copy, removing the extension clears that copy too.
-- A prompt sent to Google: gone from here as soon as the answer arrives. What the receiving service keeps is set by its own retention policy.
+- A prompt sent to Google, or a search sent to the radio directory: gone from here as soon as the answer arrives. What the receiving service keeps is set by its own retention policy.
 
 This website keeps no record of your visit beyond the request logs its host produces, which Vercel
 rotates on its own schedule, and the aggregate page counts described in section 10.
@@ -567,7 +565,7 @@ question. It can still tell you what it found; carrying it somewhere is left to 
 
 ## 9. Permissions, and what they are not for
 
-Chrome will tell you the extension asks for twenty-three permissions plus access to every site. That
+Chrome will tell you the extension asks for twenty-one permissions plus access to every site. That
 is a lot, and being suspicious about it is the right instinct, so each group is set out on the home
 page beside the feature that cannot exist without it. None of them builds a profile, and none feeds
 anything that leaves this machine except the connections listed above.

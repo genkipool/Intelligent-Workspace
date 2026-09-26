@@ -6,7 +6,7 @@
 
     const versionData = [
         {
-            version: '1.0.0',
+            version: '1.0',
             dateKey: 'date_2025_07_20',
             features: [
                 'feature_v100_geminiIntegration',
@@ -226,9 +226,9 @@
                     class:expanded={expandedVersions[version.version]}
                     onclick={() => toggleVersion(version.version)}
                 >
-                    <h4>Version {version.version}</h4>
+                    <h4>{$t('versionLabel', [version.version])}</h4>
                     <span class="version-date">{$t(version.dateKey)}</span>
-                    <button type="button" class="toggle-details-btn" aria-label="Toggle version details">
+                    <button type="button" class="toggle-details-btn" aria-label={$t('toggleVersionDetails')}>
                         <span class="material-icons-sharp">chevron_right</span>
                     </button>
                 </div>

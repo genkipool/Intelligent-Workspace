@@ -1287,7 +1287,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
             logMessage('Pin state change detected, updating memory cache.');
             await updatePinState();
         }
-        if (changes['preferred-language']) {
+        if (changes[ItgLanguages.STORAGE_KEY]) {
             logMessage('[i18n] Language change detected. Recreating context menus.');
             await loadI18nMessages(true); // Drop the cached locale before rebuilding.
             await setupContextMenus();

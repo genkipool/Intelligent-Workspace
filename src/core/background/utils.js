@@ -259,16 +259,16 @@ async function loadI18nMessages(force = false) {
 
     loadI18nMessagesPromise = (async () => {
         try {
-            const result = await chrome.storage.local.get('preferred-language');
-            currentLang = result['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
+            const result = await chrome.storage.local.get(ItgLanguages.STORAGE_KEY);
+            currentLang = ItgLanguages.pickLanguage(result[ItgLanguages.STORAGE_KEY]);
 
             const url = chrome.runtime.getURL(`_locales/${currentLang}/messages.json`);
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
-                if (currentLang !== 'en') {
+                if (currentLang !== ItgLanguages.DEFAULT_LANGUAGE) {
                     try {
-                        const enUrl = chrome.runtime.getURL('_locales/en/messages.json');
+                        const enUrl = chrome.runtime.getURL(`_locales/${ItgLanguages.DEFAULT_LANGUAGE}/messages.json`);
                         const enResp = await fetch(enUrl);
                         if (enResp.ok) {
                             const enData = await enResp.json();
@@ -295,6 +295,16 @@ async function loadI18nMessages(force = false) {
         }
     })();
     return loadI18nMessagesPromise;
+}
+
+/**
+ * The message key for `count` items (`<key>_one`, `<key>_other`…), by the CLDR plural
+ * rules of the language in use rather than by `count === 1`.
+ */
+function getI18nPluralKey(key, count) {
+    const category = new Intl.PluralRules(ItgLanguages.localeOf(currentLang)).select(Number(count));
+    const candidate = `${key}_${category}`;
+    return !currentLangMessages[candidate] && currentLangMessages[`${key}_other`] ? `${key}_other` : candidate;
 }
 
 function getI18nMsg(key, params = []) {
@@ -790,7 +800,7 @@ const setupContextMenus = async () => {
         menuItems.push({
             id: 'open-extension-web',
             parentId: 'open-extension-parent',
-            title: getI18nMsg('openSettingsRules'),
+            title: getI18nMsg('openRulesInTab'),
             contexts: ['page', 'selection', 'image', 'link'],
         });
         menuItems.push({
@@ -2091,8 +2101,10 @@ async function removeTabsByDomainCommand(domain) {
         // We only process tabs with valid URLs.
         if (tab.url && (tab.url.startsWith('http') || tab.url.startsWith('file'))) {
             try {
-                const tabDomain = new URL(tab.url).hostname;
-                return tabDomain === domain;
+                // The menu lists domains without "www." (see the context menu
+                // builder), so www.bbc.com has to match the "bbc.com" entry.
+                const tabDomain = new URL(tab.url).hostname.replace(/^www\./, '');
+                return tabDomain === domain.replace(/^www\./, '');
             } catch {
                 // Ignore URLs that cannot be parsed.
                 return false;
@@ -2115,8 +2127,10 @@ async function removeTabsByDomainCommand(domain) {
             iconUrl: '/assets/icons/icon128.png',
             title: getI18nMsg('removeTabsByDomainSuccessTitle') || 'Tabs removed',
             message:
-                getI18nMsg('removeTabsByDomainSuccessMessage', [tabsRemovedCount.toString(), domain]) ||
-                `${tabsRemovedCount} tabs from domain ${domain} have been removed.`,
+                getI18nMsg(getI18nPluralKey('removeTabsByDomainSuccessMessage', tabsRemovedCount), [
+                    tabsRemovedCount.toString(),
+                    domain,
+                ]) || `${tabsRemovedCount} tabs from domain ${domain} have been removed.`,
         });
     } else {
         logMessage(`[removeTabsByDomainCommand] No tabs found for domain ${domain}.`);

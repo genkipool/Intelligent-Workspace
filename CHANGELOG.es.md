@@ -179,6 +179,24 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Cambiado
 
+- **El interruptor de idioma se respeta en todas partes.** Al instalarla, la extensión
+  se abre en el idioma de Chrome; en cuanto se usa el interruptor del popup, esa
+  elección manda cada vez que se abre. Hasta ahora buena parte de la interfaz —los
+  tooltips del pomodoro, los ajustes de voz, "Pestañas sin grupo", las fechas y los
+  contadores de las notas, las fechas de los paneles— seguía el idioma de Chrome, y con
+  Chrome en inglés y la extensión en español los dos idiomas se mezclaban en la misma
+  pantalla. Las fechas y los números siguen ya el idioma elegido, y también el `lang`
+  de la página, que es el que usan los lectores de pantalla.
+- **Los recuentos se leen bien en singular.** "1 grupo", "1 pestaña", "1 palabra", "1
+  minuto más"… en vez de "1 grupos". Los plurales siguen las reglas de cada idioma.
+- Los tooltips ya no muestran notas para el traductor ("Tooltip on the popup button that
+  leads to the store reviews.") y se han revisado los textos en español: "clic" en todas
+  partes, "completas un ciclo", "Todas las reglas", la redacción del menú contextual.
+- La copia acumulativa (`y`) ya no necesita permiso para leer el portapapeles: añade a
+  lo copiado en el navegador, y una copia normal empieza una colección nueva. La
+  extensión deja de pedir `clipboardRead`.
+- Añadir un idioma es ahora una entrada en `src/utils/languages.js` y su carpeta de
+  `_locales`; el interruptor, la detección y las comprobaciones salen de esa lista.
 - Guardar o actualizar un tema lo elige. Quien acaba de repartir nueve colores está
   mirando el resultado y quiere quedárselo, y hasta ahora eso se tiraba en cuanto se
   cerraba el editor; el aviso, además, ya decía «guardado y aplicado». Deseleccionarlo
@@ -222,6 +240,32 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Corregido
 
+- Las búsquedas por sitio de la omnibar (`g:`, `y:`, `w:`…) mostraban "Sin título" y una
+  clave en crudo en vez de lo que Enter iba a buscar.
+- `dr:` decía que borraba las reglas filtradas y no borraba ninguna.
+- `dg:` aparecía en la lista `@` como cambiar de grupo; lo que hace es cerrarlos.
+- Un comando sin coincidencias (`dt: algo`) convertía Enter en una búsqueda web del
+  texto entero.
+- Preguntar a la IA sin clave de API mostraba el código `NO_API_KEY` en vez de decir
+  qué hacer.
+- Las listas vacías de la omnibar (`laiq:`, `lai:`, `lnt:`) mostraban "Mensaje sin
+  texto" u ofrecían copiar nada.
+- "Eliminar URLs por dominio" no encontraba nada en sitios con `www.` (bbc.com,
+  youtube.com).
+- Importar un fichero que no era una exportación de actividad web decía "Datos
+  importados".
+- La importación de ajustes de navegación decía que un disparador de snippet "excede
+  los 20 caracteres" cuando el límite es 5.
+- El botón de la clave de Gemini se quedaba en "Comprobando..." tras rechazar una
+  clave.
+- Escribir `$$` sin snippets guardados se comía uno de los dólares.
+- El filtro por etiqueta del panel del pomodoro quedaba fuera de alcance a 1280 píxeles.
+- La notificación del pomodoro se titulaba "Pomodoro [POMODORO]", y varias
+  notificaciones llevaban aún el nombre antiguo "Intelligent Tab Group".
+- La ventana de vista previa de selecciones e imágenes estaba en español fuera cual
+  fuera el idioma.
+- La entrada del menú contextual que abre la gestión de reglas en una pestaña decía
+  "panel lateral".
 - **Cerrar el editor de temas sin guardar ya no deja los colores puestos.** Cada color
   que se toca se pinta en la página para verlo, y salir por la cruz, por el fondo o con
   Escape no es decidir quedárselo: la página se quedaba vestida con un tema que nadie

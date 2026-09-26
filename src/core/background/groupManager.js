@@ -2224,7 +2224,7 @@ async function addLinkPreviewBlacklistDomain(domain) {
         chrome.notifications.create({
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
+            title: getI18nMsg('extName'),
             message: msgStr,
         });
 
@@ -2256,7 +2256,7 @@ async function removeLinkPreviewBlacklistDomain(domain) {
         chrome.notifications.create({
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
+            title: getI18nMsg('extName'),
             message: msgStr,
         });
 

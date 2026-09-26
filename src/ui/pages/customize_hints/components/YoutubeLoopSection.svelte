@@ -1,4 +1,11 @@
 <script>
+    import {
+        msg as localizedMsg,
+        LANGUAGE_STORAGE_KEY,
+        getCurrentLang,
+        loadMessages,
+        resolveMessage,
+    } from '../../../../utils/i18n.js';
     /**
      * YouTube Loop settings section.
      *
@@ -6,7 +13,6 @@
      * and YouTube Shorts.
      */
     import { onMount } from 'svelte';
-    import { getCurrentLang, loadMessages, resolveMessage } from '../../../../utils/i18n.js';
 
     const KEY = 'youtubeLoopEnabled';
 
@@ -18,9 +24,9 @@
         const fallback = enabled ? 'Turn off' : 'Turn on';
         try {
             const messages = await loadMessages(await getCurrentLang());
-            toggleTitle = resolveMessage(messages[key], [], 'message') || chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = resolveMessage(messages[key], [], 'message') || localizedMsg(key) || fallback;
         } catch {
-            toggleTitle = chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = localizedMsg(key) || fallback;
         }
     }
 
@@ -40,7 +46,7 @@
             if ((area === 'sync' || area === 'local') && changes[KEY] !== undefined) {
                 enabled = changes[KEY].newValue !== false;
                 updateTitle();
-            } else if (area === 'local' && changes['preferred-language']) {
+            } else if (area === 'local' && changes[LANGUAGE_STORAGE_KEY]) {
                 updateTitle();
             }
         };

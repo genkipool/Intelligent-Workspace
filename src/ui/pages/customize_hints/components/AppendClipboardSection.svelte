@@ -1,4 +1,11 @@
 <script>
+    import {
+        msg as localizedMsg,
+        LANGUAGE_STORAGE_KEY,
+        getCurrentLang,
+        loadMessages,
+        resolveMessage,
+    } from '../../../../utils/i18n.js';
     /**
      * The switch and status for the cumulative clipboard copy feature.
      *
@@ -6,7 +13,6 @@
      * and sync storage, so any window or open tab agrees without a reload.
      */
     import { onMount } from 'svelte';
-    import { getCurrentLang, loadMessages, resolveMessage } from '../../../../utils/i18n.js';
 
     const KEY = 'appendClipboardEnabled';
 
@@ -19,9 +25,9 @@
         const fallback = enabled ? 'Turn off' : 'Turn on';
         try {
             const messages = await loadMessages(await getCurrentLang());
-            toggleTitle = resolveMessage(messages[key], [], 'message') || chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = resolveMessage(messages[key], [], 'message') || localizedMsg(key) || fallback;
         } catch {
-            toggleTitle = chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = localizedMsg(key) || fallback;
         }
     }
 
@@ -61,7 +67,7 @@
             if (area === 'sync' && changes['itg-ui-custom-shortcuts']) {
                 updateAssignedKey(changes['itg-ui-custom-shortcuts'].newValue);
             }
-            if (area === 'local' && changes['preferred-language']) {
+            if (area === 'local' && changes[LANGUAGE_STORAGE_KEY]) {
                 updateTitle();
             }
         };

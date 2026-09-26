@@ -1,6 +1,15 @@
 <script>
     import { t, tt } from '../../stores/i18nStore.js';
     import { SvelteSet } from 'svelte/reactivity';
+    import { bookmarkFolderTitle } from '../../bookmarks/folderTitle.js';
+
+    /**
+     * The markup passes `$t` so Svelte re-reads the name when the language changes;
+     * the name itself comes from the shared helper.
+     */
+    function folderTitle(node, languageDependency) {
+        return bookmarkFolderTitle(node);
+    }
 
     let {
         folderTree = [],
@@ -485,9 +494,9 @@
                         {:else}
                             <span class="folder-name">
                                 {#if hasSearch && node._matched}
-                                    {@render highlightName(node.title || $t('untitledFolder'), searchTerm)}
+                                    {@render highlightName(folderTitle(node, $t), searchTerm)}
                                 {:else}
-                                    {node.title || $t('untitledFolder')}
+                                    {folderTitle(node, $t)}
                                 {/if}
                             </span>
                         {/if}

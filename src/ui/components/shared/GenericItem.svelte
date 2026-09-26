@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg } from '../../../utils/i18n.js';
     /**
      * List item shared by the History / Recently closed / Reading list views.
      *
@@ -32,15 +33,15 @@
     let title = $derived.by(() => {
         if (isWindowItem) {
             const count = item.tabs?.length || 0;
-            const w = chrome.i18n.getMessage('recentWindow') || 'Window';
-            const tabsLabel = chrome.i18n.getMessage('recentTabs') || 'tabs';
+            const w = localizedMsg('recentWindow') || 'Window';
+            const tabsLabel = localizedMsg('recentTabs') || 'tabs';
             return `${w} (${count} ${tabsLabel})`;
         }
-        return item.title || item.url || chrome.i18n.getMessage('untitled') || 'Untitled';
+        return item.title || item.url || localizedMsg('untitled') || 'Untitled';
     });
 
     let subtitle = $derived(
-        isWindowItem ? chrome.i18n.getMessage('recentRestoreWindow') || 'Restore full window' : item.url || '',
+        isWindowItem ? localizedMsg('recentRestoreWindow') || 'Restore full window' : item.url || '',
     );
 
     // DD-MM-YYYY HH:MM

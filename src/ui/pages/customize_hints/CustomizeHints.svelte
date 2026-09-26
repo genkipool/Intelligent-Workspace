@@ -1,4 +1,11 @@
 <script>
+    import {
+        msg as localizedMsg,
+        LANGUAGE_STORAGE_KEY,
+        getCurrentLang,
+        loadMessages,
+        resolveMessage,
+    } from '../../../utils/i18n.js';
     /**
      * Keyboard navigation & snippets page.
      *
@@ -10,7 +17,6 @@
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ScrollButtons from '../../components/common/ScrollButtons.svelte';
     import { initCustomizeHints } from './customize_hints.js';
-    import { getCurrentLang, loadMessages, resolveMessage } from '../../../utils/i18n.js';
     import SiteShortcutsSection from './components/SiteShortcutsSection.svelte';
     import SidePanelHeader from '../../components/common/SidePanelHeader.svelte';
     import SnippetsSection from './components/SnippetsSection.svelte';
@@ -36,12 +42,10 @@
             const messages = await loadMessages(lang);
             const message = resolveMessage(messages[key], [], 'message');
             previewToggleTitle =
-                message ||
-                chrome.i18n.getMessage(key) ||
-                (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+                message || localizedMsg(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
         } catch {
             previewToggleTitle =
-                chrome.i18n.getMessage(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
+                localizedMsg(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
         }
     }
 
@@ -82,7 +86,7 @@
         });
         // Kept in step with the shortcut, the context menu and any other window.
         const onStorageChanged = (changes, area) => {
-            if (area === 'local' && (changes.linkPreviewEnabled || changes['preferred-language'])) {
+            if (area === 'local' && (changes.linkPreviewEnabled || changes[LANGUAGE_STORAGE_KEY])) {
                 if (changes.linkPreviewEnabled) {
                     linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
                 }

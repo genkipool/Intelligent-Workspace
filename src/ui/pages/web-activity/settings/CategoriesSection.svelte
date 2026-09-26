@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * THE CATEGORIES A SITE CAN BE FILED UNDER.
@@ -113,7 +114,9 @@
                                 ? $t('webActivityCategoryUnused')
                                 : usage[entry.id] === 1
                                   ? $t('webActivityCategorySite')
-                                  : $t('webActivityCategorySites', [String(usage[entry.id])])}
+                                  : $t(pluralKey('webActivityCategorySites', usage[entry.id]), [
+                                        String(usage[entry.id]),
+                                    ])}
                         </span>
                         <button
                             class="wa-icon-btn wa-icon-btn-danger"

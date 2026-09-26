@@ -72,20 +72,32 @@
         "description": "Message shown when all groups are already backed up"
     },
     "addFolderToExistingRule": {
-        "message": "Añadir carpeta a regla existente",
-        "description": "Añadir esta carpeta a una regla existente"
+        "message": "Añadir carpeta a regla existente"
+    },
+    "addFolderToExistingRule_tooltip": {
+        "message": "Añadir esta carpeta a una regla existente",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «addFolderToExistingRule»."
     },
     "deleteBookmarkFolder": {
-        "message": "Eliminar carpeta",
-        "description": "Eliminar esta carpeta de marcadores"
+        "message": "Eliminar carpeta"
+    },
+    "deleteBookmarkFolder_tooltip": {
+        "message": "Eliminar esta carpeta de marcadores",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «deleteBookmarkFolder»."
     },
     "folderCountTooltip": {
-        "message": "Carpetas",
-        "description": "Número de carpetas que contiene"
+        "message": "Carpetas"
+    },
+    "folderCountTooltip_tooltip": {
+        "message": "Número de carpetas que contiene",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «folderCountTooltip»."
     },
     "bookmarkCountTooltip": {
-        "message": "Marcadores",
-        "description": "Número de marcadores que contiene"
+        "message": "Marcadores"
+    },
+    "bookmarkCountTooltip_tooltip": {
+        "message": "Número de marcadores que contiene",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «bookmarkCountTooltip»."
     },
     "bookmarkBar": {
         "message": "Barra de marcadores"
@@ -102,8 +114,13 @@
     "bookmarkDeleted": {
         "message": "Marcador eliminado"
     },
-    "bookmarksDeleted": {
-        "message": "$1 marcadores eliminados"
+    "bookmarksDeleted_one": {
+        "message": "$1 marcador eliminado",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "bookmarksDeleted_other": {
+        "message": "$1 marcadores eliminados",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "noUrlsToCopy": {
         "message": "No hay URLs que copiar"
@@ -208,7 +225,8 @@
         "message": "Guardar el tema \"$1\""
     },
     "omnibarDeleteAllFilteredTabs": {
-        "message": "Cerrar las $1 pestañas filtradas"
+        "message": "Cerrar las coincidencias: $1",
+        "description": "Fila de la omnibar que cierra las pestañas que coinciden con el filtro. $1 es la frase con su plural (omnibarTabCount)."
     },
     "openVideoPipTitle": {
         "message": "Abrir en vídeo picture-in-picture"
@@ -219,15 +237,23 @@
     "screenshotUnarchived": {
         "message": "Captura desfijada"
     },
-    "themesExportedSuccessfully": {
-        "message": "$1 temas exportados"
+    "themesExportedSuccessfully_one": {
+        "message": "$1 tema exportado",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "themesExportedSuccessfully_other": {
+        "message": "$1 temas exportados",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "scheduleDateTimeInPast": {
         "message": "La fecha y hora elegidas ya han pasado"
     },
     "editSchedule": {
-        "message": "Editar programación",
-        "description": "Editar esta programación"
+        "message": "Editar programación"
+    },
+    "editSchedule_tooltip": {
+        "message": "Editar esta programación",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «editSchedule»."
     },
     "copied": {
         "message": "¡Copiado!"
@@ -246,32 +272,53 @@
         "message": "Panel"
     },
     "dashboardSwitchDashboard": {
-        "message": "Cambiar de panel",
-        "description": "Abre la lista de paneles: actividad web y pomodoro."
+        "message": "Cambiar de panel"
+    },
+    "dashboardSwitchDashboard_tooltip": {
+        "message": "Abre la lista de paneles: actividad web y pomodoro.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardSwitchDashboard»."
     },
     "dashboardDragSection": {
-        "message": "Arrastra para mover esta sección",
-        "description": "Cambia el orden de las secciones del panel. Se recuerda."
+        "message": "Arrastra para mover esta sección"
+    },
+    "dashboardDragSection_tooltip": {
+        "message": "Cambia el orden de las secciones del panel. Se recuerda.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardDragSection»."
     },
     "dashboardDragPanel": {
-        "message": "Arrastra para mover este panel",
-        "description": "Cambia el orden de los paneles dentro de su sección. No puede salir de ella."
+        "message": "Arrastra para mover este panel"
+    },
+    "dashboardDragPanel_tooltip": {
+        "message": "Cambia el orden de los paneles dentro de su sección. No puede salir de ella.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardDragPanel»."
     },
     "dashboardWebPhases": {
-        "message": "Navegación durante el temporizador",
-        "description": "Qué webs se han visitado mientras corría cada fase del pomodoro. El tiempo navegado sin el temporizador en marcha no aparece en ninguna de las tres tarjetas."
+        "message": "Navegación durante el temporizador"
+    },
+    "dashboardWebPhases_tooltip": {
+        "message": "Qué webs se han visitado mientras corría cada fase del pomodoro. El tiempo navegado sin el temporizador en marcha no aparece en ninguna de las tres tarjetas.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardWebPhases»."
     },
     "dashboardWebPhaseFocus": {
-        "message": "Durante el foco",
-        "description": "Tiempo en cada web mientras corría un bloque de foco."
+        "message": "Durante el foco"
+    },
+    "dashboardWebPhaseFocus_tooltip": {
+        "message": "Tiempo en cada web mientras corría un bloque de foco.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardWebPhaseFocus»."
     },
     "dashboardWebPhaseShort": {
-        "message": "Durante el descanso corto",
-        "description": "Tiempo en cada web mientras corría un descanso corto."
+        "message": "Durante el descanso corto"
+    },
+    "dashboardWebPhaseShort_tooltip": {
+        "message": "Tiempo en cada web mientras corría un descanso corto.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardWebPhaseShort»."
     },
     "dashboardWebPhaseLong": {
-        "message": "Durante el descanso largo",
-        "description": "Tiempo en cada web mientras corría un descanso largo."
+        "message": "Durante el descanso largo"
+    },
+    "dashboardWebPhaseLong_tooltip": {
+        "message": "Tiempo en cada web mientras corría un descanso largo.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardWebPhaseLong»."
     },
     "dashboardWebPhaseEmpty": {
         "message": "Sin navegación en esta fase"
@@ -305,8 +352,11 @@
         "description": "Abrir como ventana emergente"
     },
     "openAsPipTitle": {
-        "message": "Abrir como Picture-in-Picture",
-        "description": "Abrir en ventana Picture-in-Picture"
+        "message": "Abrir como Picture-in-Picture"
+    },
+    "openAsPipTitle_tooltip": {
+        "message": "Abrir en ventana Picture-in-Picture",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «openAsPipTitle»."
     },
     "openSelectionInPip": {
         "message": "Abrir selección en Picture-in-Picture",
@@ -333,11 +383,11 @@
         "description": "Arrastrar para mover"
     },
     "toggleCurrentGroup": {
-        "message": "Expandir/Colapso Grupo Actual",
+        "message": "Expandir/Colapsar el grupo actual",
         "description": "Atajo de teclado Expandir/Colapso grupo actual"
     },
     "toggleAllGroups": {
-        "message": "Expandir/Colapso Todos los Grupos",
+        "message": "Expandir/Colapsar todos los grupos",
         "description": "Atajo de teclado Expandir/Colapso todos los grupos"
     },
     "toggleSortAlpha": {
@@ -345,12 +395,15 @@
         "description": "Atajo de teclado activar/desactivar orden alfabético"
     },
     "toggleCollapseTimer": {
-        "message": "Activar/Desactivar Temporizador para colapso los grupos",
+        "message": "Activar/Desactivar el temporizador que colapsa los grupos",
         "description": "Atajo de teclado activar/desactivar temporizador de contracción automática"
     },
     "toggleCollapseTimerWithTimes": {
-        "message": "click derecho para configurar el temporizador de colapso (Inactivo: $1 min, Activo: $2 min)",
-        "description": "click derecho para editar el temporizador de colapso de los grupos"
+        "message": "Clic derecho para configurar el temporizador de colapso (Inactivo: $1 min, Activo: $2 min)"
+    },
+    "toggleCollapseTimerWithTimes_tooltip": {
+        "message": "Clic derecho para editar el temporizador de colapso de los grupos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «toggleCollapseTimerWithTimes»."
     },
     "toggleAllRules": {
         "message": "Activar/Desactivar todas las reglas",
@@ -469,11 +522,11 @@
         "description": "Botón para configurar reglas"
     },
     "collapseExpandAllTabs": {
-        "message": "Expandir/Colapso Grupos",
+        "message": "Expandir/Colapsar grupos",
         "description": "Nombre del atajo"
     },
     "collapseExpandCurrentTabs": {
-        "message": "Expandir/Colapso Grupo Actual",
+        "message": "Expandir/Colapsar el grupo actual",
         "description": "Nombre del atajo"
     },
     "toggleAlphabeticalSorting": {
@@ -541,8 +594,11 @@
         "description": "Título para la página de gestión de reglas"
     },
     "listTabGroups": {
-        "message": "Listar Grupos",
-        "description": "Listar grupos en el panel lateral"
+        "message": "Listar Grupos"
+    },
+    "listTabGroups_tooltip": {
+        "message": "Listar grupos en el panel lateral",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «listTabGroups»."
     },
     "editTitleModal": {
         "message": "Editar Regla",
@@ -682,7 +738,7 @@
     },
     "ctrlClickToOpen": {
         "message": "Todas las URLs han sido abiertas",
-        "description": "Doble-click para editar el nombre \nClick derecho para abrir todas las URLs"
+        "description": "Doble-clic para editar el nombre \nClic derecho para abrir todas las URLs"
     },
     "dragRule": {
         "message": "Arrastrar regla",
@@ -701,8 +757,8 @@
         "description": "Sin URLs asociadas"
     },
     "ruleNameTooltip": {
-        "message": "Click derecho para abrir todas las URLs \nClick izquierdo para copiar las URLs",
-        "description": "Click derecho para abrir todas las URLs \nClick izquierdo para copiar las URLs"
+        "message": "Clic derecho para abrir todas las URLs \nClic izquierdo para copiar las URLs",
+        "description": "Clic derecho para abrir todas las URLs \nClic izquierdo para copiar las URLs"
     },
     "grey": {
         "message": "Gris",
@@ -765,8 +821,11 @@
         "description": "Label for real-time validation toggle in rule form"
     },
     "validateErrorsRealTime": {
+        "message": "Validar errores en tiempo real"
+    },
+    "validateErrorsRealTime_tooltip": {
         "message": "Validar errores en tiempo real",
-        "description": "Validar errores en tiempo real"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «validateErrorsRealTime»."
     },
     "configureCollapseTimer": {
         "message": "Configurar Tiempo de Agrupar Grupos",
@@ -873,36 +932,57 @@
         "description": ":"
     },
     "addRule": {
-        "message": "Añadir regla",
-        "description": "Añadir una nueva regla"
+        "message": "Añadir regla"
+    },
+    "addRule_tooltip": {
+        "message": "Añadir una nueva regla",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «addRule»."
     },
     "importRules": {
-        "message": "Importar reglas",
-        "description": "Importar reglas desde un archivo"
+        "message": "Importar reglas"
+    },
+    "importRules_tooltip": {
+        "message": "Importar reglas desde un archivo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «importRules»."
     },
     "exportRules": {
-        "message": "Exportar reglas",
-        "description": "Exportar reglas a un archivo"
+        "message": "Exportar reglas"
+    },
+    "exportRules_tooltip": {
+        "message": "Exportar reglas a un archivo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «exportRules»."
     },
     "toggleSortGroups": {
         "message": "Ordenar grupos alfabeticamente",
         "description": "Título para el interruptor de ordenar grupos"
     },
     "enableToggleCollapseTimer": {
-        "message": "Activar temporizador",
-        "description": "Activar temporizador para agrupar grupos"
+        "message": "Activar temporizador"
+    },
+    "enableToggleCollapseTimer_tooltip": {
+        "message": "Activar temporizador para agrupar grupos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «enableToggleCollapseTimer»."
     },
     "disableToggleCollapseTimer": {
-        "message": "Desactivar temporizador",
-        "description": "Desactivar temporizador para agrupar grupos"
+        "message": "Desactivar temporizador"
+    },
+    "disableToggleCollapseTimer_tooltip": {
+        "message": "Desactivar temporizador para agrupar grupos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «disableToggleCollapseTimer»."
     },
     "starRule": {
-        "message": "Regla $1 añadida a favoritos",
-        "description": "Añadir regla a favoritos"
+        "message": "Regla $1 añadida a favoritos"
+    },
+    "starRule_tooltip": {
+        "message": "Añadir regla a favoritos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «starRule»."
     },
     "unstarRule": {
-        "message": "Regla $1 eliminada de favoritos",
-        "description": "Quitar regla de favoritos"
+        "message": "Regla $1 eliminada de favoritos"
+    },
+    "unstarRule_tooltip": {
+        "message": "Quitar regla de favoritos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «unstarRule»."
     },
     "urlUpdateCancelled": {
         "message": "Actualización de $1 cancelada"
@@ -916,8 +996,11 @@
         "description": "Agrupar reglas"
     },
     "sortAlphabeticallyButton": {
-        "message": "Ordenar Alfabéticamente",
-        "description": "Ordenar los reglas de la regla alfabéticamente"
+        "message": "Ordenar Alfabéticamente"
+    },
+    "sortAlphabeticallyButton_tooltip": {
+        "message": "Ordenar los reglas de la regla alfabéticamente",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «sortAlphabeticallyButton»."
     },
     "toggleRuleActive": {
         "message": "Activar/Desactivar Regla",
@@ -928,32 +1011,53 @@
         "description": "Añadir regla a favoritos"
     },
     "changeRuleColor": {
-        "message": "Cambiar Color",
-        "description": "Cambiar el color asociado a la regla"
+        "message": "Cambiar Color"
+    },
+    "changeRuleColor_tooltip": {
+        "message": "Cambiar el color asociado a la regla",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «changeRuleColor»."
     },
     "reorderRule": {
-        "message": "Reordenar Regla",
-        "description": "Arrastrar para cambiar el orden de la regla en la lista"
+        "message": "Reordenar Regla"
+    },
+    "reorderRule_tooltip": {
+        "message": "Arrastrar para cambiar el orden de la regla en la lista",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «reorderRule»."
     },
     "selectLightTheme": {
-        "message": "Seleccionar Tema Claro",
-        "description": "Seleccionar el tema claro"
+        "message": "Seleccionar Tema Claro"
+    },
+    "selectLightTheme_tooltip": {
+        "message": "Seleccionar el tema claro",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectLightTheme»."
     },
     "selectDarkTheme": {
-        "message": "Seleccionar Tema Oscuro",
-        "description": "Seleccionar el tema oscuro"
+        "message": "Seleccionar Tema Oscuro"
+    },
+    "selectDarkTheme_tooltip": {
+        "message": "Seleccionar el tema oscuro",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectDarkTheme»."
     },
     "selectSystemTheme": {
-        "message": "Seleccionar Tema del Sistema",
-        "description": "Seleccionar el tema basado en las preferencias del sistema"
+        "message": "Seleccionar Tema del Sistema"
+    },
+    "selectSystemTheme_tooltip": {
+        "message": "Seleccionar el tema basado en las preferencias del sistema",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectSystemTheme»."
     },
     "selectViridianTheme": {
-        "message": "Seleccionar Tema Viridiano",
-        "description": "Seleccionar el tema viridiano"
+        "message": "Seleccionar Tema Viridiano"
+    },
+    "selectViridianTheme_tooltip": {
+        "message": "Seleccionar el tema viridiano",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectViridianTheme»."
     },
     "selectCustomTheme": {
-        "message": "Seleccionar Tema Personalizado",
-        "description": "Seleccionar y editar un tema personalizado"
+        "message": "Seleccionar Tema Personalizado"
+    },
+    "selectCustomTheme_tooltip": {
+        "message": "Seleccionar y editar un tema personalizado",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectCustomTheme»."
     },
     "customizeActionColor": {
         "message": "Personalizar Color de Acción",
@@ -992,28 +1096,46 @@
         "description": "Ajustar el color usado para indicar errores en la interfaz"
     },
     "contributeWithBitcoin": {
-        "message": "Apoyar con Bitcoin",
-        "description": "Copiar dirección de Bitcoin"
+        "message": "Apoyar con Bitcoin"
+    },
+    "contributeWithBitcoin_tooltip": {
+        "message": "Copiar dirección de Bitcoin",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithBitcoin»."
     },
     "contributeWithCardano": {
-        "message": "Apoyar con Cardano",
-        "description": "Copiar dirección de Cardano"
+        "message": "Apoyar con Cardano"
+    },
+    "contributeWithCardano_tooltip": {
+        "message": "Copiar dirección de Cardano",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithCardano»."
     },
     "contributeWithRadix": {
-        "message": "Apoyar con Radix",
-        "description": "Copiar dirección de Radix"
+        "message": "Apoyar con Radix"
+    },
+    "contributeWithRadix_tooltip": {
+        "message": "Copiar dirección de Radix",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithRadix»."
     },
     "contributeWithPaypal": {
-        "message": "Apoyar con PayPal",
-        "description": "Abrir la página de PayPal"
+        "message": "Apoyar con PayPal"
+    },
+    "contributeWithPaypal_tooltip": {
+        "message": "Abrir la página de PayPal",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithPaypal»."
     },
     "contributeWithStripe": {
-        "message": "Apoyar con tarjeta",
-        "description": "Abrir el formulario para pagar con tarjeta"
+        "message": "Apoyar con tarjeta"
+    },
+    "contributeWithStripe_tooltip": {
+        "message": "Abrir el formulario para pagar con tarjeta",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithStripe»."
     },
     "contributeWithGooglePay": {
-        "message": "Apoyar con Google Pay",
-        "description": "Abrir el formulario para pagar con Google Pay"
+        "message": "Apoyar con Google Pay"
+    },
+    "contributeWithGooglePay_tooltip": {
+        "message": "Abrir el formulario para pagar con Google Pay",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithGooglePay»."
     },
     "openStripeContribution": {
         "message": "Abrir formulario de pago con tarjeta",
@@ -1024,16 +1146,22 @@
         "description": "Etiqueta ARIA para botón de pago"
     },
     "contributeWithApplePay": {
-        "message": "Apoyar con Apple Pay",
-        "description": "Abrir el formulario para pagar con Apple Pay"
+        "message": "Apoyar con Apple Pay"
+    },
+    "contributeWithApplePay_tooltip": {
+        "message": "Abrir el formulario para pagar con Apple Pay",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithApplePay»."
     },
     "openApplePayContribution": {
         "message": "Abrir formulario de pago con Apple Pay",
         "description": "Etiqueta ARIA para botón de pago"
     },
     "contributeWithEthereum": {
-        "message": "Apoyar con Ethereum",
-        "description": "Copiar la dirección de Ethereum"
+        "message": "Apoyar con Ethereum"
+    },
+    "contributeWithEthereum_tooltip": {
+        "message": "Copiar la dirección de Ethereum",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «contributeWithEthereum»."
     },
     "copyEthereumAddress": {
         "message": "Copiar dirección de Ethereum",
@@ -1073,16 +1201,22 @@
         "description": "Desactivar orden alfabético de grupos"
     },
     "enableAllRules": {
-        "message": "Activar todas las reglas",
-        "description": "Habilitar todas las reglas"
+        "message": "Activar todas las reglas"
+    },
+    "enableAllRules_tooltip": {
+        "message": "Habilitar todas las reglas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «enableAllRules»."
     },
     "disableAllRules": {
         "message": "Desactivar todas las reglas",
         "description": "Desactivar todas las reglas"
     },
     "viewOriginalOrder": {
-        "message": "Ver en orden original",
-        "description": "Restaurar el orden original de las reglas"
+        "message": "Ver en orden original"
+    },
+    "viewOriginalOrder_tooltip": {
+        "message": "Restaurar el orden original de las reglas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «viewOriginalOrder»."
     },
     "expandAllRules": {
         "message": "Desplegar todas las reglas",
@@ -1097,8 +1231,11 @@
         "description": "Desplegar reglas"
     },
     "collapseSection": {
+        "message": "Colapsar reglas"
+    },
+    "collapseSection_tooltip": {
         "message": "Colapsar reglas",
-        "description": "Colapsar reglas"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «collapseSection»."
     },
     "pinRulesPage": {
         "message": "Fijar página de reglas",
@@ -1121,8 +1258,11 @@
         "description": "Abre la página de configuración reglas en una nueva pestaña"
     },
     "sortAlphabetically": {
-        "message": "Ordenar reglas alfabéticamente",
-        "description": "Ordenar las reglas alfabéticamente"
+        "message": "Ordenar reglas alfabéticamente"
+    },
+    "sortAlphabetically_tooltip": {
+        "message": "Ordenar las reglas alfabéticamente",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «sortAlphabetically»."
     },
     "closeModal": {
         "message": "Cerrar Ventana modal",
@@ -1153,11 +1293,14 @@
         "description": "Sobrescribir las reglas existentes con las importadas"
     },
     "cancelImport": {
+        "message": "Cancelar el proceso de importación"
+    },
+    "cancelImport_tooltip": {
         "message": "Cancelar el proceso de importación",
-        "description": "Cancelar el proceso de importación"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «cancelImport»."
     },
     "openRuleUrls": {
-        "message": "Doble-click editar nombre <br> control+click para abrir todas las URL de esta regla",
+        "message": "Doble-clic editar nombre <br> control+clic para abrir todas las URL de esta regla",
         "description": "Abrir todas las URL de la regla seleccionada"
     },
     "editRule": {
@@ -1181,12 +1324,18 @@
         "description": "Eliminar de la lista de lectura"
     },
     "activateRule": {
-        "message": "Activar esta regla",
-        "description": "Haga click para activar la regla"
+        "message": "Activar esta regla"
+    },
+    "activateRule_tooltip": {
+        "message": "Haga clic para activar la regla",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «activateRule»."
     },
     "deactivateRule": {
-        "message": "Desactivar esta regla",
-        "description": "Haga click para desactivar la regla"
+        "message": "Desactivar esta regla"
+    },
+    "deactivateRule_tooltip": {
+        "message": "Haga clic para desactivar la regla",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «deactivateRule»."
     },
     "editDomain": {
         "message": "Editar este dominio",
@@ -1197,20 +1346,23 @@
         "description": "Eliminar este dominio"
     },
     "openRulesPage": {
-        "message": "Gestionar Reglas",
-        "description": "Gestionar reglas en el panel lateral"
+        "message": "Gestionar Reglas"
     },
-    "selectLangEn": {
-        "message": "Seleccionar inglés",
-        "description": "Selecciona inglés como idioma de la interfaz de usuario"
+    "openRulesPage_tooltip": {
+        "message": "Gestionar reglas en el panel lateral",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «openRulesPage»."
     },
-    "selectLangEs": {
-        "message": "Seleccionar español",
-        "description": "Selecciona español como idioma de la interfaz de usuario"
+    "languageOptionTitle": {
+        "message": "Usar $1 en la interfaz",
+        "description": "Botón de idioma del popup. $1 es el nombre del idioma en su propia lengua, p. ej. «English»."
     },
-    "toggleLanguage": {
-        "message": "Alternar entre inglés y español",
-        "description": "Cambia entre inglés y español"
+    "languageSwitchTitle": {
+        "message": "Cambiar el idioma de la interfaz",
+        "description": "Interruptor entre los dos idiomas de la interfaz en el popup."
+    },
+    "languageSelectLabel": {
+        "message": "Idioma de la interfaz",
+        "description": "Nombre accesible de la lista de idiomas, que se usa cuando la extensión tenga más de dos idiomas."
     },
     "exportTheme": {
         "message": "Exportar el tema personalizado actual",
@@ -1233,16 +1385,19 @@
         "description": "Regresa a la selección de color del tema personalizado"
     },
     "selectThemeFile": {
-        "message": "Haga click para seleccionar un archivo de tema o arrástrelo y suéltelo aquí",
+        "message": "Haga clic para seleccionar un archivo de tema o arrástrelo y suéltelo aquí",
         "description": "Selecciona o suelta un archivo de tema"
     },
     "selectRuleFile": {
-        "message": "Haga click para seleccionar un archivo de reglas o arrástrelo y suéltelo aquí",
+        "message": "Haga clic para seleccionar un archivo de reglas o arrástrelo y suéltelo aquí",
         "description": "Selecciona o suelta un archivo de reglas"
     },
     "cancelThemeImport": {
-        "message": "Cancelar la importación del tema",
-        "description": "Cancela la importación del tema"
+        "message": "Cancelar la importación del tema"
+    },
+    "cancelThemeImport_tooltip": {
+        "message": "Cancela la importación del tema",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «cancelThemeImport»."
     },
     "itemDeleted": {
         "message": "$1 eliminado.",
@@ -1400,11 +1555,11 @@
         "description": "Notificación de error durante la actualización de marcador."
     },
     "togglePrefixesTooltip": {
-        "message": "Activar/Desactivar marcadores. click derecho para editar.",
+        "message": "Activar/Desactivar marcadores. clic derecho para editar.",
         "description": "Información sobre herramientas para el interruptor de marcadores con instrucciones de edición."
     },
     "togglePrefixesWithValuesTooltip": {
-        "message": "click derecho para editar. Actuales: $C $K $L $E $W",
+        "message": "Clic derecho para editar. Actuales: $C $K $L $E $W",
         "description": "Información sobre herramientas que muestra los marcadores actuales. $C, $K, $L, $E, $W son marcadores de posición."
     },
     "prefixInputPlaceholder": {
@@ -1444,8 +1599,11 @@
         "description": "Notificación cuando se elimina el prefijo 'warning' de un grupo."
     },
     "miscSortCtrlClick": {
-        "message": "click derecho para configurar la posición del grupo Misc.",
-        "description": "click derecho para configurar la posición del grupo Misc."
+        "message": "Clic derecho para configurar la posición del grupo Misc."
+    },
+    "miscSortCtrlClick_tooltip": {
+        "message": "Clic derecho para configurar la posición del grupo Misc.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «miscSortCtrlClick»."
     },
     "miscSortTitle": {
         "message": "Posición del Grupo Misceláneo",
@@ -1560,12 +1718,18 @@
         "description": "Etiqueta para activar la agrupación por Dirección IP."
     },
     "enableThisGrouping": {
-        "message": "Activar este tipo de grupo",
-        "description": "Activar Grupo."
+        "message": "Activar este tipo de grupo"
+    },
+    "enableThisGrouping_tooltip": {
+        "message": "Activar Grupo.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «enableThisGrouping»."
     },
     "disableThisGrouping": {
-        "message": "Desactivar este tipo de grupo",
-        "description": "Desactivar Grupo"
+        "message": "Desactivar este tipo de grupo"
+    },
+    "disableThisGrouping_tooltip": {
+        "message": "Desactivar Grupo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «disableThisGrouping»."
     },
     "resetClusterDefaults": {
         "message": "Restablecer Valores",
@@ -1576,11 +1740,14 @@
         "description": "Notificación cuando la configuración de agrupación se restablece."
     },
     "settingsActions": {
-        "message": "Ajustes",
-        "description": "Opciones avanzadas."
+        "message": "Ajustes"
+    },
+    "settingsActions_tooltip": {
+        "message": "Opciones avanzadas.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «settingsActions»."
     },
     "featureAutoCollapse": {
-        "message": "Temporizador configurable para colapso automáticamente grupos activos e inactivos.",
+        "message": "Temporizador configurable para colapsar automáticamente los grupos activos e inactivos.",
         "description": "Descripción de la característica"
     },
     "featureStatusPrefixes": {
@@ -1592,16 +1759,25 @@
         "description": "Texto en la sección de comentarios"
     },
     "reportAnIssue": {
-        "message": "Reportar un Problema en GitHub",
-        "description": "Informar de un problema en GitHub"
+        "message": "Reportar un Problema en GitHub"
+    },
+    "reportAnIssue_tooltip": {
+        "message": "Informar de un problema en GitHub",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «reportAnIssue»."
     },
     "viewSourceCode": {
-        "message": "Ver el Código en GitHub",
-        "description": "Abrir el repositorio público del proyecto en GitHub"
+        "message": "Ver el Código en GitHub"
+    },
+    "viewSourceCode_tooltip": {
+        "message": "Abrir el repositorio público del proyecto en GitHub",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «viewSourceCode»."
     },
     "sendAnEmail": {
-        "message": "Enviar un Correo Electrónico",
-        "description": "Enviar un correo al desarrollador"
+        "message": "Enviar un Correo Electrónico"
+    },
+    "sendAnEmail_tooltip": {
+        "message": "Enviar un correo al desarrollador",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «sendAnEmail»."
     },
     "ThanksDesc_nameThanksDesc_part1": {
         "message": "En el viaje que ha sido la creación de esta extensión, hay momentos que definen el rumbo y personas que se convierten en pilares indispensables. Hoy, quiero tomar un momento no solo para agradecer, sino para celebrar y reconocer profundamente la contribución monumental de una persona excepcional, cuya influencia ha sido absolutamente decisiva para el éxito y el alma de este proyecto: "
@@ -1792,10 +1968,10 @@
         "message": "Desactivar marcadores de seguimiento del estado del grupo"
     },
     "configureClusterCtrlClick": {
-        "message": "click derecho para configurar grupos"
+        "message": "Clic derecho para configurar grupos"
     },
     "configurePrefixesCtrlClick": {
-        "message": "click derecho para configurar marcadores"
+        "message": "Clic derecho para configurar marcadores"
     },
     "teamTitle": {
         "message": "Equipo",
@@ -1822,8 +1998,11 @@
         "description": "Explicación del permiso 'commands'."
     },
     "copyEmailAddress": {
-        "message": "Copiar dirección de correo",
-        "description": "Copiar la dirección de correo electrónico del desarrollador al portapapeles"
+        "message": "Copiar dirección de correo"
+    },
+    "copyEmailAddress_tooltip": {
+        "message": "Copiar la dirección de correo electrónico del desarrollador al portapapeles",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «copyEmailAddress»."
     },
     "configureStorageTitle": {
         "message": "Configurar almacenamiento de reglas"
@@ -1849,8 +2028,8 @@
         "description": "Advertencia importante para el usuario"
     },
     "configureStorageCtrlClick": {
-        "message": "click derecho para configurar el almacenamiento de las reglas",
-        "description": "click derecho para configurar el almacenamiento de las reglas"
+        "message": "Clic derecho para configurar el almacenamiento de las reglas",
+        "description": "clic derecho para configurar el almacenamiento de las reglas"
     },
     "enableCompactMode": {
         "message": "Modo Compacto"
@@ -1859,7 +2038,7 @@
         "message": "Modo de Almacenamiento: Sincronizado. Tus reglas se sincronizan entre tus dispositivos a través de tu cuenta de Google."
     },
     "storageModeSyncDescClick": {
-        "message": "Modo de Almacenamiento: Sincronizado. Haz click para forzar una sincronización manual con tu cuenta de Google."
+        "message": "Modo de Almacenamiento: Sincronizado. Haz clic para forzar una sincronización manual con tu cuenta de Google."
     },
     "storageModeLocalDesc": {
         "message": "Modo de Almacenamiento: Local. Tus reglas se guardan únicamente en este dispositivo y no se sincronizan."
@@ -2031,7 +2210,7 @@
         "message": "Agrupa tus pestañas automáticamente por dominio, reglas y más, con opciones avanzadas de personalización."
     },
     "contextMenuGroupManagement": {
-        "message": "Expandir/Colapso Grupos"
+        "message": "Expandir/Colapsar grupos"
     },
     "contextGroupingOptions": {
         "message": "Gestión de Grupos"
@@ -2055,11 +2234,11 @@
         "message": "Alfabéticamente"
     },
     "featureContextMenu": {
-        "message": "Acceso rápido a funciones clave mediante el menú contextual del click derecho.",
+        "message": "Acceso rápido a funciones clave mediante el menú contextual del clic derecho.",
         "description": "Descripción de la funcionalidad del menú contextual."
     },
     "permContextMenus": {
-        "message": "Añade opciones al menú contextual del navegador (click derecho) para un acceso rápido a las funciones de la extensión.",
+        "message": "Añade opciones al menú contextual del navegador (clic derecho) para un acceso rápido a las funciones de la extensión.",
         "description": "Explicación del permiso 'contextMenus'."
     },
     "featureContextMenu_rules": {
@@ -2079,8 +2258,8 @@
         "description": "El título del tutorial en la página de reglas."
     },
     "tutorialPrompt": {
-        "message": "(Haz click para expandir)",
-        "description": "Texto que anima al usuario a hacer click para ver el tutorial."
+        "message": "(Haz clic para expandir)",
+        "description": "Texto que anima al usuario a hacer clic para ver el tutorial."
     },
     "tutorialWelcomeTitle": {
         "message": "¡Bienvenido/a a Intelligent Workspace!",
@@ -2123,15 +2302,15 @@
         "description": "Explicación de la barra de búsqueda."
     },
     "tutorialHeaderIconAllRules": {
-        "message": "Activar/Desactivar Todaslas Reglas: Un interruptor maestro para habilitar o deshabilitar todas tus reglas a la vez.",
+        "message": "Activar/Desactivar Todas las Reglas: Un interruptor maestro para habilitar o deshabilitar todas tus reglas a la vez.",
         "description": "Explicación del interruptor maestro de reglas."
     },
     "tutorialContextMenuTitle": {
-        "message": "El Poder del Click Derecho (Menú Contextual)",
+        "message": "El Poder del Clic Derecho (Menú Contextual)",
         "description": "Título para la sección del menú contextual."
     },
     "tutorialContextMenuDesc": {
-        "message": "Haz click derecho en cualquier página web para acceder a un menú con atajos muy útiles:",
+        "message": "Haz clic derecho en cualquier página web para acceder a un menú con atajos muy útiles:",
         "description": "Explicación de cómo acceder y usar el menú contextual."
     },
     "tutorialContextMenuItem1": {
@@ -2147,35 +2326,35 @@
         "description": "Opción 3 del menú contextual."
     },
     "tutorialWelcomeDesc": {
-        "message": "Esta guía te enseñará a dominar la organización de tus pestañas. Este tutorial desaparecerá cuando crees tu primera regla. ¡No te preocupes! Puedes volver a mostrarlo en cualquier momento haciendo click derecho en el título 'Reglas'.",
+        "message": "Esta guía te enseñará a dominar la organización de tus pestañas. Este tutorial desaparecerá cuando crees tu primera regla. ¡No te preocupes! Puedes volver a mostrarlo en cualquier momento haciendo clic derecho en el título 'Reglas'.",
         "description": "Párrafo de bienvenida que explica cómo volver a mostrar el tutorial."
     },
     "tutorialRuleNameDesc": {
-        "message": "Un nombre descriptivo y corto para tu grupo (ej: 'Trabajo', 'Redes Sociales'). Consejo: ¡Haz doble click en el nombre para editarlo o click derecho para abrir todas sus URLs!",
+        "message": "Un nombre descriptivo y corto para tu grupo (ej: 'Trabajo', 'Redes Sociales'). Consejo: ¡Haz doble clic en el nombre para editarlo o clic derecho para abrir todas sus URLs!",
         "description": "Explicación del nombre de la regla y sus atajos."
     },
     "tutorialHeaderIconsDesc": {
-        "message": "Estos iconos ofrecen un acceso rápido a las configuraciones. En la mayoría, un click normal activa/desactiva la función, mientras que un click derecho abre un menú de configuración avanzada. Son especialmente útiles en pantallas pequeñas donde el botón 'Ajustes' no es visible.",
-        "description": "Descripción general de los iconos de la cabecera y el uso de click derecho."
+        "message": "Estos iconos ofrecen un acceso rápido a las configuraciones. En la mayoría, un clic normal activa/desactiva la función, mientras que un clic derecho abre un menú de configuración avanzada. Son especialmente útiles en pantallas pequeñas donde el botón 'Ajustes' no es visible.",
+        "description": "Descripción general de los iconos de la cabecera y el uso de clic derecho."
     },
     "tutorialHeaderIconSort": {
         "message": "Orden Alfabético: Activa/desactiva el orden alfabético de tus reglas.",
         "description": "Explicación del icono de ordenación alfabética."
     },
     "tutorialHeaderIconCluster": {
-        "message": "Grupos Automáticos: Permite activar o desactivar la creación automática de grupos. Con click derecho accedes a opciones avanzadas para personalizar qué grupos se activan, cuántas pestañas se necesitan para crearlos, y editar nombre y color de los grupos especiales.",
+        "message": "Grupos Automáticos: Permite activar o desactivar la creación automática de grupos. Con clic derecho accedes a opciones avanzadas para personalizar qué grupos se activan, cuántas pestañas se necesitan para crearlos, y editar nombre y color de los grupos especiales.",
         "description": "Explicación del icono de clústeres."
     },
     "tutorialHeaderIconPrefixes": {
-        "message": "Marcadores de Estado: Activa/desactiva los emojis de estado en los títulos de los grupos. Con click derecho puedes personalizar qué emojis usar.",
+        "message": "Marcadores de Estado: Activa/desactiva los emojis de estado en los títulos de los grupos. Con clic derecho puedes personalizar qué emojis usar.",
         "description": "Explicación del icono de prefijos/marcadores."
     },
     "tutorialHeaderIconTimer": {
-        "message": "Temporizador de Colapso: Activa/desactiva el colapso automático de grupos inactivos. Con click derecho puedes definir los tiempos.",
+        "message": "Temporizador de Colapso: Activa/desactiva el colapso automático de grupos inactivos. Con clic derecho puedes definir los tiempos.",
         "description": "Explicación del icono del temporizador."
     },
     "tutorialHeaderIconStorageLocal": {
-        "message": "Almacenamiento Local: Haz click derecho para configurar el modo de almacenamiento.",
+        "message": "Almacenamiento Local: Haz clic derecho para configurar el modo de almacenamiento.",
         "description": "Explicación del icono de almacenamiento local."
     },
     "tutorialRuleItemTitle": {
@@ -2191,7 +2370,7 @@
         "description": "Explicación del icono para borrar una URL individual."
     },
     "tutorialEditNameRuleDesc": {
-        "message": "Haz doble click sobre el nombre de la regla para editarlo directamente. Esto te permite personalizar y organizar tus reglas de forma rápida y sencilla.",
+        "message": "Haz doble clic sobre el nombre de la regla para editarlo directamente. Esto te permite personalizar y organizar tus reglas de forma rápida y sencilla.",
         "description": "Explicación del icono para borrar una URL individual."
     },
     "tutorialOpenAllURLs": {
@@ -2199,7 +2378,7 @@
         "description": "Explicación del icono para borrar una URL individual."
     },
     "tutorialOpenAllURLsDesc": {
-        "message": "Si haces click derecho sobre el nombre de la regla, se abrirán automáticamente todas las URLs asociadas a ella en nuevas pestañas.",
+        "message": "Si haces clic derecho sobre el nombre de la regla, se abrirán automáticamente todas las URLs asociadas a ella en nuevas pestañas.",
         "description": "Explicación del icono para borrar una URL individual."
     },
     "tutorialRuleStar": {
@@ -2207,7 +2386,7 @@
         "description": "Explicación del botón de destacar."
     },
     "tutorialRuleDrag": {
-        "message": "Asa de Arrastre: Haz click y arrastra para reordenar manualmente tus reglas (solo funciona cuando el orden alfabético está desactivado).",
+        "message": "Asa de Arrastre: Haz clic y arrastra para reordenar manualmente tus reglas (solo funciona cuando el orden alfabético está desactivado).",
         "description": "Explicación del asa de arrastre."
     },
     "tutorialRuleColor": {
@@ -2239,12 +2418,12 @@
         "description": "Explicación del icono para borrar una URL individual."
     },
     "tutorialHeaderIconSortGroups": {
-        "message": "Ordenar Grupos: Activa/desactiva el orden alfabético de los grupos de pestañas en la vista principal de la extensión. Con click derecho, puedes configurar la posición del grupo 'Misceláneo' (al inicio, al final o alfabéticamente).",
+        "message": "Ordenar Grupos: Activa/desactiva el orden alfabético de los grupos de pestañas en la vista principal de la extensión. Con clic derecho, puedes configurar la posición del grupo 'Misceláneo' (al inicio, al final o alfabéticamente).",
         "description": "Explicación del icono de ordenar grupos y sus opciones avanzadas."
     },
     "tutorialPromptReturn": {
-        "message": "(Haz click para volver a las reglas)",
-        "description": "Texto que anima al usuario a hacer click para volver a la vista de reglas."
+        "message": "(Haz clic para volver a las reglas)",
+        "description": "Texto que anima al usuario a hacer clic para volver a la vista de reglas."
     },
     "errorUrlAlreadyInRule": {
         "message": "La URL ya existe en la regla $1.",
@@ -2328,16 +2507,16 @@
         "description": "Explicación del permiso 'notifications'."
     },
     "rulesTitleButton": {
-        "message": "Haz click derecho para ver el tutorial.",
-        "description": "Haz click derecho para ver el tutorial."
+        "message": "Haz clic derecho para ver el tutorial.",
+        "description": "Haz clic derecho para ver el tutorial."
     },
     "clickToCopyUrls": {
-        "message": "Click para copiar URLs, doble click para abrir todas",
+        "message": "Clic para copiar URLs, doble clic para abrir todas",
         "description": "Tooltip para el nombre de la regla"
     },
     "contextMenuRegroupAll": {
-        "message": "Reagrupar Todas Las Pestañas",
-        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
+        "message": "Reagrupar todas las pestañas",
+        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace clic en restaurar."
     },
     "contextMenuCreateRuleForPage": {
         "message": "Crear Regla para esta Web"
@@ -2359,12 +2538,16 @@
         "message": "Abrir panel de gestionar reglas",
         "description": "Abrir panel de gestionar reglas"
     },
+    "openRulesInTab": {
+        "message": "Abrir la gestión de reglas en una pestaña",
+        "description": "Abre la página de reglas en una pestaña del navegador (menú contextual, atajo de teclado y botón de ampliar del panel de reglas)."
+    },
     "openSettingsGemini": {
         "message": "Abrir panel lateral de asistente IA",
         "description": "Abrir panel lateral de asistente IA"
     },
     "openSidePanel": {
-        "message": "Abrir gestion de reglas en el Panel Lateral"
+        "message": "Abrir la gestión de reglas en el panel lateral"
     },
     "regroupAllTabs": {
         "message": "Reagrupar todas las pestañas",
@@ -2395,12 +2578,18 @@
         "description": "Title for the saved themes page and header."
     },
     "storageSyncSavedLimit": {
-        "message": "Guardar temas en tu cuenta de Google (sincronizado entre dispositivos, límite de 20).",
-        "description": "Guardar temas en tu cuenta de Google (sincronizado entre dispositivos, límite de 20 temas)."
+        "message": "Guardar temas en tu cuenta de Google (sincronizado entre dispositivos, límite de 20)."
+    },
+    "storageSyncSavedLimit_tooltip": {
+        "message": "Guardar temas en tu cuenta de Google (sincronizado entre dispositivos, límite de 20 temas).",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «storageSyncSavedLimit»."
     },
     "storageLocalSavedLimit": {
-        "message": "Guardar temas solo en este ordenador (no se sincroniza, límite de 30).",
-        "description": "Guardar temas solo en este ordenador (no se sincroniza, límite de 30 temas)."
+        "message": "Guardar temas solo en este ordenador (no se sincroniza, límite de 30)."
+    },
+    "storageLocalSavedLimit_tooltip": {
+        "message": "Guardar temas solo en este ordenador (no se sincroniza, límite de 30 temas).",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «storageLocalSavedLimit»."
     },
     "backToThemeEditor": {
         "message": "Volver al editor de temas",
@@ -2518,9 +2707,19 @@
         "message": "Mostrar Temas Guardados",
         "description": "Mostrar Temas Guardados"
     },
-    "themesImportedSuccessfully": {
+    "themesImportedSuccessfully_one": {
+        "message": "$1 tema importado correctamente.",
+        "description": "Mensaje de notificación que se muestra después de importar uno o más temas con éxito. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "themesImportedSuccessfully_other": {
         "message": "$1 temas importados correctamente.",
-        "description": "Mensaje de notificación que se muestra después de importar uno o más temas con éxito.",
+        "description": "Mensaje de notificación que se muestra después de importar uno o más temas con éxito. Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -2611,16 +2810,19 @@
         "description": "Tema"
     },
     "doubleClickToEdit": {
-        "message": "Doble click para editar el nombre",
-        "description": "Doble click para editar el nombre"
+        "message": "Doble clic para editar el nombre",
+        "description": "Doble clic para editar el nombre"
     },
     "configureThemeTitle": {
         "message": "Configuración del Tema",
         "description": "Título para la sección de selección de tema en el modal de ajustes."
     },
     "openThemeSelector": {
-        "message": "Abrir Selector de Temas",
-        "description": "Abrir el panel lateral de selección de temas"
+        "message": "Abrir Selector de Temas"
+    },
+    "openThemeSelector_tooltip": {
+        "message": "Abrir el panel lateral de selección de temas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «openThemeSelector»."
     },
     "openAllUrls": {
         "message": "Abrir todas las URLs",
@@ -2634,11 +2836,11 @@
         "description": "El nombre de la extensión."
     },
     "extDescription": {
-        "message": "Estación de trabajo que organiza tus pestañas en grupos con actividad web y herramientas básicas que mejoran tu producción y foco.",
+        "message": "Espacio de trabajo que organiza tus pestañas en grupos, con actividad web y herramientas que mejoran tu productividad y foco.",
         "description": "Descripción corta de la extensión para Chrome Web Store (máximo 132 caracteres)."
     },
     "contextMenuRemoveDuplicateTabs": {
-        "message": "Eliminar Todas Las URLs Repetidas",
+        "message": "Eliminar todas las URLs repetidas",
         "description": "Elemento del menú contextual para eliminar pestañas con la misma URL exacta."
     },
     "removeDuplicatesSuccessTitle": {
@@ -2675,9 +2877,21 @@
         "message": "Pestañas Eliminadas",
         "description": "Título de la notificación cuando las pestañas de un dominio se eliminan correctamente."
     },
-    "removeTabsByDomainSuccessMessage": {
-        "message": "Se han eliminado $1 pestañas del dominio $2$.",
-        "description": "Mensaje de la notificación tras eliminar pestañas con éxito. Marcadores: $1 = número de pestañas, $2 = nombre del dominio.",
+    "removeTabsByDomainSuccessMessage_one": {
+        "message": "Se ha eliminado $1 pestaña del dominio $2.",
+        "description": "Mensaje de la notificación tras eliminar pestañas con éxito. Marcadores: $1 = número de pestañas, $2 = nombre del dominio. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "removeTabsByDomainSuccessMessage_other": {
+        "message": "Se han eliminado $1 pestañas del dominio $2.",
+        "description": "Mensaje de la notificación tras eliminar pestañas con éxito. Marcadores: $1 = número de pestañas, $2 = nombre del dominio. Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "1": {
                 "content": "$1"
@@ -2841,8 +3055,11 @@
         "message": "Eliminar pestañas duplicadas en todos los grupos"
     },
     "collapseAllGroups": {
-        "message": "Colapsar todos los grupos",
-        "description": "Colapsar todos los grupos de pestañas"
+        "message": "Colapsar todos los grupos"
+    },
+    "collapseAllGroups_tooltip": {
+        "message": "Colapsar todos los grupos de pestañas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «collapseAllGroups»."
     },
     "listGroupPagePinned": {
         "message": "Página de lista de grupos fijada"
@@ -2976,8 +3193,11 @@
         "description": "Crear Tema Personalizado"
     },
     "pickColorEyeDropper": {
-        "message": "Seleccionar color de la pantalla",
-        "description": "Seleccionar color de la pantalla con cuentagotas"
+        "message": "Seleccionar color de la pantalla"
+    },
+    "pickColorEyeDropper_tooltip": {
+        "message": "Seleccionar color de la pantalla con cuentagotas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pickColorEyeDropper»."
     },
     "colorPickedAndCopied": {
         "message": "Color '$1' seleccionado y copiado al portapapeles",
@@ -3114,8 +3334,11 @@
         "description": "Realiza consultas a Gemini"
     },
     "addApiKeyBtn": {
-        "message": "Añadir Clave API",
-        "description": "Añade una clave de la API de Gemini para que el asistente pueda responder"
+        "message": "Añadir Clave API"
+    },
+    "addApiKeyBtn_tooltip": {
+        "message": "Añade una clave de la API de Gemini para que el asistente pueda responder",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «addApiKeyBtn»."
     },
     "geminiFreeTier": {
         "message": "Nivel Gratuito",
@@ -3154,8 +3377,11 @@
         "description": "Activar búsqueda web"
     },
     "enableGeminiSearch": {
-        "message": "Haz click para activar las consultas en la barra de búsqueda. click largo o Ctrl+click para abrir las consultas de Gemini en el panel lateral.",
-        "description": "Haz click para activar las consultas en la barra de búsqueda.\n\n Click largo o Ctrl+click para abrir las consultas de Gemini en el panel lateral."
+        "message": "Haz clic para activar las consultas en la barra de búsqueda. clic largo o Ctrl+clic para abrir las consultas de Gemini en el panel lateral."
+    },
+    "enableGeminiSearch_tooltip": {
+        "message": "Haz clic para activar las consultas en la barra de búsqueda.\n\n Clic largo o Ctrl+clic para abrir las consultas de Gemini en el panel lateral.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «enableGeminiSearch»."
     },
     "localAiAcceptBtn": {
         "message": "Aceptar",
@@ -3362,12 +3588,18 @@
         "description": "Marcador de posición y etiqueta para el campo de entrada de la clave API."
     },
     "showApiKeyTitle": {
-        "message": "Mostrar clave API",
-        "description": "Muestra la clave en texto legible."
+        "message": "Mostrar clave API"
+    },
+    "showApiKeyTitle_tooltip": {
+        "message": "Muestra la clave en texto legible.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «showApiKeyTitle»."
     },
     "hideApiKeyTitle": {
-        "message": "Ocultar clave API",
-        "description": "Vuelve a ocultar la clave."
+        "message": "Ocultar clave API"
+    },
+    "hideApiKeyTitle_tooltip": {
+        "message": "Vuelve a ocultar la clave.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hideApiKeyTitle»."
     },
     "geminiApiKeySaved": {
         "message": "Clave API de Gemini guardada correctamente.",
@@ -3422,8 +3654,11 @@
         "description": "Etiqueta para el elemento de detalles de estadísticas de la API"
     },
     "copyApiKeyTooltip": {
-        "message": "Copiar clave de API",
-        "description": "Copia esta clave al portapapeles."
+        "message": "Copiar clave de API"
+    },
+    "copyApiKeyTooltip_tooltip": {
+        "message": "Copia esta clave al portapapeles.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «copyApiKeyTooltip»."
     },
     "apiKeyCopied": {
         "message": "Clave de API copiada al portapapeles",
@@ -3456,28 +3691,68 @@
         "message": "Ver menos"
     },
     "showYouTubePlayer": {
-        "message": "Mostrar reproductor de YouTube",
-        "description": "Vuelve a mostrar el reproductor oculto."
+        "message": "Mostrar reproductor de YouTube"
+    },
+    "showYouTubePlayer_tooltip": {
+        "message": "Vuelve a mostrar el reproductor oculto.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «showYouTubePlayer»."
     },
     "closeYouTubePlayer": {
-        "message": "Cerrar reproductor de YouTube",
-        "description": "Cierra el reproductor oculto y detén su audio."
+        "message": "Cerrar reproductor de YouTube"
+    },
+    "closeYouTubePlayer_tooltip": {
+        "message": "Cierra el reproductor oculto y detén su audio.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «closeYouTubePlayer»."
     },
     "copyAllUrls": {
         "message": "Copiar todas las URL de este grupo",
         "description": "Copiar todas las URL de este grupo"
     },
     "copySubGroupAllUrls": {
-        "message": "Copiar todas las URL del dominio",
-        "description": "Copiar todas las URL de este dominio"
+        "message": "Copiar todas las URL del dominio"
+    },
+    "copySubGroupAllUrls_tooltip": {
+        "message": "Copiar todas las URL de este dominio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «copySubGroupAllUrls»."
     },
     "copyUrl": {
         "message": "Copiar URL",
         "description": "Copiar URL"
     },
+    "selectionPreviewPageTitle": {
+        "message": "Vista previa — Intelligent Workspace",
+        "description": "Título de la pestaña de la ventana que muestra una selección o una imagen abierta desde el menú contextual."
+    },
+    "selectionPreviewSelection": {
+        "message": "Texto seleccionado",
+        "description": "Cabecera de la ventana de vista previa cuando muestra texto seleccionado en una página."
+    },
+    "selectionPreviewImage": {
+        "message": "Visor de imagen",
+        "description": "Cabecera de la ventana de vista previa cuando muestra una imagen."
+    },
+    "selectionPreviewNoId": {
+        "message": "Nada que mostrar: la ventana se abrió sin contenido.",
+        "description": "Se muestra en la ventana de vista previa cuando su dirección no lleva identificador de contenido."
+    },
+    "selectionPreviewNotFound": {
+        "message": "Esta vista previa ya no está disponible. Vuelve a abrirla desde la página.",
+        "description": "Se muestra cuando el contenido temporal de la vista previa se ha borrado, por ejemplo al reiniciar el navegador."
+    },
+    "selectionPreviewScreenshotNotFound": {
+        "message": "Esta captura ya no está en la galería.",
+        "description": "Se muestra cuando la captura de la galería abierta en la vista previa se ha eliminado."
+    },
+    "selectionPreviewUrlCopied": {
+        "message": "¡Dirección copiada!",
+        "description": "Confirmación en el botón de copiar tras copiar la dirección de una imagen."
+    },
     "showDownloads": {
+        "message": "Mostrar archivos descargables"
+    },
+    "showDownloads_tooltip": {
         "message": "Mostrar archivos descargables",
-        "description": "Mostrar archivos descargables"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «showDownloads»."
     },
     "downloadableFiles": {
         "message": "Descargas",
@@ -3500,8 +3775,11 @@
         "description": "Texto del botón para deseleccionar todos los elementos en la lista de descargas."
     },
     "download": {
-        "message": "Descargar",
-        "description": "Guarda este archivo en tu equipo."
+        "message": "Descargar"
+    },
+    "download_tooltip": {
+        "message": "Guarda este archivo en tu equipo.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «download»."
     },
     "noDownloadsAvailable": {
         "message": "No se encontraron archivos descargables en esta página.",
@@ -3525,9 +3803,19 @@
         "message": "No se pudieron obtener los enlaces de descarga de la página.",
         "description": "Notificación de error cuando falla la obtención de enlaces de descarga."
     },
-    "downloadsStarted": {
+    "downloadsStarted_one": {
+        "message": "Se inició $1 descarga.",
+        "description": "Notificación después de iniciar descargas. $1 es un marcador de posición. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
+    "downloadsStarted_other": {
         "message": "Se iniciaron $1 descargas.",
-        "description": "Notificación después de iniciar descargas. $1 es un marcador de posición.",
+        "description": "Notificación después de iniciar descargas. $1 es un marcador de posición. Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -3576,8 +3864,11 @@
         "description": "Modo Lectura"
     },
     "openInPanel": {
-        "message": "Abrir en el panel",
-        "description": "Abrir en el panel lateral"
+        "message": "Abrir en el panel"
+    },
+    "openInPanel_tooltip": {
+        "message": "Abrir en el panel lateral",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «openInPanel»."
     },
     "openInNewTab": {
         "message": "Abrir en una nueva pestaña",
@@ -3605,6 +3896,22 @@
     },
     "backToMainPopup": {
         "message": "Volver al popup principal"
+    },
+    "versionLabel": {
+        "message": "Versión $1",
+        "description": "Cabecera de una versión en el historial. $1 es el número de versión."
+    },
+    "toggleVersionDetails": {
+        "message": "Mostrar u ocultar los cambios de esta versión",
+        "description": "Botón que despliega una versión en el historial."
+    },
+    "removeAttachment": {
+        "message": "Quitar este adjunto",
+        "description": "Botón sobre un archivo adjunto a una pregunta al asistente."
+    },
+    "backToMainPopup_tooltip": {
+        "message": "Volver al popup principal",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «backToMainPopup»."
     },
     "allSchedules": {
         "message": "Programar Tema"
@@ -3674,6 +3981,22 @@
                 "content": "$1"
             }
         }
+    },
+    "themeScheduleActivated": {
+        "message": "Tema programado aplicado",
+        "description": "Título de la notificación cuando empieza un tema programado."
+    },
+    "themeScheduleActivatedBody": {
+        "message": "$1 ya está en uso",
+        "description": "Texto de la notificación cuando empieza un tema programado. $1 es el nombre del tema."
+    },
+    "themeScheduleDeactivated": {
+        "message": "Tema programado terminado",
+        "description": "Título de la notificación cuando termina un tema programado."
+    },
+    "themeScheduleDeactivatedBody": {
+        "message": "Vuelves a tu tema anterior",
+        "description": "Texto de la notificación cuando termina un tema programado."
     },
     "maxSchedulesReached": {
         "message": "Has alcanzado el límite de $1 programaciones. Para añadir una nueva, elimina una existente.",
@@ -3816,6 +4139,14 @@
         "message": "Habilita la función de descarga de archivos, permitiéndote guardar contenido directamente desde las pestañas.",
         "description": "Descripción del permiso para descargas."
     },
+    "permDownloadsOpen": {
+        "message": "Abre una descarga de la lista del panel cuando la pulsas, como la página de descargas de Chrome.",
+        "description": "Página Acerca de, lista de permisos: por qué se pide downloads.open."
+    },
+    "permAllUrls": {
+        "message": "Permite que las funciones que usas funcionen en cualquier web: agrupar pestañas por dominio, los atajos de teclado y la omnibar, los límites de tiempo por sitio y la vista web del panel lateral.",
+        "description": "Página Acerca de, lista de permisos: por qué se pide acceso a todos los sitios."
+    },
     "permSystemDisplay": {
         "message": "Se utiliza para obtener información sobre la pantalla y gestionar correctamente la funcionalidad de pantalla dividida.",
         "description": "Descripción del permiso para system.display."
@@ -3857,8 +4188,11 @@
         "description": "Eliminar todas las conversaciones"
     },
     "captureWebpage": {
-        "message": "Capturar página web",
-        "description": "Capturar página web. Con Ctrl+Click se activa la captura de área."
+        "message": "Capturar página web"
+    },
+    "captureWebpage_tooltip": {
+        "message": "Capturar página web. Con Ctrl+Clic se activa la captura de área.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureWebpage»."
     },
     "captureFullPage": {
         "message": "Capturar página web",
@@ -3960,8 +4294,8 @@
         "description": "Copiar toda la conversación"
     },
     "copyGeminiResponse": {
-        "message": "Copiar respuesta (Ctrl+click para copiar Pregunta y Respuesta)",
-        "description": "Copiar respuesta (Ctrl+click para copiar Pregunta y Respuesta)"
+        "message": "Copiar respuesta (Ctrl+clic para copiar Pregunta y Respuesta)",
+        "description": "Copiar respuesta (Ctrl+clic para copiar Pregunta y Respuesta)"
     },
     "geminiHistoryCopied": {
         "message": "Conversación copiada al portapapeles.",
@@ -3988,8 +4322,11 @@
         "description": "Error al reproducir el audio."
     },
     "stopReadingAloud": {
-        "message": "Detener lectura",
-        "description": "Detén la lectura en voz alta de la página."
+        "message": "Detener lectura"
+    },
+    "stopReadingAloud_tooltip": {
+        "message": "Detén la lectura en voz alta de la página.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «stopReadingAloud»."
     },
     "errorDeletingScreenshots": {
         "message": "Error al eliminar las capturas. Por favor, inténtalo de nuevo.",
@@ -4024,8 +4361,11 @@
         "description": "Añadir dominio a una regla existente"
     },
     "createRuleFromSubgroup": {
-        "message": "Crear nueva regla de este dominio",
-        "description": "Crear nueva regla desde este dominio"
+        "message": "Crear nueva regla de este dominio"
+    },
+    "createRuleFromSubgroup_tooltip": {
+        "message": "Crear nueva regla desde este dominio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «createRuleFromSubgroup»."
     },
     "addToExistingRule": {
         "message": "Añadir a Regla Existente"
@@ -4208,36 +4548,31 @@
         "description": "Texto del botón para añadir una nueva tarjeta/elemento a la lista categorizada (Kanban)."
     },
     "noteStatsWordsChars": {
-        "message": "$1pal/$2car",
-        "description": "Estadísticas de una nota de texto, mostrando el número de palabras y caracteres.",
-        "placeholders": {
-            "word_count": {
-                "content": "$1",
-                "example": "123"
-            },
-            "char_count": {
-                "content": "$2",
-                "example": "789"
-            }
-        }
+        "message": "$1 pal / $2 car",
+        "description": "Estadísticas compactas en la tarjeta de una nota; abreviadas para que valgan con cualquier número. $1 palabras, $2 caracteres."
     },
     "noteEditorStatsWordsChars": {
-        "message": "$1 palabras / $2 caracteres",
-        "description": "Estadísticas completas en el editor de texto de notas, mostrando el número de palabras y caracteres.",
-        "placeholders": {
-            "word_count": {
-                "content": "$1",
-                "example": "5"
-            },
-            "char_count": {
-                "content": "$2",
-                "example": "49"
-            }
-        }
+        "message": "$1 / $2",
+        "description": "Pie del editor de notas. $1 es el recuento de palabras y $2 el de caracteres, ya con su plural (noteWordCount, noteCharCount)."
+    },
+    "noteWordCount_one": {
+        "message": "$1 palabra",
+        "description": "Número de palabras de una nota. $1 es la cifra."
+    },
+    "noteWordCount_other": {
+        "message": "$1 palabras",
+        "description": "Número de palabras de una nota. $1 es la cifra."
+    },
+    "noteCharCount_one": {
+        "message": "$1 carácter",
+        "description": "Número de caracteres de una nota. $1 es la cifra."
+    },
+    "noteCharCount_other": {
+        "message": "$1 caracteres",
+        "description": "Número de caracteres de una nota. $1 es la cifra."
     },
     "charCountLimit": {
         "message": "$1/$2 caracteres",
-        "description": "Contador de caracteres respecto al límite permitido.",
         "placeholders": {
             "current": {
                 "content": "$1",
@@ -4248,6 +4583,10 @@
                 "example": "1000"
             }
         }
+    },
+    "charCountLimit_tooltip": {
+        "message": "Contador de caracteres respecto al límite permitido.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «charCountLimit»."
     },
     "editCookies": {
         "message": "Editar cookies",
@@ -4262,8 +4601,11 @@
         "description": "Restablecer"
     },
     "deleteCookie": {
-        "message": "Eliminar cookie",
-        "description": "Elimina esta cookie del sitio."
+        "message": "Eliminar cookie"
+    },
+    "deleteCookie_tooltip": {
+        "message": "Elimina esta cookie del sitio.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «deleteCookie»."
     },
     "cookieValue": {
         "message": "Valor",
@@ -4310,8 +4652,8 @@
         "description": "Cookies actualizadas correctamente."
     },
     "noteStatsTooltipText": {
-        "message": "Muestra el recuento de palabras y caracteres ($1 palabra / $2 caracteres).",
-        "description": "$1 palabras y $2 caracteres en esta nota."
+        "message": "$1 y $2 en esta nota.",
+        "description": "Texto al pasar el ratón por las estadísticas de la nota. $1 y $2 son los recuentos ya con su plural."
     },
     "noteStatsTooltipChecklist": {
         "message": "Muestra las tareas completadas del total ($1/$2).",
@@ -4350,16 +4692,22 @@
         "description": "Título del panel de pantalla completa para importar cookies."
     },
     "backToCookieEditor": {
-        "message": "Volver al Editor de Cookies",
-        "description": "Sal del panel de importación y vuelve a la lista de cookies."
+        "message": "Volver al Editor de Cookies"
+    },
+    "backToCookieEditor_tooltip": {
+        "message": "Sal del panel de importación y vuelve a la lista de cookies.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «backToCookieEditor»."
     },
     "dragDropCookie": {
-        "message": "Arrastra y suelta un archivo .json aquí o haz click para seleccionar uno",
+        "message": "Arrastra y suelta un archivo .json aquí o haz clic para seleccionar uno",
         "description": "Texto de instrucciones dentro del área de arrastrar y soltar para las cookies."
     },
     "selectCookieFile": {
-        "message": "Seleccionar un archivo de cookies para importar",
-        "description": "Suelta aquí un archivo de cookies, o haz clic para elegir uno."
+        "message": "Seleccionar un archivo de cookies para importar"
+    },
+    "selectCookieFile_tooltip": {
+        "message": "Suelta aquí un archivo de cookies, o haz clic para elegir uno.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «selectCookieFile»."
     },
     "cookiesImported": {
         "message": "Se importaron $COUNT$ cookies correctamente.",
@@ -4443,7 +4791,7 @@
         "description": "Texto alternativo predeterminado para una imagen pegada en el editor de notas."
     },
     "notePdfOpenTooltip": {
-        "message": "click para abrir en el panel lateral. Ctrl+click para abrir en una nueva pestaña."
+        "message": "Clic para abrir en el panel lateral. Ctrl+clic para abrir en una nueva pestaña."
     },
     "notePdfLinkTitle": {
         "message": "Abrir PDF: $fileName$",
@@ -4634,8 +4982,11 @@
         "description": "Etiqueta de estado de una conversación temporal que no se ha guardado permanentemente."
     },
     "conversationEditedDateTooltip": {
-        "message": "Última modificación",
-        "description": "Cuándo se añadió algo por última vez a esta conversación."
+        "message": "Última modificación"
+    },
+    "conversationEditedDateTooltip_tooltip": {
+        "message": "Cuándo se añadió algo por última vez a esta conversación.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «conversationEditedDateTooltip»."
     },
     "errorDuplicateConversationTitle": {
         "message": "Ya existe una conversación con este título.",
@@ -4704,7 +5055,7 @@
         "message": "Copia acumulativa al portapapeles"
     },
     "appendClipboardDesc": {
-        "message": "Al pulsar la tecla asignada con texto seleccionado, se copia la selección y se añade con un salto de línea al último contenido del portapapeles."
+        "message": "Con texto seleccionado, la tecla asignada añade la selección a lo que copiaste antes en el navegador, separado por una línea en blanco, y deja la colección entera en el portapapeles. Una copia normal (Ctrl+C) empieza una colección nueva."
     },
     "appendClipboardToggleEnable": {
         "message": "Activar la copia acumulativa al portapapeles",
@@ -4850,8 +5201,11 @@
         "description": "Texto de ejemplo para la descripción del comando."
     },
     "addCommandButton": {
-        "message": "Añadir Comando",
-        "description": "Guarda este comando para que aparezca en la lista."
+        "message": "Añadir Comando"
+    },
+    "addCommandButton_tooltip": {
+        "message": "Guarda este comando para que aparezca en la lista.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «addCommandButton»."
     },
     "currentCommandsSectionTitle": {
         "message": "Comandos Personalizados Actuales",
@@ -4921,27 +5275,47 @@
     "hintDesc_u": {
         "message": "Ir al inicio de la página"
     },
+    "hintDesc_u_tooltip": {
+        "message": "Ir al inicio de la página",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_u»."
+    },
     "hintDesc_r": {
-        "message": "Recargar página",
-        "description": "Recargar la página actual"
+        "message": "Recargar página"
+    },
+    "hintDesc_r_tooltip": {
+        "message": "Recargar la página actual",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_r»."
     },
     "hintDesc_R": {
-        "message": "Recarga forzada (borrar caché)",
-        "description": "Recarga forzada borrando la caché"
+        "message": "Recarga forzada (borrar caché)"
+    },
+    "hintDesc_R_tooltip": {
+        "message": "Recarga forzada borrando la caché",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_R»."
     },
     "hintDesc_h_tab_page": {
-        "message": "Ir a la página anterior",
-        "description": "Retroceder en el historial"
+        "message": "Ir a la página anterior"
+    },
+    "hintDesc_h_tab_page_tooltip": {
+        "message": "Retroceder en el historial",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_h_tab_page»."
     },
     "hintDesc_l_tab_page": {
-        "message": "Ir a la página siguiente",
-        "description": "Avanzar en el historial"
+        "message": "Ir a la página siguiente"
+    },
+    "hintDesc_l_tab_page_tooltip": {
+        "message": "Avanzar en el historial",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_l_tab_page»."
     },
     "hintDesc_c": {
         "message": "Copiar URL actual"
     },
+    "hintDesc_c_tooltip": {
+        "message": "Copiar URL actual",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «hintDesc_c»."
+    },
     "hintDesc_y": {
-        "message": "Copiar texto seleccionado y añadir al portapapeles con salto de línea"
+        "message": "Copiar la selección y añadirla a lo que ya habías reunido"
     },
     "hintDesc_vs": {
         "message": "Ver código fuente"
@@ -4963,6 +5337,10 @@
     },
     "hintDesc_group_tab_nav": {
         "message": "Navegar a la pestaña N del grupo (ej: Alt+gog4+Enter)"
+    },
+    "hintGroupTabKeys": {
+        "message": "<grupo><n>",
+        "description": "Marcador de teclas en la lista de atajos para «Alt + número de grupo + número de pestaña». Conserva los signos < >."
     },
     "hintDesc_t": {
         "message": "Abrir nueva pestaña"
@@ -5112,20 +5490,32 @@
         "description": "Activa la visibilidad de los dominios primero para usar esta opción"
     },
     "copy": {
-        "message": "Copiar",
-        "description": "Cópialo al portapapeles."
+        "message": "Copiar"
+    },
+    "copy_tooltip": {
+        "message": "Cópialo al portapapeles.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «copy»."
     },
     "openUrl": {
-        "message": "Abrir URL",
-        "description": "Abre esta dirección en una pestaña nueva."
+        "message": "Abrir URL"
+    },
+    "openUrl_tooltip": {
+        "message": "Abre esta dirección en una pestaña nueva.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «openUrl»."
     },
     "moreOptions": {
-        "message": "Más opciones",
-        "description": "Muestra el resto de acciones de esta descarga."
+        "message": "Más opciones"
+    },
+    "moreOptions_tooltip": {
+        "message": "Muestra el resto de acciones de esta descarga.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «moreOptions»."
     },
     "removeScheduleTime": {
-        "message": "Quitar hora",
-        "description": "Quita esta hora de la programación."
+        "message": "Quitar hora"
+    },
+    "removeScheduleTime_tooltip": {
+        "message": "Quita esta hora de la programación.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «removeScheduleTime»."
     },
     "enableChildFoldersFirstTooltip": {
         "message": "Muestra primero las subcarpetas para poder usar esta opción",
@@ -5143,9 +5533,13 @@
         "message": "Pestañas sin Grupo",
         "description": "Title for the virtual group that contains all ungrouped tabs."
     },
-    "allOrphanNotesDeleted": {
+    "allOrphanNotesDeleted_one": {
+        "message": "Se ha eliminado $1 nota.",
+        "description": "Mensaje tras eliminar notas de la sección huérfana / general. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "allOrphanNotesDeleted_other": {
         "message": "Se han eliminado $1 notas.",
-        "description": "Mensaje tras eliminar notas de la sección huérfana / general."
+        "description": "Mensaje tras eliminar notas de la sección huérfana / general. Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "noOrphanNotesToDelete": {
         "message": "No hay notas para eliminar.",
@@ -5155,9 +5549,19 @@
         "message": "No hay capturas para eliminar.",
         "description": "Mensaje cuando no hay capturas para eliminar."
     },
-    "allOrphanScreenshotsDeleted": {
+    "allOrphanScreenshotsDeleted_one": {
+        "message": "Se ha eliminado $1 captura huérfana.",
+        "description": "Mensaje de confirmación que se muestra tras eliminar todas las capturas que ya no estaban asociadas a ningún grupo existente. El marcador de posición $COUNT$ será reemplazado por el número de elementos eliminados. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "allOrphanScreenshotsDeleted_other": {
         "message": "Se han eliminado las $1 capturas huérfanas.",
-        "description": "Mensaje de confirmación que se muestra tras eliminar todas las capturas que ya no estaban asociadas a ningún grupo existente. El marcador de posición $COUNT$ será reemplazado por el número de elementos eliminados.",
+        "description": "Mensaje de confirmación que se muestra tras eliminar todas las capturas que ya no estaban asociadas a ningún grupo existente. El marcador de posición $COUNT$ será reemplazado por el número de elementos eliminados. Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -5425,13 +5829,23 @@
     "restoreAllGroupsTooltip": {
         "message": "Restaurar todos los grupos respaldados. Esto puede consumir bastantes recursos en PCs menos potentes."
     },
-    "allGroupsBackedUp": {
-        "message": "$1 grupos inactivos han sido respaldados.",
+    "allGroupsBackedUp_one": {
+        "message": "$1 grupo inactivo ha sido respaldado.",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "1": {
                 "content": "$1"
             }
         }
+    },
+    "allGroupsBackedUp_other": {
+        "message": "$1 grupos inactivos han sido respaldados.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "allGroupsRestored": {
         "message": "Todos los $1 grupos respaldados han sido restaurados.",
@@ -5448,16 +5862,19 @@
         "message": "No hay grupos en el respaldo para restaurar."
     },
     "backupGroup": {
-        "message": "Respaldar este grupo.",
-        "description": "Respaldar este grupo"
+        "message": "Respaldar este grupo."
+    },
+    "backupGroup_tooltip": {
+        "message": "Respaldar este grupo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «backupGroup»."
     },
     "restoreGroup": {
         "message": "Restaurar este grupo",
         "description": "Restaurar este grupo"
     },
     "restoreGroupTooltip": {
-        "message": "Haz click para restaurar este grupo",
-        "description": "Haz click para restaurar este grupo"
+        "message": "Haz clic para restaurar este grupo",
+        "description": "Haz clic para restaurar este grupo"
     },
     "groupBackedUp": {
         "message": "Grupo '$1' respaldado con éxito.",
@@ -5558,8 +5975,8 @@
         "description": "Selecciona un archivo de marcadores (.json) para importar"
     },
     "dragDropBookmarks": {
-        "message": "Arrastra y suelta un archivo .json aquí o haz click para seleccionar un archivo.",
-        "description": "Arrastra y suelta un archivo .json aquí o haz click para seleccionar un archivo."
+        "message": "Arrastra y suelta un archivo .json aquí o haz clic para seleccionar un archivo.",
+        "description": "Arrastra y suelta un archivo .json aquí o haz clic para seleccionar un archivo."
     },
     "cancelBookmarksImport": {
         "message": "Cancelar importación de marcadores",
@@ -5886,8 +6303,11 @@
         "message": "Contraer todas las descargas"
     },
     "deleteHistoryForDate": {
-        "message": "Borrar historial de esta fecha",
-        "description": "Borra todas las entradas del historial de este día."
+        "message": "Borrar historial de esta fecha"
+    },
+    "deleteHistoryForDate_tooltip": {
+        "message": "Borra todas las entradas del historial de este día.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «deleteHistoryForDate»."
     },
     "deleteHistoryConfirmDesc": {
         "message": "¿Estás seguro de que quieres eliminar todo el historial de:",
@@ -6165,7 +6585,27 @@
         "message": "Expansión inválida"
     },
     "val_trigger_too_long": {
-        "message": "El disparador '$1' excede los 20 caracteres"
+        "message": "El disparador '$1' supera los 5 caracteres"
+    },
+    "val_invalid_variables": {
+        "message": "Formato de variables no válido",
+        "description": "Importar ajustes de navegación: un snippet cuyas variables no son una lista."
+    },
+    "val_too_many_variables": {
+        "message": "El snippet '$1' tiene demasiadas variables (máximo 50)",
+        "description": "Importar ajustes de navegación. $1 es el disparador del snippet."
+    },
+    "val_prefix_site": {
+        "message": "Sitio: $1",
+        "description": "Prefijo de un error de importación sobre un atajo a sitio. $1 es el error."
+    },
+    "val_prefix_snippet": {
+        "message": "Snippet: $1",
+        "description": "Prefijo de un error de importación sobre un snippet. $1 es el error."
+    },
+    "val_prefix_override": {
+        "message": "Atajo: $1",
+        "description": "Prefijo de un error de importación sobre un atajo predefinido cambiado. $1 es el error."
     },
     "val_expansion_too_long": {
         "message": "La expansión para '$1' es demasiado larga"
@@ -6413,6 +6853,10 @@
             }
         }
     },
+    "omnibarPressEnterToSearch": {
+        "message": "Pulsa Enter para buscar",
+        "description": "Segunda línea de una fila de búsqueda en un sitio de la omnibar (g:, y:, w:…)."
+    },
     "omnibarPrefixGoogleTitle": {
         "message": "Google"
     },
@@ -6598,8 +7042,8 @@
         }
     },
     "ctrlClickUrl": {
-        "message": "ctrl+click $URL$",
-        "description": "Tooltip en los links de URL de reglas indicando que ctrl+click los abre",
+        "message": "ctrl+clic $URL$",
+        "description": "Tooltip en los links de URL de reglas indicando que ctrl+clic los abre",
         "placeholders": {
             "url": {
                 "content": "$1",
@@ -6727,6 +7171,10 @@
         "message": "❌ Error al consultar la IA",
         "description": "Estado de error del omnibar cuando falla la consulta IA"
     },
+    "omnibarAiNoApiKey": {
+        "message": "Añade una clave de la API de Gemini en el asistente (panel lateral) para preguntar a la IA.",
+        "description": "Se muestra en la omnibar cuando se lanza una consulta o el agente sin ninguna clave guardada."
+    },
     "omnibarPrefixPopupTitle": {
         "message": "Abrir en Ventana Emergente"
     },
@@ -6734,7 +7182,7 @@
         "message": "Selecciona una pestaña para abrirla en una ventana emergente"
     },
     "omnibarPrefixPipTitle": {
-        "message": "Abrir en ventana en picture-in-picture"
+        "message": "Abrir en ventana Picture-in-Picture"
     },
     "omnibarPrefixPipDesc": {
         "message": "Selecciona una pestaña para abrirla en modo Picture-in-Picture"
@@ -6764,10 +7212,10 @@
         "description": "Tutorial row"
     },
     "omnibarPrefixVideoPipTitle": {
-        "message": "Abrir en picture video"
+        "message": "Abrir el vídeo en Picture-in-Picture"
     },
     "omnibarPrefixVideoPipDesc": {
-        "message": "Selecciona una pestaña para abrirla en modo picture video"
+        "message": "Selecciona una pestaña para abrir su vídeo en una ventana Picture-in-Picture"
     },
     "pipMoreOptions": {
         "message": "Más opciones"
@@ -7124,10 +7572,10 @@
         "message": "Explora y vuelve a abrir pestañas cerradas recientemente"
     },
     "omnibarPrefixGroupsTitle": {
-        "message": "Grupos de pestañas"
+        "message": "Grupos de pestañas (Eliminar)"
     },
     "omnibarPrefixGroupsDesc": {
-        "message": "Busca y cambia entre grupos de pestañas"
+        "message": "Busca y cierra grupos con todas sus pestañas"
     },
     "omnibarPrefixDeepSearchTitle": {
         "message": "Búsqueda profunda"
@@ -7172,7 +7620,7 @@
         "message": "Explora y busca en tus notas guardadas"
     },
     "omnibarResultHint": {
-        "message": "Enter para copiar . Ctrl+Enter para expandir"
+        "message": "Enter para copiar · Ctrl+Enter para expandir"
     },
     "prefixSelector": {
         "message": "Mostrar selector de prefijos"
@@ -7210,16 +7658,25 @@
         "description": "Placeholder para búsqueda de snippets"
     },
     "deleteAllNotesContext": {
-        "message": "Eliminar todas las notas en este contexto",
-        "description": "Elimina todas las notas archivadas en este contexto. No se puede deshacer."
+        "message": "Eliminar todas las notas en este contexto"
+    },
+    "deleteAllNotesContext_tooltip": {
+        "message": "Elimina todas las notas archivadas en este contexto. No se puede deshacer.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «deleteAllNotesContext»."
     },
     "viewOrphanScreenshots": {
-        "message": "Ver capturas huérfanas",
-        "description": "Muestra las capturas cuyo grupo ya no existe."
+        "message": "Ver capturas huérfanas"
+    },
+    "viewOrphanScreenshots_tooltip": {
+        "message": "Muestra las capturas cuyo grupo ya no existe.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «viewOrphanScreenshots»."
     },
     "uploadFileTooltip": {
-        "message": "Subir archivo",
-        "description": "Elige un archivo de tu equipo."
+        "message": "Subir archivo"
+    },
+    "uploadFileTooltip_tooltip": {
+        "message": "Elige un archivo de tu equipo.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «uploadFileTooltip»."
     },
     "configureCollapseExpandAllTabs": {
         "message": "Configurar atajo para Colapsar/Expandir todas las pestañas",
@@ -7860,8 +8317,8 @@
         "description": "Eliminar todos los marcadores"
     },
     "regroupBtnTooltip": {
-        "message": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar.",
-        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace click en restaurar."
+        "message": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace clic en restaurar.",
+        "description": "Reagrupar todas las pestañas\n\nUtilizar cuando la agrupación automática de pestañas falla.\nSuele fallar cuando se cierra el navegador inesperadamente y se hace clic en restaurar."
     },
     "backToGroups": {
         "message": "Volver a la sección de listar grupos",
@@ -7928,16 +8385,25 @@
         "description": "Tooltip del botón agente mientras ejecuta una tarea"
     },
     "geminiChangeModelTooltip": {
-        "message": "Cambiar el modelo de IA",
-        "description": "Elige qué modelo de IA responde."
+        "message": "Cambiar el modelo de IA"
+    },
+    "geminiChangeModelTooltip_tooltip": {
+        "message": "Elige qué modelo de IA responde.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «geminiChangeModelTooltip»."
     },
     "geminiPreviousModel": {
-        "message": "Modelo anterior",
-        "description": "Cambiar al modelo de IA anterior"
+        "message": "Modelo anterior"
+    },
+    "geminiPreviousModel_tooltip": {
+        "message": "Cambiar al modelo de IA anterior",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «geminiPreviousModel»."
     },
     "geminiNextModel": {
-        "message": "Modelo siguiente",
-        "description": "Cambiar al modelo de IA siguiente"
+        "message": "Modelo siguiente"
+    },
+    "geminiNextModel_tooltip": {
+        "message": "Cambiar al modelo de IA siguiente",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «geminiNextModel»."
     },
     "agentModeTitleEnable": {
         "message": "Activar el modo agente, la IA controla la extensión, ejemplo: creame la regla deportes con la web futbol.com, tenis.com, f1.com",
@@ -7948,8 +8414,11 @@
         "description": "Título para desactivar el modo agente"
     },
     "resendQuery": {
-        "message": "Reenviar consulta",
-        "description": "Vuelve a enviar esta consulta y sustituye su respuesta"
+        "message": "Reenviar consulta"
+    },
+    "resendQuery_tooltip": {
+        "message": "Vuelve a enviar esta consulta y sustituye su respuesta",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «resendQuery»."
     },
     "toolGetOpenTabs": {
         "message": "📋 Obteniendo pestañas abiertas…"
@@ -7975,8 +8444,13 @@
     "toolCloseTab": {
         "message": "❌ Cerrando pestaña $1"
     },
-    "toolCloseTabs": {
-        "message": "❌ Cerrando $1 pestañas"
+    "toolCloseTabs_one": {
+        "message": "❌ Cerrando $1 pestaña",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "toolCloseTabs_other": {
+        "message": "❌ Cerrando $1 pestañas",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "toolDuplicateTab": {
         "message": "📄 Duplicando pestaña actual…"
@@ -8106,16 +8580,25 @@
         "description": "Pomodoro panel title"
     },
     "pomodoroWork": {
-        "message": "Pomodoro",
-        "description": "Sesión de trabajo pomodoro"
+        "message": "Pomodoro"
+    },
+    "pomodoroWork_tooltip": {
+        "message": "Sesión de trabajo pomodoro",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroWork»."
     },
     "pomodoroShortBreak": {
-        "message": "Descanso corto",
-        "description": "El descanso corto entre un pomodoro y el siguiente."
+        "message": "Descanso corto"
+    },
+    "pomodoroShortBreak_tooltip": {
+        "message": "El descanso corto entre un pomodoro y el siguiente.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroShortBreak»."
     },
     "pomodoroLongBreak": {
-        "message": "Descanso largo",
-        "description": "El descanso largo con el que se cierra un ciclo de pomodoros."
+        "message": "Descanso largo"
+    },
+    "pomodoroLongBreak_tooltip": {
+        "message": "El descanso largo con el que se cierra un ciclo de pomodoros.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroLongBreak»."
     },
     "pomodoroStart": {
         "message": "Iniciar",
@@ -8170,12 +8653,18 @@
         "description": "Total de pomodoros para completar la tarea"
     },
     "pomodoroSound": {
-        "message": "Notificaciones de sonido",
-        "description": "Suena un aviso cuando termina una fase."
+        "message": "Notificaciones de sonido"
+    },
+    "pomodoroSound_tooltip": {
+        "message": "Suena un aviso cuando termina una fase.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroSound»."
     },
     "pomodoroAutostart": {
-        "message": "Iniciar siguiente sesión automáticamente",
-        "description": "Empieza la siguiente sesión sin esperar a que pulses play."
+        "message": "Iniciar siguiente sesión automáticamente"
+    },
+    "pomodoroAutostart_tooltip": {
+        "message": "Empieza la siguiente sesión sin esperar a que pulses play.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroAutostart»."
     },
     "pomodoroProjectName": {
         "message": "Nombre del proyecto",
@@ -8190,8 +8679,11 @@
         "description": "Carpeta"
     },
     "pomodoroStats": {
-        "message": "Estadísticas",
-        "description": "Dónde han ido las horas: sesiones, tiempo de foco y rachas."
+        "message": "Estadísticas"
+    },
+    "pomodoroStats_tooltip": {
+        "message": "Dónde han ido las horas: sesiones, tiempo de foco y rachas.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroStats»."
     },
     "pomodoroStatsFocusTime": {
         "message": "Tiempo de foco",
@@ -8238,16 +8730,25 @@
         "description": "Sesiones"
     },
     "pomodoroCreateNote": {
+        "message": "Crear nota de pomodoro"
+    },
+    "pomodoroCreateNote_tooltip": {
         "message": "Crear nota de pomodoro",
-        "description": "Crear nota de pomodoro"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroCreateNote»."
     },
     "pomodoroTaskReset": {
+        "message": "Reiniciar tarea completamente (pone estadísticas a cero)"
+    },
+    "pomodoroTaskReset_tooltip": {
         "message": "Reiniciar tarea completamente (pone estadísticas a cero)",
-        "description": "Reiniciar tarea completamente (pone estadísticas a cero)"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroTaskReset»."
     },
     "pomodoroTaskFinish": {
+        "message": "Finalizar tarea de pomodoro"
+    },
+    "pomodoroTaskFinish_tooltip": {
         "message": "Finalizar tarea de pomodoro",
-        "description": "Finalizar tarea de pomodoro"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroTaskFinish»."
     },
     "pomodoroSaveStats": {
         "message": "Guardar estadísticas en historial",
@@ -8586,10 +9087,10 @@
     "dashboardMaxSessions": {
         "message": "Máx. $1 $2 en un día"
     },
-    "dashboardProjects_n": {
+    "dashboardProjects_one": {
         "message": "$1 proyecto"
     },
-    "dashboardProjects_plural": {
+    "dashboardProjects_other": {
         "message": "$1 proyectos"
     },
     "dashboardSessionsTotal": {
@@ -8620,116 +9121,197 @@
         "message": "h"
     },
     "titleFilterToday": {
-        "message": "Hoy",
-        "description": "Muestra solo las sesiones completadas hoy"
+        "message": "Hoy"
+    },
+    "titleFilterToday_tooltip": {
+        "message": "Muestra solo las sesiones completadas hoy",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFilterToday»."
     },
     "titleFilter7Days": {
-        "message": "7 días",
-        "description": "Muestra las sesiones de los últimos 7 días"
+        "message": "7 días"
+    },
+    "titleFilter7Days_tooltip": {
+        "message": "Muestra las sesiones de los últimos 7 días",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFilter7Days»."
     },
     "titleFilter30Days": {
-        "message": "30 días",
-        "description": "Muestra las sesiones de los últimos 30 días"
+        "message": "30 días"
+    },
+    "titleFilter30Days_tooltip": {
+        "message": "Muestra las sesiones de los últimos 30 días",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFilter30Days»."
     },
     "titleFilter3Months": {
-        "message": "3 meses",
-        "description": "Muestra las sesiones de los últimos 3 meses"
+        "message": "3 meses"
+    },
+    "titleFilter3Months_tooltip": {
+        "message": "Muestra las sesiones de los últimos 3 meses",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFilter3Months»."
     },
     "titleFilterAll": {
-        "message": "Todo",
-        "description": "Muestra todas las sesiones registradas sin límite de tiempo"
+        "message": "Todo"
+    },
+    "titleFilterAll_tooltip": {
+        "message": "Muestra todas las sesiones registradas sin límite de tiempo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFilterAll»."
     },
     "titleTagFilter": {
-        "message": "Etiqueta",
-        "description": "Filtra las sesiones por etiqueta de proyecto"
+        "message": "Etiqueta"
+    },
+    "titleTagFilter_tooltip": {
+        "message": "Filtra las sesiones por etiqueta de proyecto",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleTagFilter»."
     },
     "titleSummarySection": {
-        "message": "Resumen",
-        "description": "Métricas clave del periodo: tiempo de foco, sesiones, pomodoros, eficiencia, días activos y mejor sesión"
+        "message": "Resumen"
+    },
+    "titleSummarySection_tooltip": {
+        "message": "Métricas clave del periodo: tiempo de foco, sesiones, pomodoros, eficiencia, días activos y mejor sesión",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleSummarySection»."
     },
     "titleStreaksSection": {
-        "message": "Rachas",
-        "description": "Rachas de días consecutivos con actividad y patrones de uso por hora del día"
+        "message": "Rachas"
+    },
+    "titleStreaksSection_tooltip": {
+        "message": "Rachas de días consecutivos con actividad y patrones de uso por hora del día",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleStreaksSection»."
     },
     "titleCurrentStreak": {
-        "message": "Racha actual",
-        "description": "Número de días consecutivos hasta hoy con al menos una sesión completada"
+        "message": "Racha actual"
+    },
+    "titleCurrentStreak_tooltip": {
+        "message": "Número de días consecutivos hasta hoy con al menos una sesión completada",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleCurrentStreak»."
     },
     "titleBestStreak": {
-        "message": "Mejor racha",
-        "description": "Máximo de días consecutivos con actividad registrada en el historial completo"
+        "message": "Mejor racha"
+    },
+    "titleBestStreak_tooltip": {
+        "message": "Máximo de días consecutivos con actividad registrada en el historial completo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleBestStreak»."
     },
     "titleHourDistrib": {
-        "message": "Por hora",
-        "description": "Distribución del tiempo de foco acumulado a lo largo del día, de 0:00 a 23:00"
+        "message": "Por hora"
+    },
+    "titleHourDistrib_tooltip": {
+        "message": "Distribución del tiempo de foco acumulado a lo largo del día, de 0:00 a 23:00",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleHourDistrib»."
     },
     "titleActivity52": {
-        "message": "Actividad",
-        "description": "Vista de actividad diaria de las últimas 52 semanas. El color de cada celda indica el número de sesiones completadas ese día"
+        "message": "Actividad"
+    },
+    "titleActivity52_tooltip": {
+        "message": "Vista de actividad diaria de las últimas 52 semanas. El color de cada celda indica el número de sesiones completadas ese día",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleActivity52»."
     },
     "titleHeatmap": {
-        "message": "Mapa de calor",
-        "description": "Cuadrícula con una celda por día. El color va de gris (sin actividad) hasta el color principal (10+ sesiones)"
+        "message": "Mapa de calor"
+    },
+    "titleHeatmap_tooltip": {
+        "message": "Cuadrícula con una celda por día. El color va de gris (sin actividad) hasta el color principal (10+ sesiones)",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleHeatmap»."
     },
     "titleTimeEff": {
-        "message": "Tiempo",
-        "description": "Gráficos de foco y descanso diario, distribución por día de la semana y eficiencia por sesión"
+        "message": "Tiempo"
+    },
+    "titleTimeEff_tooltip": {
+        "message": "Gráficos de foco y descanso diario, distribución por día de la semana y eficiencia por sesión",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleTimeEff»."
     },
     "titleFocusBreakChart": {
-        "message": "Foco/Descanso",
-        "description": "Barras apiladas por día: azul = horas de foco, gris = horas de descanso. Hover para ver el total diario"
+        "message": "Foco/Descanso"
+    },
+    "titleFocusBreakChart_tooltip": {
+        "message": "Barras apiladas por día: azul = horas de foco, gris = horas de descanso. Hover para ver el total diario",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleFocusBreakChart»."
     },
     "titleWeekdayChart": {
-        "message": "Por día",
-        "description": "Promedio de horas de foco por día de la semana. Útil para identificar tus días más productivos"
+        "message": "Por día"
+    },
+    "titleWeekdayChart_tooltip": {
+        "message": "Promedio de horas de foco por día de la semana. Útil para identificar tus días más productivos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleWeekdayChart»."
     },
     "titleEffChart": {
-        "message": "Eficiencia",
-        "description": "Eficiencia por sesión: porcentaje de tiempo activo sobre el tiempo total (foco ÷ foco+descanso). La línea es la media móvil de 5 sesiones"
+        "message": "Eficiencia"
+    },
+    "titleEffChart_tooltip": {
+        "message": "Eficiencia por sesión: porcentaje de tiempo activo sobre el tiempo total (foco ÷ foco+descanso). La línea es la media móvil de 5 sesiones",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleEffChart»."
     },
     "titleProjectSection": {
-        "message": "Proyectos",
-        "description": "Análisis del tiempo de foco y pomodoros distribuidos por proyecto"
+        "message": "Proyectos"
+    },
+    "titleProjectSection_tooltip": {
+        "message": "Análisis del tiempo de foco y pomodoros distribuidos por proyecto",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleProjectSection»."
     },
     "titleProjectBar": {
-        "message": "Foco por proyecto",
-        "description": "Horas totales de foco por proyecto, ordenadas de mayor a menor (top 12)"
+        "message": "Foco por proyecto"
+    },
+    "titleProjectBar_tooltip": {
+        "message": "Horas totales de foco por proyecto, ordenadas de mayor a menor (top 12)",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleProjectBar»."
     },
     "titleDonut": {
-        "message": "Distribución",
-        "description": "Distribución del tiempo total entre foco, descanso e interrupciones"
+        "message": "Distribución"
+    },
+    "titleDonut_tooltip": {
+        "message": "Distribución del tiempo total entre foco, descanso e interrupciones",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleDonut»."
     },
     "titleCyclesChart": {
-        "message": "Pomodoros",
-        "description": "Pomodoros completados por proyecto, ordenados de mayor a menor (top 10)"
+        "message": "Pomodoros"
+    },
+    "titleCyclesChart_tooltip": {
+        "message": "Pomodoros completados por proyecto, ordenados de mayor a menor (top 10)",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleCyclesChart»."
     },
     "titleBreakdownSection": {
-        "message": "Desglose",
-        "description": "Tabla resumen por proyecto y listado de las últimas sesiones individuales"
+        "message": "Desglose"
+    },
+    "titleBreakdownSection_tooltip": {
+        "message": "Tabla resumen por proyecto y listado de las últimas sesiones individuales",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleBreakdownSection»."
     },
     "titleProjectTable": {
-        "message": "Tabla",
-        "description": "Resumen por proyecto: número de sesiones, tiempo de foco, pomodoros completados, interrupciones y eficiencia media"
+        "message": "Tabla"
+    },
+    "titleProjectTable_tooltip": {
+        "message": "Resumen por proyecto: número de sesiones, tiempo de foco, pomodoros completados, interrupciones y eficiencia media",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleProjectTable»."
     },
     "titleTimeline": {
-        "message": "Recientes",
-        "description": "Últimas sesiones registradas con fecha, proyecto, tiempo de foco y eficiencia individual"
+        "message": "Recientes"
+    },
+    "titleTimeline_tooltip": {
+        "message": "Últimas sesiones registradas con fecha, proyecto, tiempo de foco y eficiencia individual",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «titleTimeline»."
     },
     "muteAllTabs": {
-        "message": "Silenciar todas las pestañas",
-        "description": "Silenciar todas las pestañas con audio"
+        "message": "Silenciar todas las pestañas"
+    },
+    "muteAllTabs_tooltip": {
+        "message": "Silenciar todas las pestañas con audio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «muteAllTabs»."
     },
     "unmuteAllTabs": {
         "message": "Activar sonido en todas las pestañas",
         "description": "Activar sonido en todas las pestañas"
     },
     "toggleMuteMute": {
-        "message": "Silenciar",
-        "description": "Silenciar esta pestaña"
+        "message": "Silenciar"
+    },
+    "toggleMuteMute_tooltip": {
+        "message": "Silenciar esta pestaña",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «toggleMuteMute»."
     },
     "toggleMuteUnmute": {
-        "message": "Activar sonido",
-        "description": "Activar sonido en esta pestaña"
+        "message": "Activar sonido"
+    },
+    "toggleMuteUnmute_tooltip": {
+        "message": "Activar sonido en esta pestaña",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «toggleMuteUnmute»."
     },
     "prefixQueryAIAgent": {
         "message": "Consultar al Agente IA para realizar acciones"
@@ -8753,8 +9335,11 @@
         "message": "❌ Error en el agente IA"
     },
     "pomodoroDashboard": {
+        "message": "Abrir Dashboard"
+    },
+    "pomodoroDashboard_tooltip": {
         "message": "Abrir Dashboard",
-        "description": "Abrir Dashboard"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroDashboard»."
     },
     "pomodoroMethodLabel": {
         "message": "Método",
@@ -8777,8 +9362,11 @@
         "description": "Tiempo"
     },
     "pomodoroMethodPauseAsStop": {
+        "message": "Pausa como Stop"
+    },
+    "pomodoroMethodPauseAsStop_tooltip": {
         "message": "Pausa como Stop",
-        "description": "Pausa como Stop"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroMethodPauseAsStop»."
     },
     "pomodoroTimerHours": {
         "message": "Horas",
@@ -8848,18 +9436,36 @@
         "message": "Pomodoro: grupo de focos que termina con un descanso largo. Sesión: una tarea completa de principio a fin",
         "description": "Pomodoro: grupo de focos que termina con un descanso largo. Sesión: una tarea completa de principio a fin"
     },
-    "pomodoroUnitSessionsTitle": {
-        "message": "Con $1 pomodoros terminas la tarea. Cada tarea finalizada cuenta como una sesión",
-        "description": "Title de la unidad de sesiones",
+    "pomodoroUnitSessionsTitle_one": {
+        "message": "Con $1 pomodoro terminas la tarea. Cada tarea finalizada cuenta como una sesión",
+        "description": "Title de la unidad de sesiones Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "1": {
                 "content": "$1"
             }
         }
     },
-    "pomodoroUnitCycleInfoTitle": {
-        "message": "Con $1 pomodoros completas un pomodoro (después viene el descanso largo)",
-        "description": "Title del mensaje de pomodoro",
+    "pomodoroUnitSessionsTitle_other": {
+        "message": "Con $1 pomodoros terminas la tarea. Cada tarea finalizada cuenta como una sesión",
+        "description": "Title de la unidad de sesiones Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "pomodoroUnitCycleInfoTitle_one": {
+        "message": "Con $1 pomodoro completas un ciclo (después viene el descanso largo)",
+        "description": "Title del mensaje de pomodoro Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "pomodoroUnitCycleInfoTitle_other": {
+        "message": "Con $1 pomodoros completas un ciclo (después viene el descanso largo)",
+        "description": "Title del mensaje de pomodoro Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "1": {
                 "content": "$1"
@@ -8947,12 +9553,18 @@
         "description": "Botón de importar estadísticas Pomodoro"
     },
     "dashboardExportJSON": {
-        "message": "Exportar estadísticas (JSON)",
-        "description": "Guarda tus estadísticas en un archivo JSON."
+        "message": "Exportar estadísticas (JSON)"
+    },
+    "dashboardExportJSON_tooltip": {
+        "message": "Guarda tus estadísticas en un archivo JSON.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardExportJSON»."
     },
     "dashboardImportJSON": {
-        "message": "Importar estadísticas (JSON)",
-        "description": "Carga estadísticas desde un archivo JSON."
+        "message": "Importar estadísticas (JSON)"
+    },
+    "dashboardImportJSON_tooltip": {
+        "message": "Carga estadísticas desde un archivo JSON.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «dashboardImportJSON»."
     },
     "pomodoroCurrentSessionLabel": {
         "message": "— sesión actual —",
@@ -8961,9 +9573,9 @@
     "otherGroupsDeleted": {
         "message": "Otros grupos cerrados con éxito"
     },
-    "confirmDeleteOtherGroups": {
-        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
-        "description": "Confirmación para cerrar los demás grupos en la ventana actual informando del grupo que se mantendrá.",
+    "confirmDeleteOtherGroups_one": {
+        "message": "¿Confirmas que quieres cerrar $1 grupo de esta ventana excepto el grupo \"$2\"?",
+        "description": "Confirmación para cerrar los demás grupos en la ventana actual informando del grupo que se mantendrá. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -8975,13 +9587,13 @@
             }
         }
     },
-    "confirmDeleteOtherGroupsSingle": {
-        "message": "¿Confirmas que quieres cerrar 1 grupo de esta ventana excepto el grupo \"$2\"?",
-        "description": "Confirmación para cerrar 1 grupo en la ventana actual informando del grupo que se mantendrá.",
+    "confirmDeleteOtherGroups_other": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
+        "description": "Confirmación para cerrar los demás grupos en la ventana actual informando del grupo que se mantendrá. Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "count": {
                 "content": "$1",
-                "example": "1"
+                "example": "3"
             },
             "keepGroup": {
                 "content": "$2",
@@ -9003,9 +9615,9 @@
             }
         }
     },
-    "confirmDeleteAllGroupsInWindow": {
-        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
-        "description": "Confirmación para cerrar todos los grupos en la ventana actual cuando no hay grupo activo.",
+    "confirmDeleteAllGroupsInWindow_one": {
+        "message": "¿Confirmas que quieres cerrar $1 grupo de esta ventana?",
+        "description": "Confirmación para cerrar todos los grupos en la ventana actual cuando no hay grupo activo. Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -9013,9 +9625,15 @@
             }
         }
     },
-    "confirmDeleteAllGroupsInWindowSingle": {
-        "message": "¿Confirmas que quieres cerrar 1 grupo de esta ventana?",
-        "description": "Confirmación para cerrar 1 grupo en la ventana actual cuando no hay grupo activo."
+    "confirmDeleteAllGroupsInWindow_other": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
+        "description": "Confirmación para cerrar todos los grupos en la ventana actual cuando no hay grupo activo. Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
     },
     "noOtherGroupsToClose": {
         "message": "No hay otros grupos que cerrar en esta ventana"
@@ -9560,8 +10178,13 @@
     "omnibarClickCaptureTab": {
         "message": "Clic o Enter para capturar. Espacio / Ctrl+Clic para seleccionar varias."
     },
-    "omnibarCaptureGroupHint": {
-        "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas."
+    "omnibarCaptureGroupHint_one": {
+        "message": "Capturar el grupo entero ($1 pestaña). Espacio / Ctrl+Clic la marca.",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "omnibarCaptureGroupHint_other": {
+        "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas.",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "omnibarClickDeleteTab": {
         "message": "Haz clic para eliminar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para rango."
@@ -9589,15 +10212,24 @@
         "message": "Cierra todas las pestañas dentro de estos grupos"
     },
     "omnibarDeleteAllGroupsDetail": {
-        "message": "Borrar $1 grupos y $2 pestañas",
-        "placeholders": {
-            "1": {
-                "content": "$1"
-            },
-            "2": {
-                "content": "$2"
-            }
-        }
+        "message": "Borrar $1 y $2",
+        "description": "Fila de la omnibar que cierra grupos y sus pestañas. $1 y $2 son las frases con su plural (omnibarGroupCount, omnibarTabCount)."
+    },
+    "omnibarGroupCount_one": {
+        "message": "$1 grupo",
+        "description": "Número de grupos en una fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarGroupCount_other": {
+        "message": "$1 grupos",
+        "description": "Número de grupos en una fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarTabCount_one": {
+        "message": "$1 pestaña",
+        "description": "Número de pestañas en una fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarTabCount_other": {
+        "message": "$1 pestañas",
+        "description": "Número de pestañas en una fila de borrar de la omnibar. $1 es la cifra."
     },
     "omnibarDeleteAllTabs": {
         "message": "Borrar todas las pestañas ($1)",
@@ -9739,15 +10371,28 @@
         }
     },
     "omnibarDeleteAllRulesDetail": {
-        "message": "Borrar $1 reglas y $2 dominios",
-        "placeholders": {
-            "1": {
-                "content": "$1"
-            },
-            "2": {
-                "content": "$2"
-            }
-        }
+        "message": "Eliminar $1 y $2",
+        "description": "Fila de la omnibar que elimina reglas y dominios. $1 y $2 son las frases con su plural (omnibarRuleCount, omnibarDomainCount)."
+    },
+    "omnibarDeleteDomains": {
+        "message": "Eliminar $1",
+        "description": "Fila de la omnibar que elimina solo dominios. $1 es la frase con su plural (omnibarDomainCount)."
+    },
+    "omnibarRuleCount_one": {
+        "message": "$1 regla",
+        "description": "Número de reglas en la fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarRuleCount_other": {
+        "message": "$1 reglas",
+        "description": "Número de reglas en la fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarDomainCount_one": {
+        "message": "$1 dominio",
+        "description": "Número de dominios en la fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarDomainCount_other": {
+        "message": "$1 dominios",
+        "description": "Número de dominios en la fila de borrar de la omnibar. $1 es la cifra."
     },
     "omnibarDeleteAllRulesDesc": {
         "message": "Borra todas estas reglas"
@@ -9795,13 +10440,23 @@
             }
         }
     },
-    "omnibarGroupBackup": {
-        "message": "Copia de seguridad ($1 pestañas)",
+    "omnibarGroupBackup_one": {
+        "message": "Copia de seguridad ($1 pestaña)",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "1": {
                 "content": "$1"
             }
         }
+    },
+    "omnibarGroupBackup_other": {
+        "message": "Copia de seguridad ($1 pestañas)",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "omnibarRuleColorUpdated": {
         "message": "Color de regla actualizado a $1",
@@ -10172,20 +10827,12 @@
         "description": "Error when importing rules with spaces in names."
     },
     "omnibarClickBackupGroup": {
-        "message": "Click para respaldar. Espacio / Ctrl+Click para seleccionar, Shift+Click para seleccionar rango.",
+        "message": "Clic para respaldar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para seleccionar rango.",
         "description": "Hint text for backup group items in omnibar"
     },
     "omnibarBackupAllGroups": {
-        "message": "Respaldar todos los grupos ($1 grupos, $2 pestañas)",
-        "placeholders": {
-            "1": {
-                "content": "$1"
-            },
-            "2": {
-                "content": "$2"
-            }
-        },
-        "description": "Special action item title for backing up all filtered groups"
+        "message": "Respaldar todos los grupos ($1, $2)",
+        "description": "Las frases $1 y $2 ya llevan su plural (omnibarGroupCount, omnibarTabCount)."
     },
     "omnibarBackupAllGroupsDesc": {
         "message": "Respalda todos estos grupos",
@@ -10210,16 +10857,8 @@
         "description": "Special action item title when restoring filtered backup groups"
     },
     "omnibarRestoreAllGroupsDetail": {
-        "message": "Restaurar todas las copias ($1 grupos, $2 pestañas)",
-        "placeholders": {
-            "1": {
-                "content": "$1"
-            },
-            "2": {
-                "content": "$2"
-            }
-        },
-        "description": "Special action item title with group and tab counts for restoring all backups"
+        "message": "Restaurar todas las copias ($1, $2)",
+        "description": "Las frases $1 y $2 ya llevan su plural (omnibarGroupCount, omnibarTabCount)."
     },
     "omnibarRestoreAllGroupsDesc": {
         "message": "Restaura todas estas copias de seguridad",
@@ -10383,16 +11022,25 @@
         "message": "Activar menú de Snippets"
     },
     "quickAccessNotesBtn": {
-        "message": "Ver notas",
-        "description": "Abre la vista de notas con todas las notas guardadas, vengan del grupo que vengan"
+        "message": "Ver notas"
+    },
+    "quickAccessNotesBtn_tooltip": {
+        "message": "Abre la vista de notas con todas las notas guardadas, vengan del grupo que vengan",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «quickAccessNotesBtn»."
     },
     "quickAccessGalleryBtn": {
-        "message": "Ver galería",
-        "description": "Abre la galería con todas las capturas guardadas, vengan del grupo que vengan"
+        "message": "Ver galería"
+    },
+    "quickAccessGalleryBtn_tooltip": {
+        "message": "Abre la galería con todas las capturas guardadas, vengan del grupo que vengan",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «quickAccessGalleryBtn»."
     },
     "webActivityTitle": {
-        "message": "Actividad web",
-        "description": "Tiempo y visitas registradas por sitio"
+        "message": "Actividad web"
+    },
+    "webActivityTitle_tooltip": {
+        "message": "Tiempo y visitas registradas por sitio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityTitle»."
     },
     "webActivityDashboardTitle": {
         "message": "Dashboard de Actividad Web",
@@ -10453,8 +11101,11 @@
         "message": "Buscar sitios"
     },
     "webActivityAllSites": {
-        "message": "Todos los sitios",
-        "description": "Quita el filtro de sitio y vuelve a mostrarlos todos"
+        "message": "Todos los sitios"
+    },
+    "webActivityAllSites_tooltip": {
+        "message": "Quita el filtro de sitio y vuelve a mostrarlos todos",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityAllSites»."
     },
     "webActivityNoSites": {
         "message": "Ningún sitio registrado en este periodo"
@@ -10478,12 +11129,18 @@
         "message": "Mostrar solo los sitios de una categoría"
     },
     "webActivityExport": {
-        "message": "Exportar",
-        "description": "Guarda todo el registro —días, límites y ajustes— en un fichero JSON"
+        "message": "Exportar"
+    },
+    "webActivityExport_tooltip": {
+        "message": "Guarda todo el registro —días, límites y ajustes— en un fichero JSON",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityExport»."
     },
     "webActivityImport": {
-        "message": "Importar",
-        "description": "Fusiona un fichero exportado con el registro en lugar de reemplazarlo"
+        "message": "Importar"
+    },
+    "webActivityImport_tooltip": {
+        "message": "Fusiona un fichero exportado con el registro en lugar de reemplazarlo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityImport»."
     },
     "webActivityUpdatedAt": {
         "message": "Actualizado a las $1"
@@ -10501,8 +11158,11 @@
         "message": "Navega un rato y aquí aparecerán el tiempo, las visitas y los patrones."
     },
     "webActivitySummaryTitle": {
-        "message": "Resumen general",
-        "description": "Las cifras principales del periodo seleccionado"
+        "message": "Resumen general"
+    },
+    "webActivitySummaryTitle_tooltip": {
+        "message": "Las cifras principales del periodo seleccionado",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySummaryTitle»."
     },
     "webActivityPatterns": {
         "message": "Patrones"
@@ -10735,8 +11395,13 @@
         "message": "Cinco minutos más",
         "description": "Levanta el bloqueo un rato. Queda registrado como aplazamiento, no como quitar el límite."
     },
-    "webActivitySnoozeWithTime": {
-        "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite."
+    "webActivitySnoozeWithTime_one": {
+        "message": "Concede $1 minuto de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite.",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "webActivitySnoozeWithTime_other": {
+        "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite.",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "webActivitySnoozed": {
         "message": "Bloqueo aplazado"
@@ -10766,8 +11431,11 @@
         "message": "Límite guardado"
     },
     "webActivityFieldSite": {
-        "message": "Sitio",
-        "description": "Solo el dominio, sin https:// — puedes pegar la dirección entera, se queda solo el host"
+        "message": "Sitio"
+    },
+    "webActivityFieldSite_tooltip": {
+        "message": "Solo el dominio, sin https:// — puedes pegar la dirección entera, se queda solo el host",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityFieldSite»."
     },
     "webActivitySiteRequired": {
         "message": "Escribe una dirección web"
@@ -10829,8 +11497,11 @@
         "message": "Minutos"
     },
     "webActivityClearAll": {
-        "message": "Borrarlo todo",
-        "description": "Elimina todos los días registrados y las visitas recientes. Los límites y los ajustes se conservan."
+        "message": "Borrarlo todo"
+    },
+    "webActivityClearAll_tooltip": {
+        "message": "Elimina todos los días registrados y las visitas recientes. Los límites y los ajustes se conservan.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityClearAll»."
     },
     "webActivityClearAllConfirm": {
         "message": "¿Borrar todo el historial de actividad?"
@@ -10865,8 +11536,13 @@
     "webActivityBlockedGoBack": {
         "message": "Volver"
     },
-    "webActivityBlockedSnooze": {
-        "message": "$1 minutos más"
+    "webActivityBlockedSnooze_one": {
+        "message": "$1 minuto más",
+        "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "webActivityBlockedSnooze_other": {
+        "message": "$1 minutos más",
+        "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "webActivityBlockedFooter": {
         "message": "Esto lo configuraste tú, desde el dashboard de actividad web. Puedes cambiarlo allí."
@@ -11214,8 +11890,11 @@
         "description": "Las categorías que has añadido tú"
     },
     "webActivitySettings": {
-        "message": "Ajustes",
-        "description": "Reglas, categorías y cómo se registra la actividad"
+        "message": "Ajustes"
+    },
+    "webActivitySettings_tooltip": {
+        "message": "Reglas, categorías y cómo se registra la actividad",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettings»."
     },
     "webActivitySettingsHint": {
         "message": "Reglas, categorías y cómo se registra la actividad",
@@ -11230,12 +11909,18 @@
         "description": "Todos los sitios con límite de tiempo u horario"
     },
     "webActivitySettingsRulesHint": {
-        "message": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no.",
-        "description": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no"
+        "message": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no."
+    },
+    "webActivitySettingsRulesHint_tooltip": {
+        "message": "Todos los sitios con cuota u horario, los hayas abierto últimamente o no",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsRulesHint»."
     },
     "webActivitySettingsPassword": {
-        "message": "Contraseña de bloqueo",
-        "description": "Una pausa entre querer levantar un bloqueo y levantarlo. No cifra nada: cualquiera con acceso al perfil del navegador puede saltársela."
+        "message": "Contraseña de bloqueo"
+    },
+    "webActivitySettingsPassword_tooltip": {
+        "message": "Una pausa entre querer levantar un bloqueo y levantarlo. No cifra nada: cualquiera con acceso al perfil del navegador puede saltársela.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsPassword»."
     },
     "webActivitySettingsPasswordHint": {
         "message": "Pide una contraseña antes de desactivar, editar o borrar una regla"
@@ -11258,15 +11943,21 @@
         "message": "Se guarda cifrada con SHA-256 y sal; la contraseña en claro no se guarda en ningún sitio."
     },
     "webActivityBlockPasswordRepeat": {
-        "message": "Repetir",
-        "description": "Otra vez, para descartar una errata."
+        "message": "Repetir"
+    },
+    "webActivityBlockPasswordRepeat_tooltip": {
+        "message": "Otra vez, para descartar una errata.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityBlockPasswordRepeat»."
     },
     "webActivityBlockPasswordRepeatHint": {
         "message": "Las dos tienen que coincidir."
     },
     "webActivityBlockPasswordCurrent": {
-        "message": "Contraseña actual",
-        "description": "La que hay ahora. Hace falta para cambiarla o quitarla."
+        "message": "Contraseña actual"
+    },
+    "webActivityBlockPasswordCurrent_tooltip": {
+        "message": "La que hay ahora. Hace falta para cambiarla o quitarla.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityBlockPasswordCurrent»."
     },
     "webActivityBlockPasswordCurrentHint": {
         "message": "Hace falta para cambiarla o quitarla."
@@ -11278,8 +11969,11 @@
         "message": "Cambiar contraseña"
     },
     "webActivityBlockPasswordRemove": {
-        "message": "Quitar contraseña",
-        "description": "Deja de pedirla. Hace falta la contraseña actual."
+        "message": "Quitar contraseña"
+    },
+    "webActivityBlockPasswordRemove_tooltip": {
+        "message": "Deja de pedirla. Hace falta la contraseña actual.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityBlockPasswordRemove»."
     },
     "webActivityBlockPasswordMismatch": {
         "message": "Las dos contraseñas no coinciden"
@@ -11292,8 +11986,11 @@
         "description": "Esta regla está protegida con contraseña."
     },
     "webActivityBlockPasswordLabel": {
-        "message": "Escribe la contraseña para continuar",
-        "description": "Sin ella la regla se queda como está."
+        "message": "Escribe la contraseña para continuar"
+    },
+    "webActivityBlockPasswordLabel_tooltip": {
+        "message": "Sin ella la regla se queda como está.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityBlockPasswordLabel»."
     },
     "webActivityBlockPasswordSaved": {
         "message": "Contraseña guardada"
@@ -11306,56 +12003,82 @@
         "description": "Los grupos en los que se clasifica un sitio"
     },
     "webActivitySettingsCategoriesHint": {
-        "message": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas. Añade las tuyas para lo que la detección automática no sepa nombrar.",
-        "description": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas"
+        "message": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas. Añade las tuyas para lo que la detección automática no sepa nombrar."
+    },
+    "webActivitySettingsCategoriesHint_tooltip": {
+        "message": "La categoría de un sitio lo agrupa en la barra lateral y en las gráficas",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsCategoriesHint»."
     },
     "webActivitySettingsTracking": {
         "message": "Registro",
         "description": "Cómo se comporta el reloj"
     },
     "webActivitySettingsTrackingHint": {
-        "message": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro.",
-        "description": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro"
+        "message": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro."
+    },
+    "webActivitySettingsTrackingHint_tooltip": {
+        "message": "Cómo decide el reloj que estás navegando, y cuánto se conserva el registro",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsTrackingHint»."
     },
     "webActivitySettingsIgnored": {
         "message": "Sitios sin registrar",
         "description": "Sitios en los que el reloj no corre nunca"
     },
     "webActivitySettingsIgnoredHint": {
-        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro.",
-        "description": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro"
+        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro."
+    },
+    "webActivitySettingsIgnoredHint_tooltip": {
+        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsIgnoredHint»."
     },
     "webActivitySettingsData": {
         "message": "Tus datos",
         "description": "Llévatelos, recupéralos o bórralos"
     },
     "webActivitySettingsDataHint": {
-        "message": "Todo se guarda solo en este dispositivo. No se envía nada a ninguna parte.",
-        "description": "Todo se guarda solo en este dispositivo"
+        "message": "Todo se guarda solo en este dispositivo. No se envía nada a ninguna parte."
+    },
+    "webActivitySettingsDataHint_tooltip": {
+        "message": "Todo se guarda solo en este dispositivo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsDataHint»."
     },
     "webActivitySettingsSaved": {
         "message": "Ajustes guardados",
         "description": "Ajustes guardados"
     },
     "webActivityAddRule": {
-        "message": "Añadir sitio",
-        "description": "Poner un límite o un horario a un sitio"
+        "message": "Añadir sitio"
+    },
+    "webActivityAddRule_tooltip": {
+        "message": "Poner un límite o un horario a un sitio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityAddRule»."
     },
     "webActivityRulesEmpty": {
         "message": "Todavía ningún sitio tiene límite ni horario.",
         "description": "Todavía ningún sitio tiene límite ni horario"
     },
     "webActivityDataFigures": {
-        "message": "$1 días registrados · $2 sitios en el periodo en pantalla",
-        "description": "Cuánto hay registrado"
+        "message": "Registro: $1 · $2 en el periodo en pantalla",
+        "description": "Cuánto hay registrado. $1 es webActivityDayCount y $2 webActivityCategorySites, ambos con su plural."
+    },
+    "webActivityDayCount_one": {
+        "message": "$1 día",
+        "description": "Número de días registrados. $1 es la cifra."
+    },
+    "webActivityDayCount_other": {
+        "message": "$1 días",
+        "description": "Número de días registrados. $1 es la cifra."
     },
     "webActivityCleared": {
         "message": "Historial borrado",
         "description": "Historial borrado"
     },
     "webActivityCategoryNew": {
-        "message": "Nueva categoría",
-        "description": "Añadir una categoría tuya"
+        "message": "Nueva categoría"
+    },
+    "webActivityCategoryNew_tooltip": {
+        "message": "Añadir una categoría tuya",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityCategoryNew»."
     },
     "webActivityCategoryNamePlaceholder": {
         "message": "Nombre de la categoría",
@@ -11366,12 +12089,18 @@
         "description": "Añadir esta categoría"
     },
     "webActivityCategoryRename": {
-        "message": "Renombrar",
-        "description": "Haz clic para renombrar esta categoría"
+        "message": "Renombrar"
+    },
+    "webActivityCategoryRename_tooltip": {
+        "message": "Haz clic para renombrar esta categoría",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityCategoryRename»."
     },
     "webActivityCategoryDelete": {
-        "message": "Borrar categoría",
-        "description": "Borrar esta categoría"
+        "message": "Borrar categoría"
+    },
+    "webActivityCategoryDelete_tooltip": {
+        "message": "Borrar esta categoría",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityCategoryDelete»."
     },
     "webActivityCategoryDeleteConfirm": {
         "message": "¿Borrar la categoría «$1»? Los sitios clasificados en ella vuelven a detectarse automáticamente.",
@@ -11393,17 +12122,24 @@
         "message": "Son las que la detección automática sabe reconocer. Un sitio se puede sacar de una desde su fila del registro.",
         "description": "Las categorías que vienen con la extensión"
     },
-    "webActivityCategorySites": {
+    "webActivityCategorySites_one": {
+        "message": "$1 sitio",
+        "description": "Cuántos sitios hay clasificados en esta categoría Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "webActivityCategorySites_other": {
         "message": "$1 sitios",
-        "description": "Cuántos sitios hay clasificados en esta categoría"
+        "description": "Cuántos sitios hay clasificados en esta categoría Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "webActivityCategoryUnused": {
         "message": "sin sitios todavía",
         "description": "Todavía no hay ningún sitio en esta categoría"
     },
     "webActivityTrackingEnabled": {
-        "message": "Registrar actividad",
-        "description": "Encender o apagar el reloj"
+        "message": "Registrar actividad"
+    },
+    "webActivityTrackingEnabled_tooltip": {
+        "message": "Encender o apagar el reloj",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityTrackingEnabled»."
     },
     "webActivityTrackingEnabledHint": {
         "message": "Con esto apagado no se registra nada nuevo. Lo ya registrado se conserva.",
@@ -11418,8 +12154,11 @@
         "description": "Cuánto tiempo sin teclado ni ratón cuenta como ausencia"
     },
     "webActivityCountAudible": {
-        "message": "Seguir contando el audio en segundo plano",
-        "description": "Contar una pestaña que suena aunque el navegador no esté delante"
+        "message": "Seguir contando el audio en segundo plano"
+    },
+    "webActivityCountAudible_tooltip": {
+        "message": "Contar una pestaña que suena aunque el navegador no esté delante",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityCountAudible»."
     },
     "webActivityCountAudibleHint": {
         "message": "Un vídeo que sigue sonando en otra ventana también es tiempo en ese sitio.",
@@ -11460,8 +12199,11 @@
         "description": "Días de historial que se guardan antes de descartar los más antiguos"
     },
     "webActivitySyncEnabled": {
-        "message": "Sincronizar entre navegadores",
-        "description": "Comparte el registro, las reglas y estos ajustes con la misma extensión instalada en otro navegador donde hayas iniciado la misma sesión. Viaja por la sincronización del propio navegador. Desactivado de fábrica."
+        "message": "Sincronizar entre navegadores"
+    },
+    "webActivitySyncEnabled_tooltip": {
+        "message": "Comparte el registro, las reglas y estos ajustes con la misma extensión instalada en otro navegador donde hayas iniciado la misma sesión. Viaja por la sincronización del propio navegador. Desactivado de fábrica.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySyncEnabled»."
     },
     "webActivitySyncEnabledHint": {
         "message": "Los datos aparecen también en las extensiones instaladas en otros navegadores. Desactivado por defecto."
@@ -11475,8 +12217,11 @@
         "description": "Se están registrando todos los sitios"
     },
     "webActivityIgnoredAdd": {
-        "message": "Añadir sitio",
-        "description": "Dejar de registrar un sitio"
+        "message": "Añadir sitio"
+    },
+    "webActivityIgnoredAdd_tooltip": {
+        "message": "Dejar de registrar un sitio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityIgnoredAdd»."
     },
     "webActivityLimitModalTitle": {
         "message": "Límite de tiempo",
@@ -11558,9 +12303,13 @@
         "message": "Franja $1",
         "description": "Una de las franjas horarias permitidas"
     },
-    "webActivityWindowCount": {
+    "webActivityWindowCount_one": {
+        "message": "$1 franja",
+        "description": "Cuántas franjas horarias permitidas hay configuradas Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
+    },
+    "webActivityWindowCount_other": {
         "message": "$1 franjas",
-        "description": "Cuántas franjas horarias permitidas hay configuradas"
+        "description": "Cuántas franjas horarias permitidas hay configuradas Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
     "webActivityWindowNoDays": {
         "message": "Elige al menos un día, o esta franja no hace nada.",
@@ -11575,8 +12324,11 @@
         "description": "Esta franja pasa de la medianoche"
     },
     "webActivityOvernightHint": {
-        "message": "Acaba antes de empezar, así que cruza la medianoche. Sus días son aquellos en los que empieza.",
-        "description": "Esta franja pasa de la medianoche"
+        "message": "Acaba antes de empezar, así que cruza la medianoche. Sus días son aquellos en los que empieza."
+    },
+    "webActivityOvernightHint_tooltip": {
+        "message": "Esta franja pasa de la medianoche",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityOvernightHint»."
     },
     "webActivityDaysAll": {
         "message": "Todos",
@@ -11595,8 +12347,11 @@
         "description": "Activar o desactivar toda la regla de este sitio"
     },
     "webActivityConfigureSchedule": {
-        "message": "Configurar horario permitido",
-        "description": "Configurar las horas a las que se puede abrir este sitio"
+        "message": "Configurar horario permitido"
+    },
+    "webActivityConfigureSchedule_tooltip": {
+        "message": "Configurar las horas a las que se puede abrir este sitio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityConfigureSchedule»."
     },
     "webActivityBlocksTitle": {
         "message": "Bloqueos",
@@ -11639,12 +12394,18 @@
         "description": "Hora en la que termina el tiempo de gracia"
     },
     "webActivityMeterDaily": {
-        "message": "Hoy",
-        "description": "Tiempo consumido de la cuota diaria"
+        "message": "Hoy"
+    },
+    "webActivityMeterDaily_tooltip": {
+        "message": "Tiempo consumido de la cuota diaria",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityMeterDaily»."
     },
     "webActivityMeterWeekly": {
-        "message": "Esta semana",
-        "description": "Tiempo consumido de la cuota semanal"
+        "message": "Esta semana"
+    },
+    "webActivityMeterWeekly_tooltip": {
+        "message": "Tiempo consumido de la cuota semanal",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityMeterWeekly»."
     },
     "webActivityColWeekly": {
         "message": "Semanal",
@@ -11659,8 +12420,11 @@
         "description": "Solo se dibujan las primeras filas"
     },
     "webActivityTableCappedHint": {
-        "message": "El registro dibuja las primeras filas del orden en el que esté. Los totales de abajo siguen contando todos los sitios.",
-        "description": "El registro dibuja las primeras filas del orden en el que esté"
+        "message": "El registro dibuja las primeras filas del orden en el que esté. Los totales de abajo siguen contando todos los sitios."
+    },
+    "webActivityTableCappedHint_tooltip": {
+        "message": "El registro dibuja las primeras filas del orden en el que esté",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityTableCappedHint»."
     },
     "webActivityStateBlocked_weekly": {
         "message": "semana agotada",
@@ -11723,16 +12487,25 @@
         "description": "Ese sitio ya está en la lista"
     },
     "webActivityLimitDaysHint": {
-        "message": "Los días en los que se aplica esta cuota. El resto de días el sitio no tiene límite diario.",
-        "description": "Los días en los que se aplica esta cuota"
+        "message": "Los días en los que se aplica esta cuota. El resto de días el sitio no tiene límite diario."
+    },
+    "webActivityLimitDaysHint_tooltip": {
+        "message": "Los días en los que se aplica esta cuota",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityLimitDaysHint»."
     },
     "webActivityWindowDaysHint": {
-        "message": "Los días en los que rige esta franja. Cada franja tiene los suyos.",
-        "description": "Los días en los que rige esta franja"
+        "message": "Los días en los que rige esta franja. Cada franja tiene los suyos."
+    },
+    "webActivityWindowDaysHint_tooltip": {
+        "message": "Los días en los que rige esta franja",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityWindowDaysHint»."
     },
     "webActivityRestoreDefaults": {
-        "message": "Restaurar valores por defecto",
-        "description": "Devolver los ajustes de registro a los que trae la extensión"
+        "message": "Restaurar valores por defecto"
+    },
+    "webActivityRestoreDefaults_tooltip": {
+        "message": "Devolver los ajustes de registro a los que trae la extensión",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityRestoreDefaults»."
     },
     "webActivityRestoreDefaultsConfirm": {
         "message": "¿Devolver los ajustes de registro a sus valores por defecto? Tus categorías, tus reglas y tu historial no se tocan.",
@@ -11751,12 +12524,18 @@
         "description": "Abrir la actividad en el panel lateral"
     },
     "webActivityOpenInTab": {
-        "message": "Abrir en una pestaña",
-        "description": "Abrir el dashboard completo de actividad web en una pestaña"
+        "message": "Abrir en una pestaña"
+    },
+    "webActivityOpenInTab_tooltip": {
+        "message": "Abrir el dashboard completo de actividad web en una pestaña",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityOpenInTab»."
     },
     "webActivitySearchPanel": {
-        "message": "Buscar sitios",
-        "description": "Filtrar la lista por sitio"
+        "message": "Buscar sitios"
+    },
+    "webActivitySearchPanel_tooltip": {
+        "message": "Filtrar la lista por sitio",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySearchPanel»."
     },
     "webActivityExpandAll": {
         "message": "Desplegar todos los sitios",
@@ -11779,8 +12558,11 @@
         "description": "Volver a activar esta cuota"
     },
     "webActivityDisableLimit": {
+        "message": "Pausar esta cuota sin borrarla"
+    },
+    "webActivityDisableLimit_tooltip": {
         "message": "Pausar esta cuota sin borrarla",
-        "description": "Pausar esta cuota sin borrarla"
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityDisableLimit»."
     },
     "webActivityEnableSchedule": {
         "message": "Volver a activar este horario",
@@ -11791,8 +12573,11 @@
         "description": "Pausar este horario sin borrarlo"
     },
     "webActivityNothingToToggle": {
-        "message": "Aquí todavía no hay nada configurado",
-        "description": "Aquí no hay nada que activar ni desactivar"
+        "message": "Aquí todavía no hay nada configurado"
+    },
+    "webActivityNothingToToggle_tooltip": {
+        "message": "Aquí no hay nada que activar ni desactivar",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityNothingToToggle»."
     },
     "webActivityPanelTitleBar": {
         "message": "Actividad web",
@@ -11803,12 +12588,18 @@
         "description": "Fijar el panel de actividad"
     },
     "webActivityPinPageTitle": {
-        "message": "Fijar esta vista: la extensión la abrirá desde la barra de herramientas",
-        "description": "Fijar esta vista para que el botón de la barra la abra"
+        "message": "Fijar esta vista: la extensión la abrirá desde la barra de herramientas"
+    },
+    "webActivityPinPageTitle_tooltip": {
+        "message": "Fijar esta vista para que el botón de la barra la abra",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityPinPageTitle»."
     },
     "webActivityUnpinPageTitle": {
-        "message": "Dejar de fijar esta vista",
-        "description": "Que el botón de la barra deje de abrir esta vista"
+        "message": "Dejar de fijar esta vista"
+    },
+    "webActivityUnpinPageTitle_tooltip": {
+        "message": "Que el botón de la barra deje de abrir esta vista",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivityUnpinPageTitle»."
     },
     "webActivityPagePinned": {
         "message": "Panel de actividad fijado",
@@ -11823,16 +12614,25 @@
         "description": "Botón de cámara de un grupo"
     },
     "captureGroupTabsVisible": {
-        "message": "Capturar cada pestaña",
-        "description": "Capturar el área visible de cada pestaña del grupo"
+        "message": "Capturar cada pestaña"
+    },
+    "captureGroupTabsVisible_tooltip": {
+        "message": "Capturar el área visible de cada pestaña del grupo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureGroupTabsVisible»."
     },
     "captureGroupTabsFullPage": {
-        "message": "Capturar cada pestaña (web completa)",
-        "description": "Capturar cada pestaña del grupo con desplazamiento"
+        "message": "Capturar cada pestaña (web completa)"
+    },
+    "captureGroupTabsFullPage_tooltip": {
+        "message": "Capturar cada pestaña del grupo con desplazamiento",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureGroupTabsFullPage»."
     },
     "captureGroupTabsFullPageParts": {
-        "message": "Capturar cada pestaña (web completa por partes)",
-        "description": "Capturar cada pestaña del grupo, una imagen por pantalla"
+        "message": "Capturar cada pestaña (web completa por partes)"
+    },
+    "captureGroupTabsFullPageParts_tooltip": {
+        "message": "Capturar cada pestaña del grupo, una imagen por pantalla",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureGroupTabsFullPageParts»."
     },
     "noGroupToCapture": {
         "message": "La pestaña actual no está en ningún grupo",
@@ -11850,9 +12650,18 @@
             }
         }
     },
-    "groupTabsCaptured": {
+    "groupTabsCaptured_one": {
+        "message": "$1 captura guardada del grupo",
+        "description": "Resultado de capturar un grupo entero Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "groupTabsCaptured_other": {
         "message": "$1 capturas guardadas del grupo",
-        "description": "Resultado de capturar un grupo entero",
+        "description": "Resultado de capturar un grupo entero Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -11868,8 +12677,11 @@
         "description": "Capturar solo lo que se ve en pantalla"
     },
     "captureFullPageScroll": {
-        "message": "Capturar la web completa",
-        "description": "Capturar toda la página recorriéndola"
+        "message": "Capturar la web completa"
+    },
+    "captureFullPageScroll_tooltip": {
+        "message": "Capturar toda la página recorriéndola",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureFullPageScroll»."
     },
     "capturingFullPage": {
         "message": "Capturando la web completa…",
@@ -12122,8 +12934,11 @@
         "description": "Qué significa elegir TXT"
     },
     "captureFullPageSplit": {
-        "message": "Capturar la web completa por partes",
-        "description": "Una imagen por pantalla en vez de una imagen larga"
+        "message": "Capturar la web completa por partes"
+    },
+    "captureFullPageSplit_tooltip": {
+        "message": "Una imagen por pantalla en vez de una imagen larga",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «captureFullPageSplit»."
     },
     "categoryReadAloudControls": {
         "message": "Lector de páginas en voz alta (mientras está abierto)",
@@ -12227,16 +13042,22 @@
         "description": "Subtitle of the pomodoro settings page"
     },
     "pomodoroSettingsHint": {
-        "message": "Configura los métodos, tiempos y opciones del temporizador",
-        "description": "Ajusta el método del temporizador, cuánto dura cada fase y el resto de opciones."
+        "message": "Configura los métodos, tiempos y opciones del temporizador"
+    },
+    "pomodoroSettingsHint_tooltip": {
+        "message": "Ajusta el método del temporizador, cuánto dura cada fase y el resto de opciones.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «pomodoroSettingsHint»."
     },
     "pomodoroSettingsShared": {
         "message": "Selecciona el método por defecto. Lo que cambies aquí cambia a la vez en el panel lateral y en el listado de grupos.",
         "description": "Note explaining that the pomodoro settings are shared across every surface"
     },
     "editProjectName": {
-        "message": "Editar nombre del proyecto",
-        "description": "Cambia el nombre de este proyecto."
+        "message": "Editar nombre del proyecto"
+    },
+    "editProjectName_tooltip": {
+        "message": "Cambia el nombre de este proyecto.",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «editProjectName»."
     },
     "pomodoroHideTimer": {
         "message": "Ocultar interfaz del temporizador (clic para colapsar)",
@@ -12323,16 +13144,25 @@
         "description": "Hint for the show-seconds setting"
     },
     "audioSourceGoToTab": {
-        "message": "Ir a la pestaña",
-        "description": "Traer al frente la pestaña de la que sale el sonido"
+        "message": "Ir a la pestaña"
+    },
+    "audioSourceGoToTab_tooltip": {
+        "message": "Traer al frente la pestaña de la que sale el sonido",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «audioSourceGoToTab»."
     },
     "audioSourceMute": {
-        "message": "Silenciar",
-        "description": "Silenciar todas las pestañas y pausar el lector"
+        "message": "Silenciar"
+    },
+    "audioSourceMute_tooltip": {
+        "message": "Silenciar todas las pestañas y pausar el lector",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «audioSourceMute»."
     },
     "audioSourceUnmute": {
-        "message": "Activar sonido",
-        "description": "Devolver el sonido y seguir leyendo"
+        "message": "Activar sonido"
+    },
+    "audioSourceUnmute_tooltip": {
+        "message": "Devolver el sonido y seguir leyendo",
+        "description": "Texto al pasar el ratón por el control cuya etiqueta es «audioSourceUnmute»."
     },
     "muteAllSources": {
         "message": "Silenciarlo todo",
@@ -12433,9 +13263,9 @@
         "message": "Política de privacidad",
         "description": "Popup footer: link to the privacy policy on the website."
     },
-    "groupTabCountTooltip": {
-        "message": "$1 de $2 pestañas vistas",
-        "description": "$1 de $2 pestañas vistas",
+    "groupTabCountTooltip_one": {
+        "message": "$1 de $2 pestaña vista",
+        "description": "$1 de $2 pestañas vistas Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
         "placeholders": {
             "1": {
                 "content": "$1"
@@ -12445,9 +13275,33 @@
             }
         }
     },
-    "backupTabCountTooltip": {
+    "groupTabCountTooltip_other": {
+        "message": "$1 de $2 pestañas vistas",
+        "description": "$1 de $2 pestañas vistas Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "backupTabCountTooltip_one": {
+        "message": "$1 de $2 pestaña restaurada",
+        "description": "$1 de $2 pestañas restauradas Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "backupTabCountTooltip_other": {
         "message": "$1 de $2 pestañas restauradas",
-        "description": "$1 de $2 pestañas restauradas",
+        "description": "$1 de $2 pestañas restauradas Forma para cualquier otro recuento (categoría CLDR «other»).",
         "placeholders": {
             "1": {
                 "content": "$1"

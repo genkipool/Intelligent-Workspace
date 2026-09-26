@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../utils/i18n.js';
     // The page can be opened straight into this view, and the URL says so before any
     // store is set. Laying it out from the first frame stops the group shell being
     // painted and swapped a few frames later. The boot still drives it afterwards.
@@ -16,8 +17,8 @@
     let filteredDates = $derived.by(() => {
         const range = $currentHistoryDateFilter;
         if (!range) return null;
-        const from = new Date(range.start).toLocaleDateString();
-        const to = new Date(range.end).toLocaleDateString();
+        const from = new Date(range.start).toLocaleDateString(activeLocale());
+        const to = new Date(range.end).toLocaleDateString(activeLocale());
         return startOfDay(range.start) === startOfDay(range.end) ? from : `${from} – ${to}`;
     });
 

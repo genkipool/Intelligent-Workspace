@@ -7,7 +7,7 @@
 import { get } from 'svelte/store';
 import { updateScrollButtons } from '../components/common/scrollButtonsBridge.js';
 
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations, showNotification, msg as localizedMsg } from '../../utils/i18n.js';
 
 import { extractYouTubeVideoId, createYouTubeEmbed } from '../../utils/youtubeEmbed.js';
 
@@ -829,7 +829,7 @@ export function openDeleteHistoryConfirmModal(dateLabel, urlsToDelete) {
         dateLabel,
         urlsToDelete,
         onDeleted: () => {
-            const successMsg = chrome.i18n.getMessage('historyDeletedSuccess') || 'History deleted';
+            const successMsg = localizedMsg('historyDeletedSuccess') || 'History deleted';
             showNotification(successMsg, false, [urlsToDelete.length]);
             renderHistoryView(get(currentHistoryDateFilter)?.start, get(currentHistoryDateFilter)?.end);
         },
@@ -1003,20 +1003,20 @@ export function initCustomCalendar() {
         const month = d.getMonth();
 
         const monthNames = [
-            chrome.i18n.getMessage('monthJanuary') || 'January',
-            chrome.i18n.getMessage('monthFebruary') || 'February',
-            chrome.i18n.getMessage('monthMarch') || 'March',
-            chrome.i18n.getMessage('monthApril') || 'April',
-            chrome.i18n.getMessage('monthMay') || 'May',
-            chrome.i18n.getMessage('monthJune') || 'June',
-            chrome.i18n.getMessage('monthJuly') || 'July',
-            chrome.i18n.getMessage('monthAugust') || 'August',
-            chrome.i18n.getMessage('monthSeptember') || 'September',
-            chrome.i18n.getMessage('monthOctober') || 'October',
-            chrome.i18n.getMessage('monthNovember') || 'November',
-            chrome.i18n.getMessage('monthDecember') || 'December',
+            localizedMsg('monthJanuary') || 'January',
+            localizedMsg('monthFebruary') || 'February',
+            localizedMsg('monthMarch') || 'March',
+            localizedMsg('monthApril') || 'April',
+            localizedMsg('monthMay') || 'May',
+            localizedMsg('monthJune') || 'June',
+            localizedMsg('monthJuly') || 'July',
+            localizedMsg('monthAugust') || 'August',
+            localizedMsg('monthSeptember') || 'September',
+            localizedMsg('monthOctober') || 'October',
+            localizedMsg('monthNovember') || 'November',
+            localizedMsg('monthDecember') || 'December',
         ];
-        const monthName = chrome.i18n.getMessage(`month${month + 1}`) || monthNames[month];
+        const monthName = localizedMsg(`month${month + 1}`) || monthNames[month];
         monthYearEl.textContent = `${monthName} ${year}`;
 
         gridEl.innerHTML = '';
@@ -1151,10 +1151,10 @@ export function createGenericListItem(item, type) {
     }
     if (type === 'recent' && item.type === 'window') {
         const tabCount = item.tabs ? item.tabs.length : 0;
-        titleEl.textContent = `${chrome.i18n.getMessage('recentWindow') || 'Window'} (${tabCount} ${chrome.i18n.getMessage('recentTabs') || 'tabs'})`;
-        urlEl.textContent = chrome.i18n.getMessage('recentRestoreWindow') || 'Restore full window';
+        titleEl.textContent = `${localizedMsg('recentWindow') || 'Window'} (${tabCount} ${localizedMsg('recentTabs') || 'tabs'})`;
+        urlEl.textContent = localizedMsg('recentRestoreWindow') || 'Restore full window';
     } else {
-        titleEl.textContent = item.title || item.url || chrome.i18n.getMessage('untitled') || 'Untitled';
+        titleEl.textContent = item.title || item.url || localizedMsg('untitled') || 'Untitled';
         urlEl.textContent = item.url || '';
     }
     let timestamp = 0;
@@ -1503,7 +1503,7 @@ function createPaymentSkeleton() {
     const skeleton = document.createElement('div');
     skeleton.className = 'pay-skeleton';
     skeleton.setAttribute('role', 'status');
-    skeleton.setAttribute('aria-label', chrome.i18n.getMessage('contributionLoading') || 'Loading');
+    skeleton.setAttribute('aria-label', localizedMsg('contributionLoading') || 'Loading');
     skeleton.innerHTML = `
         <div class="pay-sk-line pay-sk-title"></div>
         <div class="pay-sk-line pay-sk-label"></div>
@@ -1911,7 +1911,7 @@ export function showErrorView(errorMessage, url) {
     titleEl.setAttribute('data-i18n', 'errorLoadingPageTitle');
 
     const detailsEl = errorEl.querySelector('.error-details');
-    const detailsLabel = chrome.i18n.getMessage('errorDetailsLabel') || 'Details:';
+    const detailsLabel = localizedMsg('errorDetailsLabel') || 'Details:';
 
     const fullErrorMessageHtml = linkifyHtml(`${detailsLabel} ${errorMessage}`);
 

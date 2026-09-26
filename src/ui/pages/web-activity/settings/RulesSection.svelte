@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * EVERY SITE THAT HAS A RULE, IN ONE PLACE.
@@ -104,7 +105,7 @@
         const windows = limit.schedules.filter((schedule) => schedule.start && schedule.end);
         if (!windows.length) return '—';
         if (windows.length === 1) return `${windows[0].start}-${windows[0].end}`;
-        return $t('webActivityWindowCount', [String(windows.length)]);
+        return $t(pluralKey('webActivityWindowCount', windows.length), [String(windows.length)]);
     }
 </script>
 

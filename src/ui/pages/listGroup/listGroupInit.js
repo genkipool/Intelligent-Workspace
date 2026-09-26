@@ -3,7 +3,7 @@ import { getStorageAreaName } from '../../services/storage.js';
 import { get } from 'svelte/store';
 import { listGroupState } from '../../stores/listGroupStore.js';
 
-import { applyTranslations, showNotification } from '../../../utils/i18n.js';
+import { applyTranslations, showNotification, msg as localizedMsg } from '../../../utils/i18n.js';
 import { renderNoteEntry as renderNoteEntryFromModule } from '../../content-renderer/content-renderer.js';
 import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
 import { initAgentUI } from '../../../utils/agent-ui.js';
@@ -568,7 +568,7 @@ function initRuntimeMessageListener() {
                     const context = get(currentNotesContext) || {
                         type: 'group',
                         id: -1,
-                        title: chrome.i18n.getMessage('note') || 'Note',
+                        title: localizedMsg('note') || 'Note',
                     };
                     const handlers = getNoteHandlers(context);
                     const newNoteEl = renderNoteEntryFromModule(freshNote, context, handlers);

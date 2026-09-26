@@ -10,6 +10,16 @@ var getOmniMsg = (key, params, fallback) => {
 };
 
 /**
+ * What the user reads when an AI request fails. The worker answers with codes for the
+ * cases it knows (`NO_API_KEY`); those are translated, anything else is the API's own
+ * message and is shown as it came.
+ */
+var describeAiError = (error) => {
+    if (error === 'NO_API_KEY') return getOmniMsg('omnibarAiNoApiKey');
+    return error || getOmniMsg('errorTitle') || 'Error';
+};
+
+/**
  * Row kinds that stand for one open tab and can be gathered into a batch: what the
  * row is worth as an id is the tab it points at, whatever the batch is going to do
  * with it. Adding an action over tabs means adding its kind here.
@@ -328,6 +338,169 @@ var OmniBar = class OmniBar {
         this._clipObservers = [resize, mutations, { disconnect: () => window.removeEventListener('resize', report) }];
         report();
     }
+    /** Every command the omnibar knows, as the `@` selector lists them. */
+    _prefixCommands() {
+        return [
+            {
+                prefix: this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
+                title: getOmniMsg('omnibarPrefixPopupTitle') || 'Open Popup',
+                desc: getOmniMsg('omnibarPrefixPopupDesc') || 'Select a tab to open as a standalone popup window',
+            },
+            {
+                prefix: this._getPrefixVal('wp:', 'omnibarPrefixPipDesc'),
+                title: getOmniMsg('omnibarPrefixPipTitle') || 'Open PiP',
+                desc: getOmniMsg('omnibarPrefixPipDesc') || 'Select a tab to open as Document Picture-in-Picture',
+            },
+            {
+                prefix: this._getPrefixVal('wv:', 'omnibarPrefixVideoPipDesc'),
+                title: getOmniMsg('omnibarPrefixVideoPipTitle') || 'Open Video PiP',
+                desc: getOmniMsg('omnibarPrefixVideoPipDesc') || 'Select a tab to open as Video Picture-in-Picture',
+            },
+            {
+                prefix: this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc'),
+                title: getOmniMsg('omnibarPrefixSidePanelTitle') || 'Open in the side panel',
+                desc:
+                    getOmniMsg('omnibarPrefixSidePanelDesc') || 'Open a tab, an address or a search in the side panel',
+            },
+            {
+                prefix: this._getPrefixVal('ar:', 'prefixReadAloud'),
+                title: getOmniMsg('omnibarPrefixReadAloudTitle') || 'Read Aloud',
+                desc: getOmniMsg('omnibarPrefixReadAloudDesc') || 'Pick a tab and have its text read out loud',
+            },
+            {
+                prefix: this._getPrefixVal('b:', 'prefixSearchBookmarks'),
+                title: getOmniMsg('omnibarPrefixBookmarksTitle') || 'Bookmarks',
+                desc: getOmniMsg('omnibarPrefixBookmarksDesc') || 'Search through your browser bookmarks',
+            },
+            {
+                prefix: this._getPrefixVal('h:', 'prefixSearchHistory'),
+                title: getOmniMsg('omnibarPrefixHistoryTitle') || 'History',
+                desc: getOmniMsg('omnibarPrefixHistoryDesc') || 'Search through your browsing history',
+            },
+            {
+                prefix: this._getPrefixVal('c:', 'prefixSearchRecentlyClosed'),
+                title: getOmniMsg('omnibarPrefixClosedTitle') || 'Recently Closed',
+                desc: getOmniMsg('omnibarPrefixClosedDesc') || 'Browse and reopen recently closed tabs',
+            },
+            {
+                prefix: this._getPrefixVal('dg:', 'prefixDeleteGroup'),
+                title: getOmniMsg('omnibarPrefixGroupsTitle') || 'Tab Groups',
+                desc: getOmniMsg('omnibarPrefixGroupsDesc') || 'Search and switch between tab groups',
+            },
+            {
+                prefix: this._getPrefixVal('dt:', 'prefixDeleteTab'),
+                title: getOmniMsg('omnibarPrefixTabsDeleteTitle') || 'Tabs (Delete)',
+                desc: getOmniMsg('omnibarPrefixTabsDeleteDesc') || 'Search and delete multiple tabs',
+            },
+            {
+                prefix: this._getPrefixVal('ts:', 'prefixSplitTabs'),
+                title: getOmniMsg('omnibarPrefixTabsSplitTitle') || 'Tabs (Split Screen)',
+                desc: getOmniMsg('omnibarPrefixTabsSplitDesc') || 'Search tabs and open in split screen',
+            },
+            ...this._getCapturePrefixes().map((entry) => ({
+                prefix: entry.prefix,
+                title: getOmniMsg(entry.titleKey) || entry.title,
+                desc: getOmniMsg(entry.descKey) || entry.desc,
+            })),
+            {
+                prefix: this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
+                title: getOmniMsg('omnibarPrefixBackupTitle') || 'Backups',
+                desc: getOmniMsg('omnibarPrefixBackupDesc') || 'Search and restore backed up groups and tabs',
+            },
+            {
+                prefix: this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc'),
+                title: getOmniMsg('omnibarPrefixBackupNowTitle') || 'Backup Groups',
+                desc: getOmniMsg('omnibarPrefixBackupNowDesc') || 'Backup tab groups that do not have a backup yet',
+            },
+            {
+                prefix: this._getPrefixVal('f:', 'prefixSearchText'),
+                title: getOmniMsg('omnibarPrefixDeepSearchTitle') || 'Deep Search',
+                desc: getOmniMsg('omnibarPrefixDeepSearchDesc') || 'Full-text search in all open tabs',
+            },
+            {
+                prefix: this._getPrefixVal('qai:', 'prefixQueryAI'),
+                title: getOmniMsg('omnibarPrefixAiQueryTitle') || 'AI Query',
+                desc: getOmniMsg('omnibarPrefixAiQueryDesc') || 'Ask a question to the configured AI model',
+            },
+            {
+                prefix: this._getPrefixVal('qaia:', 'prefixQueryAIAgent'),
+                title: getOmniMsg('omnibarPrefixAiAgentTitle') || 'AI Agent',
+                desc: getOmniMsg('omnibarPrefixAiAgentDesc') || 'Ask the AI agent to perform actions',
+            },
+            {
+                prefix: this._getPrefixVal('lai:', 'prefixListConversations'),
+                title: getOmniMsg('omnibarPrefixConversationsTitle') || 'Conversations',
+                desc: getOmniMsg('omnibarPrefixConversationsDesc') || 'Browse your AI conversation history',
+            },
+            {
+                prefix: this._getPrefixVal('laiq:', 'prefixListQueries'),
+                title: getOmniMsg('omnibarPrefixMessagesTitle') || 'AI Messages',
+                desc: getOmniMsg('omnibarPrefixMessagesDesc') || 'Search through all AI messages',
+            },
+            {
+                prefix: this._getPrefixVal('limg:', 'prefixListImages'),
+                title: getOmniMsg('omnibarPrefixImagesTitle') || 'Images',
+                desc: getOmniMsg('omnibarPrefixImagesDesc') || 'Browse captured screenshots and images',
+            },
+            {
+                prefix: this._getPrefixVal('lnt:', 'prefixListNotes'),
+                title: getOmniMsg('omnibarPrefixNotesTitle') || 'Notes',
+                desc: getOmniMsg('omnibarPrefixNotesDesc') || 'Browse and search your saved notes',
+            },
+            {
+                prefix: this._getPrefixVal('atcr:', 'omnibarPrefixAddToExistingRule'),
+                title: getOmniMsg('omnibarPrefixAddToExistingRuleTitle') || 'Add Active Tab to Rule',
+                desc: getOmniMsg('omnibarPrefixAddToExistingRuleDesc') || 'Add the active tab to an existing rule',
+            },
+            {
+                prefix: this._getPrefixVal('atr:', 'omnibarPrefixAddToRule'),
+                title: getOmniMsg('omnibarPrefixAddToRuleTitle') || 'Add Tabs to Rule',
+                desc:
+                    getOmniMsg('omnibarPrefixAddToRuleDesc') ||
+                    'Add open tabs or manual URLs/domains to an existing rule',
+            },
+            {
+                prefix: this._getPrefixVal('rl:', 'omnibarPrefixRulesSearch'),
+                title: getOmniMsg('omnibarPrefixRulesTitle') || 'Rules',
+                desc: getOmniMsg('omnibarPrefixRulesDesc') || 'Search rules and open URLs',
+            },
+            {
+                prefix: this._getPrefixVal('cr:', 'omnibarPrefixRulesCreate'),
+                title: getOmniMsg('omnibarPrefixRulesCreateTitle') || 'Create Rule',
+                desc:
+                    getOmniMsg('omnibarPrefixRulesCreateDesc') ||
+                    "Create a new rule. Type 'cr: rule_name' to create and select tabs, or 'cr: rule_name, url1, url2' to add URLs directly.",
+            },
+            {
+                prefix: this._getPrefixVal('ccr:', 'omnibarPrefixChangeRuleColor'),
+                title: getOmniMsg('omnibarPrefixChangeRuleColorTitle') || 'Change Rule Color',
+                desc: getOmniMsg('omnibarPrefixChangeRuleColorDesc') || 'Select rules and change their color',
+            },
+            {
+                prefix: this._getPrefixVal('ccg:', 'omnibarPrefixChangeGroupColor'),
+                title: getOmniMsg('omnibarPrefixChangeGroupColorTitle') || 'Change Group Color',
+                desc: getOmniMsg('omnibarPrefixChangeGroupColorDesc') || 'Change groups color',
+            },
+            {
+                prefix: this._getPrefixVal('dr:', 'omnibarPrefixRulesDelete'),
+                title: getOmniMsg('omnibarPrefixRulesDeleteTitle') || 'Rules (Delete)',
+                desc: getOmniMsg('omnibarPrefixRulesDeleteDesc') || 'Delete rules or rule domains',
+            },
+            {
+                prefix: this._getPrefixVal('er:', 'omnibarPrefixRulesEdit'),
+                title: getOmniMsg('omnibarPrefixRulesEditTitle') || 'Rules (Edit)',
+                desc: getOmniMsg('omnibarPrefixRulesEditDesc') || 'Select a rule or URL to rename/edit it',
+            },
+            {
+                prefix: this._getPrefixVal('st:', 'omnibarPrefixTutorial'),
+                title: getOmniMsg('omnibarPrefixTutorialTitle') || 'Omnibar Tutorial',
+                desc: getOmniMsg('omnibarPrefixTutorialDesc') || 'Learn how to use the Omnibar features and shortcuts',
+            },
+            // The site searches are prefixes like any other and belong on this list.
+            ...this._getSiteSearchPrefixes(),
+        ];
+    }
+
     _handleInput(event) {
         if (!chrome.runtime || !chrome.runtime.id) {
             console.warn('[Hint] Extension context invalidated.');
@@ -339,168 +512,7 @@ var OmniBar = class OmniBar {
         // -- Prefix Selector Trigger (default: @) --------------
         const trigger = this.registry ? this.registry.getRawShortcuts()['prefixSelector'] || '@' : '@';
         if (query.startsWith(trigger)) {
-            const prefixList = [
-                {
-                    prefix: this._getPrefixVal('we:', 'omnibarPrefixPopupDesc'),
-                    title: getOmniMsg('omnibarPrefixPopupTitle') || 'Open Popup',
-                    desc: getOmniMsg('omnibarPrefixPopupDesc') || 'Select a tab to open as a standalone popup window',
-                },
-                {
-                    prefix: this._getPrefixVal('wp:', 'omnibarPrefixPipDesc'),
-                    title: getOmniMsg('omnibarPrefixPipTitle') || 'Open PiP',
-                    desc: getOmniMsg('omnibarPrefixPipDesc') || 'Select a tab to open as Document Picture-in-Picture',
-                },
-                {
-                    prefix: this._getPrefixVal('wv:', 'omnibarPrefixVideoPipDesc'),
-                    title: getOmniMsg('omnibarPrefixVideoPipTitle') || 'Open Video PiP',
-                    desc: getOmniMsg('omnibarPrefixVideoPipDesc') || 'Select a tab to open as Video Picture-in-Picture',
-                },
-                {
-                    prefix: this._getPrefixVal('sp:', 'omnibarPrefixSidePanelDesc'),
-                    title: getOmniMsg('omnibarPrefixSidePanelTitle') || 'Open in the side panel',
-                    desc:
-                        getOmniMsg('omnibarPrefixSidePanelDesc') ||
-                        'Open a tab, an address or a search in the side panel',
-                },
-                {
-                    prefix: this._getPrefixVal('ar:', 'prefixReadAloud'),
-                    title: getOmniMsg('omnibarPrefixReadAloudTitle') || 'Read Aloud',
-                    desc: getOmniMsg('omnibarPrefixReadAloudDesc') || 'Pick a tab and have its text read out loud',
-                },
-                {
-                    prefix: this._getPrefixVal('b:', 'prefixSearchBookmarks'),
-                    title: getOmniMsg('omnibarPrefixBookmarksTitle') || 'Bookmarks',
-                    desc: getOmniMsg('omnibarPrefixBookmarksDesc') || 'Search through your browser bookmarks',
-                },
-                {
-                    prefix: this._getPrefixVal('h:', 'prefixSearchHistory'),
-                    title: getOmniMsg('omnibarPrefixHistoryTitle') || 'History',
-                    desc: getOmniMsg('omnibarPrefixHistoryDesc') || 'Search through your browsing history',
-                },
-                {
-                    prefix: this._getPrefixVal('c:', 'prefixSearchRecentlyClosed'),
-                    title: getOmniMsg('omnibarPrefixClosedTitle') || 'Recently Closed',
-                    desc: getOmniMsg('omnibarPrefixClosedDesc') || 'Browse and reopen recently closed tabs',
-                },
-                {
-                    prefix: this._getPrefixVal('dg:', 'prefixDeleteGroup'),
-                    title: getOmniMsg('omnibarPrefixGroupsTitle') || 'Tab Groups',
-                    desc: getOmniMsg('omnibarPrefixGroupsDesc') || 'Search and switch between tab groups',
-                },
-                {
-                    prefix: this._getPrefixVal('dt:', 'prefixDeleteTab'),
-                    title: getOmniMsg('omnibarPrefixTabsDeleteTitle') || 'Tabs (Delete)',
-                    desc: getOmniMsg('omnibarPrefixTabsDeleteDesc') || 'Search and delete multiple tabs',
-                },
-                {
-                    prefix: this._getPrefixVal('ts:', 'prefixSplitTabs'),
-                    title: getOmniMsg('omnibarPrefixTabsSplitTitle') || 'Tabs (Split Screen)',
-                    desc: getOmniMsg('omnibarPrefixTabsSplitDesc') || 'Search tabs and open in split screen',
-                },
-                ...this._getCapturePrefixes().map((entry) => ({
-                    prefix: entry.prefix,
-                    title: getOmniMsg(entry.titleKey) || entry.title,
-                    desc: getOmniMsg(entry.descKey) || entry.desc,
-                })),
-                {
-                    prefix: this._getPrefixVal('bgr:', 'omnibarPrefixBackupDesc'),
-                    title: getOmniMsg('omnibarPrefixBackupTitle') || 'Backups',
-                    desc: getOmniMsg('omnibarPrefixBackupDesc') || 'Search and restore backed up groups and tabs',
-                },
-                {
-                    prefix: this._getPrefixVal('bg:', 'omnibarPrefixBackupNowDesc'),
-                    title: getOmniMsg('omnibarPrefixBackupNowTitle') || 'Backup Groups',
-                    desc: getOmniMsg('omnibarPrefixBackupNowDesc') || 'Backup tab groups that do not have a backup yet',
-                },
-                {
-                    prefix: this._getPrefixVal('f:', 'prefixSearchText'),
-                    title: getOmniMsg('omnibarPrefixDeepSearchTitle') || 'Deep Search',
-                    desc: getOmniMsg('omnibarPrefixDeepSearchDesc') || 'Full-text search in all open tabs',
-                },
-                {
-                    prefix: this._getPrefixVal('qai:', 'prefixQueryAI'),
-                    title: getOmniMsg('omnibarPrefixAiQueryTitle') || 'AI Query',
-                    desc: getOmniMsg('omnibarPrefixAiQueryDesc') || 'Ask a question to the configured AI model',
-                },
-                {
-                    prefix: this._getPrefixVal('qaia:', 'prefixQueryAIAgent'),
-                    title: getOmniMsg('omnibarPrefixAiAgentTitle') || 'AI Agent',
-                    desc: getOmniMsg('omnibarPrefixAiAgentDesc') || 'Ask the AI agent to perform actions',
-                },
-                {
-                    prefix: this._getPrefixVal('lai:', 'prefixListConversations'),
-                    title: getOmniMsg('omnibarPrefixConversationsTitle') || 'Conversations',
-                    desc: getOmniMsg('omnibarPrefixConversationsDesc') || 'Browse your AI conversation history',
-                },
-                {
-                    prefix: this._getPrefixVal('laiq:', 'prefixListQueries'),
-                    title: getOmniMsg('omnibarPrefixMessagesTitle') || 'AI Messages',
-                    desc: getOmniMsg('omnibarPrefixMessagesDesc') || 'Search through all AI messages',
-                },
-                {
-                    prefix: this._getPrefixVal('limg:', 'prefixListImages'),
-                    title: getOmniMsg('omnibarPrefixImagesTitle') || 'Images',
-                    desc: getOmniMsg('omnibarPrefixImagesDesc') || 'Browse captured screenshots and images',
-                },
-                {
-                    prefix: this._getPrefixVal('lnt:', 'prefixListNotes'),
-                    title: getOmniMsg('omnibarPrefixNotesTitle') || 'Notes',
-                    desc: getOmniMsg('omnibarPrefixNotesDesc') || 'Browse and search your saved notes',
-                },
-                {
-                    prefix: this._getPrefixVal('atcr:', 'omnibarPrefixAddToExistingRule'),
-                    title: getOmniMsg('omnibarPrefixAddToExistingRuleTitle') || 'Add Active Tab to Rule',
-                    desc: getOmniMsg('omnibarPrefixAddToExistingRuleDesc') || 'Add the active tab to an existing rule',
-                },
-                {
-                    prefix: this._getPrefixVal('atr:', 'omnibarPrefixAddToRule'),
-                    title: getOmniMsg('omnibarPrefixAddToRuleTitle') || 'Add Tabs to Rule',
-                    desc:
-                        getOmniMsg('omnibarPrefixAddToRuleDesc') ||
-                        'Add open tabs or manual URLs/domains to an existing rule',
-                },
-                {
-                    prefix: this._getPrefixVal('rl:', 'omnibarPrefixRulesSearch'),
-                    title: getOmniMsg('omnibarPrefixRulesTitle') || 'Rules',
-                    desc: getOmniMsg('omnibarPrefixRulesDesc') || 'Search rules and open URLs',
-                },
-                {
-                    prefix: this._getPrefixVal('cr:', 'omnibarPrefixRulesCreate'),
-                    title: getOmniMsg('omnibarPrefixRulesCreateTitle') || 'Create Rule',
-                    desc:
-                        getOmniMsg('omnibarPrefixRulesCreateDesc') ||
-                        "Create a new rule. Type 'cr: rule_name' to create and select tabs, or 'cr: rule_name, url1, url2' to add URLs directly.",
-                },
-                {
-                    prefix: this._getPrefixVal('ccr:', 'omnibarPrefixChangeRuleColor'),
-                    title: getOmniMsg('omnibarPrefixChangeRuleColorTitle') || 'Change Rule Color',
-                    desc: getOmniMsg('omnibarPrefixChangeRuleColorDesc') || 'Select rules and change their color',
-                },
-                {
-                    prefix: this._getPrefixVal('ccg:', 'omnibarPrefixChangeGroupColor'),
-                    title: getOmniMsg('omnibarPrefixChangeGroupColorTitle') || 'Change Group Color',
-                    desc: getOmniMsg('omnibarPrefixChangeGroupColorDesc') || 'Change groups color',
-                },
-                {
-                    prefix: this._getPrefixVal('dr:', 'omnibarPrefixRulesDelete'),
-                    title: getOmniMsg('omnibarPrefixRulesDeleteTitle') || 'Rules (Delete)',
-                    desc: getOmniMsg('omnibarPrefixRulesDeleteDesc') || 'Delete rules or rule domains',
-                },
-                {
-                    prefix: this._getPrefixVal('er:', 'omnibarPrefixRulesEdit'),
-                    title: getOmniMsg('omnibarPrefixRulesEditTitle') || 'Rules (Edit)',
-                    desc: getOmniMsg('omnibarPrefixRulesEditDesc') || 'Select a rule or URL to rename/edit it',
-                },
-                {
-                    prefix: this._getPrefixVal('st:', 'omnibarPrefixTutorial'),
-                    title: getOmniMsg('omnibarPrefixTutorialTitle') || 'Omnibar Tutorial',
-                    desc:
-                        getOmniMsg('omnibarPrefixTutorialDesc') ||
-                        'Learn how to use the Omnibar features and shortcuts',
-                },
-                // The site searches are prefixes like any other and belong on this list.
-                ...this._getSiteSearchPrefixes(),
-            ];
+            const prefixList = this._prefixCommands();
             // Typing after the trigger narrows the list: `@b` shows the commands whose
             // prefix or name mentions it, and the prefix matches come first. The
             // description only counts when nothing else matched, so a common letter
@@ -646,7 +658,7 @@ var OmniBar = class OmniBar {
         const site = this._getSiteSearchPrefixes().find((entry) => lower.startsWith(entry.prefix));
         if (site) {
             const q = query.substring(site.prefix.length).trim();
-            const hint = getOmniMsg('omnibarPressEnterToSearch') || 'Press Enter to search';
+            const hint = getOmniMsg('omnibarPressEnterToSearch');
             this._renderResults(
                 [
                     {
@@ -751,6 +763,7 @@ var OmniBar = class OmniBar {
                     if (convs.length === 0)
                         convs = [
                             {
+                                isEmptyState: true,
                                 title: getOmniMsg('omnibarNoConversations') || 'No conversations found',
                                 url: '',
                                 icon: '[CONV]',
@@ -791,6 +804,7 @@ var OmniBar = class OmniBar {
                     if (msgs.length === 0)
                         msgs = [
                             {
+                                isEmptyState: true,
                                 title: getOmniMsg('omnibarNoMessages') || 'No messages found',
                                 url: '',
                                 icon: '<svg width="24" height="24" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.48 4h4l.5.5v2.03h.52l.5.5V8l-.5.5h-.52v3l-.5.5H9.36l-2.5 2.76L6 14.4V12H3.5l-.5-.64V8.5h-.5L2 8v-.97l.5-.5H3V4.36L3.53 4h4V2.86A1 1 0 0 1 7 2a1 1 0 0 1 2 0 1 1 0 0 1-.52.83zM12 8V5H4v5.86l2.5.14H7v2.19l1.8-2.04.35-.15H12zm-2.12.51a2.7 2.7 0 0 1-1.37.74v-.01a2.71 2.71 0 0 1-2.42-.74l-.7.71c.34.34.745.608 1.19.79.45.188.932.286 1.42.29a3.7 3.7 0 0 0 2.58-1.07zM6.49 6.5h-1v1h1zm3 0h1v1h-1z"></path></svg>',
@@ -831,6 +845,7 @@ var OmniBar = class OmniBar {
                     if (notes.length === 0)
                         notes = [
                             {
+                                isEmptyState: true,
                                 title: getOmniMsg('omnibarNoNotes') || 'No notes found',
                                 url: '',
                                 icon: '[TEXT]',
@@ -868,6 +883,7 @@ var OmniBar = class OmniBar {
                     if (imgs.length === 0)
                         imgs = [
                             {
+                                isEmptyState: true,
                                 title: getOmniMsg('omnibarNoImages') || 'No images found',
                                 url: '',
                                 icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g fill="var(--text-color)"><path d="M18 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M11.943 1.25h.114c2.309 0 4.118 0 5.53.19 1.444.194 2.584.6 3.479 1.494.895.895 1.3 2.035 1.494 3.48.19 1.411.19 3.22.19 5.529v.088c0 1.909 0 3.471-.104 4.743-.104 1.28-.317 2.347-.795 3.235q-.314.586-.785 1.057c-.895.895-2.035 1.3-3.48 1.494-1.411.19-3.22.19-5.529.19h-.114c-2.309 0-4.118 0-5.53-.19-1.444-.194-2.584-.6-3.479-1.494-.793-.793-1.203-1.78-1.42-3.006-.215-1.203-.254-2.7-.262-4.558Q1.25 12.792 1.25 12v-.058c0-2.309 0-4.118.19-5.53.194-1.444.6-2.584 1.494-3.479.895-.895 2.035-1.3 3.48-1.494 1.411-.19 3.22-.19 5.529-.19m-5.33 1.676c-1.278.172-2.049.5-2.618 1.069-.57.57-.897 1.34-1.069 2.619-.174 1.3-.176 3.008-.176 5.386v.844l1.001-.876a2.3 2.3 0 0 1 3.141.104l4.29 4.29a2 2 0 0 0 2.564.222l.298-.21a3 3 0 0 1 3.732.225l2.83 2.547c.286-.598.455-1.384.545-2.493.098-1.205.099-2.707.099-4.653 0-2.378-.002-4.086-.176-5.386-.172-1.279-.5-2.05-1.069-2.62-.57-.569-1.34-.896-2.619-1.068-1.3-.174-3.008-.176-5.386-.176s-4.086.002-5.386.176"></path></g></svg>',
@@ -1761,8 +1777,9 @@ var OmniBar = class OmniBar {
                                 color: backup.group.color,
                                 count: backup.tabs.length,
                                 url:
-                                    getOmniMsg('omnibarGroupBackup', [backup.tabs.length.toString()]) ||
-                                    `Group Backup (${backup.tabs.length} tabs)`,
+                                    getOmniMsg(HintCommon.i18n.pluralKey('omnibarGroupBackup', backup.tabs.length), [
+                                        backup.tabs.length.toString(),
+                                    ]) || `Group Backup (${backup.tabs.length} tabs)`,
                             });
                         }
                         backup.tabs.forEach((tab) => {
@@ -2016,6 +2033,7 @@ var OmniBar = class OmniBar {
             event.preventDefault();
             const items = Array.from(resultsList.getElementsByTagName('li'));
             const selected = items[this.selectedIndex];
+            if (selected?.dataset.emptyState) return;
             if (selected && selected.dataset.type === 'prefix') {
                 input.value = selected.dataset.prefix;
                 this._handleInput({
@@ -2392,7 +2410,7 @@ var OmniBar = class OmniBar {
                             if (response && response.success) {
                                 this._renderAIResponse(q, response.answer);
                             } else {
-                                const errMsg = response?.error || 'Unknown error';
+                                const errMsg = describeAiError(response?.error);
                                 this._renderResults(
                                     [
                                         {
@@ -2431,7 +2449,14 @@ var OmniBar = class OmniBar {
                 return;
             }
             if (count === 0) {
-                this._executeDefaultSearch(currentValue, { inSidePanel: event.ctrlKey || event.metaKey });
+                // A command with nothing to act on stays put: "dt: example" with no such
+                // tab must not turn into a web search for "dt: example".
+                const isCommand = this._prefixCommands().some(
+                    (command) => command.prefix && currentLower.startsWith(command.prefix.toLowerCase()),
+                );
+                if (!isCommand) {
+                    this._executeDefaultSearch(currentValue, { inSidePanel: event.ctrlKey || event.metaKey });
+                }
                 return;
             }
 
@@ -3520,7 +3545,9 @@ var OmniBar = class OmniBar {
                 case 'closeTab':
                     return getOmniMsg('toolCloseTab', [String(params.tabId || '')]);
                 case 'closeTabs':
-                    return getOmniMsg('toolCloseTabs', [String((params.tabIds || []).length)]);
+                    return getOmniMsg(HintCommon.i18n.pluralKey('toolCloseTabs', (params.tabIds || []).length), [
+                        String((params.tabIds || []).length),
+                    ]);
                 case 'getTabGroups':
                     return i18n('toolGetTabGroups');
                 case 'groupTabs':
@@ -3831,8 +3858,8 @@ IMPORTANT RULES:
             });
             if (!geminiResult?.success) {
                 finalResponse =
-                    getOmniMsg('omnibarAgentErrorPrefix', [geminiResult?.error || 'Error']) ||
-                    `[ERR] ${geminiResult?.error || 'Error'}`;
+                    getOmniMsg('omnibarAgentErrorPrefix', [describeAiError(geminiResult?.error)]) ||
+                    `[ERR] ${describeAiError(geminiResult?.error)}`;
                 break;
             }
             contents.push({
@@ -4005,9 +4032,10 @@ IMPORTANT RULES:
                 specialType = 'delete-all-groups';
                 const totalTabs = items.reduce((sum, g) => sum + (g.tabCount || 0), 0);
                 if (totalTabs > 0) {
-                    title =
-                        getOmniMsg('omnibarDeleteAllGroupsDetail', [count.toString(), totalTabs.toString()]) ||
-                        `Delete ${count} groups and ${totalTabs} tabs`;
+                    title = getOmniMsg('omnibarDeleteAllGroupsDetail', [
+                        HintCommon.i18n.plural('omnibarGroupCount', count),
+                        HintCommon.i18n.plural('omnibarTabCount', totalTabs),
+                    ]);
                 } else {
                     title = hasFilter
                         ? getOmniMsg('omnibarDeleteAllFilteredGroups', [count.toString()]) ||
@@ -4019,10 +4047,12 @@ IMPORTANT RULES:
                 specialType = 'delete-all-rules';
                 const rulesCount = items.filter((i) => i.type === 'dr-rule').length;
                 const domainsCount = items.filter((i) => i.type !== 'dr-rule').length;
+                const domainsPhrase = HintCommon.i18n.plural('omnibarDomainCount', domainsCount);
                 if (rulesCount > 0 && domainsCount > 0) {
-                    title =
-                        getOmniMsg('omnibarDeleteAllRulesDetail', [rulesCount.toString(), domainsCount.toString()]) ||
-                        `Delete ${rulesCount} rules and ${domainsCount} domains`;
+                    title = getOmniMsg('omnibarDeleteAllRulesDetail', [
+                        HintCommon.i18n.plural('omnibarRuleCount', rulesCount),
+                        domainsPhrase,
+                    ]);
                 } else if (rulesCount > 0) {
                     title = hasFilter
                         ? getOmniMsg('omnibarDeleteAllFilteredRules', [rulesCount.toString()]) ||
@@ -4030,7 +4060,7 @@ IMPORTANT RULES:
                         : getOmniMsg('omnibarDeleteAllRules', [rulesCount.toString()]) ||
                           `Delete all rules (${rulesCount})`;
                 } else {
-                    title = `Delete ${domainsCount} domains`;
+                    title = getOmniMsg('omnibarDeleteDomains', [domainsPhrase]);
                 }
                 desc = hasFilter
                     ? getOmniMsg('omnibarDeleteAllFilteredRulesDesc') || 'Deletes all filtered rules'
@@ -4039,8 +4069,10 @@ IMPORTANT RULES:
                 specialType = 'backup-all-groups';
                 const totalTabs = items.reduce((sum, g) => sum + (g.count || 0), 0);
                 title =
-                    getOmniMsg('omnibarBackupAllGroups', [count.toString(), totalTabs.toString()]) ||
-                    `Backup all groups (${count} groups, ${totalTabs} tabs)`;
+                    getOmniMsg('omnibarBackupAllGroups', [
+                        HintCommon.i18n.plural('omnibarGroupCount', count),
+                        HintCommon.i18n.plural('omnibarTabCount', totalTabs),
+                    ]) || `Backup all groups (${count} groups, ${totalTabs} tabs)`;
                 desc = getOmniMsg('omnibarBackupAllGroupsDesc') || 'Backs up all these groups';
             } else if (isBgr) {
                 specialType = 'restore-all-groups';
@@ -4048,8 +4080,10 @@ IMPORTANT RULES:
                 const tabsCount = items.filter((i) => i.type === 'bg-tab').length;
                 if (groupsCount > 0 && tabsCount > 0) {
                     title =
-                        getOmniMsg('omnibarRestoreAllGroupsDetail', [groupsCount.toString(), tabsCount.toString()]) ||
-                        `Restore all backups (${groupsCount} groups, ${tabsCount} tabs)`;
+                        getOmniMsg('omnibarRestoreAllGroupsDetail', [
+                            HintCommon.i18n.plural('omnibarGroupCount', groupsCount),
+                            HintCommon.i18n.plural('omnibarTabCount', tabsCount),
+                        ]) || `Restore all backups (${groupsCount} groups, ${tabsCount} tabs)`;
                 } else if (groupsCount > 0) {
                     title = hasFilter
                         ? getOmniMsg('omnibarRestoreAllFilteredGroups', [groupsCount.toString()]) ||
@@ -4065,8 +4099,7 @@ IMPORTANT RULES:
             } else {
                 specialType = 'delete-all-tabs';
                 title = hasFilter
-                    ? getOmniMsg('omnibarDeleteAllFilteredTabs', [count.toString()]) ||
-                      `Delete all filtered tabs (${count})`
+                    ? getOmniMsg('omnibarDeleteAllFilteredTabs', [HintCommon.i18n.plural('omnibarTabCount', count)])
                     : getOmniMsg('omnibarDeleteAllTabs', [count.toString()]) || `Delete all tabs (${count})`;
                 desc = getOmniMsg('omnibarDeleteAllTabsDesc') || 'Closes all these tabs';
             }
@@ -4143,7 +4176,15 @@ IMPORTANT RULES:
                  * Chrome's favicon store (see _omniFaviconSource), never from an address.
                  */
                 faviconPageUrl = '';
-            if (data.isSpecialAction) {
+            if (data.isEmptyState) {
+                // "Nothing found" is a message, not a result: no date, no copy hint,
+                // and Enter does nothing with it.
+                title = data.title;
+                url = '';
+                favIcon = '';
+                li.dataset.emptyState = 'true';
+                li.style.cursor = 'default';
+            } else if (data.isSpecialAction) {
                 title = data.title;
                 url = data.url || '';
                 favIcon = '';
@@ -4206,8 +4247,9 @@ IMPORTANT RULES:
             } else if (type === 'capture' && data.captureRow === 'group') {
                 title = data.title || getOmniMsg('omnibarGroupTitle', [data.color]) || `Group ${data.color}`;
                 url =
-                    getOmniMsg('omnibarCaptureGroupHint', [String(data.count)]) ||
-                    `Capture the ${data.count} tabs of this group`;
+                    getOmniMsg(HintCommon.i18n.pluralKey('omnibarCaptureGroupHint', data.count), [
+                        String(data.count),
+                    ]) || `Capture the ${data.count} tabs of this group`;
                 favIcon = '';
                 li.dataset.captureRow = 'group';
                 li.dataset.groupId = data.id;
@@ -4254,6 +4296,9 @@ IMPORTANT RULES:
                 favIcon = '';
                 li.dataset.groupId = data.id;
                 this._injectColorDot(li, data.color);
+            } else if (type === 'site-search') {
+                title = data.title;
+                favIcon = '';
             } else if (type === 'inpage') {
                 title = data.snippet;
                 url = getOmniMsg('omnibarMatchInPage') || 'Match in page';
@@ -4284,7 +4329,7 @@ IMPORTANT RULES:
                 }
             } else if (type === 'conversation') {
                 title = data.title || getOmniMsg('omnibarUntitledConversation') || 'Untitled conversation';
-                const dateStr = data.date ? new Date(data.date).toLocaleString() : '';
+                const dateStr = data.date ? new Date(data.date).toLocaleString(HintCommon.i18n.locale()) : '';
                 const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 // The number of entries, which was being read from a name that was never
                 // declared: the exception left the whole conversation list empty.
@@ -4308,8 +4353,9 @@ IMPORTANT RULES:
             } else if (type === 'image') {
                 title = data.title || getOmniMsg('omnibarUntitledImage') || 'Untitled image';
                 url = data.date
-                    ? getOmniMsg('omnibarCapturedDate', [new Date(data.date).toLocaleString()]) ||
-                      `Captured: ${new Date(data.date).toLocaleString()}`
+                    ? getOmniMsg('omnibarCapturedDate', [
+                          new Date(data.date).toLocaleString(HintCommon.i18n.locale()),
+                      ]) || `Captured: ${new Date(data.date).toLocaleString(HintCommon.i18n.locale())}`
                     : '';
                 favIcon = '';
                 if (data.dataUrl) {
@@ -4334,7 +4380,7 @@ IMPORTANT RULES:
             } else if (type === 'note') {
                 title = data.title || getOmniMsg('omnibarUntitledNote') || 'Untitled note';
                 const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
-                url = (data.date ? `${new Date(data.date).toLocaleString()} . ` : '') + hint;
+                url = (data.date ? `${new Date(data.date).toLocaleString(HintCommon.i18n.locale())} . ` : '') + hint;
                 favIcon = '';
                 const iconEl = this._injectSvgIcon(
                     li,
@@ -4356,7 +4402,7 @@ IMPORTANT RULES:
                 title = data.query
                     ? data.query.substring(0, 60) + (data.query.length > 60 ? '...' : '')
                     : getOmniMsg('omnibarMessageWithoutText') || 'Message without text';
-                const dateStr = data.date ? new Date(data.date).toLocaleString() : '';
+                const dateStr = data.date ? new Date(data.date).toLocaleString(HintCommon.i18n.locale()) : '';
                 const convName = data.convTitle ? ` . ${data.convTitle.substring(0, 30)}` : '';
                 const hint = getOmniMsg('omnibarResultHint') || 'Enter to copy . Ctrl+Enter to expand';
                 url = `${dateStr}${convName} . ${hint}`;
@@ -4692,6 +4738,7 @@ IMPORTANT RULES:
                 }
             });
             li.addEventListener('click', async (e) => {
+                if (li.dataset.emptyState) return;
                 if (e.target && e.target.closest && e.target.closest('.hint-omni-copy-btn')) return;
                 // Ignore clicks on the expanded panel itself (allow text selection)
                 if (e.target && e.target.closest && e.target.closest('.hint-omni-conv-expand, .hint-omni-img-expand'))
@@ -4829,7 +4876,9 @@ IMPORTANT RULES:
                             );
                         });
                     }
-                } else if (type === 'dr-item') {
+                } else if (type === 'dr-item' && !li.classList.contains('delete-all-filtered')) {
+                    // The "delete all filtered" row is a dr-item too, but it carries its own
+                    // list of rules; it is handled with the other bulk rows below.
                     this._handleMultiSelectionClick(e, li, (ids) => {
                         chrome.runtime.sendMessage(
                             {

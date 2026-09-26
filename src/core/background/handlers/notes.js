@@ -181,7 +181,7 @@ function notifyNote(key, params = []) {
     chrome.notifications.create({
         type: 'basic',
         iconUrl: '/assets/icons/icon128.png',
-        title: 'Intelligent Tab Group',
+        title: getI18nMsg('extName'),
         message: getI18nMsg(key, params),
     });
 }

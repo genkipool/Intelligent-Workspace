@@ -1,5 +1,6 @@
 import { writable, derived } from 'svelte/store';
 import { i18nService } from '../services/i18nService.js';
+import { setActiveMessages } from '../../utils/i18n.js';
 
 export const currentLang = writable('en');
 export const messages = writable({});
@@ -22,11 +23,13 @@ export const i18nStore = {
     init: () => {
         initPromise ??= (async () => {
             const { lang, messages: msgs } = await i18nService.init();
+            setActiveMessages(lang, msgs);
             currentLang.set(lang);
             messages.set(msgs);
 
             i18nService.subscribe(async (newLang) => {
                 const newMsgs = await i18nService.loadMessages(newLang);
+                setActiveMessages(newLang, newMsgs);
                 currentLang.set(newLang);
                 messages.set(newMsgs);
             });
@@ -35,6 +38,7 @@ export const i18nStore = {
     },
     changeLanguage: async (lang) => {
         const msgs = await i18nService.changeLanguage(lang);
+        setActiveMessages(lang, msgs);
         currentLang.set(lang);
         messages.set(msgs);
     },

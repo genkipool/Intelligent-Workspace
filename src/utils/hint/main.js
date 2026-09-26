@@ -975,15 +975,13 @@ var Main = class Main {
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
         this._boundMainKeyUpHandler = (e) => this._handleKeyUp(e);
+        // An ordinary copy or cut starts a new cumulative-clipboard collection. The
+        // page may have put something else on the clipboard (a copy button, a
+        // formatted snippet); the selection is what the user saw, so it is what counts.
         this._boundCopyHandler = () => {
             try {
                 const sel = window.getSelection()?.toString();
-                if (sel && window.HintCommon?.Clipboard) {
-                    window.HintCommon.Clipboard._lastCopiedText = sel;
-                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-                        chrome.storage.local.set({ itg_last_clipboard_text: sel });
-                    }
-                }
+                if (sel) window.HintCommon?.Clipboard?.remember(sel);
             } catch {}
         };
         document.addEventListener('focusin', this._boundFocusInHandler);
@@ -991,6 +989,7 @@ var Main = class Main {
         document.addEventListener('keydown', this._boundMainKeyDownHandler, true);
         document.addEventListener('keyup', this._boundMainKeyUpHandler, true);
         document.addEventListener('copy', this._boundCopyHandler, true);
+        document.addEventListener('cut', this._boundCopyHandler, true);
     }
     _handleKeyUp(event) {
         if (event.key === 'Alt') {
@@ -2022,7 +2021,10 @@ var Main = class Main {
         if (this._boundFocusInHandler) document.removeEventListener('focusin', this._boundFocusInHandler);
         if (this._boundFocusOutHandler) document.removeEventListener('focusout', this._boundFocusOutHandler);
         if (this._boundMainKeyDownHandler) document.removeEventListener('keydown', this._boundMainKeyDownHandler, true);
-        if (this._boundCopyHandler) document.removeEventListener('copy', this._boundCopyHandler, true);
+        if (this._boundCopyHandler) {
+            document.removeEventListener('copy', this._boundCopyHandler, true);
+            document.removeEventListener('cut', this._boundCopyHandler, true);
+        }
         if (this._boundMessageHandler) {
             try {
                 chrome.runtime.onMessage.removeListener(this._boundMessageHandler);
@@ -2369,13 +2371,7 @@ var Main = class Main {
             n: () => selection.modify('extend', 'forward', 'paragraph'),
             p: () => selection.modify('extend', 'backward', 'paragraph'),
             c: () => {
-                const text = selection.toString();
-                if (text && window.HintCommon?.Clipboard) {
-                    window.HintCommon.Clipboard._lastCopiedText = text;
-                    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-                        chrome.storage.local.set({ itg_last_clipboard_text: text });
-                    }
-                }
+                // The copy event this fires is what starts the new collection.
                 document.execCommand('copy');
             },
         };

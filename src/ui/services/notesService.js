@@ -22,7 +22,7 @@ async function waitForElement(selector, attempts = 30) {
     return null;
 }
 
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations, showNotification, msg as localizedMsg } from '../../utils/i18n.js';
 import { openModal, showNoteModal } from '../stores/modalStore.js';
 import { renderNoteEntry as renderNoteEntryFromModule } from '../content-renderer/content-renderer.js';
 
@@ -396,9 +396,9 @@ export function getNoteHandlers(context) {
                 textToRead = note.content.map((item) => `${item.checked ? '[x]' : '[ ]'} ${item.text}`).join('\n');
             } else if (note.type === 'kanban' && Array.isArray(note.content)) {
                 const stateLabels = {
-                    todo: chrome.i18n.getMessage('kanbanDefaultTodo') || 'To Do',
-                    inprogress: chrome.i18n.getMessage('kanbanDefaultInProgress') || 'In Progress',
-                    done: chrome.i18n.getMessage('kanbanDefaultDone') || 'Done',
+                    todo: localizedMsg('kanbanDefaultTodo') || 'To Do',
+                    inprogress: localizedMsg('kanbanDefaultInProgress') || 'In Progress',
+                    done: localizedMsg('kanbanDefaultDone') || 'Done',
                 };
                 textToRead = note.content
                     .map((item) => `[${stateLabels[item.state] || item.state}] ${item.text}`)
@@ -418,8 +418,8 @@ export function getNoteHandlers(context) {
             let currentChunkIndex = 0;
             let isCancelled = false;
 
-            const readAloudTitle = chrome.i18n.getMessage('readAloud') || 'Play';
-            const stopReadingTitle = chrome.i18n.getMessage('stopReadingAloud') || 'Stop reading';
+            const readAloudTitle = localizedMsg('readAloud') || 'Play';
+            const stopReadingTitle = localizedMsg('stopReadingAloud') || 'Stop reading';
 
             const resetSpeechState = (buttonToReset) => {
                 const interval = get(speechKeepAliveInterval);
@@ -486,8 +486,8 @@ export function getNoteHandlers(context) {
 
                 switch (note.type) {
                     case 'checklist':
-                        const statusCompleted = chrome.i18n.getMessage('ttsChecklistCompleted') || 'completed';
-                        const statusPending = chrome.i18n.getMessage('ttsChecklistPending') || 'pending';
+                        const statusCompleted = localizedMsg('ttsChecklistCompleted') || 'completed';
+                        const statusPending = localizedMsg('ttsChecklistPending') || 'pending';
                         textToRead = noteTitle + '. ';
                         if (Array.isArray(note.content)) {
                             textToRead += note.content
@@ -498,9 +498,9 @@ export function getNoteHandlers(context) {
 
                     case 'kanban':
                         const stateLabels = {
-                            todo: chrome.i18n.getMessage('kanbanDefaultTodo') || 'To Do',
-                            inprogress: chrome.i18n.getMessage('kanbanDefaultInProgress') || 'In Progress',
-                            done: chrome.i18n.getMessage('kanbanDefaultDone') || 'Done',
+                            todo: localizedMsg('kanbanDefaultTodo') || 'To Do',
+                            inprogress: localizedMsg('kanbanDefaultInProgress') || 'In Progress',
+                            done: localizedMsg('kanbanDefaultDone') || 'Done',
                         };
                         textToRead = noteTitle + '. ';
                         if (Array.isArray(note.content)) {
@@ -734,7 +734,7 @@ async function renderNotesList(notes, context) {
 
     notes.forEach((note) => {
         const noteContext = isOrphan
-            ? { title: chrome.i18n.getMessage('orphanNoteTitle') || 'Orphan Note', isOrphan: true }
+            ? { title: localizedMsg('orphanNoteTitle') || 'Orphan Note', isOrphan: true }
             : context;
         const noteEntry = renderNoteEntryFromModule(note, noteContext, handlers);
         const domainSpan = noteEntry.querySelector('.entry-footer .entry-domain');
@@ -744,10 +744,10 @@ async function renderNotesList(notes, context) {
             if (isPomodoro) {
                 domainSpan.style.display = 'none';
             } else if (isOrphan) {
-                let orphanContextText = chrome.i18n.getMessage('orphanNoteContext') || 'Context Lost';
+                let orphanContextText = localizedMsg('orphanNoteContext') || 'Context Lost';
                 if (contextKey) {
                     if (contextKey === 'g_general') {
-                        orphanContextText = chrome.i18n.getMessage('generalNotesContext') || 'General';
+                        orphanContextText = localizedMsg('generalNotesContext') || 'General';
                     } else {
                         const parts = contextKey.split('_');
                         if (contextKey.startsWith('g_') && parts.length > 1) {
@@ -759,7 +759,7 @@ async function renderNotesList(notes, context) {
                 }
                 domainSpan.textContent = orphanContextText;
                 domainSpan.dataset.context = orphanContextText;
-                const filterByContextTooltip = chrome.i18n.getMessage('filterByContextTooltip', [orphanContextText]);
+                const filterByContextTooltip = localizedMsg('filterByContextTooltip', [orphanContextText]);
                 domainSpan.title = filterByContextTooltip;
                 domainSpan.classList.add('is-orphan');
             } else if (contextKey && contextKey.startsWith('s_')) {
@@ -768,14 +768,14 @@ async function renderNotesList(notes, context) {
                     const ctxText = parts.slice(2).join('_');
                     domainSpan.textContent = ctxText;
                     domainSpan.dataset.context = ctxText;
-                    domainSpan.title = chrome.i18n.getMessage('filterByContextTooltip', [ctxText]);
+                    domainSpan.title = localizedMsg('filterByContextTooltip', [ctxText]);
                 } else {
                     domainSpan.style.display = 'none';
                 }
             } else {
                 domainSpan.textContent = context.title;
                 domainSpan.dataset.context = context.title;
-                domainSpan.title = chrome.i18n.getMessage('filterByContextTooltip', [context.title]);
+                domainSpan.title = localizedMsg('filterByContextTooltip', [context.title]);
                 domainSpan.classList.add('is-group-title');
             }
         }

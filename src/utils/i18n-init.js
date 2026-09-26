@@ -22,8 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // 2. Titles / Tooltips
             document.querySelectorAll('[data-i18n-title]').forEach((el) => {
                 const key = el.getAttribute('data-i18n-title');
-                if (messages[key] && !el.title) {
-                    const text = messages[key].description || messages[key].message || key;
+                const entry = messages[`${key}_tooltip`] || messages[key];
+                if (entry && !el.title) {
+                    const text = entry.message || key;
                     if (!text.includes('$')) {
                         el.title = text;
                     }

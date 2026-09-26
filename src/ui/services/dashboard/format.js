@@ -1,3 +1,4 @@
+import { activeLanguage, localeOf } from '../../../utils/i18n.js';
 /**
  * [AI INSTRUCTION]
  * FORMATTERS AND CALENDAR MATHS SHARED BY EVERY DASHBOARD.
@@ -35,12 +36,10 @@ export const fmtHm = (secs) => {
 /** Hours with one decimal, for axis labels and tight cells. */
 export const fmtH = (secs, abbrev = 'h') => (secs / 3600).toFixed(1) + abbrev;
 
-const localeOf = (lang) => (lang === 'es' ? 'es-ES' : 'en-GB');
-
-export const fmtDateShort = (ts, lang = 'en') =>
+export const fmtDateShort = (ts, lang = activeLanguage()) =>
     !ts ? '--' : new Date(ts).toLocaleDateString(localeOf(lang), { day: '2-digit', month: 'short' });
 
-export const fmtTime = (ts, lang = 'en') =>
+export const fmtTime = (ts, lang = activeLanguage()) =>
     !ts ? '--' : new Date(ts).toLocaleTimeString(localeOf(lang), { hour: '2-digit', minute: '2-digit' });
 
 /** `YYYY-MM-DD` in local time, which is the day the user means. */

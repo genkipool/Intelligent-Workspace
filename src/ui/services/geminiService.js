@@ -18,7 +18,7 @@ import {
 } from '../stores/geminiStore.js';
 import { renderGeminiResponse, parseMarkdown } from '../content-renderer/content-renderer.js';
 import '../../lib/marked.js';
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations, showNotification, msg as localizedMsg } from '../../utils/i18n.js';
 import { getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb } from '../../utils/db.js';
 import { STORAGE_KEYS } from './constants.js';
 import {
@@ -81,7 +81,7 @@ export const GEMINI_DOWNLOAD_FORMATS = [
 
 export function getConversationTitle() {
     const fromDOM = document.querySelector('#persistent-conversation-display')?.textContent?.trim();
-    const placeholder = chrome.i18n.getMessage('selectConversationPlaceholder');
+    const placeholder = localizedMsg('selectConversationPlaceholder');
     if (fromDOM && fromDOM !== placeholder) {
         return fromDOM;
     }
@@ -90,7 +90,7 @@ export function getConversationTitle() {
     if (index >= 0 && conversations[index]?.title) {
         return conversations[index].title;
     }
-    return chrome.i18n.getMessage('geminiConversationDefaultTitle') || 'Gemini Conversation';
+    return localizedMsg('geminiConversationDefaultTitle') || 'Gemini Conversation';
 }
 
 export function handleDownloadConversation() {
@@ -232,7 +232,7 @@ export async function switchToGeminiView() {
     const mainHeaderTitle = document.getElementById('main-header-title');
     if (mainHeaderTitle) {
         mainHeaderTitle.setAttribute('data-i18n', 'geminiViewTitle');
-        const titleText = chrome.i18n.getMessage('geminiViewTitle');
+        const titleText = localizedMsg('geminiViewTitle');
         if (titleText) mainHeaderTitle.textContent = titleText;
     }
 
@@ -308,20 +308,20 @@ export function htmlToSpeechText(htmlString) {
                 case 'img':
                     const altText = node.getAttribute('alt');
                     if (altText) {
-                        speechText += `${chrome.i18n.getMessage('ttsImageDescription') || 'Image: '}${altText}. `;
+                        speechText += `${localizedMsg('ttsImageDescription') || 'Image: '}${altText}. `;
                     } else {
-                        speechText += `${chrome.i18n.getMessage('ttsImageWithoutDescription') || 'Image without description.'} `;
+                        speechText += `${localizedMsg('ttsImageWithoutDescription') || 'Image without description.'} `;
                     }
                     break;
                 case 'a':
                     const linkText = node.textContent.trim();
-                    speechText += `${chrome.i18n.getMessage('ttsLinkDescription') || 'Link: '}${linkText}. `;
+                    speechText += `${localizedMsg('ttsLinkDescription') || 'Link: '}${linkText}. `;
                     return;
                 case 'iframe':
-                    let contentDescription = chrome.i18n.getMessage('ttsEmbeddedContent') || 'Embedded content.';
+                    let contentDescription = localizedMsg('ttsEmbeddedContent') || 'Embedded content.';
                     const src = node.getAttribute('src');
                     if (src && src.includes('youtube.com/embed')) {
-                        contentDescription = chrome.i18n.getMessage('ttsYouTubeVideo') || 'Embedded YouTube video.';
+                        contentDescription = localizedMsg('ttsYouTubeVideo') || 'Embedded YouTube video.';
                     }
                     speechText += contentDescription;
                     return;
@@ -329,7 +329,7 @@ export function htmlToSpeechText(htmlString) {
                     speechText += '. ';
                     break;
                 case 'li':
-                    speechText += `${chrome.i18n.getMessage('ttsListItem') || 'List item: '} `;
+                    speechText += `${localizedMsg('ttsListItem') || 'List item: '} `;
                     for (const child of node.childNodes) {
                         traverse(child);
                     }

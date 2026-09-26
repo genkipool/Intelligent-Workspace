@@ -3,6 +3,8 @@ import { get } from 'svelte/store';
 import { prefetchCache, isPopupWindow, currentMainView } from '../stores/appStore.svelte.js';
 import { prefetchUrl } from '../services/prefetchService.js';
 import { getDomainOrSubdomainUrl } from '../services/utils.js';
+import { msg as localizedMsg } from '../../utils/i18n.js';
+import { bookmarkFolderTitle } from './folderTitle.js';
 
 function navigateToCreateRule(urls, ruleName) {
     const uniqueUrls = [...new Set(urls.map((u) => getDomainOrSubdomainUrl(u)).filter(Boolean))].join('\n');
@@ -145,7 +147,7 @@ function showInlineCreateFolderInput(parentId, folderEl) {
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'folder-name-input'; // Reuses existing styles
-    input.placeholder = chrome.i18n.getMessage('enterFolderNamePlaceholder') || 'Folder Name';
+    input.placeholder = localizedMsg('enterFolderNamePlaceholder') || 'Folder Name';
     input.style.flexGrow = '1';
 
     tempContainer.appendChild(iconSpan);
@@ -514,14 +516,7 @@ export async function initializeBookmarksView(container, utils, sortBy = 'dateAd
                 else folderEl.open = isAllExpanded;
             }
 
-            let displayTitle = node.title;
-            if (!displayTitle) {
-                if (node.id === '1') displayTitle = chrome.i18n.getMessage('bookmarkBar') || 'Bookmarks Bar';
-                else if (node.id === '2') displayTitle = chrome.i18n.getMessage('otherBookmarks') || 'Other Bookmarks';
-                else if (node.id === '3')
-                    displayTitle = chrome.i18n.getMessage('mobileBookmarks') || 'Mobile Bookmarks';
-                else displayTitle = 'Untitled Folder';
-            }
+            const displayTitle = bookmarkFolderTitle(node);
 
             const nameEl = folderEl.querySelector('.folder-name');
             nameEl.textContent = displayTitle;

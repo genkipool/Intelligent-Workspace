@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { SvelteSet } from 'svelte/reactivity';
 import { computeDayStreak, dayKey, fmtDur, fmtH } from '../../services/dashboard/format.js';
+import { pluralKey, localeOf } from '../../../utils/i18n.js';
 
 /**
  * The pomodoro-specific half of the dashboard maths. Durations, dates and the streak
@@ -101,11 +102,7 @@ export function computeKpis(d, allData, i18n, lang) {
     const avgFocus = totalCycles > 0 ? Math.round(totalFocus / totalCycles) : 0;
     const activeDays = days.size;
     const projects = projs.size;
-    // 'dashboardProject' (singular) does not exist in either locale, so with exactly
-    // one project the label read "1 dashboardProject". The pair below already carries
-    // the count and is what the project table uses for the same sentence.
-    const projLabel =
-        projects === 1 ? i18n('dashboardProjects_n', projects) : i18n('dashboardProjects_plural', projects);
+    const projLabel = i18n(pluralKey('dashboardProjects', projects, localeOf(lang), null), projects);
     const cyclesPerSess = d.length > 0 ? (totalCycles / d.length).toFixed(1) : 0;
     const intPerSess = d.length > 0 ? (totalInt / d.length).toFixed(1) : 0;
 

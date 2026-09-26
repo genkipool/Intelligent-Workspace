@@ -51,7 +51,7 @@
             class="resize-button"
             translate="no"
             onclick={onOpenResize}
-            title={$tt('openSettingsRules') || 'Open in tab'}
+            title={$tt('openRulesInTab')}
             aria-label={$t('openWebConfigRules') || 'Open web config'}
             aria-pressed="false"
         >

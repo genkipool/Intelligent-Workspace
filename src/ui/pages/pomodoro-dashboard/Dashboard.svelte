@@ -3,7 +3,14 @@
     import { compareNames } from '../../services/utils.js';
     import { onMount, onDestroy, mount, unmount } from 'svelte';
     import { SvelteSet, SvelteMap, SvelteDate } from 'svelte/reactivity';
-    import { showNotification } from '../../../utils/i18n.js';
+    import {
+        showNotification,
+        getCurrentLang,
+        loadMessages,
+        tooltipEntry,
+        pluralKey,
+        localeOf,
+    } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { t, i18nStore } from '../../stores/i18nStore.js';
@@ -13,7 +20,6 @@
    =============================================================== */
 
     import Sidebar from './components/Sidebar.svelte';
-    import TagFilter from './components/TagFilter.svelte';
     import KpiGrid from '../../components/dashboard/KpiGrid.svelte';
     import HourGrid from '../../components/dashboard/HourGrid.svelte';
     import Heatmap from '../../components/dashboard/Heatmap.svelte';
@@ -66,7 +72,6 @@
     let view = $state('dashboard');
 
     let apps = {
-        tagFilter: null,
         kpiGrid: null,
         hourGrid: null,
         heatmap: null,
@@ -99,27 +104,10 @@
     let _lang = 'en';
     const openFolders = new SvelteSet();
 
+    /** The shared dictionary of the language picked in the extension, English-backed. */
     async function _loadI18n() {
-        try {
-            const stored = await chrome.storage.local.get('preferred-language');
-            _lang = stored['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
-        } catch {
-            _lang = 'en';
-        }
-        try {
-            const url = chrome.runtime.getURL(`_locales/${_lang}/messages.json`);
-            const res = await fetch(url);
-            if (res.ok) {
-                _msgs = await res.json();
-                return;
-            }
-        } catch {}
-        // Fallback to English
-        try {
-            const url = chrome.runtime.getURL('_locales/en/messages.json');
-            const res = await fetch(url);
-            if (res.ok) _msgs = await res.json();
-        } catch {}
+        _lang = await getCurrentLang();
+        _msgs = await loadMessages(_lang);
     }
 
     /** Returns the localized message for a key, substituting $1, $2... */
@@ -133,12 +121,12 @@
     }
 
     /**
-     * The richer explanation a key carries in its `description`, for tooltips. The
-     * same thing `applyDomI18n` does for `data-i18n-title`, for the places that set a
-     * title from script rather than from an attribute.
+     * Tooltip text: `<key>_tooltip` when the control has hover text of its own, the
+     * label otherwise. The same thing `applyDomI18n` does for `data-i18n-title`, for
+     * the places that set a title from script rather than from an attribute.
      */
     function i18nTitle(key) {
-        return _msgs[key]?.description || i18n(key);
+        return tooltipEntry(_msgs, key)?.message || i18n(key);
     }
 
     /** Applies data-i18n / data-i18n-placeholder to the DOM */
@@ -152,8 +140,7 @@
         });
         document.querySelectorAll('[data-i18n-title]').forEach((el) => {
             const key = el.getAttribute('data-i18n-title');
-            // Use description field as tooltip text (richer explanation), fall back to message
-            el.title = _msgs[key]?.description || i18n(key);
+            el.title = i18nTitle(key);
         });
     }
 
@@ -424,11 +411,15 @@
         const sel = document.getElementById('tag-filter');
         if (!sel) return;
 
-        unmountApp('tagFilter');
-        // Keep the trigger button and drop only the stale options
-        const props = { tags, activeTag, allTagsLabel: i18n('dashboardAllTags') };
+        // Plain options rather than a mounted component: Svelte mounting <option>s into
+        // a customizable select left it with none at all, so the filter showed an
+        // empty button. The trigger button is kept; only the options are replaced.
         sel.querySelectorAll('option').forEach((o) => o.remove());
-        apps.tagFilter = mount(TagFilter, { target: sel, props });
+        sel.append(new Option(i18n('dashboardAllTags'), ''), ...tags.map((tag) => new Option(`#${tag}`, tag)));
+        // A customizable select copies the chosen option into <selectedcontent> only
+        // when the selection changes, so it is chosen again after the swap.
+        sel.selectedIndex = -1;
+        sel.value = tags.includes(activeTag) ? activeTag : '';
     }
 
     // --- KPIs ---------------------------------------------------------
@@ -500,7 +491,7 @@
         const dowSnap = rangeStart.getDay();
         rangeStart.setDate(rangeStart.getDate() - (dowSnap === 0 ? 6 : dowSnap - 1));
 
-        const locale = _lang === 'es' ? 'es-ES' : 'en-GB';
+        const locale = localeOf(_lang);
 
         // -- iterate weeks -> collect cells + month positions -------------
         const cells = [];
@@ -675,7 +666,7 @@
         const sorted = [...filteredData].sort((a, b) => a.savedAt - b.savedAt);
         const labels = sorted.map((_, i) => `#${i + 1}`);
         const dates = sorted.map((e) =>
-            new Date(e.savedAt).toLocaleDateString(_lang === 'es' ? 'es-ES' : 'en-GB', {
+            new Date(e.savedAt).toLocaleDateString(localeOf(_lang), {
                 day: '2-digit',
                 month: 'short',
             }),
@@ -1033,8 +1024,10 @@
 
         const sorted = Object.entries(proj).sort((a, b) => b[1].focus - a[1].focus);
         const n = sorted.length;
-        document.getElementById('project-count').textContent =
-            n === 1 ? i18n('dashboardProjects_n', n) : i18n('dashboardProjects_plural', n);
+        document.getElementById('project-count').textContent = i18n(
+            pluralKey('dashboardProjects', n, localeOf(_lang), _msgs),
+            n,
+        );
 
         const tbody = document.getElementById('project-table-body');
         const empty = document.getElementById('table-empty');
@@ -1324,7 +1317,7 @@
             document.getElementById('last-updated').textContent =
                 i18n('dashboardUpdated') +
                 ' ' +
-                new Date().toLocaleTimeString(_lang === 'es' ? 'es-ES' : 'en-GB', {
+                new Date().toLocaleTimeString(localeOf(_lang), {
                     hour: '2-digit',
                     minute: '2-digit',
                 });

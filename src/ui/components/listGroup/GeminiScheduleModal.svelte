@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../utils/i18n.js';
     import { get } from 'svelte/store';
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
@@ -232,7 +233,7 @@
                                             ', ',
                                         )}
                                     {:else}
-                                        {new Date(schedule.startDateTime).toLocaleDateString()} - {timesOf(
+                                        {new Date(schedule.startDateTime).toLocaleDateString(activeLocale())} - {timesOf(
                                             schedule,
                                         ).join(', ')}
                                     {/if}

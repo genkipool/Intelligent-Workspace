@@ -60,20 +60,32 @@
     "message": "Confirm"
   },
   "addFolderToExistingRule": {
-    "message": "Add folder to existing rule",
-    "description": "Add this folder to an existing rule"
+    "message": "Add folder to existing rule"
+  },
+  "addFolderToExistingRule_tooltip": {
+    "message": "Add this folder to an existing rule",
+    "description": "Hover text of the control whose label is “addFolderToExistingRule”."
   },
   "deleteBookmarkFolder": {
-    "message": "Delete folder",
-    "description": "Delete this bookmark folder"
+    "message": "Delete folder"
+  },
+  "deleteBookmarkFolder_tooltip": {
+    "message": "Delete this bookmark folder",
+    "description": "Hover text of the control whose label is “deleteBookmarkFolder”."
   },
   "folderCountTooltip": {
-    "message": "Folders",
-    "description": "Number of folders it contains"
+    "message": "Folders"
+  },
+  "folderCountTooltip_tooltip": {
+    "message": "Number of folders it contains",
+    "description": "Hover text of the control whose label is “folderCountTooltip”."
   },
   "bookmarkCountTooltip": {
-    "message": "Bookmarks",
-    "description": "Number of bookmarks it contains"
+    "message": "Bookmarks"
+  },
+  "bookmarkCountTooltip_tooltip": {
+    "message": "Number of bookmarks it contains",
+    "description": "Hover text of the control whose label is “bookmarkCountTooltip”."
   },
   "bookmarkBar": {
     "message": "Bookmarks bar"
@@ -90,8 +102,13 @@
   "bookmarkDeleted": {
     "message": "Bookmark deleted"
   },
-  "bookmarksDeleted": {
-    "message": "$1 bookmarks deleted"
+  "bookmarksDeleted_one": {
+    "message": "$1 bookmark deleted",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "bookmarksDeleted_other": {
+    "message": "$1 bookmarks deleted",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "noUrlsToCopy": {
     "message": "There are no URLs to copy"
@@ -196,7 +213,8 @@
     "message": "Save theme \"$1\""
   },
   "omnibarDeleteAllFilteredTabs": {
-    "message": "Close the $1 matching tabs"
+    "message": "Close the matching ones: $1",
+    "description": "Omnibar row that closes the tabs matching the filter. $1 is the counted phrase (omnibarTabCount)."
   },
   "openVideoPipTitle": {
     "message": "Open in picture-in-picture video"
@@ -207,15 +225,23 @@
   "screenshotUnarchived": {
     "message": "Screenshot unpinned"
   },
-  "themesExportedSuccessfully": {
-    "message": "$1 themes exported"
+  "themesExportedSuccessfully_one": {
+    "message": "$1 theme exported",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "themesExportedSuccessfully_other": {
+    "message": "$1 themes exported",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "scheduleDateTimeInPast": {
     "message": "The chosen date and time are in the past"
   },
   "editSchedule": {
-    "message": "Edit schedule",
-    "description": "Edit this schedule"
+    "message": "Edit schedule"
+  },
+  "editSchedule_tooltip": {
+    "message": "Edit this schedule",
+    "description": "Hover text of the control whose label is “editSchedule”."
   },
   "copied": {
     "message": "Copied!"
@@ -234,32 +260,53 @@
     "message": "Dashboard"
   },
   "dashboardSwitchDashboard": {
-    "message": "Switch dashboard",
-    "description": "Opens the list of dashboards: web activity and pomodoro."
+    "message": "Switch dashboard"
+  },
+  "dashboardSwitchDashboard_tooltip": {
+    "message": "Opens the list of dashboards: web activity and pomodoro.",
+    "description": "Hover text of the control whose label is “dashboardSwitchDashboard”."
   },
   "dashboardDragSection": {
-    "message": "Drag to move this section",
-    "description": "Changes the order of the dashboard sections. It is remembered."
+    "message": "Drag to move this section"
+  },
+  "dashboardDragSection_tooltip": {
+    "message": "Changes the order of the dashboard sections. It is remembered.",
+    "description": "Hover text of the control whose label is “dashboardDragSection”."
   },
   "dashboardDragPanel": {
-    "message": "Drag to move this panel",
-    "description": "Changes the order of the panels inside their section. It cannot leave it."
+    "message": "Drag to move this panel"
+  },
+  "dashboardDragPanel_tooltip": {
+    "message": "Changes the order of the panels inside their section. It cannot leave it.",
+    "description": "Hover text of the control whose label is “dashboardDragPanel”."
   },
   "dashboardWebPhases": {
-    "message": "Browsing during the timer",
-    "description": "Which sites were open while each pomodoro phase was running. Time browsed with no timer going appears in none of the three cards."
+    "message": "Browsing during the timer"
+  },
+  "dashboardWebPhases_tooltip": {
+    "message": "Which sites were open while each pomodoro phase was running. Time browsed with no timer going appears in none of the three cards.",
+    "description": "Hover text of the control whose label is “dashboardWebPhases”."
   },
   "dashboardWebPhaseFocus": {
-    "message": "During focus",
-    "description": "Time on each site while a focus block was running."
+    "message": "During focus"
+  },
+  "dashboardWebPhaseFocus_tooltip": {
+    "message": "Time on each site while a focus block was running.",
+    "description": "Hover text of the control whose label is “dashboardWebPhaseFocus”."
   },
   "dashboardWebPhaseShort": {
-    "message": "During short breaks",
-    "description": "Time on each site while a short break was running."
+    "message": "During short breaks"
+  },
+  "dashboardWebPhaseShort_tooltip": {
+    "message": "Time on each site while a short break was running.",
+    "description": "Hover text of the control whose label is “dashboardWebPhaseShort”."
   },
   "dashboardWebPhaseLong": {
-    "message": "During long breaks",
-    "description": "Time on each site while a long break was running."
+    "message": "During long breaks"
+  },
+  "dashboardWebPhaseLong_tooltip": {
+    "message": "Time on each site while a long break was running.",
+    "description": "Hover text of the control whose label is “dashboardWebPhaseLong”."
   },
   "dashboardWebPhaseEmpty": {
     "message": "No browsing in this phase"
@@ -293,8 +340,11 @@
     "description": "Open as popup window"
   },
   "openAsPipTitle": {
-    "message": "Open as Picture-in-Picture",
-    "description": "Open in Picture-in-Picture window"
+    "message": "Open as Picture-in-Picture"
+  },
+  "openAsPipTitle_tooltip": {
+    "message": "Open in Picture-in-Picture window",
+    "description": "Hover text of the control whose label is “openAsPipTitle”."
   },
   "openSelectionInPip": {
     "message": "Open selection in Picture-in-Picture",
@@ -341,16 +391,25 @@
     "description": "Keyboard shortcut to toggle auto-collapse timer"
   },
   "toggleCollapseTimerWithTimes": {
-    "message": "Right-click to configure collapse timer (Inactive: $1 min, Active: $2 min)",
-    "description": "Right-click to edit the collapse timer for groups"
+    "message": "Right-click to configure collapse timer (Inactive: $1 min, Active: $2 min)"
+  },
+  "toggleCollapseTimerWithTimes_tooltip": {
+    "message": "Right-click to edit the collapse timer for groups",
+    "description": "Hover text of the control whose label is “toggleCollapseTimerWithTimes”."
   },
   "enableToggleCollapseTimer": {
-    "message": "Enable timer",
-    "description": "Enable timer for grouping groups"
+    "message": "Enable timer"
+  },
+  "enableToggleCollapseTimer_tooltip": {
+    "message": "Enable timer for grouping groups",
+    "description": "Hover text of the control whose label is “enableToggleCollapseTimer”."
   },
   "disableToggleCollapseTimer": {
-    "message": "Disable timer",
-    "description": "Disable timer for grouping groups"
+    "message": "Disable timer"
+  },
+  "disableToggleCollapseTimer_tooltip": {
+    "message": "Disable timer for grouping groups",
+    "description": "Hover text of the control whose label is “disableToggleCollapseTimer”."
   },
   "selectLanguage": {
     "message": "Language:"
@@ -537,8 +596,11 @@
     "description": "Title for rules management page"
   },
   "listTabGroups": {
-    "message": "List Groups",
-    "description": "List groups in the sidebar"
+    "message": "List Groups"
+  },
+  "listTabGroups_tooltip": {
+    "message": "List groups in the sidebar",
+    "description": "Hover text of the control whose label is “listTabGroups”."
   },
   "editTitleModal": {
     "message": "Edit Rule",
@@ -765,8 +827,11 @@
     "description": "Label for real-time validation toggle in rule form"
   },
   "validateErrorsRealTime": {
-    "message": "Validate errors in real time",
-    "description": "validate errors in real time"
+    "message": "Validate errors in real time"
+  },
+  "validateErrorsRealTime_tooltip": {
+    "message": "validate errors in real time",
+    "description": "Hover text of the control whose label is “validateErrorsRealTime”."
   },
   "configureCollapseTimer": {
     "message": "Configure Collapse Timer",
@@ -869,16 +934,25 @@
     "description": ":"
   },
   "addRule": {
-    "message": "Add rule",
-    "description": "Add a new rule"
+    "message": "Add rule"
+  },
+  "addRule_tooltip": {
+    "message": "Add a new rule",
+    "description": "Hover text of the control whose label is “addRule”."
   },
   "importRules": {
-    "message": "Import rules",
-    "description": "Import rules from a file"
+    "message": "Import rules"
+  },
+  "importRules_tooltip": {
+    "message": "Import rules from a file",
+    "description": "Hover text of the control whose label is “importRules”."
   },
   "exportRules": {
-    "message": "Export rules",
-    "description": "Export rules to a file"
+    "message": "Export rules"
+  },
+  "exportRules_tooltip": {
+    "message": "Export rules to a file",
+    "description": "Hover text of the control whose label is “exportRules”."
   },
   "toggleSortGroups": {
     "message": "Sort groups alphabetically",
@@ -889,12 +963,18 @@
     "description": "Tooltip for the toggle all rules switch"
   },
   "starRule": {
-    "message": "Rule $1 added to favorites",
-    "description": "Add rule to favorites"
+    "message": "Rule $1 added to favorites"
+  },
+  "starRule_tooltip": {
+    "message": "Add rule to favorites",
+    "description": "Hover text of the control whose label is “starRule”."
   },
   "unstarRule": {
-    "message": "Rule $1 removed from favorites",
-    "description": "Remove rule from favorites"
+    "message": "Rule $1 removed from favorites"
+  },
+  "unstarRule_tooltip": {
+    "message": "Remove rule from favorites",
+    "description": "Hover text of the control whose label is “unstarRule”."
   },
   "urlUpdateCancelled": {
     "message": "$1 update canceled"
@@ -908,32 +988,53 @@
     "description": "Enable or disable the selected rule"
   },
   "changeRuleColor": {
-    "message": "Change rule color",
-    "description": "Change the color associated with the rule"
+    "message": "Change rule color"
+  },
+  "changeRuleColor_tooltip": {
+    "message": "Change the color associated with the rule",
+    "description": "Hover text of the control whose label is “changeRuleColor”."
   },
   "reorderRule": {
-    "message": "Reorder rule",
-    "description": "Drag to change the rule's order in the list"
+    "message": "Reorder rule"
+  },
+  "reorderRule_tooltip": {
+    "message": "Drag to change the rule's order in the list",
+    "description": "Hover text of the control whose label is “reorderRule”."
   },
   "selectLightTheme": {
-    "message": "Select Light Theme",
-    "description": "Select the light theme for the interface"
+    "message": "Select Light Theme"
+  },
+  "selectLightTheme_tooltip": {
+    "message": "Select the light theme for the interface",
+    "description": "Hover text of the control whose label is “selectLightTheme”."
   },
   "selectDarkTheme": {
-    "message": "Select Dark Theme",
-    "description": "Select the dark theme for the interface"
+    "message": "Select Dark Theme"
+  },
+  "selectDarkTheme_tooltip": {
+    "message": "Select the dark theme for the interface",
+    "description": "Hover text of the control whose label is “selectDarkTheme”."
   },
   "selectSystemTheme": {
-    "message": "Select System Theme",
-    "description": "Select the theme based on system preferences"
+    "message": "Select System Theme"
+  },
+  "selectSystemTheme_tooltip": {
+    "message": "Select the theme based on system preferences",
+    "description": "Hover text of the control whose label is “selectSystemTheme”."
   },
   "selectViridianTheme": {
-    "message": "Select Viridian Theme",
-    "description": "Select the viridian theme for the interface"
+    "message": "Select Viridian Theme"
+  },
+  "selectViridianTheme_tooltip": {
+    "message": "Select the viridian theme for the interface",
+    "description": "Hover text of the control whose label is “selectViridianTheme”."
   },
   "selectCustomTheme": {
-    "message": "Edit Custom Theme",
-    "description": "Select and edit a custom theme for the interface"
+    "message": "Edit Custom Theme"
+  },
+  "selectCustomTheme_tooltip": {
+    "message": "Select and edit a custom theme for the interface",
+    "description": "Hover text of the control whose label is “selectCustomTheme”."
   },
   "customizeActionColor": {
     "message": "Customize Action Color",
@@ -972,28 +1073,46 @@
     "description": "Adjust the color used to indicate errors in the interface"
   },
   "contributeWithBitcoin": {
-    "message": "Support with Bitcoin",
-    "description": "Copy the Bitcoin address"
+    "message": "Support with Bitcoin"
+  },
+  "contributeWithBitcoin_tooltip": {
+    "message": "Copy the Bitcoin address",
+    "description": "Hover text of the control whose label is “contributeWithBitcoin”."
   },
   "contributeWithCardano": {
-    "message": "Support with Cardano",
-    "description": "Copy the Cardano address"
+    "message": "Support with Cardano"
+  },
+  "contributeWithCardano_tooltip": {
+    "message": "Copy the Cardano address",
+    "description": "Hover text of the control whose label is “contributeWithCardano”."
   },
   "contributeWithRadix": {
-    "message": "Support with Radix",
-    "description": "Copy the Radix address"
+    "message": "Support with Radix"
+  },
+  "contributeWithRadix_tooltip": {
+    "message": "Copy the Radix address",
+    "description": "Hover text of the control whose label is “contributeWithRadix”."
   },
   "contributeWithPaypal": {
-    "message": "Support with PayPal",
-    "description": "Open the PayPal page to support"
+    "message": "Support with PayPal"
+  },
+  "contributeWithPaypal_tooltip": {
+    "message": "Open the PayPal page to support",
+    "description": "Hover text of the control whose label is “contributeWithPaypal”."
   },
   "contributeWithStripe": {
-    "message": "Support with card",
-    "description": "Open the form to pay by card"
+    "message": "Support with card"
+  },
+  "contributeWithStripe_tooltip": {
+    "message": "Open the form to pay by card",
+    "description": "Hover text of the control whose label is “contributeWithStripe”."
   },
   "contributeWithGooglePay": {
-    "message": "Support with Google Pay",
-    "description": "Open the form and pay with Google Pay"
+    "message": "Support with Google Pay"
+  },
+  "contributeWithGooglePay_tooltip": {
+    "message": "Open the form and pay with Google Pay",
+    "description": "Hover text of the control whose label is “contributeWithGooglePay”."
   },
   "openStripeContribution": {
     "message": "Open card payment form",
@@ -1004,16 +1123,22 @@
     "description": "ARIA label for payment button"
   },
   "contributeWithApplePay": {
-    "message": "Support with Apple Pay",
-    "description": "Open the form and pay with Apple Pay"
+    "message": "Support with Apple Pay"
+  },
+  "contributeWithApplePay_tooltip": {
+    "message": "Open the form and pay with Apple Pay",
+    "description": "Hover text of the control whose label is “contributeWithApplePay”."
   },
   "openApplePayContribution": {
     "message": "Open Apple Pay payment form",
     "description": "ARIA label for payment button"
   },
   "contributeWithEthereum": {
-    "message": "Support with Ethereum",
-    "description": "Copy the Ethereum address"
+    "message": "Support with Ethereum"
+  },
+  "contributeWithEthereum_tooltip": {
+    "message": "Copy the Ethereum address",
+    "description": "Hover text of the control whose label is “contributeWithEthereum”."
   },
   "copyEthereumAddress": {
     "message": "Copy Ethereum address",
@@ -1053,16 +1178,22 @@
     "description": "Disable alphabetical sorting of groups"
   },
   "enableAllRules": {
+    "message": "Enable all rules"
+  },
+  "enableAllRules_tooltip": {
     "message": "Enable all rules",
-    "description": "Enable all rules"
+    "description": "Hover text of the control whose label is “enableAllRules”."
   },
   "disableAllRules": {
     "message": "Disable all rules",
     "description": "Disable all rules"
   },
   "viewOriginalOrder": {
-    "message": "View in original order",
-    "description": "Restore the original order of the rules"
+    "message": "View in original order"
+  },
+  "viewOriginalOrder_tooltip": {
+    "message": "Restore the original order of the rules",
+    "description": "Hover text of the control whose label is “viewOriginalOrder”."
   },
   "expandAllRules": {
     "message": "Expand all rules",
@@ -1077,8 +1208,11 @@
     "description": "Expand rules section"
   },
   "collapseSection": {
-    "message": "Collapse rules section",
-    "description": "Collapse rules"
+    "message": "Collapse rules section"
+  },
+  "collapseSection_tooltip": {
+    "message": "Collapse rules",
+    "description": "Hover text of the control whose label is “collapseSection”."
   },
   "collapseUrlsButton": {
     "message": "Collapse rules",
@@ -1093,16 +1227,34 @@
     "description": "Unpins the rules page"
   },
   "backToMainPopup": {
-    "message": "Back to main menu",
-    "description": "Returns to the main menu"
+    "message": "Back to main menu"
+  },
+  "versionLabel": {
+    "message": "Version $1",
+    "description": "Heading of a release in the version history. $1 is the version number."
+  },
+  "toggleVersionDetails": {
+    "message": "Show or hide the changes in this version",
+    "description": "Button that expands a release in the version history."
+  },
+  "removeAttachment": {
+    "message": "Remove this attachment",
+    "description": "Button on a file attached to an assistant question."
+  },
+  "backToMainPopup_tooltip": {
+    "message": "Returns to the main menu",
+    "description": "Hover text of the control whose label is “backToMainPopup”."
   },
   "openRulesWebPage": {
     "message": "Open rules in a new tab",
     "description": "Opens the rules configuration page in a new tab"
   },
   "sortAlphabetically": {
-    "message": "Sort rules alphabetically",
-    "description": "Sorts the rules alphabetically"
+    "message": "Sort rules alphabetically"
+  },
+  "sortAlphabetically_tooltip": {
+    "message": "Sorts the rules alphabetically",
+    "description": "Hover text of the control whose label is “sortAlphabetically”."
   },
   "closeModal": {
     "message": "Close modal window",
@@ -1181,8 +1333,11 @@
     "description": "Successful restoration notification"
   },
   "cancelImport": {
-    "message": "Cancel import process",
-    "description": "Cancels the import process"
+    "message": "Cancel import process"
+  },
+  "cancelImport_tooltip": {
+    "message": "Cancels the import process",
+    "description": "Hover text of the control whose label is “cancelImport”."
   },
   "openRuleUrls": {
     "message": "Ctrl+Click to open all URLs for this rule",
@@ -1209,12 +1364,18 @@
     "description": "Remove from reading list"
   },
   "activateRule": {
-    "message": "Activate this rule",
-    "description": "click to activate the rule"
+    "message": "Activate this rule"
+  },
+  "activateRule_tooltip": {
+    "message": "click to activate the rule",
+    "description": "Hover text of the control whose label is “activateRule”."
   },
   "deactivateRule": {
-    "message": "Deactivate this rule",
-    "description": "Click to disable the rule"
+    "message": "Deactivate this rule"
+  },
+  "deactivateRule_tooltip": {
+    "message": "Click to disable the rule",
+    "description": "Hover text of the control whose label is “deactivateRule”."
   },
   "editDomain": {
     "message": "Edit this domain",
@@ -1225,20 +1386,23 @@
     "description": "Delete this domain"
   },
   "openRulesPage": {
-    "message": "Manage Rules",
-    "description": "Manage rules in the sidebar"
+    "message": "Manage Rules"
   },
-  "selectLangEn": {
-    "message": "Select English language",
-    "description": "Selects English as the UI language"
+  "openRulesPage_tooltip": {
+    "message": "Manage rules in the sidebar",
+    "description": "Hover text of the control whose label is “openRulesPage”."
   },
-  "selectLangEs": {
-    "message": "Select Spanish language",
-    "description": "Selects Spanish as the UI language"
+  "languageOptionTitle": {
+    "message": "Use $1 for the interface",
+    "description": "Language button in the popup. $1 is the language’s own name, e.g. “Español”."
   },
-  "toggleLanguage": {
-    "message": "Toggle between English and Spanish",
-    "description": "Switches between English and Spanish"
+  "languageSwitchTitle": {
+    "message": "Switch the interface language",
+    "description": "Switch between the two interface languages in the popup."
+  },
+  "languageSelectLabel": {
+    "message": "Interface language",
+    "description": "Accessible name of the language list, used once the extension ships more than two languages."
   },
   "exportTheme": {
     "message": "Export current custom theme",
@@ -1269,8 +1433,11 @@
     "description": "Select or drop a rules file"
   },
   "cancelThemeImport": {
-    "message": "Cancel theme import",
-    "description": "Cancels the theme import"
+    "message": "Cancel theme import"
+  },
+  "cancelThemeImport_tooltip": {
+    "message": "Cancels the theme import",
+    "description": "Hover text of the control whose label is “cancelThemeImport”."
   },
   "itemDeleted": {
     "message": "$1 deleted.",
@@ -1473,8 +1640,11 @@
     "description": "Notification when the 'warning' prefix is ​​removed from a group."
   },
   "miscSortCtrlClick": {
-    "message": "Right-click to configure Miscellaneous group position",
-    "description": "Right-click to configure Miscellaneous group position."
+    "message": "Right-click to configure Miscellaneous group position"
+  },
+  "miscSortCtrlClick_tooltip": {
+    "message": "Right-click to configure Miscellaneous group position.",
+    "description": "Hover text of the control whose label is “miscSortCtrlClick”."
   },
   "miscSortTitle": {
     "message": "Miscellaneous Group Position",
@@ -1589,12 +1759,18 @@
     "description": "Label for IP Address grouping toggle."
   },
   "enableThisGrouping": {
-    "message": "Enable this group type",
-    "description": "Enable Group"
+    "message": "Enable this group type"
+  },
+  "enableThisGrouping_tooltip": {
+    "message": "Enable Group",
+    "description": "Hover text of the control whose label is “enableThisGrouping”."
   },
   "disableThisGrouping": {
-    "message": "Disable this group type",
-    "description": "Disable Group"
+    "message": "Disable this group type"
+  },
+  "disableThisGrouping_tooltip": {
+    "message": "Disable Group",
+    "description": "Hover text of the control whose label is “disableThisGrouping”."
   },
   "resetClusterDefaults": {
     "message": "Reset Defaults",
@@ -1605,8 +1781,11 @@
     "description": "Notification when cluster settings are reset."
   },
   "settingsActions": {
-    "message": "Settings",
-    "description": "Advanced Options."
+    "message": "Settings"
+  },
+  "settingsActions_tooltip": {
+    "message": "Advanced Options.",
+    "description": "Hover text of the control whose label is “settingsActions”."
   },
   "featureAdvancedConfig": {
     "message": "Advanced configuration options for timers and sorting."
@@ -1627,16 +1806,25 @@
     "description": "Text in feedback section"
   },
   "reportAnIssue": {
-    "message": "Report an Issue on GitHub",
-    "description": "Report a problem on GitHub"
+    "message": "Report an Issue on GitHub"
+  },
+  "reportAnIssue_tooltip": {
+    "message": "Report a problem on GitHub",
+    "description": "Hover text of the control whose label is “reportAnIssue”."
   },
   "viewSourceCode": {
-    "message": "View the Code on GitHub",
-    "description": "Open the project's public repository on GitHub"
+    "message": "View the Code on GitHub"
+  },
+  "viewSourceCode_tooltip": {
+    "message": "Open the project's public repository on GitHub",
+    "description": "Hover text of the control whose label is “viewSourceCode”."
   },
   "sendAnEmail": {
-    "message": "Send an Email",
-    "description": "Send an email to the developer"
+    "message": "Send an Email"
+  },
+  "sendAnEmail_tooltip": {
+    "message": "Send an email to the developer",
+    "description": "Hover text of the control whose label is “sendAnEmail”."
   },
   "ThanksDesc_nameThanksDesc_part1": {
     "message": "I want to extend my deepest and most sincere gratitude to a person whose contribution has been absolutely fundamental to the success and quality of this project: ",
@@ -1854,8 +2042,11 @@
     "description": "Explanation of the 'commands' permission."
   },
   "copyEmailAddress": {
-    "message": "Copy email address",
-    "description": "Copy the developer's email address to the clipboard"
+    "message": "Copy email address"
+  },
+  "copyEmailAddress_tooltip": {
+    "message": "Copy the developer's email address to the clipboard",
+    "description": "Hover text of the control whose label is “copyEmailAddress”."
   },
   "configureStorageTitle": {
     "message": "Configure Rule Storage"
@@ -2383,6 +2574,10 @@
     "message": "Open Manage Rules side panel",
     "description": "Open Manage Rules side panel"
   },
+  "openRulesInTab": {
+    "message": "Open rule management in a tab",
+    "description": "Opens the rules page in a browser tab (context menu, keyboard shortcut and the resize button of the rules panel)."
+  },
   "openSettingsGemini": {
     "message": "Open AI Assistant side panel",
     "description": "Open AI Assistant side panel"
@@ -2419,12 +2614,18 @@
     "description": "Title for the saved themes page and header."
   },
   "storageSyncSavedLimit": {
-    "message": "Save themes to your Google account (synced across devices, limit of 20).",
-    "description": "Save themes to your Google account (synced across devices, limit of 20 themes)."
+    "message": "Save themes to your Google account (synced across devices, limit of 20)."
+  },
+  "storageSyncSavedLimit_tooltip": {
+    "message": "Save themes to your Google account (synced across devices, limit of 20 themes).",
+    "description": "Hover text of the control whose label is “storageSyncSavedLimit”."
   },
   "storageLocalSavedLimit": {
-    "message": "Save themes only on this computer (not synced, limit of 30).",
-    "description": "Save themes only on this computer (not synced, limit of 30 themes)."
+    "message": "Save themes only on this computer (not synced, limit of 30)."
+  },
+  "storageLocalSavedLimit_tooltip": {
+    "message": "Save themes only on this computer (not synced, limit of 30 themes).",
+    "description": "Hover text of the control whose label is “storageLocalSavedLimit”."
   },
   "backToThemeEditor": {
     "message": "Back to theme editor",
@@ -2546,9 +2747,19 @@
     "message": "Show Saved Themes",
     "description": "Show Saved Themes"
   },
-  "themesImportedSuccessfully": {
+  "themesImportedSuccessfully_one": {
+    "message": "$1 theme imported successfully.",
+    "description": "Notification message shown after successfully importing one or more themes. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "themesImportedSuccessfully_other": {
     "message": "$1 themes imported successfully.",
-    "description": "Notification message shown after successfully importing one or more themes.",
+    "description": "Notification message shown after successfully importing one or more themes. Form for any other count (CLDR \"other\").",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -2643,8 +2854,11 @@
     "description": "Title for the theme selection section in the settings modal."
   },
   "openThemeSelector": {
-    "message": "Open Theme Selector",
-    "description": "Open the theme selector side panel"
+    "message": "Open Theme Selector"
+  },
+  "openThemeSelector_tooltip": {
+    "message": "Open the theme selector side panel",
+    "description": "Hover text of the control whose label is “openThemeSelector”."
   },
   "openAllUrls": {
     "message": "Open all URLs",
@@ -2699,9 +2913,21 @@
     "message": "Tabs Removed",
     "description": "Notification title when tabs from a domain are successfully removed."
   },
-  "removeTabsByDomainSuccessMessage": {
+  "removeTabsByDomainSuccessMessage_one": {
+    "message": "Successfully removed $1 tab from the domain $2.",
+    "description": "Notification message after successfully removing tabs. Placeholders: $1 = number of tabs, $2 = domain name. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "removeTabsByDomainSuccessMessage_other": {
     "message": "Successfully removed $1 tabs from the domain $2.",
-    "description": "Notification message after successfully removing tabs. Placeholders: $1 = number of tabs, $2 = domain name.",
+    "description": "Notification message after successfully removing tabs. Placeholders: $1 = number of tabs, $2 = domain name. Form for any other count (CLDR \"other\").",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -2875,6 +3101,10 @@
   "collapseAllGroups": {
     "message": "Collapse all groups"
   },
+  "collapseAllGroups_tooltip": {
+    "message": "Collapse all groups",
+    "description": "Hover text of the control whose label is “collapseAllGroups”."
+  },
   "listGroupPagePinned": {
     "message": "List group page pinned"
   },
@@ -3007,8 +3237,11 @@
     "description": "Create Custom Theme"
   },
   "pickColorEyeDropper": {
-    "message": "Pick color from screen",
-    "description": "Pick color from screen using eyedropper"
+    "message": "Pick color from screen"
+  },
+  "pickColorEyeDropper_tooltip": {
+    "message": "Pick color from screen using eyedropper",
+    "description": "Hover text of the control whose label is “pickColorEyeDropper”."
   },
   "colorPickedAndCopied": {
     "message": "Color '$1' picked and copied to the clipboard",
@@ -3145,8 +3378,11 @@
     "description": "Perform queries to Gemini"
   },
   "addApiKeyBtn": {
-    "message": "Add API Key",
-    "description": "Add a Gemini API key so the assistant can answer"
+    "message": "Add API Key"
+  },
+  "addApiKeyBtn_tooltip": {
+    "message": "Add a Gemini API key so the assistant can answer",
+    "description": "Hover text of the control whose label is “addApiKeyBtn”."
   },
   "geminiFreeTier": {
     "message": "Free Tier",
@@ -3185,8 +3421,11 @@
     "description": "Enable web search"
   },
   "enableGeminiSearch": {
-    "message": "Click to enable search bar queries. Long click or Ctrl+Click to open Gemini queries in the side panel.",
-    "description": "Click to enable search bar queries.\n\n Long click or Ctrl+Click to open Gemini queries in the side panel."
+    "message": "Click to enable search bar queries. Long click or Ctrl+Click to open Gemini queries in the side panel."
+  },
+  "enableGeminiSearch_tooltip": {
+    "message": "Click to enable search bar queries.\n\n Long click or Ctrl+Click to open Gemini queries in the side panel.",
+    "description": "Hover text of the control whose label is “enableGeminiSearch”."
   },
   "localAiAcceptBtn": {
     "message": "Accept",
@@ -3393,12 +3632,18 @@
     "description": "Placeholder and label for the API key input field."
   },
   "showApiKeyTitle": {
-    "message": "Show API Key",
-    "description": "Show the key in clear text."
+    "message": "Show API Key"
+  },
+  "showApiKeyTitle_tooltip": {
+    "message": "Show the key in clear text.",
+    "description": "Hover text of the control whose label is “showApiKeyTitle”."
   },
   "hideApiKeyTitle": {
-    "message": "Hide API Key",
-    "description": "Hide the key again."
+    "message": "Hide API Key"
+  },
+  "hideApiKeyTitle_tooltip": {
+    "message": "Hide the key again.",
+    "description": "Hover text of the control whose label is “hideApiKeyTitle”."
   },
   "geminiApiKeySaved": {
     "message": "Gemini API Key saved successfully.",
@@ -3453,8 +3698,11 @@
     "description": "Label for the API statistics details element"
   },
   "copyApiKeyTooltip": {
-    "message": "Copy API key",
-    "description": "Copy this key to the clipboard."
+    "message": "Copy API key"
+  },
+  "copyApiKeyTooltip_tooltip": {
+    "message": "Copy this key to the clipboard.",
+    "description": "Hover text of the control whose label is “copyApiKeyTooltip”."
   },
   "apiKeyCopied": {
     "message": "API key copied to clipboard",
@@ -3530,16 +3778,50 @@
     "description": "Copy all URLs in this group"
   },
   "copySubGroupAllUrls": {
-    "message": "Copy all URLs in the domain",
-    "description": "Copy all URLs in this group"
+    "message": "Copy all URLs in the domain"
+  },
+  "copySubGroupAllUrls_tooltip": {
+    "message": "Copy all URLs in this group",
+    "description": "Hover text of the control whose label is “copySubGroupAllUrls”."
   },
   "copyUrl": {
     "message": "Copy URL",
     "description": "Copy URL"
   },
+  "selectionPreviewPageTitle": {
+    "message": "Preview — Intelligent Workspace",
+    "description": "Tab title of the window that shows a text selection or an image opened from the context menu."
+  },
+  "selectionPreviewSelection": {
+    "message": "Selected text",
+    "description": "Heading of the preview window when it shows text selected on a page."
+  },
+  "selectionPreviewImage": {
+    "message": "Image viewer",
+    "description": "Heading of the preview window when it shows an image."
+  },
+  "selectionPreviewNoId": {
+    "message": "Nothing to preview: the window was opened without content.",
+    "description": "Shown in the preview window when its address carries no content id."
+  },
+  "selectionPreviewNotFound": {
+    "message": "This preview is no longer available. Open it again from the page.",
+    "description": "Shown when the temporary content of the preview was cleared, for example after restarting the browser."
+  },
+  "selectionPreviewScreenshotNotFound": {
+    "message": "This capture is no longer in the gallery.",
+    "description": "Shown when a gallery capture opened in the preview window has been deleted."
+  },
+  "selectionPreviewUrlCopied": {
+    "message": "Address copied!",
+    "description": "Confirmation on the copy button after copying an image address."
+  },
   "showDownloads": {
-    "message": "Show downloadable files",
-    "description": "Show downloadable files."
+    "message": "Show downloadable files"
+  },
+  "showDownloads_tooltip": {
+    "message": "Show downloadable files.",
+    "description": "Hover text of the control whose label is “showDownloads”."
   },
   "downloadableFiles": {
     "message": "Downloads",
@@ -3562,12 +3844,25 @@
     "description": "Button text to deselect all items in the download list."
   },
   "download": {
-    "message": "Download",
-    "description": "Save this file to your computer."
+    "message": "Download"
   },
-  "downloadsStarted": {
+  "download_tooltip": {
+    "message": "Save this file to your computer.",
+    "description": "Hover text of the control whose label is “download”."
+  },
+  "downloadsStarted_one": {
+    "message": "Started $1 download.",
+    "description": "Notification after initiating downloads. $1 is a placeholder. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "downloadsStarted_other": {
     "message": "Started $1 downloads.",
-    "description": "Notification after initiating downloads. $1 is a placeholder.",
+    "description": "Notification after initiating downloads. $1 is a placeholder. Form for any other count (CLDR \"other\").",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -3616,8 +3911,11 @@
     "description": "Reader View"
   },
   "openInPanel": {
+    "message": "Open in Panel"
+  },
+  "openInPanel_tooltip": {
     "message": "Open in Panel",
-    "description": "Open in Panel"
+    "description": "Hover text of the control whose label is “openInPanel”."
   },
   "openInNewTab": {
     "message": "Open in New Tab",
@@ -3711,6 +4009,22 @@
         "content": "$1"
       }
     }
+  },
+  "themeScheduleActivated": {
+    "message": "Scheduled theme applied",
+    "description": "Notification title when a scheduled theme starts."
+  },
+  "themeScheduleActivatedBody": {
+    "message": "$1 is now in use",
+    "description": "Notification body when a scheduled theme starts. $1 is the theme name."
+  },
+  "themeScheduleDeactivated": {
+    "message": "Scheduled theme ended",
+    "description": "Notification title when a scheduled theme ends."
+  },
+  "themeScheduleDeactivatedBody": {
+    "message": "Back to your previous theme",
+    "description": "Notification body when a scheduled theme ends."
   },
   "maxSchedulesReached": {
     "message": "You have reached the limit of $1 schedules. Please delete an existing one to add a new one.",
@@ -3829,6 +4143,14 @@
     "message": "Enables the file downloader feature, allowing you to save content directly from tabs.",
     "description": "Permission description for downloads."
   },
+  "permDownloadsOpen": {
+    "message": "Opens a download from the panel’s download list when you click it, like Chrome’s own downloads page.",
+    "description": "About page, permissions list: why downloads.open is requested."
+  },
+  "permAllUrls": {
+    "message": "Lets the features you use work on any site: grouping tabs by their domain, the keyboard shortcuts and the omnibar, site time limits, and the web view in the side panel.",
+    "description": "About page, permissions list: why access to all sites is requested."
+  },
   "permSystemDisplay": {
     "message": "Used to get information about the screen to properly manage the split-screen functionality.",
     "description": "Permission description for system.display."
@@ -3870,8 +4192,11 @@
     "description": "Clear Conversation History"
   },
   "captureWebpage": {
-    "message": "Capture webpage",
-    "description": "Capture webpage. Ctrl+Click enables area capture."
+    "message": "Capture webpage"
+  },
+  "captureWebpage_tooltip": {
+    "message": "Capture webpage. Ctrl+Click enables area capture.",
+    "description": "Hover text of the control whose label is “captureWebpage”."
   },
   "captureFullPage": {
     "message": "Capture webpage",
@@ -3985,8 +4310,11 @@
     "description": "Error playing audio."
   },
   "stopReadingAloud": {
-    "message": "Stop reading",
-    "description": "Stop reading the page aloud."
+    "message": "Stop reading"
+  },
+  "stopReadingAloud_tooltip": {
+    "message": "Stop reading the page aloud.",
+    "description": "Hover text of the control whose label is “stopReadingAloud”."
   },
   "errorDeletingScreenshots": {
     "message": "Error deleting screenshots. Please try again.",
@@ -4021,8 +4349,11 @@
     "description": "Add domain to an existing rule"
   },
   "createRuleFromSubgroup": {
-    "message": "Create new rule for this domain",
-    "description": "Create new rule from this domain"
+    "message": "Create new rule for this domain"
+  },
+  "createRuleFromSubgroup_tooltip": {
+    "message": "Create new rule from this domain",
+    "description": "Hover text of the control whose label is “createRuleFromSubgroup”."
   },
   "addToExistingRule": {
     "message": "Add to Existing Rule"
@@ -4205,36 +4536,31 @@
     "description": "Button text to add a new card/item to the categorized list (Kanban)."
   },
   "noteStatsWordsChars": {
-    "message": "$1 words / $2 chars",
-    "description": "Statistics for a text note, showing word and character count.",
-    "placeholders": {
-      "word_count": {
-        "content": "$1",
-        "example": "123"
-      },
-      "char_count": {
-        "content": "$2",
-        "example": "789"
-      }
-    }
+    "message": "$1 w / $2 ch",
+    "description": "Compact statistics on a note card; abbreviated so it reads the same for any number. $1 words, $2 characters."
   },
   "noteEditorStatsWordsChars": {
-    "message": "$1 words / $2 characters",
-    "description": "Full statistics in the note text editor, showing word and character count.",
-    "placeholders": {
-      "word_count": {
-        "content": "$1",
-        "example": "5"
-      },
-      "char_count": {
-        "content": "$2",
-        "example": "49"
-      }
-    }
+    "message": "$1 / $2",
+    "description": "Note editor footer. $1 is the word count and $2 the character count, both already pluralised (noteWordCount, noteCharCount)."
+  },
+  "noteWordCount_one": {
+    "message": "$1 word",
+    "description": "Word count of a note. $1 is the number."
+  },
+  "noteWordCount_other": {
+    "message": "$1 words",
+    "description": "Word count of a note. $1 is the number."
+  },
+  "noteCharCount_one": {
+    "message": "$1 character",
+    "description": "Character count of a note. $1 is the number."
+  },
+  "noteCharCount_other": {
+    "message": "$1 characters",
+    "description": "Character count of a note. $1 is the number."
   },
   "charCountLimit": {
     "message": "$1/$2 characters",
-    "description": "Character counter with maximum limit.",
     "placeholders": {
       "current": {
         "content": "$1",
@@ -4245,6 +4571,10 @@
         "example": "1000"
       }
     }
+  },
+  "charCountLimit_tooltip": {
+    "message": "Character counter with maximum limit.",
+    "description": "Hover text of the control whose label is “charCountLimit”."
   },
   "editCookies": {
     "message": "Edit Cookies",
@@ -4259,8 +4589,11 @@
     "description": "Reset"
   },
   "deleteCookie": {
-    "message": "Delete Cookie",
-    "description": "Delete this cookie from the site."
+    "message": "Delete Cookie"
+  },
+  "deleteCookie_tooltip": {
+    "message": "Delete this cookie from the site.",
+    "description": "Hover text of the control whose label is “deleteCookie”."
   },
   "cookieValue": {
     "message": "Value",
@@ -4307,8 +4640,8 @@
     "description": "Cookies updated successfully."
   },
   "noteStatsTooltipText": {
-    "message": "Shows the word and character count ($1 words / $2 chars).",
-    "description": "$1 words and $2 characters in this note."
+    "message": "$1 and $2 in this note.",
+    "description": "Hover text of the note statistics. $1 and $2 are the pluralised word and character counts."
   },
   "noteStatsTooltipChecklist": {
     "message": "Shows completed tasks out of the total ($1/$2).",
@@ -4347,16 +4680,22 @@
     "description": "Title for the full-screen cookie import panel."
   },
   "backToCookieEditor": {
-    "message": "Back to Cookie Editor",
-    "description": "Leave the import panel and go back to the cookie list."
+    "message": "Back to Cookie Editor"
+  },
+  "backToCookieEditor_tooltip": {
+    "message": "Leave the import panel and go back to the cookie list.",
+    "description": "Hover text of the control whose label is “backToCookieEditor”."
   },
   "dragDropCookie": {
     "message": "Drag & drop a .json file here or click to select one",
     "description": "Instructional text inside the drag and drop area for cookies."
   },
   "selectCookieFile": {
-    "message": "Select a cookie file to import",
-    "description": "Drop a cookie file here, or click to choose one."
+    "message": "Select a cookie file to import"
+  },
+  "selectCookieFile_tooltip": {
+    "message": "Drop a cookie file here, or click to choose one.",
+    "description": "Hover text of the control whose label is “selectCookieFile”."
   },
   "cookiesImported": {
     "message": "Successfully imported $COUNT$ cookies.",
@@ -4631,8 +4970,11 @@
     "description": "Status label for a temporary conversation that has not been permanently saved."
   },
   "conversationEditedDateTooltip": {
-    "message": "Last modified",
-    "description": "When something was last added to this conversation."
+    "message": "Last modified"
+  },
+  "conversationEditedDateTooltip_tooltip": {
+    "message": "When something was last added to this conversation.",
+    "description": "Hover text of the control whose label is “conversationEditedDateTooltip”."
   },
   "errorDuplicateConversationTitle": {
     "message": "A conversation with this title already exists.",
@@ -4701,7 +5043,7 @@
     "message": "Cumulative clipboard copy"
   },
   "appendClipboardDesc": {
-    "message": "When text is selected and the assigned key is pressed, copies the selection and appends it with a newline to the previous clipboard content."
+    "message": "With text selected, the assigned key adds the selection to what you copied before in the browser, separated by a blank line, and leaves the whole collection on the clipboard. An ordinary copy (Ctrl+C) starts a new collection."
   },
   "appendClipboardToggleEnable": {
     "message": "Enable cumulative clipboard copy",
@@ -4849,8 +5191,11 @@
     "description": "Placeholder text for the command description."
   },
   "addCommandButton": {
-    "message": "Add Command",
-    "description": "Save this command so it appears in the list."
+    "message": "Add Command"
+  },
+  "addCommandButton_tooltip": {
+    "message": "Save this command so it appears in the list.",
+    "description": "Hover text of the control whose label is “addCommandButton”."
   },
   "currentCommandsSectionTitle": {
     "message": "Current Custom Commands",
@@ -4918,31 +5263,49 @@
     "message": "Scroll to bottom"
   },
   "hintDesc_u": {
-    "message": "Scroll to top (Page/Panel)",
-    "description": "Scroll page to top"
+    "message": "Scroll to top (Page/Panel)"
+  },
+  "hintDesc_u_tooltip": {
+    "message": "Scroll page to top",
+    "description": "Hover text of the control whose label is “hintDesc_u”."
   },
   "hintDesc_r": {
-    "message": "Reload page",
-    "description": "Reload current page"
+    "message": "Reload page"
+  },
+  "hintDesc_r_tooltip": {
+    "message": "Reload current page",
+    "description": "Hover text of the control whose label is “hintDesc_r”."
   },
   "hintDesc_R": {
-    "message": "Force reload (clear cache)",
-    "description": "Force reload current page clearing cache"
+    "message": "Force reload (clear cache)"
+  },
+  "hintDesc_R_tooltip": {
+    "message": "Force reload current page clearing cache",
+    "description": "Hover text of the control whose label is “hintDesc_R”."
   },
   "hintDesc_h_tab_page": {
-    "message": "Go to Previous Page",
-    "description": "Go back in history"
+    "message": "Go to Previous Page"
+  },
+  "hintDesc_h_tab_page_tooltip": {
+    "message": "Go back in history",
+    "description": "Hover text of the control whose label is “hintDesc_h_tab_page”."
   },
   "hintDesc_l_tab_page": {
-    "message": "Go to Next Page",
-    "description": "Go forward in history"
+    "message": "Go to Next Page"
+  },
+  "hintDesc_l_tab_page_tooltip": {
+    "message": "Go forward in history",
+    "description": "Hover text of the control whose label is “hintDesc_l_tab_page”."
   },
   "hintDesc_c": {
-    "message": "Copy URL",
-    "description": "Copy current URL"
+    "message": "Copy URL"
+  },
+  "hintDesc_c_tooltip": {
+    "message": "Copy current URL",
+    "description": "Hover text of the control whose label is “hintDesc_c”."
   },
   "hintDesc_y": {
-    "message": "Copy selected text and append to clipboard with newline"
+    "message": "Copy the selection and add it to what you collected before"
   },
   "hintDesc_vs": {
     "message": "View page source"
@@ -4964,6 +5327,10 @@
   },
   "hintDesc_group_tab_nav": {
     "message": "Navigate to tab N of group (e.g. Alt+gog4+Enter)"
+  },
+  "hintGroupTabKeys": {
+    "message": "<group><n>",
+    "description": "Key placeholder in the shortcut list for “Alt + group number + tab number”. Keep the angle brackets."
   },
   "hintDesc_t": {
     "message": "Open a new tab"
@@ -5110,20 +5477,32 @@
     "description": "Enable domain visibility first to use this option"
   },
   "copy": {
-    "message": "Copy",
-    "description": "Copy it to the clipboard."
+    "message": "Copy"
+  },
+  "copy_tooltip": {
+    "message": "Copy it to the clipboard.",
+    "description": "Hover text of the control whose label is “copy”."
   },
   "openUrl": {
-    "message": "Open URL",
-    "description": "Open this address in a new tab."
+    "message": "Open URL"
+  },
+  "openUrl_tooltip": {
+    "message": "Open this address in a new tab.",
+    "description": "Hover text of the control whose label is “openUrl”."
   },
   "moreOptions": {
-    "message": "More options",
-    "description": "Show the rest of the actions for this download."
+    "message": "More options"
+  },
+  "moreOptions_tooltip": {
+    "message": "Show the rest of the actions for this download.",
+    "description": "Hover text of the control whose label is “moreOptions”."
   },
   "removeScheduleTime": {
-    "message": "Remove time",
-    "description": "Remove this time from the schedule."
+    "message": "Remove time"
+  },
+  "removeScheduleTime_tooltip": {
+    "message": "Remove this time from the schedule.",
+    "description": "Hover text of the control whose label is “removeScheduleTime”."
   },
   "enableChildFoldersFirstTooltip": {
     "message": "Show child folders first to use this option",
@@ -5141,9 +5520,13 @@
     "message": "Tabs without Group",
     "description": "Title for the virtual group that contains all ungrouped tabs."
   },
-  "allOrphanNotesDeleted": {
+  "allOrphanNotesDeleted_one": {
+    "message": "$1 note deleted.",
+    "description": "Message after deleting orphan / general notes. Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "allOrphanNotesDeleted_other": {
     "message": "$1 notes deleted.",
-    "description": "Message after deleting orphan / general notes."
+    "description": "Message after deleting orphan / general notes. Form for any other count (CLDR \"other\")."
   },
   "noOrphanNotesToDelete": {
     "message": "No notes to delete.",
@@ -5153,9 +5536,19 @@
     "message": "No screenshots to delete.",
     "description": "Message when there are no screenshots to delete."
   },
-  "allOrphanScreenshotsDeleted": {
+  "allOrphanScreenshotsDeleted_one": {
+    "message": "$1 orphan screenshot has been deleted.",
+    "description": "Confirmation message shown after deleting all screenshots that are no longer associated with any existing group. The $COUNT$ placeholder will be replaced by the number of deleted items. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "allOrphanScreenshotsDeleted_other": {
     "message": "All $1 orphan screenshots have been deleted.",
-    "description": "Confirmation message shown after deleting all screenshots that are no longer associated with any existing group. The $COUNT$ placeholder will be replaced by the number of deleted items.",
+    "description": "Confirmation message shown after deleting all screenshots that are no longer associated with any existing group. The $COUNT$ placeholder will be replaced by the number of deleted items. Form for any other count (CLDR \"other\").",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -5423,13 +5816,23 @@
   "restoreAllGroupsTooltip": {
     "message": "Restore all backed up groups. This can consume significant resources on less powerful PCs."
   },
-  "allGroupsBackedUp": {
-    "message": "$1 inactive groups have been backed up.",
+  "allGroupsBackedUp_one": {
+    "message": "$1 inactive group has been backed up.",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
     "placeholders": {
       "1": {
         "content": "$1"
       }
     }
+  },
+  "allGroupsBackedUp_other": {
+    "message": "$1 inactive groups have been backed up.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "allGroupsRestored": {
     "message": "All $1 backed up groups have been restored.",
@@ -5446,8 +5849,11 @@
     "message": "No groups in backup to restore."
   },
   "backupGroup": {
+    "message": "Backup this group"
+  },
+  "backupGroup_tooltip": {
     "message": "Backup this group",
-    "description": "Backup this group"
+    "description": "Hover text of the control whose label is “backupGroup”."
   },
   "restoreGroup": {
     "message": "Restore this group",
@@ -5884,8 +6290,11 @@
     "message": "Collapse all downloads"
   },
   "deleteHistoryForDate": {
-    "message": "Delete history for this date",
-    "description": "Delete every history entry from this day."
+    "message": "Delete history for this date"
+  },
+  "deleteHistoryForDate_tooltip": {
+    "message": "Delete every history entry from this day.",
+    "description": "Hover text of the control whose label is “deleteHistoryForDate”."
   },
   "deleteHistoryConfirmDesc": {
     "message": "Are you sure you want to delete all history items for:",
@@ -6105,7 +6514,27 @@
     "message": "Invalid expansion"
   },
   "val_trigger_too_long": {
-    "message": "Trigger '$1' exceeds 20 characters"
+    "message": "Trigger '$1' is longer than 5 characters"
+  },
+  "val_invalid_variables": {
+    "message": "Invalid variables format",
+    "description": "Import of navigation settings: a snippet whose variables are not a list."
+  },
+  "val_too_many_variables": {
+    "message": "Snippet '$1' has too many variables (max 50)",
+    "description": "Import of navigation settings. $1 is the snippet trigger."
+  },
+  "val_prefix_site": {
+    "message": "Site: $1",
+    "description": "Prefix of an import error about a site shortcut. $1 is the error."
+  },
+  "val_prefix_snippet": {
+    "message": "Snippet: $1",
+    "description": "Prefix of an import error about a snippet. $1 is the error."
+  },
+  "val_prefix_override": {
+    "message": "Shortcut: $1",
+    "description": "Prefix of an import error about a changed built-in shortcut. $1 is the error."
   },
   "val_expansion_too_long": {
     "message": "Expansion for '$1' too long"
@@ -6356,6 +6785,10 @@
         "content": "$1"
       }
     }
+  },
+  "omnibarPressEnterToSearch": {
+    "message": "Press Enter to search",
+    "description": "Second line of an omnibar site-search row (g:, y:, w:…)."
   },
   "omnibarPrefixGoogleTitle": {
     "message": "Google"
@@ -6670,6 +7103,10 @@
   "omnibarAiError": {
     "message": "❌ Error querying AI",
     "description": "Omnibar error state when AI query fails"
+  },
+  "omnibarAiNoApiKey": {
+    "message": "Add a Gemini API key in the assistant (side panel) to ask the AI.",
+    "description": "Shown in the omnibar when an AI query or the agent runs with no API key saved."
   },
   "omnibarPrefixPopupTitle": {
     "message": "Open Popup"
@@ -7068,10 +7505,10 @@
     "message": "Browse and reopen recently closed tabs"
   },
   "omnibarPrefixGroupsTitle": {
-    "message": "Tab Groups"
+    "message": "Tab groups (Delete)"
   },
   "omnibarPrefixGroupsDesc": {
-    "message": "Search and switch between tab groups"
+    "message": "Search and close groups with all their tabs"
   },
   "omnibarPrefixDeepSearchTitle": {
     "message": "Deep Search"
@@ -7116,7 +7553,7 @@
     "message": "Browse and search your saved notes"
   },
   "omnibarResultHint": {
-    "message": "Enter to copy . Ctrl+Enter to expand"
+    "message": "Enter to copy · Ctrl+Enter to expand"
   },
   "prefixSelector": {
     "message": "Show prefix selector"
@@ -7154,16 +7591,25 @@
     "description": "Placeholder for snippet search"
   },
   "deleteAllNotesContext": {
-    "message": "Delete all notes in this context",
-    "description": "Delete every note filed under this context. It cannot be undone."
+    "message": "Delete all notes in this context"
+  },
+  "deleteAllNotesContext_tooltip": {
+    "message": "Delete every note filed under this context. It cannot be undone.",
+    "description": "Hover text of the control whose label is “deleteAllNotesContext”."
   },
   "viewOrphanScreenshots": {
-    "message": "View orphan screenshots",
-    "description": "Show captures whose group no longer exists."
+    "message": "View orphan screenshots"
+  },
+  "viewOrphanScreenshots_tooltip": {
+    "message": "Show captures whose group no longer exists.",
+    "description": "Hover text of the control whose label is “viewOrphanScreenshots”."
   },
   "uploadFileTooltip": {
-    "message": "Upload file",
-    "description": "Choose a file from your computer."
+    "message": "Upload file"
+  },
+  "uploadFileTooltip_tooltip": {
+    "message": "Choose a file from your computer.",
+    "description": "Hover text of the control whose label is “uploadFileTooltip”."
   },
   "configureCollapseExpandAllTabs": {
     "message": "Configure Collapse/Expand All Tabs shortcut",
@@ -7872,16 +8318,25 @@
     "description": "Tooltip shown on agent button while a task is running"
   },
   "geminiChangeModelTooltip": {
-    "message": "Change AI model",
-    "description": "Pick which AI model answers."
+    "message": "Change AI model"
+  },
+  "geminiChangeModelTooltip_tooltip": {
+    "message": "Pick which AI model answers.",
+    "description": "Hover text of the control whose label is “geminiChangeModelTooltip”."
   },
   "geminiPreviousModel": {
-    "message": "Previous model",
-    "description": "Switch to the previous AI model"
+    "message": "Previous model"
+  },
+  "geminiPreviousModel_tooltip": {
+    "message": "Switch to the previous AI model",
+    "description": "Hover text of the control whose label is “geminiPreviousModel”."
   },
   "geminiNextModel": {
-    "message": "Next model",
-    "description": "Switch to the next AI model"
+    "message": "Next model"
+  },
+  "geminiNextModel_tooltip": {
+    "message": "Switch to the next AI model",
+    "description": "Hover text of the control whose label is “geminiNextModel”."
   },
   "agentModeTitleEnable": {
     "message": "Activate agent mode, AI controls the extension, for example: create the sports rule with the websites football.com, tennis.com, f1.com",
@@ -7892,8 +8347,11 @@
     "description": "Title for disabling agent mode"
   },
   "resendQuery": {
-    "message": "Resend query",
-    "description": "Send this query again and replace its answer"
+    "message": "Resend query"
+  },
+  "resendQuery_tooltip": {
+    "message": "Send this query again and replace its answer",
+    "description": "Hover text of the control whose label is “resendQuery”."
   },
   "toolGetOpenTabs": {
     "message": "📋 Getting open tabs…"
@@ -7919,8 +8377,13 @@
   "toolCloseTab": {
     "message": "❌ Closing tab $1"
   },
-  "toolCloseTabs": {
-    "message": "❌ Closing $1 tabs"
+  "toolCloseTabs_one": {
+    "message": "❌ Closing $1 tab",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "toolCloseTabs_other": {
+    "message": "❌ Closing $1 tabs",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "toolDuplicateTab": {
     "message": "📄 Duplicating current tab…"
@@ -8047,16 +8510,25 @@
     "description": "Pomodoro panel title"
   },
   "pomodoroWork": {
-    "message": "Pomodoro",
-    "description": "Pomodoro work session"
+    "message": "Pomodoro"
+  },
+  "pomodoroWork_tooltip": {
+    "message": "Pomodoro work session",
+    "description": "Hover text of the control whose label is “pomodoroWork”."
   },
   "pomodoroShortBreak": {
-    "message": "Short Break",
-    "description": "The short rest between one pomodoro and the next."
+    "message": "Short Break"
+  },
+  "pomodoroShortBreak_tooltip": {
+    "message": "The short rest between one pomodoro and the next.",
+    "description": "Hover text of the control whose label is “pomodoroShortBreak”."
   },
   "pomodoroLongBreak": {
-    "message": "Long Break",
-    "description": "The longer rest that closes a cycle of pomodoros."
+    "message": "Long Break"
+  },
+  "pomodoroLongBreak_tooltip": {
+    "message": "The longer rest that closes a cycle of pomodoros.",
+    "description": "Hover text of the control whose label is “pomodoroLongBreak”."
   },
   "pomodoroStart": {
     "message": "Start",
@@ -8111,12 +8583,18 @@
     "description": "Total pomodoros to complete the task"
   },
   "pomodoroSound": {
-    "message": "Sound notifications",
-    "description": "Play a chime when a phase ends."
+    "message": "Sound notifications"
+  },
+  "pomodoroSound_tooltip": {
+    "message": "Play a chime when a phase ends.",
+    "description": "Hover text of the control whose label is “pomodoroSound”."
   },
   "pomodoroAutostart": {
-    "message": "Auto-start next session",
-    "description": "Start the next session without waiting for you to press play."
+    "message": "Auto-start next session"
+  },
+  "pomodoroAutostart_tooltip": {
+    "message": "Start the next session without waiting for you to press play.",
+    "description": "Hover text of the control whose label is “pomodoroAutostart”."
   },
   "pomodoroProjectName": {
     "message": "Project name",
@@ -8131,8 +8609,11 @@
     "description": "Project folder field label"
   },
   "pomodoroStats": {
-    "message": "Statistics",
-    "description": "Where the hours went: sessions, focus time and streaks."
+    "message": "Statistics"
+  },
+  "pomodoroStats_tooltip": {
+    "message": "Where the hours went: sessions, focus time and streaks.",
+    "description": "Hover text of the control whose label is “pomodoroStats”."
   },
   "pomodoroStatsFocusTime": {
     "message": "Focus time",
@@ -8179,16 +8660,25 @@
     "description": "Sessions stat label (fully completed pomodoro sets)"
   },
   "pomodoroCreateNote": {
-    "message": "Create pomodoro note",
-    "description": "Create a note during pomodoro session"
+    "message": "Create pomodoro note"
+  },
+  "pomodoroCreateNote_tooltip": {
+    "message": "Create a note during pomodoro session",
+    "description": "Hover text of the control whose label is “pomodoroCreateNote”."
   },
   "pomodoroTaskReset": {
-    "message": "Fully reset task (zeroes all statistics)",
-    "description": "Reset task and zero out stats"
+    "message": "Fully reset task (zeroes all statistics)"
+  },
+  "pomodoroTaskReset_tooltip": {
+    "message": "Reset task and zero out stats",
+    "description": "Hover text of the control whose label is “pomodoroTaskReset”."
   },
   "pomodoroTaskFinish": {
-    "message": "Finish pomodoro task",
-    "description": "Finish the current pomodoro task"
+    "message": "Finish pomodoro task"
+  },
+  "pomodoroTaskFinish_tooltip": {
+    "message": "Finish the current pomodoro task",
+    "description": "Hover text of the control whose label is “pomodoroTaskFinish”."
   },
   "pomodoroSaveStats": {
     "message": "Save statistics to history",
@@ -8527,10 +9017,10 @@
   "dashboardMaxSessions": {
     "message": "Max. $1 $2 in one day"
   },
-  "dashboardProjects_n": {
+  "dashboardProjects_one": {
     "message": "$1 project"
   },
-  "dashboardProjects_plural": {
+  "dashboardProjects_other": {
     "message": "$1 projects"
   },
   "dashboardSessionsTotal": {
@@ -8561,116 +9051,197 @@
     "message": "h"
   },
   "titleFilterToday": {
-    "message": "Today",
-    "description": "Show only sessions completed today"
+    "message": "Today"
+  },
+  "titleFilterToday_tooltip": {
+    "message": "Show only sessions completed today",
+    "description": "Hover text of the control whose label is “titleFilterToday”."
   },
   "titleFilter7Days": {
-    "message": "7 days",
-    "description": "Show sessions from the last 7 days"
+    "message": "7 days"
+  },
+  "titleFilter7Days_tooltip": {
+    "message": "Show sessions from the last 7 days",
+    "description": "Hover text of the control whose label is “titleFilter7Days”."
   },
   "titleFilter30Days": {
-    "message": "30 days",
-    "description": "Show sessions from the last 30 days"
+    "message": "30 days"
+  },
+  "titleFilter30Days_tooltip": {
+    "message": "Show sessions from the last 30 days",
+    "description": "Hover text of the control whose label is “titleFilter30Days”."
   },
   "titleFilter3Months": {
-    "message": "3 months",
-    "description": "Show sessions from the last 3 months"
+    "message": "3 months"
+  },
+  "titleFilter3Months_tooltip": {
+    "message": "Show sessions from the last 3 months",
+    "description": "Hover text of the control whose label is “titleFilter3Months”."
   },
   "titleFilterAll": {
-    "message": "All",
-    "description": "Show all recorded sessions with no time limit"
+    "message": "All"
+  },
+  "titleFilterAll_tooltip": {
+    "message": "Show all recorded sessions with no time limit",
+    "description": "Hover text of the control whose label is “titleFilterAll”."
   },
   "titleTagFilter": {
-    "message": "Tag",
-    "description": "Filter sessions by project tag"
+    "message": "Tag"
+  },
+  "titleTagFilter_tooltip": {
+    "message": "Filter sessions by project tag",
+    "description": "Hover text of the control whose label is “titleTagFilter”."
   },
   "titleSummarySection": {
-    "message": "Summary",
-    "description": "Key metrics for the period: focus time, sessions, cycles, efficiency, active days and best session"
+    "message": "Summary"
+  },
+  "titleSummarySection_tooltip": {
+    "message": "Key metrics for the period: focus time, sessions, cycles, efficiency, active days and best session",
+    "description": "Hover text of the control whose label is “titleSummarySection”."
   },
   "titleStreaksSection": {
-    "message": "Streaks",
-    "description": "Consecutive active day streaks and hourly usage patterns"
+    "message": "Streaks"
+  },
+  "titleStreaksSection_tooltip": {
+    "message": "Consecutive active day streaks and hourly usage patterns",
+    "description": "Hover text of the control whose label is “titleStreaksSection”."
   },
   "titleCurrentStreak": {
-    "message": "Current streak",
-    "description": "Number of consecutive days up to today with at least one completed session"
+    "message": "Current streak"
+  },
+  "titleCurrentStreak_tooltip": {
+    "message": "Number of consecutive days up to today with at least one completed session",
+    "description": "Hover text of the control whose label is “titleCurrentStreak”."
   },
   "titleBestStreak": {
-    "message": "Best streak",
-    "description": "Maximum consecutive days with recorded activity across full history"
+    "message": "Best streak"
+  },
+  "titleBestStreak_tooltip": {
+    "message": "Maximum consecutive days with recorded activity across full history",
+    "description": "Hover text of the control whose label is “titleBestStreak”."
   },
   "titleHourDistrib": {
-    "message": "By hour",
-    "description": "Distribution of accumulated focus time throughout the day, from 0:00 to 23:00"
+    "message": "By hour"
+  },
+  "titleHourDistrib_tooltip": {
+    "message": "Distribution of accumulated focus time throughout the day, from 0:00 to 23:00",
+    "description": "Hover text of the control whose label is “titleHourDistrib”."
   },
   "titleActivity52": {
-    "message": "Activity",
-    "description": "Daily activity view for the last 52 weeks. Cell colour indicates sessions completed that day"
+    "message": "Activity"
+  },
+  "titleActivity52_tooltip": {
+    "message": "Daily activity view for the last 52 weeks. Cell colour indicates sessions completed that day",
+    "description": "Hover text of the control whose label is “titleActivity52”."
   },
   "titleHeatmap": {
-    "message": "Heat map",
-    "description": "Grid with one cell per day. Colour ranges from grey (no activity) to the main colour (10+ sessions)"
+    "message": "Heat map"
+  },
+  "titleHeatmap_tooltip": {
+    "message": "Grid with one cell per day. Colour ranges from grey (no activity) to the main colour (10+ sessions)",
+    "description": "Hover text of the control whose label is “titleHeatmap”."
   },
   "titleTimeEff": {
-    "message": "Time",
-    "description": "Charts for daily focus and break time, distribution by weekday, and per-session efficiency"
+    "message": "Time"
+  },
+  "titleTimeEff_tooltip": {
+    "message": "Charts for daily focus and break time, distribution by weekday, and per-session efficiency",
+    "description": "Hover text of the control whose label is “titleTimeEff”."
   },
   "titleFocusBreakChart": {
-    "message": "Focus/Break",
-    "description": "Stacked bars by day: blue = focus hours, grey = break hours. Hover to see the daily total"
+    "message": "Focus/Break"
+  },
+  "titleFocusBreakChart_tooltip": {
+    "message": "Stacked bars by day: blue = focus hours, grey = break hours. Hover to see the daily total",
+    "description": "Hover text of the control whose label is “titleFocusBreakChart”."
   },
   "titleWeekdayChart": {
-    "message": "By day",
-    "description": "Average focus hours by day of the week. Useful for identifying your most productive days"
+    "message": "By day"
+  },
+  "titleWeekdayChart_tooltip": {
+    "message": "Average focus hours by day of the week. Useful for identifying your most productive days",
+    "description": "Hover text of the control whose label is “titleWeekdayChart”."
   },
   "titleEffChart": {
-    "message": "Efficiency",
-    "description": "Per-session efficiency: percentage of active time over total time (focus ÷ focus+break). Line is the 5-session rolling average"
+    "message": "Efficiency"
+  },
+  "titleEffChart_tooltip": {
+    "message": "Per-session efficiency: percentage of active time over total time (focus ÷ focus+break). Line is the 5-session rolling average",
+    "description": "Hover text of the control whose label is “titleEffChart”."
   },
   "titleProjectSection": {
-    "message": "Projects",
-    "description": "Analysis of focus time and cycles distributed by project"
+    "message": "Projects"
+  },
+  "titleProjectSection_tooltip": {
+    "message": "Analysis of focus time and cycles distributed by project",
+    "description": "Hover text of the control whose label is “titleProjectSection”."
   },
   "titleProjectBar": {
-    "message": "Focus by project",
-    "description": "Total focus hours per project, sorted highest to lowest (top 12)"
+    "message": "Focus by project"
+  },
+  "titleProjectBar_tooltip": {
+    "message": "Total focus hours per project, sorted highest to lowest (top 12)",
+    "description": "Hover text of the control whose label is “titleProjectBar”."
   },
   "titleDonut": {
-    "message": "Distribution",
-    "description": "Distribution of total time between focus, break and interruptions"
+    "message": "Distribution"
+  },
+  "titleDonut_tooltip": {
+    "message": "Distribution of total time between focus, break and interruptions",
+    "description": "Hover text of the control whose label is “titleDonut”."
   },
   "titleCyclesChart": {
-    "message": "Cycles",
-    "description": "Completed Pomodoro cycles per project, sorted highest to lowest (top 10)"
+    "message": "Cycles"
+  },
+  "titleCyclesChart_tooltip": {
+    "message": "Completed Pomodoro cycles per project, sorted highest to lowest (top 10)",
+    "description": "Hover text of the control whose label is “titleCyclesChart”."
   },
   "titleBreakdownSection": {
-    "message": "Breakdown",
-    "description": "Project summary table and list of the latest individual sessions"
+    "message": "Breakdown"
+  },
+  "titleBreakdownSection_tooltip": {
+    "message": "Project summary table and list of the latest individual sessions",
+    "description": "Hover text of the control whose label is “titleBreakdownSection”."
   },
   "titleProjectTable": {
-    "message": "Table",
-    "description": "Per-project summary: sessions, focus time, completed cycles, interruptions and average efficiency"
+    "message": "Table"
+  },
+  "titleProjectTable_tooltip": {
+    "message": "Per-project summary: sessions, focus time, completed cycles, interruptions and average efficiency",
+    "description": "Hover text of the control whose label is “titleProjectTable”."
   },
   "titleTimeline": {
-    "message": "Recent",
-    "description": "Latest recorded sessions with date, project, focus time and individual efficiency"
+    "message": "Recent"
+  },
+  "titleTimeline_tooltip": {
+    "message": "Latest recorded sessions with date, project, focus time and individual efficiency",
+    "description": "Hover text of the control whose label is “titleTimeline”."
   },
   "muteAllTabs": {
+    "message": "Mute all tabs"
+  },
+  "muteAllTabs_tooltip": {
     "message": "Mute all tabs",
-    "description": "Mute all tabs"
+    "description": "Hover text of the control whose label is “muteAllTabs”."
   },
   "unmuteAllTabs": {
     "message": "Unmute all tabs",
     "description": "Unmute all tabs"
   },
   "toggleMuteMute": {
-    "message": "Mute",
-    "description": "Mute this tab"
+    "message": "Mute"
+  },
+  "toggleMuteMute_tooltip": {
+    "message": "Mute this tab",
+    "description": "Hover text of the control whose label is “toggleMuteMute”."
   },
   "toggleMuteUnmute": {
-    "message": "Unmute",
-    "description": "Unmute this tab"
+    "message": "Unmute"
+  },
+  "toggleMuteUnmute_tooltip": {
+    "message": "Unmute this tab",
+    "description": "Hover text of the control whose label is “toggleMuteUnmute”."
   },
   "prefixQueryAIAgent": {
     "message": "Query AI Agent to perform actions"
@@ -8694,8 +9265,11 @@
     "message": "❌ AI agent error"
   },
   "pomodoroDashboard": {
-    "message": "Open Dashboard",
-    "description": "Open Pomodoro Dashboard"
+    "message": "Open Dashboard"
+  },
+  "pomodoroDashboard_tooltip": {
+    "message": "Open Pomodoro Dashboard",
+    "description": "Hover text of the control whose label is “pomodoroDashboard”."
   },
   "pomodoroMethodLabel": {
     "message": "Method",
@@ -8718,8 +9292,11 @@
     "description": "Time method (count to end time)"
   },
   "pomodoroMethodPauseAsStop": {
-    "message": "Pause as Stop",
-    "description": "Convert pause to stop in stopwatch mode"
+    "message": "Pause as Stop"
+  },
+  "pomodoroMethodPauseAsStop_tooltip": {
+    "message": "Convert pause to stop in stopwatch mode",
+    "description": "Hover text of the control whose label is “pomodoroMethodPauseAsStop”."
   },
   "pomodoroTimerHours": {
     "message": "Hours",
@@ -8789,18 +9366,36 @@
     "message": "Cycle: group of pomodoros ending with a long break. Session: one complete task from start to finish",
     "description": "Cycle: group of pomodoros ending with a long break. Session: one complete task from start to finish"
   },
-  "pomodoroUnitSessionsTitle": {
-    "message": "With $1 pomodoros you finish the task. Each completed task counts as a session",
-    "description": "Sessions unit title",
+  "pomodoroUnitSessionsTitle_one": {
+    "message": "With $1 pomodoro you finish the task. Each completed task counts as a session",
+    "description": "Sessions unit title Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
     "placeholders": {
       "1": {
         "content": "$1"
       }
     }
   },
-  "pomodoroUnitCycleInfoTitle": {
+  "pomodoroUnitSessionsTitle_other": {
+    "message": "With $1 pomodoros you finish the task. Each completed task counts as a session",
+    "description": "Sessions unit title Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pomodoroUnitCycleInfoTitle_one": {
+    "message": "With $1 pomodoro you complete a cycle (then comes the long break)",
+    "description": "Cycle info title Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pomodoroUnitCycleInfoTitle_other": {
     "message": "With $1 pomodoros you complete a cycle (then comes the long break)",
-    "description": "Cycle info title",
+    "description": "Cycle info title Form for any other count (CLDR \"other\").",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -8900,12 +9495,18 @@
     "description": "Import button for Pomodoro statistics"
   },
   "dashboardExportJSON": {
-    "message": "Export Statistics (JSON)",
-    "description": "Save your statistics to a JSON file."
+    "message": "Export Statistics (JSON)"
+  },
+  "dashboardExportJSON_tooltip": {
+    "message": "Save your statistics to a JSON file.",
+    "description": "Hover text of the control whose label is “dashboardExportJSON”."
   },
   "dashboardImportJSON": {
-    "message": "Import Statistics (JSON)",
-    "description": "Load statistics back in from a JSON file."
+    "message": "Import Statistics (JSON)"
+  },
+  "dashboardImportJSON_tooltip": {
+    "message": "Load statistics back in from a JSON file.",
+    "description": "Hover text of the control whose label is “dashboardImportJSON”."
   },
   "pomodoroStatsTotalAll": {
     "message": "Totals (all)",
@@ -9058,9 +9659,9 @@
   "otherGroupsDeleted": {
     "message": "Other groups closed successfully"
   },
-  "confirmDeleteOtherGroups": {
-    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
-    "description": "Confirmation message asking user if they want to close other groups in this window and stating the group to keep.",
+  "confirmDeleteOtherGroups_one": {
+    "message": "Are you sure you want to close $1 group in this window except the group \"$2\"?",
+    "description": "Confirmation message asking user if they want to close other groups in this window and stating the group to keep. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -9072,13 +9673,13 @@
       }
     }
   },
-  "confirmDeleteOtherGroupsSingle": {
-    "message": "Are you sure you want to close 1 group in this window except the group \"$2\"?",
-    "description": "Confirmation message asking user if they want to close 1 group in this window and stating the group to keep.",
+  "confirmDeleteOtherGroups_other": {
+    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
+    "description": "Confirmation message asking user if they want to close other groups in this window and stating the group to keep. Form for any other count (CLDR \"other\").",
     "placeholders": {
       "count": {
         "content": "$1",
-        "example": "1"
+        "example": "3"
       },
       "keepGroup": {
         "content": "$2",
@@ -9100,9 +9701,9 @@
       }
     }
   },
-  "confirmDeleteAllGroupsInWindow": {
-    "message": "Are you sure you want to close $1 groups in this window?",
-    "description": "Confirmation message asking user if they want to close all groups in this window when there is no active group.",
+  "confirmDeleteAllGroupsInWindow_one": {
+    "message": "Are you sure you want to close $1 group in this window?",
+    "description": "Confirmation message asking user if they want to close all groups in this window when there is no active group. Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -9110,9 +9711,15 @@
       }
     }
   },
-  "confirmDeleteAllGroupsInWindowSingle": {
-    "message": "Are you sure you want to close 1 group in this window?",
-    "description": "Confirmation message asking user if they want to close 1 group in this window when there is no active group."
+  "confirmDeleteAllGroupsInWindow_other": {
+    "message": "Are you sure you want to close $1 groups in this window?",
+    "description": "Confirmation message asking user if they want to close all groups in this window when there is no active group. Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   },
   "noOtherGroupsToClose": {
     "message": "No other groups to close in this window"
@@ -9136,8 +9743,11 @@
     "message": "Clear reading list"
   },
   "sortAlphabeticallyButton": {
-    "message": "Sort Alphabetically",
-    "description": "Sort items alphabetically"
+    "message": "Sort Alphabetically"
+  },
+  "sortAlphabeticallyButton_tooltip": {
+    "message": "Sort items alphabetically",
+    "description": "Hover text of the control whose label is “sortAlphabeticallyButton”."
   },
   "overwriteRules": {
     "message": "Overwrite existing rules with imported ones",
@@ -9152,12 +9762,18 @@
     "description": "Title displayed when a page fails to load in reader view."
   },
   "showYouTubePlayer": {
-    "message": "Show YouTube player",
-    "description": "Bring the hidden player back into view."
+    "message": "Show YouTube player"
+  },
+  "showYouTubePlayer_tooltip": {
+    "message": "Bring the hidden player back into view.",
+    "description": "Hover text of the control whose label is “showYouTubePlayer”."
   },
   "closeYouTubePlayer": {
-    "message": "Close YouTube player",
-    "description": "Close the hidden player and stop its audio."
+    "message": "Close YouTube player"
+  },
+  "closeYouTubePlayer_tooltip": {
+    "message": "Close the hidden player and stop its audio.",
+    "description": "Hover text of the control whose label is “closeYouTubePlayer”."
   },
   "listGroupFeatures": {
     "message": "List & Group Management Features",
@@ -9565,8 +10181,13 @@
   "omnibarClickCaptureTab": {
     "message": "Click or Enter to capture. Space / Ctrl+Click to select several."
   },
-  "omnibarCaptureGroupHint": {
-    "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all."
+  "omnibarCaptureGroupHint_one": {
+    "message": "Capture the whole group ($1 tab). Space / Ctrl+Click picks it.",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "omnibarCaptureGroupHint_other": {
+    "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all.",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "omnibarClickDeleteTab": {
     "message": "Click to delete. Space / Ctrl+Click to select, Shift+Click to select range."
@@ -9594,15 +10215,24 @@
     "message": "Closes all tabs inside these groups"
   },
   "omnibarDeleteAllGroupsDetail": {
-    "message": "Delete $1 groups and $2 tabs",
-    "placeholders": {
-      "1": {
-        "content": "$1"
-      },
-      "2": {
-        "content": "$2"
-      }
-    }
+    "message": "Delete $1 and $2",
+    "description": "Omnibar row that closes groups and their tabs. $1 and $2 are the counted phrases (omnibarGroupCount, omnibarTabCount)."
+  },
+  "omnibarGroupCount_one": {
+    "message": "$1 group",
+    "description": "Number of tab groups in an omnibar delete row. $1 is the count."
+  },
+  "omnibarGroupCount_other": {
+    "message": "$1 groups",
+    "description": "Number of tab groups in an omnibar delete row. $1 is the count."
+  },
+  "omnibarTabCount_one": {
+    "message": "$1 tab",
+    "description": "Number of tabs in an omnibar delete row. $1 is the count."
+  },
+  "omnibarTabCount_other": {
+    "message": "$1 tabs",
+    "description": "Number of tabs in an omnibar delete row. $1 is the count."
   },
   "omnibarDeleteAllTabs": {
     "message": "Delete all tabs ($1)",
@@ -9744,15 +10374,28 @@
     }
   },
   "omnibarDeleteAllRulesDetail": {
-    "message": "Delete $1 rules and $2 domains",
-    "placeholders": {
-      "1": {
-        "content": "$1"
-      },
-      "2": {
-        "content": "$2"
-      }
-    }
+    "message": "Delete $1 and $2",
+    "description": "Omnibar row that deletes rules and domains. $1 and $2 are the counted phrases (omnibarRuleCount, omnibarDomainCount)."
+  },
+  "omnibarDeleteDomains": {
+    "message": "Delete $1",
+    "description": "Omnibar row that deletes only domains. $1 is the counted phrase (omnibarDomainCount)."
+  },
+  "omnibarRuleCount_one": {
+    "message": "$1 rule",
+    "description": "Number of rules, in the omnibar delete row. $1 is the count."
+  },
+  "omnibarRuleCount_other": {
+    "message": "$1 rules",
+    "description": "Number of rules, in the omnibar delete row. $1 is the count."
+  },
+  "omnibarDomainCount_one": {
+    "message": "$1 domain",
+    "description": "Number of domains, in the omnibar delete row. $1 is the count."
+  },
+  "omnibarDomainCount_other": {
+    "message": "$1 domains",
+    "description": "Number of domains, in the omnibar delete row. $1 is the count."
   },
   "omnibarDeleteAllRulesDesc": {
     "message": "Deletes all these rules"
@@ -9800,13 +10443,23 @@
       }
     }
   },
-  "omnibarGroupBackup": {
-    "message": "Group Backup ($1 tabs)",
+  "omnibarGroupBackup_one": {
+    "message": "Group Backup ($1 tab)",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
     "placeholders": {
       "1": {
         "content": "$1"
       }
     }
+  },
+  "omnibarGroupBackup_other": {
+    "message": "Group Backup ($1 tabs)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "omnibarRuleColorUpdated": {
     "message": "Rule color updated to $1",
@@ -10198,16 +10851,8 @@
     "description": "Message shown when restoring selected backup groups"
   },
   "omnibarBackupAllGroups": {
-    "message": "Backup all groups ($1 groups, $2 tabs)",
-    "placeholders": {
-      "1": {
-        "content": "$1"
-      },
-      "2": {
-        "content": "$2"
-      }
-    },
-    "description": "Special action item title for backing up all filtered groups"
+    "message": "Backup all groups ($1, $2)",
+    "description": "Phrases $1 and $2 are already pluralised (omnibarGroupCount, omnibarTabCount)."
   },
   "omnibarBackupAllGroupsDesc": {
     "message": "Backs up all these groups",
@@ -10232,16 +10877,8 @@
     "description": "Special action item title when restoring filtered backup groups"
   },
   "omnibarRestoreAllGroupsDetail": {
-    "message": "Restore all backups ($1 groups, $2 tabs)",
-    "placeholders": {
-      "1": {
-        "content": "$1"
-      },
-      "2": {
-        "content": "$2"
-      }
-    },
-    "description": "Special action item title with group and tab counts for restoring all backups"
+    "message": "Restore all backups ($1, $2)",
+    "description": "Phrases $1 and $2 are already pluralised (omnibarGroupCount, omnibarTabCount)."
   },
   "omnibarRestoreAllGroupsDesc": {
     "message": "Restores all these backups",
@@ -10405,16 +11042,25 @@
     "message": "Activate Snippets Menu"
   },
   "quickAccessNotesBtn": {
-    "message": "View notes",
-    "description": "Opens the notes view with every note saved, whatever group it came from"
+    "message": "View notes"
+  },
+  "quickAccessNotesBtn_tooltip": {
+    "message": "Opens the notes view with every note saved, whatever group it came from",
+    "description": "Hover text of the control whose label is “quickAccessNotesBtn”."
   },
   "quickAccessGalleryBtn": {
-    "message": "View gallery",
-    "description": "Opens the screenshot gallery with every capture saved, whatever group it came from"
+    "message": "View gallery"
+  },
+  "quickAccessGalleryBtn_tooltip": {
+    "message": "Opens the screenshot gallery with every capture saved, whatever group it came from",
+    "description": "Hover text of the control whose label is “quickAccessGalleryBtn”."
   },
   "webActivityTitle": {
-    "message": "Web activity",
-    "description": "Time and visits recorded per site"
+    "message": "Web activity"
+  },
+  "webActivityTitle_tooltip": {
+    "message": "Time and visits recorded per site",
+    "description": "Hover text of the control whose label is “webActivityTitle”."
   },
   "webActivityDashboardTitle": {
     "message": "Web Activity Dashboard",
@@ -10475,8 +11121,11 @@
     "message": "Search sites"
   },
   "webActivityAllSites": {
-    "message": "All sites",
-    "description": "Clears the site filter and shows every site again"
+    "message": "All sites"
+  },
+  "webActivityAllSites_tooltip": {
+    "message": "Clears the site filter and shows every site again",
+    "description": "Hover text of the control whose label is “webActivityAllSites”."
   },
   "webActivityNoSites": {
     "message": "No sites recorded in this period"
@@ -10500,12 +11149,18 @@
     "message": "Show only the sites in one category"
   },
   "webActivityExport": {
-    "message": "Export",
-    "description": "Saves the whole record — days, limits and settings — as a JSON file"
+    "message": "Export"
+  },
+  "webActivityExport_tooltip": {
+    "message": "Saves the whole record — days, limits and settings — as a JSON file",
+    "description": "Hover text of the control whose label is “webActivityExport”."
   },
   "webActivityImport": {
-    "message": "Import",
-    "description": "Merges an exported file into the record instead of replacing it"
+    "message": "Import"
+  },
+  "webActivityImport_tooltip": {
+    "message": "Merges an exported file into the record instead of replacing it",
+    "description": "Hover text of the control whose label is “webActivityImport”."
   },
   "webActivityUpdatedAt": {
     "message": "Updated at $1"
@@ -10523,8 +11178,11 @@
     "message": "Browse for a while and the time, the visits and the patterns will show up here."
   },
   "webActivitySummaryTitle": {
-    "message": "General summary",
-    "description": "The headline figures for the period selected"
+    "message": "General summary"
+  },
+  "webActivitySummaryTitle_tooltip": {
+    "message": "The headline figures for the period selected",
+    "description": "Hover text of the control whose label is “webActivitySummaryTitle”."
   },
   "webActivityPatterns": {
     "message": "Patterns"
@@ -10757,8 +11415,13 @@
     "message": "Five more minutes",
     "description": "Lifts the block for a while. It is recorded as a snooze, not as removing the limit."
   },
-  "webActivitySnoozeWithTime": {
-    "message": "Grants $1 minutes of grace period. It is recorded as a snooze, not as removing the limit."
+  "webActivitySnoozeWithTime_one": {
+    "message": "Grants $1 minute of grace period. It is recorded as a snooze, not as removing the limit.",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "webActivitySnoozeWithTime_other": {
+    "message": "Grants $1 minutes of grace period. It is recorded as a snooze, not as removing the limit.",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "webActivitySnoozed": {
     "message": "Block postponed"
@@ -10788,8 +11451,11 @@
     "message": "Limit saved"
   },
   "webActivityFieldSite": {
-    "message": "Site",
-    "description": "Just the hostname, without https:// — pasting a full address works, only the host is kept"
+    "message": "Site"
+  },
+  "webActivityFieldSite_tooltip": {
+    "message": "Just the hostname, without https:// — pasting a full address works, only the host is kept",
+    "description": "Hover text of the control whose label is “webActivityFieldSite”."
   },
   "webActivitySiteRequired": {
     "message": "Type a web address"
@@ -10851,8 +11517,11 @@
     "message": "Minutes"
   },
   "webActivityClearAll": {
-    "message": "Delete everything",
-    "description": "Removes every day on record and the recent visits. Limits and settings are kept."
+    "message": "Delete everything"
+  },
+  "webActivityClearAll_tooltip": {
+    "message": "Removes every day on record and the recent visits. Limits and settings are kept.",
+    "description": "Hover text of the control whose label is “webActivityClearAll”."
   },
   "webActivityClearAllConfirm": {
     "message": "Delete the whole activity history?"
@@ -10887,8 +11556,13 @@
   "webActivityBlockedGoBack": {
     "message": "Go back"
   },
-  "webActivityBlockedSnooze": {
-    "message": "$1 more minutes"
+  "webActivityBlockedSnooze_one": {
+    "message": "$1 more minute",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "webActivityBlockedSnooze_other": {
+    "message": "$1 more minutes",
+    "description": "Form for any other count (CLDR \"other\")."
   },
   "webActivityBlockedFooter": {
     "message": "You set this yourself, from the web activity dashboard. You can change it there."
@@ -11236,8 +11910,11 @@
     "description": "The categories you added yourself"
   },
   "webActivitySettings": {
-    "message": "Settings",
-    "description": "Rules, categories and how the activity is recorded"
+    "message": "Settings"
+  },
+  "webActivitySettings_tooltip": {
+    "message": "Rules, categories and how the activity is recorded",
+    "description": "Hover text of the control whose label is “webActivitySettings”."
   },
   "webActivitySettingsHint": {
     "message": "Rules, categories and how the activity is recorded",
@@ -11252,12 +11929,18 @@
     "description": "Every site with a time limit or a schedule"
   },
   "webActivitySettingsRulesHint": {
-    "message": "Every site with an allowance or a schedule, whether or not you have opened it lately.",
-    "description": "Every site with an allowance or a schedule, whether or not you have opened it lately"
+    "message": "Every site with an allowance or a schedule, whether or not you have opened it lately."
+  },
+  "webActivitySettingsRulesHint_tooltip": {
+    "message": "Every site with an allowance or a schedule, whether or not you have opened it lately",
+    "description": "Hover text of the control whose label is “webActivitySettingsRulesHint”."
   },
   "webActivitySettingsPassword": {
-    "message": "Block password",
-    "description": "A pause between wanting to lift a block and lifting it. It encrypts nothing: anyone with access to the browser profile can get past it."
+    "message": "Block password"
+  },
+  "webActivitySettingsPassword_tooltip": {
+    "message": "A pause between wanting to lift a block and lifting it. It encrypts nothing: anyone with access to the browser profile can get past it.",
+    "description": "Hover text of the control whose label is “webActivitySettingsPassword”."
   },
   "webActivitySettingsPasswordHint": {
     "message": "Ask for a password before switching off, editing or deleting a rule"
@@ -11280,15 +11963,21 @@
     "message": "Stored as a salted SHA-256 hash; the password itself is never kept anywhere."
   },
   "webActivityBlockPasswordRepeat": {
-    "message": "Repeat",
-    "description": "Again, to rule out a typo."
+    "message": "Repeat"
+  },
+  "webActivityBlockPasswordRepeat_tooltip": {
+    "message": "Again, to rule out a typo.",
+    "description": "Hover text of the control whose label is “webActivityBlockPasswordRepeat”."
   },
   "webActivityBlockPasswordRepeatHint": {
     "message": "The two have to match."
   },
   "webActivityBlockPasswordCurrent": {
-    "message": "Current password",
-    "description": "The one in force. Needed to change it or remove it."
+    "message": "Current password"
+  },
+  "webActivityBlockPasswordCurrent_tooltip": {
+    "message": "The one in force. Needed to change it or remove it.",
+    "description": "Hover text of the control whose label is “webActivityBlockPasswordCurrent”."
   },
   "webActivityBlockPasswordCurrentHint": {
     "message": "Needed to change it or remove it."
@@ -11300,8 +11989,11 @@
     "message": "Change password"
   },
   "webActivityBlockPasswordRemove": {
-    "message": "Remove password",
-    "description": "Stops asking for it. Needs the current password."
+    "message": "Remove password"
+  },
+  "webActivityBlockPasswordRemove_tooltip": {
+    "message": "Stops asking for it. Needs the current password.",
+    "description": "Hover text of the control whose label is “webActivityBlockPasswordRemove”."
   },
   "webActivityBlockPasswordMismatch": {
     "message": "The two passwords do not match"
@@ -11314,8 +12006,11 @@
     "description": "This rule is protected with a password."
   },
   "webActivityBlockPasswordLabel": {
-    "message": "Type the password to continue",
-    "description": "Without it the rule stays as it is."
+    "message": "Type the password to continue"
+  },
+  "webActivityBlockPasswordLabel_tooltip": {
+    "message": "Without it the rule stays as it is.",
+    "description": "Hover text of the control whose label is “webActivityBlockPasswordLabel”."
   },
   "webActivityBlockPasswordSaved": {
     "message": "Password saved"
@@ -11328,56 +12023,82 @@
     "description": "The buckets a site can be filed under"
   },
   "webActivitySettingsCategoriesHint": {
-    "message": "A site's category groups it in the sidebar and in the charts. Add your own for anything the automatic detection cannot name.",
-    "description": "A site's category groups it in the sidebar and in the charts"
+    "message": "A site's category groups it in the sidebar and in the charts. Add your own for anything the automatic detection cannot name."
+  },
+  "webActivitySettingsCategoriesHint_tooltip": {
+    "message": "A site's category groups it in the sidebar and in the charts",
+    "description": "Hover text of the control whose label is “webActivitySettingsCategoriesHint”."
   },
   "webActivitySettingsTracking": {
     "message": "Recording",
     "description": "How the clock behaves"
   },
   "webActivitySettingsTrackingHint": {
-    "message": "How the clock decides you are browsing, and how long the record is kept.",
-    "description": "How the clock decides you are browsing, and how long the record is kept"
+    "message": "How the clock decides you are browsing, and how long the record is kept."
+  },
+  "webActivitySettingsTrackingHint_tooltip": {
+    "message": "How the clock decides you are browsing, and how long the record is kept",
+    "description": "Hover text of the control whose label is “webActivitySettingsTrackingHint”."
   },
   "webActivitySettingsIgnored": {
     "message": "Sites never recorded",
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Time on these sites is never counted and they never appear in the log.",
-    "description": "Time on these sites is never counted and they never appear in the log"
+    "message": "Time on these sites is never counted and they never appear in the log."
+  },
+  "webActivitySettingsIgnoredHint_tooltip": {
+    "message": "Time on these sites is never counted and they never appear in the log",
+    "description": "Hover text of the control whose label is “webActivitySettingsIgnoredHint”."
   },
   "webActivitySettingsData": {
     "message": "Your data",
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Everything is stored on this device only. Nothing is ever sent anywhere.",
-    "description": "Everything is stored on this device only"
+    "message": "Everything is stored on this device only. Nothing is ever sent anywhere."
+  },
+  "webActivitySettingsDataHint_tooltip": {
+    "message": "Everything is stored on this device only",
+    "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {
     "message": "Settings saved",
     "description": "Settings saved"
   },
   "webActivityAddRule": {
-    "message": "Add site",
-    "description": "Set a limit or a schedule on a site"
+    "message": "Add site"
+  },
+  "webActivityAddRule_tooltip": {
+    "message": "Set a limit or a schedule on a site",
+    "description": "Hover text of the control whose label is “webActivityAddRule”."
   },
   "webActivityRulesEmpty": {
     "message": "No site has a limit or a schedule yet.",
     "description": "No site has a limit or a schedule yet"
   },
   "webActivityDataFigures": {
-    "message": "$1 days on record · $2 sites in the period on screen",
-    "description": "How much has been recorded"
+    "message": "$1 on record · $2 in the period on screen",
+    "description": "How much has been recorded. $1 is webActivityDayCount, $2 webActivityCategorySites, both pluralised."
+  },
+  "webActivityDayCount_one": {
+    "message": "$1 day",
+    "description": "Number of days recorded. $1 is the count."
+  },
+  "webActivityDayCount_other": {
+    "message": "$1 days",
+    "description": "Number of days recorded. $1 is the count."
   },
   "webActivityCleared": {
     "message": "History deleted",
     "description": "History deleted"
   },
   "webActivityCategoryNew": {
-    "message": "New category",
-    "description": "Add a category of your own"
+    "message": "New category"
+  },
+  "webActivityCategoryNew_tooltip": {
+    "message": "Add a category of your own",
+    "description": "Hover text of the control whose label is “webActivityCategoryNew”."
   },
   "webActivityCategoryNamePlaceholder": {
     "message": "Category name",
@@ -11388,12 +12109,18 @@
     "description": "Add this category"
   },
   "webActivityCategoryRename": {
-    "message": "Rename",
-    "description": "Click to rename this category"
+    "message": "Rename"
+  },
+  "webActivityCategoryRename_tooltip": {
+    "message": "Click to rename this category",
+    "description": "Hover text of the control whose label is “webActivityCategoryRename”."
   },
   "webActivityCategoryDelete": {
-    "message": "Delete category",
-    "description": "Delete this category"
+    "message": "Delete category"
+  },
+  "webActivityCategoryDelete_tooltip": {
+    "message": "Delete this category",
+    "description": "Hover text of the control whose label is “webActivityCategoryDelete”."
   },
   "webActivityCategoryDeleteConfirm": {
     "message": "Delete the category “$1”? The sites filed under it go back to being detected automatically.",
@@ -11415,17 +12142,24 @@
     "message": "These are what the automatic detection knows how to recognise. A site can be moved out of one from its row in the log.",
     "description": "The categories that come with the extension"
   },
-  "webActivityCategorySites": {
+  "webActivityCategorySites_one": {
+    "message": "$1 site",
+    "description": "How many sites are filed under this category Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "webActivityCategorySites_other": {
     "message": "$1 sites",
-    "description": "How many sites are filed under this category"
+    "description": "How many sites are filed under this category Form for any other count (CLDR \"other\")."
   },
   "webActivityCategoryUnused": {
     "message": "no sites yet",
     "description": "No site is filed under this category yet"
   },
   "webActivityTrackingEnabled": {
-    "message": "Record activity",
-    "description": "Turn the clock on or off"
+    "message": "Record activity"
+  },
+  "webActivityTrackingEnabled_tooltip": {
+    "message": "Turn the clock on or off",
+    "description": "Hover text of the control whose label is “webActivityTrackingEnabled”."
   },
   "webActivityTrackingEnabledHint": {
     "message": "With this off nothing new is recorded. What is already on record is kept.",
@@ -11440,8 +12174,11 @@
     "description": "How long without keyboard or mouse counts as away"
   },
   "webActivityCountAudible": {
-    "message": "Keep counting audio in the background",
-    "description": "Count a tab that is playing sound even when the browser is not in front"
+    "message": "Keep counting audio in the background"
+  },
+  "webActivityCountAudible_tooltip": {
+    "message": "Count a tab that is playing sound even when the browser is not in front",
+    "description": "Hover text of the control whose label is “webActivityCountAudible”."
   },
   "webActivityCountAudibleHint": {
     "message": "A video still playing in another window is still time on that site.",
@@ -11482,8 +12219,11 @@
     "description": "Days of history kept before the oldest is dropped"
   },
   "webActivitySyncEnabled": {
-    "message": "Sync across browsers",
-    "description": "Shares the record, the rules and these settings with the same extension installed in another browser signed into the same profile. It travels through the browser’s own sync. Off out of the box."
+    "message": "Sync across browsers"
+  },
+  "webActivitySyncEnabled_tooltip": {
+    "message": "Shares the record, the rules and these settings with the same extension installed in another browser signed into the same profile. It travels through the browser’s own sync. Off out of the box.",
+    "description": "Hover text of the control whose label is “webActivitySyncEnabled”."
   },
   "webActivitySyncEnabledHint": {
     "message": "The data also shows up in the extension installed in your other browsers. Off by default."
@@ -11497,8 +12237,11 @@
     "description": "Every site is being recorded"
   },
   "webActivityIgnoredAdd": {
-    "message": "Add site",
-    "description": "Stop recording a site"
+    "message": "Add site"
+  },
+  "webActivityIgnoredAdd_tooltip": {
+    "message": "Stop recording a site",
+    "description": "Hover text of the control whose label is “webActivityIgnoredAdd”."
   },
   "webActivityLimitModalTitle": {
     "message": "Time limit",
@@ -11580,9 +12323,13 @@
     "message": "Window $1",
     "description": "One of the allowed time windows"
   },
-  "webActivityWindowCount": {
+  "webActivityWindowCount_one": {
+    "message": "$1 window",
+    "description": "How many allowed time windows are set Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "webActivityWindowCount_other": {
     "message": "$1 windows",
-    "description": "How many allowed time windows are set"
+    "description": "How many allowed time windows are set Form for any other count (CLDR \"other\")."
   },
   "webActivityWindowNoDays": {
     "message": "Pick at least one day, or this window does nothing.",
@@ -11597,8 +12344,11 @@
     "description": "This window runs past midnight"
   },
   "webActivityOvernightHint": {
-    "message": "It ends before it starts, so it runs past midnight. Its days are the ones it starts on.",
-    "description": "This window runs past midnight"
+    "message": "It ends before it starts, so it runs past midnight. Its days are the ones it starts on."
+  },
+  "webActivityOvernightHint_tooltip": {
+    "message": "This window runs past midnight",
+    "description": "Hover text of the control whose label is “webActivityOvernightHint”."
   },
   "webActivityDaysAll": {
     "message": "Every day",
@@ -11617,8 +12367,11 @@
     "description": "Turn the whole rule for this site on or off"
   },
   "webActivityConfigureSchedule": {
-    "message": "Configure allowed hours",
-    "description": "Configure the hours this site can be opened"
+    "message": "Configure allowed hours"
+  },
+  "webActivityConfigureSchedule_tooltip": {
+    "message": "Configure the hours this site can be opened",
+    "description": "Hover text of the control whose label is “webActivityConfigureSchedule”."
   },
   "webActivityBlocksTitle": {
     "message": "Blocks",
@@ -11661,12 +12414,18 @@
     "description": "Time when grace period ends"
   },
   "webActivityMeterDaily": {
-    "message": "Today",
-    "description": "Time used against the daily allowance"
+    "message": "Today"
+  },
+  "webActivityMeterDaily_tooltip": {
+    "message": "Time used against the daily allowance",
+    "description": "Hover text of the control whose label is “webActivityMeterDaily”."
   },
   "webActivityMeterWeekly": {
-    "message": "This week",
-    "description": "Time used against the weekly allowance"
+    "message": "This week"
+  },
+  "webActivityMeterWeekly_tooltip": {
+    "message": "Time used against the weekly allowance",
+    "description": "Hover text of the control whose label is “webActivityMeterWeekly”."
   },
   "webActivityColWeekly": {
     "message": "Weekly",
@@ -11681,8 +12440,11 @@
     "description": "Only the first rows are drawn"
   },
   "webActivityTableCappedHint": {
-    "message": "The log draws the leading rows of whatever order it is sorted in. The totals below still count every site.",
-    "description": "The log draws the leading rows of whatever order it is sorted in"
+    "message": "The log draws the leading rows of whatever order it is sorted in. The totals below still count every site."
+  },
+  "webActivityTableCappedHint_tooltip": {
+    "message": "The log draws the leading rows of whatever order it is sorted in",
+    "description": "Hover text of the control whose label is “webActivityTableCappedHint”."
   },
   "webActivityStateBlocked_weekly": {
     "message": "week used up",
@@ -11745,16 +12507,25 @@
     "description": "That site is already on the list"
   },
   "webActivityLimitDaysHint": {
-    "message": "The days this allowance applies on. On any other day the site has no daily limit.",
-    "description": "The days this allowance applies on"
+    "message": "The days this allowance applies on. On any other day the site has no daily limit."
+  },
+  "webActivityLimitDaysHint_tooltip": {
+    "message": "The days this allowance applies on",
+    "description": "Hover text of the control whose label is “webActivityLimitDaysHint”."
   },
   "webActivityWindowDaysHint": {
-    "message": "The days this window runs on. Each window has its own.",
-    "description": "The days this window runs on"
+    "message": "The days this window runs on. Each window has its own."
+  },
+  "webActivityWindowDaysHint_tooltip": {
+    "message": "The days this window runs on",
+    "description": "Hover text of the control whose label is “webActivityWindowDaysHint”."
   },
   "webActivityRestoreDefaults": {
-    "message": "Restore defaults",
-    "description": "Put the recording settings back to what the extension ships with"
+    "message": "Restore defaults"
+  },
+  "webActivityRestoreDefaults_tooltip": {
+    "message": "Put the recording settings back to what the extension ships with",
+    "description": "Hover text of the control whose label is “webActivityRestoreDefaults”."
   },
   "webActivityRestoreDefaultsConfirm": {
     "message": "Put the recording settings back to their defaults? Your categories, your rules and your history are left alone.",
@@ -11773,12 +12544,18 @@
     "description": "Open the activity in the side panel"
   },
   "webActivityOpenInTab": {
-    "message": "Open in a tab",
-    "description": "Open the full web activity dashboard in a tab"
+    "message": "Open in a tab"
+  },
+  "webActivityOpenInTab_tooltip": {
+    "message": "Open the full web activity dashboard in a tab",
+    "description": "Hover text of the control whose label is “webActivityOpenInTab”."
   },
   "webActivitySearchPanel": {
-    "message": "Search sites",
-    "description": "Filter the list by site"
+    "message": "Search sites"
+  },
+  "webActivitySearchPanel_tooltip": {
+    "message": "Filter the list by site",
+    "description": "Hover text of the control whose label is “webActivitySearchPanel”."
   },
   "webActivityExpandAll": {
     "message": "Expand every site",
@@ -11801,8 +12578,11 @@
     "description": "Turn this allowance back on"
   },
   "webActivityDisableLimit": {
-    "message": "Pause this allowance, keeping it",
-    "description": "Pause this allowance without deleting it"
+    "message": "Pause this allowance, keeping it"
+  },
+  "webActivityDisableLimit_tooltip": {
+    "message": "Pause this allowance without deleting it",
+    "description": "Hover text of the control whose label is “webActivityDisableLimit”."
   },
   "webActivityEnableSchedule": {
     "message": "Turn these hours back on",
@@ -11813,8 +12593,11 @@
     "description": "Pause these hours without deleting them"
   },
   "webActivityNothingToToggle": {
-    "message": "Nothing set here yet",
-    "description": "There is nothing here to turn on or off"
+    "message": "Nothing set here yet"
+  },
+  "webActivityNothingToToggle_tooltip": {
+    "message": "There is nothing here to turn on or off",
+    "description": "Hover text of the control whose label is “webActivityNothingToToggle”."
   },
   "webActivityPanelTitleBar": {
     "message": "Web activity",
@@ -11825,12 +12608,18 @@
     "description": "Pin the activity panel"
   },
   "webActivityPinPageTitle": {
-    "message": "Pin this view — the extension will open it from the toolbar",
-    "description": "Pin this view so the toolbar button opens it"
+    "message": "Pin this view — the extension will open it from the toolbar"
+  },
+  "webActivityPinPageTitle_tooltip": {
+    "message": "Pin this view so the toolbar button opens it",
+    "description": "Hover text of the control whose label is “webActivityPinPageTitle”."
   },
   "webActivityUnpinPageTitle": {
-    "message": "Unpin this view",
-    "description": "Stop the toolbar button opening this view"
+    "message": "Unpin this view"
+  },
+  "webActivityUnpinPageTitle_tooltip": {
+    "message": "Stop the toolbar button opening this view",
+    "description": "Hover text of the control whose label is “webActivityUnpinPageTitle”."
   },
   "webActivityPagePinned": {
     "message": "Activity panel pinned",
@@ -11845,16 +12634,25 @@
     "description": "Camera button on a group"
   },
   "captureGroupTabsVisible": {
-    "message": "Capture every tab",
-    "description": "Capture the visible area of every tab in the group"
+    "message": "Capture every tab"
+  },
+  "captureGroupTabsVisible_tooltip": {
+    "message": "Capture the visible area of every tab in the group",
+    "description": "Hover text of the control whose label is “captureGroupTabsVisible”."
   },
   "captureGroupTabsFullPage": {
-    "message": "Capture every tab (full page)",
-    "description": "Capture every tab in the group, scrolling"
+    "message": "Capture every tab (full page)"
+  },
+  "captureGroupTabsFullPage_tooltip": {
+    "message": "Capture every tab in the group, scrolling",
+    "description": "Hover text of the control whose label is “captureGroupTabsFullPage”."
   },
   "captureGroupTabsFullPageParts": {
-    "message": "Capture every tab (full page in parts)",
-    "description": "Capture every tab in the group, one image per screenful"
+    "message": "Capture every tab (full page in parts)"
+  },
+  "captureGroupTabsFullPageParts_tooltip": {
+    "message": "Capture every tab in the group, one image per screenful",
+    "description": "Hover text of the control whose label is “captureGroupTabsFullPageParts”."
   },
   "noGroupToCapture": {
     "message": "The current tab is not in any group",
@@ -11872,9 +12670,18 @@
       }
     }
   },
-  "groupTabsCaptured": {
+  "groupTabsCaptured_one": {
+    "message": "$1 capture saved from the group",
+    "description": "Result of capturing a whole group Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "groupTabsCaptured_other": {
     "message": "$1 captures saved from the group",
-    "description": "Result of capturing a whole group",
+    "description": "Result of capturing a whole group Form for any other count (CLDR \"other\").",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -11890,8 +12697,11 @@
     "description": "Capture only what is on screen"
   },
   "captureFullPageScroll": {
-    "message": "Capture the full page",
-    "description": "Capture the whole page by scrolling through it"
+    "message": "Capture the full page"
+  },
+  "captureFullPageScroll_tooltip": {
+    "message": "Capture the whole page by scrolling through it",
+    "description": "Hover text of the control whose label is “captureFullPageScroll”."
   },
   "capturingFullPage": {
     "message": "Capturing the full page…",
@@ -12144,8 +12954,11 @@
     "description": "What choosing plain text means"
   },
   "captureFullPageSplit": {
-    "message": "Capture the full page in parts",
-    "description": "One image per screenful instead of one tall image"
+    "message": "Capture the full page in parts"
+  },
+  "captureFullPageSplit_tooltip": {
+    "message": "One image per screenful instead of one tall image",
+    "description": "Hover text of the control whose label is “captureFullPageSplit”."
   },
   "categoryReadAloudControls": {
     "message": "Read-aloud page reader (while open)",
@@ -12249,16 +13062,22 @@
     "description": "Subtitle of the pomodoro settings page"
   },
   "pomodoroSettingsHint": {
-    "message": "Configure timer methods, durations, and options",
-    "description": "Set the timer method, how long each phase lasts, and the rest of the options."
+    "message": "Configure timer methods, durations, and options"
+  },
+  "pomodoroSettingsHint_tooltip": {
+    "message": "Set the timer method, how long each phase lasts, and the rest of the options.",
+    "description": "Hover text of the control whose label is “pomodoroSettingsHint”."
   },
   "pomodoroSettingsShared": {
     "message": "Select the default method. Changes made here apply to the side panel and the group list at the same time.",
     "description": "Note explaining that the pomodoro settings are shared across every surface"
   },
   "editProjectName": {
-    "message": "Edit project name",
-    "description": "Rename this project."
+    "message": "Edit project name"
+  },
+  "editProjectName_tooltip": {
+    "message": "Rename this project.",
+    "description": "Hover text of the control whose label is “editProjectName”."
   },
   "pomodoroHideTimer": {
     "message": "Hide timer interface (click to collapse)",
@@ -12345,16 +13164,25 @@
     "description": "Hint for the show-seconds setting"
   },
   "audioSourceGoToTab": {
-    "message": "Go to the tab",
-    "description": "Bring the tab the sound is coming from to the front"
+    "message": "Go to the tab"
+  },
+  "audioSourceGoToTab_tooltip": {
+    "message": "Bring the tab the sound is coming from to the front",
+    "description": "Hover text of the control whose label is “audioSourceGoToTab”."
   },
   "audioSourceMute": {
-    "message": "Mute",
-    "description": "Silence every tab and pause the page reader"
+    "message": "Mute"
+  },
+  "audioSourceMute_tooltip": {
+    "message": "Silence every tab and pause the page reader",
+    "description": "Hover text of the control whose label is “audioSourceMute”."
   },
   "audioSourceUnmute": {
-    "message": "Unmute",
-    "description": "Bring the sound back and carry on reading"
+    "message": "Unmute"
+  },
+  "audioSourceUnmute_tooltip": {
+    "message": "Bring the sound back and carry on reading",
+    "description": "Hover text of the control whose label is “audioSourceUnmute”."
   },
   "muteAllSources": {
     "message": "Silence everything",
@@ -12455,28 +13283,52 @@
       "message": "Privacy policy",
       "description": "Popup footer: link to the privacy policy on the website."
   },
-  "groupTabCountTooltip": {
-      "message": "$1 of $2 tabs viewed",
-      "description": "$1 of $2 tabs viewed",
-      "placeholders": {
-          "1": {
-              "content": "$1"
-          },
-          "2": {
-              "content": "$2"
-          }
+  "groupTabCountTooltip_one": {
+    "message": "$1 of $2 tab viewed",
+    "description": "$1 of $2 tabs viewed Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
       }
+    }
   },
-  "backupTabCountTooltip": {
-      "message": "$1 of $2 tabs restored",
-      "description": "$1 of $2 tabs restored",
-      "placeholders": {
-          "1": {
-              "content": "$1"
-          },
-          "2": {
-              "content": "$2"
-          }
+  "groupTabCountTooltip_other": {
+    "message": "$1 of $2 tabs viewed",
+    "description": "$1 of $2 tabs viewed Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
       }
+    }
+  },
+  "backupTabCountTooltip_one": {
+    "message": "$1 of $2 tab restored",
+    "description": "$1 of $2 tabs restored Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "backupTabCountTooltip_other": {
+    "message": "$1 of $2 tabs restored",
+    "description": "$1 of $2 tabs restored Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
   }
 }

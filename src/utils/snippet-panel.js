@@ -9,6 +9,7 @@
  * Google Docs/Office/WhatsApp/Telegram editor strategies, or any
  * chrome.runtime.onMessage listeners that could interfere with MV3 messaging.
  */
+import { msg as localizedMsg } from './i18n.js';
 (function () {
     'use strict';
 
@@ -151,6 +152,9 @@
                 const trigger = this.popupTriggerKey || '$$';
                 if (
                     trigger &&
+                    // With no snippets saved there is no list to open, and swallowing the
+                    // keystroke would just eat a character the user meant to type.
+                    Object.keys(this.snippets || {}).length > 0 &&
                     this.keyBuffer.length >= trigger.length &&
                     this.keyBuffer.slice(-trigger.length).join('') === trigger
                 ) {
@@ -408,7 +412,7 @@
             searchContainer.className = 'sp-snippet-search-container';
             const searchInput = document.createElement('input');
             searchInput.type = 'text';
-            searchInput.placeholder = chrome.i18n.getMessage('searchSnippets') || 'Search snippets...';
+            searchInput.placeholder = localizedMsg('searchSnippets') || 'Search snippets...';
             searchInput.className = 'sp-snippet-search-input';
             searchContainer.appendChild(searchInput);
             popup.appendChild(searchContainer);
@@ -489,7 +493,7 @@
             if (this.filteredSnippets.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'sp-snippet-empty';
-                empty.textContent = 'No matching snippets';
+                empty.textContent = localizedMsg('omnibarNoMatchingSnippets') || 'No matching snippets';
                 this.popupList.appendChild(empty);
                 return;
             }

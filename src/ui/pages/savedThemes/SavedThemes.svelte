@@ -1,4 +1,13 @@
 <script>
+    import {
+        msg as localizedMsg,
+        initializeTranslations,
+        showNotification,
+        applyTranslations,
+        getCurrentLang,
+        loadMessages,
+        pluralKey,
+    } from '../../../utils/i18n.js';
     import { onMount, tick } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
@@ -7,13 +16,6 @@
     import SavedThemesToolbar from './components/SavedThemesToolbar.svelte';
     import SavedThemesGrid from './components/SavedThemesGrid.svelte';
     import SavedThemesFooter from './components/SavedThemesFooter.svelte';
-    import {
-        initializeTranslations,
-        showNotification,
-        applyTranslations,
-        getCurrentLang,
-        loadMessages,
-    } from '../../../utils/i18n.js';
     import { initializeActiveTheme, applyCustomTheme, getActiveTheme, saveActiveTheme } from '../../../utils/theme.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import { exportThemes, processAndSaveImportedThemes } from '../../../utils/importExport.js';
@@ -262,7 +264,7 @@
         } else {
             const maxThemes = currentStorageArea === 'sync' ? MAX_SYNC_THEMES : MAX_LOCAL_THEMES;
             if (currentThemes.length >= maxThemes) {
-                const storageTypeName = chrome.i18n.getMessage(
+                const storageTypeName = localizedMsg(
                     currentStorageArea === 'sync' ? 'storageTypeSync' : 'storageTypeLocal',
                 );
                 showNotification('maxThemesReached', true, [maxThemes, storageTypeName]);
@@ -478,7 +480,7 @@
                 startTimeTrigger = '00:00';
                 endTimeTrigger = '23:59';
             } else if (startTimeTrigger === '00:00' && endTimeTrigger === '00:00') {
-                scheduleError = chrome.i18n.getMessage('scheduleTimeMissing') || 'scheduleTimeMissing';
+                scheduleError = localizedMsg('scheduleTimeMissing') || 'scheduleTimeMissing';
                 return false;
             }
             newSchedule = {
@@ -496,18 +498,17 @@
             };
         } else {
             if (!startDateValue || !endDateValue) {
-                scheduleError = chrome.i18n.getMessage('scheduleDateTimeMissing') || 'scheduleDateTimeMissing';
+                scheduleError = localizedMsg('scheduleDateTimeMissing') || 'scheduleDateTimeMissing';
                 return false;
             }
             const startDateTime = `${startDateValue}T${startTimeOneTimeTrigger}`;
             const endDateTime = `${endDateValue}T${endTimeOneTimeTrigger}`;
             if (new Date(startDateTime) >= new Date(endDateTime)) {
-                scheduleError =
-                    chrome.i18n.getMessage('scheduleEndBeforeStartDateTime') || 'scheduleEndBeforeStartDateTime';
+                scheduleError = localizedMsg('scheduleEndBeforeStartDateTime') || 'scheduleEndBeforeStartDateTime';
                 return false;
             }
             if (new Date(startDateTime) < new Date(Date.now() - 60000)) {
-                scheduleError = chrome.i18n.getMessage('scheduleDateTimeInPast') || 'scheduleDateTimeInPast';
+                scheduleError = localizedMsg('scheduleDateTimeInPast') || 'scheduleDateTimeInPast';
                 return false;
             }
             newSchedule = { type: 'onetime', startDateTime, endDateTime, reminder, storageArea: currentStorageArea };
@@ -573,13 +574,13 @@
 
     function getDayNames(days) {
         const dNames = [
-            chrome.i18n.getMessage('daySun') || 'Sun',
-            chrome.i18n.getMessage('dayMon') || 'Mon',
-            chrome.i18n.getMessage('dayTue') || 'Tue',
-            chrome.i18n.getMessage('dayWed') || 'Wed',
-            chrome.i18n.getMessage('dayThu') || 'Thu',
-            chrome.i18n.getMessage('dayFri') || 'Fri',
-            chrome.i18n.getMessage('daySat') || 'Sat',
+            localizedMsg('daySun') || 'Sun',
+            localizedMsg('dayMon') || 'Mon',
+            localizedMsg('dayTue') || 'Tue',
+            localizedMsg('dayWed') || 'Wed',
+            localizedMsg('dayThu') || 'Thu',
+            localizedMsg('dayFri') || 'Fri',
+            localizedMsg('daySat') || 'Sat',
         ];
         const sorted = [...days].sort((a, b) => (a === 0 ? 7 : a) - (b === 0 ? 7 : b));
         return sorted.map((d) => dNames[d]).join(', ');
@@ -630,7 +631,12 @@
                         showNotification('themeImportedAndSaved', false, [importedTheme.name], true);
                         chrome.runtime.sendMessage({ action: 'themeChanged' });
                     } else {
-                        showNotification('themesImportedSuccessfully', false, [result.importedCount], true);
+                        showNotification(
+                            pluralKey('themesImportedSuccessfully', result.importedCount),
+                            false,
+                            [result.importedCount],
+                            true,
+                        );
                     }
                     await fetchThemes();
                 }

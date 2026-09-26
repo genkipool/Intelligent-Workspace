@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg, activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
@@ -51,11 +52,11 @@
     function getMetaText(item) {
         if (type === 'old') {
             const date = item.dateLastUsed || item.dateAdded;
-            return `${chrome.i18n.getMessage('lastVisit') || 'Last visit'}: ${new Date(date).toLocaleDateString()}`;
+            return `${localizedMsg('lastVisit') || 'Last visit'}: ${new Date(date).toLocaleDateString(activeLocale())}`;
         } else if (type === 'broken') {
             if (typeof item.status === 'number') return `Status: ${item.status}`;
-            if (item.status === 'timeout') return chrome.i18n.getMessage('filterTimeouts') || 'Timeout';
-            return chrome.i18n.getMessage('connectionError') || 'Connection Error';
+            if (item.status === 'timeout') return localizedMsg('filterTimeouts') || 'Timeout';
+            return localizedMsg('connectionError') || 'Connection Error';
         }
         return '';
     }

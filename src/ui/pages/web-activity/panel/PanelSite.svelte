@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * ONE SITE, AS A BOX, FOR THE SIDE PANEL.
@@ -62,7 +63,7 @@
         if (limit.blockAlways) return $t('webActivityLimitAlways');
         if (!windows.length) return '—';
         if (windows.length === 1) return `${windows[0].start}-${windows[0].end}`;
-        return $t('webActivityWindowCount', [String(windows.length)]);
+        return $t(pluralKey('webActivityWindowCount', windows.length), [String(windows.length)]);
     });
 
     const tooltipData = $derived({

@@ -142,7 +142,8 @@
                             type="button"
                             class="remove-attachment-btn"
                             data-index={i}
-                            title="Remove"
+                            title={$t('removeAttachment')}
+                            aria-label={$t('removeAttachment')}
                             onclick={() => removeAttachment(i)}
                         >
                             <svg viewBox="0 0 24 24" width="14" height="14">

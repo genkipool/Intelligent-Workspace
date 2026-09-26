@@ -1,4 +1,4 @@
-import { applyTranslations } from '../../utils/i18n.js';
+import { applyTranslations, msg as localizedMsg } from '../../utils/i18n.js';
 import { get } from 'svelte/store';
 import {
     activeContextMenu,
@@ -388,7 +388,7 @@ export async function showContextMenu(event, contextElement) {
                     list,
                     itemTemplate,
                     iconHtml: iconHtml,
-                    text: chrome.i18n.getMessage('createNote'),
+                    text: localizedMsg('createNote'),
                     count: null,
                     onClick: () => originalButton.click(),
                 });
@@ -398,7 +398,7 @@ export async function showContextMenu(event, contextElement) {
                         list,
                         itemTemplate,
                         iconHtml: iconHtml,
-                        text: chrome.i18n.getMessage('viewNotes'),
+                        text: localizedMsg('viewNotes'),
                         count: noteCount,
                         onClick: () => noteBadge.click(),
                     });
@@ -412,7 +412,7 @@ export async function showContextMenu(event, contextElement) {
                         list,
                         itemTemplate,
                         iconHtml: iconHtml,
-                        text: chrome.i18n.getMessage('viewScreenshots'),
+                        text: localizedMsg('viewScreenshots'),
                         count: screenshotCount,
                         onClick: () => originalButton.click(),
                     });
@@ -818,7 +818,7 @@ export function populateBookmarkOverflowPopup(container, templateId, contextElem
                     originalBtn.title ||
                     originalBtn.getAttribute('title') ||
                     (originalBtn.getAttribute('data-i18n-title')
-                        ? chrome.i18n.getMessage(originalBtn.getAttribute('data-i18n-title'))
+                        ? localizedMsg(originalBtn.getAttribute('data-i18n-title'))
                         : '') ||
                     '';
 

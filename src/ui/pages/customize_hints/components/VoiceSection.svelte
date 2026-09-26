@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg, activeLocale, showNotification } from '../../../../utils/i18n.js';
     /**
      * Reading voice settings.
      *
@@ -14,7 +15,6 @@
      */
     import { onMount } from 'svelte';
     import SelectField from '../../../components/common/SelectField.svelte';
-    import { showNotification } from '../../../../utils/i18n.js';
     import {
         DEFAULT_SPEECH_SETTINGS,
         SPEECH_SETTINGS_KEY,
@@ -36,7 +36,7 @@
      * Voices as a clean flat list of options without optgroups.
      */
     let voiceOptions = $derived.by(() => {
-        const auto = { value: '', label: chrome.i18n.getMessage('speechVoiceAuto') || 'Automatic' };
+        const auto = { value: '', label: localizedMsg('speechVoiceAuto') || 'Automatic' };
         if (voices.length === 0) return [auto];
 
         const list = voices.map((voice) => ({
@@ -75,14 +75,14 @@
     function test() {
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(
-            chrome.i18n.getMessage('speechTestPhrase') || 'This is how the chosen voice reads.',
+            localizedMsg('speechTestPhrase') || 'This is how the chosen voice reads.',
         );
         const voice = voices.find((candidate) => candidate.voiceURI === settings.voiceURI);
         if (voice) {
             utterance.voice = voice;
             utterance.lang = voice.lang;
         } else {
-            utterance.lang = chrome.i18n.getUILanguage() || 'en-US';
+            utterance.lang = activeLocale();
         }
         // The same conversion every reader uses, so the test sounds like the reading will.
         applySpeechSettings(utterance, settings);
@@ -126,7 +126,7 @@
                 value={settings.voiceURI}
                 options={voiceOptions}
                 disabled={!ready}
-                ariaLabel={chrome.i18n.getMessage('speechVoiceLabel') || 'Voice'}
+                ariaLabel={localizedMsg('speechVoiceLabel') || 'Voice'}
                 onchange={pickVoice}
             />
         </div>
@@ -148,7 +148,7 @@
                     step={slider.step}
                     value={settings[slider.key]}
                     disabled={!ready}
-                    aria-label={chrome.i18n.getMessage(slider.i18n) || slider.key}
+                    aria-label={localizedMsg(slider.i18n) || slider.key}
                     oninput={(event) => setSlider(slider.key, event.currentTarget.value)}
                 />
                 <output class="voice-value">{Number(settings[slider.key]).toFixed(2)}</output>

@@ -1,3 +1,12 @@
+import './languages.js';
+
+const Languages = globalThis.ItgLanguages;
+export const SUPPORTED_LANGUAGES = Languages.SUPPORTED_LANGUAGES;
+export const DEFAULT_LANGUAGE = Languages.DEFAULT_LANGUAGE;
+export const LANGUAGE_STORAGE_KEY = Languages.STORAGE_KEY;
+export const { resolveLanguage, pickLanguage, localeOf } = Languages;
+export const isSupportedLanguage = Languages.isSupported;
+
 export function replacePlaceholders(message, params) {
     if (!params || params.length === 0) return message;
     return message.replace(/\$(\d+)/g, (match, indexStr) => {
@@ -37,6 +46,15 @@ export function resolveMessage(entry, params = [], field = 'message') {
     return result.includes('$$') ? result.replace(/\$\$/g, '$') : result;
 }
 
+/**
+ * The entry a tooltip is read from: `<key>_tooltip` when the control has hover text
+ * of its own, otherwise the label itself. `description` is left to translators, as
+ * Chrome intends; it is never shown to the user.
+ */
+export function tooltipEntry(messages, key) {
+    return messages?.[`${key}_tooltip`] || messages?.[key];
+}
+
 /** Reads a JSON array of substitutions from a data attribute, tolerating bad input. */
 function readParams(element, datasetKey, messageKey) {
     const raw = element.dataset?.[datasetKey];
@@ -63,27 +81,24 @@ export function loadMessages(lang) {
         const url = chrome.runtime.getURL(`_locales/${lang}/messages.json`);
         try {
             const response = await fetch(url);
-            if (!response.ok) return lang === 'en' ? {} : await loadMessages('en');
+            if (!response.ok) return lang === DEFAULT_LANGUAGE ? {} : await loadMessages(DEFAULT_LANGUAGE);
             const data = await response.json();
             let finalData = data;
-            if (lang !== 'en') {
+            // A translation may lag behind: whatever it lacks is shown in the default language.
+            if (lang !== DEFAULT_LANGUAGE) {
                 try {
-                    const enMessages = await loadMessages('en');
-                    finalData = { ...enMessages, ...data };
+                    const fallback = await loadMessages(DEFAULT_LANGUAGE);
+                    finalData = { ...fallback, ...data };
                 } catch {
                     finalData = data;
                 }
             }
 
-            // Keep the synchronous cache in sync for the next language swap.
-            localStorage.setItem('i18n-cache-messages', JSON.stringify(finalData));
-            localStorage.setItem('i18n-cache-lang', lang);
-
             return finalData;
         } catch (error) {
             console.error(`Error fetching messages for ${lang}:`, error);
             messagesCache.delete(lang);
-            if (lang !== 'en') return await loadMessages('en');
+            if (lang !== DEFAULT_LANGUAGE) return await loadMessages(DEFAULT_LANGUAGE);
             return {};
         }
     })();
@@ -97,29 +112,132 @@ export function loadMessages(lang) {
 // invalidated by the storage listener below.
 let langPromise = null;
 
+/**
+ * The language in use: the one picked with the switch, or — until the user picks
+ * one — the browser's, so a fresh install opens in the language Chrome is in.
+ */
 export function getCurrentLang() {
     langPromise ??= (async () => {
         try {
-            const result = await chrome.storage.local.get('preferred-language');
-            const lang = result['preferred-language'] || (chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en');
-
-            // Keep the synchronous cache in step for the next language swap.
-            localStorage.setItem('i18n-cache-lang', lang);
+            const result = await chrome.storage.local.get(LANGUAGE_STORAGE_KEY);
+            const lang = pickLanguage(result[LANGUAGE_STORAGE_KEY]);
 
             return lang;
         } catch (error) {
-            console.error("[i18n.js] Error getting language from storage, defaulting to 'en':", error);
+            console.error('[i18n.js] Error getting language from storage, using the browser language:', error);
             langPromise = null;
-            return 'en';
+            return Languages.detectBrowserLanguage();
         }
     })();
     return langPromise;
 }
 
+/*
+ * The dictionary of the language the user picked, for synchronous reads.
+ *
+ * `chrome.i18n.getMessage()` always answers in the browser's language, not in the one
+ * chosen with the extension's en/es switch, so anything built imperatively in a page
+ * came out in the other language whenever the two differed. `msg()` reads this
+ * dictionary instead and only falls back to Chrome while it is still loading.
+ */
+let activeLang = null;
+let activeMessages = null;
+
+export function setActiveMessages(lang, messages) {
+    if (!lang || !messages) return;
+    // applyTranslations() runs for every item a list renders, so this is called
+    // thousands of times with the same dictionary. Everything below touches the
+    // document, and writing `<html lang>` — even the same value — invalidates the
+    // style of the whole page: done per bookmark it turned a 0.3 s view into 4 s.
+    if (lang === activeLang && messages === activeMessages) return;
+    activeLang = lang;
+    activeMessages = messages;
+    if (typeof document === 'undefined' || !document.documentElement) return;
+
+    // The document says which language it is in (screen readers, speech, hyphenation)
+    // and its tab title follows the switch too.
+    const tag = lang.replace('_', '-');
+    if (document.documentElement.lang !== tag) document.documentElement.lang = tag;
+    const title = document.querySelector('title[data-i18n]');
+    const titleText = title && resolveMessage(messages[title.dataset.i18n], [], 'message');
+    if (titleText && title.textContent !== titleText) title.textContent = titleText;
+
+    // The synchronous cache i18n-init.js paints the first frame from. Only the
+    // language actually in use is written, never a dictionary loaded speculatively.
+    try {
+        localStorage.setItem('i18n-cache-messages', JSON.stringify(messages));
+        localStorage.setItem('i18n-cache-lang', lang);
+    } catch {
+        // Storage full or unavailable: the first frame just waits for the fetch.
+    }
+}
+
+/** Loads the dictionary of the current language and makes it the one `msg()` reads. */
+export async function primeActiveMessages() {
+    const lang = await getCurrentLang();
+    const messages = await loadMessages(lang);
+    setActiveMessages(lang, messages);
+    return messages;
+}
+
+/**
+ * Drop-in replacement for `chrome.i18n.getMessage()` that follows the extension's
+ * language setting. Same contract: a missing key yields an empty string.
+ */
+export function msg(key, substitutions) {
+    const entry = activeMessages?.[key];
+    if (entry) {
+        const params =
+            substitutions === undefined || substitutions === null
+                ? []
+                : Array.isArray(substitutions)
+                  ? substitutions.map(String)
+                  : [String(substitutions)];
+        return resolveMessage(entry, params, 'message');
+    }
+    if (typeof chrome === 'undefined' || !chrome.i18n?.getMessage) return '';
+    return chrome.i18n.getMessage(key, substitutions);
+}
+
+/**
+ * The message key for `count` items: `<key>_one`, `<key>_other`… chosen by the
+ * language's CLDR plural rules rather than by `count === 1`, which is wrong for
+ * other languages and for zero in some of them. Falls back to `<key>_other`.
+ */
+export function pluralKey(key, count, locale = activeLocale(), messages = activeMessages) {
+    const category = new Intl.PluralRules(locale).select(Number(count));
+    const candidate = `${key}_${category}`;
+    // Only fall back when the language lacks this form but has the general one
+    // (Spanish has no "few"); a dictionary without the key at all keeps the exact form.
+    return messages && !messages[candidate] && messages[`${key}_other`] ? `${key}_other` : candidate;
+}
+
+/** `msg()` for a counted phrase: `$1` is the count, further substitutions follow. */
+export function plural(key, count, substitutions = []) {
+    return msg(pluralKey(key, count), [String(count), ...[].concat(substitutions)]);
+}
+
+/** The code of the language in use, e.g. `es`, available synchronously. */
+export function activeLanguage() {
+    return activeLang || Languages.detectBrowserLanguage();
+}
+
+/** BCP 47 locale for dates and numbers, matching the extension's language. */
+export function activeLocale() {
+    return localeOf(activeLanguage());
+}
+
 if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes['preferred-language']) langPromise = null;
+        if (area === 'local' && changes[LANGUAGE_STORAGE_KEY]) {
+            langPromise = null;
+            if (typeof window !== 'undefined') primeActiveMessages().catch(() => {});
+        }
     });
+}
+
+if (typeof window !== 'undefined' && typeof chrome !== 'undefined' && chrome.runtime?.id) {
+    primeActiveMessages().catch(() => {});
 }
 
 /**
@@ -134,6 +252,7 @@ export async function applyTranslations(container = document) {
 
     const lang = await getCurrentLang();
     const messages = await loadMessages(lang);
+    setActiveMessages(lang, messages);
 
     // 1. Handle elements with data-i18n (textContent)
     const i18nElements = container.querySelectorAll ? container.querySelectorAll('[data-i18n]') : [];
@@ -183,12 +302,11 @@ export async function applyTranslations(container = document) {
 
     tTargets.forEach((element) => {
         const key = element.getAttribute('data-i18n-title');
-        const messageObj = messages[key];
+        const messageObj = tooltipEntry(messages, key);
         let titleText = '';
 
         if (messageObj) {
-            const field = messageObj.description?.trim() ? 'description' : 'message';
-            titleText = resolveMessage(messageObj, readParams(element, 'i18nTitleParams', key), field) || key;
+            titleText = resolveMessage(messageObj, readParams(element, 'i18nTitleParams', key), 'message') || key;
         } else {
             titleText = key;
         }
@@ -211,19 +329,8 @@ export async function applyTranslations(container = document) {
     });
 }
 
-export async function initializeTranslations(languageToggle, langEn, langEs) {
-    const initialLang = await getCurrentLang();
-    if (languageToggle && langEn && langEs) {
-        languageToggle.checked = initialLang === 'es';
-        updateLanguageIndicator(initialLang, langEn, langEs);
-    }
+export async function initializeTranslations() {
     await applyTranslations();
-}
-
-export function updateLanguageIndicator(lang, langEn, langEs) {
-    if (!langEn || !langEs) return;
-    langEn.style.fontWeight = lang === 'en' ? 'bold' : 'normal';
-    langEs.style.fontWeight = lang === 'es' ? 'bold' : 'normal';
 }
 
 // Variables to manage the notification queue

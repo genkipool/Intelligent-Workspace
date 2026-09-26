@@ -1,4 +1,5 @@
 <script>
+    import { msg as localizedMsg } from '../../../utils/i18n.js';
     /**
      * Download group for a single date: collapsible `<details>` reusing the group
      * classes (`group-item`, `group-header`, `group-title`, `group-tab-count`,
@@ -16,7 +17,7 @@
         e.preventDefault();
         const confirmed = await confirmAction({
             messageKey: 'deleteDownloadsGroupConfirm',
-            message: `${chrome.i18n.getMessage('deleteDownloadsForDate') || 'Borrar descargas de esta fecha'}: ${group.label}?`,
+            message: `${localizedMsg('deleteDownloadsForDate') || 'Borrar descargas de esta fecha'}: ${group.label}?`,
             danger: true,
         });
         if (confirmed) {

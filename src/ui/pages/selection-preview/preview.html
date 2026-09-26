@@ -3,17 +3,17 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Vista Previa - Intelligent Tab Group</title>
+        <title data-i18n="selectionPreviewPageTitle">Preview — Intelligent Workspace</title>
         <link rel="stylesheet" href="preview.css" />
     </head>
     <body>
         <div id="container">
             <header id="header">
-                <div class="header-title" id="headerTitle">📝 Recorte seleccionado</div>
-                <button id="copyBtn">Copiar</button>
+                <div class="header-title" id="headerTitle"></div>
+                <button id="copyBtn" type="button" data-i18n="copy"></button>
             </header>
             <main id="mainContent">
-                <div id="loading">Cargando contenido...</div>
+                <div id="loading" data-i18n="loading"></div>
             </main>
         </div>
         <script type="module" src="preview.js"></script>

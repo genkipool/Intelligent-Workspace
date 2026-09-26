@@ -6,16 +6,22 @@
 
 import { storageService } from './storage.js';
 import { messaging, ACTIONS } from './messaging.js';
-import { resolveMessage, loadMessages } from '../../utils/i18n.js';
+import {
+    resolveMessage,
+    loadMessages,
+    tooltipEntry,
+    pickLanguage,
+    isSupportedLanguage,
+    LANGUAGE_STORAGE_KEY,
+} from '../../utils/i18n.js';
 
 export const i18nService = {
     /**
-     * Detect the current language from storage or browser UI.
+     * The language picked with the switch, or the browser's until the user picks one.
      */
     async detectLanguage() {
-        const { 'preferred-language': lang } = await storageService.get(['preferred-language'], 'local');
-        if (lang) return lang;
-        return chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en';
+        const { [LANGUAGE_STORAGE_KEY]: lang } = await storageService.get([LANGUAGE_STORAGE_KEY], 'local');
+        return pickLanguage(lang);
     },
 
     /**
@@ -53,23 +59,23 @@ export const i18nService = {
     /**
      * Translates a tooltip (title attribute).
      *
-     * Tooltips use the `description` field of messages.json when present and fall
-     * back to `message`. This is the same resolution `applyTranslations()` applies
-     * to `data-i18n-title` attributes, so Svelte components and the imperative DOM
-     * always show the same text.
+     * Tooltips read `<key>_tooltip` when it exists and the label otherwise. This is
+     * the same resolution `applyTranslations()` applies to `data-i18n-title`
+     * attributes, so Svelte components and the imperative DOM always show the same
+     * text.
      */
     translateTitle(messages, key, params = []) {
-        const entry = messages[key];
+        const entry = tooltipEntry(messages, key);
         if (!entry) return key;
-        const field = entry.description?.trim() ? 'description' : 'message';
-        return resolveMessage(entry, params, field) || key;
+        return resolveMessage(entry, params, 'message') || key;
     },
 
     /**
      * Change language and persist.
      */
     async changeLanguage(lang) {
-        await storageService.set({ 'preferred-language': lang }, 'local');
+        if (!isSupportedLanguage(lang)) throw new Error(`Unsupported language: ${lang}`);
+        await storageService.set({ [LANGUAGE_STORAGE_KEY]: lang }, 'local');
         messaging.notify(ACTIONS.LANGUAGE_CHANGED);
         return i18nService.loadMessages(lang);
     },
@@ -82,7 +88,7 @@ export const i18nService = {
         // after the other. The preference nearly always matches the browser UI
         // language, so the matching file is fetched in parallel and the read only has
         // to confirm it; a mismatch costs one extra fetch of a local file.
-        const uiLang = chrome.i18n.getUILanguage().startsWith('es') ? 'es' : 'en';
+        const uiLang = pickLanguage(null);
         const optimistic = i18nService.loadMessages(uiLang);
         const lang = await i18nService.detectLanguage();
         const msgs = lang === uiLang ? await optimistic : await i18nService.loadMessages(lang);
@@ -94,8 +100,8 @@ export const i18nService = {
      */
     subscribe(callback) {
         storageService.onChanged((changes) => {
-            if (changes['preferred-language']) {
-                const newLang = changes['preferred-language'].newValue;
+            if (changes[LANGUAGE_STORAGE_KEY]) {
+                const newLang = changes[LANGUAGE_STORAGE_KEY].newValue;
                 if (newLang) {
                     callback(newLang);
                 }

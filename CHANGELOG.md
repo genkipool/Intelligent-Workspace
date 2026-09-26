@@ -174,6 +174,23 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Changed
 
+- **The language switch is obeyed everywhere.** A fresh install opens in the language
+  Chrome is in; once the switch in the popup is used, that choice wins every time the
+  extension opens. Until now a good part of the interface — the pomodoro tooltips, the
+  voice settings, "Tabs without Group", note dates and counters, the dashboards' dates —
+  kept following Chrome's language, so with Chrome in English and the extension in
+  Spanish the two were mixed on the same screen. Dates and numbers now follow the
+  chosen language too, and so does the page's own `lang`, which screen readers use.
+- **Counts read correctly in the singular.** "1 group", "1 tab", "1 word", "1 minute
+  more"… instead of "1 groups". Plurals follow each language's own rules.
+- Tooltips no longer show notes meant for translators ("Tooltip on the popup button
+  that leads to the store reviews.") and the Spanish texts were proofread: "clic"
+  throughout, "completas un ciclo", "Todas las reglas", the context menu wording.
+- The cumulative copy (`y`) no longer needs permission to read the clipboard: it adds
+  to what was copied in the browser, and an ordinary copy starts a new collection.
+  The extension no longer asks for `clipboardRead`.
+- Adding a language is now one entry in `src/utils/languages.js` plus its
+  `_locales` folder; the switch, the detection and the checks derive from that list.
 - Saving or updating a theme selects it. Whoever has just spent nine colours on it is
   looking at the result and means to keep it, and until now that was thrown away the
   moment the editor closed; the notice, besides, already said "saved and applied".
@@ -216,6 +233,27 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Fixed
 
+- The omnibar's site searches (`g:`, `y:`, `w:`…) showed "Untitled" and a raw key
+  instead of what Enter would search for.
+- `dr:` said it deleted the filtered rules and deleted none.
+- `dg:` was described in the `@` list as switching groups; it closes them.
+- A command with no matches (`dt: something`) turned Enter into a web search for the
+  whole text.
+- Asking the AI without an API key showed the code `NO_API_KEY` instead of saying what
+  to do.
+- Empty lists in the omnibar (`laiq:`, `lai:`, `lnt:`) showed "Message without text" or
+  offered to copy nothing.
+- "Remove URLs by domain" found nothing for sites with `www.` (bbc.com, youtube.com).
+- Importing a file that was not a web activity export reported "Data imported".
+- The navigation settings import said a snippet trigger "exceeds 20 characters" when
+  the limit is 5.
+- The Gemini API key button stayed on "Checking..." after a rejected key.
+- Typing `$$` with no snippets saved swallowed one of the dollar signs.
+- The pomodoro dashboard's tag filter was out of reach at 1280 pixels wide.
+- The pomodoro notification was titled "Pomodoro [POMODORO]", and several
+  notifications still carried the old name "Intelligent Tab Group".
+- The selection and image preview window was in Spanish whatever the language.
+- The context menu entry that opens rule management in a tab said "side panel".
 - **Closing the theme editor without saving no longer leaves the colours on.** Every
   colour touched is painted on the page so it can be seen, and leaving by the cross, by
   the backdrop or with Escape is not a decision to keep it: the page stayed dressed in

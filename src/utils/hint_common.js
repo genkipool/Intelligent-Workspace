@@ -8,12 +8,10 @@ var HintCommon = {
             if (!force && this._loadPromise) return this._loadPromise;
             this._loadPromise = (async () => {
                 try {
-                    let lang = 'en';
+                    let lang = ItgLanguages.DEFAULT_LANGUAGE;
                     if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-                        const stored = await chrome.storage.local.get('preferred-language');
-                        lang =
-                            stored?.['preferred-language'] ||
-                            (chrome.i18n?.getUILanguage()?.startsWith('es') ? 'es' : 'en');
+                        const stored = await chrome.storage.local.get(ItgLanguages.STORAGE_KEY);
+                        lang = ItgLanguages.pickLanguage(stored?.[ItgLanguages.STORAGE_KEY]);
                     }
                     this._lang = lang;
                     let loaded = false;
@@ -40,10 +38,14 @@ var HintCommon = {
                             }
                         } catch {}
                     }
-                    if (!loaded && lang !== 'en') {
+                    // A translation may lag behind: whatever it lacks comes from the
+                    // default language rather than from the browser's.
+                    if (lang !== ItgLanguages.DEFAULT_LANGUAGE) {
                         try {
-                            const fallbackRes = await fetch(chrome.runtime.getURL('_locales/en/messages.json'));
-                            if (fallbackRes.ok) this._messages = await fallbackRes.json();
+                            const fallbackRes = await fetch(
+                                chrome.runtime.getURL(`_locales/${ItgLanguages.DEFAULT_LANGUAGE}/messages.json`),
+                            );
+                            if (fallbackRes.ok) this._messages = { ...(await fallbackRes.json()), ...this._messages };
                         } catch {}
                     }
                 } catch (e) {
@@ -56,6 +58,25 @@ var HintCommon = {
                 return this._messages || {};
             })();
             return this._loadPromise;
+        },
+        /**
+         * A counted phrase ("1 rule", "3 rules"): picks `<key>_one`, `<key>_other`…
+         * by the CLDR plural rules of the language in use, not by `count === 1`.
+         */
+        /** BCP 47 locale for dates and numbers in the language in use. */
+        locale() {
+            return ItgLanguages.localeOf(this._lang || ItgLanguages.detectBrowserLanguage());
+        },
+        pluralKey(key, count) {
+            const locale = ItgLanguages.localeOf(this._lang || ItgLanguages.DEFAULT_LANGUAGE);
+            const category = new Intl.PluralRules(locale).select(Number(count));
+            const candidate = `${key}_${category}`;
+            return this._messages && !this._messages[candidate] && this._messages[`${key}_other`]
+                ? `${key}_other`
+                : candidate;
+        },
+        plural(key, count) {
+            return this.getMessage(this.pluralKey(key, count), [String(count)]);
         },
         getMessage(key, params = [], fallback = '') {
             if (typeof params === 'string' && fallback === '') {
@@ -330,31 +351,39 @@ var HintCommon = {
     },
 
     /**
-     * Shared logic for Cumulative Clipboard (Append Selection)
+     * Cumulative clipboard: `y` adds the selection to what was collected before.
+     *
+     * The collection is kept by the extension, not read back from the system
+     * clipboard. Reading the clipboard needs the `clipboardRead` permission, and
+     * without it every site would ask the user for clipboard access on the first
+     * append. So what accumulates is what was copied in the browser: an ordinary
+     * copy or cut on any page starts a new collection, and each append extends it.
+     * The collection lives in `chrome.storage.local`, so it carries across tabs.
      */
     Clipboard: {
+        STORAGE_KEY: 'itg_last_clipboard_text',
         _lastCopiedText: '',
 
-        async getLastCopied() {
-            let text = '';
-            try {
-                if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
-                    text = await navigator.clipboard.readText();
-                }
-            } catch {
-                // Clipboard read permission or document focus restriction
+        /** Starts a new collection with `text` (an ordinary copy or cut). */
+        remember(text) {
+            if (!text) return;
+            this._lastCopiedText = text;
+            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                chrome.storage.local.set({ [this.STORAGE_KEY]: text }).catch(() => {});
             }
+        },
 
-            if (!text) {
-                text = this._lastCopiedText || '';
-                if (!text && typeof chrome !== 'undefined' && chrome.storage?.local) {
-                    try {
-                        const data = await chrome.storage.local.get('itg_last_clipboard_text');
-                        text = data?.itg_last_clipboard_text || '';
-                    } catch {}
+        async getLastCopied() {
+            // Storage first: another tab may have copied or appended since this one did.
+            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                try {
+                    const data = await chrome.storage.local.get(this.STORAGE_KEY);
+                    if (typeof data?.[this.STORAGE_KEY] === 'string') return data[this.STORAGE_KEY];
+                } catch {
+                    // Extension context gone (reloaded): fall back to this page's copy.
                 }
             }
-            return text;
+            return this._lastCopiedText || '';
         },
 
         async appendSelection(selection) {
@@ -406,12 +435,7 @@ var HintCommon = {
                 } catch {}
             }
 
-            this._lastCopiedText = combinedText;
-            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-                try {
-                    chrome.storage.local.set({ itg_last_clipboard_text: combinedText });
-                } catch {}
-            }
+            if (success) this.remember(combinedText);
             return success;
         },
 
@@ -784,7 +808,7 @@ var HintCommon = {
         const shift = (days) => new Date(now.getFullYear(), now.getMonth(), now.getDate() + days);
         const pad = (n) => String(n).padStart(2, '0');
         const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-        const day = (d) => d.toLocaleDateString();
+        const day = (d) => d.toLocaleDateString(HintCommon.i18n.locale());
         try {
             switch (type) {
                 case 'date':
@@ -792,22 +816,22 @@ var HintCommon = {
                 case 'isodate':
                     return iso(now);
                 case 'longdate':
-                    return now.toLocaleDateString(undefined, {
+                    return now.toLocaleDateString(HintCommon.i18n.locale(), {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',
                     });
                 case 'time':
-                    return now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                    return now.toLocaleTimeString(HintCommon.i18n.locale(), { hour: '2-digit', minute: '2-digit' });
                 case 'datetime':
-                    return `${day(now)} ${now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`;
+                    return `${day(now)} ${now.toLocaleTimeString(HintCommon.i18n.locale(), { hour: '2-digit', minute: '2-digit' })}`;
                 case 'weekday':
-                    return now.toLocaleDateString(undefined, { weekday: 'long' });
+                    return now.toLocaleDateString(HintCommon.i18n.locale(), { weekday: 'long' });
                 case 'day':
                     return String(now.getDate());
                 case 'month':
-                    return now.toLocaleDateString(undefined, { month: 'long' });
+                    return now.toLocaleDateString(HintCommon.i18n.locale(), { month: 'long' });
                 case 'year':
                     return String(now.getFullYear());
                 case 'tomorrow':
@@ -3222,7 +3246,7 @@ var HintCommon = {
 if (typeof chrome !== 'undefined' && chrome.storage?.onChanged && !globalThis.__itgHintCommonLanguageListener) {
     globalThis.__itgHintCommonLanguageListener = true;
     chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes['preferred-language']) {
+        if (area === 'local' && changes[ItgLanguages.STORAGE_KEY]) {
             HintCommon.i18n.loadMessages(true);
         }
     });

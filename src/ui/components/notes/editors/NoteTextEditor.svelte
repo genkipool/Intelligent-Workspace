@@ -1,5 +1,6 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
+    import { pluralKey } from '../../../../utils/i18n.js';
     import { sanitizeNoteHtml, escapeHtml } from '../../../../utils/noteHtml.js';
 
     let { contentHTML = $bindable(''), showValidation = false, noteType = 'text' } = $props();
@@ -15,6 +16,14 @@
         const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
         return { words, chars };
     });
+
+    /** "1 word" / "5 words", by the plural rules of the language in use. */
+    function countPhrases(translate, { words, chars }) {
+        return [
+            translate(pluralKey('noteWordCount', words), [words]),
+            translate(pluralKey('noteCharCount', chars), [chars]),
+        ];
+    }
 
     // The rich editor owns its own DOM while the user types
     $effect(() => {
@@ -152,8 +161,8 @@
                 oninput={onContentInput}
                 onpaste={handlePaste}
             ></div>
-            <span class="note-editor-stats" title={$tt('noteStatsTooltipText', [stats.words, stats.chars])}>
-                {$t('noteEditorStatsWordsChars', [stats.words, stats.chars])}
+            <span class="note-editor-stats" title={$tt('noteStatsTooltipText', countPhrases($t, stats))}>
+                {$t('noteEditorStatsWordsChars', countPhrases($t, stats))}
             </span>
         </div>
         <label for="note-file-input" class="note-file-upload-label" title={$tt('uploadFileTooltip')}>

@@ -98,7 +98,7 @@ async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
             chrome.notifications.create(`backup-notify-${Date.now()}`, {
                 type: 'basic',
                 iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
+                title: getI18nMsg('extName'),
                 message: noGroupsMsg,
             });
             if (sendResponse) sendResponse({ success: false, error: 'No groups to backup' });
@@ -133,13 +133,14 @@ async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
         if (allTabIdsToRemove.length > 0) {
             await chrome.tabs.remove(allTabIdsToRemove);
 
-            const successMsgPattern = getI18nMsg('allGroupsBackedUp', [], '$1 grupos inactivos han sido respaldados.');
-            const successMsg = successMsgPattern.replace('$1', String(groupsToBackup.length));
+            const successMsg = getI18nMsg(getI18nPluralKey('allGroupsBackedUp', groupsToBackup.length), [
+                String(groupsToBackup.length),
+            ]);
 
             chrome.notifications.create(`backup-notify-${Date.now()}`, {
                 type: 'basic',
                 iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
+                title: getI18nMsg('extName'),
                 message: successMsg,
             });
 
@@ -225,7 +226,7 @@ async function handleRestoreAllGroupsFromKey(message, sendResponse, sender) {
             chrome.notifications.create(`restore-notify-${Date.now()}`, {
                 type: 'basic',
                 iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
+                title: getI18nMsg('extName'),
                 message: noBackupsMsg,
             });
             if (sendResponse) sendResponse({ success: false, error: 'No backups to restore' });
@@ -265,7 +266,7 @@ async function handleRestoreAllGroupsFromKey(message, sendResponse, sender) {
         chrome.notifications.create(`restore-notify-${Date.now()}`, {
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
+            title: getI18nMsg('extName'),
             message: successMsg,
         });
 
@@ -336,7 +337,7 @@ async function handleRestoreBackupGroup(message, sendResponse) {
         chrome.notifications.create(`restore-group-notify-${Date.now()}`, {
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
+            title: getI18nMsg('extName'),
             message: successMsg,
         });
 
@@ -447,7 +448,7 @@ async function handleRestoreBackupTab(message, sendResponse) {
         chrome.notifications.create(`restore-tab-notify-${Date.now()}`, {
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
-            title: 'Intelligent Tab Group',
+            title: getI18nMsg('extName'),
             message: successMsg,
         });
 

@@ -174,7 +174,7 @@ function notifySplitScreenPlacementIgnored() {
     chrome.notifications.create('split-screen-placement-ignored', {
         type: 'basic',
         iconUrl: '/assets/icons/icon128.png',
-        title: 'Intelligent Tab Group',
+        title: getI18nMsg('extName'),
         message: getI18nMsg('splitScreenPlacementIgnored'),
     });
 }
@@ -567,7 +567,7 @@ function handleToggleLinkPreviewFromKey(message, sendResponse) {
             chrome.notifications.create({
                 type: 'basic',
                 iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
+                title: getI18nMsg('extName'),
                 message: msgStr,
             });
             sendResponse({
@@ -596,7 +596,7 @@ function handleToggleAutoPipFromKey(message, sendResponse) {
             chrome.notifications.create({
                 type: 'basic',
                 iconUrl: '/assets/icons/icon128.png',
-                title: 'Intelligent Tab Group',
+                title: getI18nMsg('extName'),
                 message: msgStr,
             });
             sendResponse({ success: true, enabled });

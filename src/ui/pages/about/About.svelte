@@ -68,7 +68,7 @@
             onclick={goBack}
             class="back-button"
             title={$tt('backToMainPopup')}
-            aria-label="Back to main popup"
+            aria-label={$t('backToMainPopup')}
         >
             <span class="material-icons-sharp" translate="no" aria-hidden="true">arrow_back_ios_new</span>
         </button>

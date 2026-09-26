@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale } from '../../../../utils/i18n.js';
     /**
      * The dashboard's top bar: what it is, what slice of time is on screen, and the
      * actions that apply to the whole page.
@@ -80,7 +81,7 @@
 
     <div class="header-actions">
         <div class="last-updated">
-            {lastUpdated ? $t('webActivityUpdatedAt', [new Date(lastUpdated).toLocaleTimeString()]) : '-'}
+            {lastUpdated ? $t('webActivityUpdatedAt', [new Date(lastUpdated).toLocaleTimeString(activeLocale())]) : '-'}
         </div>
         <div class="header-actions-group">
             <button class="btn" type="button" title={$tt('webActivityExport')} onclick={onExport}>

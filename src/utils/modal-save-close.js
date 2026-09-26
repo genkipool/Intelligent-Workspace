@@ -3,10 +3,11 @@
  * @param {HTMLElement} btn
  * @param {{ onSave: (e: MouseEvent) => boolean|Promise<boolean>, close?: () => void, i18nTitleKey?: string }} options
  */
+import { msg as localizedMsg } from './i18n.js';
 export function bindModalSaveButton(btn, { onSave, close, i18nTitleKey = 'modalSaveCloseHint' }) {
     if (!btn) return;
 
-    const hint = chrome.i18n.getMessage(i18nTitleKey);
+    const hint = localizedMsg(i18nTitleKey);
     if (hint) btn.title = hint;
 
     btn.addEventListener('click', async (e) => {

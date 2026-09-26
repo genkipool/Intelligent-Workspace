@@ -7,7 +7,7 @@
  * Functions: getAllBookmarksFlat, handleShowOldBookmarks, handleShowBrokenBookmarks, updateBrokenBookmarksCache, deleteSpecialItem, deleteAllSpecialItems, resetSpecialScan, closeImportModalWithAnimation, openDeleteAllBookmarksConfirmModal, openAddToBookmarkModal, showImportBookmarksPopup, hideImportBookmarksPopup, showBookmarkDragDropPanel, hideBookmarkDragDropPanel, triggerBookmarkImport, showAddToRuleModal, saveAddToRule, initBookmarkEvents
  */
 
-import { applyTranslations, showNotification } from '../../utils/i18n.js';
+import { applyTranslations, showNotification, pluralKey } from '../../utils/i18n.js';
 import {
     openModal,
     showAddToRuleModal as showAddToRuleModalStore,
@@ -250,7 +250,7 @@ export async function deleteAllSpecialItems(ids, type) {
         cached = cached.filter((bm) => !ids.includes(bm.id));
         await chrome.storage.session.set({ [STORAGE_KEYS.BROKEN_BOOKMARKS_SESSION]: cached });
     }
-    showNotification('bookmarksDeleted', false, [ids.length]);
+    showNotification(pluralKey('bookmarksDeleted', ids.length), false, [ids.length]);
     chrome.runtime.sendMessage({ action: 'bookmarksChanged' });
 }
 

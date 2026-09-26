@@ -1,4 +1,5 @@
 <script>
+    import { pluralKey } from '../../../../utils/i18n.js';
     /**
      * [AI INSTRUCTION]
      * THE RECORD ITSELF: take it away, bring it back, or throw it out.
@@ -21,7 +22,12 @@
 </script>
 
 <div class="set-block">
-    <p class="set-figure">{$t('webActivityDataFigures', [String(dayCount), String(siteCount)])}</p>
+    <p class="set-figure">
+        {$t('webActivityDataFigures', [
+            $t(pluralKey('webActivityDayCount', dayCount), [String(dayCount)]),
+            $t(pluralKey('webActivityCategorySites', siteCount), [String(siteCount)]),
+        ])}
+    </p>
 
     <div class="set-actions">
         <button class="btn" type="button" title={$tt('webActivityExport')} onclick={onExport}>

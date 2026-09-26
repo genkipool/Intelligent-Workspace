@@ -77,6 +77,7 @@ try {
       {
         "matches": ["<all_urls>"],
         "js": [
+          "src/utils/languages.js",
           "src/utils/hint_common.js",
           "src/utils/hint/utils.js",
           "src/utils/hint/videoPipUi.js",

@@ -1,4 +1,11 @@
 <script>
+    import {
+        msg as localizedMsg,
+        LANGUAGE_STORAGE_KEY,
+        getCurrentLang,
+        loadMessages,
+        resolveMessage,
+    } from '../../../../utils/i18n.js';
     /**
      * Video Picture-in-Picture settings section.
      *
@@ -6,7 +13,6 @@
      * Shorts, TikTok and HTML5 video players, along with automatic PiP triggers.
      */
     import { onMount } from 'svelte';
-    import { getCurrentLang, loadMessages, resolveMessage } from '../../../../utils/i18n.js';
 
     const PIP_KEY = 'videoPipEnabled';
     const AUTO_KEYS = { scroll: 'itgAutoPipOnScroll', hidden: 'itgAutoPipOnHidden' };
@@ -21,9 +27,9 @@
         const fallback = enabled ? 'Turn off' : 'Turn on';
         try {
             const messages = await loadMessages(await getCurrentLang());
-            toggleTitle = resolveMessage(messages[key], [], 'message') || chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = resolveMessage(messages[key], [], 'message') || localizedMsg(key) || fallback;
         } catch {
-            toggleTitle = chrome.i18n.getMessage(key) || fallback;
+            toggleTitle = localizedMsg(key) || fallback;
         }
     }
 
@@ -71,7 +77,7 @@
                 if (changes[AUTO_KEYS.hidden] !== undefined) {
                     onHidden = changes[AUTO_KEYS.hidden].newValue === true;
                 }
-                if (changes['preferred-language']) {
+                if (changes[LANGUAGE_STORAGE_KEY]) {
                     updateTitle();
                 }
             }
