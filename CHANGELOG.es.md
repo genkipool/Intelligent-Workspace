@@ -32,6 +32,14 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
+## 1.0.2 — 2026-10-08
+
+### Corregido
+
+- **Transparencia del marco del omnibar en Google Search:** Se corrigió un marco blanco no deseado que rodeaba el omnibar al abrirlo en la web de búsqueda de Google. Chromium forzaba un lienzo blanco opaco por falta de coincidencia de `color-scheme` en páginas que usan temas oscuros mediante variables CSS sin declararlo en `:root`. El frame del omnibar ahora declara soporte dual `light dark` y el host calcula la luminancia real del fondo para sincronizar `color-scheme: dark`.
+
+---
+
 ## 1.0.1 — 2026-10-08
 
 ### Corregido

@@ -32,6 +32,14 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
+## 1.0.2 — 2026-10-08
+
+### Fixed
+
+- **Omnibar frame transparency on Google Search:** Fixed an unwanted white background frame boxing the omnibar on Google Search pages. Chrome was applying an opaque canvas background due to a `color-scheme` mismatch on pages styling dark backgrounds via custom CSS variables without root `:root` declarations. The omnibar frame now declares dual `light dark` color-scheme support, and the host evaluates real background luminance to synchronize `color-scheme: dark`.
+
+---
+
 ## 1.0.1 — 2026-10-08
 
 ### Fixed

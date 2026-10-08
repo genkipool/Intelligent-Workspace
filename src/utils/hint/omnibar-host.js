@@ -109,6 +109,7 @@ var OmniBarHost = class OmniBarHost {
 
         const frame = document.createElement('iframe');
         frame.tabIndex = -1;
+        frame.setAttribute('allowtransparency', 'true');
         // The origin has to be named. Without one `allow` delegates to the origin of `src`,
         // and with `use_dynamic_url` that is a per-session GUID while the document it
         // loads is the extension's own origin: nothing was delegated and every copy from
@@ -117,6 +118,7 @@ var OmniBarHost = class OmniBarHost {
         frame.allow = `clipboard-read ${extensionOrigin}; clipboard-write ${extensionOrigin}`;
         // The query goes after getURL: inside its argument the `?` would be part of the path.
         frame.src = `${chrome.runtime.getURL('src/utils/hint/omnibar-frame.html')}?n=${nonce}`;
+        const initialScheme = this._resolveColorScheme();
         const style = {
             position: 'fixed',
             inset: '0',
@@ -135,6 +137,7 @@ var OmniBarHost = class OmniBarHost {
             transform: 'none',
             'z-index': '2147483647',
             background: 'transparent',
+            'color-scheme': initialScheme,
             'pointer-events': 'auto',
             // Nothing is hit or painted until the omnibar reports where it is drawn.
             'clip-path': OMNIBAR_HIDDEN_CLIP,
@@ -212,8 +215,43 @@ var OmniBarHost = class OmniBarHost {
         }, 3000);
         if (this.active) this._sendOpen();
     }
+    _parseColor(colorStr) {
+        if (!colorStr || colorStr === 'transparent' || colorStr === 'rgba(0, 0, 0, 0)') return null;
+        const m = colorStr.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (!m) return null;
+        return {
+            r: Number(m[1]),
+            g: Number(m[2]),
+            b: Number(m[3]),
+            lum: 0.2126 * Number(m[1]) + 0.7152 * Number(m[2]) + 0.0722 * Number(m[3]),
+        };
+    }
+    _resolveColorScheme() {
+        if (this.frame) {
+            const cs = window.getComputedStyle(this.frame).colorScheme;
+            if (cs && cs !== 'normal') return cs;
+        }
+        const rootCs = window.getComputedStyle(document.documentElement).colorScheme;
+        if (rootCs && rootCs !== 'normal') return rootCs;
+
+        // Fallback for sites like Google Search that implement dark theme
+        // via background-color without declaring `color-scheme: dark`:
+        const bodyBg = document.body ? this._parseColor(window.getComputedStyle(document.body).backgroundColor) : null;
+        const rootBg = this._parseColor(window.getComputedStyle(document.documentElement).backgroundColor);
+        const bg = bodyBg || rootBg;
+        if (bg) {
+            return bg.lum < 128 ? 'dark' : 'light';
+        }
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'normal';
+    }
     _sendOpen() {
         this.frame.focus();
+        const scheme = this._resolveColorScheme();
+        this.frame.style.setProperty('color-scheme', scheme, 'important');
         this.port.postMessage({
             type: 'open',
             pageMode: document.documentElement.getAttribute('data-itg-page-mode'),
@@ -221,10 +259,10 @@ var OmniBarHost = class OmniBarHost {
             layoutWidth: this._layoutWidth(),
             // Chrome paints a frame opaque when its document's color scheme is not the one
             // its element has on the page — a white box around the bar on any site that
-            // declares `color-scheme: dark`, measured. Forcing the element to `normal` did
-            // not help; handing the page's scheme to the frame does, and it is also the
-            // scheme the bar's controls had when it was drawn inside the page.
-            colorScheme: window.getComputedStyle(this.frame).colorScheme,
+            // declares `color-scheme: dark`, measured. Sites like Google Search use dark
+            // backgrounds without declaring `color-scheme: dark`, so `_resolveColorScheme`
+            // falls back to luminance detection to prevent Chrome's opaque canvas.
+            colorScheme: scheme,
             documentPip: 'documentPictureInPicture' in window,
         });
     }

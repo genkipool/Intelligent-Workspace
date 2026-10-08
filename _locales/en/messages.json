@@ -1848,7 +1848,11 @@
   },
   "date_2026_10_08": {
     "message": "October 8, 2026",
-    "description": "Release date for version 1.0.1."
+    "description": "Release date for version 1.0.1 and 1.0.2."
+  },
+  "feature_v102_omnibarTransparencyGoogleFix": {
+    "message": "Fix for unwanted white frame around the omnibar on Google Search through color-scheme synchronization and dual light/dark frame support.",
+    "description": "Description of omnibar transparency fix in v1.0.2."
   },
   "feature_v101_localAiLocalization": {
     "message": "Detection and localization of Chrome local AI errors (including insufficient space for GPU caches).",

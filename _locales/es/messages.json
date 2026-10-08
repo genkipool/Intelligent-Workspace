@@ -1798,7 +1798,11 @@
     },
     "date_2026_10_08": {
         "message": "8 de octubre de 2026",
-        "description": "Fecha de la versión 1.0.1."
+        "description": "Fecha de la versión 1.0.1 y 1.0.2."
+    },
+    "feature_v102_omnibarTransparencyGoogleFix": {
+        "message": "Corrección del marco de fondo blanco no deseado alrededor del omnibar en Google Search mediante sincronización de color-scheme y soporte dual claro/oscuro en el frame.",
+        "description": "Descripción de la corrección de transparencia del omnibar en la v1.0.2."
     },
     "feature_v101_localAiLocalization": {
         "message": "Detección y traducción de errores de la IA local de Chrome (incluido espacio insuficiente para cachés de GPU).",

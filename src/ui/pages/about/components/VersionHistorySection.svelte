@@ -6,6 +6,11 @@
 
     const versionData = [
         {
+            version: '1.0.2',
+            dateKey: 'date_2026_10_08',
+            features: ['feature_v102_omnibarTransparencyGoogleFix'],
+        },
+        {
             version: '1.0.1',
             dateKey: 'date_2026_10_08',
             features: [
