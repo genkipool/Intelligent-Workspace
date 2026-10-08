@@ -6,6 +6,15 @@
 
     const versionData = [
         {
+            version: '1.0.1',
+            dateKey: 'date_2026_10_08',
+            features: [
+                'feature_v101_localAiLocalization',
+                'feature_v101_autoSelectGeminiModel',
+                'feature_v101_savedConversationsDeletion',
+            ],
+        },
+        {
             version: '1.0',
             dateKey: 'date_2025_07_20',
             features: [

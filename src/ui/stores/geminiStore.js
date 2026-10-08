@@ -4,6 +4,9 @@ import { showNotification, getCurrentLang, loadMessages, msg as localizedMsg } f
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
 import { parseMarkdown } from '../content-renderer/content-renderer.js';
 import { LOCAL_AI_MODEL_ID } from '../services/localAiService.js';
+
+/** The Gemini model chosen when the first API key is added. */
+const DEFAULT_REMOTE_MODEL = 'gemini-2.5-flash';
 import {
     isGeminiViewActive as appIsGeminiViewActive,
     currentlySpeakingEntryId as noteSpeakingEntryId,
@@ -287,16 +290,35 @@ function createGeminiStore() {
     }
 
     /** Removes a session (temporary) conversation and the entries only it referenced. */
-    async function deleteSessionConversation(timestamp) {
+    async function deleteSessionConversation(targetIdentifier) {
         const current = get(state);
-        const target = current.sessionConversations.find((c) => c.timestamp === timestamp);
+        const timestamp = typeof targetIdentifier === 'object' ? targetIdentifier.timestamp : targetIdentifier;
+        const target = current.sessionConversations.find((c) => {
+            if (timestamp && c.timestamp === timestamp) return true;
+            if (typeof targetIdentifier === 'object') {
+                if (targetIdentifier.title && c.title === targetIdentifier.title) return true;
+                if (
+                    targetIdentifier.entryIds?.length &&
+                    c.entryIds?.some((id) => targetIdentifier.entryIds.includes(id))
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        });
         if (!target) return;
 
-        const remaining = current.sessionConversations.filter((c) => c.timestamp !== timestamp);
+        const remaining = current.sessionConversations.filter((c) => c !== target && c.timestamp !== target.timestamp);
         const stillReferenced = new Set(remaining.flatMap((c) => c.entryIds || []));
         for (const id of target.entryIds || []) {
             if (!stillReferenced.has(id)) await deleteGeminiEntryFromDb(id);
         }
+
+        const isCurrentActive =
+            current.conversationHistory.length > 0 &&
+            (target.entryIds?.some((id) => current.conversationHistory.some((e) => e.id === id)) ||
+                (target.timestamp &&
+                    current.combinedConversations[current.currentCombinedIndex]?.timestamp === target.timestamp));
 
         // The combined list is cached separately and is what the UI reads, so it has to
         // be recomputed here or the deleted row stays on screen.
@@ -306,13 +328,28 @@ function createGeminiStore() {
             combinedConversations: [...st.persistentConversations, ...remaining].sort(
                 (a, b) => b.timestamp - a.timestamp,
             ),
+            ...(isCurrentActive
+                ? {
+                      conversationHistory: [],
+                      currentCombinedIndex: -1,
+                  }
+                : {}),
         }));
         await chrome.storage.session.set({ [STORAGE_KEYS.GEMINI_SESSION_CONVERSATIONS]: remaining });
+        showNotification('conversationDeleted');
+        await updateCombinedConversationDisplay();
     }
 
-    async function deletePersistentConversationByTitle(title) {
+    async function deletePersistentConversationByTitle(titleOrConv) {
         const s = get(state);
-        const convToDelete = s.persistentConversations.find((c) => c.title === title && !c.isTemporary);
+        const title = typeof titleOrConv === 'object' ? titleOrConv.title : titleOrConv;
+        const convToDelete = s.persistentConversations.find((c) => {
+            if (title && c.title === title && !c.isTemporary) return true;
+            if (typeof titleOrConv === 'object' && titleOrConv.timestamp && c.timestamp === titleOrConv.timestamp) {
+                return true;
+            }
+            return false;
+        });
         if (!convToDelete) return;
 
         const idsToDelete = convToDelete.entries.map((e) => e.id);
@@ -325,22 +362,38 @@ function createGeminiStore() {
         idsToDelete.forEach((id) => pSet.delete(id));
         await chrome.storage.local.set({ [STORAGE_KEYS.PERSISTENT_GEMINI]: Array.from(pSet) });
 
+        const isCurrentActive =
+            s.conversationHistory.length > 0 &&
+            (s.conversationHistory[0]?.persistentTitle === convToDelete.title ||
+                convToDelete.entries?.some((e) => s.conversationHistory.some((h) => h.id === e.id)));
+
         update((st) => ({
             ...st,
-            persistentConversations: st.persistentConversations.filter((c) => c.title !== title),
+            persistentConversations: st.persistentConversations.filter((c) => c !== convToDelete),
+            ...(isCurrentActive
+                ? {
+                      conversationHistory: [],
+                      currentCombinedIndex: -1,
+                  }
+                : {}),
         }));
-
-        const s2 = get(state);
-        if (s2.conversationHistory.length > 0 && s2.conversationHistory[0]?.persistentTitle === title) {
-            update((st) => ({
-                ...st,
-                conversationHistory: [],
-                currentCombinedIndex: -1,
-            }));
-        }
 
         showNotification('conversationDeleted');
         await updateCombinedConversationDisplay();
+    }
+
+    /**
+     * Picks the model that matches the keys the user now has and redraws the selector.
+     *
+     * Written to storage first: the worker and the other open panels read the choice
+     * from there, and the selector's own refresh would otherwise put back the old one.
+     */
+    async function selectModelAfterKeysChange(model) {
+        await chrome.storage.local.set({ selectedGeminiModel: model });
+        update((st) => ({ ...st, selectedModel: model }));
+        geminiStore.initializeModelSelector().catch((error) => {
+            console.warn('[Gemini] Could not refresh the model list:', error);
+        });
     }
 
     return {
@@ -1402,6 +1455,7 @@ function createGeminiStore() {
                             key: decodeKey(k.key),
                         }));
                     }
+                    const isFirstKey = keysList.length === 0;
                     const existingIndex = keysList.findIndex((k) => k.key === apiKey);
                     if (existingIndex !== -1) {
                         return { ok: false, errorKey: 'duplicateApiKeyError' };
@@ -1436,6 +1490,10 @@ function createGeminiStore() {
                         geminiApiKeysList: encodedKeysList,
                     });
                     update((st) => ({ ...st, apiKeys: keysList }));
+                    // The first key is what makes Gemini usable at all, so it becomes
+                    // the engine: whatever was picked while there was no key (the local
+                    // model, usually) would otherwise keep answering in its place.
+                    if (isFirstKey) await selectModelAfterKeysChange(DEFAULT_REMOTE_MODEL);
                     showNotification('apiKeySaved');
                     input.value = '';
                     return { ok: true };
@@ -1497,6 +1555,9 @@ function createGeminiStore() {
             }
             await chrome.storage.local.set(updateData);
             update((st) => ({ ...st, apiKeys: keysList }));
+            // Without a key no Gemini model can answer; Chrome's local model is the only
+            // engine left, so the selector moves to it rather than to a dead choice.
+            if (keysList.length === 0) await selectModelAfterKeysChange(LOCAL_AI_MODEL_ID);
             showNotification('apiKeyDeleted', true);
             return { ok: true, keysList };
         },

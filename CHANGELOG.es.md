@@ -32,6 +32,16 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
+## 1.0.1 — 2026-10-08
+
+### Corregido
+
+- **Gestión y localización de errores de la IA local de Chrome (Prompt API):** Los mensajes de error del modelo local del navegador (como espacio en disco insuficiente para crear las cachés de ejecución de GPU) se traducen y adaptan al idioma seleccionado por el usuario en lugar de mostrar excepciones en inglés de Chromium, explicando con claridad el motivo del fallo.
+- **Autoselección de modelo según las claves de API:** Al añadir la primera clave de API de Gemini, se autoselecciona el modelo `gemini-2.5-flash`. Si se eliminan todas las claves de API, se autoselecciona automáticamente el modelo local de IA (`chrome-local-ai`).
+- **Eliminación definitiva de conversaciones guardadas:** Al hacer clic en la «x» para eliminar una conversación en la ventana modal de Conversaciones Guardadas, el elemento y la conversación se eliminan de forma inmediata y definitiva sin volver a reaparecer. Si la conversación borrada estaba abierta en el asistente, se limpia el historial activo para evitar que vuelva a guardarse.
+
+---
+
 ## Sin publicar
 
 ### Añadido

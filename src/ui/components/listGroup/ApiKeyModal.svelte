@@ -141,7 +141,12 @@
         const result = await installLocalAi();
         installing = false;
         if (!result.success) {
-            installError = result.error === 'unsupported' ? $t('localAiUnsupportedHelp') : $t('localAiInstallError');
+            // Chrome's own reason when it gave one: "check the space and the connection"
+            // sent a user with hundreds of free gigabytes looking for the wrong problem.
+            installError =
+                result.error === 'unsupported'
+                    ? $t('localAiUnsupportedHelp')
+                    : $t(result.reason || 'localAiInstallError');
         }
     }
 

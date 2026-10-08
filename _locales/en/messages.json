@@ -1846,6 +1846,22 @@
     "message": ".",
     "description": "."
   },
+  "date_2026_10_08": {
+    "message": "October 8, 2026",
+    "description": "Release date for version 1.0.1."
+  },
+  "feature_v101_localAiLocalization": {
+    "message": "Detection and localization of Chrome local AI errors (including insufficient space for GPU caches).",
+    "description": "Description of local AI improvement in v1.0.1."
+  },
+  "feature_v101_autoSelectGeminiModel": {
+    "message": "Automatic selection of Gemini 2.5 Flash when adding the first API key, and local AI when all keys are removed.",
+    "description": "Description of model autoselection in v1.0.1."
+  },
+  "feature_v101_savedConversationsDeletion": {
+    "message": "Instant and permanent deletion of conversations in the Saved Conversations modal without accidental reappearance.",
+    "description": "Description of conversation deletion fix in v1.0.1."
+  },
   "date_2025_07_20": {
     "message": "July 20, 2025"
   },
@@ -3625,6 +3641,42 @@
   "localAiInstallError": {
     "message": "Chrome could not download the model. Check the space on the profile drive and the connection, and try again.",
     "description": "Error shown when the download fails."
+  },
+  "localAiErrorCacheDiskSpace": {
+    "message": "Chrome cannot prepare the local model: the first time it is used it builds its GPU caches and requires at least 10 GB free on the profile drive. Free up space, restart Chrome (it only re-checks free space now and then) and try again. chrome://on-device-internals shows the state of the model.",
+    "description": "Error when Chrome has no room to build the local model caches."
+  },
+  "localAiErrorDownloadDiskSpace": {
+    "message": "Chrome cannot download the local model: it asks for at least 22 GB free on the profile drive. Free up space, restart Chrome and try again.",
+    "description": "Error when Chrome has no room to download the local model."
+  },
+  "localAiErrorNotEligible": {
+    "message": "Chrome says this device cannot run the local model right now. Check the requirements in the local AI tab.",
+    "description": "Error when the device is not eligible for the local model."
+  },
+  "localAiErrorInputTooLarge": {
+    "message": "The question or the conversation is too long for the local model. Start a new conversation or shorten the text.",
+    "description": "Error when the input exceeds the local model context."
+  },
+  "localAiErrorAborted": {
+    "message": "The local model answer was cancelled.",
+    "description": "Error when the local model request is cancelled."
+  },
+  "localAiErrorPermission": {
+    "message": "Chrome did not allow the local model to be used from here. Try again from the extension panel.",
+    "description": "Error when Chrome denies permission to use the local model."
+  },
+  "localAiErrorUnsupported": {
+    "message": "This browser does not offer Chrome's local AI. Add a Gemini API key to use the assistant.",
+    "description": "Error when the browser has no Prompt API."
+  },
+  "localAiErrorEmpty": {
+    "message": "The local model returned no answer. Try again.",
+    "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorGeneric": {
+    "message": "Chrome's local AI could not answer. Try again or check its state at chrome://on-device-internals.",
+    "description": "Generic local model error."
   },
   "localAiDisabledByLocal": {
     "message": "Not available with Chrome's local AI",

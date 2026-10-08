@@ -1796,6 +1796,22 @@
         "message": ".",
         "description": "."
     },
+    "date_2026_10_08": {
+        "message": "8 de octubre de 2026",
+        "description": "Fecha de la versión 1.0.1."
+    },
+    "feature_v101_localAiLocalization": {
+        "message": "Detección y traducción de errores de la IA local de Chrome (incluido espacio insuficiente para cachés de GPU).",
+        "description": "Descripción de la mejora de IA local en la v1.0.1."
+    },
+    "feature_v101_autoSelectGeminiModel": {
+        "message": "Autoselección de Gemini 2.5 Flash al añadir la primera clave de API, y de la IA local al eliminar todas las claves.",
+        "description": "Descripción de autoselección de modelos en la v1.0.1."
+    },
+    "feature_v101_savedConversationsDeletion": {
+        "message": "Eliminación instantánea y definitiva de conversaciones en la ventana modal de Conversaciones Guardadas sin reaparición accidental.",
+        "description": "Descripción de corrección de borrado de conversaciones en la v1.0.1."
+    },
     "date_2025_07_20": {
         "message": "20 de julio de 2025"
     },
@@ -3581,6 +3597,42 @@
     "localAiInstallError": {
         "message": "Chrome no ha podido descargar el modelo. Revisa el espacio de la unidad del perfil y la conexión, e inténtalo de nuevo.",
         "description": "Error cuando falla la descarga."
+    },
+    "localAiErrorCacheDiskSpace": {
+        "message": "Chrome no puede preparar el modelo local: la primera vez que se usa compila sus cachés de GPU y exige al menos 10 GB libres en la unidad del perfil. Libera espacio, reinicia Chrome (comprueba el espacio libre solo de vez en cuando) e inténtalo de nuevo. En chrome://on-device-internals puedes ver el estado del modelo.",
+        "description": "Error cuando Chrome no tiene espacio para crear las cachés del modelo local."
+    },
+    "localAiErrorDownloadDiskSpace": {
+        "message": "Chrome no puede descargar el modelo local: pide al menos 22 GB libres en la unidad del perfil. Libera espacio, reinicia Chrome e inténtalo de nuevo.",
+        "description": "Error cuando Chrome no tiene espacio para descargar el modelo local."
+    },
+    "localAiErrorNotEligible": {
+        "message": "Chrome indica que este equipo no puede ejecutar el modelo local ahora mismo. Revisa los requisitos en la pestaña de IA local.",
+        "description": "Error cuando el equipo no es apto para el modelo local."
+    },
+    "localAiErrorInputTooLarge": {
+        "message": "La pregunta o la conversación es demasiado larga para el modelo local. Empieza una conversación nueva o acorta el texto.",
+        "description": "Error cuando la entrada supera el contexto del modelo local."
+    },
+    "localAiErrorAborted": {
+        "message": "Se ha cancelado la respuesta del modelo local.",
+        "description": "Error cuando la petición al modelo local se cancela."
+    },
+    "localAiErrorPermission": {
+        "message": "Chrome no ha permitido usar el modelo local desde aquí. Inténtalo de nuevo desde el panel de la extensión.",
+        "description": "Error cuando Chrome deniega el permiso para usar el modelo local."
+    },
+    "localAiErrorUnsupported": {
+        "message": "Este navegador no ofrece la IA local de Chrome. Añade una clave API de Gemini para usar el asistente.",
+        "description": "Error cuando el navegador no tiene la Prompt API."
+    },
+    "localAiErrorEmpty": {
+        "message": "El modelo local no ha devuelto ninguna respuesta. Inténtalo de nuevo.",
+        "description": "Error cuando el modelo local responde vacío."
+    },
+    "localAiErrorGeneric": {
+        "message": "La IA local de Chrome no ha podido responder. Inténtalo de nuevo o revisa su estado en chrome://on-device-internals.",
+        "description": "Error genérico del modelo local."
     },
     "localAiDisabledByLocal": {
         "message": "No disponible con la IA local de Chrome",

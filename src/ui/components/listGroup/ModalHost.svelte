@@ -159,8 +159,8 @@
             closeModal(showViewConversationsModal);
         }}
         onDelete={async (conv) => {
-            if (conv.isTemporary) await geminiStore.deleteSessionConversation(conv.timestamp);
-            else await geminiStore.deletePersistentConversationByTitle(conv.title);
+            if (conv.isTemporary) await geminiStore.deleteSessionConversation(conv);
+            else await geminiStore.deletePersistentConversationByTitle(conv);
             openModal(showViewConversationsModal, { conversations: geminiStore.getCombinedConversations() });
         }}
     />

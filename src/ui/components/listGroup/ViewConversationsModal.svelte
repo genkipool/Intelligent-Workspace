@@ -18,27 +18,37 @@
     let { show = false, conversations = [], onClose, onSelect, onDelete } = $props();
 
     let searchTerm = $state('');
-    let deleting = $state(null); // timestamp of conversation being deleted (for animation)
+    let deleting = $state(null); // key of conversation being deleted (for animation)
+    let deletedKeys = $state(new Set());
+
+    function getConvKey(conv) {
+        if (!conv) return '';
+        return conv.isTemporary
+            ? `temp_${conv.timestamp}_${conv.title || ''}`
+            : `perm_${conv.title || ''}_${conv.timestamp || ''}`;
+    }
 
     let filteredConversations = $derived.by(() => {
         const term = searchTerm.toLowerCase().trim();
-        if (!term) return conversations;
-        return conversations.filter((c) => c.title.toLowerCase().includes(term));
+        const base = (conversations || []).filter((c) => !deletedKeys.has(getConvKey(c)));
+        if (!term) return base;
+        return base.filter((c) => c.title.toLowerCase().includes(term));
     });
 
     let noResultsMessage = $derived(
         filteredConversations.length === 0
-            ? conversations.length === 0
+            ? (conversations || []).length === 0 || deletedKeys.size >= (conversations || []).length
                 ? $t('noSavedConversations')
                 : $t('noConversationsFoundForSearch')
             : '',
     );
 
-    let hasConversations = $derived(conversations.length > 0);
+    let hasConversations = $derived(filteredConversations.length > 0);
 
     function handleClose() {
         searchTerm = '';
         deleting = null;
+        deletedKeys = new Set();
         onClose?.();
     }
 
@@ -53,15 +63,22 @@
     }
 
     async function handleDelete(conv) {
-        deleting = conv.isTemporary ? conv.timestamp : conv.title;
+        const key = getConvKey(conv);
+        deleting = key;
+
+        // Schedule removal from list before deleting resets so it never flickers back
+        const timer = setTimeout(() => {
+            deletedKeys = new Set([...deletedKeys, key]);
+            if (deleting === key) deleting = null;
+        }, 280);
 
         try {
             await onDelete?.(conv);
-        } finally {
-            // Allow animation to complete before resetting
-            setTimeout(() => {
-                deleting = null;
-            }, 300);
+        } catch (err) {
+            clearTimeout(timer);
+            deletedKeys = new Set([...deletedKeys].filter((k) => k !== key));
+            deleting = null;
+            console.error('[ViewConversationsModal] Failed to delete conversation:', err);
         }
     }
 
@@ -139,11 +156,8 @@
                 </div>
 
                 <ul id="saved-conversations-list">
-                    {#each filteredConversations as conv (conv.isTemporary ? conv.timestamp : conv.title)}
-                        <li
-                            class:fading-out={deleting === (conv.isTemporary ? conv.timestamp : conv.title)}
-                            class:is-scheduled={conv.isScheduled}
-                        >
+                    {#each filteredConversations as conv (getConvKey(conv))}
+                        <li class:fading-out={deleting === getConvKey(conv)} class:is-scheduled={conv.isScheduled}>
                             <button type="button" class="conversation-select-btn" onclick={() => handleSelect(conv)}>
                                 <div class="conversation-info">
                                     <span class="conversation-title" title={conv.title}>{conv.title}</span>

@@ -20,7 +20,7 @@
 
 import { writable, derived, get } from 'svelte/store';
 
-import { getCurrentLang } from '../../utils/i18n.js';
+import { getCurrentLang, msg } from '../../utils/i18n.js';
 
 export const STORAGE_KEYS = {
     ENABLED: 'localAiEnabled',
@@ -29,6 +29,54 @@ export const STORAGE_KEYS = {
     SELECTED_MODEL: 'selectedGeminiModel',
     TOOLS: 'localAiSupportsTools',
 };
+
+/**
+ * Chrome's own refusals, matched to the extension's messages.
+ *
+ * The Prompt API rejects with a DOMException whose text is always English, whatever
+ * language the browser or the extension is in — Blink hard-codes it. Shown as it came,
+ * a user who chose Spanish read "The device does not have enough disk space…" under a
+ * Spanish "Detalles:". Each pattern is the stable part of one of Blink's messages
+ * (third_party/blink/renderer/modules/ai/exception_helpers.cc); anything not listed
+ * falls back to a generic line and the original goes to the console.
+ */
+const LOCAL_AI_ERROR_PATTERNS = [
+    // kUnavailableInsufficientDiskSpaceForCaches: the weights are on disk, but the
+    // first session compiles GPU caches and Chrome wants 10 GB free to build them.
+    [/enough disk space to initialize/i, 'localAiErrorCacheDiskSpace'],
+    // kUnavailableInsufficientDiskSpace: not downloaded yet, and 22 GB are required.
+    [/enough space for downloading/i, 'localAiErrorDownloadDiskSpace'],
+    [/not eligible|not supported|unable to create a session/i, 'localAiErrorNotEligible'],
+    [/too large|exceeds/i, 'localAiErrorInputTooLarge'],
+    [/aborted|cancelled|destroyed/i, 'localAiErrorAborted'],
+    [/permission|not allowed|user gesture|user activation/i, 'localAiErrorPermission'],
+];
+
+const LOCAL_AI_ERROR_CODES = {
+    unsupported: 'localAiErrorUnsupported',
+    'empty-response': 'localAiErrorEmpty',
+};
+
+/**
+ * The message key that explains a local-model failure, or null when the reason is
+ * not one Chrome names in a way worth telling apart.
+ *
+ * @param {unknown} error A DOMException, an Error, or one of this module's codes.
+ */
+export function localAiErrorKey(error) {
+    const text = typeof error === 'string' ? error : error?.message || '';
+    if (LOCAL_AI_ERROR_CODES[text]) return LOCAL_AI_ERROR_CODES[text];
+    for (const [pattern, key] of LOCAL_AI_ERROR_PATTERNS) {
+        if (pattern.test(text)) return key;
+    }
+    return null;
+}
+
+/** The failure in the user's language, ready to be shown. */
+export function localAiErrorMessage(error) {
+    const key = localAiErrorKey(error) || 'localAiErrorGeneric';
+    return msg(key) || msg('localAiErrorGeneric') || String(error?.message || error || '');
+}
 
 /**
  * What the local engine is called in the model selector and in the answers it writes.
@@ -368,7 +416,9 @@ export async function installLocalAi(onProgress) {
     } catch (error) {
         console.error('[LocalAI] Download failed:', error);
         await refreshLocalAiState();
-        return { success: false, error: error?.message || 'download-failed' };
+        // `reason` is the message key when Chrome said why, so the modal can explain
+        // it in the user's language instead of the generic "could not download".
+        return { success: false, error: error?.message || 'download-failed', reason: localAiErrorKey(error) };
     } finally {
         localAiDownloadProgress.set(null);
     }
@@ -459,7 +509,7 @@ const MAX_LOCAL_TURNS = 6;
  */
 export async function promptLocalAi(query, contents = null) {
     const LanguageModel = api();
-    if (!LanguageModel?.create) return { success: false, error: 'unsupported' };
+    if (!LanguageModel?.create) return { success: false, error: localAiErrorMessage('unsupported') };
 
     let session;
     try {
@@ -481,7 +531,7 @@ export async function promptLocalAi(query, contents = null) {
         session = await LanguageModel.create({ ...(await outputOptions()), initialPrompts });
         const answer = await withTimeout(session.prompt(query), PROMPT_TIMEOUT, null);
 
-        if (!answer) return { success: false, error: 'empty-response' };
+        if (!answer) return { success: false, error: localAiErrorMessage('empty-response') };
 
         return {
             success: true,
@@ -493,7 +543,7 @@ export async function promptLocalAi(query, contents = null) {
         };
     } catch (error) {
         console.error('[LocalAI] Prompt failed:', error);
-        return { success: false, error: error?.message || 'local-ai-failed' };
+        return { success: false, error: localAiErrorMessage(error) };
     } finally {
         session?.destroy?.();
     }
@@ -513,7 +563,7 @@ export async function promptLocalAi(query, contents = null) {
  */
 export async function promptLocalAiAgentStep(systemPrompt, contents) {
     const LanguageModel = api();
-    if (!LanguageModel?.create) return { success: false, error: 'unsupported' };
+    if (!LanguageModel?.create) return { success: false, error: localAiErrorMessage('unsupported') };
 
     const turns = (contents || []).map((turn) => ({
         role: turn.role === 'model' ? 'assistant' : 'user',
@@ -531,11 +581,11 @@ export async function promptLocalAiAgentStep(systemPrompt, contents) {
             initialPrompts: [{ role: 'system', content: systemPrompt }, ...turns.filter((t) => t.content)],
         });
         const answer = await withTimeout(session.prompt(last?.content || ''), PROMPT_TIMEOUT, null);
-        if (!answer) return { success: false, error: 'empty-response' };
+        if (!answer) return { success: false, error: localAiErrorMessage('empty-response') };
         return { success: true, answer, modelVersion: LOCAL_AI_MODEL_ID, isLocalAi: true };
     } catch (error) {
         console.error('[LocalAI] Agent step failed:', error);
-        return { success: false, error: error?.message || 'local-ai-failed' };
+        return { success: false, error: localAiErrorMessage(error) };
     } finally {
         session?.destroy?.();
     }

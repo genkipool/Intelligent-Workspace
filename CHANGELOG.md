@@ -32,6 +32,16 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
+## 1.0.1 — 2026-10-08
+
+### Fixed
+
+- **Chrome local AI (Prompt API) error handling and localization:** Refusal messages from Chrome's on-device model (such as insufficient disk space to build GPU execution caches) are translated and localized according to the user's selected language, explaining the actual requirement clearly instead of showing raw English DOMException errors.
+- **Model auto-selection on API key changes:** When the first Gemini API key is added, `gemini-2.5-flash` is automatically selected as the active model. When all API keys are deleted, Chrome's local AI model (`chrome-local-ai`) is automatically selected.
+- **Saved Conversations deletion fix:** Deleting a conversation in the Saved Conversations modal window removes it immediately and permanently without flickering or reappearing back into the list. Active conversation history is cleared if the deleted conversation was open in the assistant.
+
+---
+
 ## Unreleased
 
 ### Added
