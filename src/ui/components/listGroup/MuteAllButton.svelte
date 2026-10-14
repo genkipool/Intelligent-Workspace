@@ -188,6 +188,9 @@
 </button>
 
 {#if isPopupOpen}
+    <!-- Its items are the tab stops, not the menu: a focusable menu would swallow the focusout
+         that closes it when a click lands on its padding. -->
+    <!-- svelte-ignore a11y_interactive_supports_focus -->
     <div
         bind:this={popupEl}
         class="audio-sources-popup"

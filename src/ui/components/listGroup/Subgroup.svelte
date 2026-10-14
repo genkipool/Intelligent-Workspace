@@ -1,6 +1,7 @@
 <script>
     import { pluralKey } from '../../../utils/i18n.js';
     import { tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import TabItem from './TabItem.svelte';
     import { listGroupStore } from '../../stores/listGroupStore.js';
     import { updateExpandAllButtonState, updateScrollButtons } from '../../services/viewsService.js';
@@ -123,6 +124,7 @@
             tabindex="0"
             title={$tt('copySubGroupAllUrls')}
             onclick={copyUrls}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-copy"></use></svg>
         </div>
@@ -132,6 +134,7 @@
             tabindex="0"
             title={$tt('deleteSubgroupTabs')}
             onclick={deleteSubgroup}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-trash"></use></svg>
         </div>

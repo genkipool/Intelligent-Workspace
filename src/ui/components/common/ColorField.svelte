@@ -1,5 +1,5 @@
 <script>
-    import { tick } from 'svelte';
+    import { tick, untrack } from 'svelte';
     import { portal } from '../../actions/portal.js';
     import { t } from '../../stores/i18nStore.js';
     import {
@@ -70,7 +70,7 @@
     // What is in the hex field. It is a draft, not the colour: half-typed text is not
     // a colour and must not be written back to the theme.
     let draft = $state(FALLBACK);
-    let notation = $state(COLOR_FORMATS.includes(format) ? format : 'hex');
+    let notation = $state(untrack(() => (COLOR_FORMATS.includes(format) ? format : 'hex')));
     let copied = $state(false);
     let copiedTimer = null;
 
@@ -355,6 +355,9 @@
             role="slider"
             tabindex="0"
             aria-label={$t('colorPickerSaturation')}
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow={Math.round(hsv.s * 100)}
             aria-valuetext={formatColor(current, notation)}
             style="background-color: {hueColor};"
             onpointerdown={(e) => startDrag(e, 'area')}

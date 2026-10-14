@@ -239,3 +239,19 @@ export function initializeKeyboardNavigation(customHandlers = {}) {
         true,
     ); // <--- THIS IS THE MOST IMPORTANT LINE OF THE CHANGE
 }
+
+/**
+ * Enter or Space on a focusable element that is not a native button does what a
+ * click does. Pages that run `initializeKeyboardNavigation` already do this in the
+ * capture phase and mark the key handled, so here it only acts where that is not
+ * running — the action never fires twice.
+ *
+ * @param {KeyboardEvent} event
+ */
+export function activateOnKey(event) {
+    if (event.defaultPrevented || event.ctrlKey || (event.key !== 'Enter' && event.key !== ' ')) return;
+    // A key pressed inside a child (a field, a nested button) belongs to that child.
+    if (event.target !== event.currentTarget) return;
+    event.preventDefault();
+    event.currentTarget.click();
+}

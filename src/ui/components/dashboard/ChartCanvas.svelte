@@ -28,6 +28,11 @@
     });
 </script>
 
-<div class="chart-wrap" style={grow ? `flex:1 1 auto;min-height:${height}px` : `height:${height}px`}>
-    <canvas bind:this={canvas} role="img" aria-label={ariaLabel}></canvas>
+<div
+    class="chart-wrap"
+    role="img"
+    aria-label={ariaLabel}
+    style={grow ? `flex:1 1 auto;min-height:${height}px` : `height:${height}px`}
+>
+    <canvas bind:this={canvas}></canvas>
 </div>

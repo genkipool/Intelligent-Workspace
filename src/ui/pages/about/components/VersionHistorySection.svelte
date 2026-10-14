@@ -239,8 +239,9 @@
     <div class="version-list">
         {#each versionsToDisplay as version (version.version)}
             <div class="version-item">
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <!-- The whole row is a mouse target; from the keyboard the toggle button inside it is,
+                     and its click bubbles up to the same handler. -->
+                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
                 <div
                     class="version-header"
                     class:expanded={expandedVersions[version.version]}
@@ -248,7 +249,12 @@
                 >
                     <h4>{$t('versionLabel', [version.version])}</h4>
                     <span class="version-date">{$t(version.dateKey)}</span>
-                    <button type="button" class="toggle-details-btn" aria-label={$t('toggleVersionDetails')}>
+                    <button
+                        type="button"
+                        class="toggle-details-btn"
+                        aria-label={$t('toggleVersionDetails')}
+                        aria-expanded={!!expandedVersions[version.version]}
+                    >
                         <span class="material-icons-sharp">chevron_right</span>
                     </button>
                 </div>

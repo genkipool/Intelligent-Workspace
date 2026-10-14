@@ -183,7 +183,7 @@
                     <div class="bookmarks-delete-list-container">
                         <ul class="bookmarks-delete-list">
                             {#each filteredItems as item (item.id)}
-                                <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_noninteractive_element_interactions -->
+                                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
                                 <li
                                     class="delete-list-item card-style"
                                     data-id={item.id}

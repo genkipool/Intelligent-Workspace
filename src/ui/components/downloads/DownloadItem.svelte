@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import {
         downloadsStore,
         formatBytes,
@@ -323,6 +324,7 @@
                     if (isMenuVisible) closeMenu();
                     else showMenu();
                 }}
+                onkeydown={activateOnKey}
             >
                 <svg width="16" height="16" aria-hidden="true" focusable="false">
                     <use href="#icon-more-vertical"></use>
@@ -589,10 +591,6 @@
     .delete-download-btn:hover {
         color: var(--error-color) !important;
         opacity: 1;
-    }
-
-    .delete-download-btn:hover svg path {
-        stroke: var(--error-color) !important;
     }
 
     .download-menu-container {

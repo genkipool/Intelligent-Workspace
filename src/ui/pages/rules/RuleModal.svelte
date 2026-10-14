@@ -1,5 +1,6 @@
 <script>
     import ModalHeader from '../../components/common/ModalHeader.svelte';
+    import { autofocus } from '../../actions/autofocus.js';
     import { onMount } from 'svelte';
     import { SvelteSet } from 'svelte/reactivity';
     import { t, tt } from '../../stores/i18nStore.js';
@@ -424,7 +425,7 @@
                 bind:value={ruleName}
                 required
                 maxlength="16"
-                autofocus
+                use:autofocus
                 tabindex="0"
                 translate="no"
                 spellcheck="false"

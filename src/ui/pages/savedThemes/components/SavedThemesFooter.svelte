@@ -28,7 +28,7 @@
                 `Sync: ${syncThemesCount}/${maxSyncThemes} | Local: ${localThemesCount}/${maxLocalThemes}`}</span
         >
     </footer>
-    <a href="#" id="about-link-saved-themes" class="footer-link" onclick={openAboutPage}>
+    <a href="../about/about.html" id="about-link-saved-themes" class="footer-link" onclick={openAboutPage}>
         <footer class="footer">
             <div>Intelligent Workspace v{chrome.runtime.getManifest().version}</div>
             <div class="color-dots">

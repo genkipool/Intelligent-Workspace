@@ -13,6 +13,7 @@
      * and shows the window management interface with day selector chips and time fields.
      */
     import '../../../../core/services/webActivitySchema.js';
+    import { untrack } from 'svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
     import NumberField from '../../../components/common/NumberField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
@@ -23,15 +24,19 @@
 
     let { domain = '', limit = null, initialTab = 'daily', onSave, onClose } = $props();
 
-    const base = WA.normalizeLimit(limit || {});
-    const isNew = !domain;
+    // The rule as it stood when the dialog opened: the fields below are a draft seeded from it.
+    const opening = untrack(() => ({ domain, limit, initialTab }));
+    const base = WA.normalizeLimit(opening.limit || {});
+    const isNew = !opening.domain;
     const storedWindows = base.schedules.filter((schedule) => schedule.start && schedule.end);
 
     const blankWindow = () => ({ start: '09:00', end: '18:00', days: [0, 1, 2, 3, 4, 5, 6] });
 
     // Whichever tab the caller was looking at when they opened the dialog.
-    let tab = $state(initialTab === 'weekly' ? 'weekly' : initialTab === 'schedule' ? 'schedule' : 'daily');
-    let site = $state(domain);
+    let tab = $state(
+        opening.initialTab === 'weekly' ? 'weekly' : opening.initialTab === 'schedule' ? 'schedule' : 'daily',
+    );
+    let site = $state(opening.domain);
     let applyToAll = $state(false);
     let dailyTime = $state(secondsToHhMm(base.dailyLimitSeconds));
     let weeklyTime = $state(secondsToHhMm(base.weeklyLimitSeconds, 168));
@@ -46,7 +51,7 @@
                   end: schedule.end,
                   days: [...(schedule.days?.length ? schedule.days : [0, 1, 2, 3, 4, 5, 6])],
               }))
-            : initialTab === 'schedule'
+            : opening.initialTab === 'schedule'
               ? [blankWindow()]
               : [],
     );

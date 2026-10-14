@@ -1,6 +1,7 @@
 <script>
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import { geminiStore } from '../../stores/geminiStore.js';
     import { isCtrlHeld } from '../../stores/modifierKeysStore.js';
     import { renderGeminiResponse } from '../../content-renderer/content-renderer.js';
@@ -26,7 +27,7 @@
     let unsubscribe;
 
     let isQueryExpanded = $state(false);
-    let currentEntryId = $state(entry?.id);
+    let currentEntryId = $state(untrack(() => entry?.id));
 
     $effect(() => {
         if (entry?.id !== currentEntryId) {
@@ -139,6 +140,9 @@
                     class="entry-icon entry-icon-agent"
                     title={$tt('configureApiKeyTooltip')}
                     onclick={handleIconClick}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <path
                         fill-rule="evenodd"
@@ -151,6 +155,9 @@
                     class="entry-icon entry-icon-gemini"
                     title={$tt('configureApiKeyTooltip')}
                     onclick={handleIconClick}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg width="24" height="24" aria-hidden="true">
                         <use href="#icon-gemini"></use>
@@ -165,6 +172,9 @@
                         e.stopPropagation();
                         handleResend();
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg class="icon-resume" width="20" height="20">
                         <use href="#icon-resume"></use>
@@ -180,6 +190,9 @@
                         e.stopPropagation();
                         handleReadAloud(e);
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg class="icon-play" width="20" height="20"><use href="#icon-play"></use></svg>
                     <svg class="icon-pause" width="20" height="20"><use href="#icon-pause"></use></svg>
@@ -193,6 +206,9 @@
                         e.stopPropagation();
                         handleEdit();
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg width="20" height="20"><use href="#icon-edit"></use></svg>
                 </div>
@@ -203,6 +219,9 @@
                         e.stopPropagation();
                         handleDownload();
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg width="20" height="20"><use href="#icon-download"></use></svg>
                 </div>
@@ -213,6 +232,9 @@
                         e.stopPropagation();
                         handleCopy(e);
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg width="20" height="20"><use href="#icon-copy"></use></svg>
                 </div>
@@ -226,6 +248,9 @@
                         if (isEditing) exitEditMode();
                         else handleDelete();
                     }}
+                    role="button"
+                    tabindex="0"
+                    onkeydown={activateOnKey}
                 >
                     <svg width="20" height="20"><use href="#icon-close-stroke"></use></svg>
                 </div>

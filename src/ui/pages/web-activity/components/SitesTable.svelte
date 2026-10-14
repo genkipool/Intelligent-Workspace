@@ -280,16 +280,18 @@
                         class:is-sortable={!!column.sortValue}
                         style:text-align={column.align || 'center'}
                         title={$tt(column.descKey)}
+                        aria-sort={column.sortValue
+                            ? prefs.sortBy === column.id
+                                ? prefs.sortDir === 'asc'
+                                    ? 'ascending'
+                                    : 'descending'
+                                : 'none'
+                            : undefined}
                     >
                         {#if column.sortValue}
                             <button
                                 type="button"
                                 class="wa-sort-btn"
-                                aria-sort={prefs.sortBy === column.id
-                                    ? prefs.sortDir === 'asc'
-                                        ? 'ascending'
-                                        : 'descending'
-                                    : 'none'}
                                 title={$tt(column.descKey)}
                                 onclick={() => headerSort(column)}
                             >

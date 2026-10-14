@@ -88,6 +88,9 @@
 
 <header class={headerClass}>
     {#if onTitleClick}
+        <!-- The title is the heading and the control at once: `data-i18n` rewrites this element's
+             text, so a button nested inside it would be wiped on every language change. -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
         <h1
             id={titleId}
             class={titleClass || undefined}

@@ -60,7 +60,12 @@
     });
 </script>
 
-<div class="gemini-model-selector-wrapper" role="combobox" aria-expanded={dropdownVisible}>
+<div
+    class="gemini-model-selector-wrapper"
+    role="combobox"
+    aria-expanded={dropdownVisible}
+    aria-controls="gemini-model-dropdown"
+>
     <button
         id="cycle-prev-model-btn"
         class="model-cycle-btn"
@@ -95,7 +100,7 @@
 </div>
 
 {#if dropdownVisible}
-    <div class="gemini-model-dropdown visible" role="listbox">
+    <div id="gemini-model-dropdown" class="gemini-model-dropdown visible" role="listbox">
         <div class="dropdown-search-container">
             <span class="search-icon">
                 <svg width="14" height="14">

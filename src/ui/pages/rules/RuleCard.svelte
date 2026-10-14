@@ -1,6 +1,6 @@
 <script>
     import { getThemeColors } from '../../services/constants.js';
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
     import { showUrlTooltip, hideUrlTooltip } from './urlTooltip.js';
@@ -351,7 +351,7 @@
     // transition finishes. The rendered list follows it rather than `isExpanded`,
     // otherwise collapsing would drop the extra URLs on the first frame and the
     // height would jump before the animation had a chance to run.
-    let expandedClass = $state(isExpanded);
+    let expandedClass = $state(untrack(() => isExpanded));
 
     // Nothing is rendered until the first measurement: painting the full list and
     // trimming it afterwards is what made the row flicker on every load.
@@ -471,7 +471,7 @@
     // The `expanded` class switches the container to its grid layout, so on collapse
     // it has to stay until the height animation finishes; otherwise the row would
     // snap shut instead of sliding.
-    let previousExpanded = isExpanded;
+    let previousExpanded = untrack(() => isExpanded);
 
     let pendingAnimation = null;
 
@@ -537,9 +537,11 @@
     hide everything inside it from a screen reader in exchange for a label. What it
     does declare is `aria-expanded`, which is the part that matters: whether this card
     is open. A rule with no URLs has nothing to open and stays out of the tab order.
+    It has no keydown handler on purpose: see `cardIsExpander`.
 -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
     bind:this={cardEl}
     class="rule-item"
@@ -626,6 +628,9 @@
                 autocomplete="off"
             />
         {:else}
+            <!-- The name is the card's heading and a control at once (Enter copies its URLs, a double
+                 click renames it, hovering lists them); the styles and handlers all hang on it. -->
+            <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
             <h3
                 id="ruleName"
                 class="rule-name"

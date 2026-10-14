@@ -3,6 +3,7 @@
     import { untrack } from 'svelte';
     import { get } from 'svelte/store';
     import { tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import TabItem from './TabItem.svelte';
     import Subgroup from './Subgroup.svelte';
     import { listGroupStore, listGroupState } from '../../stores/listGroupStore.js';
@@ -430,6 +431,7 @@
         title={isBackup ? $tt('restoreGroupTooltip') : null}
         style="background-color: {$listGroupState.themeColors[group.color] || 'grey'};"
         onclick={colorIndicatorClick}
+        onkeydown={activateOnKey}
     >
         {isBackup ? 'B' : ''}
     </span>

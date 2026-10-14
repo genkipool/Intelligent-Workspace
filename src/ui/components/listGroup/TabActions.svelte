@@ -1,5 +1,6 @@
 <script>
     import { tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import { createHoverActionPopup, createPageModePopup } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
@@ -79,6 +80,7 @@
             tabindex="0"
             title={$tt('splitScreen')}
             onclick={onSplitScreen}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-split-screen"></use></svg>
         </div>
@@ -89,6 +91,7 @@
         tabindex="0"
         title={$tt('openInPanel')}
         onclick={onOpenInPanel}
+        onkeydown={activateOnKey}
         onmouseenter={onPrefetchTab}
     >
         <svg width="14" height="14"><use href="#icon-open-panel"></use></svg>
@@ -100,6 +103,7 @@
             tabindex="0"
             title={$tt('summarizeWithGemini')}
             onclick={onGeminiSummary}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-summary"></use></svg>
         </div>
@@ -109,7 +113,14 @@
             <svg width="14" height="14"><use href="#icon-page-mode"></use></svg>
         </div>
     </div>
-    <div class="qr-code-btn action-btn" role="button" tabindex="0" title={$tt('showQrCode')} onclick={onShowQr}>
+    <div
+        class="qr-code-btn action-btn"
+        role="button"
+        tabindex="0"
+        title={$tt('showQrCode')}
+        onclick={onShowQr}
+        onkeydown={activateOnKey}
+    >
         <svg width="14" height="14"><use href="#icon-qr"></use></svg>
     </div>
     <div
@@ -118,6 +129,7 @@
         tabindex="0"
         title={$tt('editCookies')}
         onclick={onEditCookies}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-cookie"></use></svg>
     </div>
@@ -128,6 +140,7 @@
             tabindex="0"
             title={$tt('captureWebpage')}
             onclick={onTakeScreenshot}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
         </div>
@@ -138,6 +151,7 @@
         tabindex="0"
         title={$tt('addToBookmarks')}
         onclick={onAddToBookmarks}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-bookmark"></use></svg>
     </div>
@@ -147,10 +161,18 @@
         tabindex="0"
         title={$tt('showDownloads')}
         onclick={onShowDownloads}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-download"></use></svg>
     </div>
-    <div class="copy-tab-url-btn action-btn" role="button" tabindex="0" title={$tt('copyUrl')} onclick={onCopyUrl}>
+    <div
+        class="copy-tab-url-btn action-btn"
+        role="button"
+        tabindex="0"
+        title={$tt('copyUrl')}
+        onclick={onCopyUrl}
+        onkeydown={activateOnKey}
+    >
         <svg width="14" height="14"><use href="#icon-copy"></use></svg>
     </div>
     <div
@@ -159,6 +181,7 @@
         tabindex="0"
         title={$tt('openAsPipTitle')}
         onclick={onOpenPip}
+        onkeydown={activateOnKey}
         onmouseenter={onPrefetchTab}
     >
         <svg width="14" height="14"><use href="#icon-pip"></use></svg>
@@ -169,6 +192,7 @@
         tabindex="0"
         title={$tt('omnibarPrefixVideoPipTitle')}
         onclick={onOpenVideoPip}
+        onkeydown={activateOnKey}
         onmouseenter={onPrefetchTab}
     >
         <svg width="14" height="14"><use href="#icon-video-pip"></use></svg>
@@ -179,11 +203,19 @@
         tabindex="0"
         title={$tt('openAsPopupTitle')}
         onclick={onOpenPopupWindow}
+        onkeydown={activateOnKey}
         onmouseenter={onPrefetchTab}
     >
         <svg width="14" height="14"><use href="#icon-popup"></use></svg>
     </div>
-    <div class="delete-tab-btn action-btn" role="button" tabindex="0" title={$tt('closeTab')} onclick={onDeleteTab}>
+    <div
+        class="delete-tab-btn action-btn"
+        role="button"
+        tabindex="0"
+        title={$tt('closeTab')}
+        onclick={onDeleteTab}
+        onkeydown={activateOnKey}
+    >
         <svg width="14" height="14"><use href="#icon-close"></use></svg>
     </div>
 </div>

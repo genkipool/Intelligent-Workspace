@@ -64,6 +64,9 @@
                 </h3>
                 <ul id="schedules-list">
                     {#each schedules as sch (sch.themeName + '-' + sch.originalIndex)}
+                        <!-- A tab stop of its own: the keyboard lands on a schedule and highlights it the way
+                             hovering does (:focus-visible). -->
+                        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
                         <li class="schedule-item" tabindex="0">
                             <span class="schedule-type-indicator"
                                 >{sch.type === 'onetime'
@@ -150,7 +153,7 @@
                         ></h3>
 
                         <div class="form-group">
-                            <label data-i18n="daysOfWeek"></label>
+                            <label for="schedule-days" data-i18n="daysOfWeek"></label>
                             <div id="schedule-days" class="days-selector">
                                 {#each [{ d: 1, k: 'dayMon' }, { d: 2, k: 'dayTue' }, { d: 3, k: 'dayWed' }, { d: 4, k: 'dayThu' }, { d: 5, k: 'dayFri' }, { d: 6, k: 'daySat' }, { d: 0, k: 'daySun' }] as day (day.d)}
                                     <button
@@ -167,11 +170,11 @@
                             <div id="onetime-schedule-group" class="form-group">
                                 <div class="datetime-row">
                                     <div class="field-container">
-                                        <label data-i18n="startDateTime"></label>
+                                        <label for="start-date-trigger" data-i18n="startDateTime"></label>
                                         <DateField id="start-date-trigger" bind:value={startDateValue} />
                                     </div>
                                     <div class="field-container time-width">
-                                        <label data-i18n="startTime"></label>
+                                        <label for="start-time-onetime-trigger" data-i18n="startTime"></label>
                                         <TimeField
                                             id="start-time-onetime-trigger"
                                             bind:value={startTimeOneTimeTrigger}
@@ -180,11 +183,11 @@
                                 </div>
                                 <div class="datetime-row">
                                     <div class="field-container">
-                                        <label data-i18n="endDateTime"></label>
+                                        <label for="end-date-trigger" data-i18n="endDateTime"></label>
                                         <DateField id="end-date-trigger" bind:value={endDateValue} />
                                     </div>
                                     <div class="field-container time-width">
-                                        <label data-i18n="endTime"></label>
+                                        <label for="end-time-onetime-trigger" data-i18n="endTime"></label>
                                         <TimeField id="end-time-onetime-trigger" bind:value={endTimeOneTimeTrigger} />
                                     </div>
                                 </div>
@@ -194,11 +197,11 @@
                                 {#if !allDay}
                                     <div class="time-range">
                                         <div class="start-time time">
-                                            <label data-i18n="startTime"></label>
+                                            <label for="start-time-trigger" data-i18n="startTime"></label>
                                             <TimeField id="start-time-trigger" bind:value={startTimeTrigger} />
                                         </div>
                                         <div class="end-time time">
-                                            <label data-i18n="endTime"></label>
+                                            <label for="end-time-trigger" data-i18n="endTime"></label>
                                             <TimeField id="end-time-trigger" bind:value={endTimeTrigger} />
                                         </div>
                                     </div>

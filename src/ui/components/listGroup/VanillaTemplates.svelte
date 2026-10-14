@@ -37,6 +37,8 @@
 </template>
 
 <template id="download-item-template">
+    <!-- A tab stop so keyboard focus raises the row the way hovering does (:focus-within). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <li class="download-item" tabindex="0">
         <span class="download-file-extension"></span>
         <span class="download-filename"></span>

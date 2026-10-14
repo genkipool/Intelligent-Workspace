@@ -63,12 +63,6 @@
         </div>
 
         <div id="snippet-variables-container" class="snippet-vars-container"></div>
-
-        <div class="snippet-preview-container itg-display-none">
-            <span id="snippet-copy-preview"></span>
-            <span id="snippet-copy-feedback" data-i18n="copied">Copied!</span>
-            <button id="snippet-copy-btn" type="button"></button>
-        </div>
     </div>
     <ul id="snippets-list" class="commands-list itg-manage-list"></ul>
 </section>

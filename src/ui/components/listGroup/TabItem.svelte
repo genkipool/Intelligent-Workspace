@@ -1,6 +1,7 @@
 <script>
     import { get } from 'svelte/store';
     import { tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import { showNotification } from '../../../utils/i18n.js';
     import { isProgrammaticActivation, splitScreenState } from '../../stores/appStore.svelte.js';
     import {
@@ -356,6 +357,9 @@
     });
 </script>
 
+<!-- The row is the link, but its tab stop is the title inside it: Enter on the title bubbles up to
+     the row's keydown, and the row's own focus would only add a second stop per tab. -->
+<!-- svelte-ignore a11y_interactive_supports_focus -->
 <div
     bind:this={tabEl}
     class="tab-item"
@@ -397,6 +401,7 @@
         title={$tt(isMuted ? 'toggleMuteUnmute' : 'toggleMuteMute')}
         tabindex="0"
         onclick={toggleMute}
+        onkeydown={activateOnKey}
     >
         <svg class="icon-audible" width="16" height="16">
             <use href="#icon-speaker"></use>
@@ -406,6 +411,7 @@
         </svg>
     </span>
 
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <span
         class="tab-title"
         tabindex="0"

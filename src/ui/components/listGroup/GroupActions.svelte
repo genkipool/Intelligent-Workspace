@@ -1,5 +1,6 @@
 <script>
     import { tt } from '../../stores/i18nStore.js';
+    import { activateOnKey } from '../../../utils/keyboardNav.js';
     import { createHoverActionPopup, renderNotesButton, renderScreenshotButton } from '../../services/groupsService.js';
     import { createOverflowMenu } from '../../services/contextMenuService.js';
     import { actionVisibilitySettings } from '../../stores/appStore.svelte.js';
@@ -70,6 +71,7 @@
         tabindex="0"
         title={$tt('backupGroup')}
         onclick={onbackup}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-backup"></use></svg>
     </div>
@@ -80,6 +82,7 @@
         tabindex="0"
         title={$tt('restoreGroup')}
         onclick={onrestore}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-restore"></use></svg>
     </div>
@@ -92,6 +95,7 @@
         tabindex="0"
         title={$tt(isPinned ? 'unpinGroup' : 'pinGroup')}
         onclick={ontogglepin}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-pin"></use></svg>
     </div>
@@ -102,6 +106,7 @@
         tabindex="0"
         title={$tt('hideGroup')}
         onclick={onhide}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-eye"></use></svg>
     </div>
@@ -143,6 +148,7 @@
                 event.preventDefault();
                 oncapture({ mode: 'visible' });
             }}
+            onkeydown={activateOnKey}
         >
             <svg width="14" height="14"><use href="#icon-screenshot"></use></svg>
         </div>
@@ -153,6 +159,7 @@
         tabindex="0"
         title={$tt('copyAllUrls')}
         onclick={oncopyurls}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-copy"></use></svg>
     </div>
@@ -162,6 +169,7 @@
         tabindex="0"
         title={$tt('deleteGroupTabs')}
         onclick={ondelete}
+        onkeydown={activateOnKey}
     >
         <svg width="14" height="14"><use href="#icon-trash"></use></svg>
     </div>

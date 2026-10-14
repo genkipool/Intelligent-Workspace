@@ -1,4 +1,6 @@
 <script>
+    import { untrack } from 'svelte';
+
     let {
         theme,
         index,
@@ -17,7 +19,7 @@
     } = $props();
 
     let isEditing = $state(false);
-    let labelText = $state(theme.name);
+    let labelText = $state(untrack(() => theme.name));
     let labelEl = $state(null);
     let clickTimer = null;
 
@@ -139,7 +141,11 @@
     {ondrop}
     ondragend={handleDragEnd}
 >
+    <!-- The swatch and the name are tab stops of their own: the name is renamed in place with a
+         double click, and the shared keyboard navigation moves between the two. -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div class="theme-color-preview" tabindex="0" style="background-color: {theme.colors.bgColor || '#cccccc'}"></div>
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_static_element_interactions -->
     <div
         class="theme-label"
         contenteditable={isEditing}

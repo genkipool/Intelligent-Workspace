@@ -29,7 +29,7 @@
                 'stroke-linecap': 'round',
                 'stroke-linejoin': 'round',
             },
-            onClick: onOpenRules,
+            onClick: (event) => onOpenRules?.(event),
         },
         {
             id: 'list-group-inline-btn',
@@ -39,7 +39,7 @@
             icon: '#icon-list-group',
             viewBox: '0 0 512 512',
             svgAttrs: { fill: 'currentColor' },
-            onClick: onOpenListGroup,
+            onClick: (event) => onOpenListGroup?.(event),
         },
         {
             id: 'customize-hints-btn',
@@ -57,7 +57,7 @@
             tooltipKey: 'openSettingsGemini',
             icon: '#icon-gemini',
             viewBox: '0 0 471 471',
-            onClick: onOpenGemini,
+            onClick: (event) => onOpenGemini?.(event),
         },
     ];
 </script>

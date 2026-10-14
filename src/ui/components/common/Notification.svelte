@@ -10,6 +10,7 @@
             class="notification"
             class:notification-error={type === 'error'}
             class:notification-success={type !== 'error'}
+            role="status"
             onmouseenter={() => notificationStore.pause()}
             onmouseleave={() => notificationStore.resume()}
         >

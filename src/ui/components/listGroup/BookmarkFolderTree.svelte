@@ -1,5 +1,6 @@
 <script>
     import { t, tt } from '../../stores/i18nStore.js';
+    import { autofocus } from '../../actions/autofocus.js';
     import { SvelteSet } from 'svelte/reactivity';
     import { bookmarkFolderTitle } from '../../bookmarks/folderTitle.js';
 
@@ -432,7 +433,7 @@
             placeholder={$t('enterFolderNamePlaceholder')}
             maxlength="100"
             autocomplete="off"
-            autofocus
+            use:autofocus
             bind:value={newFolderName}
             onkeydown={handleNewFolderKeydown}
         />
@@ -484,7 +485,7 @@
                                 type="text"
                                 class="folder-name-input"
                                 autocomplete="off"
-                                autofocus
+                                use:autofocus
                                 bind:value={editFolderNameInput}
                                 onclick={(e) => e.stopPropagation()}
                                 ondblclick={(e) => e.stopPropagation()}

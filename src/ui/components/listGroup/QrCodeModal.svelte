@@ -1,4 +1,5 @@
 <script>
+    import { untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { decodeBarcodeFromFile, decodeBarcodeFromDataUrl } from '../../services/qrScannerService.js';
@@ -6,7 +7,8 @@
 
     let { show = false, url = '', title = '', initialTab = 'generate', onClose } = $props();
 
-    let activeTab = $state(initialTab || (url ? 'generate' : 'scan'));
+    // The tab it opens on; switching tabs afterwards is the user's.
+    let activeTab = $state(untrack(() => initialTab || (url ? 'generate' : 'scan')));
     let scanResults = $state([]);
     let isScanning = $state(false);
     let isDragging = $state(false);
@@ -303,7 +305,7 @@
                         <div
                             class="qr-dropzone"
                             class:dragging={isDragging}
-                            role="region"
+                            role="button"
                             aria-label={$t('qrDragDropPlaceholder')}
                             ondrop={handleDrop}
                             ondragover={handleDragOver}
