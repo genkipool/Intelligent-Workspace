@@ -1,6 +1,13 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import DashboardBrandSwitcher from '../../../components/dashboard/DashboardBrandSwitcher.svelte';
+    import PeriodChips from '../../../components/common/PeriodChips.svelte';
+
+    let {
+        /** The selected period, in days. `0` is everything. */
+        period = 0,
+        onPeriodChange,
+    } = $props();
 </script>
 
 <header class="app-header">
@@ -22,23 +29,12 @@
     <!-- Period & tag filters -->
     <div class="header-filters">
         <span class="filter-label">{$t('dashboardPeriod') || 'Period'}</span>
-        <div class="filter-chips" id="period-filters">
-            <button class="filter-chip" type="button" data-period="1" title={$tt('titleFilterToday')}
-                >{$t('dashboardToday') || 'Today'}</button
-            >
-            <button class="filter-chip" type="button" data-period="7" title={$tt('titleFilter7Days')}
-                >{$t('dashboard7Days') || '7 days'}</button
-            >
-            <button class="filter-chip" type="button" data-period="30" title={$tt('titleFilter30Days')}
-                >{$t('dashboard30Days') || '30 days'}</button
-            >
-            <button class="filter-chip" type="button" data-period="90" title={$tt('titleFilter3Months')}
-                >{$t('dashboard3Months') || '3 months'}</button
-            >
-            <button class="filter-chip active" type="button" data-period="0" title={$tt('titleFilterAll')}
-                >{$t('dashboardAllTime') || 'All time'}</button
-            >
-        </div>
+        <PeriodChips
+            value={period}
+            collapsible
+            ariaLabel={$t('dashboardPeriod') || 'Period'}
+            onchange={onPeriodChange}
+        />
         <span class="filter-sep"></span>
         <span class="filter-label">{$t('pomodoroProjectTag') || 'Tag'}</span>
         <select class="tag-select" id="tag-filter" title={$tt('titleTagFilter')}>

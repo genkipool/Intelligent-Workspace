@@ -931,6 +931,99 @@ async function executeGroupingPlan(groupingPlan, existingGroups, windowId, curre
     return Object.fromEntries(groupResults.filter(Boolean));
 }
 
+/**
+ * The `chrome.tabGroups.move` calls that put the groups in `idealIds` order, packed
+ * from `startIndex`, with the loose tabs left behind them in their own order.
+ *
+ * `blocks` is the unpinned strip in index order: one `{ groupId, size }` per group and
+ * one per loose tab (`groupId: -1`). It is updated in place as each move is planned,
+ * so every index is computed against where the groups will really be by then.
+ *
+ * Every move is also a write the browser syncs to the user's other devices as a
+ * saved-group change, together with one per tab in the group. Placing the groups one
+ * by one from the front moved every group that sat behind a new one: a group created
+ * at the start of a strip of six cost five moves, and building six groups in a row
+ * cost fourteen, measured. When the groups already sit together at the front, the
+ * ones that are already in the right order relative to each other — the longest such
+ * run — stay where they are and only the others are moved, each straight after the
+ * group that precedes it. The final strip is the same. When a loose tab sits between
+ * groups the one-by-one placement is kept, since it is the one that also packs them.
+ *
+ * @param {{ groupId: number, size: number }[]} blocks
+ * @param {number[]} idealIds - Group ids in the order they should end up in.
+ * @param {number} startIndex - Index of the first unpinned tab.
+ * @returns {{ groupId: number, index: number }[]}
+ */
+function planGroupSortMoves(blocks, idealIds, startIndex) {
+    const moves = [];
+    const startOfBlock = (position) => {
+        let index = startIndex;
+        for (let i = 0; i < position; i++) index += blocks[i].size;
+        return index;
+    };
+    const moveBlock = (from, toIndex) => {
+        const [block] = blocks.splice(from, 1);
+        let to = 0;
+        let index = startIndex;
+        while (to < blocks.length && index < toIndex) {
+            index += blocks[to].size;
+            to++;
+        }
+        blocks.splice(to, 0, block);
+        moves.push({ groupId: block.groupId, index: toIndex });
+    };
+
+    const rank = new Map(idealIds.map((id, i) => [id, i]));
+    const lastGroupBlock = blocks.findLastIndex((b) => rank.has(b.groupId));
+    const groupsPacked = blocks.slice(0, lastGroupBlock + 1).every((b) => rank.has(b.groupId));
+
+    if (groupsPacked && lastGroupBlock + 1 === idealIds.length) {
+        // Longest run of groups already in ideal order (patience sorting).
+        const current = blocks.slice(0, lastGroupBlock + 1).map((b) => rank.get(b.groupId));
+        const tails = [];
+        const tailAt = [];
+        const prev = new Array(current.length).fill(-1);
+        current.forEach((r, i) => {
+            let lo = 0;
+            let hi = tails.length;
+            while (lo < hi) {
+                const mid = (lo + hi) >> 1;
+                if (tails[mid] < r) lo = mid + 1;
+                else hi = mid;
+            }
+            tails[lo] = r;
+            tailAt[lo] = i;
+            prev[i] = lo > 0 ? tailAt[lo - 1] : -1;
+        });
+        const stay = new Set();
+        for (let i = tailAt[tails.length - 1] ?? -1; i !== -1; i = prev[i]) stay.add(idealIds[current[i]]);
+
+        idealIds.forEach((id, i) => {
+            if (stay.has(id)) return;
+            const from = blocks.findIndex((b) => b.groupId === id);
+            let toIndex = startIndex;
+            if (i > 0) {
+                const before = blocks.findIndex((b) => b.groupId === idealIds[i - 1]);
+                toIndex = startOfBlock(before) + blocks[before].size;
+            }
+            // Leaving it out of the strip first is what Chrome's index means: the
+            // place the group's first tab ends up at.
+            if (from < blocks.findIndex((b) => b.groupId === idealIds[i - 1])) toIndex -= blocks[from].size;
+            if (startOfBlock(from) !== toIndex) moveBlock(from, toIndex);
+        });
+        return moves;
+    }
+
+    let currentIndex = startIndex;
+    for (const id of idealIds) {
+        const from = blocks.findIndex((b) => b.groupId === id);
+        if (from === -1) continue;
+        if (startOfBlock(from) !== currentIndex) moveBlock(from, currentIndex);
+        currentIndex += blocks[blocks.findIndex((b) => b.groupId === id)].size;
+    }
+    return moves;
+}
+
 async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
     try {
         if (groupsInWindow.length === 0) return;
@@ -1010,10 +1103,7 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
         // anyway as the groups are packed to the front.
 
         // The tab strip as blocks in index order: one block per group, one per
-        // loose tab. Every move is replayed here so the next comparison is made
-        // against where the group really is, not against the stale snapshot.
-        // Comparing against the snapshot made the first move invalidate all the
-        // others, so every group was moved even when it was already in place.
+        // loose tab.
         const blocks = [];
         for (const tab of orderedTabs) {
             if (tab.pinned) continue;
@@ -1025,43 +1115,21 @@ async function sortGroups(windowId, groupsInWindow, tabsInWindow) {
             }
         }
 
-        const startOfBlock = (position) => {
-            let index = startIndex;
-            for (let i = 0; i < position; i++) index += blocks[i].size;
-            return index;
-        };
-
-        let currentIndex = startIndex;
-        let moves = 0;
-        for (const groupToPlace of idealOrder) {
-            const from = blocks.findIndex((b) => b.groupId === groupToPlace.id);
-            if (from === -1) {
-                currentIndex += groupToPlace.tabCount;
-                continue;
-            }
-
-            if (startOfBlock(from) !== currentIndex) {
-                await executeWithRetries(
-                    async () =>
-                        await chrome.tabGroups.move(groupToPlace.id, {
-                            index: currentIndex,
-                        }),
-                    `sort move group ${groupToPlace.title} to index ${currentIndex}`,
-                );
-                moves++;
-
-                const [block] = blocks.splice(from, 1);
-                let to = 0;
-                let index = startIndex;
-                while (to < blocks.length && index < currentIndex) {
-                    index += blocks[to].size;
-                    to++;
-                }
-                blocks.splice(to, 0, block);
-            }
-            currentIndex += groupToPlace.tabCount;
+        const titleById = new Map(idealOrder.map((group) => [group.id, group.title]));
+        const plannedMoves = planGroupSortMoves(
+            blocks,
+            idealOrder.map((group) => group.id),
+            startIndex,
+        );
+        for (const { groupId, index } of plannedMoves) {
+            await executeWithRetries(
+                async () => await chrome.tabGroups.move(groupId, { index }),
+                `sort move group ${titleById.get(groupId)} to index ${index}`,
+            );
         }
-        logMessage(`[sortGroups] Reordered window ${windowId} with ${moves} move(s) for ${idealOrder.length} groups.`);
+        logMessage(
+            `[sortGroups] Reordered window ${windowId} with ${plannedMoves.length} move(s) for ${idealOrder.length} groups.`,
+        );
     } catch (error) {
         console.warn('Error sorting groups.', error);
     }

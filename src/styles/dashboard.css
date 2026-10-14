@@ -154,10 +154,11 @@ body {
     align-items: center;
     gap: 7px;
     padding: 0 16px;
-    overflow-x: auto;
-    /* Thin rather than hidden: with no scrollbar a mouse had no way to reach the
-       filters that overflow, and nothing said there were any. */
-    scrollbar-width: thin;
+    /* Nothing here scrolls. The row fits by giving ground instead — labels first,
+       then the action captions, then the period chips fold into a select — and the
+       two selects are the last to give, truncating their label before anything is
+       pushed out. A scrollbar in a 50px bar covered the row it was meant to reveal. */
+    overflow: hidden;
     min-width: 0;
 }
 
@@ -313,6 +314,84 @@ body {
     align-items: center;
     height: 100%;
     padding: 0 14px;
+}
+
+/* The actions on the right took more than five hundred pixels and were what pushed
+   the filters into a scroll below 1300px. They give ground first, in the order they
+   matter least: the button captions (each button keeps its icon and its tooltip),
+   then the gutters, then the "updated" stamp, which the refresh button stands for. */
+@media (max-width: 1366px) {
+    .header-actions .btn span {
+        display: none;
+    }
+
+    .header-actions .btn {
+        padding: 5px 8px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .header-filters {
+        gap: 5px;
+        padding: 0 10px;
+    }
+
+    .filter-chips {
+        gap: 3px;
+    }
+
+    .filter-chip {
+        padding: 3px 8px;
+    }
+
+    .last-updated,
+    .header-actions-group,
+    .header-actions-refresh {
+        padding: 0 9px;
+    }
+
+    .header-actions-group {
+        gap: 5px;
+    }
+}
+
+@media (max-width: 1040px) {
+    .last-updated {
+        display: none;
+    }
+}
+
+/* The period as a select. Rendered by `PeriodChips` (`collapsible`) next to the chips
+   and kept hidden until the chips stop fitting; from there on the two filters are
+   the same control side by side, and both may shrink down to a word and the caret. */
+.header-filters .period-select {
+    display: none;
+    flex-shrink: 1;
+    min-width: 72px;
+}
+
+@media (max-width: 820px) {
+    .header-filters .filter-chips {
+        display: none;
+    }
+
+    .header-filters .period-select {
+        display: flex;
+    }
+
+    .header-filters .period-select .itg-select,
+    .header-filters .itg-select,
+    .header-filters .tag-select {
+        width: 150px;
+        min-width: 72px;
+        flex-shrink: 1;
+    }
+}
+
+@media (max-width: 760px) {
+    .header-filters .filter-sep {
+        display: none;
+    }
 }
 
 /* --- BUTTONS ---------------------------------------------------- */

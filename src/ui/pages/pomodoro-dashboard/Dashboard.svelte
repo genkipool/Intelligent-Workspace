@@ -1363,15 +1363,6 @@
             e.target.value = ''; // Reset for next time
         });
 
-        document.getElementById('period-filters').addEventListener('click', (e) => {
-            const chip = e.target.closest('.filter-chip');
-            if (!chip) return;
-            document.querySelectorAll('#period-filters .filter-chip').forEach((c) => c.classList.remove('active'));
-            chip.classList.add('active');
-            activePeriod = +chip.dataset.period;
-            renderAll();
-        });
-
         document.getElementById('tag-filter').addEventListener('change', (e) => {
             activeTag = e.target.value;
             renderAll();
@@ -1489,7 +1480,13 @@
 <div id="tooltip"></div>
 
 <!-- --- Header ----------------------------------------------------- -->
-<DashboardHeader />
+<DashboardHeader
+    period={activePeriod}
+    onPeriodChange={(days) => {
+        activePeriod = days;
+        renderAll();
+    }}
+/>
 
 <!-- --- App body ---------------------------------------------------- -->
 <div class="app-body">

@@ -10,9 +10,15 @@
      * `wrap` is the panel's variant: in a header the chips sit on one line at their
      * natural width, and in a 300px column they have to share the line evenly and fold
      * onto a second one rather than run off the edge.
+     *
+     * `collapsible` is the header's variant: next to the chips it renders the same
+     * periods as a select, and the stylesheet shows one or the other by width
+     * (`dashboard.css`). A narrow window gets one compact control instead of a row of
+     * chips that ran under the actions and needed a scrollbar to reach.
      */
     import { t, tt } from '../../stores/i18nStore.js';
     import { DASHBOARD_PERIODS } from '../../services/dashboard/periods.js';
+    import SelectField from './SelectField.svelte';
 
     let {
         /** The selected period, in days. `0` is everything. */
@@ -20,6 +26,7 @@
         /** Which periods to offer; defaults to all five. */
         periods = DASHBOARD_PERIODS,
         wrap = false,
+        collapsible = false,
         ariaLabel = '',
         onchange,
     } = $props();
@@ -37,3 +44,14 @@
         >
     {/each}
 </div>
+{#if collapsible}
+    <div class="period-select">
+        <SelectField
+            value={String(value)}
+            ariaLabel={ariaLabel || $t('dashboardPeriod')}
+            title={ariaLabel || $t('dashboardPeriod')}
+            options={periods.map((period) => ({ value: String(period.days), label: $t(period.labelKey) }))}
+            onchange={(next) => onchange?.(Number(next))}
+        />
+    </div>
+{/if}

@@ -67,7 +67,7 @@
 
     <div class="header-filters">
         <span class="filter-label">{$t('dashboardPeriod')}</span>
-        <PeriodChips value={period} ariaLabel={$t('dashboardPeriod')} onchange={onPeriodChange} />
+        <PeriodChips value={period} collapsible ariaLabel={$t('dashboardPeriod')} onchange={onPeriodChange} />
         <span class="filter-sep"></span>
         <span class="filter-label">{$t('webActivityCategoryLabel')}</span>
         <SelectField
