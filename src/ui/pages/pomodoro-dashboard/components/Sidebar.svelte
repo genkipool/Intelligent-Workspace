@@ -26,6 +26,10 @@
     let editingName = $state('');
     let editInputEl = $state(null);
 
+    // Sessions saved without a name are stored as the English word "Unnamed": that
+    // value is the project's key, so only the label shown is translated.
+    const displayName = $derived((p) => (p === 'Unnamed' ? $t('dashboardNoName') || p : p));
+
     const needle = $derived(query.trim().toLowerCase());
     const matchesQuery = $derived.by(() => (name) => !needle || name.toLowerCase().includes(needle));
 
@@ -231,7 +235,7 @@
                                         data-project={p}
                                         role="button"
                                         tabindex="0"
-                                        title={p}
+                                        title={displayName(p)}
                                         onclick={() => onSelectProject?.(p)}
                                         onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p)}
                                     >
@@ -247,7 +251,7 @@
                                                 onclick={(e) => e.stopPropagation()}
                                             />
                                         {:else}
-                                            <span class="si-name">{p}</span>
+                                            <span class="si-name">{displayName(p)}</span>
                                             <button
                                                 type="button"
                                                 class="si-edit-btn"
@@ -298,7 +302,7 @@
                     data-project={p}
                     role="button"
                     tabindex="0"
-                    title={p}
+                    title={displayName(p)}
                     onclick={() => onSelectProject?.(p)}
                     onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p)}
                 >
@@ -314,7 +318,7 @@
                             onclick={(e) => e.stopPropagation()}
                         />
                     {:else}
-                        <span class="si-name">{p}</span>
+                        <span class="si-name">{displayName(p)}</span>
                         <button
                             type="button"
                             class="si-edit-btn"

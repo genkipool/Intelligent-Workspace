@@ -110,6 +110,14 @@
     "message": "$1 bookmarks deleted",
     "description": "Form for any other count (CLDR \"other\")."
   },
+  "bookmarksDeleted_few": {
+    "message": "$1 bookmarks deleted",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "bookmarksDeleted_many": {
+    "message": "$1 bookmarks deleted",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "noUrlsToCopy": {
     "message": "There are no URLs to copy"
   },
@@ -232,6 +240,14 @@
   "themesExportedSuccessfully_other": {
     "message": "$1 themes exported",
     "description": "Form for any other count (CLDR \"other\")."
+  },
+  "themesExportedSuccessfully_few": {
+    "message": "$1 themes exported",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "themesExportedSuccessfully_many": {
+    "message": "$1 themes exported",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "scheduleDateTimeInPast": {
     "message": "The chosen date and time are in the past"
@@ -506,6 +522,10 @@
   "managerRules": {
     "message": "Manager Rules",
     "description": "Manager rules section title"
+  },
+  "managerRules_tooltip": {
+    "message": "Manager Rules",
+    "description": "Full name of the popup section, shown on hover; the label itself may be shortened to fit."
   },
   "managerGroups": {
     "message": "List Groups",
@@ -1404,6 +1424,10 @@
     "message": "Interface language",
     "description": "Accessible name of the language list, used once the extension ships more than two languages."
   },
+  "languagePairPickerTitle": {
+    "message": "Language on this side of the switch",
+    "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+  },
   "exportTheme": {
     "message": "Export current custom theme",
     "description": "Exports the current custom theme"
@@ -1496,7 +1520,7 @@
     "message": "Full keyboard navigation support for accessibility."
   },
   "featureMultiLanguage": {
-    "message": "Multi-language support (English & Spanish)."
+    "message": "Multilingual support: English, Spanish, German, Brazilian Portuguese, Russian, Japanese, Simplified Chinese, Hindi, French, Italian and Korean."
   },
   "permissionsUsed": {
     "message": "Permissions Used"
@@ -1853,6 +1877,26 @@
   "feature_v102_omnibarTransparencyGoogleFix": {
     "message": "Fix for unwanted white frame around the omnibar on Google Search through color-scheme synchronization and dual light/dark frame support.",
     "description": "Description of omnibar transparency fix in v1.0.2."
+  },
+  "date_2026_10_14": {
+    "message": "October 14, 2026",
+    "description": "Release date for version 1.0.2."
+  },
+  "feature_v102_newLanguages": {
+    "message": "Nine new languages: German, Brazilian Portuguese, Russian, Japanese, Simplified Chinese, Hindi, French, Italian and Korean. The extension starts in your browser's language.",
+    "description": "Description of the new interface languages in v1.0.2."
+  },
+  "feature_v102_languagePairSwitch": {
+    "message": "The language switch holds any two languages: yours on the left, English on the right. Hover a language name to choose another one for that side, and switch between them with one click.",
+    "description": "Description of the two-language switch in v1.0.2."
+  },
+  "feature_v102_groupSortFewerMoves": {
+    "message": "Sorting tab groups only moves the groups that are out of place: the same order with up to half as many changes synced to your other devices.",
+    "description": "Description of the group sorting improvement in v1.0.2."
+  },
+  "feature_v102_dashboardHeaderNoScroll": {
+    "message": "Pomodoro and Web activity dashboards: the header adapts to narrow windows without a horizontal scrollbar, and the period becomes a selector when the chips no longer fit.",
+    "description": "Description of the dashboard header improvement in v1.0.2."
   },
   "feature_v101_localAiLocalization": {
     "message": "Detection and localization of Chrome local AI errors (including insufficient space for GPU caches).",
@@ -2787,6 +2831,26 @@
       }
     }
   },
+  "themesImportedSuccessfully_few": {
+    "message": "$1 themes imported successfully.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "themesImportedSuccessfully_many": {
+    "message": "$1 themes imported successfully.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
   "themesImportedSuccessfullyAndRedirecting": {
     "message": "$1 themes imported. Redirecting...",
     "description": "Message shown when themes are imported from the main popup, before redirecting to the saved themes page.",
@@ -2948,6 +3012,30 @@
   "removeTabsByDomainSuccessMessage_other": {
     "message": "Successfully removed $1 tabs from the domain $2.",
     "description": "Notification message after successfully removing tabs. Placeholders: $1 = number of tabs, $2 = domain name. Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "removeTabsByDomainSuccessMessage_few": {
+    "message": "Successfully removed $1 tabs from the domain $2.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "removeTabsByDomainSuccessMessage_many": {
+    "message": "Successfully removed $1 tabs from the domain $2.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -3162,7 +3250,7 @@
     "description": "Schedule Theme"
   },
   "scheduleThemes": {
-    "message": "Scheduled Topics",
+    "message": "Scheduled Themes",
     "description": "Scheduled Topics"
   },
   "backToSavedThemes": {
@@ -3941,6 +4029,26 @@
       }
     }
   },
+  "downloadsStarted_few": {
+    "message": "Started $1 downloads.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "downloadsStarted_many": {
+    "message": "Started $1 downloads.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
   "summarizeWithGemini": {
     "message": "Web summary with AI assistant",
     "description": "Web summary with AI assistant"
@@ -4622,6 +4730,14 @@
     "message": "$1 words",
     "description": "Word count of a note. $1 is the number."
   },
+  "noteWordCount_few": {
+    "message": "$1 words",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "noteWordCount_many": {
+    "message": "$1 words",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "noteCharCount_one": {
     "message": "$1 character",
     "description": "Character count of a note. $1 is the number."
@@ -4629,6 +4745,14 @@
   "noteCharCount_other": {
     "message": "$1 characters",
     "description": "Character count of a note. $1 is the number."
+  },
+  "noteCharCount_few": {
+    "message": "$1 characters",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "noteCharCount_many": {
+    "message": "$1 characters",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "charCountLimit": {
     "message": "$1/$2 characters",
@@ -5321,8 +5445,12 @@
     "description": "Customize navigation hints, snippets and omnibar."
   },
   "navigationSettingsTitle": {
-      "message": "Navigation settings",
-      "description": "Popup: heading over the navigation button, which carries the on/off switch."
+    "message": "Navigation settings",
+    "description": "Popup: heading over the navigation button, which carries the on/off switch."
+  },
+  "navigationSettingsTitle_tooltip": {
+    "message": "Navigation settings",
+    "description": "Full name of the popup section, shown on hover; the label itself may be shortened to fit."
   },
   "toggleHintsTooltip": {
     "message": "Enable/Disable all hint commands",
@@ -5635,6 +5763,14 @@
     "message": "$1 notes deleted.",
     "description": "Message after deleting orphan / general notes. Form for any other count (CLDR \"other\")."
   },
+  "allOrphanNotesDeleted_few": {
+    "message": "$1 notes deleted.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "allOrphanNotesDeleted_many": {
+    "message": "$1 notes deleted.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "noOrphanNotesToDelete": {
     "message": "No notes to delete.",
     "description": "Message when there are no notes to delete."
@@ -5656,6 +5792,26 @@
   "allOrphanScreenshotsDeleted_other": {
     "message": "All $1 orphan screenshots have been deleted.",
     "description": "Confirmation message shown after deleting all screenshots that are no longer associated with any existing group. The $COUNT$ placeholder will be replaced by the number of deleted items. Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "allOrphanScreenshotsDeleted_few": {
+    "message": "All $1 orphan screenshots have been deleted.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "5"
+      }
+    }
+  },
+  "allOrphanScreenshotsDeleted_many": {
+    "message": "All $1 orphan screenshots have been deleted.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -5940,6 +6096,24 @@
       }
     },
     "description": "Form for any other count (CLDR \"other\")."
+  },
+  "allGroupsBackedUp_few": {
+    "message": "$1 inactive groups have been backed up.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "allGroupsBackedUp_many": {
+    "message": "$1 inactive groups have been backed up.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "allGroupsRestored": {
     "message": "All $1 backed up groups have been restored.",
@@ -6379,10 +6553,10 @@
     "message": "Completed"
   },
   "downloadFilterPaused": {
-      "message": "Paused"
+    "message": "Paused"
   },
   "downloadFilterFailed": {
-      "message": "Failed"
+    "message": "Failed"
   },
   "filterDownloads": {
     "message": "Filter downloads"
@@ -6855,7 +7029,7 @@
     "message": "Quick Access Menu"
   },
   "snippetHelpPopupTooltip": {
-    "message": "Type $$ in any text field to open a menu with your top 5 most used snippets.",
+    "message": "Type $$$$ in any text field to open a menu with your top 5 most used snippets.",
     "description": "Tooltip for snippet quick access menu"
   },
   "snippetHelpPopupDescPrefix": {
@@ -7228,28 +7402,28 @@
     "message": "Select a tab to open as Picture-in-Picture window"
   },
   "omnibarPrefixSidePanelTitle": {
-      "message": "Open in the side panel",
-      "description": "Title of the sp: prefix row"
+    "message": "Open in the side panel",
+    "description": "Title of the sp: prefix row"
   },
   "omnibarPrefixSidePanelDesc": {
-      "message": "Open a tab, an address or a search in the side panel",
-      "description": "What the sp: prefix does"
+    "message": "Open a tab, an address or a search in the side panel",
+    "description": "What the sp: prefix does"
   },
   "omnibarSidePanelOpenUrl": {
-      "message": "Open this address in the side panel",
-      "description": "Row for a typed address"
+    "message": "Open this address in the side panel",
+    "description": "Row for a typed address"
   },
   "omnibarSidePanelSearch": {
-      "message": "Search for this in the side panel",
-      "description": "Row for typed search terms"
+    "message": "Search for this in the side panel",
+    "description": "Row for typed search terms"
   },
   "omnibarTutorialSidePanelTitle": {
-      "message": "Press Ctrl + Enter on a page",
-      "description": "Tutorial row"
+    "message": "Press Ctrl + Enter on a page",
+    "description": "Tutorial row"
   },
   "omnibarTutorialSidePanelDesc": {
-      "message": "On a tab, a bookmark, a history entry or a search, Ctrl+Enter opens it in the side panel.",
-      "description": "Tutorial row"
+    "message": "On a tab, a bookmark, a history entry or a search, Ctrl+Enter opens it in the side panel.",
+    "description": "Tutorial row"
   },
   "omnibarPrefixVideoPipTitle": {
     "message": "Open Video PiP"
@@ -7961,159 +8135,159 @@
     "message": "Reading list"
   },
   "sectionReadingAPage": {
-      "message": "Reading a web page",
-      "description": "About page: section title"
+    "message": "Reading a web page",
+    "description": "About page: section title"
   },
   "sectionVideo": {
-      "message": "Floating Video & PiP Tools",
-      "description": "About page: section title"
+    "message": "Floating Video & PiP Tools",
+    "description": "About page: section title"
   },
   "sectionWebActivity": {
-      "message": "Web Activity & Digital Wellbeing",
-      "description": "About page: section title"
+    "message": "Web Activity & Digital Wellbeing",
+    "description": "About page: section title"
   },
   "feature_webActivity_tracking": {
-      "message": "Time spent on every site, counted only while you are really there: the clock stops when you go idle or the browser loses focus.",
-      "description": "Web activity feature"
+    "message": "Time spent on every site, counted only while you are really there: the clock stops when you go idle or the browser loses focus.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_dashboard": {
-      "message": "A dashboard with the totals, the sites that took the most time and the figures for whichever period you pick.",
-      "description": "Web activity feature"
+    "message": "A dashboard with the totals, the sites that took the most time and the figures for whichever period you pick.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_categories": {
-      "message": "Every site filed by category, the ones it recognises on its own and the ones you add.",
-      "description": "Web activity feature"
+    "message": "Every site filed by category, the ones it recognises on its own and the ones you add.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_limits": {
-      "message": "Daily and weekly allowances per site, with a warning before the time runs out.",
-      "description": "Web activity feature"
+    "message": "Daily and weekly allowances per site, with a warning before the time runs out.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_schedules": {
-      "message": "Allowed hours per site: outside the windows you set, the site does not open.",
-      "description": "Web activity feature"
+    "message": "Allowed hours per site: outside the windows you set, the site does not open.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_blocking": {
-      "message": "A block screen that says why it is blocked and when it lifts, with five more minutes if you need them.",
-      "description": "Web activity feature"
+    "message": "A block screen that says why it is blocked and when it lifts, with five more minutes if you need them.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_password": {
-      "message": "A password guarding the rules, so switching off a limit is not one click away.",
-      "description": "Web activity feature"
+    "message": "A password guarding the rules, so switching off a limit is not one click away.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_patterns": {
-      "message": "When you browse: a year in a heatmap, the hours of the day and the days of the week.",
-      "description": "Web activity feature"
+    "message": "When you browse: a year in a heatmap, the hours of the day and the days of the week.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_log": {
-      "message": "A log of every site with search, sorting and columns you choose.",
-      "description": "Web activity feature"
+    "message": "A log of every site with search, sorting and columns you choose.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_ignored": {
-      "message": "Sites that are never recorded, and a retention period after which the older history is deleted on its own.",
-      "description": "Web activity feature"
+    "message": "Sites that are never recorded, and a retention period after which the older history is deleted on its own.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_panel": {
-      "message": "The activity in the side panel, which can be pinned, showing what is being timed right now.",
-      "description": "Web activity feature"
+    "message": "The activity in the side panel, which can be pinned, showing what is being timed right now.",
+    "description": "Web activity feature"
   },
   "feature_webActivity_data": {
-      "message": "Everything kept on this device, with import, export and optional sync between your browsers.",
-      "description": "Web activity feature"
+    "message": "Everything kept on this device, with import, export and optional sync between your browsers.",
+    "description": "Web activity feature"
   },
   "feature_captureFullPage": {
-      "message": "Capture the whole page by scrolling through it, keeping sticky headers and cookie bars from being stamped onto every strip.",
-      "description": "List groups feature"
+    "message": "Capture the whole page by scrolling through it, keeping sticky headers and cookie bars from being stamped onto every strip.",
+    "description": "List groups feature"
   },
   "feature_captureParts": {
-      "message": "Capture a full page in parts, one image per screenful, for a page that reads better as a series of screens.",
-      "description": "List groups feature"
+    "message": "Capture a full page in parts, one image per screenful, for a page that reads better as a series of screens.",
+    "description": "List groups feature"
   },
   "feature_captureGroupTabs": {
-      "message": "Capture every tab of a group in one go, with a count of how far along it is.",
-      "description": "List groups feature"
+    "message": "Capture every tab of a group in one go, with a count of how far along it is.",
+    "description": "List groups feature"
   },
   "feature_captureDownloadFormats": {
-      "message": "Download a capture, or a whole gallery, as PNG images or as a single PDF paginated across as many sheets as it needs.",
-      "description": "List groups feature"
+    "message": "Download a capture, or a whole gallery, as PNG images or as a single PDF paginated across as many sheets as it needs.",
+    "description": "List groups feature"
   },
   "feature_theme_color_picker": {
-      "message": "Pipette: take any colour on screen with a magnifier, a pixel grid and the hex value under the cursor, on every platform.",
-      "description": "Themes feature"
+    "message": "Pipette: take any colour on screen with a magnifier, a pixel grid and the hex value under the cursor, on every platform.",
+    "description": "Themes feature"
   },
   "feature_omnibar_read_aloud": {
-      "message": "Read a tab out loud from the omnibar: it lists them all and reads the one you pick, waking it if it was asleep.",
-      "description": "Omnibar feature"
+    "message": "Read a tab out loud from the omnibar: it lists them all and reads the one you pick, waking it if it was asleep.",
+    "description": "Omnibar feature"
   },
   "feature_omnibar_side_panel": {
-      "message": "Open a tab, an address or a search in the side panel, from its own prefix or with Ctrl+Enter on any result.",
-      "description": "Omnibar feature"
+    "message": "Open a tab, an address or a search in the side panel, from its own prefix or with Ctrl+Enter on any result.",
+    "description": "Omnibar feature"
   },
   "feature_shortcuts_group_capture": {
-      "message": "Capture every tab of a group from the keyboard: the visible area of each, the whole page of each, or the whole page in parts.",
-      "description": "Navigation shortcuts feature"
+    "message": "Capture every tab of a group from the keyboard: the visible area of each, the whole page of each, or the whole page in parts.",
+    "description": "Navigation shortcuts feature"
   },
   "feature_noteFromSelection": {
-      "message": "Take a note from the selected text, from the keyboard or the right-click menu: it is filed under the group the page belongs to and titled with the nearest heading above the selection, so a long page leaves one note per section instead of one note for the lot.",
-      "description": "Navigation shortcuts feature"
+    "message": "Take a note from the selected text, from the keyboard or the right-click menu: it is filed under the group the page belongs to and titled with the nearest heading above the selection, so a long page leaves one note per section instead of one note for the lot.",
+    "description": "Navigation shortcuts feature"
   },
   "feature_youtubeShortsPreviewAudio": {
-      "message": "Hear a YouTube Short while you hover over it: a speaker on the preview turns the sound on at the volume you already use on YouTube, and it stays on as you move from one Short to the next.",
-      "description": "Feature: sound on YouTube Shorts hover previews"
+    "message": "Hear a YouTube Short while you hover over it: a speaker on the preview turns the sound on at the volume you already use on YouTube, and it stays on as you move from one Short to the next.",
+    "description": "Feature: sound on YouTube Shorts hover previews"
   },
   "licenseTitle": {
-      "message": "License",
-      "description": "About page: section title"
+    "message": "License",
+    "description": "About page: section title"
   },
   "licenseCopyright": {
-      "message": "Copyright (c) 2026 GENKI Organization. All rights reserved.",
-      "description": "License section: copyright line"
+    "message": "Copyright (c) 2026 GENKI Organization. All rights reserved.",
+    "description": "License section: copyright line"
   },
   "licenseIntro": {
-      "message": "This is proprietary software. Its source code is published on GitHub for one reason only: so that anyone can read it, audit it for security, learn from it, and propose improvements.",
-      "description": "License section: what the licence is"
+    "message": "This is proprietary software. Its source code is published on GitHub for one reason only: so that anyone can read it, audit it for security, learn from it, and propose improvements.",
+    "description": "License section: what the licence is"
   },
   "licenseAllowedTitle": {
-      "message": "What you may do",
-      "description": "License section: heading"
+    "message": "What you may do",
+    "description": "License section: heading"
   },
   "licenseAllowed1": {
-      "message": "Download, inspect and compile the code on your own machine, for personal and private use.",
-      "description": "License section: granted permission"
+    "message": "Download, inspect and compile the code on your own machine, for personal and private use.",
+    "description": "License section: granted permission"
   },
   "licenseAllowed2": {
-      "message": "Fork the repository on GitHub for the sole purpose of proposing improvements or fixing bugs through a Pull Request back to the original repository.",
-      "description": "License section: granted permission"
+    "message": "Fork the repository on GitHub for the sole purpose of proposing improvements or fixing bugs through a Pull Request back to the original repository.",
+    "description": "License section: granted permission"
   },
   "licenseForbiddenTitle": {
-      "message": "What is not allowed",
-      "description": "License section: heading"
+    "message": "What is not allowed",
+    "description": "License section: heading"
   },
   "licenseForbidden1": {
-      "message": "Copying, cloning, forking for a separate project, or reproducing this code to build a derivative product.",
-      "description": "License section: prohibition"
+    "message": "Copying, cloning, forking for a separate project, or reproducing this code to build a derivative product.",
+    "description": "License section: prohibition"
   },
   "licenseForbidden2": {
-      "message": "Compiling, packaging or publishing this code, in whole or in part, on the Chrome Web Store, Edge Add-ons, Firefox Add-ons or any other distribution platform.",
-      "description": "License section: prohibition"
+    "message": "Compiling, packaging or publishing this code, in whole or in part, on the Chrome Web Store, Edge Add-ons, Firefox Add-ons or any other distribution platform.",
+    "description": "License section: prohibition"
   },
   "licenseForbidden3": {
-      "message": "Using this code or any of its components for commercial purposes.",
-      "description": "License section: prohibition"
+    "message": "Using this code or any of its components for commercial purposes.",
+    "description": "License section: prohibition"
   },
   "licenseFullTextLink": {
-      "message": "Read the full licence, in English and Spanish",
-      "description": "License section: link to the LICENSE file"
+    "message": "Read the full licence, in English and Spanish",
+    "description": "License section: link to the LICENSE file"
   },
   "termsLink": {
-      "message": "Read the terms of service",
-      "description": "License section: link to the terms of service on the website"
+    "message": "Read the terms of service",
+    "description": "License section: link to the terms of service on the website"
   },
   "termsLinkTitle": {
-      "message": "Terms of service: the licence, the disclaimers, and what a tip is",
-      "description": "License section: tooltip on the terms of service link"
+    "message": "Terms of service: the licence, the disclaimers, and what a tip is",
+    "description": "License section: tooltip on the terms of service link"
   },
   "licenseFullTextTitle": {
-      "message": "Opens the LICENSE file of the repository on GitHub",
+    "message": "Opens the LICENSE file of the repository on GitHub",
     "description": "Opens the LICENSE file of the repository on GitHub"
   },
   "sectionListDownloads": {
@@ -8330,8 +8504,8 @@
     "message": "Leave a Review"
   },
   "rateExtensionBtnTitle": {
-      "message": "Opens the Chrome Web Store listing, on its reviews tab",
-      "description": "Tooltip on the popup button that leads to the store reviews."
+    "message": "Opens the Chrome Web Store listing, on its reviews tab",
+    "description": "Tooltip on the popup button that leads to the store reviews."
   },
   "rateExtensionDescShort": {
     "message": "Enjoying Intelligent Workspace? Please consider leaving a 5-star review!"
@@ -8491,6 +8665,14 @@
   "toolCloseTabs_other": {
     "message": "❌ Closing $1 tabs",
     "description": "Form for any other count (CLDR \"other\")."
+  },
+  "toolCloseTabs_few": {
+    "message": "❌ Closing $1 tabs",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "toolCloseTabs_many": {
+    "message": "❌ Closing $1 tabs",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "toolDuplicateTab": {
     "message": "📄 Duplicating current tab…"
@@ -9130,6 +9312,14 @@
   "dashboardProjects_other": {
     "message": "$1 projects"
   },
+  "dashboardProjects_few": {
+    "message": "$1 projects",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardProjects_many": {
+    "message": "$1 projects",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardSessionsTotal": {
     "message": "$1 total"
   },
@@ -9491,6 +9681,24 @@
       }
     }
   },
+  "pomodoroUnitSessionsTitle_few": {
+    "message": "With $1 pomodoros you finish the task. Each completed task counts as a session",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pomodoroUnitSessionsTitle_many": {
+    "message": "With $1 pomodoros you finish the task. Each completed task counts as a session",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
   "pomodoroUnitCycleInfoTitle_one": {
     "message": "With $1 pomodoro you complete a cycle (then comes the long break)",
     "description": "Cycle info title Form for a count of one (CLDR \"one\"); the plural is chosen at run time.",
@@ -9503,6 +9711,24 @@
   "pomodoroUnitCycleInfoTitle_other": {
     "message": "With $1 pomodoros you complete a cycle (then comes the long break)",
     "description": "Cycle info title Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pomodoroUnitCycleInfoTitle_few": {
+    "message": "With $1 pomodoros you complete a cycle (then comes the long break)",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "pomodoroUnitCycleInfoTitle_many": {
+    "message": "With $1 pomodoros you complete a cycle (then comes the long break)",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -9794,6 +10020,34 @@
       }
     }
   },
+  "confirmDeleteOtherGroups_few": {
+    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "keepGroup": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
+  "confirmDeleteOtherGroups_many": {
+    "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      },
+      "keepGroup": {
+        "content": "$2",
+        "example": "Work"
+      }
+    }
+  },
   "confirmDeleteOtherGroupsMultiple": {
     "message": "Are you sure you want to close $1 groups in this window except the group \"$2\"?",
     "description": "Confirmation message asking user if they want to close multiple groups in this window and stating the group to keep.",
@@ -9821,6 +10075,26 @@
   "confirmDeleteAllGroupsInWindow_other": {
     "message": "Are you sure you want to close $1 groups in this window?",
     "description": "Confirmation message asking user if they want to close all groups in this window when there is no active group. Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmDeleteAllGroupsInWindow_few": {
+    "message": "Are you sure you want to close $1 groups in this window?",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "confirmDeleteAllGroupsInWindow_many": {
+    "message": "Are you sure you want to close $1 groups in this window?",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "count": {
         "content": "$1",
@@ -10296,6 +10570,14 @@
     "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all.",
     "description": "Form for any other count (CLDR \"other\")."
   },
+  "omnibarCaptureGroupHint_few": {
+    "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarCaptureGroupHint_many": {
+    "message": "Capture the whole group ($1 tabs). Space / Ctrl+Click picks them all.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "omnibarClickDeleteTab": {
     "message": "Click to delete. Space / Ctrl+Click to select, Shift+Click to select range."
   },
@@ -10333,6 +10615,14 @@
     "message": "$1 groups",
     "description": "Number of tab groups in an omnibar delete row. $1 is the count."
   },
+  "omnibarGroupCount_few": {
+    "message": "$1 groups",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarGroupCount_many": {
+    "message": "$1 groups",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "omnibarTabCount_one": {
     "message": "$1 tab",
     "description": "Number of tabs in an omnibar delete row. $1 is the count."
@@ -10340,6 +10630,14 @@
   "omnibarTabCount_other": {
     "message": "$1 tabs",
     "description": "Number of tabs in an omnibar delete row. $1 is the count."
+  },
+  "omnibarTabCount_few": {
+    "message": "$1 tabs",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarTabCount_many": {
+    "message": "$1 tabs",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "omnibarDeleteAllTabs": {
     "message": "Delete all tabs ($1)",
@@ -10496,6 +10794,14 @@
     "message": "$1 rules",
     "description": "Number of rules, in the omnibar delete row. $1 is the count."
   },
+  "omnibarRuleCount_few": {
+    "message": "$1 rules",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarRuleCount_many": {
+    "message": "$1 rules",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "omnibarDomainCount_one": {
     "message": "$1 domain",
     "description": "Number of domains, in the omnibar delete row. $1 is the count."
@@ -10503,6 +10809,14 @@
   "omnibarDomainCount_other": {
     "message": "$1 domains",
     "description": "Number of domains, in the omnibar delete row. $1 is the count."
+  },
+  "omnibarDomainCount_few": {
+    "message": "$1 domains",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarDomainCount_many": {
+    "message": "$1 domains",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "omnibarDeleteAllRulesDesc": {
     "message": "Deletes all these rules"
@@ -10567,6 +10881,24 @@
       }
     },
     "description": "Form for any other count (CLDR \"other\")."
+  },
+  "omnibarGroupBackup_few": {
+    "message": "Group Backup ($1 tabs)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "omnibarGroupBackup_many": {
+    "message": "Group Backup ($1 tabs)",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    },
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "omnibarRuleColorUpdated": {
     "message": "Rule color updated to $1",
@@ -11221,6 +11553,14 @@
   "webActivityCategory_other": {
     "message": "Other"
   },
+  "webActivityCategory_few": {
+    "message": "Other",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivityCategory_many": {
+    "message": "Other",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "webActivitySites": {
     "message": "Sites"
   },
@@ -11530,6 +11870,14 @@
     "message": "Grants $1 minutes of grace period. It is recorded as a snooze, not as removing the limit.",
     "description": "Form for any other count (CLDR \"other\")."
   },
+  "webActivitySnoozeWithTime_few": {
+    "message": "Grants $1 minutes of grace period. It is recorded as a snooze, not as removing the limit.",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivitySnoozeWithTime_many": {
+    "message": "Grants $1 minutes of grace period. It is recorded as a snooze, not as removing the limit.",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "webActivitySnoozed": {
     "message": "Block postponed"
   },
@@ -11670,6 +12018,14 @@
   "webActivityBlockedSnooze_other": {
     "message": "$1 more minutes",
     "description": "Form for any other count (CLDR \"other\")."
+  },
+  "webActivityBlockedSnooze_few": {
+    "message": "$1 more minutes",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivityBlockedSnooze_many": {
+    "message": "$1 more minutes",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "webActivityBlockedFooter": {
     "message": "You set this yourself, from the web activity dashboard. You can change it there."
@@ -12196,6 +12552,14 @@
     "message": "$1 days",
     "description": "Number of days recorded. $1 is the count."
   },
+  "webActivityDayCount_few": {
+    "message": "$1 days",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivityDayCount_many": {
+    "message": "$1 days",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "webActivityCleared": {
     "message": "History deleted",
     "description": "History deleted"
@@ -12256,6 +12620,14 @@
   "webActivityCategorySites_other": {
     "message": "$1 sites",
     "description": "How many sites are filed under this category Form for any other count (CLDR \"other\")."
+  },
+  "webActivityCategorySites_few": {
+    "message": "$1 sites",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivityCategorySites_many": {
+    "message": "$1 sites",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "webActivityCategoryUnused": {
     "message": "no sites yet",
@@ -12437,6 +12809,14 @@
   "webActivityWindowCount_other": {
     "message": "$1 windows",
     "description": "How many allowed time windows are set Form for any other count (CLDR \"other\")."
+  },
+  "webActivityWindowCount_few": {
+    "message": "$1 windows",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "webActivityWindowCount_many": {
+    "message": "$1 windows",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "webActivityWindowNoDays": {
     "message": "Pick at least one day, or this window does nothing.",
@@ -12789,6 +13169,24 @@
   "groupTabsCaptured_other": {
     "message": "$1 captures saved from the group",
     "description": "Result of capturing a whole group Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "groupTabsCaptured_few": {
+    "message": "$1 captures saved from the group",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "groupTabsCaptured_many": {
+    "message": "$1 captures saved from the group",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "count": {
         "content": "$1"
@@ -13379,16 +13777,16 @@
     "message": "Read the full privacy policy"
   },
   "popupSupportLink": {
-      "message": "Support",
-      "description": "Popup footer: link to the support page on the website."
+    "message": "Support",
+    "description": "Popup footer: link to the support page on the website."
   },
   "popupTermsLink": {
-      "message": "Terms of use",
-      "description": "Popup footer: link to the terms of service on the website."
+    "message": "Terms of use",
+    "description": "Popup footer: link to the terms of service on the website."
   },
   "popupPrivacyPolicyLink": {
-      "message": "Privacy policy",
-      "description": "Popup footer: link to the privacy policy on the website."
+    "message": "Privacy policy",
+    "description": "Popup footer: link to the privacy policy on the website."
   },
   "groupTabCountTooltip_one": {
     "message": "$1 of $2 tab viewed",
@@ -13405,6 +13803,30 @@
   "groupTabCountTooltip_other": {
     "message": "$1 of $2 tabs viewed",
     "description": "$1 of $2 tabs viewed Form for any other count (CLDR \"other\").",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "groupTabCountTooltip_few": {
+    "message": "$1 of $2 tabs viewed",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "groupTabCountTooltip_many": {
+    "message": "$1 of $2 tabs viewed",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
     "placeholders": {
       "1": {
         "content": "$1"
@@ -13437,5 +13859,205 @@
         "content": "$2"
       }
     }
+  },
+  "backupTabCountTooltip_few": {
+    "message": "$1 of $2 tabs restored",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "backupTabCountTooltip_many": {
+    "message": "$1 of $2 tabs restored",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it.",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      },
+      "2": {
+        "content": "$2"
+      }
+    }
+  },
+  "imageFilePickerDescription": {
+    "message": "Images",
+    "description": "File type label shown in the system file picker when uploading images to the screenshot gallery."
+  },
+  "screenshotImageAlt": {
+    "message": "Screenshot of $1",
+    "description": "Alternative text of a screenshot image in the gallery. $1 is the page title."
+  },
+  "ocrProgressTooltip": {
+    "message": "OCR… $1%",
+    "description": "Tooltip of the OCR button while text recognition runs. $1 is the percentage done."
+  },
+  "geminiPanelAriaLabel": {
+    "message": "Gemini panel",
+    "description": "Accessible name (screen readers) of the Gemini chat side panel region."
+  },
+  "cookieSameSiteNone": {
+    "message": "None",
+    "description": "Cookie editor: label of the SameSite option 'None' (no restriction). Lax and Strict are left untranslated as technical names."
+  },
+  "pomodoroProjectNamePlaceholder": {
+    "message": "My project",
+    "description": "Placeholder of the project name field in the Pomodoro settings panel."
+  },
+  "dateFormatPlaceholder": {
+    "message": "YYYY-MM-DD",
+    "description": "Placeholder shown in date fields when no date is chosen. Keep the year-month-day order; only translate the letters (Y=year, M=month, D=day)."
+  },
+  "appLogoAriaLabel": {
+    "message": "Intelligent Workspace logo",
+    "description": "Accessible name (screen readers) of the extension logo."
+  },
+  "colorChannelSaturation": {
+    "message": "Saturation",
+    "description": "Color picker: tooltip of the S (saturation) number field in HSL notation."
+  },
+  "colorChannelLightness": {
+    "message": "Lightness",
+    "description": "Color picker: tooltip of the L (lightness) number field in HSL notation."
+  },
+  "teamPhotoAlt": {
+    "message": "Team photo",
+    "description": "Alternative text of the team photo on the About page."
+  },
+  "dashboardJointSeries": {
+    "message": "$1 (joint)",
+    "description": "Pomodoro dashboard chart: legend/tooltip label of the stacked (joint) series. $1 is the series name, e.g. \"Focus (h)\"."
+  },
+  "dashboardTotalHours": {
+    "message": "Total: $1h",
+    "description": "Pomodoro dashboard chart tooltip footer. $1 is a number of hours with one decimal."
+  },
+  "invalidFileFormat": {
+    "message": "Invalid file format",
+    "description": "Error shown when an imported file does not have the expected format."
+  },
+  "pomodoroTaskDefaultName": {
+    "message": "Task",
+    "description": "Pomodoro stats: name shown for a completed task that has no name."
+  },
+  "pomodoroTaskCycle": {
+    "message": "Cycle $1",
+    "description": "Pomodoro stats: cycle in which a task was completed. $1 is the cycle number."
+  },
+  "unsupportedFileFormat": {
+    "message": "Unsupported file format",
+    "description": "Error shown when importing a Pomodoro statistics file whose format is not recognized."
+  },
+  "shortcutUsedBySnippet": {
+    "message": "Snippet ($1)",
+    "description": "Customize hints page: names what already uses a key when a shortcut conflicts with a snippet. $1 is the snippet trigger."
+  },
+  "conversationDefaultName": {
+    "message": "Conversation",
+    "description": "Gemini chat: name given to an unsaved conversation that has no question text yet."
+  },
+  "aiConnectionUnknownError": {
+    "message": "Unknown error connecting to AI",
+    "description": "Gemini chat: error shown when the AI request fails without a specific reason."
+  },
+  "omnibarFailedBackupGroups": {
+    "message": "Failed to back up the groups",
+    "description": "Omnibar toast when backing up all groups fails."
+  },
+  "omnibarFailedBackupGroup": {
+    "message": "Failed to back up the group",
+    "description": "Omnibar toast when backing up one group fails."
+  },
+  "omnibarFailedRestoreBackups": {
+    "message": "Failed to restore the backups",
+    "description": "Omnibar toast when restoring backed-up groups fails."
+  },
+  "previewLinkFallback": {
+    "message": "Link",
+    "description": "Link preview window header: shown instead of the domain when the link address cannot be parsed."
+  },
+  "conversationNumbered": {
+    "message": "Conversation $1",
+    "description": "Omnibar: name of an unsaved Gemini conversation with no title. $1 is its position number."
+  },
+  "screenshotNumbered": {
+    "message": "Screenshot $1",
+    "description": "Omnibar: name of a screenshot that has no title. $1 is its internal number."
+  },
+  "omnibarErrNoEntryIds": {
+    "message": "No conversation entries were given",
+    "description": "Omnibar error when a conversation is expanded without any entry to load."
+  },
+  "omnibarErrNoConversationEntries": {
+    "message": "No entries found for this conversation",
+    "description": "Omnibar error when a saved conversation has no stored entries."
+  },
+  "selectionPipTitle": {
+    "message": "Text clip",
+    "description": "Title of the Picture-in-Picture window that shows the text selected on a page."
+  },
+  "errorNoGroupForRule": {
+    "message": "Could not find a group for the rule '$1'.",
+    "description": "Notification when closing the tabs of a rule fails because its tab group was not found. $1 is the rule name."
+  },
+  "agentQueryCancelledByUser": {
+    "message": "Query cancelled by user",
+    "description": "Gemini agent: step shown when the user stops a running query."
+  },
+  "agentQueryCancelled": {
+    "message": "Query cancelled.",
+    "description": "Gemini agent: answer shown when a query was cancelled."
+  },
+  "agentCouldNotConnect": {
+    "message": "Could not connect to the Gemini API",
+    "description": "Gemini agent: error when the request to the Gemini API fails without details."
+  },
+  "agentErrorDetail": {
+    "message": "Error: $1",
+    "description": "Gemini agent: failed step. $1 is the error message."
+  },
+  "agentUnexpectedError": {
+    "message": "Unexpected error: $1",
+    "description": "Gemini agent: answer when an unexpected error happens. $1 is the error message."
+  },
+  "httpErrorStatus": {
+    "message": "HTTP error (status $1)",
+    "description": "Error shown when a web request fails and the server gives no message. $1 is the HTTP status code."
+  },
+  "networkErrorDetail": {
+    "message": "Network error: $1",
+    "description": "Error shown when a request cannot reach the server. $1 is the technical reason."
+  },
+  "unknownError": {
+    "message": "Unknown error",
+    "description": "Generic error shown when the cause is not known."
+  },
+  "geminiResponseBlocked": {
+    "message": "The response was blocked for safety reasons.",
+    "description": "Gemini chat: error when Gemini withholds an answer because of its safety filters."
+  },
+  "geminiResponseEmpty": {
+    "message": "The API response had no content.",
+    "description": "Gemini chat: error when the Gemini API answers with no text."
+  },
+  "geminiAllKeysExhausted": {
+    "message": "All API keys have used up their quota.",
+    "description": "Gemini chat: error when every configured API key is out of quota."
+  },
+  "backupNotFound": {
+    "message": "Backup not found",
+    "description": "Error when restoring a group backup that no longer exists."
+  },
+  "backupTabNotFound": {
+    "message": "Tab not found in the backup",
+    "description": "Error when restoring one tab from a group backup and the tab is not in it."
+  },
+  "errorMissingUrlOrRule": {
+    "message": "The address or the rule name is missing",
+    "description": "Error when adding an address to a rule without giving both the address and the rule name."
   }
 }

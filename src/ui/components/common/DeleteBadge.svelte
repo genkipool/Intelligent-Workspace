@@ -1,4 +1,6 @@
 <script>
+    import { t } from '../../stores/i18nStore.js';
+
     let {
         title = '',
         ariaLabel = '',
@@ -22,7 +24,7 @@
     class="delete-badge-btn {className}"
     class:show-on-hover={showOnParentHover}
     {title}
-    aria-label={ariaLabel || title || 'Delete'}
+    aria-label={ariaLabel || title || $t('delete') || 'Delete'}
     {disabled}
     onclick={handleClick}
 >

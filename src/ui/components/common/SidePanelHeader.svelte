@@ -95,13 +95,14 @@
             role="button"
             tabindex="0"
             data-i18n={titleI18n}
+            {title}
             onclick={onTitleClick}
             onkeydown={(e) => e.key === 'Enter' && onTitleClick()}
         >
             {title}
         </h1>
     {:else}
-        <h1 id={titleId} class={titleClass || undefined} data-i18n={titleI18n}>{title}</h1>
+        <h1 id={titleId} class={titleClass || undefined} data-i18n={titleI18n} {title}>{title}</h1>
     {/if}
 
     {#if actionsClass}
@@ -110,3 +111,17 @@
         {@render buttons()}
     {/if}
 </header>
+
+<style>
+    /* The title keeps to one line in every language, next to the header's buttons. A
+       longer translation used to wrap and double the height of the header ("Управление
+       правилами" in a 400px side panel). If it still does not fit it ends in an
+       ellipsis, and the full title is its tooltip. */
+    h1 {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>

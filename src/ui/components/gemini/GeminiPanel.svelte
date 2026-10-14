@@ -187,7 +187,7 @@
     id="gemini-panel-wrapper"
     style="display: {isLaidOut ? 'contents' : 'none'};"
     role="region"
-    aria-label="Gemini panel"
+    aria-label={$t('geminiPanelAriaLabel') || 'Gemini panel'}
 >
     <div id="gemini-model-selector-container">
         <button

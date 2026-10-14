@@ -12,6 +12,26 @@ import { activeLanguage, resolveLanguage, DEFAULT_LANGUAGE } from '../utils/i18n
 export const SITE_ORIGIN = 'https://intelligentworkspace.genkipool.com';
 
 /**
+ * Where each of the extension's languages lives on the website. The site names two of
+ * them by their base code — Brazilian Portuguese is `/pt` and Simplified Chinese `/zh`;
+ * `/pt-br` and `/zh-cn` answer 404 — so the path cannot be derived from the code.
+ * English lives at the root. A language missing here falls back to English.
+ */
+const SITE_PATHS = {
+    en: '',
+    es: '/es',
+    de: '/de',
+    fr: '/fr',
+    it: '/it',
+    pt_BR: '/pt',
+    ru: '/ru',
+    hi: '/hi',
+    ja: '/ja',
+    zh_CN: '/zh',
+    ko: '/ko',
+};
+
+/**
  * The address of a page of the website.
  *
  * @param {'support'|'privacy'|'terms'} page
@@ -19,10 +39,12 @@ export const SITE_ORIGIN = 'https://intelligentworkspace.genkipool.com';
  * @returns {string}
  */
 export function siteUrl(page, language = activeLanguage()) {
-    const code = resolveLanguage(language);
-    // English lives at the root; every other language under its own code.
-    const prefix = code === DEFAULT_LANGUAGE ? '' : `/${code.replace('_', '-').toLowerCase()}`;
-    return `${SITE_ORIGIN}${prefix}/${page}`;
+    return `${SITE_ORIGIN}${sitePathPrefix(language)}/${page}`;
+}
+
+/** The path the website serves a language under: `''` for English, `/fr`, `/pt`… */
+export function sitePathPrefix(language = activeLanguage()) {
+    return SITE_PATHS[resolveLanguage(language)] ?? SITE_PATHS[DEFAULT_LANGUAGE];
 }
 
 /**

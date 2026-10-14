@@ -1154,7 +1154,7 @@ export async function importHintsConfig(file, utils) {
                 console.error('Import error:', error);
 
                 // IMPORTANT: We build the detail message here
-                const errorDetail = error.message || 'Unknown error';
+                const errorDetail = error.message || localizedMsg('unknownError') || 'Unknown error';
 
                 // We call the notification passing the detail as parameter for $1
                 // This will show: "Import errors: Invalid file type..."

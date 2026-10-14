@@ -2794,8 +2794,12 @@ export function initGroupsEvents() {
                     if (tabToRestore) {
                         handleRestoreSingleTab(groupId, tabToRestore);
                         sendResponse({ success: true });
-                    } else sendResponse({ success: false, error: 'Tab not found in backup' });
-                } else sendResponse({ success: false, error: 'Backup not found' });
+                    } else
+                        sendResponse({
+                            success: false,
+                            error: localizedMsg('backupTabNotFound') || 'Tab not found in backup',
+                        });
+                } else sendResponse({ success: false, error: localizedMsg('backupNotFound') || 'Backup not found' });
                 return true;
             }
 

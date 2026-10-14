@@ -18,7 +18,7 @@ export async function showDownloadPopup(button, url) {
         const response = await chrome.runtime.sendMessage({ action: 'getDownloadableFiles', url: url });
 
         if (chrome.runtime.lastError) throw new Error(chrome.runtime.lastError.message);
-        if (!response.success) throw new Error(response.error || 'Unknown error');
+        if (!response.success) throw new Error(response.error || localizedMsg('unknownError') || 'Unknown error');
 
         const files = response.files;
         if (!files || files.length === 0) {

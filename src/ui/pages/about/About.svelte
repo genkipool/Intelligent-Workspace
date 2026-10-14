@@ -99,7 +99,7 @@
             <section id="feedback-section" class="feedback-section card">
                 <h3>{$t('teamTitle')}</h3>
                 <div class="team-content">
-                    <img src={teamImg} alt="Team Photo" class="team-photo" />
+                    <img src={teamImg} alt={$t('teamPhotoAlt') || 'Team photo'} class="team-photo" />
                     <div class="team-members">
                         <p class="team-member">
                             <strong>{$t('teamMember1Name')}</strong><span>{$t('teamMember1Role')}</span>

@@ -16,7 +16,7 @@
 
     <template id="bookmark-item-template">
         <div class="bookmark-item" role="link" tabindex="0">
-            <img src="" alt="Favicon" class="favicon" />
+            <img src="" alt="" class="favicon" />
             <span class="bookmark-title"></span>
             <div class="bookmark-actions">
                 <button type="button" class="action-btn create-rule-btn" data-i18n-title="createRule">
@@ -94,7 +94,7 @@
                 </div>
 
                 <div class="modal-footer">
-                    <span class="items-count-label">0 items</span>
+                    <span class="items-count-label" data-i18n="itemsCount" data-params="[0]">0 items</span>
                     <button type="button" class="modal-btn-delete-all-listed error-state"></button>
                 </div>
             </div>

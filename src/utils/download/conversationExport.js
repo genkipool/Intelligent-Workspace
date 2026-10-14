@@ -4,6 +4,12 @@
  * Supports exporting in HTML, JSON, Markdown, and plain text (TXT).
  */
 import { parseMarkdown } from '../../ui/content-renderer/content-renderer.js';
+import { msg } from '../i18n.js';
+
+/** Title of an exported conversation that has none of its own, in the user's language. */
+function defaultTitle() {
+    return msg('geminiConversationDefaultTitle') || 'Gemini Conversation';
+}
 
 /**
  * Escapes special HTML characters.
@@ -102,7 +108,7 @@ export function getThemeTextOnColor() {
  * @returns {string}
  */
 export function exportConversationAsHtml(title, entries = [], options = {}) {
-    const safeTitle = escapeHtml(title || 'Gemini Conversation');
+    const safeTitle = escapeHtml(title || defaultTitle());
     const queryColor = options.queryColor ? normalizeColorCode(options.queryColor) : getThemeTextOnColor();
 
     const entriesHtml = entries
@@ -275,7 +281,7 @@ ${entriesHtml}
  */
 export function exportConversationAsJson(title, entries = []) {
     const data = {
-        title: title || 'Gemini Conversation',
+        title: title || defaultTitle(),
         exportedAt: new Date().toISOString(),
         totalEntries: entries.length,
         entries: entries.map((entry, index) => ({
@@ -297,7 +303,7 @@ export function exportConversationAsJson(title, entries = []) {
  * @returns {string}
  */
 export function exportConversationAsMarkdown(title, entries = []) {
-    const heading = `# ${title || 'Gemini Conversation'}\n\n`;
+    const heading = `# ${title || defaultTitle()}\n\n`;
     const body = entries
         .map((entry, index) => {
             const q = `## Q${index + 1}: ${entry.query || ''}\n\n`;
@@ -316,7 +322,7 @@ export function exportConversationAsMarkdown(title, entries = []) {
  * @returns {string}
  */
 export function exportConversationAsTxt(title, entries = []) {
-    const safeTitle = (title || 'Gemini Conversation').toUpperCase();
+    const safeTitle = (title || defaultTitle()).toUpperCase();
     const separator = '='.repeat(70);
     const thinSeparator = '-'.repeat(70);
 

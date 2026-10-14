@@ -398,7 +398,9 @@
                                                     </svg>
                                                 </button>
                                                 <option value="unspecified">{$t('cookieSameSiteUnspecified')}</option>
-                                                <option value="no_restriction">None</option>
+                                                <option value="no_restriction"
+                                                    >{$t('cookieSameSiteNone') || 'None'}</option
+                                                >
                                                 <option value="lax">Lax</option>
                                                 <option value="strict">Strict</option>
                                             </select>

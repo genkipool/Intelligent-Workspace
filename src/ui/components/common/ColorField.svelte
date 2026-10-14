@@ -442,7 +442,7 @@
                             spellcheck="false"
                             autocomplete="off"
                             maxlength="5"
-                            title={channel.title}
+                            title={$t(channel.titleKey) || channel.title}
                             value={channels[channel.key].toFixed(channel.decimals)}
                             oninput={(e) => channelInput(e, channel)}
                             onblur={(e) => channelBlur(e, channel)}

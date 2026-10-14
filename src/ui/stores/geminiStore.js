@@ -125,7 +125,7 @@ function createGeminiStore() {
                 (entry) => persistentIdSet.has(entry.id) && entry.isPersistent,
             );
             const groupedByTitle = allPersistentEntries.reduce((acc, entry) => {
-                const title = entry.persistentTitle || 'Untitled';
+                const title = entry.persistentTitle || localizedMsg('untitled') || 'Untitled';
                 if (!acc[title]) acc[title] = [];
                 acc[title].push(entry);
                 return acc;
@@ -180,9 +180,12 @@ function createGeminiStore() {
 
         let errorMsg = '';
         if (chrome.runtime.lastError) {
-            errorMsg = chrome.runtime.lastError.message || 'Connection error';
+            errorMsg = chrome.runtime.lastError.message || localizedMsg('connectionError') || 'Connection error';
         } else if (!response || response.error) {
-            errorMsg = response && response.error ? response.error : 'Unknown error connecting to AI';
+            errorMsg =
+                response && response.error
+                    ? response.error
+                    : localizedMsg('aiConnectionUnknownError') || 'Unknown error connecting to AI';
         }
 
         if (errorMsg) {
@@ -432,7 +435,7 @@ function createGeminiStore() {
                     (entry) => persistentIdSet.has(entry.id) && entry.isPersistent,
                 );
                 const groupedByTitle = allPersistentEntries.reduce((acc, entry) => {
-                    const title = entry.persistentTitle || 'Untitled';
+                    const title = entry.persistentTitle || localizedMsg('untitled') || 'Untitled';
                     if (!acc[title]) acc[title] = [];
                     acc[title].push(entry);
                     return acc;
@@ -714,7 +717,8 @@ function createGeminiStore() {
             );
             if (isAlreadyArchived) return;
 
-            const firstQuestion = s.conversationHistory[0]?.query || 'Conversation';
+            const firstQuestion =
+                s.conversationHistory[0]?.query || localizedMsg('conversationDefaultName') || 'Conversation';
             const title = firstQuestion.substring(0, 40) + (firstQuestion.length > 40 ? '...' : '');
 
             const newSessionConv = {
@@ -1048,9 +1052,13 @@ function createGeminiStore() {
 
                     let errorMsg = '';
                     if (chrome.runtime.lastError) {
-                        errorMsg = chrome.runtime.lastError.message || 'Connection error';
+                        errorMsg =
+                            chrome.runtime.lastError.message || localizedMsg('connectionError') || 'Connection error';
                     } else if (!response || response.error) {
-                        errorMsg = response && response.error ? response.error : 'Unknown error connecting to AI';
+                        errorMsg =
+                            response && response.error
+                                ? response.error
+                                : localizedMsg('aiConnectionUnknownError') || 'Unknown error connecting to AI';
                     }
 
                     if (errorMsg) {

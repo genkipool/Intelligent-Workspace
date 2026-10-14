@@ -173,7 +173,7 @@ function handleAddCurrentUrlToExistingRule(message, sendResponse) {
                 await addUrlToRuleAndNotify(url, ruleName);
                 sendResponse({ success: true });
             } else {
-                sendResponse({ success: false, error: 'Missing url or ruleName' });
+                sendResponse({ success: false, error: getI18nMsg('errorMissingUrlOrRule') });
             }
         } catch (e) {
             sendResponse({ success: false, error: e.message });

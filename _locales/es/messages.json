@@ -122,6 +122,14 @@
         "message": "$1 marcadores eliminados",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
+    "bookmarksDeleted_few": {
+        "message": "$1 marcadores eliminados",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "bookmarksDeleted_many": {
+        "message": "$1 marcadores eliminados",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "noUrlsToCopy": {
         "message": "No hay URLs que copiar"
     },
@@ -244,6 +252,14 @@
     "themesExportedSuccessfully_other": {
         "message": "$1 temas exportados",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "themesExportedSuccessfully_few": {
+        "message": "$1 temas exportados",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "themesExportedSuccessfully_many": {
+        "message": "$1 temas exportados",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "scheduleDateTimeInPast": {
         "message": "La fecha y hora elegidas ya han pasado"
@@ -505,6 +521,10 @@
         "message": "Gestionar Reglas",
         "description": "Título de la sección de gestionar reglas"
     },
+    "managerRules_tooltip": {
+        "message": "Gestionar Reglas",
+        "description": "Full name of the popup section, shown on hover; the label itself may be shortened to fit."
+    },
     "managerGroups": {
         "message": "Listar Grupos",
         "description": "Título de la sección de gestionar grupos"
@@ -590,7 +610,7 @@
         "description": "Botón de cancelar"
     },
     "manageRules": {
-        "message": "Gestionar Reglas",
+        "message": "Reglas",
         "description": "Título para la página de gestión de reglas"
     },
     "listTabGroups": {
@@ -1364,6 +1384,10 @@
         "message": "Idioma de la interfaz",
         "description": "Nombre accesible de la lista de idiomas, que se usa cuando la extensión tenga más de dos idiomas."
     },
+    "languagePairPickerTitle": {
+        "message": "Idioma de este lado del interruptor",
+        "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+    },
     "exportTheme": {
         "message": "Exportar el tema personalizado actual",
         "description": "Exporta el tema personalizado actual"
@@ -1455,7 +1479,7 @@
         "message": "Soporte completo de navegación por teclado para accesibilidad."
     },
     "featureMultiLanguage": {
-        "message": "Soporte multilingüe (inglés y español)."
+        "message": "Soporte multilingüe: inglés, español, alemán, portugués de Brasil, ruso, japonés, chino simplificado, hindi, francés, italiano y coreano."
     },
     "permissionsUsed": {
         "message": "Permisos utilizados"
@@ -1803,6 +1827,26 @@
     "feature_v102_omnibarTransparencyGoogleFix": {
         "message": "Corrección del marco de fondo blanco no deseado alrededor del omnibar en Google Search mediante sincronización de color-scheme y soporte dual claro/oscuro en el frame.",
         "description": "Descripción de la corrección de transparencia del omnibar en la v1.0.2."
+    },
+    "date_2026_10_14": {
+        "message": "14 de octubre de 2026",
+        "description": "Fecha de la versión 1.0.2."
+    },
+    "feature_v102_newLanguages": {
+        "message": "Nueve idiomas nuevos: alemán, portugués de Brasil, ruso, japonés, chino simplificado, hindi, francés, italiano y coreano. La extensión arranca en el idioma de tu navegador.",
+        "description": "Descripción de los idiomas nuevos de la v1.0.2."
+    },
+    "feature_v102_languagePairSwitch": {
+        "message": "El interruptor de idioma admite cualquier par de idiomas: el tuyo a la izquierda y el inglés a la derecha. Pasa el ratón por el nombre de un idioma para elegir otro en ese lado y cambia entre ellos con un clic.",
+        "description": "Descripción del interruptor de dos idiomas de la v1.0.2."
+    },
+    "feature_v102_groupSortFewerMoves": {
+        "message": "Al ordenar los grupos de pestañas solo se mueven los que están fuera de sitio: el mismo orden con hasta la mitad de cambios sincronizados con tus otros dispositivos.",
+        "description": "Descripción de la mejora en la ordenación de grupos de la v1.0.2."
+    },
+    "feature_v102_dashboardHeaderNoScroll": {
+        "message": "Paneles de Pomodoro y de Actividad web: la cabecera se adapta a ventanas estrechas sin barra de desplazamiento horizontal, y el periodo pasa a ser un selector cuando los botones ya no caben.",
+        "description": "Descripción de la mejora de la cabecera de los paneles de la v1.0.2."
     },
     "feature_v101_localAiLocalization": {
         "message": "Detección y traducción de errores de la IA local de Chrome (incluido espacio insuficiente para cachés de GPU).",
@@ -2616,7 +2660,7 @@
         "description": "Volver al editor de temas"
     },
     "noSavedThemes": {
-        "message": "Aún no hay temas guardados. ¡Ve a la pestaña 'Personalizado' en el popup para crear y guardar uno!",
+        "message": "Aún no hay temas guardados. ¡Ve a la pestaña 'Editar' en el popup para crear y guardar uno!",
         "description": "Mensaje que se muestra cuando no hay temas guardados."
     },
     "editTheme": {
@@ -2740,6 +2784,26 @@
     "themesImportedSuccessfully_other": {
         "message": "$1 temas importados correctamente.",
         "description": "Mensaje de notificación que se muestra después de importar uno o más temas con éxito. Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "themesImportedSuccessfully_few": {
+        "message": "$1 temas importados correctamente.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "themesImportedSuccessfully_many": {
+        "message": "$1 temas importados correctamente.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -2912,6 +2976,30 @@
     "removeTabsByDomainSuccessMessage_other": {
         "message": "Se han eliminado $1 pestañas del dominio $2.",
         "description": "Mensaje de la notificación tras eliminar pestañas con éxito. Marcadores: $1 = número de pestañas, $2 = nombre del dominio. Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "removeTabsByDomainSuccessMessage_few": {
+        "message": "Se han eliminado $1 pestañas del dominio $2.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "removeTabsByDomainSuccessMessage_many": {
+        "message": "Se han eliminado $1 pestañas del dominio $2.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "1": {
                 "content": "$1"
@@ -3894,6 +3982,26 @@
             }
         }
     },
+    "downloadsStarted_few": {
+        "message": "Se iniciaron $1 descargas.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
+    "downloadsStarted_many": {
+        "message": "Se iniciaron $1 descargas.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
     "summarizeWithGemini": {
         "message": "Resumen web con asistente IA",
         "description": "Resumen web con asistente IA"
@@ -4634,6 +4742,14 @@
         "message": "$1 palabras",
         "description": "Número de palabras de una nota. $1 es la cifra."
     },
+    "noteWordCount_few": {
+        "message": "$1 palabras",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "noteWordCount_many": {
+        "message": "$1 palabras",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "noteCharCount_one": {
         "message": "$1 carácter",
         "description": "Número de caracteres de una nota. $1 es la cifra."
@@ -4641,6 +4757,14 @@
     "noteCharCount_other": {
         "message": "$1 caracteres",
         "description": "Número de caracteres de una nota. $1 es la cifra."
+    },
+    "noteCharCount_few": {
+        "message": "$1 caracteres",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "noteCharCount_many": {
+        "message": "$1 caracteres",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "charCountLimit": {
         "message": "$1/$2 caracteres",
@@ -5334,6 +5458,10 @@
         "message": "Ajustes Navegación",
         "description": "Popup: heading over the navigation button, which carries the on/off switch."
     },
+    "navigationSettingsTitle_tooltip": {
+        "message": "Ajustes Navegación",
+        "description": "Full name of the popup section, shown on hover; the label itself may be shortened to fit."
+    },
     "toggleHintsTooltip": {
         "message": "Activar/Desactivar todos los comandos de atajos",
         "description": "Tooltip para el interruptor en el popup que activa o desactiva la función de atajos."
@@ -5648,6 +5776,14 @@
         "message": "Se han eliminado $1 notas.",
         "description": "Mensaje tras eliminar notas de la sección huérfana / general. Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
+    "allOrphanNotesDeleted_few": {
+        "message": "Se han eliminado $1 notas.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "allOrphanNotesDeleted_many": {
+        "message": "Se han eliminado $1 notas.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "noOrphanNotesToDelete": {
         "message": "No hay notas para eliminar.",
         "description": "Mensaje cuando no hay notas para eliminar."
@@ -5669,6 +5805,26 @@
     "allOrphanScreenshotsDeleted_other": {
         "message": "Se han eliminado las $1 capturas huérfanas.",
         "description": "Mensaje de confirmación que se muestra tras eliminar todas las capturas que ya no estaban asociadas a ningún grupo existente. El marcador de posición $COUNT$ será reemplazado por el número de elementos eliminados. Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "allOrphanScreenshotsDeleted_few": {
+        "message": "Se han eliminado las $1 capturas huérfanas.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "5"
+            }
+        }
+    },
+    "allOrphanScreenshotsDeleted_many": {
+        "message": "Se han eliminado las $1 capturas huérfanas.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -5953,6 +6109,24 @@
             }
         },
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "allGroupsBackedUp_few": {
+        "message": "$1 grupos inactivos han sido respaldados.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "allGroupsBackedUp_many": {
+        "message": "$1 grupos inactivos han sido respaldados.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "allGroupsRestored": {
         "message": "Todos los $1 grupos respaldados han sido restaurados.",
@@ -6922,7 +7096,7 @@
         "message": "Menú de Acceso Rápido"
     },
     "snippetHelpPopupTooltip": {
-        "message": "Escribe $$ en cualquier campo de texto para abrir un menú con tus 5 snippets más usados.",
+        "message": "Escribe $$$$ en cualquier campo de texto para abrir un menú con tus 5 snippets más usados.",
         "description": "Tooltip para el menú de acceso rápido de snippets"
     },
     "snippetHelpPopupDescPrefix": {
@@ -8559,6 +8733,14 @@
         "message": "❌ Cerrando $1 pestañas",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
+    "toolCloseTabs_few": {
+        "message": "❌ Cerrando $1 pestañas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "toolCloseTabs_many": {
+        "message": "❌ Cerrando $1 pestañas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "toolDuplicateTab": {
         "message": "📄 Duplicando pestaña actual…"
     },
@@ -9200,6 +9382,14 @@
     "dashboardProjects_other": {
         "message": "$1 proyectos"
     },
+    "dashboardProjects_few": {
+        "message": "$1 proyectos",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "dashboardProjects_many": {
+        "message": "$1 proyectos",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "dashboardSessionsTotal": {
         "message": "$1 en total"
     },
@@ -9561,6 +9751,24 @@
             }
         }
     },
+    "pomodoroUnitSessionsTitle_few": {
+        "message": "Con $1 pomodoros terminas la tarea. Cada tarea finalizada cuenta como una sesión",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "pomodoroUnitSessionsTitle_many": {
+        "message": "Con $1 pomodoros terminas la tarea. Cada tarea finalizada cuenta como una sesión",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
     "pomodoroUnitCycleInfoTitle_one": {
         "message": "Con $1 pomodoro completas un ciclo (después viene el descanso largo)",
         "description": "Title del mensaje de pomodoro Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
@@ -9573,6 +9781,24 @@
     "pomodoroUnitCycleInfoTitle_other": {
         "message": "Con $1 pomodoros completas un ciclo (después viene el descanso largo)",
         "description": "Title del mensaje de pomodoro Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "pomodoroUnitCycleInfoTitle_few": {
+        "message": "Con $1 pomodoros completas un ciclo (después viene el descanso largo)",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        }
+    },
+    "pomodoroUnitCycleInfoTitle_many": {
+        "message": "Con $1 pomodoros completas un ciclo (después viene el descanso largo)",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "1": {
                 "content": "$1"
@@ -9708,6 +9934,34 @@
             }
         }
     },
+    "confirmDeleteOtherGroups_few": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            },
+            "keepGroup": {
+                "content": "$2",
+                "example": "Trabajo"
+            }
+        }
+    },
+    "confirmDeleteOtherGroups_many": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            },
+            "keepGroup": {
+                "content": "$2",
+                "example": "Trabajo"
+            }
+        }
+    },
     "confirmDeleteOtherGroupsMultiple": {
         "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana excepto el grupo \"$2\"?",
         "description": "Confirmación para cerrar múltiples grupos en la ventana actual informando del grupo que se mantendrá.",
@@ -9735,6 +9989,26 @@
     "confirmDeleteAllGroupsInWindow_other": {
         "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
         "description": "Confirmación para cerrar todos los grupos en la ventana actual cuando no hay grupo activo. Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
+    "confirmDeleteAllGroupsInWindow_few": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1",
+                "example": "3"
+            }
+        }
+    },
+    "confirmDeleteAllGroupsInWindow_many": {
+        "message": "¿Confirmas que quieres cerrar $1 grupos de esta ventana?",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "count": {
                 "content": "$1",
@@ -10293,6 +10567,14 @@
         "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas.",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
+    "omnibarCaptureGroupHint_few": {
+        "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarCaptureGroupHint_many": {
+        "message": "Capturar el grupo entero ($1 pestañas). Espacio / Ctrl+Clic las marca todas.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "omnibarClickDeleteTab": {
         "message": "Haz clic para eliminar. Espacio / Ctrl+Clic para seleccionar, Shift+Clic para rango."
     },
@@ -10330,6 +10612,14 @@
         "message": "$1 grupos",
         "description": "Número de grupos en una fila de borrar de la omnibar. $1 es la cifra."
     },
+    "omnibarGroupCount_few": {
+        "message": "$1 grupos",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarGroupCount_many": {
+        "message": "$1 grupos",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "omnibarTabCount_one": {
         "message": "$1 pestaña",
         "description": "Número de pestañas en una fila de borrar de la omnibar. $1 es la cifra."
@@ -10337,6 +10627,14 @@
     "omnibarTabCount_other": {
         "message": "$1 pestañas",
         "description": "Número de pestañas en una fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarTabCount_few": {
+        "message": "$1 pestañas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarTabCount_many": {
+        "message": "$1 pestañas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "omnibarDeleteAllTabs": {
         "message": "Borrar todas las pestañas ($1)",
@@ -10493,6 +10791,14 @@
         "message": "$1 reglas",
         "description": "Número de reglas en la fila de borrar de la omnibar. $1 es la cifra."
     },
+    "omnibarRuleCount_few": {
+        "message": "$1 reglas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarRuleCount_many": {
+        "message": "$1 reglas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "omnibarDomainCount_one": {
         "message": "$1 dominio",
         "description": "Número de dominios en la fila de borrar de la omnibar. $1 es la cifra."
@@ -10500,6 +10806,14 @@
     "omnibarDomainCount_other": {
         "message": "$1 dominios",
         "description": "Número de dominios en la fila de borrar de la omnibar. $1 es la cifra."
+    },
+    "omnibarDomainCount_few": {
+        "message": "$1 dominios",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarDomainCount_many": {
+        "message": "$1 dominios",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "omnibarDeleteAllRulesDesc": {
         "message": "Borra todas estas reglas"
@@ -10564,6 +10878,24 @@
             }
         },
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "omnibarGroupBackup_few": {
+        "message": "Copia de seguridad ($1 pestañas)",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "omnibarGroupBackup_many": {
+        "message": "Copia de seguridad ($1 pestañas)",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            }
+        },
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "omnibarRuleColorUpdated": {
         "message": "Color de regla actualizado a $1",
@@ -11201,6 +11533,14 @@
     "webActivityCategory_other": {
         "message": "Otros"
     },
+    "webActivityCategory_few": {
+        "message": "Otros",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivityCategory_many": {
+        "message": "Otros",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "webActivitySites": {
         "message": "Sitios"
     },
@@ -11510,6 +11850,14 @@
         "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite.",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
     },
+    "webActivitySnoozeWithTime_few": {
+        "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite.",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivitySnoozeWithTime_many": {
+        "message": "Concede $1 minutos de tiempo de gracia. Queda registrado como aplazamiento, no como quitar el límite.",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "webActivitySnoozed": {
         "message": "Bloqueo aplazado"
     },
@@ -11650,6 +11998,14 @@
     "webActivityBlockedSnooze_other": {
         "message": "$1 minutos más",
         "description": "Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "webActivityBlockedSnooze_few": {
+        "message": "$1 minutos más",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivityBlockedSnooze_many": {
+        "message": "$1 minutos más",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "webActivityBlockedFooter": {
         "message": "Esto lo configuraste tú, desde el dashboard de actividad web. Puedes cambiarlo allí."
@@ -12176,6 +12532,14 @@
         "message": "$1 días",
         "description": "Número de días registrados. $1 es la cifra."
     },
+    "webActivityDayCount_few": {
+        "message": "$1 días",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivityDayCount_many": {
+        "message": "$1 días",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "webActivityCleared": {
         "message": "Historial borrado",
         "description": "Historial borrado"
@@ -12236,6 +12600,14 @@
     "webActivityCategorySites_other": {
         "message": "$1 sitios",
         "description": "Cuántos sitios hay clasificados en esta categoría Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "webActivityCategorySites_few": {
+        "message": "$1 sitios",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivityCategorySites_many": {
+        "message": "$1 sitios",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "webActivityCategoryUnused": {
         "message": "sin sitios todavía",
@@ -12417,6 +12789,14 @@
     "webActivityWindowCount_other": {
         "message": "$1 franjas",
         "description": "Cuántas franjas horarias permitidas hay configuradas Forma para cualquier otro recuento (categoría CLDR «other»)."
+    },
+    "webActivityWindowCount_few": {
+        "message": "$1 franjas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "webActivityWindowCount_many": {
+        "message": "$1 franjas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
     },
     "webActivityWindowNoDays": {
         "message": "Elige al menos un día, o esta franja no hace nada.",
@@ -12769,6 +13149,24 @@
     "groupTabsCaptured_other": {
         "message": "$1 capturas guardadas del grupo",
         "description": "Resultado de capturar un grupo entero Forma para cualquier otro recuento (categoría CLDR «other»).",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "groupTabsCaptured_few": {
+        "message": "$1 capturas guardadas del grupo",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "groupTabsCaptured_many": {
+        "message": "$1 capturas guardadas del grupo",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
         "placeholders": {
             "count": {
                 "content": "$1"
@@ -13319,45 +13717,45 @@
         "message": "No se pudieron convertir $1 imagen(es) a $2.",
         "description": "Falló la conversión"
     },
-  "dataUseTitle": {
-    "message": "Qué hace Intelligent Workspace con tus datos"
-  },
-  "dataUseIntro": {
-    "message": "Intelligent Workspace lee tus pestañas, tu historial, tus marcadores y las páginas sobre las que actúas. Esto es, entero, adónde va todo eso."
-  },
-  "dataUseLocalTitle": {
-    "message": "Se queda en este dispositivo"
-  },
-  "dataUseLocalBody": {
-    "message": "Tus grupos, notas, capturas, sesiones guardadas, registros de tiempo e historial de Pomodoro se guardan en el almacenamiento del propio navegador. No hay cuenta ni hay servidor nuestro al que puedan ir."
-  },
-  "dataUseSyncTitle": {
-    "message": "Tus ajustes acompañan a tu perfil de Chrome"
-  },
-  "dataUseSyncBody": {
-    "message": "Las reglas de agrupado, los snippets y los atajos viven en el almacenamiento sincronizado de Chrome, así que un segundo ordenador con el mismo perfil se comporta igual. Con la sincronización de Chrome apagada, nada de eso sale de esta máquina. El tiempo por sitio queda deliberadamente fuera, tras un interruptor propio que empieza apagado."
-  },
-  "dataUseLeavesTitle": {
-    "message": "Qué sale del dispositivo, y solo cuando tú lo pides"
-  },
-  "dataUseGeminiItem": {
-    "message": "El asistente envía la página que le señalas, lo que le adjuntes y los títulos de tus pestañas abiertas cuando las buscas por descripción, a la API de Gemini de Google con tu propia clave. El modelo local de Chrome no envía nada. El asistente está apagado hasta que lo configuras."
-  },
-  "dataUseOcrItem": {
-    "message": "Leer el texto de una captura descarga una vez sus modelos de idioma —español e inglés— desde jsDelivr, y el navegador los guarda en caché. No se envía nada sobre ti."
-  },
-  "dataUseContributionItem": {
-    "message": "Apoyar el proyecto abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
-  },
-  "dataUseNeverTitle": {
-    "message": "Qué no pasa nunca"
-  },
-  "dataUseNeverBody": {
-    "message": "Ni analítica, ni rastreo, ni publicidad. Nada de lo que navegas, lees o escribes se recopila, se vende ni se comparte con nadie."
-  },
-  "dataUsePolicyLink": {
-    "message": "Leer la política de privacidad completa"
-  },
+    "dataUseTitle": {
+        "message": "Qué hace Intelligent Workspace con tus datos"
+    },
+    "dataUseIntro": {
+        "message": "Intelligent Workspace lee tus pestañas, tu historial, tus marcadores y las páginas sobre las que actúas. Esto es, entero, adónde va todo eso."
+    },
+    "dataUseLocalTitle": {
+        "message": "Se queda en este dispositivo"
+    },
+    "dataUseLocalBody": {
+        "message": "Tus grupos, notas, capturas, sesiones guardadas, registros de tiempo e historial de Pomodoro se guardan en el almacenamiento del propio navegador. No hay cuenta ni hay servidor nuestro al que puedan ir."
+    },
+    "dataUseSyncTitle": {
+        "message": "Tus ajustes acompañan a tu perfil de Chrome"
+    },
+    "dataUseSyncBody": {
+        "message": "Las reglas de agrupado, los snippets y los atajos viven en el almacenamiento sincronizado de Chrome, así que un segundo ordenador con el mismo perfil se comporta igual. Con la sincronización de Chrome apagada, nada de eso sale de esta máquina. El tiempo por sitio queda deliberadamente fuera, tras un interruptor propio que empieza apagado."
+    },
+    "dataUseLeavesTitle": {
+        "message": "Qué sale del dispositivo, y solo cuando tú lo pides"
+    },
+    "dataUseGeminiItem": {
+        "message": "El asistente envía la página que le señalas, lo que le adjuntes y los títulos de tus pestañas abiertas cuando las buscas por descripción, a la API de Gemini de Google con tu propia clave. El modelo local de Chrome no envía nada. El asistente está apagado hasta que lo configuras."
+    },
+    "dataUseOcrItem": {
+        "message": "Leer el texto de una captura descarga una vez sus modelos de idioma —español e inglés— desde jsDelivr, y el navegador los guarda en caché. No se envía nada sobre ti."
+    },
+    "dataUseContributionItem": {
+        "message": "Apoyar el proyecto abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."
+    },
+    "dataUseNeverTitle": {
+        "message": "Qué no pasa nunca"
+    },
+    "dataUseNeverBody": {
+        "message": "Ni analítica, ni rastreo, ni publicidad. Nada de lo que navegas, lees o escribes se recopila, se vende ni se comparte con nadie."
+    },
+    "dataUsePolicyLink": {
+        "message": "Leer la política de privacidad completa"
+    },
     "popupSupportLink": {
         "message": "Soporte",
         "description": "Popup footer: link to the support page on the website."
@@ -13394,6 +13792,30 @@
             }
         }
     },
+    "groupTabCountTooltip_few": {
+        "message": "$1 de $2 pestañas vistas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "groupTabCountTooltip_many": {
+        "message": "$1 de $2 pestañas vistas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
     "backupTabCountTooltip_one": {
         "message": "$1 de $2 pestaña restaurada",
         "description": "$1 de $2 pestañas restauradas Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar.",
@@ -13417,5 +13839,205 @@
                 "content": "$2"
             }
         }
+    },
+    "backupTabCountTooltip_few": {
+        "message": "$1 de $2 pestañas restauradas",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "backupTabCountTooltip_many": {
+        "message": "$1 de $2 pestañas restauradas",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen.",
+        "placeholders": {
+            "1": {
+                "content": "$1"
+            },
+            "2": {
+                "content": "$2"
+            }
+        }
+    },
+    "imageFilePickerDescription": {
+        "message": "Imágenes",
+        "description": "File type label shown in the system file picker when uploading images to the screenshot gallery."
+    },
+    "screenshotImageAlt": {
+        "message": "Captura de $1",
+        "description": "Alternative text of a screenshot image in the gallery. $1 is the page title."
+    },
+    "ocrProgressTooltip": {
+        "message": "OCR… $1%",
+        "description": "Tooltip of the OCR button while text recognition runs. $1 is the percentage done."
+    },
+    "geminiPanelAriaLabel": {
+        "message": "Panel de Gemini",
+        "description": "Accessible name (screen readers) of the Gemini chat side panel region."
+    },
+    "cookieSameSiteNone": {
+        "message": "Ninguna",
+        "description": "Cookie editor: label of the SameSite option 'None' (no restriction). Lax and Strict are left untranslated as technical names."
+    },
+    "pomodoroProjectNamePlaceholder": {
+        "message": "Mi proyecto",
+        "description": "Placeholder of the project name field in the Pomodoro settings panel."
+    },
+    "dateFormatPlaceholder": {
+        "message": "AAAA-MM-DD",
+        "description": "Placeholder shown in date fields when no date is chosen. Keep the year-month-day order; only translate the letters (Y=year, M=month, D=day)."
+    },
+    "appLogoAriaLabel": {
+        "message": "Logotipo de Intelligent Workspace",
+        "description": "Accessible name (screen readers) of the extension logo."
+    },
+    "colorChannelSaturation": {
+        "message": "Saturación",
+        "description": "Color picker: tooltip of the S (saturation) number field in HSL notation."
+    },
+    "colorChannelLightness": {
+        "message": "Luminosidad",
+        "description": "Color picker: tooltip of the L (lightness) number field in HSL notation."
+    },
+    "teamPhotoAlt": {
+        "message": "Foto del equipo",
+        "description": "Alternative text of the team photo on the About page."
+    },
+    "dashboardJointSeries": {
+        "message": "$1 (conjunto)",
+        "description": "Pomodoro dashboard chart: legend/tooltip label of the stacked (joint) series. $1 is the series name, e.g. \"Focus (h)\"."
+    },
+    "dashboardTotalHours": {
+        "message": "Total: $1 h",
+        "description": "Pomodoro dashboard chart tooltip footer. $1 is a number of hours with one decimal."
+    },
+    "invalidFileFormat": {
+        "message": "Formato de archivo no válido",
+        "description": "Error shown when an imported file does not have the expected format."
+    },
+    "pomodoroTaskDefaultName": {
+        "message": "Tarea",
+        "description": "Pomodoro stats: name shown for a completed task that has no name."
+    },
+    "pomodoroTaskCycle": {
+        "message": "Ciclo $1",
+        "description": "Pomodoro stats: cycle in which a task was completed. $1 is the cycle number."
+    },
+    "unsupportedFileFormat": {
+        "message": "Formato de archivo no compatible",
+        "description": "Error shown when importing a Pomodoro statistics file whose format is not recognized."
+    },
+    "shortcutUsedBySnippet": {
+        "message": "Snippet ($1)",
+        "description": "Customize hints page: names what already uses a key when a shortcut conflicts with a snippet. $1 is the snippet trigger."
+    },
+    "conversationDefaultName": {
+        "message": "Conversación",
+        "description": "Gemini chat: name given to an unsaved conversation that has no question text yet."
+    },
+    "aiConnectionUnknownError": {
+        "message": "Error desconocido al conectar con la IA",
+        "description": "Gemini chat: error shown when the AI request fails without a specific reason."
+    },
+    "omnibarFailedBackupGroups": {
+        "message": "No se pudieron respaldar los grupos",
+        "description": "Omnibar toast when backing up all groups fails."
+    },
+    "omnibarFailedBackupGroup": {
+        "message": "No se pudo respaldar el grupo",
+        "description": "Omnibar toast when backing up one group fails."
+    },
+    "omnibarFailedRestoreBackups": {
+        "message": "No se pudieron restaurar las copias de seguridad",
+        "description": "Omnibar toast when restoring backed-up groups fails."
+    },
+    "previewLinkFallback": {
+        "message": "Enlace",
+        "description": "Link preview window header: shown instead of the domain when the link address cannot be parsed."
+    },
+    "conversationNumbered": {
+        "message": "Conversación $1",
+        "description": "Omnibar: name of an unsaved Gemini conversation with no title. $1 is its position number."
+    },
+    "screenshotNumbered": {
+        "message": "Captura $1",
+        "description": "Omnibar: name of a screenshot that has no title. $1 is its internal number."
+    },
+    "omnibarErrNoEntryIds": {
+        "message": "No se indicó ninguna entrada de la conversación",
+        "description": "Omnibar error when a conversation is expanded without any entry to load."
+    },
+    "omnibarErrNoConversationEntries": {
+        "message": "No se encontraron entradas para esta conversación",
+        "description": "Omnibar error when a saved conversation has no stored entries."
+    },
+    "selectionPipTitle": {
+        "message": "Recorte de texto",
+        "description": "Title of the Picture-in-Picture window that shows the text selected on a page."
+    },
+    "errorNoGroupForRule": {
+        "message": "No se pudo encontrar un grupo para la regla '$1'.",
+        "description": "Notification when closing the tabs of a rule fails because its tab group was not found. $1 is the rule name."
+    },
+    "agentQueryCancelledByUser": {
+        "message": "Consulta cancelada por el usuario",
+        "description": "Gemini agent: step shown when the user stops a running query."
+    },
+    "agentQueryCancelled": {
+        "message": "Consulta cancelada.",
+        "description": "Gemini agent: answer shown when a query was cancelled."
+    },
+    "agentCouldNotConnect": {
+        "message": "No se pudo conectar con la API de Gemini",
+        "description": "Gemini agent: error when the request to the Gemini API fails without details."
+    },
+    "agentErrorDetail": {
+        "message": "Error: $1",
+        "description": "Gemini agent: failed step. $1 is the error message."
+    },
+    "agentUnexpectedError": {
+        "message": "Error inesperado: $1",
+        "description": "Gemini agent: answer when an unexpected error happens. $1 is the error message."
+    },
+    "httpErrorStatus": {
+        "message": "Error HTTP (estado $1)",
+        "description": "Error shown when a web request fails and the server gives no message. $1 is the HTTP status code."
+    },
+    "networkErrorDetail": {
+        "message": "Error de red: $1",
+        "description": "Error shown when a request cannot reach the server. $1 is the technical reason."
+    },
+    "unknownError": {
+        "message": "Error desconocido",
+        "description": "Generic error shown when the cause is not known."
+    },
+    "geminiResponseBlocked": {
+        "message": "La respuesta se bloqueó por motivos de seguridad.",
+        "description": "Gemini chat: error when Gemini withholds an answer because of its safety filters."
+    },
+    "geminiResponseEmpty": {
+        "message": "La respuesta de la API no tenía contenido.",
+        "description": "Gemini chat: error when the Gemini API answers with no text."
+    },
+    "geminiAllKeysExhausted": {
+        "message": "Todas las claves de API han agotado su cuota.",
+        "description": "Gemini chat: error when every configured API key is out of quota."
+    },
+    "backupNotFound": {
+        "message": "No se encontró la copia de seguridad",
+        "description": "Error when restoring a group backup that no longer exists."
+    },
+    "backupTabNotFound": {
+        "message": "No se encontró la pestaña en la copia de seguridad",
+        "description": "Error when restoring one tab from a group backup and the tab is not in it."
+    },
+    "errorMissingUrlOrRule": {
+        "message": "Falta la dirección o el nombre de la regla",
+        "description": "Error when adding an address to a rule without giving both the address and the rule name."
     }
 }

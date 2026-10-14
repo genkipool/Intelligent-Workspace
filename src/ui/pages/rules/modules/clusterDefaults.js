@@ -9,7 +9,7 @@ export const DEFAULT_CLUSTER_CONFIG = {
     subdomainThreshold: 2,
     compactMode: {
         enabled: true,
-        threshold: 12,
+        threshold: 16,
     },
     specialGroups: {
         chrome: { enabled: true, threshold: 1, name: 'Chrome:', color: 'blue', key: 'Chrome' },

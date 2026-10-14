@@ -95,7 +95,7 @@
                                     class="edit-schedule-btn"
                                     type="button"
                                     data-i18n-title="editSchedule"
-                                    aria-label="Edit schedule"
+                                    aria-label={$t('editSchedule') || 'Edit schedule'}
                                     onclick={() => onEditSchedule(sch)}
                                 >
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -117,7 +117,7 @@
                                     class="delete-schedule-btn"
                                     type="button"
                                     data-i18n-title="deleteSchedule"
-                                    aria-label="Delete schedule"
+                                    aria-label={$t('deleteSchedule') || 'Delete schedule'}
                                     onclick={() => onDeleteSchedule(sch.themeName, sch.originalIndex)}
                                 >
                                     <svg

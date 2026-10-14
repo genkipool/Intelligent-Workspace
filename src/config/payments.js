@@ -18,6 +18,9 @@
  * message from, and every message also has to carry the per-open nonce. Card data
  * never crosses into the extension — the frame is cross-origin, so it cannot.
  */
+
+import { sitePathPrefix } from './site.js';
+
 /**
  * The origin serving the payment page. Origin comparisons are made against exactly this
  * string, so it carries no trailing slash and no path.
@@ -41,17 +44,16 @@ export const PAYMENT_ORIGIN = import.meta.env?.VITE_PAYMENT_ORIGIN || 'https://i
 
 /**
  * `/pay` is a route of the marketing site, not a subdomain of its own, and the site
- * pre-renders one page per language: `/pay` in English, `/es/pay` in Spanish.
+ * pre-renders one page per language under the same prefixes as its other pages:
+ * `/pay` in English, `/es/pay`, `/fr/pay`, `/pt/pay`… (`sitePathPrefix`).
  *
  * Asking for the right one here rather than passing `?locale=` means the panel gets a
  * page whose copy is already correct in the HTML, with no flash of English while a
  * script swaps it. Any language the site does not build falls back to English, which is
  * what the site itself does for an unknown prefix.
  */
-const LOCALISED_PAYMENT_PATHS = { en: '/pay', es: '/es/pay' };
-
 export function paymentPagePath(locale) {
-    return LOCALISED_PAYMENT_PATHS[locale] || LOCALISED_PAYMENT_PATHS.en;
+    return `${sitePathPrefix(locale)}/pay`;
 }
 
 /**

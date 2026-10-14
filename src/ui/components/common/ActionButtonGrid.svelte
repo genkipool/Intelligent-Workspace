@@ -23,7 +23,7 @@
     {#each items as item (item.id)}
         <div class="button-wrapper">
             <div class="title-with-toggle">
-                <div class="section-title">{$t(item.titleKey)}</div>
+                <div class="section-title" title={$tt(item.titleKey)}>{$t(item.titleKey)}</div>
                 {#if toggles[item.id]}{@render toggles[item.id]()}{/if}
             </div>
             <button

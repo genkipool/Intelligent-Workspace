@@ -7,8 +7,14 @@
     const versionData = [
         {
             version: '1.0.2',
-            dateKey: 'date_2026_10_08',
-            features: ['feature_v102_omnibarTransparencyGoogleFix'],
+            dateKey: 'date_2026_10_14',
+            features: [
+                'feature_v102_newLanguages',
+                'feature_v102_languagePairSwitch',
+                'feature_v102_groupSortFewerMoves',
+                'feature_v102_dashboardHeaderNoScroll',
+                'feature_v102_omnibarTransparencyGoogleFix',
+            ],
         },
         {
             version: '1.0.1',

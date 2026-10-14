@@ -87,7 +87,7 @@ async function fetchAvailableModels() {
         const response = await fetch(GEMINI_MODELS_URL, geminiRequestInit(apiKey));
         if (!response.ok) {
             const errorData = await response.json();
-            const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+            const errorMessage = errorData.error?.message || getI18nMsg('httpErrorStatus', [String(response.status)]);
             console.error('[Gemini] API Error fetching models:', errorMessage);
             return { success: false, error: errorMessage };
         }
@@ -103,7 +103,7 @@ async function fetchAvailableModels() {
         return { success: true, models };
     } catch (error) {
         console.error('[Gemini] Network or fetch error fetching models:', error);
-        return { success: false, error: `Network error: ${error.message}` };
+        return { success: false, error: getI18nMsg('networkErrorDetail', [error.message]) };
     }
 }
 
@@ -174,7 +174,7 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
     let startIndex = keysList.findIndex((k) => k.key === activeKey);
     if (startIndex === -1) startIndex = 0;
 
-    let lastError = 'Unknown error';
+    let lastError = getI18nMsg('unknownError');
 
     for (let attempt = 0; attempt < keysList.length; attempt++) {
         const currentIndex = (startIndex + attempt) % keysList.length;
@@ -226,22 +226,25 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const errorMessage = errorData.error?.message || `HTTP error! status: ${response.status}`;
+                // The API's own text is what the quota checks read; the translated
+                // fallback is only for the user when the API said nothing.
+                const apiMessage = errorData.error?.message || '';
+                const errorMessage = apiMessage || getI18nMsg('httpErrorStatus', [String(response.status)]);
                 console.error(`${logPrefix} API Error:`, errorMessage, errorData);
 
                 const isQuotaError =
                     response.status === 429 ||
-                    errorMessage.includes('quota') ||
-                    errorMessage.includes('RESOURCE_EXHAUSTED') ||
-                    errorMessage.includes('exceeded') ||
-                    errorMessage.includes('billing');
+                    apiMessage.includes('quota') ||
+                    apiMessage.includes('RESOURCE_EXHAUSTED') ||
+                    apiMessage.includes('exceeded') ||
+                    apiMessage.includes('billing');
 
                 const isToolQuotaError =
                     applySearchTool &&
                     (response.status === 403 ||
-                        errorMessage.includes('grounding') ||
-                        errorMessage.includes('google_search') ||
-                        errorMessage.includes('Search Grounding'));
+                        apiMessage.includes('grounding') ||
+                        apiMessage.includes('google_search') ||
+                        apiMessage.includes('Search Grounding'));
 
                 return { ok: false, error: errorMessage, isToolQuotaError, isQuotaError };
             }
@@ -312,14 +315,14 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
             if (blockReason === 'SAFETY') {
                 return {
                     ok: false,
-                    error: 'The response was blocked for security reasons.',
+                    error: getI18nMsg('geminiResponseBlocked'),
                     isToolQuotaError: false,
                     isQuotaError: false,
                 };
             }
             return {
                 ok: false,
-                error: 'No content found in API response.',
+                error: getI18nMsg('geminiResponseEmpty'),
                 isToolQuotaError: false,
                 isQuotaError: false,
             };
@@ -372,14 +375,14 @@ async function _executeGeminiRequest(requestBodyBuilder, options = {}) {
             }
         } catch (error) {
             console.error(`${logPrefix} Network or fetch error:`, error);
-            return { success: false, error: `Network error: ${error.message}` };
+            return { success: false, error: getI18nMsg('networkErrorDetail', [error.message]) };
         }
     }
 
     console.error(`${logPrefix} All available API keys have exhausted their quota.`);
     return {
         success: false,
-        error: lastError || 'All API keys have exhausted their quota.',
+        error: lastError || getI18nMsg('geminiAllKeysExhausted'),
         allKeysExhausted: true,
     };
 }

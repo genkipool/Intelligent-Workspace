@@ -224,7 +224,12 @@ export async function pickImageFiles() {
                 id: 'itg-gallery-images',
                 multiple: true,
                 startIn: 'pictures',
-                types: [{ description: 'Images', accept: { 'image/*': UPLOAD_ACCEPT } }],
+                types: [
+                    {
+                        description: localizedMsg('imageFilePickerDescription') || 'Images',
+                        accept: { 'image/*': UPLOAD_ACCEPT },
+                    },
+                ],
             });
             const files = await Promise.all(handles.map((handle) => handle.getFile()));
             await uploadImagesToGallery(files);
@@ -1038,7 +1043,7 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
     const pinBtn = galleryItem.querySelector('.gallery-pin-btn');
 
     img.src = fullScreenshot.dataUrl;
-    img.alt = `Screenshot of ${fullScreenshot.title}`;
+    img.alt = localizedMsg('screenshotImageAlt', [fullScreenshot.title]) || `Screenshot of ${fullScreenshot.title}`;
     galleryItem.querySelector('.gallery-item-title').textContent = fullScreenshot.title;
 
     // The card used to open a drawing board wherever it was clicked, which is not what
@@ -1375,7 +1380,7 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
             logger: (m) => {
                 if (m.status === 'recognizing text' && m.progress != null) {
                     const pct = Math.round(m.progress * 100);
-                    buttonEl.title = `OCR... ${pct}%`;
+                    buttonEl.title = localizedMsg('ocrProgressTooltip', [String(pct)]) || `OCR... ${pct}%`;
                     progressNotice.updateProgress([String(pct)]);
                 }
             },

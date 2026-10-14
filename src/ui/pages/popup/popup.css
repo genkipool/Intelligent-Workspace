@@ -72,6 +72,12 @@ main {
     flex: 1;
     /* Makes main occupy remaining vertical space */
     overflow-y: auto;
+    /* overflow-y: auto alone makes the other axis auto as well, so anything a pixel
+       too wide (a longer translation, the vertical bar taking its own width) showed
+       a horizontal scrollbar. The panel only ever scrolls down, and the gutter is
+       reserved so the bar appearing never changes the width of the content. */
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
     /* ADD SCROLL ONLY TO THIS ELEMENT */
     display: flex;
     /* ADDED: Convert main into a flex container */
@@ -272,6 +278,23 @@ input:focus-visible + .slider {
         box-shadow 0.3s ease 0.1s;
 }
 
+/* A theme name stays on one line, at most a little smaller. The five buttons share the
+   width of a 400px popup, and some translations of these names are much longer than
+   the English ones: a name that still does not fit is cut with an ellipsis, and the
+   button's tooltip carries it in full. */
+.theme-button {
+    min-width: 0;
+    overflow: hidden;
+    padding-inline: 4px;
+}
+
+.theme-button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .theme-option[data-theme='system'] .theme-button {
     background: linear-gradient(to right, white 50%, black 50%);
 }
@@ -320,7 +343,10 @@ input:focus-visible + .slider {
 
 .settings-rules-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0, 1fr), not 1fr: a bare fr track cannot shrink below its content, so a
+       long translation widened its own column and the two buttons of a row stopped
+       being the same size. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px 8px;
     align-items: flex-start;
 }
@@ -329,6 +355,7 @@ input:focus-visible + .slider {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .button-wrapper .section-title {
@@ -425,6 +452,29 @@ button:active {
 
 .button i {
     margin-right: 6px;
+}
+
+/* Every action button keeps the size it has in English, in any language: one line of
+   text at a fixed height. A label too long for it ends in an ellipsis instead of growing
+   the button; the button's tooltip describes the action in full. */
+.settings-rules-actions .button {
+    box-sizing: border-box;
+    height: 34px;
+    min-width: 0;
+    gap: 6px;
+    padding: 0 10px;
+    line-height: 16px;
+}
+
+.settings-rules-actions .button svg {
+    flex-shrink: 0;
+}
+
+.settings-rules-actions .button span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Contribution Section */
@@ -621,9 +671,20 @@ footer:hover {
     padding: 4px 10px 0;
 }
 
+.privacy-link-container {
+    gap: 10px;
+    justify-content: space-between;
+}
+
+/* One row in every language. Each link takes the room its own text needs, so a long
+   one ("Политика конфиденциальности") borrows from a short one instead of wrapping;
+   only if the three together still do not fit does the longest end in an ellipsis. */
 .privacy-link-container .footer-link {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     text-align: center;
     font-size: 11px;
     opacity: 0.7;

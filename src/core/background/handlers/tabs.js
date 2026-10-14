@@ -259,7 +259,7 @@ function handleFetchPageContent(message, sendResponse) {
         try {
             const response = await fetch(message.url);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(getI18nMsg('httpErrorStatus', [String(response.status)]));
             }
             const content = await response.text();
             sendResponse({

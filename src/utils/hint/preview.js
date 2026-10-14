@@ -252,7 +252,7 @@ var LinkPreviewManager = class LinkPreviewManager {
             container = document.createElement('div');
             container.className = 'hint-preview-container';
             container.dataset.shown = 'false';
-            let domain = 'Link';
+            let domain = getPreviewMsg('previewLinkFallback', 'Link');
             try {
                 domain = new URL(url).hostname;
             } catch {}

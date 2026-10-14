@@ -17,7 +17,7 @@
      */
     let { value = $bindable(''), allowPast = false, id = undefined, onchange = undefined } = $props();
 
-    const PLACEHOLDER = 'YYYY-MM-DD';
+    const placeholder = $derived($t('dateFormatPlaceholder') || 'YYYY-MM-DD');
 
     let open = $state(false);
     let triggerEl = $state(null);
@@ -138,7 +138,7 @@
     {#if value}
         {value}
     {:else}
-        <span class="val-placeholder">{PLACEHOLDER}</span>
+        <span class="val-placeholder">{placeholder}</span>
     {/if}
 </div>
 

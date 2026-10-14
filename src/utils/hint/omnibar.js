@@ -1386,7 +1386,8 @@ var OmniBar = class OmniBar {
                     const clusterConfig = responses[1] && responses[1].success ? responses[1].config : {};
                     const specialGroups = clusterConfig.specialGroups || {};
                     tabGroups.forEach((group) => {
-                        const title = group.title || `Group ${group.id}`;
+                        const title =
+                            group.title || getOmniMsg('omnibarGroupTitle', [String(group.id)]) || `Group ${group.id}`;
                         const groupMatches =
                             !q ||
                             itgFoldForSearch(title).includes(itgFoldForSearch(qLower)) ||
@@ -1767,7 +1768,10 @@ var OmniBar = class OmniBar {
                     const backups = res && res.success ? res.backups : [];
                     const results = [];
                     backups.forEach((backup) => {
-                        const groupTitle = backup.group.title || `Group ${backup.group.color}`;
+                        const groupTitle =
+                            backup.group.title ||
+                            getOmniMsg('omnibarGroupTitle', [backup.group.color]) ||
+                            `Group ${backup.group.color}`;
                         const groupMatches = !q || this._itemMatchesQuery('dg', backup.group, q);
                         if (groupMatches) {
                             results.push({
@@ -1850,7 +1854,8 @@ var OmniBar = class OmniBar {
                             const results = [];
                             groups.forEach((g) => {
                                 if (!backedUpGroupIds.has(g.id)) {
-                                    const groupTitle = g.title || `Group ${g.color}`;
+                                    const groupTitle =
+                                        g.title || getOmniMsg('omnibarGroupTitle', [g.color]) || `Group ${g.color}`;
                                     if (!q || this._itemMatchesQuery('dg', g, q)) {
                                         results.push({
                                             type: 'bg-group',
@@ -2752,7 +2757,7 @@ var OmniBar = class OmniBar {
     }
     _copyImageToClipboard(li) {
         const imgId = li.dataset.imgId;
-        const imgTitle = li.dataset.imgTitle || 'Image';
+        const imgTitle = li.dataset.imgTitle || getOmniMsg('omnibarUntitledImage') || 'Image';
         const existingDataUrl = li.dataset.imgDataUrl;
         const doCopy = (dataUrl) => {
             fetch(dataUrl)
@@ -2855,7 +2860,7 @@ var OmniBar = class OmniBar {
     _copyMessage(li) {
         const query = li.dataset.msgQuery || '';
         const answer = li.dataset.msgAnswer || '';
-        const title = li.dataset.title || 'Message';
+        const title = li.dataset.title || getOmniMsg('omnibarIconMessage') || 'Message';
         const plainText = `**${query}**\n\n${answer}`;
         const htmlText = `<p><strong>${query.replace(/</g, '&lt;')}</strong></p>${_omniParseMarkdown(answer)}`;
         _omniCopyRich(plainText, htmlText)
@@ -3456,12 +3461,9 @@ var OmniBar = class OmniBar {
                     expandEl.textContent = res.text;
                 } else {
                     expandEl.textContent =
-                        getOmniMsg('omnibarAgentErr') ||
-                        '[ERR]' +
-                            ' ' +
-                            (res?.error ||
-                                getOmniMsg('omnibarErrLoadingConversation') ||
-                                'Could not load conversation');
+                        (getOmniMsg('omnibarAgentErr') || '[ERR]') +
+                        ' ' +
+                        (res?.error || getOmniMsg('omnibarErrLoadingConversation') || 'Could not load conversation');
                 }
             },
         );
@@ -4591,7 +4593,7 @@ IMPORTANT RULES:
                 dot.style.backgroundColor = data.color || '#9e9e9e';
                 li.appendChild(dot);
             } else if (type === 'atr-tab') {
-                title = data.title || 'Untitled';
+                title = data.title || getOmniMsg('omnibarUntitledTab') || 'Untitled';
                 li.dataset.tabId = data.id;
                 li.dataset.windowId = data.windowId;
                 li.dataset.url = data.url;
@@ -5114,7 +5116,11 @@ IMPORTANT RULES:
                                         getOmniMsg('omnibarGroupsBackedUp') || 'Groups backed up successfully',
                                     );
                                 } else {
-                                    this._showToast(response?.error || 'Failed to backup groups');
+                                    this._showToast(
+                                        response?.error ||
+                                            getOmniMsg('omnibarFailedBackupGroups') ||
+                                            'Failed to backup groups',
+                                    );
                                 }
                             },
                         );
@@ -5131,7 +5137,11 @@ IMPORTANT RULES:
                                             `Restoring ${ids.length} backup(s)`,
                                     );
                                 } else {
-                                    this._showToast(response?.error || 'Failed to restore backups');
+                                    this._showToast(
+                                        response?.error ||
+                                            getOmniMsg('omnibarFailedRestoreBackups') ||
+                                            'Failed to restore backups',
+                                    );
                                 }
                             },
                         );
@@ -5202,7 +5212,11 @@ IMPORTANT RULES:
                                             getOmniMsg('omnibarGroupsBackedUp') || 'Groups backed up successfully',
                                         );
                                     } else {
-                                        this._showToast(response?.error || 'Failed to backup group');
+                                        this._showToast(
+                                            response?.error ||
+                                                getOmniMsg('omnibarFailedBackupGroup') ||
+                                                'Failed to backup group',
+                                        );
                                     }
                                 },
                             );
@@ -5244,7 +5258,11 @@ IMPORTANT RULES:
                                                 ]) || `Restoring ${groupIdsToRestore.length} backup(s)`,
                                             );
                                         } else {
-                                            this._showToast(response?.error || 'Failed to restore backups');
+                                            this._showToast(
+                                                response?.error ||
+                                                    getOmniMsg('omnibarFailedRestoreBackups') ||
+                                                    'Failed to restore backups',
+                                            );
                                         }
                                     },
                                 );

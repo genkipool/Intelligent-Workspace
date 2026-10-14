@@ -80,7 +80,9 @@
     <div class="timeline-item">
         <div class="timeline-dot-col"><div class="tl-dot"></div></div>
         <div class="timeline-body">
-            <div class="tl-project">{e.projectName || i18n('dashboardNoName')}</div>
+            <div class="tl-project">
+                {!e.projectName || e.projectName === 'Unnamed' ? i18n('dashboardNoName') : e.projectName}
+            </div>
             <div class="tl-meta">
                 <span class="tl-chip">{fmtDateShort(e.savedAt)} - {fmtTime(e.savedAt)}</span>
                 <span class="tl-chip" style="display:inline-flex;align-items:center;gap:4px">

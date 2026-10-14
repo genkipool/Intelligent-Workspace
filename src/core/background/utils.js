@@ -112,7 +112,7 @@ function isCompactModeActive(groupsInWindow) {
         return false;
     }
 
-    const threshold = compactModeConfig.threshold ?? 12;
+    const threshold = compactModeConfig.threshold ?? 16;
     const groupCount = groupsInWindow.length;
 
     return groupCount >= threshold;
@@ -1971,7 +1971,7 @@ async function closeTabsForUrlCommand(urlToClose, originatingRuleName, groupId) 
             type: 'basic',
             iconUrl: '/assets/icons/icon128.png',
             title: getI18nMsg('errorTitle') || 'Error',
-            message: `No se pudo encontrar un grupo para la regla '${originatingRuleName}'.`,
+            message: getI18nMsg('errorNoGroupForRule', [originatingRuleName]),
         });
         return;
     }

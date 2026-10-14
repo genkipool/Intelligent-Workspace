@@ -300,7 +300,12 @@
         <div class="entry-content"></div>
         <div class="entry-footer">
             <button type="button" class="note-tag filter-btn"></button>
-            <button type="button" class="note-pomo-filter filter-btn hidden" data-pomo="pomodoro">Pomodoro</button>
+            <button
+                type="button"
+                class="note-pomo-filter filter-btn hidden"
+                data-pomo="pomodoro"
+                data-i18n="pomodoroTitle">Pomodoro</button
+            >
             <button type="button" class="entry-domain filter-btn"></button>
             <span class="note-date"></span>
             <button type="button" class="note-type filter-btn"></button>
@@ -665,7 +670,7 @@
 
 <template id="gallery-item-template">
     <div class="gallery-item">
-        <img src="" alt="Screenshot" loading="lazy" class="gallery-image" data-i18n-title="openScreenshotInTab" />
+        <img src="" alt="" loading="lazy" class="gallery-image" data-i18n-title="openScreenshotInTab" />
         <span class="gallery-full-page-badge" data-i18n="fullPageBadge"></span>
         <div class="gallery-item-info">
             <p class="gallery-item-title"></p>

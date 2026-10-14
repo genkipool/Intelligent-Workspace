@@ -11,17 +11,19 @@
      * @prop {number|string} [height='100%'] - Height of the SVG
      * @prop {string} [class=''] - Additional CSS classes
      * @prop {'auto'|'original'|'light'|'dark'|'viridian'} [theme='auto'] - Specific theme override
-     * @prop {string} [ariaLabel='Intelligent Workspace Logo'] - Accessibility label
+     * @prop {string} [ariaLabel] - Accessibility label (defaults to the translated logo name)
      * @prop {string} [role='img'] - ARIA role
      * @prop {string} [title] - Optional hover title / <title> element
      */
+    import { t } from '../../stores/i18nStore.js';
+
     let {
         size = undefined,
         width = '100%',
         height = '100%',
         class: className = '',
         theme = 'auto',
-        ariaLabel = 'Intelligent Workspace Logo',
+        ariaLabel = undefined,
         role = 'img',
         title = undefined,
         ...restProps
@@ -40,7 +42,7 @@
     class="app-logo-svg {className}"
     data-theme={themeAttr}
     {role}
-    aria-label={ariaLabel}
+    aria-label={ariaLabel || $t('appLogoAriaLabel') || 'Intelligent Workspace Logo'}
     {...restProps}
 >
     {#if title}

@@ -295,7 +295,7 @@ export async function initCustomizeHints() {
                 (trig) => trig.toLowerCase() === k && trig.toLowerCase() !== ex,
             );
             if (foundTrigger) {
-                return `Snippet (${foundTrigger})`;
+                return localizedMsg('shortcutUsedBySnippet', [foundTrigger]) || `Snippet (${foundTrigger})`;
             }
         }
 

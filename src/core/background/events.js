@@ -854,7 +854,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                         target: {
                             tabId: tab.id,
                         },
-                        func: async (selectedText) => {
+                        func: async (selectedText, labels) => {
                             if ('documentPictureInPicture' in window) {
                                 if (window.documentPictureInPicture.window) {
                                     window.documentPictureInPicture.window.close();
@@ -881,9 +881,16 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                                     header.style.marginBottom = '20px';
                                     header.style.borderBottom = '1px solid #333';
                                     header.style.paddingBottom = '16px';
-                                    header.innerHTML = `<span style="font-size: 16px; font-weight: 600; color: #a0a0a0;">📝 Recorte de Texto</span>`;
+                                    // Labels arrive translated from the worker and are set as
+                                    // text, never parsed as markup.
+                                    const headerTitle = document.createElement('span');
+                                    headerTitle.style.fontSize = '16px';
+                                    headerTitle.style.fontWeight = '600';
+                                    headerTitle.style.color = '#a0a0a0';
+                                    headerTitle.textContent = `📝 ${labels.title}`;
+                                    header.appendChild(headerTitle);
                                     const copyBtn = document.createElement('button');
-                                    copyBtn.innerText = 'Copiar';
+                                    copyBtn.innerText = labels.copy;
                                     copyBtn.style.background = '#007acc';
                                     copyBtn.style.color = '#fff';
                                     copyBtn.style.border = 'none';
@@ -894,8 +901,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                                     copyBtn.style.fontWeight = '500';
                                     copyBtn.onclick = () => {
                                         navigator.clipboard.writeText(selectedText);
-                                        copyBtn.innerText = '¡Copiado!';
-                                        setTimeout(() => (copyBtn.innerText = 'Copiar'), 2000);
+                                        copyBtn.innerText = labels.copied;
+                                        setTimeout(() => (copyBtn.innerText = labels.copy), 2000);
                                     };
                                     header.appendChild(copyBtn);
                                     const card = document.createElement('div');
@@ -919,7 +926,14 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                             }
                             return false;
                         },
-                        args: [info.selectionText],
+                        args: [
+                            info.selectionText,
+                            {
+                                title: getI18nMsg('selectionPipTitle'),
+                                copy: getI18nMsg('copyButtonTitle'),
+                                copied: getI18nMsg('copied'),
+                            },
+                        ],
                     });
                 } catch (execErr) {
                     console.warn('Selection PiP executeScript failed:', execErr);

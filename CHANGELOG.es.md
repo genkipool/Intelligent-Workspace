@@ -32,10 +32,22 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
-## 1.0.2 — 2026-10-08
+## 1.0.2 — 2026-10-14
+
+### Añadido
+
+- **Nueve idiomas nuevos:** alemán, portugués de Brasil, ruso, japonés, chino simplificado, hindi, francés, italiano y coreano. La extensión arranca en el idioma del navegador; si no está entre los disponibles, en inglés (`pt-PT` usa el portugués de Brasil y `zh-TW` el chino simplificado). El ruso tiene sus formas de plural `_few` y `_many`.
+- **Interruptor de dos idiomas a elección:** el idioma del usuario a la izquierda (seleccionado al instalar) y el inglés a la derecha. Al pasar el ratón por cualquiera de los dos nombres se abre la lista de idiomas para poner otro en ese lado; elegir el que ya está en el otro lado los intercambia. El par se guarda en `language-switch-pair`.
+
+### Cambiado
+
+- **Ordenación de grupos con el mínimo de movimientos:** `sortGroups` deja quietos los grupos que ya están en orden relativo (subsecuencia creciente más larga) y solo mueve los demás. Misma barra final; medido con 12 grupos, un 47 % menos de cambios de grupos, que Chrome sincroniza con los demás dispositivos de la cuenta.
+- **Cabecera de los paneles de Pomodoro y Actividad web sin scroll horizontal:** se compacta por pasos (etiquetas, textos de los botones, sello de actualización) y por debajo de 820 px el periodo pasa de botones a un selector.
 
 ### Corregido
 
+- **Textos que no se traducían:** unos 80 textos visibles y mensajes de error estaban escritos directamente en el código (algunos en español fijo, como el recorte de texto en ventana flotante o una notificación de reglas) y salían igual en cualquier idioma. Ahora pasan por las traducciones. El error al cargar una conversación en el omnibar vuelve a mostrar su detalle (fallaba por la precedencia de `||`).
+- **El texto de ayuda del menú de snippets decía «Escribe $»:** en `messages.json` `$$` se muestra como un solo `$`; el disparador real, `$$`, se escribe ahora `$$$$`.
 - **Transparencia del marco del omnibar en Google Search:** Se corrigió un marco blanco no deseado que rodeaba el omnibar al abrirlo en la web de búsqueda de Google. Chromium forzaba un lienzo blanco opaco por falta de coincidencia de `color-scheme` en páginas que usan temas oscuros mediante variables CSS sin declararlo en `:root`. El frame del omnibar ahora declara soporte dual `light dark` y el host calcula la luminancia real del fondo para sincronizar `color-scheme: dark`.
 
 ---

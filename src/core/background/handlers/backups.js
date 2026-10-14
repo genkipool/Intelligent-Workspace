@@ -101,7 +101,7 @@ async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
                 title: getI18nMsg('extName'),
                 message: noGroupsMsg,
             });
-            if (sendResponse) sendResponse({ success: false, error: 'No groups to backup' });
+            if (sendResponse) sendResponse({ success: false, error: noGroupsMsg });
             return;
         }
 
@@ -229,7 +229,7 @@ async function handleRestoreAllGroupsFromKey(message, sendResponse, sender) {
                 title: getI18nMsg('extName'),
                 message: noBackupsMsg,
             });
-            if (sendResponse) sendResponse({ success: false, error: 'No backups to restore' });
+            if (sendResponse) sendResponse({ success: false, error: noBackupsMsg });
             return;
         }
 
@@ -303,7 +303,7 @@ async function handleRestoreBackupGroup(message, sendResponse) {
     try {
         const backup = await getBackupFromDb(groupId);
         if (!backup) {
-            if (sendResponse) sendResponse({ success: false, error: 'Backup not found' });
+            if (sendResponse) sendResponse({ success: false, error: getI18nMsg('backupNotFound') });
             return;
         }
 
@@ -381,13 +381,13 @@ async function handleRestoreBackupTab(message, sendResponse) {
         // Fallback: Perform native restore in background if side panel is closed
         const backup = await getBackupFromDb(groupId);
         if (!backup) {
-            if (sendResponse) sendResponse({ success: false, error: 'Backup not found' });
+            if (sendResponse) sendResponse({ success: false, error: getI18nMsg('backupNotFound') });
             return;
         }
 
         const tabIndex = backup.tabs.findIndex((t) => t.url === tabUrl);
         if (tabIndex === -1) {
-            if (sendResponse) sendResponse({ success: false, error: 'Tab not found in backup' });
+            if (sendResponse) sendResponse({ success: false, error: getI18nMsg('backupTabNotFound') });
             return;
         }
 

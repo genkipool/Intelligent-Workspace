@@ -564,8 +564,8 @@ export async function handleAgentQuery(userQuery, attachments = []) {
     try {
         for (let step = 0; step < MAX_STEPS; step++) {
             if (isAgentQueryCancelled) {
-                addStep('Query cancelled by user', 'error');
-                finalResponse = 'Query cancelled.';
+                addStep(localizedMsg('agentQueryCancelledByUser') || 'Query cancelled by user', 'error');
+                finalResponse = localizedMsg('agentQueryCancelled') || 'Query cancelled.';
                 break;
             }
 
@@ -574,14 +574,15 @@ export async function handleAgentQuery(userQuery, attachments = []) {
             hideThinking();
 
             if (isAgentQueryCancelled) {
-                finalResponse = 'Query cancelled.';
+                finalResponse = localizedMsg('agentQueryCancelled') || 'Query cancelled.';
                 break;
             }
 
             if (!geminiResult?.success) {
-                const errMsg = geminiResult?.error || 'Could not connect to Gemini API';
-                addStep(`Error: ${errMsg}`, 'error');
-                finalResponse = `**Error:** ${errMsg}`;
+                const errMsg =
+                    geminiResult?.error || localizedMsg('agentCouldNotConnect') || 'Could not connect to Gemini API';
+                addStep(localizedMsg('agentErrorDetail', [errMsg]) || `Error: ${errMsg}`, 'error');
+                finalResponse = `**${localizedMsg('errorTitle') || 'Error'}:** ${errMsg}`;
                 break;
             }
 
@@ -603,7 +604,7 @@ export async function handleAgentQuery(userQuery, attachments = []) {
                 const { stepData, div: stepEl } = addStep(getToolLabel(toolName, toolParams), 'running');
 
                 if (isAgentQueryCancelled) {
-                    finalResponse = 'Query cancelled.';
+                    finalResponse = localizedMsg('agentQueryCancelled') || 'Query cancelled.';
                     break;
                 }
 
@@ -662,10 +663,13 @@ export async function handleAgentQuery(userQuery, attachments = []) {
             break;
         }
 
-        if (!finalResponse) finalResponse = 'Maximum steps reached. Please try rephrasing your request.';
+        if (!finalResponse) {
+            finalResponse =
+                localizedMsg('agentMaxStepsReached') || 'Maximum steps reached. Please try rephrasing your request.';
+        }
     } catch (err) {
-        finalResponse = `Unexpected error: ${err.message}`;
-        addStep(`Error: ${err.message}`, 'error');
+        finalResponse = localizedMsg('agentUnexpectedError', [err.message]) || `Unexpected error: ${err.message}`;
+        addStep(localizedMsg('agentErrorDetail', [err.message]) || `Error: ${err.message}`, 'error');
     } finally {
         hideThinking();
         setAgentButtonRunning(false);

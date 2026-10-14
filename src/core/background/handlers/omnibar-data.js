@@ -5,7 +5,7 @@
  * All operations here are read-only database queries formatted for
  * the omnibar suggestion UI.
  *
- * Dependencies: openDb() (from db.js),
+ * Dependencies: openDb() (from db.js), getI18nMsg() (from utils.js),
  *               NOTES_STORE_NAME, CONVERSATION_STORE_NAME, STORE_NAME (from state.js)
  */
 
@@ -48,7 +48,7 @@ function handleGetOmnibarNotes(sendResponse) {
                     }
                     return {
                         id: n.id,
-                        title: n.title || 'Untitled note',
+                        title: n.title || getI18nMsg('omnibarUntitledNote'),
                         type: n.type || 'text',
                         plainText: plainText.substring(0, 200),
                         content: typeof n.content === 'string' ? n.content : JSON.stringify(n.content),
@@ -71,7 +71,7 @@ function handleGetOmnibarConversationContent(message, sendResponse) {
         try {
             const { title, entryIds } = message;
             if (!entryIds || entryIds.length === 0) {
-                sendResponse({ success: false, error: 'No entry IDs provided' });
+                sendResponse({ success: false, error: getI18nMsg('omnibarErrNoEntryIds') });
                 return;
             }
 
@@ -88,7 +88,7 @@ function handleGetOmnibarConversationContent(message, sendResponse) {
             const entries = allEntries.filter((e) => idSet.has(e.id)).sort((a, b) => a.id - b.id);
 
             if (entries.length === 0) {
-                sendResponse({ success: false, error: 'No entries found for this conversation' });
+                sendResponse({ success: false, error: getI18nMsg('omnibarErrNoConversationEntries') });
                 return;
             }
 
@@ -139,7 +139,7 @@ function handleGetOmnibarConversations(sendResponse) {
 
             const grouped = {};
             persistentEntries.forEach((entry) => {
-                const title = entry.persistentTitle || 'Untitled';
+                const title = entry.persistentTitle || getI18nMsg('untitled');
                 if (!grouped[title]) grouped[title] = [];
                 grouped[title].push(entry);
             });
@@ -166,7 +166,7 @@ function handleGetOmnibarConversations(sendResponse) {
             const sessionConversations = sessionConvs
                 .filter((conv) => conv.entryIds && conv.entryIds.length > 0)
                 .map((conv, idx) => ({
-                    title: conv.title || `Conversation ${idx + 1}`,
+                    title: conv.title || getI18nMsg('conversationNumbered', [String(idx + 1)]),
                     date: conv.timestamp || 0,
                     entryCount: conv.entryIds.length,
                     entryIds: conv.entryIds,
@@ -309,7 +309,7 @@ function handleGetOmnibarScreenshots(sendResponse) {
                 .filter((s) => persistentIdSet.has(s.id) || sessionScreenshotIds.has(s.id))
                 .map((s) => ({
                     id: s.id,
-                    title: s.title || s.name || `Screenshot ${s.id}`,
+                    title: s.title || s.name || getI18nMsg('screenshotNumbered', [String(s.id)]),
                     date: s.timestamp || s.id || 0,
                     dataUrl: s.dataUrl ? s.dataUrl.substring(0, 100) + '...' : null,
                 }))

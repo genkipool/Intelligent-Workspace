@@ -1274,10 +1274,10 @@ export function initPomodoro({ embedded = false } = {}) {
             const row = document.createElement('div');
             row.className = 'pomo-task-stat-row';
             row.innerHTML = `
-                <span class="task-name">${task.name || 'Task'}</span>
+                <span class="task-name">${task.name || localizedMsg('pomodoroTaskDefaultName') || 'Task'}</span>
                 <span class="task-hour">${fmtTime(task.endTime)}</span>
                 <span class="task-time">${fmtDur(task.duration || 0)}</span>
-                <span class="task-cycle">Cycle ${task.cycle || '—'}</span>
+                <span class="task-cycle">${localizedMsg('pomodoroTaskCycle', [String(task.cycle || '—')]) || `Cycle ${task.cycle || '—'}`}</span>
             `;
             list.appendChild(row);
         });
@@ -1387,15 +1387,17 @@ export function initPomodoro({ embedded = false } = {}) {
         }
 
         savedStatProjects.forEach((proj) => {
+            // Unnamed sessions are stored as the English "Unnamed"; translate only the label.
+            const projLabel = proj.name === 'Unnamed' ? localizedMsg('dashboardNoName') || proj.name : proj.name;
             const item = document.createElement('li');
             item.className = 'pomo-project-item' + (selectedStatProject === proj.name ? ' active' : '');
             item.dataset.projectName = proj.name;
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.textContent = `${proj.name}  (${proj.entries.length})`;
+            btn.textContent = `${projLabel}  (${proj.entries.length})`;
             btn.addEventListener('click', () => {
                 selectedStatProject = proj.name;
-                if (statProjectName) statProjectName.textContent = proj.name;
+                if (statProjectName) statProjectName.textContent = projLabel;
                 closeProjectDropdown();
                 if (proj.entries.length > 0) renderSavedStats(proj.entries[0]);
             });
@@ -1536,7 +1538,7 @@ export function initPomodoro({ embedded = false } = {}) {
         const ctx = internal.getNotesContext() || {
             type: 'orphan',
             id: -1,
-            title: pomoData?.projectName || 'Pomodoro',
+            title: pomoData?.projectName || localizedMsg('pomodoroTitle') || 'Pomodoro',
         };
 
         internal.openNoteModal(ctx, null, { isPomodoro: true });
@@ -1548,7 +1550,7 @@ export function initPomodoro({ embedded = false } = {}) {
         if (!internal) return;
 
         // Use a dedicated pomodoro context so showNotesView fetches from g_pomodoro
-        const ctx = { type: 'pomodoro', id: -1, title: 'Pomodoro' };
+        const ctx = { type: 'pomodoro', id: -1, title: localizedMsg('pomodoroTitle') || 'Pomodoro' };
         await internal.showNotesView(ctx);
     }
 
@@ -2415,11 +2417,11 @@ export function initPomodoro({ embedded = false } = {}) {
                         },
                     ];
                 } else {
-                    throw new Error('Unsupported format');
+                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
                 }
 
                 if (!Array.isArray(entries) || entries.length === 0) {
-                    throw new Error('Unsupported format');
+                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
                 }
 
                 // Entries were written with a `savePomoStats` message that no handler
@@ -2435,7 +2437,7 @@ export function initPomodoro({ embedded = false } = {}) {
                 }
 
                 if (imported === 0) {
-                    throw new Error('Unsupported format');
+                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
                 }
 
                 showNotification('pomodoroStatsSaved', false);

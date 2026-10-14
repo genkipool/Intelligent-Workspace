@@ -260,7 +260,7 @@ const DEFAULT_CLUSTER_CONFIG = {
     clusteringEnabled: true,
     domainsEnabled: true,
     domainThreshold: 2,
-    compactMode: { enabled: true, threshold: 12 },
+    compactMode: { enabled: true, threshold: 16 },
     specialGroups: {
         chrome: {
             enabled: true,

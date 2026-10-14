@@ -6,6 +6,7 @@
 
     import { readingStore, readingLoaded } from '../../stores/readingStore.js';
     import GenericItem from '../shared/GenericItem.svelte';
+    import { t } from '../../stores/i18nStore.js';
 
     function handleDelete(item) {
         readingStore.deleteReadingItem(item.url);
@@ -18,7 +19,7 @@
             <GenericItem {item} type="reading" ondelete={handleDelete} />
         {:else}
             {#if $readingLoaded}
-                <p class="no-items-message">Reading list empty or unavailable.</p>
+                <p class="no-items-message">{$t('noReadingListFound')}</p>
             {/if}
         {/each}
     </div>

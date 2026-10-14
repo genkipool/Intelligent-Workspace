@@ -1,4 +1,6 @@
 <script>
+    import { t } from '../../../stores/i18nStore.js';
+
     let { syncThemesCount = 0, localThemesCount = 0, maxSyncThemes = 20, maxLocalThemes = 30 } = $props();
 
     const COLOR_DOTS = [
@@ -22,7 +24,8 @@
 <div class="main-footer-wrapper">
     <footer class="storage-info-footer">
         <span id="storage-limits-info"
-            >{`Sync: ${syncThemesCount}/${maxSyncThemes} | Local: ${localThemesCount}/${maxLocalThemes}`}</span
+            >{$t('storageLimitInfo', [syncThemesCount, maxSyncThemes, localThemesCount, maxLocalThemes]) ||
+                `Sync: ${syncThemesCount}/${maxSyncThemes} | Local: ${localThemesCount}/${maxLocalThemes}`}</span
         >
     </footer>
     <a href="#" id="about-link-saved-themes" class="footer-link" onclick={openAboutPage}>

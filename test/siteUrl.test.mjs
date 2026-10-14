@@ -24,8 +24,20 @@ describe('siteUrl', () => {
         assert.equal(siteUrl('terms', 'en-GB'), `${SITE_ORIGIN}/terms`);
     });
 
+    it('cada idioma de la extension enlaza a su ruta en la web', () => {
+        const expected = { fr: '/fr', de: '/de', it: '/it', ru: '/ru', hi: '/hi', ja: '/ja', ko: '/ko' };
+        for (const [language, prefix] of Object.entries(expected)) {
+            assert.equal(siteUrl('privacy', language), `${SITE_ORIGIN}${prefix}/privacy`);
+        }
+    });
+
+    it('el portugues de Brasil y el chino simplificado usan /pt y /zh, que es como los publica la web', () => {
+        for (const tag of ['pt-BR', 'pt_BR', 'pt']) assert.equal(siteUrl('terms', tag), `${SITE_ORIGIN}/pt/terms`);
+        for (const tag of ['zh-CN', 'zh_CN', 'zh']) assert.equal(siteUrl('terms', tag), `${SITE_ORIGIN}/zh/terms`);
+    });
+
     it('un idioma que la web no publica cae al ingles, como hace la web', () => {
-        ['fr', 'de', 'ja', 'pt-BR', 'zz'].forEach((language) => {
+        ['nl', 'zz'].forEach((language) => {
             assert.equal(siteUrl('privacy', language), `${SITE_ORIGIN}/privacy`);
         });
     });

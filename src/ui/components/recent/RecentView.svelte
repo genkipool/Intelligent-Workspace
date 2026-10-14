@@ -6,6 +6,7 @@
 
     import { recentStore, recentLoaded } from '../../stores/recentStore.js';
     import GenericItem from '../shared/GenericItem.svelte';
+    import { t } from '../../stores/i18nStore.js';
 </script>
 
 <div id="recent-view-container" class="view-container" style:display={startsVisible ? null : 'none'}>
@@ -14,7 +15,7 @@
             <GenericItem {item} type="recent" ondelete={recentStore.removeItem} />
         {:else}
             {#if $recentLoaded}
-                <p class="no-items-message">No recently closed tabs.</p>
+                <p class="no-items-message">{$t('noRecentlyClosedFound')}</p>
             {/if}
         {/each}
     </div>

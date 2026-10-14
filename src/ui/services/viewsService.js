@@ -1173,7 +1173,9 @@ export function createGenericListItem(item, type) {
         const minutes = String(dateObj.getMinutes()).padStart(2, '0');
         metaEl.textContent = `${day}-${month}-${year} ${hours}:${minutes}`;
     } else if (type === 'reading') {
-        metaEl.textContent = item.hasBeenRead ? 'Read' : 'Unread';
+        metaEl.textContent = item.hasBeenRead
+            ? localizedMsg('readingListItemRead') || 'Read'
+            : localizedMsg('readingListItemUnread') || 'Unread';
         if (!item.hasBeenRead) titleEl.style.fontWeight = 'bold';
     } else {
         metaEl.style.display = 'none';
@@ -1779,7 +1781,8 @@ export function showReaderView(htmlContent, baseUrl) {
     const readerTitleEl = readerEl.querySelector('.reader-title');
     const doc = new DOMParser().parseFromString(htmlContent, 'text/html');
     const videoId = extractYouTubeVideoId(doc);
-    readerTitleEl.textContent = doc.querySelector('h1, title, h2')?.textContent || 'Content';
+    readerTitleEl.textContent =
+        doc.querySelector('h1, title, h2')?.textContent || localizedMsg('noteContent') || 'Content';
     const contentNode = doc.querySelector('article, main, .post-content, .entry-content, #content, #main') || doc.body;
     const cleanContent = contentNode.cloneNode(true);
     cleanContent.querySelectorAll('script, style, iframe, noscript, link, svg').forEach((el) => el.remove());

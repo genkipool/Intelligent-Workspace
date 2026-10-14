@@ -208,20 +208,41 @@ export const COLOR_FORMATS = ['hex', 'rgb', 'hsla'];
  * The numeric fields each notation is made of. `hex` has none — it is one text field —
  * so it is absent on purpose.
  *
- * @type {Record<string, Array<{ key: string, label: string, title: string, min: number, max: number, step: number, decimals: number }>>}
+ * `title` is the English name; `titleKey` is the messages.json key the picker shows
+ * instead, so this module stays free of the translation store.
+ *
+ * @type {Record<string, Array<{ key: string, label: string, title: string, titleKey: string, min: number, max: number, step: number, decimals: number }>>}
  */
 export const COLOR_CHANNELS = {
     rgb: [
-        { key: 'r', label: 'R', title: 'Red', min: 0, max: 255, step: 1, decimals: 0 },
-        { key: 'g', label: 'G', title: 'Green', min: 0, max: 255, step: 1, decimals: 0 },
-        { key: 'b', label: 'B', title: 'Blue', min: 0, max: 255, step: 1, decimals: 0 },
-        { key: 'a', label: 'A', title: 'Alpha', min: 0, max: 1, step: 0.05, decimals: 2 },
+        { key: 'r', label: 'R', title: 'Red', titleKey: 'red', min: 0, max: 255, step: 1, decimals: 0 },
+        { key: 'g', label: 'G', title: 'Green', titleKey: 'green', min: 0, max: 255, step: 1, decimals: 0 },
+        { key: 'b', label: 'B', title: 'Blue', titleKey: 'blue', min: 0, max: 255, step: 1, decimals: 0 },
+        { key: 'a', label: 'A', title: 'Alpha', titleKey: 'colorPickerAlpha', min: 0, max: 1, step: 0.05, decimals: 2 },
     ],
     hsla: [
-        { key: 'h', label: 'H', title: 'Hue', min: 0, max: 360, step: 1, decimals: 0 },
-        { key: 's', label: 'S', title: 'Saturation', min: 0, max: 100, step: 1, decimals: 0 },
-        { key: 'l', label: 'L', title: 'Lightness', min: 0, max: 100, step: 1, decimals: 0 },
-        { key: 'a', label: 'A', title: 'Alpha', min: 0, max: 1, step: 0.05, decimals: 2 },
+        { key: 'h', label: 'H', title: 'Hue', titleKey: 'colorPickerHue', min: 0, max: 360, step: 1, decimals: 0 },
+        {
+            key: 's',
+            label: 'S',
+            title: 'Saturation',
+            titleKey: 'colorChannelSaturation',
+            min: 0,
+            max: 100,
+            step: 1,
+            decimals: 0,
+        },
+        {
+            key: 'l',
+            label: 'L',
+            title: 'Lightness',
+            titleKey: 'colorChannelLightness',
+            min: 0,
+            max: 100,
+            step: 1,
+            decimals: 0,
+        },
+        { key: 'a', label: 'A', title: 'Alpha', titleKey: 'colorPickerAlpha', min: 0, max: 1, step: 0.05, decimals: 2 },
     ],
 };
 

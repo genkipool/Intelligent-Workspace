@@ -32,10 +32,22 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
-## 1.0.2 — 2026-10-08
+## 1.0.2 — 2026-10-14
+
+### Added
+
+- **Nine new languages:** German, Brazilian Portuguese, Russian, Japanese, Simplified Chinese, Hindi, French, Italian and Korean. The extension starts in the browser's language, or in English when it is not one of them (`pt-PT` gets Brazilian Portuguese and `zh-TW` Simplified Chinese). Russian has its `_few` and `_many` plural forms.
+- **Two-language switch of the user's choice:** the user's language on the left (selected on install) and English on the right. Hovering either name opens the language list to put another one on that side; picking the one already on the other side swaps them. The pair is stored in `language-switch-pair`.
+
+### Changed
+
+- **Group sorting with the fewest moves:** `sortGroups` leaves in place the groups already in relative order (longest increasing subsequence) and moves only the rest. Same final strip; measured with 12 groups, 47% fewer group changes, which Chrome syncs to the account's other devices.
+- **Pomodoro and Web activity dashboard header without horizontal scrolling:** it compacts step by step (labels, button captions, update stamp) and below 820 px the period turns from chips into a selector.
 
 ### Fixed
 
+- **Texts that were never translated:** about 80 visible texts and error messages were written straight into the code (some in fixed Spanish, such as the text-clip floating window or a rules notification) and showed the same in every language. They now go through the translations. The error when loading a conversation in the omnibar shows its detail again (it was lost to `||` precedence).
+- **The snippet menu help said "Type $":** in `messages.json` `$$` shows as a single `$`; the real trigger, `$$`, is now written `$$$$`.
 - **Omnibar frame transparency on Google Search:** Fixed an unwanted white background frame boxing the omnibar on Google Search pages. Chrome was applying an opaque canvas background due to a `color-scheme` mismatch on pages styling dark backgrounds via custom CSS variables without root `:root` declarations. The omnibar frame now declares dual `light dark` color-scheme support, and the host evaluates real background luminance to synchronize `color-scheme: dark`.
 
 ---

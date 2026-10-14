@@ -129,8 +129,18 @@
         content: '';
     }
 
+    /* One line each, whatever the language: "Tableau de bord" in capitals or a CJK title
+       wrapped onto a second line and pushed the brand out of the 50px header. What does
+       not fit ends in an ellipsis; the summary's tooltip names the page in full. */
     .brand-text {
         min-width: 0;
+        overflow: hidden;
+    }
+
+    .brand-text > div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .brand-chevron {

@@ -855,7 +855,7 @@ async function executeGroupingPlan(groupingPlan, existingGroups, windowId, curre
             (plan) => !findManagedGroup(plan.type, plan.key, existingGroups, windowId),
         ).length;
         const expectedGroupCount = Object.keys(existingGroups).length + newGroups;
-        willBeCompact = expectedGroupCount >= (compactConfig.threshold ?? 12);
+        willBeCompact = expectedGroupCount >= (compactConfig.threshold ?? 16);
     }
 
     // Tabs that are leaving one group for another are pulled out in a single call

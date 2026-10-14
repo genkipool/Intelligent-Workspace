@@ -54,7 +54,8 @@
             const date = item.dateLastUsed || item.dateAdded;
             return `${localizedMsg('lastVisit') || 'Last visit'}: ${new Date(date).toLocaleDateString(activeLocale())}`;
         } else if (type === 'broken') {
-            if (typeof item.status === 'number') return `Status: ${item.status}`;
+            if (typeof item.status === 'number')
+                return localizedMsg('statusError', [String(item.status)]) || `Status: ${item.status}`;
             if (item.status === 'timeout') return localizedMsg('filterTimeouts') || 'Timeout';
             return localizedMsg('connectionError') || 'Connection Error';
         }

@@ -18,6 +18,7 @@ import {
     pluralKey,
     tooltipEntry,
     setActiveMessages,
+    languagePair,
 } from '../src/utils/i18n.js';
 
 const withUiLanguage = (tag) => {
@@ -46,7 +47,24 @@ describe('resolveLanguage', () => {
     });
 
     it('falls back to the default for a language not shipped, or none', () => {
-        for (const tag of ['fr', 'pt-BR', 'zz', '', undefined]) assert.equal(resolveLanguage(tag), 'en');
+        for (const tag of ['nl', 'sv-SE', 'zz', '', undefined]) assert.equal(resolveLanguage(tag), 'en');
+    });
+
+    it('resolves every shipped language from the tags browsers report', () => {
+        const cases = {
+            de: ['de', 'de-DE', 'de-AT'],
+            fr: ['fr', 'fr-FR', 'fr-CA'],
+            it: ['it', 'it-IT'],
+            ru: ['ru', 'ru-RU'],
+            ja: ['ja', 'ja-JP'],
+            ko: ['ko', 'ko-KR'],
+            hi: ['hi', 'hi-IN'],
+            pt_BR: ['pt-BR', 'pt_BR', 'pt', 'pt-PT'],
+            zh_CN: ['zh-CN', 'zh', 'zh-TW'],
+        };
+        for (const [code, tags] of Object.entries(cases)) {
+            for (const tag of tags) assert.equal(resolveLanguage(tag), code, tag);
+        }
     });
 });
 
@@ -55,6 +73,8 @@ describe('pickLanguage', () => {
         withUiLanguage('es-419');
         assert.equal(pickLanguage(undefined), 'es');
         withUiLanguage('de');
+        assert.equal(pickLanguage(undefined), 'de');
+        withUiLanguage('nl');
         assert.equal(pickLanguage(undefined), 'en');
     });
 
@@ -76,6 +96,14 @@ describe('formatting helpers', () => {
         assert.equal(localeOf('xx'), 'en-US');
     });
 
+    it('gives Russian its few and many forms', () => {
+        const messages = { n_one: {}, n_few: {}, n_many: {}, n_other: {} };
+        assert.equal(pluralKey('n', 1, 'ru-RU', messages), 'n_one');
+        assert.equal(pluralKey('n', 3, 'ru-RU', messages), 'n_few');
+        assert.equal(pluralKey('n', 7, 'ru-RU', messages), 'n_many');
+        assert.equal(pluralKey('n', 21, 'ru-RU', messages), 'n_one');
+    });
+
     it('picks plural forms by CLDR rules', () => {
         const messages = { n_one: {}, n_other: {} };
         assert.equal(pluralKey('n', 1, 'es-ES', messages), 'n_one');
@@ -92,6 +120,25 @@ describe('formatting helpers', () => {
         };
         assert.equal(tooltipEntry(messages, 'a').message, 'Hover text');
         assert.equal(tooltipEntry(messages, 'b').message, 'Only a label');
+    });
+});
+
+describe('languagePair', () => {
+    it("puts the browser's language on the left and English on the right", () => {
+        withUiLanguage('fr-FR');
+        assert.deepEqual(languagePair(undefined), ['fr', 'en']);
+    });
+
+    it('offers Spanish next to English when the browser is in English', () => {
+        withUiLanguage('en-US');
+        assert.deepEqual(languagePair(null), ['es', 'en']);
+    });
+
+    it('keeps the pair the user chose, and rejects a broken one', () => {
+        withUiLanguage('de');
+        assert.deepEqual(languagePair(['ja', 'ko']), ['ja', 'ko']);
+        assert.deepEqual(languagePair(['ja', 'ja']), ['de', 'en']);
+        assert.deepEqual(languagePair(['klingon', 'en']), ['de', 'en']);
     });
 });
 

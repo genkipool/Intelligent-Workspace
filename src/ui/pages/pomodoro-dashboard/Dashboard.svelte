@@ -607,7 +607,7 @@
                         maxBarThickness: 24,
                     },
                     {
-                        label: i18n('dashboardFocusH') + ' (Joint)',
+                        label: i18n('dashboardJointSeries', i18n('dashboardFocusH')),
                         data: focusVals,
                         stack: 'joint',
                         order: 1,
@@ -619,7 +619,7 @@
                         maxBarThickness: 24,
                     },
                     {
-                        label: i18n('dashboardBreakH') + ' (Joint)',
+                        label: i18n('dashboardJointSeries', i18n('dashboardBreakH')),
                         data: restVals,
                         stack: 'joint',
                         order: 2,
@@ -639,7 +639,10 @@
                     legend: { display: false },
                     tooltip: {
                         ...tooltipDef(),
-                        callbacks: { footer: (items) => `Total: ${items.reduce((a, i) => a + i.raw, 0).toFixed(1)}h` },
+                        callbacks: {
+                            footer: (items) =>
+                                i18n('dashboardTotalHours', items.reduce((a, i) => a + i.raw, 0).toFixed(1)),
+                        },
                     },
                 },
                 scales: {
@@ -1094,7 +1097,7 @@
                 const backup = JSON.parse(e.target.result);
                 if (backup.type !== 'pomodoro_backup' && !Array.isArray(backup)) {
                     // Support both full backup format and raw array format
-                    throw new Error('Invalid file format');
+                    throw new Error(i18n('invalidFileFormat'));
                 }
                 const data = Array.isArray(backup) ? backup : backup.data || [];
 

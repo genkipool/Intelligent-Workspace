@@ -273,7 +273,7 @@
                         <input
                             type="text"
                             id="pomodoro-project-name"
-                            placeholder="Mi proyecto"
+                            placeholder={$t('pomodoroProjectNamePlaceholder') || 'My project'}
                             class="pomo-text-input"
                         />
                     </div>
@@ -592,7 +592,7 @@
                         <div class="pomo-tiempo-field">
                             <div class="field-label">{$t('pomodoroEndDate') || 'Date'}</div>
                             <div class="custom-input-trigger pomo-date-trigger" id="pomo-end-date-trigger">
-                                <span class="val-placeholder">YYYY-MM-DD</span>
+                                <span class="val-placeholder">{$t('dateFormatPlaceholder') || 'YYYY-MM-DD'}</span>
                             </div>
                         </div>
                         <div class="pomo-tiempo-field">

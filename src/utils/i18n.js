@@ -4,7 +4,8 @@ const Languages = globalThis.ItgLanguages;
 export const SUPPORTED_LANGUAGES = Languages.SUPPORTED_LANGUAGES;
 export const DEFAULT_LANGUAGE = Languages.DEFAULT_LANGUAGE;
 export const LANGUAGE_STORAGE_KEY = Languages.STORAGE_KEY;
-export const { resolveLanguage, pickLanguage, localeOf } = Languages;
+export const LANGUAGE_PAIR_STORAGE_KEY = Languages.PAIR_STORAGE_KEY;
+export const { resolveLanguage, pickLanguage, localeOf, languagePair } = Languages;
 export const isSupportedLanguage = Languages.isSupported;
 
 export function replacePlaceholders(message, params) {

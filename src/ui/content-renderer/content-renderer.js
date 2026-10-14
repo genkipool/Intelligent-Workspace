@@ -494,6 +494,8 @@ export function renderNoteEntry(note, context, handlers) {
             'Leisure',
             'School',
             'ToDo',
+            // Stored as the English word "Custom"; only the label shown is translated.
+            'Custom',
         ];
         let translatedCategoryName;
         let i18nKey = '';
@@ -563,6 +565,7 @@ export function renderNoteEntry(note, context, handlers) {
     const pomoFilterBtn = entryEl.querySelector('.note-pomo-filter');
     if (note.pomoData) {
         if (pomoFilterBtn) {
+            pomoFilterBtn.textContent = localizedMsg('pomodoroTitle') || 'Pomodoro';
             pomoFilterBtn.classList.remove('hidden');
             if (handlers.onFilter) {
                 pomoFilterBtn.addEventListener('click', (e) => {
