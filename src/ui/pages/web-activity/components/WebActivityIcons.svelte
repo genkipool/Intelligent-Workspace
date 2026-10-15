@@ -100,6 +100,11 @@
             />
             <path d="M9 12h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>
+        <symbol id="wa-more" viewBox="0 0 24 24">
+            <circle cx="12" cy="5" r="1.8" fill="currentColor" />
+            <circle cx="12" cy="12" r="1.8" fill="currentColor" />
+            <circle cx="12" cy="19" r="1.8" fill="currentColor" />
+        </symbol>
         <symbol id="wa-plus" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
         </symbol>

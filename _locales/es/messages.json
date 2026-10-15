@@ -60,15 +60,15 @@
         "message": "Confirmar"
     },
     "omnibarGroupsBackedUp": {
-        "message": "Groups backed up successfully",
+        "message": "Copia de seguridad de los grupos creada",
         "description": "Success message after backing up groups"
     },
     "omnibarGroupsRestored": {
-        "message": "Restoring $1 backup(s)",
+        "message": "Restaurando $1 copia(s) de seguridad",
         "description": "Message shown when restoring selected backup groups"
     },
     "omnibarNoGroupsToBackup": {
-        "message": "All groups already have a backup",
+        "message": "Todos los grupos ya tienen copia de seguridad",
         "description": "Message shown when all groups are already backed up"
     },
     "addFolderToExistingRule": {
@@ -9352,6 +9352,22 @@
     "dashboardSession": {
         "message": "sesión"
     },
+    "dashboardSessionWord_one": {
+        "message": "sesión",
+        "description": "Palabra tras un número de sesiones pomodoro (tooltip del mapa de calor, gráfico por horas, «Máx. $1 $2 en un día»). Forma para la cantidad uno."
+    },
+    "dashboardSessionWord_other": {
+        "message": "sesiones",
+        "description": "Palabra tras un número de sesiones pomodoro. Forma general del plural."
+    },
+    "dashboardSessionWord_few": {
+        "message": "sesiones",
+        "description": "Forma para la categoría CLDR «few» (ruso: 2–4, 22–24…). Igual que «other» en los idiomas que no la tienen."
+    },
+    "dashboardSessionWord_many": {
+        "message": "sesiones",
+        "description": "Forma para la categoría CLDR «many» (ruso: 5–20, 25–30…). Igual que «other» en los idiomas que no la tienen."
+    },
     "dashboardCycles": {
         "message": "pomodoros"
     },
@@ -12237,6 +12253,31 @@
     },
     "webActivityLimitsAppliedToAll": {
         "message": "Configuración aplicada a todos los sitios web"
+    },
+    "webActivityApplyToAllConfirm": {
+        "message": "Se aplicará la misma regla a todos los sitios web. Sitios afectados: $1. Reglas existentes que se sustituirán: $2. ¿Continuar?",
+        "placeholders": {
+            "sites": {
+                "content": "$1"
+            },
+            "rules": {
+                "content": "$2"
+            }
+        }
+    },
+    "webActivityDeleteAllRules": {
+        "message": "Eliminar todos"
+    },
+    "webActivityDeleteAllRulesConfirm": {
+        "message": "Se eliminarán todas las reglas. Sitios con regla: $1. ¿Continuar?",
+        "placeholders": {
+            "count": {
+                "content": "$1"
+            }
+        }
+    },
+    "webActivityAllRulesDeleted": {
+        "message": "Se han eliminado todas las reglas"
     },
     "webActivityRemoveLimit": {
         "message": "Quitar esta cuota"

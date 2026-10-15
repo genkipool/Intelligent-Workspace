@@ -89,7 +89,19 @@ async function loadSessionState() {
             `%c[loadSessionState] ATTEMPTING to load state from session storage.`,
             'color: purple; font-weight: bold;',
         );
-        const data = await chrome.storage.session.get(['tabsEverActive', 'groupExpandedEver', 'activeSidePanelPath']);
+        const data = await chrome.storage.session.get([
+            'tabsEverActive',
+            'groupExpandedEver',
+            'activeSidePanelPath',
+            'lastActivity',
+        ]);
+
+        // Merged like the rest: what this worker has already recorded is newer.
+        if (data.lastActivity && typeof data.lastActivity === 'object') {
+            for (const [groupId, time] of Object.entries(data.lastActivity)) {
+                if (lastActivity[groupId] === undefined && typeof time === 'number') lastActivity[groupId] = time;
+            }
+        }
 
         // Restore activeSidePanelPath if available
         if (data.activeSidePanelPath !== undefined) {
@@ -525,6 +537,13 @@ async function loadExtensionSettings() {
             'linkPreviewTriggerKey',
         ];
         const data = await storage.get(settingsKeys);
+        // The link preview switch is obeyed from sync by the content script, whichever
+        // area holds the rules; reading it from the rules area made the context menu
+        // disagree with what pages actually do when the rules live in local.
+        if (storage !== chrome.storage.sync) {
+            const { linkPreviewEnabled } = await chrome.storage.sync.get('linkPreviewEnabled');
+            data.linkPreviewEnabled = linkPreviewEnabled;
+        }
         const storedConfig = data.clusterConfig || {};
         const mergedSpecialGroups = {};
         for (const key in DEFAULT_CLUSTER_CONFIG.specialGroups) {
@@ -676,11 +695,29 @@ async function setupDefaultSettings() {
         allowRightClickEnabled: true,
     };
     try {
-        await chrome.storage.sync.set(defaultSettings);
-        await chrome.storage.local.set(defaultSettings);
-        await chrome.storage.local.set({
-            ruleStorageArea: 'sync',
-        });
+        /*
+         * ONLY WHAT IS NOT THERE YET. `install` also fires on a reinstall and on every
+         * new device signed in to the same Chrome profile, and `sync` then already holds
+         * the user's own rules and settings (or receives them moments later). Writing the
+         * defaults over them wiped `customRules` everywhere, since that write syncs too.
+         * On a genuinely fresh install nothing is stored, so every default is written
+         * exactly as before. The local copy follows what sync already has, so the two
+         * areas do not start out disagreeing.
+         */
+        const keys = Object.keys(defaultSettings);
+        const syncStored = await chrome.storage.sync.get(keys);
+        const localStored = await chrome.storage.local.get([...keys, 'ruleStorageArea']);
+        const missingInSync = {};
+        const missingInLocal = {};
+        for (const key of keys) {
+            if (syncStored[key] === undefined) missingInSync[key] = defaultSettings[key];
+            if (localStored[key] === undefined) {
+                missingInLocal[key] = syncStored[key] !== undefined ? syncStored[key] : defaultSettings[key];
+            }
+        }
+        if (localStored.ruleStorageArea === undefined) missingInLocal.ruleStorageArea = 'sync';
+        if (Object.keys(missingInSync).length) await chrome.storage.sync.set(missingInSync);
+        if (Object.keys(missingInLocal).length) await chrome.storage.local.set(missingInLocal);
         logMessage('Default settings have been successfully saved.');
     } catch (error) {
         console.error('Failed to save default settings on install:', error);
@@ -873,6 +910,9 @@ async function executeWithRetries(action, operationDescription, maxRetries = MAX
                     console.warn(
                         `[executeWithRetries] Failed to execute "${operationDescription}" after ${maxRetries} retries due to persistent dragging.`,
                     );
+                    // A grouping pass gave up on these tabs, and a drag raises no event
+                    // that would bring them back: try again once the drag is likely over.
+                    if (isGrouping) setTimeout(() => debounceGroupTabs(), 1000);
                     return false;
                 }
             } else if (

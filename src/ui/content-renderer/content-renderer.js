@@ -240,7 +240,9 @@ export function renderGeminiResponse(entryContainer, entry) {
         footer.className = 'entry-footer gemini-footer';
         const { promptTokenCount, candidatesTokenCount, totalTokenCount } = data.usageMetadata;
         const modelLabel = localizedMsg('geminiFooterModel') || 'Model';
-        const modelVersion = data.modelVersion ? data.modelVersion.split('/').pop() : 'N/A';
+        // The model name comes from the API response, which is not ours: escaped before it
+        // goes into the markup below.
+        const modelVersion = escapeHtml(data.modelVersion ? String(data.modelVersion).split('/').pop() : 'N/A');
         const promptText = localizedMsg('geminiFooterPrompt', [String(promptTokenCount || 0)]);
         const responseText = localizedMsg('geminiFooterResponse', [String(candidatesTokenCount || 0)]);
         const totalText = localizedMsg('geminiFooterTotal', [String(totalTokenCount || 0)]);

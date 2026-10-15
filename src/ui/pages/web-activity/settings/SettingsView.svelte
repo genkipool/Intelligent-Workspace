@@ -34,6 +34,7 @@
         onEditSchedule,
         onSaveLimit,
         onAddRule,
+        onDeleteAllRules,
         onAddCategory,
         onRenameCategory,
         onDeleteCategory,
@@ -60,7 +61,15 @@
 
     <h2 class="set-head" title={$tt('webActivitySettingsRulesHint')}>{$t('webActivitySettingsRules')}</h2>
     <section class="set-section" id="set-rules">
-        <RulesSection {compact} rows={rules} {onEditLimit} {onEditSchedule} {onSaveLimit} onAdd={onAddRule} />
+        <RulesSection
+            {compact}
+            rows={rules}
+            {onEditLimit}
+            {onEditSchedule}
+            {onSaveLimit}
+            onAdd={onAddRule}
+            onDeleteAll={onDeleteAllRules}
+        />
     </section>
 
     <!-- Under the rules because it is about the rules: what it guards is weakening

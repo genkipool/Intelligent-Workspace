@@ -6,7 +6,7 @@
  *
  * Dependencies: getPomodoroState(), savePomodoroState(), getRemainingSeconds(),
  *               getModeDuration(), pomodoroDefaults(), broadcastPomodoro(),
- *               POMODORO_ALARM (all from pomodoro.js)
+ *               startPomodoroAlarms(), clearPomodoroAlarms() (all from pomodoro.js)
  */
 
 function handlePomodoroGetState(sendResponse) {
@@ -63,8 +63,8 @@ function handlePomodoroStart(sendResponse) {
             },
         };
         await savePomodoroState(newState);
-        await chrome.alarms.clear(POMODORO_ALARM);
-        await chrome.alarms.create(POMODORO_ALARM, { periodInMinutes: 1 / 60 });
+        await clearPomodoroAlarms();
+        await startPomodoroAlarms(newState);
         broadcastPomodoro(newState, 'start', null);
         sendResponse({ success: true, state: newState, remaining: resumeFrom });
     })();
@@ -90,7 +90,7 @@ function handlePomodoroPause(sendResponse) {
             stats: newStats,
         };
         await savePomodoroState(newState);
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
         broadcastPomodoro(newState, 'pause', null);
         sendResponse({ success: true, state: newState, remaining });
     })();
@@ -99,7 +99,7 @@ function handlePomodoroPause(sendResponse) {
 function handlePomodoroReset(sendResponse) {
     (async () => {
         const state = await getPomodoroState();
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
 
         const cycles = Number(state.completedCycles) || 0;
         const goal = Number(state.settings?.endAfter) || 8;
@@ -143,7 +143,7 @@ function handlePomodoroSkip(sendResponse) {
 function handlePomodoroSetMode(message, sendResponse) {
     (async () => {
         const state = await getPomodoroState();
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
         const newState = { ...state, mode: message.mode, isRunning: false, startTime: null, pausedRemaining: null };
         await savePomodoroState(newState);
         const remaining = getModeDuration(message.mode, state.settings);
@@ -155,7 +155,7 @@ function handlePomodoroSetMode(message, sendResponse) {
 function handlePomodoroSaveSettings(message, sendResponse) {
     (async () => {
         const state = await getPomodoroState();
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
         const newSettings = { ...state.settings, ...message.settings };
         const newState = { ...state, settings: newSettings, isRunning: false, startTime: null, pausedRemaining: null };
         await savePomodoroState(newState);
@@ -179,7 +179,7 @@ function handlePomodoroClearStats(sendResponse) {
             pausedRemaining: null,
             stats: { ...defaults.stats },
         };
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
         await savePomodoroState(newState);
         broadcastPomodoro(newState, 'reset', null);
         sendResponse({ success: true, state: newState });

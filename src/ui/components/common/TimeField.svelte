@@ -102,6 +102,19 @@
         open = false;
     }
 
+    /**
+     * Escape puts the picker away and no more, as the colour picker's does: the dialog
+     * underneath listens for it too, and inside the settings drawer that is a <dialog>
+     * that closed with whatever was open in it.
+     */
+    function handleKeydown(e) {
+        if (!open || e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        open = false;
+        triggerEl?.focus();
+    }
+
     function handleApply(e) {
         e?.stopPropagation?.();
         hour = clamp(hour, maxHour);
@@ -119,7 +132,12 @@
     hears every click wherever it lands. The same goes for `scroll`, which does not
     bubble at all — a fixed popup has to follow a body that scrolls under it.
 -->
-<svelte:window onclickcapture={handleOutside} onresize={place} onscrollcapture={place} />
+<svelte:window
+    onclickcapture={handleOutside}
+    onkeydowncapture={handleKeydown}
+    onresize={place}
+    onscrollcapture={place}
+/>
 
 <div
     {id}

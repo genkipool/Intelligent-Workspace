@@ -443,6 +443,37 @@ const ITG_WEB_ACTIVITY = {
         return 'other';
     },
 
+    /**
+     * Whether a limit set on `limitDomain` covers the site `domain`: the site itself
+     * or any subdomain of it. This is the same reach the block rule has, so the time
+     * a limit counts and the pages it stops are the same set.
+     */
+    limitCovers(limitDomain, domain) {
+        if (!limitDomain || !domain) return false;
+        return domain === limitDomain || domain.endsWith('.' + limitDomain);
+    },
+
+    /**
+     * Seconds a limit on `domain` is measured against: the site's own time plus its
+     * subdomains'. Time is recorded per hostname (`m.youtube.com` apart from
+     * `youtube.com`, which the dashboard shows as two rows), but the block rule for
+     * `youtube.com` also stops `m.youtube.com`, so an allowance counting only the
+     * exact key could be spent forever on a subdomain it blocks.
+     *
+     * @param {string} domain
+     * @param {object} perSite either a day's `domains` record (entries with `t`) or a
+     *   plain `{ domain: seconds }` map such as a week's totals.
+     */
+    secondsUnder(domain, perSite) {
+        if (!domain || !perSite) return 0;
+        let total = 0;
+        for (const [site, value] of Object.entries(perSite)) {
+            if (!ITG_WEB_ACTIVITY.limitCovers(domain, site)) continue;
+            total += (typeof value === 'number' ? value : value?.t) || 0;
+        }
+        return total;
+    },
+
     /** An empty per-day record for a site. */
     emptyDomainDay() {
         // `p` is the same seconds again, split by the pomodoro phase that was running

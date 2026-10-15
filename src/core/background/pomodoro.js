@@ -1,5 +1,22 @@
 const POMODORO_STORAGE_KEY = 'pomodoroState';
 const POMODORO_ALARM = 'pomodoroTick';
+// A one-shot alarm at the exact end of the phase. The tick alone is not enough: Chrome
+// fires a packed extension's alarms at most every 30 s, so the end of a phase (sound,
+// notification, next phase) could arrive up to half a minute after the display hit 0:00.
+const POMODORO_END_ALARM = 'pomodoroEnd';
+
+/** Starts the tick and the end-of-phase alarm for a running phase. */
+async function startPomodoroAlarms(state) {
+    await chrome.alarms.create(POMODORO_ALARM, { periodInMinutes: 1 / 60 });
+    const endsAt = state.startTime + getModeDuration(state.mode, state.settings) * 1000;
+    // A little past the end, so the remaining time has certainly reached 0 when it fires.
+    await chrome.alarms.create(POMODORO_END_ALARM, { when: endsAt + 250 });
+}
+
+async function clearPomodoroAlarms() {
+    await chrome.alarms.clear(POMODORO_ALARM);
+    await chrome.alarms.clear(POMODORO_END_ALARM);
+}
 
 // ---- Default state with correct defaults ----
 function pomodoroDefaults() {
@@ -167,7 +184,7 @@ async function onPomodoroComplete(state) {
 
     const allDone = wasWork && newCompletedWork > 0 && newCompletedCycles >= state.settings.endAfter;
 
-    await chrome.alarms.clear(POMODORO_ALARM);
+    await clearPomodoroAlarms();
 
     const shouldAutostart = state.settings.autostart && !allDone;
 
@@ -186,7 +203,7 @@ async function onPomodoroComplete(state) {
     await savePomodoroState(newState);
 
     if (shouldAutostart) {
-        await chrome.alarms.create(POMODORO_ALARM, { periodInMinutes: 1 / 60 });
+        await startPomodoroAlarms(newState);
     }
 
     const completedMode = state.mode;
@@ -214,12 +231,21 @@ async function onPomodoroComplete(state) {
     });
 }
 
-// Alarm tick
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (alarm.name !== POMODORO_ALARM) return;
+// Alarm tick. The tick and the end alarm can fire together; they run one after the
+// other, and the second one finds the phase already completed.
+let pomodoroAlarmQueue = Promise.resolve();
+chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name !== POMODORO_ALARM && alarm.name !== POMODORO_END_ALARM) return;
+    pomodoroAlarmQueue = pomodoroAlarmQueue
+        .then(handlePomodoroAlarm)
+        .catch((error) => console.error('[Pomodoro] Alarm handling failed:', error));
+    return pomodoroAlarmQueue;
+});
+
+async function handlePomodoroAlarm() {
     const state = await getPomodoroState();
     if (!state.isRunning) {
-        await chrome.alarms.clear(POMODORO_ALARM);
+        await clearPomodoroAlarms();
         return;
     }
     const remaining = await getRemainingSeconds(state);
@@ -228,6 +254,6 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     } else {
         broadcastPomodoro(state, 'tick', null);
     }
-});
+}
 
 // The secondary message listener has been consolidated into the primary one around line 5800.

@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "sessão"
   },
+  "dashboardSessionWord_one": {
+    "message": "sessão",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "sessões",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "sessões",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "sessões",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "ciclos"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "Criar tema personalizado",
+    "message": "➕ Criando tema $1",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "Configuração aplicada a todos os sites"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "A mesma regra será aplicada a todos os sites. Sites afetados: $1. Regras existentes que serão substituídas: $2. Continuar?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "Excluir todos"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "Todas as regras serão excluídas. Sites com regra: $1. Continuar?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "Todas as regras foram excluídas"
   },
   "webActivityRemoveLimit": {
     "message": "Remover esta cota"

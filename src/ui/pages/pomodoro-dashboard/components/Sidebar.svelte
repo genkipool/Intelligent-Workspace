@@ -1,6 +1,7 @@
 <script>
     import { t, tt } from '../../../stores/i18nStore.js';
     import { compareNames } from '../../../services/utils.js';
+    import { projectKey } from '../dashboardAnalytics.js';
 
     let {
         folderNames = [],
@@ -9,6 +10,7 @@
         standaloneProjs = [],
         totalCount = 0,
         activeProject = null,
+        activeProjectFolder = '',
         activeFolder = null,
         openFolders = new Set(),
         query = '',
@@ -22,7 +24,10 @@
         onOpenSettings,
     } = $props();
 
+    // The project being renamed, as its projectKey: two folders can each hold a project
+    // of the same name, and only the one clicked opens for editing.
     let editingProject = $state(null);
+    let editingFolder = '';
     let editingName = $state('');
     let editInputEl = $state(null);
 
@@ -53,8 +58,9 @@
 
     const hasAnyMatching = $derived(hasMatchingFolders || hasMatchingStandalone);
 
-    function startEditing(p) {
-        editingProject = p;
+    function startEditing(p, folder = '') {
+        editingProject = projectKey(folder, p);
+        editingFolder = folder;
         editingName = p;
         setTimeout(() => {
             if (editInputEl) {
@@ -69,7 +75,7 @@
         const newName = editingName.trim().slice(0, 18);
         editingProject = null;
         if (newName && newName !== oldName) {
-            onRenameProject?.(oldName, newName);
+            onRenameProject?.(oldName, newName, editingFolder);
         }
     }
 
@@ -132,7 +138,7 @@
             {@const folderMatches = matchesQuery(folder)}
             {@const anyProjectMatches = projects.some((p) => matchesQuery(p))}
             {#if folderMatches || anyProjectMatches}
-                {@const count = projects.reduce((a, p) => a + (projectCounts[p] || 0), 0)}
+                {@const count = projects.reduce((a, p) => a + (projectCounts[projectKey(folder, p)] || 0), 0)}
                 {@const open = isOpen(folder)}
                 {@const isActiveFolder = view !== 'settings' && activeFolder === folder && !activeProject}
 
@@ -183,7 +189,7 @@
                             </svg>
                         </span>
                         <span class="si-folder-icon">
-                            {#if open || isActiveFolder || (activeProject && projects.includes(activeProject))}
+                            {#if open || isActiveFolder || (activeProject && activeProjectFolder === folder)}
                                 <svg
                                     width="14"
                                     height="14"
@@ -228,18 +234,20 @@
                         <div class="folder-children-inner">
                             {#each projects as p (p)}
                                 {#if matchesQuery(p) || folderMatches}
-                                    {@const cnt = projectCounts[p] || 0}
+                                    {@const cnt = projectCounts[projectKey(folder, p)] || 0}
                                     <div
                                         class="sidebar-item"
-                                        class:active={view !== 'settings' && activeProject === p}
+                                        class:active={view !== 'settings' &&
+                                            activeProject === p &&
+                                            activeProjectFolder === folder}
                                         data-project={p}
                                         role="button"
                                         tabindex="0"
                                         title={displayName(p)}
-                                        onclick={() => onSelectProject?.(p)}
-                                        onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p)}
+                                        onclick={() => onSelectProject?.(p, folder)}
+                                        onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p, folder)}
                                     >
-                                        {#if editingProject === p}
+                                        {#if editingProject === projectKey(folder, p)}
                                             <input
                                                 bind:this={editInputEl}
                                                 class="si-edit-input"
@@ -259,7 +267,7 @@
                                                 aria-label={$tt('editProjectName') || 'Edit name'}
                                                 onclick={(e) => {
                                                     e.stopPropagation();
-                                                    startEditing(p);
+                                                    startEditing(p, folder);
                                                 }}
                                             >
                                                 <svg
@@ -295,18 +303,18 @@
 
         {#each standaloneProjs as p (p)}
             {#if matchesQuery(p)}
-                {@const cnt = projectCounts[p] || 0}
+                {@const cnt = projectCounts[projectKey('', p)] || 0}
                 <div
                     class="sidebar-item"
-                    class:active={view !== 'settings' && activeProject === p}
+                    class:active={view !== 'settings' && activeProject === p && activeProjectFolder === ''}
                     data-project={p}
                     role="button"
                     tabindex="0"
                     title={displayName(p)}
-                    onclick={() => onSelectProject?.(p)}
-                    onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p)}
+                    onclick={() => onSelectProject?.(p, '')}
+                    onkeydown={(e) => e.key === 'Enter' && onSelectProject?.(p, '')}
                 >
-                    {#if editingProject === p}
+                    {#if editingProject === projectKey('', p)}
                         <input
                             bind:this={editInputEl}
                             class="si-edit-input"
@@ -326,7 +334,7 @@
                             aria-label={$tt('editProjectName') || 'Edit name'}
                             onclick={(e) => {
                                 e.stopPropagation();
-                                startEditing(p);
+                                startEditing(p, '');
                             }}
                         >
                             <svg

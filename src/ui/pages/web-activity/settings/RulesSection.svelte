@@ -17,20 +17,23 @@
     import { t, tt } from '../../../stores/i18nStore.js';
     import { fmtHm } from '../../../services/dashboard/format.js';
     import RuleControls from '../components/RuleControls.svelte';
+    import RuleActionsMenu from '../components/RuleActionsMenu.svelte';
 
     let {
         rows = [],
         /**
-         * In the side panel the table is left out and only the "add" button stays.
-         * Every rule it would list is already a card in the panel behind this dialog,
-         * with the same three controls on it — printing them again a centimetre away is
-         * two lists of the same thing, and the second one is the one nobody asked for.
+         * The side panel. The table is listed there too, as cards (see the compact
+         * rules in webActivity.css): the panel's own cards are only the sites visited
+         * in the period on screen, so a rule on a site not opened lately — one just
+         * added, most of all — was in neither list.
          */
         compact = false,
         onEditLimit,
         onEditSchedule,
         onSaveLimit,
         onAdd,
+        /** Deletes every rule listed here; the page asks first. */
+        onDeleteAll,
     } = $props();
 
     const LIMIT_KEYS = {
@@ -114,17 +117,33 @@
         <span class="wa-cell-val" class:wa-muted={!isSet} class:is-paused={isSet && !enabled} title={valueTitle}>
             {isSet ? label : '—'}
         </span>
-        <RuleControls
-            {isSet}
-            {enabled}
-            {editTitle}
-            enableKey={keys.enable}
-            disableKey={keys.disable}
-            clearKey={keys.clear}
-            {onEdit}
-            {onToggle}
-            {onClear}
-        />
+        <!-- In the panel the three controls are a ⋮ menu: a column that narrow holds
+             the value or the buttons, not both. -->
+        {#if compact}
+            <RuleActionsMenu
+                {isSet}
+                {enabled}
+                {editTitle}
+                enableKey={keys.enable}
+                disableKey={keys.disable}
+                clearKey={keys.clear}
+                {onEdit}
+                {onToggle}
+                {onClear}
+            />
+        {:else}
+            <RuleControls
+                {isSet}
+                {enabled}
+                {editTitle}
+                enableKey={keys.enable}
+                disableKey={keys.disable}
+                clearKey={keys.clear}
+                {onEdit}
+                {onToggle}
+                {onClear}
+            />
+        {/if}
     </div>
 {/snippet}
 
@@ -134,11 +153,19 @@
             <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-plus"></use></svg>
             <span>{$t('webActivityAddRule')}</span>
         </button>
+        <button
+            class="set-add-btn set-delete-all-btn"
+            type="button"
+            disabled={!configured.length}
+            title={$tt('webActivityDeleteAllRules')}
+            onclick={() => onDeleteAll?.(configured.map((row) => row.domain))}
+        >
+            <svg width="12" height="12" aria-hidden="true" focusable="false"><use href="#wa-trash"></use></svg>
+            <span>{$t('webActivityDeleteAllRules')}</span>
+        </button>
     </div>
 
-    {#if compact}
-        <!-- Nothing else: the rules are the cards in the panel behind this dialog. -->
-    {:else if !configured.length}
+    {#if !configured.length}
         <p class="wa-empty-line">{$t('webActivityRulesEmpty')}</p>
     {:else}
         <div class="wa-table-frame wa-rules-frame">

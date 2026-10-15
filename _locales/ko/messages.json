@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "세션"
   },
+  "dashboardSessionWord_one": {
+    "message": "세션",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "세션",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "세션",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "세션",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "사이클"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "맞춤 테마 만들기",
+    "message": "➕ 테마 $1 만드는 중",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "모든 웹사이트에 설정을 적용했습니다"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "모든 웹사이트에 같은 규칙이 적용됩니다. 대상 사이트 수: $1. 대체될 기존 규칙 수: $2. 계속하시겠습니까?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "모두 삭제"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "모든 규칙이 삭제됩니다. 규칙이 있는 사이트 수: $1. 계속하시겠습니까?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "모든 규칙을 삭제했습니다"
   },
   "webActivityRemoveLimit": {
     "message": "이 허용 시간 지우기"

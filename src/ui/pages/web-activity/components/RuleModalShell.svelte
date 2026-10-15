@@ -15,6 +15,7 @@
      * fills the row.
      */
     import { dismissOnBackdrop } from '../../../actions/dismissOnBackdrop.js';
+    import { portal } from '../../../actions/portal.js';
     import ModalSaveButton from '../../../components/common/ModalSaveButton.svelte';
     import ModalHeader from '../../../components/common/ModalHeader.svelte';
 
@@ -40,7 +41,15 @@
     aria-labelledby={titleId}
     tabindex="-1"
     use:dismissOnBackdrop={onClose}
-    onkeydown={(e) => e.key === 'Escape' && onClose()}
+    use:portal
+    onkeydown={(e) => {
+        if (e.key !== 'Escape') return;
+        // Opened from the settings drawer it sits inside that <dialog>, which would
+        // take the same Escape as its own and close too.
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+    }}
 >
     <div class="modal-content wa-modal {variant}" role="none" onclick={(e) => e.stopPropagation()}>
         <ModalHeader {titleId} {title} {onClose} />

@@ -1,4 +1,34 @@
 /**
+ * Debug output of the content scripts. Silent unless `globalThis.__ITG_DEBUG__` is set
+ * in the extension's context of DevTools: these lines run on every website, and some carried what
+ * the user was typing (password fields included) or had selected.
+ */
+function itgDebug(...args) {
+    if (globalThis.__ITG_DEBUG__ === true) console.log(...args);
+}
+
+/**
+ * The key a keyboard command or hint label is matched by.
+ *
+ * Commands and hint labels are Latin letters, but `event.key` is what the active layout
+ * writes: on a Russian, Greek, Hebrew, Arabic or Hindi layout the F key writes `а`, `φ`…,
+ * so neither `f` nor any hint label could ever be typed. A letter key that writes a
+ * non-Latin character is read by its position instead (the US layout the labels are drawn
+ * from), with the case Shift gives it. Latin layouts (AZERTY, QWERTZ, Dvorak…) write ASCII
+ * and are read exactly as before.
+ *
+ * @param {KeyboardEvent} event
+ * @returns {string}
+ */
+function itgCommandKey(event) {
+    const key = event?.key;
+    if (typeof key !== 'string' || key.length !== 1 || /[\x20-\x7e]/.test(key)) return key;
+    const match = /^Key([A-Z])$/.exec(event.code || '');
+    if (!match) return key;
+    return event.shiftKey ? match[1] : match[1].toLowerCase();
+}
+
+/**
  * Tries the floating player's page again, a little later, when its frame came up as
  * Chrome's "refused to connect" page.
  *
@@ -806,6 +836,14 @@ function _omniSanitizeHtml(html) {
             'input',
             'button',
             'template',
+            // Never in a note (the note sanitizer drops them too), and each can reach
+            // beyond the note: base rewrites every link, link and meta load or redirect,
+            // svg and math carry their own scriptable namespaces.
+            'base',
+            'link',
+            'meta',
+            'svg',
+            'math',
         ]);
         const allowedAttrs = new Set(['href', 'title', 'src', 'alt', 'class', 'style', 'target', 'rel']);
 
@@ -821,8 +859,10 @@ function _omniSanitizeHtml(html) {
                     if (name.startsWith('on') || !allowedAttrs.has(name)) {
                         child.removeAttribute(attr.name);
                     } else if (name === 'href' || name === 'src') {
-                        const val = attr.value.trim().toLowerCase();
-                        if (val.startsWith('javascript:') || val.startsWith('data:text/html')) {
+                        // The URL parser drops tabs and newlines anywhere and control
+                        // characters at the start, so "java\tscript:" is javascript:.
+                        const val = attr.value.replace(/[\u0000-\u0020]/g, '').toLowerCase();
+                        if (/^(javascript|vbscript):/.test(val) || val.startsWith('data:text/html')) {
                             child.removeAttribute(attr.name);
                         }
                     }

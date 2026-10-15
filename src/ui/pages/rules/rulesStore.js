@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { getRuleStorage, setRuleStorage, getSettings, groupTabs } from './modules/rules-api.js';
 
 export const rulesStore = writable([]);
@@ -32,7 +32,16 @@ export async function initializeRules() {
 }
 
 export async function saveRulesToStorage(rules) {
+    // Shown at once, but taken back if the write fails (sync allows 8 KB per item):
+    // otherwise the list kept rules that were never stored until the page reloaded.
+    // setRuleStorage has already told the user why.
+    const previous = get(rulesStore);
     rulesStore.set(rules);
-    await setRuleStorage(rules);
+    try {
+        await setRuleStorage(rules);
+    } catch (error) {
+        rulesStore.set(previous);
+        throw error;
+    }
     await groupTabs();
 }

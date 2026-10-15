@@ -619,9 +619,21 @@
         // is how one is deleted now — there is no separate delete button — so the
         // record goes with them rather than lingering as a row of dashes. A category
         // the user picked is their own choice and keeps the record alive.
-        // The dialogs asked when they opened, so whatever they save is already past the
-        // lock; everything else — a switch in a table, a cross in the panel — arrives
+        // A dialog opened on an existing rule asked when it opened, so what it saves is
+        // already past the lock; everything else — a switch in a table, a cross in the panel — arrives
         // here unannounced and is checked against what is stored.
+        if (domains && Array.isArray(domains)) {
+            // "All" overwrites every rule there is with what the dialog holds, and with no
+            // password set nothing else stood between a stray click and losing them.
+            const existing = domains.filter((d) => payload.limits?.[d]).length;
+            const accepted = await confirmAction({
+                messageKey: 'webActivityApplyToAllConfirm',
+                params: [String(domains.length), String(existing)],
+                confirmKey: 'confirm',
+                danger: existing > 0,
+            });
+            if (!accepted) return;
+        }
         if (!unlocked && hasLock(blockLock)) {
             if (domains && Array.isArray(domains)) {
                 if (!(await askForPassword())) return;
@@ -658,6 +670,40 @@
         }
         if (announce) {
             editingLimit = null;
+        }
+    }
+
+    /**
+     * Deletes every rule listed in the settings. A site that only carries a category
+     * keeps it: the category is how the site is filed, not part of the rule.
+     *
+     * Deleting rules is loosening them, so a password, when set, is asked like for any
+     * other rule removed.
+     */
+    async function deleteAllRules(domains) {
+        if (!domains?.length) return;
+        const accepted = await confirmAction({
+            messageKey: 'webActivityDeleteAllRulesConfirm',
+            params: [String(domains.length)],
+            confirmKey: 'delete',
+        });
+        if (!accepted) return;
+        if (hasLock(blockLock) && !(await askForPassword())) return;
+
+        const withCategory = domains.filter((domain) => payload.limits[domain]?.category);
+        const plain = domains.filter((domain) => !payload.limits[domain]?.category);
+        let response = null;
+        if (plain.length) response = await saveLimit('*', null, plain);
+        if (withCategory.length) {
+            response = await saveLimit(
+                '*',
+                { dailyLimitSeconds: 0, weeklyLimitSeconds: 0, schedules: [], blockAlways: false },
+                withCategory,
+            );
+        }
+        if (response?.success) {
+            payload = { ...payload, limits: response.limits };
+            showNotification('webActivityAllRulesDeleted');
         }
     }
 
@@ -854,6 +900,10 @@
     }
 
     async function importJson(file) {
+        // A file carries its own rules and settings, and importing it replaces the ones
+        // stored — every rule could be dropped or loosened in one go — so with a lock set
+        // it is guarded like any other change that can weaken a rule.
+        if (!(await askForPassword())) return;
         try {
             const response = await importActivity(JSON.parse(await file.text()));
             if (!response?.success) throw new Error(response?.error || 'unknown');
@@ -928,12 +978,21 @@
 
         // The tracking switch lives in three places now — here, the popup and the
         // settings page — and all three have to agree the moment any of them is used.
+        //
+        // The rules too: the page in a tab and the side panel are two copies of this
+        // view, and a site added, edited or deleted in one has to show in the other
+        // straight away rather than at the next minute tick or tab switch.
         onStorageChanged = (changes, area) => {
-            if (area !== 'local' || !changes[WA.KEYS.SETTINGS]) return;
-            payload = {
-                ...payload,
-                settings: { ...WA.DEFAULT_SETTINGS, ...(changes[WA.KEYS.SETTINGS].newValue || {}) },
-            };
+            if (area !== 'local') return;
+            if (changes[WA.KEYS.SETTINGS]) {
+                payload = {
+                    ...payload,
+                    settings: { ...WA.DEFAULT_SETTINGS, ...(changes[WA.KEYS.SETTINGS].newValue || {}) },
+                };
+            }
+            if (changes[WA.KEYS.LIMITS]) {
+                payload = { ...payload, limits: changes[WA.KEYS.LIMITS].newValue || {} };
+            }
         };
         chrome.storage.onChanged.addListener(onStorageChanged);
     });
@@ -966,6 +1025,7 @@
         onEditSchedule={openScheduleEditor}
         onSaveLimit={commitLimit}
         onAddRule={() => openLimitEditor('')}
+        onDeleteAllRules={deleteAllRules}
         onAddCategory={addCategory}
         onRenameCategory={renameCategory}
         onDeleteCategory={deleteCategory}
@@ -1441,10 +1501,15 @@
         limit={editingLimit.limit}
         initialTab={editingLimit.tab}
         onSave={(domain, limit, applyToAll) => {
+            // Only a dialog opened on an existing rule asked for the password on the way
+            // in. The "Add rule" one did not, yet the site typed into it can be one that
+            // already has a rule, and "All" rewrites every rule there is — so what it
+            // saves goes through `commitLimit`'s own check instead of being waved past.
+            const unlocked = !!editingLimit?.limit;
             if (applyToAll) {
-                commitLimit('*', limit, true, true, allKnownDomains);
+                commitLimit('*', limit, true, unlocked, allKnownDomains);
             } else {
-                commitLimit(domain, limit, true, true);
+                commitLimit(domain, limit, true, unlocked);
             }
         }}
         onClose={() => (editingLimit = null)}

@@ -80,18 +80,21 @@
         initCustomizeHints();
         scrollToRequestedSection();
 
-        chrome.storage.local.get(['linkPreviewEnabled'], (data) => {
+        // Read from sync: that is the copy the content scripts' preview obeys, so the
+        // switch shows what pages actually do. The local copy written alongside it could
+        // disagree (an older version, or another device changing sync).
+        chrome.storage.sync.get(['linkPreviewEnabled'], (data) => {
             linkPreviewEnabled = data.linkPreviewEnabled !== false;
             updateToggleTitle();
         });
         // Kept in step with the shortcut, the context menu and any other window.
         const onStorageChanged = (changes, area) => {
-            if (area === 'local' && (changes.linkPreviewEnabled || changes[LANGUAGE_STORAGE_KEY])) {
-                if (changes.linkPreviewEnabled) {
-                    linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
-                }
-                updateToggleTitle();
+            const previewChanged = area === 'sync' && changes.linkPreviewEnabled;
+            const languageChanged = area === 'local' && changes[LANGUAGE_STORAGE_KEY];
+            if (previewChanged) {
+                linkPreviewEnabled = changes.linkPreviewEnabled.newValue !== false;
             }
+            if (previewChanged || languageChanged) updateToggleTitle();
         };
         chrome.storage.onChanged.addListener(onStorageChanged);
         return () => chrome.storage.onChanged.removeListener(onStorageChanged);

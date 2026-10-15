@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "セッション"
   },
+  "dashboardSessionWord_one": {
+    "message": "セッション",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "セッション",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "セッション",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "セッション",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "サイクル"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "カスタムテーマを作成",
+    "message": "➕ テーマ $1 を作成しています",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "設定をすべてのウェブサイトに適用しました"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "すべてのウェブサイトに同じルールが適用されます。対象サイト数: $1。置き換えられる既存のルール数: $2。続行しますか?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "すべて削除"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "すべてのルールを削除します。ルールのあるサイト数: $1。続行しますか?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "すべてのルールを削除しました"
   },
   "webActivityRemoveLimit": {
     "message": "この許容時間を解除"

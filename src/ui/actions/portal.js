@@ -17,16 +17,21 @@
  *
  * Svelte's scoping is a class on the element, so moving the node keeps its styles.
  *
+ * 3. MODAL `<dialog>`s. While one opened with `showModal()` is up (the settings drawer),
+ *    everything outside it is inert and drawn underneath it, so a dialog, picker or
+ *    confirmation opened from inside it has to live inside it too. With no target given
+ *    the node goes to the topmost such dialog, and to the body when there is none.
+ *
  * @param {HTMLElement} node
- * @param {HTMLElement} [target] Where to move it. Defaults to `document.body`.
+ * @param {HTMLElement} [target] Where to move it. Defaults to `modalHost()`.
  */
-export function portal(node, target = document.body) {
-    let host = target || document.body;
+export function portal(node, target = undefined) {
+    let host = target || modalHost();
     host.appendChild(node);
 
     return {
         update(next) {
-            const wanted = next || document.body;
+            const wanted = next || modalHost();
             if (wanted === host) return;
             host = wanted;
             host.appendChild(node);
@@ -37,4 +42,18 @@ export function portal(node, target = document.body) {
             node.remove();
         },
     };
+}
+
+/**
+ * Where something that floats over the page has to be put to be seen and used: the
+ * topmost modal `<dialog>` that is open, or the body.
+ *
+ * @returns {HTMLElement}
+ */
+export function modalHost() {
+    const open = document.querySelectorAll('dialog[open]');
+    for (let i = open.length - 1; i >= 0; i--) {
+        if (open[i].matches(':modal')) return open[i];
+    }
+    return document.body;
 }

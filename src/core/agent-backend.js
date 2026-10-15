@@ -556,10 +556,13 @@ const AGENT_TOOLS = {
         return `Floating link previews are now ${enabled ? 'enabled' : 'disabled'}.`;
     },
     getLinkPreviewSettings: async (params) => {
-        const local = await chrome.storage.local.get(['linkPreviewEnabled']);
-        const { linkPreviewBlacklist = [] } = await chrome.storage.sync.get(['linkPreviewBlacklist']);
+        // Both from sync: the content script obeys the sync value, so that is the truth.
+        const { linkPreviewEnabled, linkPreviewBlacklist = [] } = await chrome.storage.sync.get([
+            'linkPreviewEnabled',
+            'linkPreviewBlacklist',
+        ]);
         return JSON.stringify({
-            enabled: local.linkPreviewEnabled !== false,
+            enabled: linkPreviewEnabled !== false,
             blacklist: linkPreviewBlacklist,
         });
     },

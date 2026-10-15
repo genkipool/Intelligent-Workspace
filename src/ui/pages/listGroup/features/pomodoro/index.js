@@ -1,6 +1,7 @@
 import { showNotification, activeLocale, msg as localizedMsg, pluralKey } from '../../../../../utils/i18n.js';
 import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
 import { openDashboard } from '../../../../services/dashboard/dashboardPages.js';
+import { escapeHtml } from '../../../../../utils/noteHtml.js';
 
 // ============================================================
 // POMODORO FRONTEND v3 — 3-division design, fixed sound, i18n
@@ -1271,10 +1272,12 @@ export function initPomodoro({ embedded = false } = {}) {
         list.innerHTML = '';
 
         log.forEach((task) => {
+            // The task name is typed by the user (and synced), so it is escaped
+            // rather than parsed as markup.
             const row = document.createElement('div');
             row.className = 'pomo-task-stat-row';
             row.innerHTML = `
-                <span class="task-name">${task.name || localizedMsg('pomodoroTaskDefaultName') || 'Task'}</span>
+                <span class="task-name">${escapeHtml(task.name || localizedMsg('pomodoroTaskDefaultName') || 'Task')}</span>
                 <span class="task-hour">${fmtTime(task.endTime)}</span>
                 <span class="task-time">${fmtDur(task.duration || 0)}</span>
                 <span class="task-cycle">${localizedMsg('pomodoroTaskCycle', [String(task.cycle || '—')]) || `Cycle ${task.cycle || '—'}`}</span>

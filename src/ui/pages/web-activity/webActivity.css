@@ -637,93 +637,73 @@ td[data-col='state'] > * {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    /* THE RULES TABLE STOPS BEING A TABLE.
-       Four columns, three of them a value plus three buttons, do not fit a panel three
-       hundred pixels wide — squeezed in they cut "22:00-23:59" in half and the wider
-       page hides the weekly column outright. So each rule becomes a card instead: the
-       site on top, then one line per part of the rule with its name on the left. Same
-       markup, same components, same behaviour; only the shape changes, and nothing is
-       hidden. */
-    .settings-page-compact .wa-rules-frame {
-        border: none;
-        background: none;
+    /* Half the page's side padding: at panel width those 48 pixels are what the rules
+       table needs to show a schedule whole. */
+    .settings-page-compact .set-section {
+        padding-left: 12px;
+        padding-right: 12px;
     }
 
-    .settings-page-compact .wa-rules-frame table,
-    .settings-page-compact .wa-rules-frame tbody,
-    .settings-page-compact .wa-rules-frame tr,
-    .settings-page-compact .wa-rules-frame td {
-        display: block;
-        width: auto;
+    /* THE RULES TABLE, AT PANEL WIDTH.
+       The same table as on the page, not a different shape: site, daily, weekly and
+       schedule. The state column is the one left out — a blocked site is still marked
+       by the red edge of its row — and each cell is its value and a ⋮ menu holding the
+       three controls (RuleActionsMenu). */
+    .settings-page-compact .wa-rules-frame col[data-col='weekly'],
+    .settings-page-compact .wa-rules-frame th[data-col='weekly'],
+    .settings-page-compact .wa-rules-frame td[data-col='weekly'] {
+        display: table-cell;
     }
 
-    .settings-page-compact .wa-rules-frame thead,
-    .settings-page-compact .wa-rules-frame colgroup {
-        display: none;
+    .settings-page-compact .wa-rules-frame col[data-col='weekly'] {
+        display: table-column;
     }
 
-    /* Louder than the width rules above, which take these two away on a narrow page —
-       a card has room for them. */
-    .settings-page-compact .wa-rules-frame td[data-col='weekly'],
-    .settings-page-compact .wa-rules-frame td[data-col='state'] {
-        display: grid;
+    /* `!important` against the widths the page sets inline on each <col> for its
+       five columns. The schedule gets the most: "20:00-22:00" is its usual value. */
+    .settings-page-compact .wa-rules-frame col[data-col='site'] {
+        width: 22% !important;
     }
 
-    .settings-page-compact .wa-rules-frame tr {
-        border: 1px solid color-mix(in srgb, var(--border-color) 60%, transparent);
-        border-radius: 10px;
-        background: var(--bg-panel-color);
-        padding: 4px 10px 8px;
+    .settings-page-compact .wa-rules-frame col[data-col='limit'],
+    .settings-page-compact .wa-rules-frame col[data-col='weekly'] {
+        width: 22% !important;
     }
 
-    .settings-page-compact .wa-rules-frame tr + tr {
-        margin-top: 8px;
+    .settings-page-compact .wa-rules-frame col[data-col='schedule'] {
+        width: 34% !important;
     }
 
-    .settings-page-compact .wa-rules-frame td {
-        border: none;
-        padding: 6px 0;
-        text-align: left;
+    .settings-page-compact .wa-rules-frame td,
+    .settings-page-compact .wa-rules-frame th {
+        padding-left: 2px;
+        padding-right: 2px;
     }
 
-    .settings-page-compact .wa-rules-frame td + td {
-        border-top: 1px solid color-mix(in srgb, var(--border-color) 45%, transparent);
-    }
-
-    /* The site is the card's heading. */
-    .settings-page-compact .wa-rules-frame td[data-col='site'] {
-        padding-bottom: 8px;
-        font-weight: 600;
-    }
-
-    /* Every other cell is "what it is" on the left and the control on the right, which
-       is the shape every other row in this dialog already has. */
-    .settings-page-compact .wa-rules-frame td[data-col='limit'],
-    .settings-page-compact .wa-rules-frame td[data-col='weekly'],
-    .settings-page-compact .wa-rules-frame td[data-col='schedule'],
-    .settings-page-compact .wa-rules-frame td[data-col='state'] {
-        /* `display` is restated because the blanket `td { display: block }` above is
-           the same weight and comes first; without it two of the four cells laid their
-           label out on a line of its own. */
-        display: grid;
-        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
-        align-items: center;
-        gap: 10px;
-    }
-
-    .settings-page-compact .wa-rules-frame td[data-label]::before {
-        content: attr(data-label);
-        font-family: var(--mono);
+    .settings-page-compact .wa-rules-frame th .wa-sort-label {
         font-size: 9px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-dim);
-        white-space: nowrap;
     }
 
-    .settings-page-compact .wa-rules-frame td[data-col='state'] > * {
-        margin-inline: 0;
-        justify-self: end;
+    .settings-page-compact .wa-rules-frame .wa-cell-with-action {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1px;
+    }
+
+    .settings-page-compact .wa-rules-frame .wa-cell-val {
+        font-size: 0.72rem;
+    }
+
+    .settings-page-compact .wa-rules-frame .wa-more-btn {
+        width: 14px;
+        height: 22px;
+        border-color: transparent;
+        color: color-mix(in srgb, var(--text-color) 60%, transparent);
+    }
+
+    .settings-page-compact .wa-rules-frame .wa-more-btn:hover,
+    .settings-page-compact .wa-rules-frame .wa-more-btn.is-open {
+        border-color: var(--border-color);
+        color: var(--text-color);
     }
 
     /* The rules section is one button in the panel, so it sits in the middle rather

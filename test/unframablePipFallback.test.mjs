@@ -343,7 +343,9 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                     },
                     tabs: {
                         get: async () => ({ windowId: 1 }),
-                        query: async () => [],
+                        // The float itself: the rules are only installed for a tab positively
+                        // identified as it (see findPipTabId).
+                        query: async () => [{ id: 77, windowId: 2, openerTabId: 10, url: 'about:blank' }],
                     },
                 },
                 logMessage: () => {},
@@ -404,7 +406,9 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                     },
                     tabs: {
                         get: async () => ({ windowId: 1 }),
-                        query: async () => [],
+                        // The float itself: the rules are only installed for a tab positively
+                        // identified as it (see findPipTabId).
+                        query: async () => [{ id: 77, windowId: 2, openerTabId: 10, url: 'about:blank' }],
                     },
                 },
                 logMessage: () => {},
@@ -471,7 +475,9 @@ describe('Telegram & Document Picture-in-Picture Suite', () => {
                     },
                     tabs: {
                         get: async () => ({ windowId: 1 }),
-                        query: async () => [],
+                        // The float itself: the rules are only installed for a tab positively
+                        // identified as it (see findPipTabId).
+                        query: async () => [{ id: 77, windowId: 2, openerTabId: 10, url: 'about:blank' }],
                     },
                 },
                 logMessage: () => {},

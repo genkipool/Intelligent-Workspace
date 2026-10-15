@@ -378,7 +378,15 @@ export function limitRows(limits, days, now = Date.now()) {
         .map((domain) => ({
             domain,
             limit: WA.normalizeLimit(limits[domain]),
-            verdict: WA.evaluate(domain, limits, today[domain]?.t || 0, new Date(now), week[domain] || 0),
+            // Subdomains included, as the worker counts them: the badge has to agree with
+            // the block rule, which covers `m.youtube.com` under a limit on `youtube.com`.
+            verdict: WA.evaluate(
+                domain,
+                limits,
+                WA.secondsUnder(domain, today),
+                new Date(now),
+                WA.secondsUnder(domain, week),
+            ),
         }))
         .sort((a, b) => b.verdict.usedSeconds - a.verdict.usedSeconds);
 }

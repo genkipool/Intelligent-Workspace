@@ -301,3 +301,17 @@ export function computeStreak(allData) {
 
     return { currentStreak, maxStreak, bestSec, bestKey };
 }
+
+/**
+ * The key a project is counted and selected by. A project is its name within its
+ * folder: "Docs" in folder ClientA and "Docs" in ClientB are two projects, and keyed by
+ * name alone their counts merged and renaming one renamed both. The NUL separator
+ * cannot appear in a folder or project name typed by a person.
+ *
+ * @param {string} folder The project's folder, '' when it has none.
+ * @param {string} name The project's name.
+ * @returns {string}
+ */
+export function projectKey(folder, name) {
+    return `${folder || ''}\u0000${name}`;
+}

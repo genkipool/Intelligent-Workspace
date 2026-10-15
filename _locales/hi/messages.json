@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "सेशन"
   },
+  "dashboardSessionWord_one": {
+    "message": "सेशन",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "सेशन",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "सेशन",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "सेशन",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "साइकल"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "कस्टम थीम बनाएं",
+    "message": "➕ थीम $1 बनाई जा रही है",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "कॉन्फ़िगरेशन सभी वेबसाइटों पर लागू किया गया"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "एक ही नियम सभी वेबसाइटों पर लागू होगा। प्रभावित वेबसाइटें: $1। बदले जाने वाले मौजूदा नियम: $2। जारी रखें?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "सभी हटाएँ"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "सभी नियम हटा दिए जाएँगे। नियम वाली वेबसाइटें: $1। जारी रखें?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "सभी नियम हटा दिए गए"
   },
   "webActivityRemoveLimit": {
     "message": "यह तय समय हटाएं"

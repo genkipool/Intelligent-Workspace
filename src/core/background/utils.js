@@ -59,8 +59,10 @@ function matchesRule(tabUrl, ruleUrl) {
         return false;
     }
 
-    const tabHost = parsedTab.hostname.toLowerCase();
-    const ruleHost = parsedRule.hostname.toLowerCase();
+    // A trailing dot (`example.com.`) names the same host; without dropping it a rule
+    // for example.com never matched a tab opened on the fully-qualified form.
+    const tabHost = parsedTab.hostname.toLowerCase().replace(/\.+$/, '');
+    const ruleHost = parsedRule.hostname.toLowerCase().replace(/\.+$/, '');
 
     const cleanTabHost = tabHost.startsWith('www.') ? tabHost.slice(4) : tabHost;
     const cleanRuleHost = ruleHost.startsWith('www.') ? ruleHost.slice(4) : ruleHost;
@@ -69,8 +71,18 @@ function matchesRule(tabUrl, ruleUrl) {
         return false;
     }
 
-    if (parsedRule.port && parsedTab.port !== parsedRule.port) {
-        return false;
+    /*
+     * Ports compare as the port actually used. `URL` blanks a port that is the default
+     * for its own scheme, and rules are stored with `https://` in front of what was
+     * typed, so `intranet.local:80` became a rule with port 80 that could never equal the
+     * '' of `http://intranet.local:80/`. Only a rule that names a port is checked.
+     */
+    if (parsedRule.port) {
+        const defaultPorts = { 'http:': '80', 'https:': '443' };
+        const tabPort = parsedTab.port || defaultPorts[parsedTab.protocol] || '';
+        if (tabPort !== parsedRule.port) {
+            return false;
+        }
     }
 
     const normalizedRulePath = (parsedRule.pathname || '').replace(/\/+$/, '');
@@ -1852,9 +1864,67 @@ function isCompoundSuffix(parts) {
     return /^[a-z]{2}$/.test(tld) && GENERIC_SLD_PREFIXES.test(sld);
 }
 
+/*
+ * The Unicode form of an IDN label (`xn--bcher-kva` -> `bücher`), for the group NAME only.
+ *
+ * `new URL()` hands hostnames back in Punycode, so `bücher.de` was named "Xn--bcher-kva",
+ * which nobody recognises. This is RFC 3492's decoder, small enough to keep here rather
+ * than pull in a library for one label; anything malformed is returned untouched, which
+ * is what the name was before.
+ */
+function decodePunycodeLabel(label) {
+    if (!/^xn--/i.test(label)) return label;
+    const input = label.slice(4).toLowerCase();
+    const base = 36;
+    const tMin = 1;
+    const tMax = 26;
+    const output = [];
+    let n = 128;
+    let i = 0;
+    let bias = 72;
+    let basic = input.lastIndexOf('-');
+    if (basic < 0) basic = 0;
+    for (let j = 0; j < basic; j++) output.push(input.charCodeAt(j));
+    for (let idx = basic > 0 ? basic + 1 : 0; idx < input.length; ) {
+        const oldi = i;
+        for (let w = 1, k = base; ; k += base) {
+            if (idx >= input.length) return label;
+            const c = input.charCodeAt(idx++);
+            let digit;
+            if (c >= 48 && c <= 57) digit = c - 22;
+            else if (c >= 97 && c <= 122) digit = c - 97;
+            else return label;
+            i += digit * w;
+            const t = k <= bias ? tMin : k >= bias + tMax ? tMax : k - bias;
+            if (digit < t) break;
+            w *= base - t;
+        }
+        const len = output.length + 1;
+        let delta = oldi === 0 ? Math.floor((i - oldi) / 700) : Math.floor((i - oldi) / 2);
+        delta += Math.floor(delta / len);
+        let k = 0;
+        while (delta > ((base - tMin) * tMax) >> 1) {
+            delta = Math.floor(delta / (base - tMin));
+            k += base;
+        }
+        bias = k + Math.floor(((base - tMin + 1) * delta) / (delta + 38));
+        n += Math.floor(i / len);
+        i %= len;
+        if (n > 0x10ffff) return label;
+        output.splice(i++, 0, n);
+    }
+    return output.length ? String.fromCodePoint(...output) : label;
+}
+
+function domainLabelName(label) {
+    return capitalizeFirstLetter(decodePunycodeLabel(label)) + '\u200B';
+}
+
 function getDomain(url, useSubdomain = false) {
     try {
-        const hostname = new URL(url).hostname;
+        // A fully-qualified host (`example.com.`) is the same site as `example.com`; with
+        // the dot kept, the last label was empty and the group came out named "Com".
+        const hostname = new URL(url).hostname.replace(/\.+$/, '');
 
         if (isIPAddress(hostname) || isLocalhost(hostname)) {
             return null;
@@ -1870,22 +1940,35 @@ function getDomain(url, useSubdomain = false) {
             if (parts.length >= minPartsForSubdomain) {
                 if (parts[0].toLowerCase() === 'www') {
                     if (parts.length >= minPartsForSubdomain + 1) {
-                        return capitalizeFirstLetter(parts[1]) + '\u200B';
+                        return domainLabelName(parts[1]);
                     }
                 } else {
-                    return capitalizeFirstLetter(parts[0]) + '\u200B';
+                    return domainLabelName(parts[0]);
                 }
             }
         }
 
-        // Main domain logic (used if useSubdomain is false OR if no subdomain was found).
-        if (parts.length > 2) {
-            if (isCompoundSuffix(parts)) {
-                return capitalizeFirstLetter(parts.slice(-3, -2)[0]) + '\u200B';
+        /*
+         * Main domain logic (used if useSubdomain is false OR if no subdomain was found).
+         *
+         * A leading `www` is never the name. It only ever reached the name on sites that
+         * live directly on a public suffix (www.gov.uk, www.gob.es, www.go.jp), and there
+         * every one of them was called "Www" and merged into one group. Everywhere else
+         * the name comes from further right, so dropping it changes nothing.
+         */
+        const nameParts = parts.length > 2 && parts[0].toLowerCase() === 'www' ? parts.slice(1) : parts;
+        if (nameParts.length > 2) {
+            if (isCompoundSuffix(nameParts)) {
+                return domainLabelName(nameParts.slice(-3, -2)[0]);
             }
         }
-        if (parts.length >= 2) {
-            return capitalizeFirstLetter(parts.slice(-2, -1)[0]) + '\u200B';
+        if (nameParts.length === 2 && COMPOUND_TLDS_SET.has(nameParts.join('.').toLowerCase())) {
+            // The site IS the suffix (gov.uk, gob.es): its first label alone ("Gov",
+            // "Gob") would merge every country's government into one group.
+            return capitalizeFirstLetter(nameParts.join('.').toLowerCase()) + '\u200B';
+        }
+        if (nameParts.length >= 2) {
+            return domainLabelName(nameParts.slice(-2, -1)[0]);
         }
 
         return null;

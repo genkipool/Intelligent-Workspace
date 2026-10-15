@@ -559,7 +559,8 @@ function handleToggleLinkPreview(message, sendResponse) {
 
 function handleToggleLinkPreviewFromKey(message, sendResponse) {
     toggleLinkPreviewOption().then(() => {
-        chrome.storage.local.get(['linkPreviewEnabled'], (res) => {
+        // Sync, the copy the content scripts obey (the toggle writes both).
+        chrome.storage.sync.get(['linkPreviewEnabled'], (res) => {
             const enabled = res.linkPreviewEnabled !== false;
             const msgStr = enabled
                 ? getI18nMsg('linkPreviewEnabledNotify', [], 'Vista previa de enlaces activada')

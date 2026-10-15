@@ -5,6 +5,10 @@
 if (!window.__itgPauseMediaListener) {
     window.__itgPauseMediaListener = true;
     window.addEventListener('message', (event) => {
+        // Only ever sent downwards: by the link preview into its frame, and relayed from
+        // each frame into its children. Accepting it from anywhere let any third-party
+        // frame (an ad) pause the media of the page that embeds it.
+        if (window === window.parent || event.source !== window.parent) return;
         if (event.data && event.data.action === 'pauseMedia') {
             document.querySelectorAll('video, audio').forEach((media) => {
                 try {
@@ -48,6 +52,10 @@ var itgShortsControlsAnchor = (rightControls) =>
 var Main = class Main {
     constructor() {
         this.insertMode = false;
+        this._pendingEscape = null;
+        // Cleaned titles of the window's groups, refreshed each time Alt goes down; null
+        // until the first answer, when every Alt+letter is still taken as before.
+        this._altGroupTitles = null;
         this.hintsGloballyEnabled = true;
         this.keySequence = '';
         this.keyTimeout = null;
@@ -182,24 +190,24 @@ var Main = class Main {
             let _pipVideoResolved = false;
             let findAndMaximizeVideo = null;
             const executeMaximize = (video, delayMs = 0) => {
-                console.log(`[ITG PiP Debug] executeMaximize triggered on video:`, video, `with delay: ${delayMs}ms`);
+                itgDebug(`[ITG PiP Debug] executeMaximize triggered on video:`, video, `with delay: ${delayMs}ms`);
                 if (_pipVideoResolved) {
-                    console.log(`[ITG PiP Debug] executeMaximize: already resolved, returning`);
+                    itgDebug(`[ITG PiP Debug] executeMaximize: already resolved, returning`);
                     return;
                 }
                 _pipVideoResolved = true;
                 if (findAndMaximizeVideo) {
-                    console.log(`[ITG PiP Debug] executeMaximize: clearing polling interval`);
+                    itgDebug(`[ITG PiP Debug] executeMaximize: clearing polling interval`);
                     clearInterval(findAndMaximizeVideo);
                     findAndMaximizeVideo = null;
                 }
                 if (delayMs > 0) {
                     setTimeout(() => {
-                        console.log(`[ITG PiP Debug] executeMaximize: calling _maximizeVideoForPip after delay`);
+                        itgDebug(`[ITG PiP Debug] executeMaximize: calling _maximizeVideoForPip after delay`);
                         this._maximizeVideoForPip(video);
                     }, delayMs);
                 } else {
-                    console.log(`[ITG PiP Debug] executeMaximize: calling _maximizeVideoForPip immediately`);
+                    itgDebug(`[ITG PiP Debug] executeMaximize: calling _maximizeVideoForPip immediately`);
                     this._maximizeVideoForPip(video);
                 }
             };
@@ -259,12 +267,12 @@ var Main = class Main {
                 if (document.readyState !== 'complete') return;
                 if (!pipStartTime) {
                     pipStartTime = Date.now();
-                    console.log(`[ITG PiP Debug] Polling loop started. pipStartTime initialized.`);
+                    itgDebug(`[ITG PiP Debug] Polling loop started. pipStartTime initialized.`);
                 }
                 _pipVideoAttempts++;
                 const video = getActiveVideo();
                 if (!video || !document.body) {
-                    console.log(
+                    itgDebug(
                         `[ITG PiP Debug] Polling tick ${_pipVideoAttempts}: No video element or document.body found.`,
                     );
                     tryAttachVideoListeners();
@@ -328,7 +336,7 @@ var Main = class Main {
                         const commentsExpanded =
                             commentsPanel.getAttribute('visibility') === 'ENGAGEMENT_PANEL_VISIBILITY_EXPANDED';
                         if (commentsExpanded) {
-                            console.log(`[ITG PiP Debug] Comments panel expanded, clicking close button.`);
+                            itgDebug(`[ITG PiP Debug] Comments panel expanded, clicking close button.`);
                             const closeBtn = commentsPanel.querySelector('#close-button, yt-icon-button, button');
                             if (closeBtn) closeBtn.click();
                         }
@@ -339,7 +347,7 @@ var Main = class Main {
                         mastheadReady = masthead.classList.contains('masthead-finish');
                         isReady = videoPlaying && commentsHidden && mastheadReady;
                     }
-                    console.log(
+                    itgDebug(
                         `[ITG PiP Debug] Polling tick ${_pipVideoAttempts} | VideoPlaying: ${videoPlaying} | Masthead: ${!!masthead} (ready: ${mastheadReady}) | CommentsPanel: ${!!commentsPanel} (hidden: ${commentsHidden}) | isReady: ${isReady} | ReadyTime: ${pipShortsReadyTime ? Date.now() - pipShortsReadyTime + 'ms ago' : 'Not started'}`,
                     );
 
@@ -347,14 +355,14 @@ var Main = class Main {
                     if (isReady) {
                         if (!pipShortsReadyTime) {
                             pipShortsReadyTime = Date.now();
-                            console.log(`[ITG PiP Debug] Conditions met. Starting 2-second stability delay.`);
+                            itgDebug(`[ITG PiP Debug] Conditions met. Starting 2-second stability delay.`);
                         }
                         if (Date.now() - pipShortsReadyTime < 2000) {
                             return;
                         }
                     } else {
                         if (pipShortsReadyTime) {
-                            console.log(`[ITG PiP Debug] Conditions broken. Resetting stability delay.`);
+                            itgDebug(`[ITG PiP Debug] Conditions broken. Resetting stability delay.`);
                         }
                         pipShortsReadyTime = null;
                         return; // Not ready yet
@@ -366,7 +374,7 @@ var Main = class Main {
 
                 // Fallback: 8s for VOD, 15s for Shorts, 30s for live
                 const maxAttempts = isLive ? 60 : isShort ? 100 : 16;
-                console.log(
+                itgDebug(
                     `[ITG PiP Debug] Evaluating triggers. Attempt: ${_pipVideoAttempts}/${maxAttempts} | isReady: ${isReady}`,
                 );
                 if (!isReady && _pipVideoAttempts < maxAttempts) return;
@@ -380,13 +388,13 @@ var Main = class Main {
                             'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-comments-section"]',
                         ))
                 ) {
-                    console.log(
+                    itgDebug(
                         `[ITG PiP Debug] Timeout reached but ytd-masthead or commentsPanel still missing in DOM. Waiting...`,
                     );
                     return;
                 }
                 const delay = !isLive ? (isShort ? 0 : 1000) : 0;
-                console.log(`[ITG PiP Debug] Proceeding to maximize. Delay: ${delay}ms`);
+                itgDebug(`[ITG PiP Debug] Proceeding to maximize. Delay: ${delay}ms`);
                 executeMaximize(video, delay);
             }, 150); // Poll every 150ms instead of 500ms for faster readiness detection
             this._findVideoInterval = findAndMaximizeVideo;
@@ -397,7 +405,7 @@ var Main = class Main {
                     const video = getActiveVideo();
                     if (video) {
                         const isShort = window.location.pathname.includes('/shorts/');
-                        console.log(`[ITG PiP Debug] 15s safety fallback triggered. isShort: ${isShort}`);
+                        itgDebug(`[ITG PiP Debug] 15s safety fallback triggered. isShort: ${isShort}`);
                         if (
                             !isShort ||
                             (document.querySelector('ytd-masthead') &&
@@ -498,7 +506,7 @@ var Main = class Main {
                                             el.getAttribute('aria-label') === 'Close'))),
                         );
                         if (closeBtn) {
-                            console.log(
+                            itgDebug(
                                 '[ITG PiP] Close button clicked inside sub-frame. Sending ITG_CLOSE_CHAT message to parent.',
                             );
                             window.parent.postMessage(
@@ -517,7 +525,7 @@ var Main = class Main {
                 // Main page iframe context (itg-page-pip-iframe)
                 window.addEventListener('message', (e) => {
                     if (e.data && e.data.action === 'ITG_CLOSE_CHAT') {
-                        console.log('[ITG PiP] Received ITG_CLOSE_CHAT message. Closing chat panel.');
+                        itgDebug('[ITG PiP] Received ITG_CLOSE_CHAT message. Closing chat panel.');
 
                         // 1. Try to click native toggle button
                         const showHideBtn = document.querySelector(
@@ -556,9 +564,7 @@ var Main = class Main {
                                         el.closest('ytd-engagement-panel-section-list-renderer'))),
                         );
                         if (commentsCloseBtn) {
-                            console.log(
-                                '[ITG PiP] Comments close button clicked on main page. Hiding engagement panel.',
-                            );
+                            itgDebug('[ITG PiP] Comments close button clicked on main page. Hiding engagement panel.');
                             e.preventDefault();
                             e.stopPropagation();
                             const panel = commentsCloseBtn.closest('ytd-engagement-panel-section-list-renderer');
@@ -720,7 +726,7 @@ var Main = class Main {
                         }
                     });
                 }
-                video.play().catch((e) => console.log('Autoplay bloqueado por el navegador'));
+                video.play().catch((e) => itgDebug('Autoplay bloqueado por el navegador'));
                 Array.from(document.body.children).forEach((child) => {
                     if (child !== video && child.tagName !== 'SCRIPT' && child.tagName !== 'STYLE') {
                         child.style.display = 'none';
@@ -732,10 +738,10 @@ var Main = class Main {
         }
     }
     _maximizeShortsForPip(video) {
-        console.log(`[ITG PiP Debug] _maximizeShortsForPip called with video:`, video);
+        itgDebug(`[ITG PiP Debug] _maximizeShortsForPip called with video:`, video);
         try {
             if (document.body.classList.contains('itg-pip-shorts')) {
-                console.log(`[ITG PiP Debug] _maximizeShortsForPip: already has itg-pip-shorts class, returning`);
+                itgDebug(`[ITG PiP Debug] _maximizeShortsForPip: already has itg-pip-shorts class, returning`);
                 return;
             }
 
@@ -842,22 +848,22 @@ var Main = class Main {
 
             // 2. Enter full screen immediately to trigger correct layout reflow
             const proceedToFullscreen = () => {
-                console.log(`[ITG PiP Debug] proceedToFullscreen: adding itg-pip-shorts to body`);
+                itgDebug(`[ITG PiP Debug] proceedToFullscreen: adding itg-pip-shorts to body`);
                 document.body.classList.add('itg-pip-shorts');
                 // Reset scroll position to target active card, avoiding off-screen misalignment
                 const card = video.closest('.reel-video-in-sequence-new');
                 if (card) {
-                    console.log(`[ITG PiP Debug] proceedToFullscreen: scrolling active card into view`);
+                    itgDebug(`[ITG PiP Debug] proceedToFullscreen: scrolling active card into view`);
                     card.scrollIntoView({
                         behavior: 'auto',
                         block: 'start',
                     });
                 } else {
-                    console.log(`[ITG PiP Debug] proceedToFullscreen: active card container NOT found`);
+                    itgDebug(`[ITG PiP Debug] proceedToFullscreen: active card container NOT found`);
                 }
                 // Dispatch multiple resize events with progressive delays to force YouTube's player
                 // layout handler to recalculate coordinates on the newly cleaned layout context.
-                console.log(`[ITG PiP Debug] proceedToFullscreen: dispatching progressive resize events`);
+                itgDebug(`[ITG PiP Debug] proceedToFullscreen: dispatching progressive resize events`);
                 window.dispatchEvent(new Event('resize'));
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
                 setTimeout(() => window.dispatchEvent(new Event('resize')), 150);
@@ -975,6 +981,7 @@ var Main = class Main {
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
         this._boundMainKeyUpHandler = (e) => this._handleKeyUp(e);
+        this._boundEscapeAfterPageHandler = (e) => this._handleEscapeAfterPage(e);
         // An ordinary copy or cut starts a new cumulative-clipboard collection. The
         // page may have put something else on the clipboard (a copy button, a
         // formatted snippet); the selection is what the user saw, so it is what counts.
@@ -988,6 +995,9 @@ var Main = class Main {
         document.addEventListener('focusout', this._boundFocusOutHandler);
         document.addEventListener('keydown', this._boundMainKeyDownHandler, true);
         document.addEventListener('keyup', this._boundMainKeyUpHandler, true);
+        // Bubble phase on the window: the last stop of a key event, after the page's own
+        // listeners have had it (see _handleEscapeAfterPage).
+        window.addEventListener('keydown', this._boundEscapeAfterPageHandler);
         document.addEventListener('copy', this._boundCopyHandler, true);
         document.addEventListener('cut', this._boundCopyHandler, true);
     }
@@ -2011,7 +2021,7 @@ var Main = class Main {
 
     cleanup() {
         this._isCleanedUp = true;
-        console.log('[HintMain] Cleaning up previous content script instance...');
+        itgDebug('[HintMain] Cleaning up previous content script instance...');
         if (this._mediaStorageListener) {
             try {
                 chrome.storage.onChanged.removeListener(this._mediaStorageListener);
@@ -2021,6 +2031,10 @@ var Main = class Main {
         if (this._boundFocusInHandler) document.removeEventListener('focusin', this._boundFocusInHandler);
         if (this._boundFocusOutHandler) document.removeEventListener('focusout', this._boundFocusOutHandler);
         if (this._boundMainKeyDownHandler) document.removeEventListener('keydown', this._boundMainKeyDownHandler, true);
+        if (this._boundEscapeAfterPageHandler) {
+            window.removeEventListener('keydown', this._boundEscapeAfterPageHandler);
+            this._boundEscapeAfterPageHandler = null;
+        }
         if (this._boundCopyHandler) {
             document.removeEventListener('copy', this._boundCopyHandler, true);
             document.removeEventListener('cut', this._boundCopyHandler, true);
@@ -2081,6 +2095,12 @@ var Main = class Main {
         // 0. Alt sequence for navigating to group tabs: Alt + [group prefix] + [tab index] + Enter
         if (event.key === 'Alt') {
             this._isAltHeld = true;
+            if (!event.repeat) this._refreshAltGroupTitles();
+        } else if (!event.altKey) {
+            // Alt is not down, whatever the flag says: its keyup went elsewhere (Alt+Tab,
+            // Alt+D to the address bar, a dialog). Trusting the stale flag swallowed every
+            // key typed on the page afterwards, inputs included.
+            this._isAltHeld = false;
         }
         if (
             event.altKey ||
@@ -2114,7 +2134,14 @@ var Main = class Main {
                     event.stopPropagation();
                     return;
                 }
-            } else if (event.key !== 'Alt' && !event.ctrlKey && !event.metaKey) {
+            } else if (
+                event.key !== 'Alt' &&
+                !event.ctrlKey &&
+                !event.metaKey &&
+                // Option on macOS composes characters (@ [ ] { } | €… on many layouts). In a
+                // field that is typing, not a group sequence: let the character through.
+                !(event.key?.length === 1 && !/[a-z0-9]/i.test(event.key) && Utils.isInputLikeElement(event.target))
+            ) {
                 let char = '';
                 if (event.code && event.code.startsWith('Key')) {
                     char = event.code.slice(3).toLowerCase();
@@ -2124,6 +2151,13 @@ var Main = class Main {
                     char = event.code.slice(6);
                 } else if (event.key && event.key.length === 1 && /[a-zA-Z0-9_\-\s]/.test(event.key)) {
                     char = event.key.toLowerCase();
+                }
+                // Only an Alt+letter that can lead to a group is the extension's; any other
+                // (a site's own Alt shortcut, an accesskey) goes on to the page untouched.
+                if (char && !this._altSequenceCanMatch(this._altSequenceBuffer + char)) {
+                    this._altSequenceBuffer = '';
+                    if (this._altSequenceTimer) clearTimeout(this._altSequenceTimer);
+                    return;
                 }
                 if (char) {
                     this._altSequenceBuffer += char;
@@ -2159,7 +2193,7 @@ var Main = class Main {
             }
             const sel = window.getSelection();
             const isTextSelected = sel && !sel.isCollapsed;
-            if (event.key === 'i' && isTextSelected) {
+            if (itgCommandKey(event) === 'i' && isTextSelected) {
                 this.omniBar.recoverFocus();
                 event.preventDefault();
                 event.stopPropagation();
@@ -2183,35 +2217,20 @@ var Main = class Main {
                 event.stopPropagation();
                 return;
             }
+            // With text selected or in a field, Escape belongs to the page first: it is
+            // what closes an autocomplete, cancels an edit or closes a dialog there.
+            // Taking it here, in the capture phase, left all of that dead. The page hears
+            // it now, and the selection is cleared or the field left only afterwards,
+            // when the page did not use it (see _handleEscapeAfterPage).
             const sel = window.getSelection();
-            if (sel && !sel.isCollapsed) {
-                sel.removeAllRanges();
-                event.preventDefault();
-                event.stopPropagation();
-                return;
-            }
             const target = (event.composedPath && event.composedPath()[0]) || event.target;
             if (
+                (sel && !sel.isCollapsed) ||
                 this.insertMode ||
                 Utils.isInputLikeElement(target) ||
                 Utils.isInputLikeElement(document.activeElement)
             ) {
-                this.insertMode = false;
-                if (target && typeof target.blur === 'function') {
-                    target.blur();
-                }
-                if (document.activeElement && typeof document.activeElement.blur === 'function') {
-                    document.activeElement.blur();
-                }
-                try {
-                    if (document.body && typeof document.body.click === 'function') {
-                        document.body.click();
-                    } else if (document.documentElement && typeof document.documentElement.click === 'function') {
-                        document.documentElement.click();
-                    }
-                } catch {}
-                event.preventDefault();
-                event.stopPropagation();
+                this._pendingEscape = { event, target };
                 return;
             }
 
@@ -2231,6 +2250,8 @@ var Main = class Main {
         if (this.insertMode || Utils.isInputLikeElement(activeTarget)) {
             return;
         }
+        // From here on the key is a command: read by position on non-Latin layouts.
+        const key = itgCommandKey(event);
         if (event.shiftKey && event.key === '?') {
             // Don't open the help modal if the omnibar is active
             if (this.omniBar && this.omniBar.active) {
@@ -2252,13 +2273,13 @@ var Main = class Main {
             }
         }
         if (event.altKey) {
-            if (event.key === 'j') {
+            if (key === 'j') {
                 chrome.runtime.sendMessage({
                     action: 'previousTab',
                 });
                 event.preventDefault();
                 event.stopPropagation();
-            } else if (event.key === 'k') {
+            } else if (key === 'k') {
                 chrome.runtime.sendMessage({
                     action: 'nextTab',
                 });
@@ -2279,18 +2300,18 @@ var Main = class Main {
                 return;
             }
         }
-        if (event.key.length === 1 && !event.altKey) {
+        if (key.length === 1 && !event.altKey) {
             const mappings = this.commands.getMappings();
             if (event.repeat) {
-                if (mappings[event.key]) {
-                    mappings[event.key].action();
+                if (mappings[key]) {
+                    mappings[key].action();
                     event.preventDefault();
                     event.stopPropagation();
                 }
                 return;
             }
             clearTimeout(this.keyTimeout);
-            this.keySequence += event.key;
+            this.keySequence += key;
             const possible = Object.keys(mappings).filter((k) => k.startsWith(this.keySequence));
             if (possible.length === 1 && possible[0] === this.keySequence) {
                 mappings[this.keySequence].action();
@@ -2309,6 +2330,73 @@ var Main = class Main {
             }
         }
     }
+    /**
+     * The second half of Escape with text selected or in a field: runs once the event
+     * has been through the page. A page that used the key (cancelled it, or stopped it
+     * on its way here) keeps it to itself; otherwise the selection is cleared or the
+     * field left, as before, so that the one-letter commands are reachable again.
+     */
+    _handleEscapeAfterPage(event) {
+        const pending = this._pendingEscape;
+        if (!pending || pending.event !== event) return;
+        this._pendingEscape = null;
+        if (event.defaultPrevented) return;
+
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed) {
+            sel.removeAllRanges();
+            return;
+        }
+        const { target } = pending;
+        this.insertMode = false;
+        if (target && typeof target.blur === 'function') {
+            target.blur();
+        }
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+        }
+        try {
+            if (document.body && typeof document.body.click === 'function') {
+                document.body.click();
+            } else if (document.documentElement && typeof document.documentElement.click === 'function') {
+                document.documentElement.click();
+            }
+        } catch {}
+    }
+    /** Asks for the titles of the window's groups (see _altSequenceCanMatch). */
+    _refreshAltGroupTitles() {
+        try {
+            chrome.runtime.sendMessage({ action: 'getGroupTitlesForNavigation' }, (response) => {
+                if (chrome.runtime.lastError) return;
+                if (response?.success && Array.isArray(response.titles)) this._altGroupTitles = response.titles;
+            });
+        } catch {}
+    }
+
+    /**
+     * Whether an Alt sequence typed so far can still name a group: its letters, matched
+     * the way handleNavigateToGroupTab does in the end (at worst as a subsequence of a
+     * title), then any digits for the tab. Before the titles are known every sequence
+     * counts, which is how it always was.
+     */
+    _altSequenceCanMatch(sequence) {
+        const titles = this._altGroupTitles;
+        if (!titles) return true;
+        const match = sequence.match(/^([a-zA-Z\u00C0-\u024F\s_-]+)(\d*)$/);
+        if (!match) return false;
+        const letters = match[1]
+            .toLowerCase()
+            .trim()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+        if (!letters) return false;
+        return titles.some((title) => {
+            let i = 0;
+            for (const ch of title) if (ch === letters[i] && ++i === letters.length) return true;
+            return false;
+        });
+    }
+
     _handleTabSearch(event) {
         const sel = window.getSelection();
         if (sel && !sel.isCollapsed) {
@@ -2351,8 +2439,9 @@ var Main = class Main {
         return 'y';
     }
     _handleSelectionKeys(event, selection) {
+        const key = itgCommandKey(event);
         const appendKey = this._getAppendClipboardKey();
-        if (event.key === appendKey) {
+        if (key === appendKey) {
             if (this.appendClipboardEnabled !== false && window.HintCommon?.Clipboard) {
                 window.HintCommon.Clipboard.appendSelection(selection);
                 return true;
@@ -2376,8 +2465,8 @@ var Main = class Main {
             },
         };
 
-        if (actions[event.key]) {
-            actions[event.key]();
+        if (actions[key]) {
+            actions[key]();
             return true;
         }
         return false;

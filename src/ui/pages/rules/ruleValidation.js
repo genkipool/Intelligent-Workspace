@@ -205,6 +205,47 @@ export function isValidUrl(urlString) {
 }
 
 /**
+ * The checks a name has to pass on its own: present, not too long, no whitespace.
+ *
+ * Whitespace is refused here and not only by the modal's keydown handler, because a
+ * pasted name never goes through that handler, and a name with a space is one the
+ * import refuses: the rule would be exported into a file that cannot be read back.
+ *
+ * @returns {{valid: false, message: string, params: string[]}|null} null when it passes.
+ */
+function checkRuleNameFormat(name) {
+    if (!name) return { valid: false, message: 'enterRuleName', params: [] };
+    if (name.length > MAX_RULE_NAME_LENGTH) {
+        return { valid: false, message: 'ruleNameTooLongError', params: [name] };
+    }
+    if (/\s/.test(name)) return { valid: false, message: 'ruleNameNoSpacesError', params: [name] };
+    return null;
+}
+
+/** Names are compared ignoring case: "Docs" and "docs" would be the same group. */
+function checkRuleNameDuplicate(name, rules, editingIdx) {
+    const currentNameLower = name.toLowerCase();
+    const isDuplicateName = rules.some((r, idx) => r.name.toLowerCase() === currentNameLower && idx !== editingIdx);
+    return isDuplicateName ? { valid: false, message: 'duplicateRuleName', params: [] } : null;
+}
+
+/**
+ * Only the name part of `validateRule`, for renaming a rule from its card.
+ *
+ * The card's inline rename used to check nothing but an exact-case duplicate, so it
+ * stored names the modal and the import refuse (too long, with spaces, differing only
+ * in case), and the rule then failed every later edit in the modal.
+ *
+ * @param {string} name Already trimmed.
+ * @param {Array} rules Rules already stored.
+ * @param {number} [editingIdx] Index of the rule being renamed.
+ * @returns {{valid: boolean, message?: string, params?: string[]}}
+ */
+export function validateRuleName(name, rules, editingIdx) {
+    return checkRuleNameFormat(name) || checkRuleNameDuplicate(name, rules, editingIdx) || { valid: true };
+}
+
+/**
  * Validates one rule against the rules already stored.
  *
  * @param {string} name
@@ -215,10 +256,8 @@ export function isValidUrl(urlString) {
  * @returns {{valid: boolean, message?: string, params?: string[]}}
  */
 export function validateRule(name, color, urls, rules, editingIdx) {
-    if (!name) return { valid: false, message: 'enterRuleName', params: [] };
-    if (name.length > MAX_RULE_NAME_LENGTH) {
-        return { valid: false, message: 'ruleNameTooLongError', params: [name] };
-    }
+    const nameFormat = checkRuleNameFormat(name);
+    if (nameFormat) return nameFormat;
     if (!color) return { valid: false, message: 'selectColor', params: [] };
     if (urls.length === 0) return { valid: false, message: 'enterOneUrl', params: [] };
 
@@ -227,9 +266,8 @@ export function validateRule(name, color, urls, rules, editingIdx) {
         return { valid: false, message: 'invalidUrls', params: [invalidUrls.join(', ')] };
     }
 
-    const currentNameLower = name.toLowerCase();
-    const isDuplicateName = rules.some((r, idx) => r.name.toLowerCase() === currentNameLower && idx !== editingIdx);
-    if (isDuplicateName) return { valid: false, message: 'duplicateRuleName', params: [] };
+    const duplicateName = checkRuleNameDuplicate(name, rules, editingIdx);
+    if (duplicateName) return duplicateName;
 
     const normUrls = urls.map(normalizeUrl);
     const uniqueUrls = new Set(normUrls);
@@ -358,6 +396,8 @@ export function validateImportedRules(importedData, existingRules, mode) {
         for (const rule of cleanedRules) {
             const result = validateRule(rule.name, rule.color, rule.urls, accepted, undefined);
             if (!result.valid) {
+                // Already reported above, all spaced names in one line.
+                if (result.message === 'ruleNameNoSpacesError') continue;
                 if (result.message === 'duplicateRuleName') {
                     errors.push({ message: 'duplicateRuleNameInFile', params: [rule.name] });
                 } else {

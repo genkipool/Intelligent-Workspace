@@ -263,6 +263,7 @@ const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     'openSidePanel',
     'openPopupWindow',
     'navigateToGroupTab',
+    'getGroupTitlesForNavigation',
     'hintCommandsUpdated',
     'snippetsUpdated',
     'appendClipboardEnabledUpdated',
@@ -491,6 +492,10 @@ const MESSAGE_HANDLERS = {
     },
     navigateToGroupTab: (message, sender, sendResponse) => {
         handleNavigateToGroupTab(message, sender, sendResponse);
+        return true;
+    },
+    getGroupTitlesForNavigation: (message, sender, sendResponse) => {
+        handleGetGroupTitlesForNavigation(message, sender, sendResponse);
         return true;
     },
     clearFaviconCache: (message, sender, sendResponse) => {
@@ -899,6 +904,12 @@ const MESSAGE_HANDLERS = {
         handleCreateNoteFromSelection(message, sender, sendResponse);
         return true;
     },
+    // Rules page only (deliberately absent from ALLOWED_CONTENT_SCRIPT_ACTIONS): it
+    // rewrites where the notes and captures of every group are filed.
+    renameRuleContext: (message, sender, sendResponse) => {
+        handleRenameRuleContext(message, sender, sendResponse);
+        return true;
+    },
     startReadAloud: (message, sender, sendResponse) => {
         handleStartReadAloud(message, sender, sendResponse);
         return true;
@@ -1266,27 +1277,23 @@ const MESSAGE_HANDLERS = {
         return true;
     },
     addLinkPreviewBlacklist: (message, sender, sendResponse) => {
-        addLinkPreviewBlacklistDomain(message.domain).then(() =>
-            sendResponse({
-                success: true,
-            }),
-        );
+        // A failed write (the sync quota, mostly) must still answer: without the catch
+        // the caller waited forever and the worker logged an unhandled rejection.
+        addLinkPreviewBlacklistDomain(message.domain)
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error?.message || String(error) }));
         return true;
     },
     removeLinkPreviewBlacklist: (message, sender, sendResponse) => {
-        removeLinkPreviewBlacklistDomain(message.domain).then(() =>
-            sendResponse({
-                success: true,
-            }),
-        );
+        removeLinkPreviewBlacklistDomain(message.domain)
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error?.message || String(error) }));
         return true;
     },
     editLinkPreviewBlacklist: (message, sender, sendResponse) => {
-        editLinkPreviewBlacklistDomain(message.oldDomain, message.newDomain).then(() =>
-            sendResponse({
-                success: true,
-            }),
-        );
+        editLinkPreviewBlacklistDomain(message.oldDomain, message.newDomain)
+            .then(() => sendResponse({ success: true }))
+            .catch((error) => sendResponse({ success: false, error: error?.message || String(error) }));
         return true;
     },
     setLinkPreviewTriggerKey: (message, sender, sendResponse) => {

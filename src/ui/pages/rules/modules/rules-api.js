@@ -34,6 +34,10 @@ export async function saveSettings(items) {
     const storage = await getSettingsStorage();
     return await storage.set(items);
 }
+export async function removeSettings(keys) {
+    const storage = await getSettingsStorage();
+    return await storage.remove(keys);
+}
 export async function getRuleStorage() {
     const storage = await getSettingsStorage();
     return await storage.get('customRules');
@@ -49,7 +53,10 @@ export async function setRuleStorage(rules) {
                 if (chrome.runtime.lastError) {
                     const errorMessage = chrome.runtime.lastError.message.toLowerCase();
                     console.error('Error saving rules to storage:', errorMessage);
-                    if (errorMessage.includes('quota_bytes')) {
+                    // Chrome words it 'Resource::kQuotaBytesPerItem quota exceeded' (or
+                    // kQuotaBytes), not QUOTA_BYTES as the constants are named, so the
+                    // quota case used to fall through to the generic message.
+                    if (/quota_?bytes/i.test(errorMessage)) {
                         showNotification('errorQuotaExceeded', true);
                         reject(new Error('Storage quota exceeded'));
                     } else if (errorMessage.includes('max_write_operations')) {
@@ -57,7 +64,9 @@ export async function setRuleStorage(rules) {
                         reject(new Error('Write rate limit exceeded'));
                     } else {
                         showNotification('errorSavingRule', true);
-                        reject(chrome.runtime.lastError);
+                        // An Error, not the lastError object: a caller that lets it go
+                        // otherwise reports an unreadable "Object".
+                        reject(new Error(chrome.runtime.lastError.message));
                     }
                 } else {
                     resolve();

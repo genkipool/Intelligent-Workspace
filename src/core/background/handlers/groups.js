@@ -349,6 +349,49 @@ function isSubsequence(needle, haystack) {
  * Sequence: Alt + [groupPrefix] + [tabIndex] + Enter (e.g. Alt+gog4+Enter)
  * Works both in standard mode and compact mode.
  */
+/** A group title or a typed prefix as the Alt sequence compares them. */
+function cleanGroupQuery(value) {
+    return (value || '')
+        .toString()
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
+/** The groups an Alt sequence picks from: the sender's window, or every window when it has none. */
+async function queryGroupsForNavigation(sender) {
+    let windowId = sender?.tab?.windowId;
+    if (!windowId) {
+        const currentWin = await chrome.windows.getLastFocused({ populate: false }).catch(() => null);
+        windowId = currentWin?.id;
+    }
+    let groups = windowId ? await chrome.tabGroups.query({ windowId }) : [];
+    if (!groups || groups.length === 0) {
+        groups = await chrome.tabGroups.query({});
+    }
+    return groups || [];
+}
+
+/**
+ * The titles an Alt sequence could name, cleaned the way handleNavigateToGroupTab
+ * compares them. The page script asks for them when Alt goes down, so that it only takes
+ * an Alt+letter that can lead to a group and leaves the rest to the page.
+ */
+async function handleGetGroupTitlesForNavigation(message, sender, sendResponse) {
+    try {
+        const groups = await queryGroupsForNavigation(sender);
+        const titles = new Set();
+        for (const g of groups) {
+            const disp = typeof displayGroupTitle === 'function' ? displayGroupTitle(g) : g.title || '';
+            for (const title of [cleanGroupQuery(disp), cleanGroupQuery(g.title)]) if (title) titles.add(title);
+        }
+        sendResponse({ success: true, titles: [...titles] });
+    } catch (error) {
+        sendResponse({ success: false, error: error.message });
+    }
+}
+
 async function handleNavigateToGroupTab(message, sender, sendResponse) {
     try {
         const { groupPrefix, tabIndex } = message;
@@ -359,29 +402,14 @@ async function handleNavigateToGroupTab(message, sender, sendResponse) {
             return;
         }
 
-        let windowId = sender?.tab?.windowId;
-        if (!windowId) {
-            const currentWin = await chrome.windows.getLastFocused({ populate: false }).catch(() => null);
-            windowId = currentWin?.id;
-        }
-
-        let groups = windowId ? await chrome.tabGroups.query({ windowId }) : [];
-        if (!groups || groups.length === 0) {
-            groups = await chrome.tabGroups.query({});
-        }
+        const groups = await queryGroupsForNavigation(sender);
 
         if (!groups || groups.length === 0) {
             if (sendResponse) sendResponse({ success: false, error: 'No groups found' });
             return;
         }
 
-        const cleanStr = (s) =>
-            (s || '')
-                .toString()
-                .toLowerCase()
-                .trim()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
+        const cleanStr = cleanGroupQuery;
 
         const targetQuery = cleanStr(groupPrefix);
 

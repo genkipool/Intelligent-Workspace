@@ -60,6 +60,17 @@ const problems = [];
         );
     }
 
+    // Content scripts (hints, video PiP) fetch their catalogue, and a content script can
+    // only fetch what web_accessible_resources lists: a language missing there is
+    // silently shown in English on every web page.
+    const exposed = (manifest.web_accessible_resources || []).flatMap((entry) => entry.resources || []);
+    for (const code of codes) {
+        const file = `_locales/${code}/messages.json`;
+        if (!exposed.includes(file) && !exposed.includes('_locales/*/messages.json')) {
+            problems.push(`${file} is not in web_accessible_resources: content scripts cannot load it.`);
+        }
+    }
+
     const read = (lang) => JSON.parse(readFileSync(`_locales/${lang}/messages.json`, 'utf8'));
     const dicts = Object.fromEntries(codes.filter((c) => folders.includes(c)).map((c) => [c, read(c)]));
     const reference = dicts[DEFAULT_LANGUAGE] ?? {};

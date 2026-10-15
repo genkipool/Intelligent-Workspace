@@ -345,9 +345,129 @@ var HintCommon = {
      */
     stripHtml(html) {
         if (!html) return '';
-        const tmp = document.createElement('DIV');
-        tmp.innerHTML = html;
-        return tmp.textContent || tmp.innerText || '';
+        // Parsed into an inert document rather than a detached <div>: a <div> belongs to
+        // this page, so an <img> in the markup was fetched just by reading its text.
+        const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+        return doc.body.textContent || '';
+    },
+
+    /**
+     * Cleans snippet and site-command HTML so it carries formatting and nothing else.
+     *
+     * That HTML is rendered with innerHTML in the editor and can arrive from an imported
+     * config file written by someone else, so markup such as <meta http-equiv=refresh>,
+     * a <form> or a full-page `position:fixed` overlay would act inside the extension's
+     * own page. Everything the editor produces survives: bold/italic/underline/strike,
+     * colours, font sizes, alignment, lists, indentation and https/mailto links.
+     *
+     * @param {string} html
+     * @returns {string}
+     */
+    sanitizeHtml(html) {
+        if (typeof html !== 'string' || !html) return '';
+        const ALLOWED_TAGS = new Set(
+            (
+                'p br div span font strong b em i u s strike del ins mark small sub sup code pre ' +
+                'blockquote q cite h1 h2 h3 h4 h5 h6 hr ul ol li dl dt dd a img table thead tbody ' +
+                'tfoot tr td th caption'
+            ).split(' '),
+        );
+        // Dropped with their content: they run, load, navigate, take input or paint
+        // outside the text.
+        const DROPPED_TAGS = new Set(
+            (
+                'script style noscript iframe frame frameset object embed link meta base form input ' +
+                'button select option textarea svg math canvas template title audio video source'
+            ).split(' '),
+        );
+        const ALLOWED_ATTRS = {
+            a: ['href', 'title'],
+            img: ['src', 'alt', 'title'],
+            font: ['color', 'size', 'face'],
+            td: ['colspan', 'rowspan'],
+            th: ['colspan', 'rowspan', 'scope'],
+            ol: ['start'],
+        };
+        const COMMON_ATTRS = ['style', 'align', 'dir'];
+        // Properties that paint or indent text; nothing that positions or sizes a box.
+        const ALLOWED_STYLES = new Set([
+            'color',
+            'background-color',
+            'font-weight',
+            'font-style',
+            'font-size',
+            'font-family',
+            'font-variant',
+            'text-decoration',
+            'text-decoration-line',
+            'text-decoration-color',
+            'text-decoration-style',
+            'text-align',
+            'text-transform',
+            'margin-left',
+            'padding-left',
+        ]);
+        const cleanStyle = (value) => {
+            const kept = [];
+            for (const declaration of String(value || '').split(';')) {
+                const colon = declaration.indexOf(':');
+                if (colon === -1) continue;
+                const property = declaration.slice(0, colon).trim().toLowerCase();
+                const setting = declaration.slice(colon + 1).trim();
+                if (!setting || !ALLOWED_STYLES.has(property)) continue;
+                if (/url\(|expression\(|javascript:|[<>\\]/i.test(setting)) continue;
+                kept.push(`${property}: ${setting}`);
+            }
+            return kept.join('; ');
+        };
+        // The URL parser ignores tabs, newlines and leading control characters, so they
+        // are removed before the scheme is checked ("java\tscript:" is javascript:).
+        const schemeOf = (value) => String(value || '').replace(/[\u0000-\u0020]/g, '');
+        const safeHref = (value) => (/^(https?:|mailto:|tel:)/i.test(schemeOf(value)) ? value.trim() : null);
+        const safeSrc = (value) => (/^(https?:|data:image\/)/i.test(schemeOf(value)) ? value.trim() : null);
+        const unwrap = (el) => {
+            const parent = el.parentNode;
+            if (!parent) return;
+            while (el.firstChild) parent.insertBefore(el.firstChild, el);
+            parent.removeChild(el);
+        };
+        const clean = (el) => {
+            const tag = el.tagName.toLowerCase();
+            if (DROPPED_TAGS.has(tag)) {
+                el.remove();
+                return;
+            }
+            for (const child of Array.from(el.children)) clean(child);
+            if (!ALLOWED_TAGS.has(tag)) {
+                unwrap(el);
+                return;
+            }
+            const allowed = (ALLOWED_ATTRS[tag] || []).concat(COMMON_ATTRS);
+            for (const attr of Array.from(el.attributes)) {
+                const name = attr.name.toLowerCase();
+                if (!allowed.includes(name)) {
+                    el.removeAttribute(attr.name);
+                } else if (name === 'style') {
+                    const style = cleanStyle(attr.value);
+                    if (style) el.setAttribute('style', style);
+                    else el.removeAttribute('style');
+                } else if (name === 'href' || name === 'src') {
+                    const url = name === 'href' ? safeHref(attr.value) : safeSrc(attr.value);
+                    if (url) el.setAttribute(name, url);
+                    else el.removeAttribute(attr.name);
+                }
+            }
+            if (tag === 'img' && !el.getAttribute('src')) {
+                el.remove();
+            } else if (tag === 'a' && !el.getAttribute('href')) {
+                // A link whose target was refused keeps its words, not the link.
+                unwrap(el);
+            }
+        };
+        // A parsed document is inert: nothing in it loads or runs while it is cleaned.
+        const doc = new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html');
+        for (const child of Array.from(doc.body.children)) clean(child);
+        return doc.body.innerHTML;
     },
 
     /**
@@ -1602,7 +1722,8 @@ var HintCommon = {
             if (targetElement.dataset.placeholder && currentContent === targetElement.dataset.placeholder) {
                 currentContent = '';
             }
-            this.previewArea.innerHTML = currentContent;
+            // Stored HTML can come from an imported config: only its formatting is rendered.
+            this.previewArea.innerHTML = HintCommon.sanitizeHtml(currentContent);
             HintCommon.SnippetVars.applyMarks(this.previewArea, options.variables);
 
             // Apply button
@@ -1956,7 +2077,8 @@ var HintCommon = {
             if (targetElement.dataset.placeholder && currentContent === targetElement.dataset.placeholder) {
                 currentContent = '';
             }
-            this.previewArea.innerHTML = currentContent;
+            // Stored HTML can come from an imported config: only its formatting is rendered.
+            this.previewArea.innerHTML = HintCommon.sanitizeHtml(currentContent);
             HintCommon.SnippetVars.applyMarks(this.previewArea, options.variables);
 
             // The picker rests on its prompt until a word is marked in this snippet.

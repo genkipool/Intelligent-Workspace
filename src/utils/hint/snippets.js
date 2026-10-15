@@ -123,7 +123,7 @@ var SnippetManager = class SnippetManager {
         };
         for (const [domain, config] of Object.entries(configs)) {
             if (hostname.includes(domain)) {
-                console.log(`[Snippet] Site detected: ${config.name}`);
+                itgDebug(`[Snippet] Site detected: ${config.name}`);
                 return {
                     ...config,
                     hostname,
@@ -319,7 +319,7 @@ var SnippetManager = class SnippetManager {
      * FIXED: Emulates Backspace with REAL deletion
      */
     async _simulateBackspace(element, count) {
-        console.log(`[Snippet] [BACK] Deleting ${count} characters in proxy editor`);
+        itgDebug(`[Snippet] [BACK] Deleting ${count} characters in proxy editor`);
         for (let i = 0; i < count; i++) {
             // Simulate keyboard event
             const keydownEvent = new KeyboardEvent('keydown', {
@@ -344,7 +344,7 @@ var SnippetManager = class SnippetManager {
             });
             element.dispatchEvent(keyupEvent);
         }
-        console.log('[Snippet] [OK] Deletion completed');
+        itgDebug('[Snippet] [OK] Deletion completed');
     }
     async _deleteTrigger(element, trigger, spacePrevented) {
         // If the space was prevented, the trigger is as-is.
@@ -354,9 +354,9 @@ var SnippetManager = class SnippetManager {
         // NEW: Dynamically detect editor type
         const editorType = this._detectEditorType(element);
         const strategy = this._getEditorStrategy(editorType);
-        console.log(`[Snippet] Editor type detected: ${editorType}`);
-        console.log(`[Snippet] Deletion strategy: ${strategy.deleteMethod}`);
-        console.log(`[Snippet] Deleting "${trigger}" (${triggerLength} characters)`);
+        itgDebug(`[Snippet] Editor type detected: ${editorType}`);
+        itgDebug(`[Snippet] Deletion strategy: ${strategy.deleteMethod}`);
+        itgDebug(`[Snippet] Deleting "${trigger}" (${triggerLength} characters)`);
 
         // Apply deletion strategy
         switch (strategy.deleteMethod) {
@@ -392,7 +392,7 @@ var SnippetManager = class SnippetManager {
      * NEW: Deletes text using keyboard event emulation (for Google Docs)
      */
     async _deleteViaKeyboardEmulation(element, count) {
-        console.log('[Snippet] _deleteViaKeyboardEmulation:', count, 'characters');
+        itgDebug('[Snippet] _deleteViaKeyboardEmulation:', count, 'characters');
 
         // Trigger backspace events
         for (let i = 0; i < count; i++) {
@@ -421,25 +421,25 @@ var SnippetManager = class SnippetManager {
             });
             element.dispatchEvent(keyupEvent);
         }
-        console.log('[Snippet] [OK] Backspace emulation completed');
+        itgDebug('[Snippet] [OK] Backspace emulation completed');
     }
 
     /**
      * REFACTORED: Inserts using element type detection
      */
     async _insertViaDataTransfer(element, plainText, htmlText) {
-        console.log('[Snippet] [SYNC] Starting insertion');
+        itgDebug('[Snippet] [SYNC] Starting insertion');
 
         // NEW: Dynamically detect editor type
         const editorType = this._detectEditorType(element);
         const strategy = this._getEditorStrategy(editorType);
-        console.log(`[Snippet] Editor type detected: ${editorType}`);
-        console.log(`[Snippet] Insertion strategy: ${strategy.insertMethod}`);
-        console.log(`[Snippet] Force plain text: ${strategy.forcePlainText}`);
+        itgDebug(`[Snippet] Editor type detected: ${editorType}`);
+        itgDebug(`[Snippet] Insertion strategy: ${strategy.insertMethod}`);
+        itgDebug(`[Snippet] Force plain text: ${strategy.forcePlainText}`);
 
         // Determine whether to use HTML or plain text
         const useHTML = htmlText && !strategy.forcePlainText;
-        console.log(`[Snippet] Inserting: ${useHTML ? 'HTML' : 'plain text'}`);
+        itgDebug(`[Snippet] Inserting: ${useHTML ? 'HTML' : 'plain text'}`);
 
         // Apply insertion strategy
         switch (strategy.insertMethod) {
@@ -483,10 +483,10 @@ var SnippetManager = class SnippetManager {
         // WORD ONLINE FIX V3: Insert space explicitly AFTER paste
         // Word cuts spaces from paste, so we insert it as an isolated event
         if (editorType === 'office-online') {
-            console.log('[Snippet] [FIX] Word Online: Injecting post-paste space');
+            itgDebug('[Snippet] [FIX] Word Online: Injecting post-paste space');
             document.execCommand('insertText', false, ' ');
         }
-        console.log('[Snippet] [OK] Insertion completed');
+        itgDebug('[Snippet] [OK] Insertion completed');
         return true;
     }
 
@@ -497,16 +497,16 @@ var SnippetManager = class SnippetManager {
      * in a single operation, avoiding desync with the framework's virtual state.
      */
     async _selectAndReplace(element, triggerLength, plainText, htmlText, editorType) {
-        console.log(`[Snippet] _selectAndReplace: triggerLength=${triggerLength}, editorType=${editorType}`);
+        itgDebug(`[Snippet] _selectAndReplace: triggerLength=${triggerLength}, editorType=${editorType}`);
 
         // SPECIAL DETECTION: Google Keep
         const isKeep = window.location.hostname.includes('keep.google.com');
         if (isKeep) {
-            console.log('[Snippet] [FIX] Google Keep detected - using special strategy');
+            itgDebug('[Snippet] [FIX] Google Keep detected - using special strategy');
         }
         const sel = window.getSelection();
         if (!sel || !sel.rangeCount) {
-            console.log('[Snippet] [WARN] No selection available');
+            itgDebug('[Snippet] [WARN] No selection available');
             return false;
         }
         const range = sel.getRangeAt(0);
@@ -515,7 +515,7 @@ var SnippetManager = class SnippetManager {
 
         // Verify that we can select the trigger
         if (node.nodeType !== Node.TEXT_NODE || offset < triggerLength) {
-            console.log('[Snippet] [WARN] Cannot select trigger, falling back to execCommand');
+            itgDebug('[Snippet] [WARN] Cannot select trigger, falling back to execCommand');
             for (let i = 0; i < triggerLength; i++) {
                 document.execCommand('delete', false, null);
             }
@@ -534,13 +534,13 @@ var SnippetManager = class SnippetManager {
         newRange.setEnd(node, offset);
         sel.removeAllRanges();
         sel.addRange(newRange);
-        console.log(`[Snippet] Selected: "${node.textContent.substring(offset - triggerLength, offset)}"`);
+        itgDebug(`[Snippet] Selected: "${node.textContent.substring(offset - triggerLength, offset)}"`);
         if (editorType === 'lexical') {
             // Lexical ignores synthetic events (isTrusted===false).
             // execCommand('insertText') generates a TRUSTED beforeinput that Lexical does process.
             // As the selection already covers the trigger, this replaces it atomically.
             document.execCommand('insertText', false, plainText);
-            console.log('[Snippet] [OK] Lexical: execCommand insertText (trusted beforeinput)');
+            itgDebug('[Snippet] [OK] Lexical: execCommand insertText (trusted beforeinput)');
         } else {
             // Contenteditable: try beforeinput, fallback to execCommand
             const biEvent = new InputEvent('beforeinput', {
@@ -552,9 +552,9 @@ var SnippetManager = class SnippetManager {
             });
             const wasHandled = !element.dispatchEvent(biEvent);
             if (wasHandled) {
-                console.log('[Snippet] [OK] Handled via beforeinput');
+                itgDebug('[Snippet] [OK] Handled via beforeinput');
             } else {
-                console.log('[Snippet] Using execCommand fallback');
+                itgDebug('[Snippet] Using execCommand fallback');
                 if (htmlText) {
                     document.execCommand('insertHTML', false, htmlText);
                 } else {
@@ -567,7 +567,7 @@ var SnippetManager = class SnippetManager {
         if (isKeep) {
             await this._fixKeepCursorPosition(element, plainText);
         }
-        console.log('[Snippet] [OK] selectAndReplace completed');
+        itgDebug('[Snippet] [OK] selectAndReplace completed');
         return true;
     }
 
@@ -578,13 +578,13 @@ var SnippetManager = class SnippetManager {
      * stays at the end of the inserted text.
      */
     async _fixKeepCursorPosition(element, insertedText) {
-        console.log('[Snippet] [FIX] Applying cursor fix for Google Keep');
+        itgDebug('[Snippet] [FIX] Applying cursor fix for Google Keep');
 
         // Wait for Keep to process insertion
         await new Promise((r) => setTimeout(r, 50));
         const sel = window.getSelection();
         if (!sel || !sel.rangeCount) {
-            console.log('[Snippet] [WARN] No selection for cursor fix');
+            itgDebug('[Snippet] [WARN] No selection for cursor fix');
             return;
         }
         try {
@@ -613,9 +613,9 @@ var SnippetManager = class SnippetManager {
                 newRange.setEnd(node, endPosition);
                 sel.removeAllRanges();
                 sel.addRange(newRange);
-                console.log('[Snippet] [OK] Cursor repositioned at the end in Keep');
+                itgDebug('[Snippet] [OK] Cursor repositioned at the end in Keep');
             } else {
-                console.log('[Snippet] [WARN] No valid text node found');
+                itgDebug('[Snippet] [WARN] No valid text node found');
             }
         } catch (error) {
             console.error('[Snippet] Error repositioning cursor in Keep:', error);
@@ -626,7 +626,7 @@ var SnippetManager = class SnippetManager {
      * NEW: Inserts using paste event (for Google Docs, Office Online, etc)
      */
     _insertViaPasteEvent(element, plainText, htmlText, editorType) {
-        console.log('[Snippet] Using paste event');
+        itgDebug('[Snippet] Using paste event');
 
         // Create DataTransfer
         const dataTransfer = new DataTransfer();
@@ -643,7 +643,7 @@ var SnippetManager = class SnippetManager {
                 }
             }
             dataTransfer.setData('text/html', finalHtml);
-            console.log('[Snippet] HTML with prepared formatting');
+            itgDebug('[Snippet] HTML with prepared formatting');
         }
 
         // beforeinput event
@@ -655,7 +655,7 @@ var SnippetManager = class SnippetManager {
         });
         element.dispatchEvent(beforeInputEvent);
         if (beforeInputEvent.defaultPrevented) {
-            console.log('[Snippet] beforeinput was prevented');
+            itgDebug('[Snippet] beforeinput was prevented');
             return;
         }
 
@@ -675,11 +675,11 @@ var SnippetManager = class SnippetManager {
                 }),
             );
         }, 10);
-        console.log('[Snippet] Paste event fired, defaultPrevented:', pasteEvent.defaultPrevented);
+        itgDebug('[Snippet] Paste event fired, defaultPrevented:', pasteEvent.defaultPrevented);
 
         // Fallback when the events were not handled
         if (!pasteEvent.defaultPrevented && !beforeInputEvent.defaultPrevented) {
-            console.log('[Snippet] [WARN] Events not handled, using fallback execCommand');
+            itgDebug('[Snippet] [WARN] Events not handled, using fallback execCommand');
             if (htmlText) {
                 document.execCommand('insertHTML', false, htmlText);
             } else {
@@ -694,7 +694,7 @@ var SnippetManager = class SnippetManager {
 
         // If strategy forces plain text
         if (strategy.forcePlainText) {
-            console.log(`[Snippet] [TEXT] Using plain text (type: ${editorType})`);
+            itgDebug(`[Snippet] [TEXT] Using plain text (type: ${editorType})`);
             return true;
         }
 
@@ -704,7 +704,7 @@ var SnippetManager = class SnippetManager {
         }
 
         // By default, if it has HTML and editor supports it, use HTML
-        console.log(`[Snippet] [HTML] Using formatted HTML (type: ${editorType})`);
+        itgDebug(`[Snippet] [HTML] Using formatted HTML (type: ${editorType})`);
         return false;
     }
 
@@ -743,7 +743,7 @@ var SnippetManager = class SnippetManager {
                 const bufferText = this.keyBuffer.join('');
                 const match = this._getMatchedSnippet(bufferText);
                 if (match) {
-                    console.log('[Snippet] [MATCH] Match sincrono detected:', match.trigger);
+                    itgDebug('[Snippet] [MATCH] Match sincrono detected:', match.trigger);
                     e.preventDefault(); // Block space insertion by the editor
                     e.stopPropagation();
                     this._checkBlindMatch(true); // Pass true indicating that space was prevented
@@ -771,7 +771,7 @@ var SnippetManager = class SnippetManager {
      * NEW METHOD: Initialization of keyboard and mouse listeners
      */
     initKeyBuffer() {
-        console.log('[DEBUG] initKeyBuffer initialized');
+        itgDebug('[DEBUG] initKeyBuffer initialized');
         this._boundKeyDownHandler = (e) => this._handleKeyDown(e);
         document.addEventListener('keydown', this._boundKeyDownHandler, true);
 
@@ -785,7 +785,7 @@ var SnippetManager = class SnippetManager {
                 this.keyBuffer.push(ch);
                 if (this.keyBuffer.length > this.bufferLimit) this.keyBuffer.shift();
             }
-            console.log('[Snippet] [PASTE] Paste detected, keyBuffer updated:', this.keyBuffer.join(''));
+            itgDebug('[Snippet] [PASTE] Paste detected, keyBuffer updated:', this.keyBuffer.join(''));
         };
         document.addEventListener('paste', this._boundPasteHandler, true);
         this._boundMouseDownHandler = (e) => {
@@ -834,7 +834,7 @@ var SnippetManager = class SnippetManager {
                 if (doc) {
                     doc.addEventListener('keydown', (e) => this._handleKeyDown(e), true);
                     iframe.dataset.snippetAttached = 'true';
-                    console.log('[Snippet] [OK] Listener attached to GDocs iframe');
+                    itgDebug('[Snippet] [OK] Listener attached to GDocs iframe');
                 }
             } catch {}
         };
@@ -861,19 +861,19 @@ var SnippetManager = class SnippetManager {
         const activeEl = document.activeElement;
         if (!activeEl) return;
         const text = this.keyBuffer.join('');
-        console.log('[DEBUG] _checkBlindMatch called');
-        console.log('[DEBUG] keyBuffer:', this.keyBuffer);
-        console.log('[DEBUG] text:', text);
+        itgDebug('[DEBUG] _checkBlindMatch called');
+        itgDebug('[DEBUG] keyBuffer:', this.keyBuffer);
+        itgDebug('[DEBUG] text:', text);
         const match = this._getMatchedSnippet(text);
-        console.log('[DEBUG] match encontrado:', match);
+        itgDebug('[DEBUG] match encontrado:', match);
         if (match) {
-            console.log('[DEBUG] [OK] Match found, processing...');
+            itgDebug('[DEBUG] [OK] Match found, processing...');
             this._incrementSnippetUsage(match.trigger);
-            console.log('[DEBUG] activeElement:', activeEl);
-            console.log('[DEBUG] activeElement.tagName:', activeEl?.tagName);
-            console.log('[DEBUG] activeElement.isContentEditable:', activeEl?.isContentEditable);
+            itgDebug('[DEBUG] activeElement:', activeEl);
+            itgDebug('[DEBUG] activeElement.tagName:', activeEl?.tagName);
+            itgDebug('[DEBUG] activeElement.isContentEditable:', activeEl?.isContentEditable);
             if (!activeEl) {
-                console.log('[DEBUG] [ERR] No activeElement, aborting');
+                itgDebug('[DEBUG] [ERR] No activeElement, aborting');
                 return;
             }
 
@@ -894,8 +894,8 @@ var SnippetManager = class SnippetManager {
             // Clear buffer
             this.keyBuffer = [];
         } else {
-            console.log('[DEBUG] [ERR] No match found para:', text);
-            console.log('[DEBUG] Snippets disponibles:', Object.keys(this.snippets));
+            itgDebug('[DEBUG] [ERR] No match found para:', text);
+            itgDebug('[DEBUG] Snippets disponibles:', Object.keys(this.snippets));
         }
     }
     _simulateKey(target, key, keyCode) {
@@ -978,7 +978,7 @@ ${finalHtml}
 </body>
 </html>`;
             }
-            console.log('[SnippetManager] HTML para paste:', finalHtml.substring(0, 200));
+            itgDebug('[SnippetManager] HTML para paste:', finalHtml.substring(0, 200));
             dataTransfer.setData('text/html', finalHtml);
         }
 
@@ -992,7 +992,7 @@ ${finalHtml}
         });
         const inputHandled = target.dispatchEvent(inputEvent);
         if (!inputHandled || inputEvent.defaultPrevented) {
-            console.log('[SnippetManager] [OK] Manejado por beforeinput');
+            itgDebug('[SnippetManager] [OK] Manejado por beforeinput');
             return true;
         }
 
@@ -1005,25 +1005,25 @@ ${finalHtml}
         });
         const pasteHandled = target.dispatchEvent(pasteEvent);
         if (!pasteHandled || pasteEvent.defaultPrevented) {
-            console.log('[SnippetManager] [OK] Manejado por paste event');
+            itgDebug('[SnippetManager] [OK] Manejado por paste event');
             return true;
         }
 
         // 3. Fallback: try execCommand paste (might work in some editors)
-        console.log('[SnippetManager] [WARN] Usando fallback execCommand');
+        itgDebug('[SnippetManager] [WARN] Usando fallback execCommand');
 
         // Try insertHTML first if there is HTML
         if (html && this._isHTML(html)) {
             const success = document.execCommand('insertHTML', false, html);
             if (success) {
-                console.log('[SnippetManager] [OK] Insertado con insertHTML');
+                itgDebug('[SnippetManager] [OK] Insertado con insertHTML');
                 return true;
             }
         }
 
         // Last resort: plain text
         document.execCommand('insertText', false, text);
-        console.log('[SnippetManager] [WARN] Insertado como texto plano');
+        itgDebug('[SnippetManager] [WARN] Insertado como texto plano');
         return true;
     }
 
@@ -1221,7 +1221,7 @@ ${finalHtml}
         // Position cursor AT THE END (after the space)
         const newPos = startDelete + finalExpansion.length;
         el.setSelectionRange(newPos, newPos);
-        console.log(`[SnippetManager] [OK] Expanded in INPUT/TEXTAREA: "${match.trigger}" -> texto plano`);
+        itgDebug(`[SnippetManager] [OK] Expanded in INPUT/TEXTAREA: "${match.trigger}" -> texto plano`);
     }
 
     /**
@@ -1236,7 +1236,7 @@ ${finalHtml}
         try {
             const hasHTML = this._isHTML(match.expansion);
             const editorType = this._detectEditorType(el);
-            console.log('[Snippet] ContentEditable Exp:', {
+            itgDebug('[Snippet] ContentEditable Exp:', {
                 trigger: match.trigger,
                 editorType,
             });
@@ -1259,17 +1259,17 @@ ${finalHtml}
 
             // 1. WhatsApp / Proxy Editors
             if (this._isProxyEditor(el)) {
-                console.log('[Snippet] [MOBILE] Proxy Editor (WhatsApp) via handler');
+                itgDebug('[Snippet] [MOBILE] Proxy Editor (WhatsApp) via handler');
                 const triggerLength = match.trigger.length + (spacePrevented ? 0 : 1);
                 await this._simulateBackspace(el, triggerLength);
                 document.execCommand('insertText', false, plainText);
-                console.log('[Snippet] [OK] Proxy Editor completado');
+                itgDebug('[Snippet] [OK] Proxy Editor completado');
 
                 // 2. Telegram / ContentEditable Generic (select-and-replace)
             } else if (editorType === 'contenteditable') {
                 const triggerLen = match.trigger.length + (spacePrevented ? 0 : 1);
                 await this._selectAndReplace(el, triggerLen, plainText, htmlText, editorType);
-                console.log('[Snippet] [OK] Select-and-Replace completado');
+                itgDebug('[Snippet] [OK] Select-and-Replace completado');
 
                 // 3. Others (Google Docs, Office Online, Textarea, etc.)
             } else {
@@ -1282,7 +1282,7 @@ ${finalHtml}
                 // Note: _checkBlindMatch NO does this if it already added the space to plainText.
                 // But _handleContentEditable had it. We will keep it only if necessary.
             }
-            console.log('[Snippet] [OK] Expansion completed');
+            itgDebug('[Snippet] [OK] Expansion completed');
         } catch (err) {
             console.error('[Snippet] Error en _handleContentEditable:', err);
         }

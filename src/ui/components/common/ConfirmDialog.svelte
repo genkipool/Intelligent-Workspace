@@ -2,6 +2,7 @@
     import { t, tt } from '../../stores/i18nStore.js';
     import { confirmRequest } from '../../stores/confirmStore.js';
     import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import { portal } from '../../actions/portal.js';
 
     let confirmButton = $state(null);
 
@@ -33,7 +34,14 @@
         aria-labelledby="confirm-dialog-title"
         tabindex="-1"
         use:dismissOnBackdrop={reject}
-        onkeydown={(e) => e.key === 'Escape' && reject()}
+        use:portal
+        onkeydown={(e) => {
+            if (e.key !== 'Escape') return;
+            // Inside a modal <dialog> (see portal.js) the same Escape would close it too.
+            e.preventDefault();
+            e.stopPropagation();
+            reject();
+        }}
     >
         <div class="modal-content confirm-dialog" role="none" onclick={(e) => e.stopPropagation()}>
             <div class="modal-header">

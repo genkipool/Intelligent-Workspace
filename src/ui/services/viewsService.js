@@ -1785,7 +1785,23 @@ export function showReaderView(htmlContent, baseUrl) {
         doc.querySelector('h1, title, h2')?.textContent || localizedMsg('noteContent') || 'Content';
     const contentNode = doc.querySelector('article, main, .post-content, .entry-content, #content, #main') || doc.body;
     const cleanContent = contentNode.cloneNode(true);
-    cleanContent.querySelectorAll('script, style, iframe, noscript, link, svg').forEach((el) => el.remove());
+    // The page is somebody else's HTML going into an extension page. The CSP already
+    // stops its scripts; what is left has to go too: a meta refresh or a base tag
+    // redirect the panel itself, a form posts whatever is typed into it to the site,
+    // and an inline style or a borrowed id/class can lay a fake prompt over the whole
+    // panel or collide with the panel's own elements. None of it is reading content.
+    cleanContent
+        .querySelectorAll(
+            'script, style, iframe, noscript, link, svg, meta, base, form, input, button, select, textarea, object, embed, frame, frameset, template, math, dialog',
+        )
+        .forEach((el) => el.remove());
+    for (const el of [cleanContent, ...cleanContent.querySelectorAll('*')]) {
+        for (const { name } of [...el.attributes]) {
+            if (name.startsWith('on') || name === 'style' || name === 'id' || name === 'name' || name === 'class') {
+                el.removeAttribute(name);
+            }
+        }
+    }
 
     cleanContent.querySelectorAll('a').forEach((a) => {
         try {
@@ -1795,6 +1811,11 @@ export function showReaderView(htmlContent, baseUrl) {
                 return;
             }
             const absoluteUrl = new URL(href, baseUrl).href;
+            // Only web links lead anywhere a reader can follow.
+            if (!/^https?:/i.test(absoluteUrl)) {
+                a.replaceWith(...a.childNodes);
+                return;
+            }
             a.href = absoluteUrl;
             a.removeAttribute('target');
 

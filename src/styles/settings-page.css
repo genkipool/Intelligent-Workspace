@@ -118,6 +118,10 @@
     text-underline-offset: 3px;
 }
 
+.set-delete-all-btn:hover:not(:disabled) {
+    color: var(--error-color);
+}
+
 .set-add-btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;

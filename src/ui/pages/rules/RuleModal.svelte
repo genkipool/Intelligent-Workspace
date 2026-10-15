@@ -217,6 +217,7 @@
         const fallbacks = {
             enterRuleName: 'Please enter a name for the rule.',
             ruleNameTooLongError: `Rule name cannot exceed 16 characters${params && params[0] ? ': ' + params[0] : ''}`,
+            ruleNameNoSpacesError: `Rule name cannot contain spaces${params && params[0] ? ': ' + params[0] : ''}`,
             selectColor: 'Please select a color for the rule.',
             enterOneUrl: 'Please enter at least one URL.',
             invalidUrls: `URLs in red have an invalid format${params && params[0] ? ': ' + params[0] : ''}`,
@@ -236,6 +237,14 @@
             .map((u) => toStoredUrl(u, previousUrls));
     }
 
+    // The errors that are about the name, not the URLs: the URL overlay is left alone.
+    const NAME_ERRORS = new Set([
+        'enterRuleName',
+        'ruleNameTooLongError',
+        'ruleNameNoSpacesError',
+        'duplicateRuleName',
+    ]);
+
     function showFirstError() {
         const name = ruleName.trim();
         const color = ruleColor;
@@ -245,11 +254,7 @@
         const result = validateRule(name, color, urls, currentRules, editingIdx);
         if (!result.valid) {
             errorMessage = tMsg(result.message, result.params || []);
-            if (
-                result.message !== 'enterRuleName' &&
-                result.message !== 'ruleNameTooLongError' &&
-                result.message !== 'duplicateRuleName'
-            ) {
+            if (!NAME_ERRORS.has(result.message)) {
                 validateUrls(ruleUrls);
             }
         } else {
@@ -266,7 +271,7 @@
         onclose?.();
     }
 
-    function save() {
+    async function save() {
         const name = ruleName.trim();
         const color = ruleColor;
         const urls = collectUrls();
@@ -281,18 +286,21 @@
                 urls: urls,
                 isStarred: rule ? rule.isStarred : false,
             };
-            onsave?.(newRule);
+            // Closed only once the rule is stored: a failed write (the sync quota, the
+            // write rate limit) used to close the form anyway and lose the user's edit.
+            // The caller has already said why it failed.
+            try {
+                await onsave?.(newRule);
+            } catch {
+                return;
+            }
             close();
         } else {
             errorMessage = tMsg(result.message, result.params || []);
-            if (result.message === 'enterRuleName' || result.message === 'ruleNameTooLongError') {
+            if (result.message !== 'duplicateRuleName' && NAME_ERRORS.has(result.message)) {
                 isNameInvalid = true;
             }
-            if (
-                result.message !== 'enterRuleName' &&
-                result.message !== 'ruleNameTooLongError' &&
-                result.message !== 'duplicateRuleName'
-            ) {
+            if (!NAME_ERRORS.has(result.message)) {
                 validateUrls(ruleUrls, true);
             }
         }

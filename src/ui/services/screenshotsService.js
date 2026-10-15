@@ -478,7 +478,8 @@ export async function withTabActivation(tab, actionCallback, options = {}) {
         if (
             error &&
             error.message &&
-            (error.message.includes('QUOTA_BYTES') || error.message.includes('storage quota'))
+            // Chrome reports 'Resource::kQuotaBytes… quota exceeded', not QUOTA_BYTES.
+            (/quota_?bytes/i.test(error.message) || error.message.includes('storage quota'))
         ) {
             showNotification('screenshotStorageFull', true);
         } else {
@@ -699,7 +700,8 @@ export async function handleScreenshotRequest(tab, context, options = {}) {
         if (
             error &&
             error.message &&
-            (error.message.includes('QUOTA_BYTES') || error.message.includes('storage quota'))
+            // Chrome reports 'Resource::kQuotaBytes… quota exceeded', not QUOTA_BYTES.
+            (/quota_?bytes/i.test(error.message) || error.message.includes('storage quota'))
         ) {
             showNotification('screenshotStorageFull', true);
         } else {

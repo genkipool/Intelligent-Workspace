@@ -5,6 +5,7 @@
  */
 
 import { storageService } from './storage.js';
+import { applyCustomTheme } from '../../utils/theme.js';
 
 export const themesService = {
     /**
@@ -28,13 +29,9 @@ export const themesService = {
      * Apply custom theme colors as CSS variables.
      */
     applyCustom(colors) {
-        if (!colors) return;
-        const root = document.documentElement;
-        root.setAttribute('data-theme', 'custom');
-        const vars = Object.entries(colors).map(
-            ([key, val]) => `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${val}`,
-        );
-        root.style.cssText = vars.join(';');
+        // The one implementation that validates each colour (see theme.js): joining a
+        // cssText here let an imported value add declarations of its own.
+        applyCustomTheme(colors);
     },
 
     /**

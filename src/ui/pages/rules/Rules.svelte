@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    import { foldForSearch, getDomainOrSubdomainUrl } from '../../services/utils.js';
+    import { foldForSearch, getDomainOrSubdomainUrl, getGroupInfoMap } from '../../services/utils.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
@@ -27,7 +27,7 @@
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import RulesFooter from './RulesFooter.svelte';
     import { t, i18nStore, tt } from '../../stores/i18nStore.js';
-    import { groupTabs, getSettings, saveSettings } from './modules/rules-api.js';
+    import { groupTabs, getSettings, saveSettings, removeSettings } from './modules/rules-api.js';
     import {
         defaultClusterConfig,
         mergeClusterConfig,
@@ -37,7 +37,7 @@
     } from './modules/clusterDefaults.js';
     import { initializeActiveTheme } from '../../../utils/theme.js';
     import { showNotification } from '../../../utils/i18n.js';
-    import { validateImportedRules, MAX_RULE_NAME_LENGTH } from './ruleValidation.js';
+    import { validateImportedRules, validateRuleName, MAX_RULE_NAME_LENGTH } from './ruleValidation.js';
     import { duplicateMarkerFields } from './modules/prefixMarkers.js';
 
     let isLoading = $state(true);
@@ -138,7 +138,9 @@
             ]);
             isClusterEnabled = settings.clusteringEnabled ?? true;
             isSortGroupsEnabled = settings.sortGroupsAlphabetically ?? true;
-            isPrefixesEnabled = settings.enablePrefixes ?? true;
+            // Off unless stored, as the worker reads it: a switch shown on while groups had no
+            // prefixes was the two disagreeing.
+            isPrefixesEnabled = settings.enablePrefixes ?? false;
             isCollapseTimerEnabled = settings.enableCollapseTimer ?? false;
             clusterConfig = mergeClusterConfig(settings.clusterConfig || {});
             if (settings.userPrefixes) userPrefixes = { ...userPrefixes, ...settings.userPrefixes };
@@ -277,6 +279,23 @@
     }
 
     function handleStorageChanged(changes, areaName) {
+        // These two always live in `local`, whichever area holds the rules: they have
+        // to be read before the guard below, or with the rules in `sync` switching to
+        // `local` would never reload the list.
+        if (!areaName || areaName === 'local') {
+            if (changes.ruleStorageArea) {
+                const newArea = changes.ruleStorageArea.newValue || 'sync';
+                if (newArea !== storageMode) {
+                    storageMode = newArea;
+                    initialRestoredRules.clear();
+                    initializeRules().then(() => {
+                        showTutorial = $rulesStore.length === 0;
+                    });
+                }
+            }
+            if (changes.discardingTimeMinutes !== undefined)
+                discardingTime = Math.min(1440, Math.max(1, changes.discardingTimeMinutes.newValue ?? 60));
+        }
         if (areaName && areaName !== storageMode) return;
         if (changes.customRules) {
             const newRules = changes.customRules.newValue || [];
@@ -324,16 +343,6 @@
         }
         if (changes.enablePrefixes !== undefined) isPrefixesEnabled = changes.enablePrefixes.newValue;
         if (changes.enableCollapseTimer !== undefined) isCollapseTimerEnabled = changes.enableCollapseTimer.newValue;
-        if (changes.ruleStorageArea) {
-            const newArea = changes.ruleStorageArea.newValue || 'sync';
-            if (newArea !== storageMode) {
-                storageMode = newArea;
-                initialRestoredRules.clear();
-                initializeRules().then(() => {
-                    showTutorial = $rulesStore.length === 0;
-                });
-            }
-        }
 
         // The settings modal and these popups are two faces of the same settings, so
         // whatever one of them writes has to reach the other. Values identical to the
@@ -351,8 +360,6 @@
         if (changes.activeCollapseTime !== undefined)
             timerActiveTime = Math.min(1440, Math.max(0, changes.activeCollapseTime.newValue ?? 15));
         if (changes.miscGroupSortOption !== undefined) miscSortOption = changes.miscGroupSortOption.newValue || 'start';
-        if (changes.discardingTimeMinutes !== undefined)
-            discardingTime = Math.min(1440, Math.max(1, changes.discardingTimeMinutes.newValue ?? 60));
     }
 
     function handleKeydown(e) {
@@ -474,15 +481,23 @@
         }
     }
 
+    /**
+     * Stores the rule from the modal. A failed write is thrown back to the modal, which
+     * stays open with the user's edit in it.
+     */
     async function handleSaveRule(detail) {
         const newRule = detail;
         let updatedRules = [...$rulesStore];
+        const oldName = modalMode === 'edit' ? updatedRules[editingIndex]?.name : undefined;
         if (modalMode === 'add') {
             updatedRules.push(newRule);
         } else if (modalMode === 'edit') {
             updatedRules[editingIndex] = newRule;
         }
         await saveRulesToStorage(updatedRules);
+        // A rename from the modal is the same rename as the one on the card: the
+        // rule's sort order, expansion, notes and captures follow it to the new name.
+        if (oldName && oldName !== newRule.name) migrateRenamedRule(oldName, newRule.name, updatedRules);
         isModalOpen = false;
         editingIndex = -1;
         ruleToEdit = null;
@@ -509,6 +524,9 @@
         if (!deleted) return;
         initialRestoredRules.delete(deleted.name);
         await saveRulesToStorage(updatedRules);
+        // Its remembered URL order would otherwise stay in storage under a rule that
+        // no longer exists (and come back to a new rule given the same name).
+        removeSettings(`sortState_${deleted.name}`).catch(() => {});
         // The rule is gone, so the group it kept together stops being a group: its tabs
         // are released, exactly as the original does before saying goodbye to the rule.
         try {
@@ -518,7 +536,13 @@
                     .replace(/^\u200B+/, '')
                     .replace(/^\[\d+\/\d+\]\s*/, '')
                     .trim();
-            const groups = allGroups.filter((g) => stripMarkers(g.title) === deleted.name);
+            // The worker knows which group each rule made, whatever its title shows now
+            // (status markers, compact mode, a rename); the title is the fallback.
+            const groupInfo = await getGroupInfoMap();
+            const groups = allGroups.filter((g) => {
+                const info = groupInfo.get(g.id);
+                return (info?.type === 'rule' && info.key === deleted.name) || stripMarkers(g.title) === deleted.name;
+            });
             for (const group of groups) {
                 const tabs = await chrome.tabs.query({ groupId: group.id });
                 if (tabs.length) await chrome.tabs.ungroup(tabs.map((tab) => tab.id));
@@ -626,20 +650,44 @@
         groupTabs();
     }
 
-    /** Renaming a rule has to carry its per-rule state (sort, expansion) to the new key. */
-    function handleUpdateRuleName(detail) {
+    /**
+     * Renames a rule from its card.
+     *
+     * The name goes through the same checks as in the modal (length, no spaces, a
+     * duplicate ignoring case): this path used to check only an exact-case duplicate,
+     * and stored names the modal and the import then refused. An invalid name is
+     * reported and the card keeps the old one.
+     */
+    async function handleUpdateRuleName(detail) {
         const { index, newName } = detail;
         const updatedRules = [...$rulesStore];
         const rule = updatedRules[index];
         if (!rule || !newName || newName === rule.name) return;
-        if (updatedRules.some((r, i) => i !== index && r.name === newName)) {
-            showNotification('duplicateRuleName', true);
+        const check = validateRuleName(newName, updatedRules, index);
+        if (!check.valid) {
+            showNotification(check.message, true, check.params || []);
             return;
         }
         const oldName = rule.name;
         updatedRules[index] = { ...rule, name: newName };
-        saveRulesToStorage(updatedRules);
+        try {
+            await saveRulesToStorage(updatedRules);
+        } catch {
+            // Not stored: the list is back to the old name and the user has been told why.
+            return;
+        }
+        migrateRenamedRule(oldName, newName, updatedRules);
+        groupTabs();
+    }
 
+    /**
+     * Carries a renamed rule's per-rule state to the new name: the URL order, the
+     * expansion, and the notes and captures filed under the rule's group.
+     *
+     * Shared by the card and the modal, as the modal used to rename without it. Called
+     * only once the renamed rule is stored, so a failed save moves nothing.
+     */
+    function migrateRenamedRule(oldName, newName, rules) {
         const sortStates = new SvelteMap($sortStatesStore);
         if (sortStates.has(oldName)) {
             const val = sortStates.get(oldName);
@@ -659,6 +707,9 @@
                 // Ignore messaging errors
             }
         }
+        // The old key is left behind otherwise, one per rename, in an area (sync) that
+        // has a limit on how many keys it holds.
+        removeSettings(`sortState_${oldName}`).catch(() => {});
         const expanded = new SvelteMap($expandedStatesStore);
         if (expanded.has(oldName)) {
             expanded.set(newName, expanded.get(oldName));
@@ -669,7 +720,20 @@
             initialRestoredRules.delete(oldName);
             initialRestoredRules.add(newName);
         }
-        groupTabs();
+        // Notes and captures are filed under the group's key, which is the rule's name;
+        // the worker re-files them or they would show up as orphans.
+        try {
+            chrome.runtime
+                ?.sendMessage?.({
+                    action: 'renameRuleContext',
+                    oldName,
+                    newName,
+                    ruleNames: rules.map((r) => r.name),
+                })
+                ?.catch?.((error) => console.error('Error moving the notes of the renamed rule:', error));
+        } catch {
+            // Ignore messaging errors
+        }
     }
 
     /** Per-rule URL order, remembered per rule name exactly as the original did. */

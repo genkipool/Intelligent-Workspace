@@ -903,10 +903,12 @@ var HelpModal = class HelpModal {
             },
             (theme) => {
                 if (theme && theme.colors) {
-                    const cssVars = Object.entries(theme.colors)
-                        .map(([k, v]) => `--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`)
-                        .join(' ');
-                    content.style.cssText += cssVars;
+                    // One property per colour, and only real colours: concatenating
+                    // cssText let a theme value add declarations of its own.
+                    for (const [k, v] of Object.entries(theme.colors)) {
+                        if (typeof v !== 'string' || /[;{}<>\\]/.test(v) || !CSS.supports('color', v)) continue;
+                        content.style.setProperty(`--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`, v);
+                    }
                 }
             },
         );

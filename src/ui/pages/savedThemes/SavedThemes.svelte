@@ -337,10 +337,36 @@
         await initializeActiveTheme();
     }
 
+    /**
+     * Whether `theme` is the one in use. Sync and local can each hold a theme with the
+     * same name, so the name alone is not enough: the colours must match too, the same
+     * test the grid uses to mark the active card.
+     */
+    function isActiveTheme(theme) {
+        return (
+            !!activeTheme &&
+            activeTheme.name === theme.name &&
+            JSON.stringify(activeTheme.colors) === JSON.stringify(theme.colors)
+        );
+    }
+
+    /**
+     * Returns a predicate telling whether a schedule stored under a theme name belongs to
+     * the theme of that name in the area being edited. Schedules record their area; old
+     * ones without it are claimed only when the other area has no theme of that name, so
+     * changing a local theme never touches a same-named sync theme's schedules.
+     */
+    async function scheduleBelongsHere(themeName) {
+        const otherArea = currentStorageArea === 'sync' ? 'local' : 'sync';
+        const { savedThemes: otherThemes = [] } = await chrome.storage[otherArea].get('savedThemes');
+        const otherHasName = otherThemes.some((t) => t?.name === themeName);
+        return (sch) => sch?.storageArea === currentStorageArea || (!sch?.storageArea && !otherHasName);
+    }
+
     async function handleActivate(e) {
         const { theme } = e;
         // Clicking the theme already in use takes it off again.
-        if (activeTheme && activeTheme.name === theme.name) {
+        if (isActiveTheme(theme)) {
             await revertToPreviousTheme(theme.name);
             showNotification('themeDeselected', false, [theme.name]);
             if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -365,15 +391,28 @@
         const storage = chrome.storage[currentStorageArea];
         let { savedThemes: currentThemes = [] } = await storage.get('savedThemes');
         if (currentThemes[index]) {
+            const wasActive = isActiveTheme(currentThemes[index]);
             currentThemes[index].name = newName;
             await storage.set({ savedThemes: currentThemes });
 
+            // Only this area's schedules follow the new name; a same-named theme in the
+            // other area keeps its own.
             const { schedules: scheds = {} } = await chrome.storage.local.get('schedules');
-            if (scheds[oldName]) {
-                scheds[newName] = scheds[oldName];
-                delete scheds[oldName];
-                await chrome.storage.local.set({ schedules: scheds });
+            if (Array.isArray(scheds[oldName])) {
+                const belongs = await scheduleBelongsHere(oldName);
+                const moving = scheds[oldName].filter(belongs);
+                if (moving.length) {
+                    const staying = scheds[oldName].filter((sch) => !belongs(sch));
+                    scheds[newName] = [...(scheds[newName] || []), ...moving];
+                    if (staying.length) scheds[oldName] = staying;
+                    else delete scheds[oldName];
+                    await chrome.storage.local.set({ schedules: scheds });
+                    chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
+                }
             }
+            // The theme in use is stored as a copy; without this it kept the old name, so
+            // the card no longer showed as active and deselecting it misbehaved.
+            if (wasActive) await saveActiveTheme(currentThemes[index]);
             showNotification('themeRenamed', false, [oldName, newName]);
             fetchThemes();
         }
@@ -386,15 +425,22 @@
         currentThemes.splice(index, 1);
         await storage.set({ savedThemes: currentThemes });
 
+        // Only this area's schedules go with the theme: sync and local can each hold a
+        // theme of the same name, and deleting one must not unschedule the other.
         const { schedules: scheds = {} } = await chrome.storage.local.get('schedules');
-        if (scheds[theme.name]) {
-            delete scheds[theme.name];
-            await chrome.storage.local.set({ schedules: scheds });
-            chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
+        if (Array.isArray(scheds[theme.name])) {
+            const belongs = await scheduleBelongsHere(theme.name);
+            const remaining = scheds[theme.name].filter((sch) => !belongs(sch));
+            if (remaining.length !== scheds[theme.name].length) {
+                if (remaining.length) scheds[theme.name] = remaining;
+                else delete scheds[theme.name];
+                await chrome.storage.local.set({ schedules: scheds });
+                chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
+            }
         }
         // A theme that no longer exists cannot stay in use: the look goes back to
         // the one chosen before it, or to the default when there was none.
-        if (activeTheme && activeTheme.name === theme.name) {
+        if (isActiveTheme(theme)) {
             await revertToPreviousTheme(theme.name);
         }
 

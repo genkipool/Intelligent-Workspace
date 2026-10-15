@@ -857,8 +857,15 @@ export async function initCustomizeHints() {
                 blurOnEnter: type === 'trigger',
                 validate: (val) => {
                     if (type === 'trigger') {
-                        // It is an update (rename) if the trigger has changed
-                        return val && !HintCommon.isKeyInUse(val, 'snippet', li.dataset.trigger, { snippets });
+                        // It is an update (rename) if the trigger has changed. The same
+                        // conflict check as the add form: without it a snippet could be
+                        // renamed onto a built-in shortcut, a site command or the
+                        // preview/menu trigger keys and silently shadow (or be shadowed by) it.
+                        return (
+                            val &&
+                            !HintCommon.isKeyInUse(val, 'snippet', li.dataset.trigger, { snippets }) &&
+                            !getKeyConflictInfo(val, 'snippet', li.dataset.trigger, 'snippet')
+                        );
                     }
                     if (type === 'expansion') {
                         const varNames = Array.from(varsContainer.querySelectorAll('.var-name')).map((i) =>

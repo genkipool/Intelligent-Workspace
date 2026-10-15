@@ -1267,36 +1267,43 @@ chrome.windows.onRemoved.addListener(async (windowId) => {
         logMessage(`[windows.onRemoved] Window ${windowId} removal sync complete. windowsRemove reset to false.`);
     }
 });
+/** @param {Record<string, chrome.storage.StorageChange>} changes */
+function enforceSinglePinnedView(changes) {
+    if (changes.isPinned && changes.isPinned.newValue === true) {
+        chrome.storage.local.set({
+            isListGroupPinned: false,
+            isGeminiPinned: false,
+            isWebActivityPinned: false,
+        });
+    } else if (changes.isListGroupPinned && changes.isListGroupPinned.newValue === true) {
+        chrome.storage.local.set({
+            isPinned: false,
+            isGeminiPinned: false,
+            isWebActivityPinned: false,
+        });
+    } else if (changes.isGeminiPinned && changes.isGeminiPinned.newValue === true) {
+        chrome.storage.local.set({
+            isPinned: false,
+            isListGroupPinned: false,
+            isWebActivityPinned: false,
+        });
+    } else if (changes.isWebActivityPinned && changes.isWebActivityPinned.newValue === true) {
+        chrome.storage.local.set({
+            isPinned: false,
+            isListGroupPinned: false,
+            isGeminiPinned: false,
+        });
+    }
+}
+
 chrome.storage.onChanged.addListener(async (changes, area) => {
+    // Only one view can be pinned, so whichever was just pinned turns the rest off. It
+    // runs before the initialization guard: when this change is what woke the worker,
+    // it is the event the guard drops, and the catch-up grouping pass does not redo it.
+    if (area === 'local') enforceSinglePinnedView(changes);
     if (shouldIgnoreEventDuringInitialization('onChanged', area)) return;
     logMessage('chrome.storage.onChanged.addListener triggered.');
     if (area === 'local') {
-        // Only one view can be pinned, so whichever was just pinned turns the rest off.
-        if (changes.isPinned && changes.isPinned.newValue === true) {
-            chrome.storage.local.set({
-                isListGroupPinned: false,
-                isGeminiPinned: false,
-                isWebActivityPinned: false,
-            });
-        } else if (changes.isListGroupPinned && changes.isListGroupPinned.newValue === true) {
-            chrome.storage.local.set({
-                isPinned: false,
-                isGeminiPinned: false,
-                isWebActivityPinned: false,
-            });
-        } else if (changes.isGeminiPinned && changes.isGeminiPinned.newValue === true) {
-            chrome.storage.local.set({
-                isPinned: false,
-                isListGroupPinned: false,
-                isWebActivityPinned: false,
-            });
-        } else if (changes.isWebActivityPinned && changes.isWebActivityPinned.newValue === true) {
-            chrome.storage.local.set({
-                isPinned: false,
-                isListGroupPinned: false,
-                isGeminiPinned: false,
-            });
-        }
         if (changes.isPinned || changes.isListGroupPinned || changes.isGeminiPinned || changes.isWebActivityPinned) {
             logMessage('Pin state change detected, updating memory cache.');
             await updatePinState();
@@ -1466,6 +1473,10 @@ chrome.action.onClicked.addListener((tab) => {
         });
     }
 });
+// What `lastActivity` last looked like in session storage, so it is only written when it
+// changed. It is kept there because the map is otherwise memory only: a worker restart
+// emptied it, and a group with no entry was never collapsed again until touched.
+let lastActivitySaved = '';
 setInterval(async () => {
     const enableTimer = extensionSettings.enableCollapseTimer;
     if (enableTimer) {
@@ -1476,7 +1487,12 @@ setInterval(async () => {
             const groups = await chrome.tabGroups.query({});
             for (const group of groups) {
                 const lastActiveTime = lastActivity[group.id];
-                if (!lastActiveTime) continue;
+                if (!lastActiveTime) {
+                    // A group this worker has not seen used (it predates a restart) starts
+                    // its clock now, as a newly created group does.
+                    lastActivity[group.id] = now;
+                    continue;
+                }
                 const threshold = group.id === activeGroupId ? activeThreshold : inactiveThreshold;
                 if (threshold > 0 && now - lastActiveTime > threshold && !group.collapsed) {
                     logMessage(`[AutoCollapse] Collapsing group ${group.id} (${group.title}) due to inactivity.`);
@@ -1491,6 +1507,11 @@ setInterval(async () => {
             }
         } catch (error) {
             console.warn('[AutoCollapse] Error in auto-collapse interval:', error);
+        }
+        const snapshot = JSON.stringify(lastActivity);
+        if (snapshot !== lastActivitySaved) {
+            lastActivitySaved = snapshot;
+            chrome.storage.session.set({ lastActivity }).catch(() => {});
         }
     }
 }, 5 * 1000);

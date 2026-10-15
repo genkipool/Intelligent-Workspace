@@ -37,7 +37,7 @@ var HintEngine = class HintEngine {
             .split('')
             .filter((char) => !blockedKeys.has(char))
             .join('');
-        console.log('[HintEngine] hintChars updated:', this.hintChars);
+        itgDebug('[HintEngine] hintChars updated:', this.hintChars);
     }
     cleanup() {
         if (this.domObserver) {
@@ -610,7 +610,7 @@ var HintEngine = class HintEngine {
             this.clear();
             return true;
         }
-        const char = event.key.toLowerCase();
+        const char = itgCommandKey(event).toLowerCase();
         if (char === 'f' && this.currentHintKeys.length === 0) {
             event.preventDefault();
             event.stopPropagation();

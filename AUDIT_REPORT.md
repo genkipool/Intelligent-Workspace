@@ -8,6 +8,123 @@
 **Integrity Mode:** Strictly Read-Only on Project Source Code (`git status --porcelain` clean)  
 **Baseline Test Status:** 409 Unit Tests Passing across 29 Test Files | 0 Lint Errors | 0 Format Errors | Clean Vite Build  
 **Overall Finding Count:** 30 Verified Findings (5 Critical, 10 High, 11 Medium, 4 Low) — 0 False Positives  
+**Re-verified:** 2026-10-15 against `b3fbb573` — see section 0 for the current status of every finding, and 0.5 for a second, deeper audit.  
+
+---
+
+## 0. Re-verification Status — 2026-10-15 (read this first)
+
+> The report below (sections 1–7) is the original audit of 2026-09-13, kept unchanged as a historical record. It was written **before** the remediation commits. Every finding was re-checked on 2026-10-15 against `develop` at `b3fbb573` (code, `git log -S`/blame, Chrome API behaviour, node/jsdom tests and headless Chrome runs). This section is the current state.
+
+### 0.1 Summary
+
+| Result | Count | Findings |
+|---|---|---|
+| Already fixed by earlier commits | 16 | SEC-M1-10, SEC-M1-11, SEC-M1-12, SEC-M1-01, SEC-M1-07, DEF-01, DEF-02, DEF-03, DEF-05, DEF-06, DEF-07, DEF-08, DEF-09, FINDING-01, FINDING-03, FINDING-04 |
+| Real or only partly fixed, completed in this pass | 9 | SEC-M1-04, SEC-M1-05, SEC-M1-06, SEC-M1-13, DEF-04, DEF-10, FINDING-02, FINDING-05, FINDING-06 |
+| False positive | 2 | SEC-M1-08, SEC-M1-09 |
+| Real but by design or accepted risk, not changed | 3 | SEC-M1-02, SEC-M1-03, SEC-M1-14 |
+| **Total** | **30** | |
+| **New** issues found during the re-check, fixed | 2 | NEW-01 (locales not web-accessible), NEW-02 (regression introduced by the FINDING-05 fix) |
+
+Severity was overstated for several findings: the "Critical" IPC and storage scenarios assume a web page can message the extension, and FINDING-01 needed a file name the user picked themselves, under a CSP that blocks inline scripts.
+
+**Platform correction that applies to the whole report:** `manifest.json` has no `externally_connectable`, so an ordinary web page (including its DevTools console) cannot call this extension's `chrome.runtime.sendMessage`, `connect` or `chrome.storage`. The proofs of concept that say "run from example.com DevTools" do not work; the realistic attacker for the IPC findings is a compromised renderer running inside the extension's content-script world. Section 5 also states that the CSP has no `wasm-unsafe-eval`: it does (`manifest.json`, `extension_pages`), and it is needed by the WebAssembly OCR engine (Tesseract, `src/lib/tesseract-core.wasm.js`).
+
+### 0.2 Finding-by-finding status
+
+| ID | Status on 2026-10-15 | Evidence / what was done |
+|---|---|---|
+| SEC-M1-10 | **Fixed** (d089e63a, 78050eb6, ac4b2df4) | Default-deny listener in `messaging.js`: non-extension senders may only use `ALLOWED_CONTENT_SCRIPT_ACTIONS`; `getHistory`, `getBookmarks`, `deleteAllBookmarks`, `captureFullPage`, `getOmnibar*`, `searchGemini`, `openFileUrl` are not on it. Contract kept by `test/contentScriptMessageContract.test.mjs`. **This pass:** `createNoteFromSelection` no longer honours a `tabId` sent by a page, so a content script can only read its own tab's selection (`handlers/notes.js`). |
+| SEC-M1-11 | **Fixed** (d089e63a → 78050eb6) | `isExtensionPageSender` requires `sender.id`, a string `sender.url` under the extension origin, and checks `origin`. The audit's proposal to reject every `sender.tab` was **not** applied on purpose: the omnibar is an extension frame inside web tabs and that check broke it (fixed in 78050eb6). |
+| SEC-M1-12 | **Fixed** (d089e63a, ac4b2df4) | Only `popup-connection`/`sidepanel-connection` are handled and they require `isExtensionPageSender(port.sender)`; the omnibar frame's own port needs a 128-bit nonce. |
+| SEC-M1-14 | **Partial — accepted risk** | Keys are kept in `chrome.storage.session` (`TRUSTED_CONTEXTS`) and persisted in `storage.local` base64-obfuscated (`enc_`), which is not encryption. No content script reads them. Moving them out of `storage.local` (IndexedDB or WebCrypto) touches 8 files plus a migration that could lose keys; left as is. Exploiting it needs a compromised renderer. |
+| SEC-M1-02 | **By design** | All declared permissions are used; moving them to `optional_permissions` would add prompts and break features that run without a user gesture (omnibar history/bookmarks). `clipboardRead` was already removed (da37c2aa). |
+| SEC-M1-03 | **Mostly mitigated** (7ea7097f) | `use_dynamic_url: true` defeats the static-ID fingerprinting described. Some content-script `.js` entries are probably unnecessary; pruning them has no user benefit and some breakage risk, so not done. |
+| SEC-M1-01 | **Fixed** (d089e63a) | `commands` and `windows` removed from `permissions`. |
+| SEC-M1-04 | **Partial → improved in this pass** | Earlier commits record the activation before the guard and run a catch-up `groupTabs()` when an event was dropped. **This pass:** the "only one pinned view" rule now runs before the initialization guard (`events.js`, `enforceSinglePinnedView`), so the change that woke the worker is no longer lost. Remaining dropped work (prefix refresh, expand-on-activate) is covered by the catch-up pass or by Chrome itself. |
+| SEC-M1-05 | **Real → fixed in this pass** | The 5 s interval stays (it keeps exactly the current timing). `lastActivity` is now saved to `chrome.storage.session` when it changes and restored on start (`events.js`, `stateManager.js`), and a group the worker has never seen starts its clock instead of being skipped forever, as a new group already does. The audit's "timer killed on idle" is mostly wrong: the interval's API call keeps the worker alive. |
+| SEC-M1-06 | **Partial → fixed in this pass** | Time was always computed from timestamps (no drift), but in packed builds the end of a phase (sound, notification, next phase) could arrive up to 30 s late (the minimum is 30 s since Chrome 120, not 1 min). Added a one-shot `pomodoroEnd` alarm at the exact end, cleared/created with the tick, with serialized handling so a phase cannot complete twice (`pomodoro.js`, `pomodoro-handlers.js`; `test/pomodoroEndAlarm.test.mjs`). |
+| SEC-M1-07 | **Fixed** (6d2e66ad) | The periodic alarm is only created when `chrome.alarms.get` finds none. |
+| SEC-M1-08 | **False positive in practice** | `runtime.onSuspend` still exists in MV3; whether it fires is irrelevant here because the open segment is kept in `storage.session` and closed by the next event or the minute alarm. No change. |
+| SEC-M1-09 | **False positive** | `rebuildGroupInfoMap` and `syncWithExistingGroups` catch everything internally, so the timer callback cannot reject. |
+| SEC-M1-13 | **Partial → fixed in this pass** | `sync` stays the default on purpose (restored in 17a8508b) and the rules page already reported quota errors. **This pass:** the rules list is rolled back when a save fails instead of showing rules that were never stored (`rulesStore.js`), and "add URL to rule" now reports a failed write (`bookmarksService.js`). |
+| DEF-01 | **Fixed** (d089e63a) | No double `$t()` remains. |
+| DEF-02 | **Fixed** (d089e63a) | Named placeholders resolved first; checked over all placeholder messages in all 11 locales. |
+| DEF-03 | **Fixed** (d089e63a, 6d2e66ad) | A navigation during a pass queues exactly one more pass (E2E test). |
+| DEF-04 | **Fixed** (d089e63a) + leftover closed | Tab existence check, `executeWithRetries`, per-plan try/catch. **This pass:** when a drag outlasts the retries during a grouping pass, one more pass is scheduled 1 s later, so those tabs are not left loose until some unrelated event (`stateManager.js`). |
+| DEF-05 | **Fixed** (d089e63a) | `isLocalhost` strips IPv6 brackets. |
+| DEF-06 | **Fixed** (d089e63a) | Incognito tabs are never recorded nor synced; limits keep being enforced in incognito through DNR. |
+| DEF-07 | **Fixed** (d089e63a) | Same-name rules append instead of overwriting. |
+| DEF-08 | **Fixed** (d089e63a) | `tabs.onAttached` triggers a regroup. |
+| DEF-09 | **Fixed** (d089e63a) | UI and background merge the language over English; `scripts/check-release.mjs` also enforces identical key sets. |
+| DEF-10 | **Partial → fixed in this pass** | Title matching still failed with status markers or compact titles. Rule deletion now finds the rule's groups through the worker's `groupInfoMap` (type `rule`, same name), with the title match as fallback (`Rules.svelte`). |
+| FINDING-01 | **Fixed** (d089e63a) | File names escaped and the HTML goes through `sanitizeNoteHtml`; verified with jsdom payloads. |
+| FINDING-02 | **Partial → fixed in this pass** | `dompurify` was removed (672f45f5). The omnibar sanitizer let `java\tscript:`, control-character-prefixed and `vbscript:` URLs through and kept `base`/`link`/`meta`/`svg`/`math`. It now normalises URLs before checking and drops those tags, which can never appear in a note anyway; ordinary note content renders exactly as before (verified with jsdom) (`hint/utils.js`). |
+| FINDING-03 | **Fixed** (d089e63a) | Listeners removed in `onDestroy`; the page component never remounts, so it was theoretical. |
+| FINDING-04 | **Fixed** (d089e63a) | Same as FINDING-03 for the pomodoro dashboard. |
+| FINDING-05 | **Fixed, but see NEW-02** | `settingsStore.js` still ignored the area. **This pass:** a `customRules` change in either area now re-reads the active area, and `hintsEnabled` is only taken from `sync` where it lives. |
+| FINDING-06 | **Fixed** (d089e63a, b3fbb573) | SettingsSection callbacks read at call time. **This pass:** the RuleCard colour dot uses Svelte's reactive `MediaQuery`, so it follows a light/dark system switch while the page is open. |
+
+### 0.3 New issues found during the re-check (fixed in this pass)
+
+- **NEW-01 — Content scripts could not load 9 of the 11 languages (introduced in v1.0.2).** `web_accessible_resources` listed only `_locales/en` and `_locales/es`, so keyboard hints and the video PiP fell back to English for de, fr, it, pt_BR, ru, hi, ja, zh_CN and ko. Verified from inside the content-script world in Chrome (fetch blocked before, 200 after). Fixed with `_locales/*/messages.json`, and `scripts/check-release.mjs` now fails a release if a supported language is not web-accessible.
+- **NEW-02 — Regression introduced by the FINDING-05 fix (d089e63a).** The rules page ignored every change from the other storage area, but `ruleStorageArea` and `discardingTimeMinutes` always live in `local`. With rules in `sync`, switching the storage to `local` left the page showing the sync rules, and discard-time changes did not reach its popups. Those two keys are now handled before the area guard (`Rules.svelte`). Verified in Chrome: the old build kept showing the sync rule; the new one switches both ways.
+
+### 0.4 Verification of this pass
+
+ESLint 0 problems, Prettier clean, `check-release` passes, 585/585 tests (3 new), Vite build with 0 Svelte warnings, no JavaScript errors on any extension page, interaction checks identical to the previous build, and the two Chrome reproductions above.
+
+### 0.5 Second, deeper audit — 2026-10-15
+
+Five independent reviews (extension-page injection, content scripts, service worker, UI flows, grouping/i18n/data). A finding was only accepted with a reproduction: the real code run in a node `vm`/jsdom harness, or the built extension driven in headless Chrome against a local hostile page, compared with a control run without the extension or with the previous build. Each fix was re-checked with the same reproduction.
+
+**Fixed (all reproduced before, verified after):**
+
+| ID | Severity | Area | Problem | Fix |
+|---|---|---|---|---|
+| D-01 | High | Content scripts | After an Alt keyup lost to another window (Alt+Tab, Alt+D…), every key typed on the page was swallowed, inputs included. | The stale flag is reset whenever a key arrives without `altKey` (`hint/main.js`). |
+| D-02 | High | Content scripts | Characters typed with Option on macOS (`@ [ ] { } \| €`…) vanished from every field. | Composed characters in editable fields are let through (`hint/main.js`). |
+| D-03 | Medium | Content scripts / privacy | Every keystroke, password fields included, and pasted text were logged in clear to the page's console. | Content-script debug output goes through `itgDebug`, silent unless explicitly enabled (`hint/utils.js`, `snippets.js`, `main.js`, `engine.js`). |
+| D-04 | Low | Content scripts | Any third-party frame (an ad) could pause the media of the page embedding it (`pauseMedia`). | Only accepted from the parent frame, the only legitimate sender. |
+| D-05 | Medium | Extension pages | Reader view inserted a website's HTML into the side panel keeping `meta` refresh, `base`, forms and positioned styles: a page could redirect the panel or overlay a fake prompt. Script was already blocked by the CSP. | Those elements and `style`/`id`/`class`/`on*` attributes are removed; only http(s) links kept (`viewsService.js`). |
+| D-06 | Low–Medium | Extension pages | An imported hints configuration rendered snippet HTML unsanitised (redirect, fake form). | Snippet HTML sanitised on import and render; editor formatting kept (`hint_common.js`, `importExport.js`). |
+| D-07 | Low | Extension pages | Imported theme values were concatenated into `cssText` on every extension page (extra CSS, tracking requests). | Only real CSS colours accepted, set one property at a time (`theme.js`, `theme-init.js`, `themesService.js`, `hint/ui.js`, `importExport.js`). |
+| D-08 | Medium–High | Service worker / DNR | When the PiP float tab could not be identified, its framing and cookie rules were applied to every other tab: a page could open an extra blank popup and obtain cookie-bearing requests/framing of the floated site. | Nothing is installed unless the float tab is positively identified (`dnr.js`; tests updated). |
+| D-09 | Low–Medium | Service worker / DNR | The PiP cookie rule never matched `www.` hosts, so those floats looked logged out. | Host and its `www.` twin matched by an anchored regex. |
+| D-10 | High | Web activity | Visit recording ran outside the write queue: simultaneous navigations or a navigation during a time bank overwrote visits and banked time (and undercounted limits). | Visits queued with every other write (`web-activity.js`). |
+| D-11 | Medium | Web activity | A limit ignored time on the site's subdomains (m.youtube.com) although the block covered them. | Limits count the domain and its subdomains in every evaluation and in the dashboard badge. |
+| D-12 | High | Web activity | With a password lock, the "Add rule" dialog could delete or empty existing rules (and "All") without the password. | The password check runs unless the dialog was opened on an existing rule. |
+| D-13 | High/Medium | Web activity | Importing a file removed the lock and all limits without the password. | Import asks for the password; the worker keeps the stored lock when the file has none. |
+| D-14 | Medium | Rules | Renaming on the card skipped validation (case-only duplicates, spaces, >16 chars), producing exports that could not be re-imported; pasted spaces accepted in the modal. | Same validation everywhere (`ruleValidation.js`, `Rules.svelte`, `RuleCard.svelte`). |
+| D-15 | Medium–High | Rules | Renaming a rule detached its group's notes and screenshots. | Their context keys are re-keyed on rename (`renameRuleContext`, extension pages only). |
+| D-16 | Low–Medium | Rules | Renaming in the modal lost the URL sort state; old `sortState_*` keys were never removed. | State migrated on both rename paths, old keys removed (also on delete). |
+| D-17 | Medium | Rules | A save over the sync quota closed the modal, lost the edit, showed a generic message and threw an uncaught error (the quota message check never matched Chrome's text). | Quota detected by `/quota_?bytes/i`, the modal stays open on failure, errors are `Error`s. |
+| D-18 | Medium | Themes | Themes identified by name only across sync/local: deleting a local theme removed the active sync theme of the same name and its schedule; renaming the active theme left it stale. | Active theme matched by name and colours; schedules scoped to their area. |
+| D-19 | Low–Medium | Pomodoro | The same project name in two folders was counted and renamed as one. | Projects keyed by folder and name. |
+| D-20 | Low | Pomodoro / i18n | Wrong Russian plural ("2 сеансов"). | Proper plural keys in all 11 locales. |
+| D-21 | Low | Snippets | Renaming a trigger in place skipped the conflict checks (e.g. to `$$`). | Same conflict check as the add form. |
+| D-22 | Low | About | The page overflowed sideways at 360 px. | `min-width` 380 → 360 px. |
+| D-23 | Medium | Grouping | `www.<public suffix>` sites (www.gov.uk, www.gob.es…) were all named "Www" and merged. | Named after the whole suffix ("Gov.uk"); other names unchanged (checked on 46 URLs). |
+| D-24 | Low–Medium | Grouping | Country Google searches (google.es…) joined the "Google" group, unlike google.com searches. | Regional search hosts recognised. |
+| D-25 | Low | Grouping / rules | Trailing-dot hosts named after the TLD and never matching rules; a rule with an explicit default port never matched; IDN groups named in punycode. | Trailing dot stripped, effective ports compared, IDN names decoded for display. |
+| D-26 | Low–Medium | Settings | `linkPreviewEnabled` read from different storage areas (first click could do nothing); `enablePrefixes` defaulted on in the UI and off in the worker. | One source each (sync; default off). |
+| D-27 | Low | Link preview | Concurrent blacklist edits lost entries; a quota error left the caller without a reply. | Serialised, errors answered. |
+| D-28 | Probable | Install | `setupDefaultSettings` wrote empty rules and defaults to sync on install, which with Chrome Sync could overwrite rules of other devices (not reproducible without two synced profiles). | Only missing keys are written; a genuine fresh install is unchanged. |
+| D-29 | Low | i18n | Three omnibar messages untranslated in Spanish; the agent's "create theme" message dropped the theme name in 10 languages. | Translated / `$1` added. |
+| D-30 | Medium | Keyboard | On a non-Latin keyboard layout (Russian, Greek, Hebrew, Arabic, Hindi…) `f` and every one-letter command matched `event.key`, which is `а`, `φ`… there: hints never opened and no label could be typed (reproduced with Chrome key events of a Russian layout). | `itgCommandKey()` reads a letter key that writes a non-Latin character by its physical position; Latin layouts and typing in fields are unchanged. Test `commandKeyLayout`. |
+| D-31 | Owner-approved | Keyboard | Escape inside a page's field, or with text selected, was taken in the capture phase and never reached the page (autocompletes, comment edits, dialogs in Slack, GitHub, Gmail…). | The page hears Escape first; the field is left or the selection cleared afterwards only if the page did not use the key (cancelled it or stopped it). |
+| D-32 | Owner-approved | Keyboard | The group-navigation Alt sequence took every Alt+letter, so sites' Alt shortcuts and accesskeys never worked. | Only an Alt+letter that can still match a group title of the window is taken (same matching as the jump); titles are refreshed on each Alt press. Test `altSequencePassThrough`. |
+| D-33 | Owner-approved | Web activity | "All" in the rule dialog overwrote every rule without confirmation when no password was set. | A confirmation states how many sites are affected and how many existing rules are replaced; cancelling leaves the dialog open and nothing changed. |
+
+**Not changed — they change how the extension behaves, so they are the owner's decision:**
+
+- **One-letter hint keys** (k, j, f…) swallow sites' own shortcuts (YouTube, GitHub, Gmail) while hints are on; there is no per-site exclusion list.
+- **Subdomain grouping** keys groups by the first label only, so mail.google.com and mail.yahoo.com share a group.
+- **Hosting platforms** (alice.github.io, bob.github.io, *.blogspot.com…) are grouped as one site.
+- **Framed side panel:** a website framed in it can navigate the panel itself with one click (`allow-top-navigation-by-user-activation`).
+
+**Verification:** ESLint clean, `check-release` passes, 647/647 tests (12 new test files), build with 0 warnings, no JavaScript errors on any extension page in English or Russian, the earlier interaction suite identical, and every reproduction above re-run against the new build.
 
 ---
 

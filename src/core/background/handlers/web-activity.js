@@ -136,11 +136,14 @@ async function waGetOpenSegment() {
     return segment || null;
 }
 
-/** Seconds spent on a site today, which is what every limit is measured against. */
+/**
+ * Seconds spent on a site today, subdomains included, which is what every limit is
+ * measured against — the block rule covers the subdomains too.
+ */
 async function waUsedToday(domain, now = Date.now()) {
     if (!domain) return 0;
     const day = await waGetDay(ITG_WEB_ACTIVITY.dayKey(now));
-    return day.domains?.[domain]?.t || 0;
+    return ITG_WEB_ACTIVITY.secondsUnder(domain, day.domains);
 }
 
 /**
@@ -172,13 +175,17 @@ async function waWeekTotals(now = Date.now()) {
     return totals;
 }
 
-/** Seconds spent on a site since Monday, which is what a weekly allowance is measured against. */
+/**
+ * Seconds spent on a site since Monday, subdomains included, which is what a weekly
+ * allowance is measured against.
+ */
 async function waUsedThisWeek(domain, now = Date.now()) {
     if (!domain) return 0;
     const keys = ITG_WEB_ACTIVITY.weekDayKeys(now);
     const stored = await chrome.storage.local.get(keys.map((day) => ITG_WEB_ACTIVITY.dayStorageKey(day)));
     return keys.reduce(
-        (total, day) => total + (stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains?.[domain]?.t || 0),
+        (total, day) =>
+            total + ITG_WEB_ACTIVITY.secondsUnder(domain, stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains),
         0,
     );
 }
@@ -391,10 +398,9 @@ async function waSyncNow({ idleSince = null } = {}) {
     const open = await waGetOpenSegment();
     const next = await waResolveActiveContext(settings);
 
-    let usedToday = null;
     if (open) {
         const closedAt = idleSince && idleSince > open.startedAt ? idleSince : now;
-        usedToday = await waAddTime(open.domain, open.startedAt, closedAt, await waPomodoroPhaseField());
+        await waAddTime(open.domain, open.startedAt, closedAt, await waPomodoroPhaseField());
     }
 
     if (next) {
@@ -410,8 +416,15 @@ async function waSyncNow({ idleSince = null } = {}) {
 
     const focus = next?.domain || open?.domain;
     if (focus) {
-        if (usedToday === null || focus !== open?.domain) usedToday = await waUsedToday(focus, now);
-        await waEnforce(focus, usedToday, settings, now);
+        // Every limit whose reach includes the site in front, not only one keyed by its
+        // exact hostname: a limit on `youtube.com` has to warn and block while the user
+        // sits on `m.youtube.com`. The total `waAddTime` returns is the exact hostname's
+        // alone, so the figure a limit is judged on is read back with its subdomains.
+        const limits = await waGetLimits();
+        for (const limited of Object.keys(limits)) {
+            if (!ITG_WEB_ACTIVITY.limitCovers(limited, focus)) continue;
+            await waEnforce(limited, await waUsedToday(limited, now), settings, now);
+        }
     }
     await waRebuildBlockRules();
     return focus;
@@ -435,9 +448,9 @@ async function waBlockedDomains(now = new Date()) {
                 ITG_WEB_ACTIVITY.evaluate(
                     domain,
                     limits,
-                    today.domains?.[domain]?.t || 0,
+                    ITG_WEB_ACTIVITY.secondsUnder(domain, today.domains),
                     now,
-                    week ? week[domain] || 0 : null,
+                    week ? ITG_WEB_ACTIVITY.secondsUnder(domain, week) : null,
                 ).blocked,
         )
         .sort();
@@ -1046,9 +1059,14 @@ function handleWebActivityImport(message, sendResponse) {
             }
             if (payload.limits) writes[ITG_WEB_ACTIVITY.KEYS.LIMITS] = payload.limits;
             if (payload.settings) {
+                const current = await waGetSettings();
                 writes[ITG_WEB_ACTIVITY.KEYS.SETTINGS] = {
                     ...ITG_WEB_ACTIVITY.DEFAULT_SETTINGS,
                     ...payload.settings,
+                    // A file with no password of its own — an export from before the
+                    // lock was set, or anyone else's — would otherwise reset it to the
+                    // default of none, and importing would be a way round the lock.
+                    blockPassword: payload.settings.blockPassword || current.blockPassword || null,
                 };
             }
             await chrome.storage.local.set(writes);
@@ -1079,7 +1097,11 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         const settings = await waGetSettings();
         const domain = ITG_WEB_ACTIVITY.domainOf(changeInfo.url);
         if (settings.enabled && domain && !settings.ignoredDomains.includes(domain)) {
-            await waRecordVisit(domain, { d: domain, u: changeInfo.url, t: tab?.title || '', at: Date.now() });
+            // In the same queue as every other write to the day record: two navigations at
+            // once (a restored session) or one landing while a tab switch banks time
+            // used to overwrite each other.
+            const visit = { d: domain, u: changeInfo.url, t: tab?.title || '', at: Date.now() };
+            await waSerial(() => waRecordVisit(domain, visit));
         }
     }
     if (changeInfo.url || changeInfo.audible !== undefined) await waSyncSoon();

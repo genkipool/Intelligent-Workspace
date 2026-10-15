@@ -115,7 +115,9 @@ function selectionToNoteHtml(text) {
  */
 async function handleCreateNoteFromSelection(message, sender, sendResponse) {
     try {
-        const tabId = message.tabId ?? sender?.tab?.id;
+        // A message from a page is about that page: only the worker's own callers (the
+        // context menu passes no sender) may name another tab.
+        const tabId = sender?.tab ? sender.tab.id : message.tabId;
         const tab = tabId ? await chrome.tabs.get(tabId) : await resolveTabForScreenshot(sender);
         if (!tab?.id) throw new Error('No tab to take the note from');
 
@@ -184,4 +186,98 @@ function notifyNote(key, params = []) {
         title: getI18nMsg('extName'),
         message: getI18nMsg(key, params),
     });
+}
+
+// --- Renaming a rule ---
+//
+// A note or capture taken in a rule's group is filed under the rule's name
+// (`g_<name>`, or `s_<name>_<domain>` for one domain inside the group; see
+// getContentContextKey). Renaming the rule changes the group's key, so without this the
+// records stayed filed under a key no group has any more and turned up as orphans.
+
+/**
+ * The key a record filed under rule `oldName` gets once the rule is `newName`, or null
+ * when the record does not belong to that rule.
+ *
+ * `otherKeys` are the other group keys known (rule names, the new name included). They
+ * settle the one ambiguous case: `s_Doc_x_example.com` is a domain of rule "Doc_x", not
+ * of rule "Doc", and must be left alone when "Doc" is renamed. That is also what makes
+ * running it twice harmless. A prefix match alone is never enough: rule "Doc" must not
+ * take `g_Docs`.
+ *
+ * @param {string} contextKey
+ * @param {string} oldName
+ * @param {string} newName
+ * @param {Iterable<string>} otherKeys
+ * @returns {string|null}
+ */
+function rekeyRuleContextKey(contextKey, oldName, newName, otherKeys) {
+    if (typeof contextKey !== 'string') return null;
+    if (contextKey === `g_${oldName}`) return `g_${newName}`;
+    const prefix = `s_${oldName}_`;
+    if (!contextKey.startsWith(prefix) || contextKey.length === prefix.length) return null;
+    for (const key of otherKeys) {
+        if (key !== oldName && key.startsWith(`${oldName}_`) && contextKey.startsWith(`s_${key}_`)) return null;
+    }
+    return `s_${newName}_${contextKey.slice(prefix.length)}`;
+}
+
+/**
+ * Rewrites, in one store, the context key of every record filed under `oldName`.
+ * @returns {Promise<number>} How many records were moved.
+ */
+async function rekeyRuleContextInStore(storeName, oldName, newName, otherKeys) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], 'readwrite');
+        const request = transaction.objectStore(storeName).openCursor();
+        let moved = 0;
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (!cursor) return;
+            const record = cursor.value;
+            const nextKey = record ? rekeyRuleContextKey(record.contextKey, oldName, newName, otherKeys) : null;
+            if (nextKey) {
+                cursor.update({ ...record, contextKey: nextKey });
+                moved++;
+            }
+            cursor.continue();
+        };
+        transaction.oncomplete = () => resolve(moved);
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
+/**
+ * Moves the notes and captures of a renamed rule to its new name.
+ *
+ * Sent by the rules page once the renamed rule is stored. Extension pages only: it
+ * rewrites records of every group.
+ *
+ * @param {{oldName: string, newName: string, ruleNames?: string[]}} message `ruleNames`
+ *   are the rule names after the rename.
+ */
+async function handleRenameRuleContext(message, sender, sendResponse) {
+    try {
+        const { oldName, newName } = message || {};
+        if (typeof oldName !== 'string' || typeof newName !== 'string' || !oldName || !newName) {
+            sendResponse({ success: false, error: 'oldName and newName are required' });
+            return;
+        }
+        if (oldName === newName) {
+            sendResponse({ success: true, notes: 0, screenshots: 0 });
+            return;
+        }
+        const otherKeys = new Set(Array.isArray(message.ruleNames) ? message.ruleNames.map(String) : []);
+        otherKeys.add(newName);
+        for (const info of groupInfoMap.values()) if (info?.key) otherKeys.add(String(info.key));
+
+        const notes = await rekeyRuleContextInStore(NOTES_STORE_NAME, oldName, newName, otherKeys);
+        const screenshots = await rekeyScreenshotsForRule(oldName, newName, otherKeys);
+        sendResponse({ success: true, notes, screenshots });
+    } catch (error) {
+        console.error('Error moving the notes and captures of a renamed rule:', error);
+        sendResponse({ success: false, error: error?.message || String(error) });
+    }
 }

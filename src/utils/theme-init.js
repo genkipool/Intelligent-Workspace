@@ -10,10 +10,12 @@
         if (colors) {
             try {
                 const parsed = JSON.parse(colors);
-                const vars = Object.entries(parsed).map(
-                    ([k, v]) => `--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v}`,
-                );
-                root.style.cssText = vars.join(';');
+                // Same check as theme.js (this runs before any module can be imported): a
+                // mirror written by an older version may still hold an unvalidated value.
+                for (const [k, v] of Object.entries(parsed)) {
+                    if (typeof v !== 'string' || /[;{}<>\\]/.test(v) || !CSS.supports('color', v)) continue;
+                    root.style.setProperty(`--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`, v);
+                }
             } catch {}
         }
     }

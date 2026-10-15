@@ -402,11 +402,19 @@ const SEARCH_ENGINES_SET = new Set([
     'search.brave.com',
 ]);
 
+/*
+ * The same engines under their country domains. Only google.com was in the set, so a
+ * search on google.es or google.com.ar was grouped into a "Google" group while the very
+ * same search on google.com was left alone. The query condition below is unchanged.
+ */
+const REGIONAL_SEARCH_HOST_RE =
+    /^(?:www\.)?google\.(?:[a-z]{2}|com?\.[a-z]{2})$|^(?:[a-z]{2}\.)?search\.yahoo\.(?:com|co\.jp)$|^cn\.bing\.com$/;
+
 function isSearchUrl(url) {
     try {
         const parsedUrl = new URL(url);
         const hostname = parsedUrl.hostname.toLowerCase();
-        if (!SEARCH_ENGINES_SET.has(hostname)) return false;
+        if (!SEARCH_ENGINES_SET.has(hostname) && !REGIONAL_SEARCH_HOST_RE.test(hostname)) return false;
 
         const searchParams = parsedUrl.searchParams;
         return (
@@ -2154,7 +2162,9 @@ async function toggleHintsCommand() {
 }
 
 async function toggleLinkPreviewOption(explicitState) {
-    const res = await chrome.storage.local.get(['linkPreviewEnabled']);
+    // Sync is the copy the content scripts' preview obeys, so the toggle flips that
+    // state; reading local could invert a value the pages never had.
+    const res = await chrome.storage.sync.get(['linkPreviewEnabled']);
     const currentState = res.linkPreviewEnabled !== false; // default true
     const newState = explicitState !== undefined ? Boolean(explicitState) : !currentState;
 
@@ -2273,91 +2283,114 @@ async function handleSplitScreenClosure(state, tabIdToClose = null) {
     }
 }
 
+/*
+ * ONE CHANGE TO THE LINK-PREVIEW BLACKLIST AT A TIME.
+ *
+ * Add, remove and edit each read the whole list from `sync`, change it and write it back.
+ * Two of them in flight together (blacklisting two links in quick succession, or from
+ * two tabs) both read the same list and the second write drops the first one's domain.
+ * Chaining them on one promise makes each start from the list the previous one wrote.
+ * A failed change (e.g. the sync quota) still rejects for its own caller, but must not
+ * jam the chain for the ones after it.
+ */
+let linkPreviewBlacklistChain = Promise.resolve();
+function withLinkPreviewBlacklistLock(change) {
+    const run = linkPreviewBlacklistChain.then(change);
+    linkPreviewBlacklistChain = run.catch(() => {});
+    return run;
+}
+
 async function addLinkPreviewBlacklistDomain(domain) {
-    if (!domain || typeof domain !== 'string') return;
-    const cleanDomain = domain.trim().toLowerCase();
-    if (!cleanDomain) return;
+    return withLinkPreviewBlacklistLock(async () => {
+        if (!domain || typeof domain !== 'string') return;
+        const cleanDomain = domain.trim().toLowerCase();
+        if (!cleanDomain) return;
 
-    const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
-    const blacklist = res.linkPreviewBlacklist || [];
-    if (!blacklist.includes(cleanDomain)) {
-        blacklist.push(cleanDomain);
-        await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
+        const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
+        const blacklist = res.linkPreviewBlacklist || [];
+        if (!blacklist.includes(cleanDomain)) {
+            blacklist.push(cleanDomain);
+            await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
 
-        const msgStr = getI18nMsg(
-            'domainBlacklistedNotify',
-            [cleanDomain],
-            `Dominio añadido a la lista negra: ${cleanDomain}`,
-        );
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/assets/icons/icon128.png',
-            title: getI18nMsg('extName'),
-            message: msgStr,
-        });
+            const msgStr = getI18nMsg(
+                'domainBlacklistedNotify',
+                [cleanDomain],
+                `Dominio añadido a la lista negra: ${cleanDomain}`,
+            );
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: '/assets/icons/icon128.png',
+                title: getI18nMsg('extName'),
+                message: msgStr,
+            });
 
-        const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
-        chrome.runtime.sendMessage(msg);
-        const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
-            chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
+            chrome.runtime.sendMessage(msg);
+            const tabs = await chrome.tabs.query({});
+            for (const tab of tabs) {
+                chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            }
         }
-    }
+    });
 }
 
 async function removeLinkPreviewBlacklistDomain(domain) {
-    if (!domain || typeof domain !== 'string') return;
-    const cleanDomain = domain.trim().toLowerCase();
-    if (!cleanDomain) return;
+    return withLinkPreviewBlacklistLock(async () => {
+        if (!domain || typeof domain !== 'string') return;
+        const cleanDomain = domain.trim().toLowerCase();
+        if (!cleanDomain) return;
 
-    const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
-    let blacklist = res.linkPreviewBlacklist || [];
-    if (blacklist.includes(cleanDomain)) {
-        blacklist = blacklist.filter((d) => d !== cleanDomain);
-        await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
+        const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
+        let blacklist = res.linkPreviewBlacklist || [];
+        if (blacklist.includes(cleanDomain)) {
+            blacklist = blacklist.filter((d) => d !== cleanDomain);
+            await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
 
-        const msgStr = getI18nMsg(
-            'domainRemovedNotify',
-            [cleanDomain],
-            `Dominio eliminado de la lista negra: ${cleanDomain}`,
-        );
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: '/assets/icons/icon128.png',
-            title: getI18nMsg('extName'),
-            message: msgStr,
-        });
+            const msgStr = getI18nMsg(
+                'domainRemovedNotify',
+                [cleanDomain],
+                `Dominio eliminado de la lista negra: ${cleanDomain}`,
+            );
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: '/assets/icons/icon128.png',
+                title: getI18nMsg('extName'),
+                message: msgStr,
+            });
 
-        const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
-        chrome.runtime.sendMessage(msg);
-        const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
-            chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
+            chrome.runtime.sendMessage(msg);
+            const tabs = await chrome.tabs.query({});
+            for (const tab of tabs) {
+                chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            }
         }
-    }
+    });
 }
 
 async function editLinkPreviewBlacklistDomain(oldDomain, newDomain) {
-    if (!oldDomain || typeof oldDomain !== 'string' || !newDomain || typeof newDomain !== 'string') return;
-    const cleanOld = oldDomain.trim().toLowerCase();
-    const cleanNew = newDomain.trim().toLowerCase();
-    if (!cleanOld || !cleanNew || cleanOld === cleanNew) return;
+    return withLinkPreviewBlacklistLock(async () => {
+        if (!oldDomain || typeof oldDomain !== 'string' || !newDomain || typeof newDomain !== 'string') return;
+        const cleanOld = oldDomain.trim().toLowerCase();
+        const cleanNew = newDomain.trim().toLowerCase();
+        if (!cleanOld || !cleanNew || cleanOld === cleanNew) return;
 
-    const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
-    let blacklist = res.linkPreviewBlacklist || [];
+        const res = await chrome.storage.sync.get(['linkPreviewBlacklist']);
+        let blacklist = res.linkPreviewBlacklist || [];
 
-    if (blacklist.includes(cleanOld)) {
-        blacklist = blacklist.map((d) => (d === cleanOld ? cleanNew : d));
-        blacklist = [...new Set(blacklist)]; // Remove duplicates
-        await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
+        if (blacklist.includes(cleanOld)) {
+            blacklist = blacklist.map((d) => (d === cleanOld ? cleanNew : d));
+            blacklist = [...new Set(blacklist)]; // Remove duplicates
+            await chrome.storage.sync.set({ linkPreviewBlacklist: blacklist });
 
-        const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
-        chrome.runtime.sendMessage(msg);
-        const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
-            chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            const msg = { action: 'linkPreviewBlacklistUpdated', blacklist };
+            chrome.runtime.sendMessage(msg);
+            const tabs = await chrome.tabs.query({});
+            for (const tab of tabs) {
+                chrome.tabs.sendMessage(tab.id, msg).catch(() => {});
+            }
         }
-    }
+    });
 }
 
 async function handleSetLinkPreviewTriggerKey(triggerKey, sendResponse) {

@@ -77,7 +77,8 @@
         clusterConfig = mergeClusterConfig(data.clusterConfig || {});
         isSortGroupsEnabled = data.sortGroupsAlphabetically ?? true;
         miscSortOption = data.miscGroupSortOption || 'start';
-        isPrefixesEnabled = data.enablePrefixes ?? true;
+        // Unset means off, as the background reads it (`?? false`) and install writes it.
+        isPrefixesEnabled = data.enablePrefixes ?? false;
         currentUserPrefixes = { ...currentUserPrefixes, ...(data.userPrefixes || {}) };
         isCollapseTimerEnabled = data.enableCollapseTimer ?? false;
         timerInactiveTime = Math.min(1440, Math.max(0, data.inactiveCollapseTime ?? 1));

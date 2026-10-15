@@ -39,11 +39,12 @@ let isListening = false;
 function startStorageListener() {
     if (isListening || !chrome?.storage?.onChanged) return;
     isListening = true;
-    chrome.storage.onChanged.addListener((changes) => {
-        if (changes.customRules) applyRules(changes.customRules.newValue || []);
-        // Switching the storage area swaps the whole rule set underneath us.
-        if (changes.ruleStorageArea) refreshAllRulesActive();
-        if (changes[HINTS_KEY]) hintsEnabled.set(changes[HINTS_KEY].newValue !== false);
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        // `customRules` exists in both areas and only one of them is the active set, so
+        // the change is not taken at face value: the active area is read again.
+        // Switching the storage area swaps the whole rule set underneath us too.
+        if (changes.customRules || changes.ruleStorageArea) refreshAllRulesActive();
+        if (changes[HINTS_KEY] && areaName === 'sync') hintsEnabled.set(changes[HINTS_KEY].newValue !== false);
     });
 }
 

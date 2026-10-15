@@ -21,6 +21,46 @@ function applyTheme(theme) {
     }
 }
 
+/**
+ * Whether a theme value is a plain CSS colour.
+ *
+ * Every theme key is a colour, and themes arrive from imported files, sync storage and
+ * the agent, so a value is untrusted text. Without this check a value such as
+ * `#0af; background-image:url(https://…)` would be spliced into the root element's
+ * inline style and add arbitrary declarations (tracking requests, hidden content) to
+ * every extension page that applies the theme.
+ *
+ * @param {unknown} val
+ * @returns {boolean}
+ */
+function isThemeColor(val) {
+    if (typeof val !== 'string' || !val.trim() || val.length > 200) return false;
+    // A colour never needs these; refusing them keeps the value a single declaration
+    // even where CSS.supports is unavailable (tests, old engines).
+    if (/[;{}<>\\]/.test(val)) return false;
+    if (typeof CSS !== 'undefined' && typeof CSS.supports === 'function') {
+        return CSS.supports('color', val);
+    }
+    return true;
+}
+
+/**
+ * Returns a copy of a theme's colours keeping only well-formed keys whose value is a
+ * CSS colour (see isThemeColor); anything else is dropped so the page falls back to the
+ * stylesheet's own value for that variable.
+ *
+ * @param {Record<string, unknown>} colors
+ * @returns {Record<string, string>}
+ */
+function sanitizeThemeColors(colors) {
+    const clean = {};
+    if (!colors || typeof colors !== 'object') return clean;
+    for (const [key, val] of Object.entries(colors)) {
+        if (/^[A-Za-z][A-Za-z0-9]*$/.test(key) && isThemeColor(val)) clean[key] = val;
+    }
+    return clean;
+}
+
 // Function to apply a custom theme using CSS variables
 function applyCustomTheme(customThemeColors) {
     const root = document.documentElement;
@@ -29,10 +69,13 @@ function applyCustomTheme(customThemeColors) {
     // Set the data-theme to 'custom' to ensure these styles take precedence.
     root.setAttribute('data-theme', 'custom');
 
-    const vars = Object.entries(customThemeColors).map(
-        ([key, val]) => `--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${val}`,
-    );
-    root.style.cssText = vars.join(';');
+    // Clear the previous theme's variables, then set each one through setProperty with a
+    // validated colour: building a cssText string would let a value carry extra
+    // declarations of its own.
+    root.style.cssText = '';
+    for (const [key, val] of Object.entries(sanitizeThemeColors(customThemeColors))) {
+        root.style.setProperty(`--${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`, val);
+    }
 }
 
 // Mirror theme to localStorage for synchronous access (prevents white flash)
@@ -43,7 +86,9 @@ function mirrorThemeToLocalStorage(theme) {
         } else if (theme && theme.name) {
             localStorage.setItem('theme-mirror', theme.name);
             if (theme.colors) {
-                localStorage.setItem('theme-custom-colors', JSON.stringify(theme.colors));
+                // theme-init.js applies the mirror before any module loads, so only the
+                // validated colours are mirrored for it.
+                localStorage.setItem('theme-custom-colors', JSON.stringify(sanitizeThemeColors(theme.colors)));
             } else {
                 localStorage.removeItem('theme-custom-colors');
             }
@@ -133,6 +178,8 @@ async function getActiveTheme() {
 
 // Export functions to use in other files
 export {
+    isThemeColor,
+    sanitizeThemeColors,
     applyTheme,
     applyMirroredTheme,
     applyCustomTheme,

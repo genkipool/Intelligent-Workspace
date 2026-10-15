@@ -725,3 +725,12 @@ function handleCaptureForColorPicker(sender, sendResponse) {
         .then((dataUrl) => sendResponse({ success: true, dataUrl }))
         .catch((error) => sendResponse({ success: false, message: String(error) }));
 }
+
+/**
+ * Moves the captures filed under a renamed rule to its new name; the notes handler
+ * does the same for notes (see handleRenameRuleContext and rekeyRuleContextKey there).
+ * @returns {Promise<number>} How many captures were moved.
+ */
+function rekeyScreenshotsForRule(oldName, newName, otherKeys) {
+    return rekeyRuleContextInStore(STORE_NAME, oldName, newName, otherKeys);
+}

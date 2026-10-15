@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "session"
   },
+  "dashboardSessionWord_one": {
+    "message": "session",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "sessions",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "sessions",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "sessions",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "cycles"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "Créer un thème personnalisé",
+    "message": "➕ Création du thème $1",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "Configuration appliquée à tous les sites web"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "La même règle sera appliquée à tous les sites web. Sites concernés : $1. Règles existantes qui seront remplacées : $2. Continuer ?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "Tout supprimer"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "Toutes les règles seront supprimées. Sites avec une règle : $1. Continuer ?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "Toutes les règles ont été supprimées"
   },
   "webActivityRemoveLimit": {
     "message": "Supprimer ce quota"

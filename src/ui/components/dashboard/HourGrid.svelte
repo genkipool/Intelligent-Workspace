@@ -1,4 +1,5 @@
 <script>
+    import { activeLocale, pluralKey } from '../../../utils/i18n.js';
     /**
      * Twenty-four bars, one per hour of the day.
      *
@@ -14,7 +15,8 @@
         i18n = (key, params) => key,
         countLabel = (count) =>
             tr('dashboardHourSessions', [String(count)]) ||
-            `${count} ${tr(count === 1 ? 'dashboardSession' : 'dashboardSessions')}`,
+            // Plural forms by the language's rules (Russian has three), not one-or-many.
+            `${count} ${tr(pluralKey('dashboardSessionWord', count, activeLocale(), null))}`,
     } = $props();
 
     function tr(key, ...params) {

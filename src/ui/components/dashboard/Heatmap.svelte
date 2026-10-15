@@ -1,5 +1,5 @@
 <script>
-    import { activeLocale } from '../../../utils/i18n.js';
+    import { activeLocale, pluralKey } from '../../../utils/i18n.js';
     /**
      * `countLabel` is what the tooltip says about `c`, because what a cell counts
      * differs by dashboard — pomodoro sessions on one, nothing worth naming on
@@ -14,7 +14,8 @@
         fmtDur = () => '',
         tooltipEl = null,
         countLabel = (count, translate) =>
-            `${count} ${translate(count === 1 ? 'dashboardSession' : 'dashboardSessions')}`,
+            // Plural forms by the language's rules (Russian has three), not one-or-many.
+            `${count} ${translate(pluralKey('dashboardSessionWord', count, activeLocale(), null))}`,
     } = $props();
 
     const STRIDE = 20; // 17px cell + 3px gap

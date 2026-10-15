@@ -292,7 +292,9 @@ async function doLoadState() {
         pinnedGroupIds.set(new Set(Array.isArray(syncData[STORAGE_KEYS.PINS]) ? syncData[STORAGE_KEYS.PINS] : []));
         hiddenGroupIds.set(new Set(Array.isArray(syncData[STORAGE_KEYS.HIDDEN]) ? syncData[STORAGE_KEYS.HIDDEN] : []));
         pinnedAtLastPositionId.set(syncData[STORAGE_KEYS.PINNED_AT_LAST] || null);
-        settingsStore.update((s) => ({ ...s, enablePrefixes: syncData.enablePrefixes ?? true }));
+        // Unset means off: the background reads it with `?? false` and install writes
+        // false, so defaulting to true here showed prefixes as on while none were applied.
+        settingsStore.update((s) => ({ ...s, enablePrefixes: syncData.enablePrefixes ?? false }));
 
         const listGroupSettings = syncData[STORAGE_KEYS.SETTINGS] || {};
         // The toolbar draws these three switches from the store; writing the attribute
@@ -306,7 +308,7 @@ async function doLoadState() {
     } catch (e) {
         console.error('Error loading state:', e);
         searchToggles.set({ gemini: false, web: true, regex: false });
-        settingsStore.update((s) => ({ ...s, enablePrefixes: true }));
+        settingsStore.update((s) => ({ ...s, enablePrefixes: false }));
     }
 }
 

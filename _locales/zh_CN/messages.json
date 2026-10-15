@@ -9282,6 +9282,22 @@
   "dashboardSession": {
     "message": "个时段"
   },
+  "dashboardSessionWord_one": {
+    "message": "个时段",
+    "description": "Word after a count of pomodoro sessions (heatmap tooltip, hour chart, \"Max. $1 $2 in one day\"). Form for a count of one."
+  },
+  "dashboardSessionWord_other": {
+    "message": "个时段",
+    "description": "Word after a count of pomodoro sessions. General plural form."
+  },
+  "dashboardSessionWord_few": {
+    "message": "个时段",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "dashboardSessionWord_many": {
+    "message": "个时段",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
+  },
   "dashboardCycles": {
     "message": "轮"
   },
@@ -10213,7 +10229,7 @@
     "description": "Import"
   },
   "toolCreateTheme": {
-    "message": "创建自定义主题",
+    "message": "➕ 正在创建主题 $1",
     "description": "Create Custom Theme"
   },
   "feature_tab_discarding": {
@@ -12257,6 +12273,31 @@
   },
   "webActivityLimitsAppliedToAll": {
     "message": "已将配置应用于所有网站"
+  },
+  "webActivityApplyToAllConfirm": {
+    "message": "将对所有网站应用同一条规则。受影响的网站数:$1。将被替换的现有规则数:$2。是否继续?",
+    "placeholders": {
+      "sites": {
+        "content": "$1"
+      },
+      "rules": {
+        "content": "$2"
+      }
+    }
+  },
+  "webActivityDeleteAllRules": {
+    "message": "全部删除"
+  },
+  "webActivityDeleteAllRulesConfirm": {
+    "message": "将删除所有规则。设有规则的网站数:$1。是否继续?",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "webActivityAllRulesDeleted": {
+    "message": "已删除所有规则"
   },
   "webActivityRemoveLimit": {
     "message": "清除此可用时长"

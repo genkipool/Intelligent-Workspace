@@ -12,6 +12,7 @@
         localeOf,
     } from '../../../utils/i18n.js';
     import { notifyPomoStatsChanged } from '../../../utils/db.js';
+    import { applyCustomTheme } from '../../../utils/theme.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { t, i18nStore } from '../../stores/i18nStore.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
@@ -56,7 +57,14 @@
         tickDef,
         tooltipDef,
     } from '../../services/dashboard/chartTheme.js';
-    import { computeKpis, computeStreak, dedupeSessions, effColor, withinPeriod } from './dashboardAnalytics.js';
+    import {
+        computeKpis,
+        computeStreak,
+        dedupeSessions,
+        effColor,
+        projectKey,
+        withinPeriod,
+    } from './dashboardAnalytics.js';
     import { dayKey, fmtDateShort, fmtDur, fmtH, fmtTime } from '../../services/dashboard/format.js';
 
     /**
@@ -120,6 +128,11 @@
         return msg;
     }
 
+    /** The word "session(s)" in the plural form the language uses for `count`. */
+    function sessionWord(count) {
+        return i18n(pluralKey('dashboardSessionWord', count, localeOf(_lang), _msgs));
+    }
+
     /**
      * Tooltip text: `<key>_tooltip` when the control has hover text of its own, the
      * label otherwise. The same thing `applyDomI18n` does for `data-i18n-title`, for
@@ -153,11 +166,9 @@
             const at = data['activeTheme'];
             if (at) {
                 if (at.colors) {
-                    document.documentElement.setAttribute('data-theme', 'custom');
-                    const vars = Object.entries(at.colors)
-                        .map(([k, v]) => `--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}:${v}`)
-                        .join(';');
-                    document.documentElement.style.cssText = vars;
+                    // Shared helper: it sets each variable on its own and only accepts CSS
+                    // colours, so a stored theme value cannot add declarations to :root.
+                    applyCustomTheme(at.colors);
                 } else {
                     document.documentElement.setAttribute('data-theme', at.name || 'dark');
                 }
@@ -265,6 +276,9 @@
     let activePeriod = $state(0);
     let activeFolder = $state(null);
     let activeProject = $state(null);
+    // The folder of the selected project ('' when it has none): the same name can be a
+    // different project in another folder, so the name alone does not say which one.
+    let activeProjectFolder = $state('');
     let activeTag = $state('');
     let sidebarQuery = $state('');
     let charts = {};
@@ -287,7 +301,8 @@
         for (const e of allData) {
             const p = e.projectName || i18n('dashboardNoName');
             const f = e.projectFolder || '';
-            projectCounts[p] = (projectCounts[p] || 0) + 1;
+            const key = projectKey(f, p);
+            projectCounts[key] = (projectCounts[key] || 0) + 1;
             totalCount++;
             if (f) {
                 if (!folderMap[f]) folderMap[f] = new Set();
@@ -314,6 +329,7 @@
             if (activeTag && (e.projectTag || '') !== activeTag) return false;
             if (activeProject) {
                 if (e.projectName !== activeProject) return false;
+                if ((e.projectFolder || '') !== activeProjectFolder) return false;
             } else if (activeFolder !== null) {
                 if ((e.projectFolder || '') !== activeFolder) return false;
             }
@@ -321,7 +337,7 @@
         });
     }
 
-    async function renameProject(oldName, newName) {
+    async function renameProject(oldName, newName, folder = '') {
         const sanitizedNewName = (newName || '').trim().slice(0, 18);
         if (!sanitizedNewName) return;
         try {
@@ -335,9 +351,12 @@
                     if (cursor) {
                         const val = cursor.value;
                         const defaultName = i18n('dashboardNoName') || 'Unnamed';
+                        // Only the project in this folder: a namesake elsewhere is a
+                        // different project and keeps its name.
                         if (
-                            val.projectName === oldName ||
-                            (!val.projectName && (oldName === defaultName || oldName === 'Unnamed'))
+                            (val.projectFolder || '') === folder &&
+                            (val.projectName === oldName ||
+                                (!val.projectName && (oldName === defaultName || oldName === 'Unnamed')))
                         ) {
                             val.projectName = sanitizedNewName;
                             cursor.update(val);
@@ -353,7 +372,7 @@
                     reject(req.error);
                 };
             });
-            if (activeProject === oldName) {
+            if (activeProject === oldName && activeProjectFolder === folder) {
                 activeProject = sanitizedNewName;
             }
             await loadData();
@@ -370,18 +389,13 @@
         renderAll();
     }
 
-    function selectProject(name) {
+    function selectProject(name, folder = '') {
         view = 'dashboard';
-        activeProject = activeProject === name ? null : name;
+        const same = activeProject === name && activeProjectFolder === folder;
+        activeProject = same ? null : name;
+        activeProjectFolder = same ? '' : folder;
         activeFolder = null;
-        if (activeProject) {
-            for (const e of allData) {
-                if (e.projectName === activeProject && e.projectFolder) {
-                    openFolders.add(e.projectFolder);
-                    break;
-                }
-            }
-        }
+        if (activeProject && folder) openFolders.add(folder);
         renderAll();
     }
 
@@ -536,7 +550,9 @@
 
         // -- meta label --------------------------------------------------
         const maxC = Math.max(...Object.values(dayMap).map((d) => d.c), 1);
-        const sessWord = maxC !== 1 ? i18n('dashboardSessions') : i18n('dashboardSession');
+        // The plural form follows the language's rules: Russian needs three ("1 сеанс",
+        // "2 сеанса", "5 сеансов"), which a one-or-many choice cannot give.
+        const sessWord = sessionWord(maxC);
         document.getElementById('heatmap-meta').textContent = i18n('dashboardMaxSessions', maxC, sessWord);
 
         // -- month header spans -------------------------------------------
@@ -547,7 +563,15 @@
         // entirely determined by the column index -- offset within the column
         // doesn't shift things horizontally. We align the label to the column
         // that contains day 1, so spans transition precisely at the boundary.
-        const props = { cells, monthPositions, locale, i18n, fmtDur, tooltipEl: tooltip };
+        const props = {
+            cells,
+            monthPositions,
+            locale,
+            i18n,
+            fmtDur,
+            tooltipEl: tooltip,
+            countLabel: (count) => `${count} ${sessionWord(count)}`,
+        };
         unmountApp('heatmap');
         wrap.replaceChildren();
         apps.heatmap = mount(Heatmap, { target: wrap, props });
@@ -823,7 +847,7 @@
                         callbacks: {
                             label: (c) => [
                                 ` ${fmtH(c.raw * 3600)} ${i18n('dashboardWeekAvg')}`,
-                                ` ${cnts[c.dataIndex]} ${cnts[c.dataIndex] !== 1 ? i18n('dashboardSessions') : i18n('dashboardSession')}`,
+                                ` ${cnts[c.dataIndex]} ${sessionWord(cnts[c.dataIndex])}`,
                             ],
                         },
                     },
@@ -1501,6 +1525,7 @@
         standaloneProjs={sidebarData.standaloneProjs}
         totalCount={sidebarData.totalCount}
         {activeProject}
+        {activeProjectFolder}
         {activeFolder}
         {openFolders}
         query={sidebarQuery}

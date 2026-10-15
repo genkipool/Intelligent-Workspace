@@ -754,10 +754,12 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
  * nothing else. Both callers await `requestWindow()` before sending this message, so
  * the tab already exists by the time this runs.
  *
- * WHY IT FAILS SOFT. If the tab cannot be found — a Chrome that stops modelling the
- * float as a tab, a caller that ever sends the message first — this returns null and
- * the caller installs the rules the way it always did. A float that still works with a
- * wider rule is a better failure than a float that shows a blank rectangle.
+ * WHEN IT FAILS. If the tab cannot be found — a Chrome that stops modelling the float
+ * as a tab, a caller that ever sends the message first, a page that opened extra
+ * `about:blank` popups to make the float ambiguous — this returns null and the caller
+ * installs nothing. It used to install the rules for every other tab instead; that
+ * handed the page asking for them a way to frame the site with its cookies replayed
+ * (see `handlePrepareVideoUrlForPip`).
  *
  * NEVER THE SENDER'S TAB. The tab that asks is the web page the float was opened from,
  * and the page chose the URL: a link it put under the reader's pointer is enough. The
@@ -766,7 +768,7 @@ function handlePrepareUrlForSidePanel(message, sendResponse) {
  * itself with its framing headers gone and its cookies replayed. It used to be added
  * alongside the float's tab, and measured in a real browser a page that refuses to be
  * framed (`X-Frame-Options: DENY`, `frame-ancestors 'none'`) then rendered inside the
- * requesting page. The fallback keeps it out too, with `excludedTabIds`.
+ * requesting page.
  */
 async function findPipTabId(senderTabId, { attempts = 6, delayMs = 150 } = {}) {
     if (typeof senderTabId !== 'number') return null;
@@ -885,6 +887,10 @@ const PIP_FRAMING_REQUEST_HEADERS = [
  * framing-restriction headers WITHOUT altering the User-Agent.
  * This ensures the site serves its desktop version with native video controls intact.
  */
+function escapePipRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
     (async () => {
         let target = null;
@@ -910,19 +916,31 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
         const responseHeaders = buildFramingResponseHeaders(target.hostname);
 
         /*
-         * The float's own tab, when it can be identified — see `findPipTabId`. Adding it
-         * to both conditions is what stops these rules from reaching the rest of the
-         * browser while the window is open. `null` keeps the old, domain-only shape.
+         * The float's own tab — see `findPipTabId`. Adding it to both conditions is what
+         * stops these rules from reaching the rest of the browser while the window is open.
+         *
+         * NO TAB, NO RULES. There used to be a fallback here: when the float could not be
+         * told apart, the rules went to every tab except the requesting one
+         * (`excludedTabIds`). The requesting page decides when that happens, though: two
+         * `about:blank` popups of its own in other windows make the float ambiguous, and
+         * those popups (same origin as the page, so fully scriptable by it) were then
+         * covered too — the site framed with X-Frame-Options/CSP gone and its Cookie
+         * header, HttpOnly cookies included, replayed into any request it made. The same
+         * page closing its own float before the lookup gave the same result through the
+         * "not found" branch. Every legitimate caller awaits `requestWindow()` before
+         * asking, so the float is a tab by now, and the retries inside `findPipTabId`
+         * cover the beat it can take to show up and an old float or popup still on its
+         * way out. A float that is still unidentified after that comes up refused by the
+         * site, which is the browser's default and harms nobody.
          */
         const pipTabId = await findPipTabId(senderTabId);
-        let onlyPipTab = {};
-        if (pipTabId !== null) onlyPipTab = { tabIds: [pipTabId] };
-        else if (typeof senderTabId === 'number') onlyPipTab = { excludedTabIds: [senderTabId] };
-        logMessage(
-            pipTabId === null
-                ? '[DNR] PiP tab not identified; rules scoped to the domain, minus the requesting tab'
-                : `[DNR] PiP rules scoped to tab ${pipTabId}`,
-        );
+        if (pipTabId === null) {
+            logMessage('[DNR] PiP tab not identified; no framing or cookie rules installed');
+            sendResponse({ success: false, error: 'The floating window could not be identified' });
+            return;
+        }
+        const onlyPipTab = { tabIds: [pipTabId] };
+        logMessage(`[DNR] PiP rules scoped to tab ${pipTabId}`);
 
         const isX =
             target.hostname === 'x.com' ||
@@ -1020,7 +1038,15 @@ function handlePrepareVideoUrlForPip(message, sendResponse, senderTabId) {
                           }
                         : {
                               ...onlyPipTab,
-                              urlFilter: `|https://${urlObj.hostname.replace(/^www\./, '')}/`,
+                              /*
+                               * The page's own host and its `www.` twin, nothing else. The
+                               * old `|https://<host without www>/` dropped the `www.` and
+                               * then anchored at the scheme, so it only ever matched the
+                               * bare host: a float of www.example.com never got its
+                               * cookies and showed the site logged out. Subdomains stay
+                               * out on purpose — this header REPLACES theirs.
+                               */
+                              regexFilter: `^https://(www\\.)?${escapePipRegExp(urlObj.hostname.replace(/^www\./, ''))}/`,
                               resourceTypes: ['sub_frame', 'xmlhttprequest', 'script', 'image', 'other'],
                           };
                     rules.push({

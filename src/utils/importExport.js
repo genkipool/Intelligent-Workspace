@@ -1,4 +1,6 @@
 import { showNotification as notify, msg as localizedMsg, pluralKey } from './i18n.js';
+import { sanitizeThemeColors } from './theme.js';
+import { sanitizeNoteHtml } from './noteHtml.js';
 
 let elements;
 let globals;
@@ -582,8 +584,12 @@ export async function processAndSaveImportedThemes(themesToImport, storage, maxT
         let nextThemeNumber = existingThemes.length + 1;
 
         for (const theme of themesToImport) {
-            const themeColors = theme.colors || theme;
-            if (typeof themeColors !== 'object' || !themeColors.actionColor) {
+            const rawColors = theme.colors || theme;
+            // Every theme value ends up as a CSS variable on every extension page, so only
+            // keys holding a real CSS colour are kept; a file whose action colour is not one
+            // is refused like any other malformed theme.
+            const themeColors = rawColors && typeof rawColors === 'object' ? sanitizeThemeColors(rawColors) : null;
+            if (!themeColors || !themeColors.actionColor) {
                 utils.showNotification('errorImportingThemesInvalidFormat', true, true);
                 continue;
             }
@@ -1099,12 +1105,36 @@ export async function importHintsConfig(file, utils) {
                     'itg-ui-custom-shortcuts',
                 ]);
 
+                // The file may come from someone else and this HTML is rendered in the
+                // editor and expanded into pages, so only its formatting is stored. The
+                // editor's own cleaner keeps what the editor can produce (font sizes, font
+                // colours); the note cleaner stands in where hint_common.js is not loaded.
+                // Plain text (no tag at all) is stored exactly as written.
+                const cleanHtml = (html) =>
+                    typeof html !== 'string' || !/<[a-z!/?]/i.test(html)
+                        ? html
+                        : globalThis.HintCommon?.sanitizeHtml
+                          ? globalThis.HintCommon.sanitizeHtml(html)
+                          : sanitizeNoteHtml(html);
+                const cleanSnippets = {};
+                for (const [trigger, value] of Object.entries(snippets || {})) {
+                    cleanSnippets[trigger] =
+                        value && typeof value === 'object'
+                            ? { ...value, expansion: cleanHtml(value.expansion) }
+                            : cleanHtml(value);
+                }
+
                 const existingSites = currentData.userHintCommands || [];
                 const sitesMap = new Map(existingSites.map((site) => [site.keys, site]));
 
                 // Insert/Overwrite with imported sites
                 sites.forEach((site) => {
-                    sitesMap.set(site.keys, site);
+                    sitesMap.set(
+                        site.keys,
+                        site && typeof site.description === 'string'
+                            ? { ...site, description: cleanHtml(site.description) }
+                            : site,
+                    );
                 });
 
                 // Convert back to array
@@ -1112,7 +1142,7 @@ export async function importHintsConfig(file, utils) {
 
                 const syncUpdates = {
                     userHintCommands: mergedSites, // Use the sanitized list
-                    'itg-user-snippets': { ...(currentData['itg-user-snippets'] || {}), ...snippets },
+                    'itg-user-snippets': { ...(currentData['itg-user-snippets'] || {}), ...cleanSnippets },
                     'itg-ui-custom-shortcuts': { ...(currentData['itg-ui-custom-shortcuts'] || {}), ...overrides },
                 };
 

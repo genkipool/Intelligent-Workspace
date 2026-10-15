@@ -13,7 +13,7 @@
      * and shows the window management interface with day selector chips and time fields.
      */
     import '../../../../core/services/webActivitySchema.js';
-    import { untrack } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import { t, tt } from '../../../stores/i18nStore.js';
     import NumberField from '../../../components/common/NumberField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
@@ -77,7 +77,27 @@
     /** A window that ends before it starts runs past midnight, which is worth saying. */
     const isOvernight = (window) => WA.minutesOfDay(window.end) <= WA.minutesOfDay(window.start);
 
+    /**
+     * A new rule starts at the site field, focused, so the address can be typed straight
+     * away. A frame later: the dialog is moved into place (see portal.js) as it mounts.
+     */
+    let siteInput = $state(null);
+    onMount(() => {
+        if (!isNew) return;
+        requestAnimationFrame(() => siteInput?.focus());
+    });
+
     const hasInvalidWindow = $derived(windows.some((w) => !w.days?.length));
+
+    /**
+     * A new rule with no allowance, no weekly allowance and no hours sets nothing: saved,
+     * it is dropped on the spot (see `commitLimit`), and "All" would wipe every rule
+     * there is. Apply waits until something is configured. An existing rule is not held
+     * back — emptying it is how it is deleted.
+     */
+    const setsNothing = $derived(
+        dailySeconds === 0 && weeklySeconds === 0 && !windows.some((window) => window.start && window.end),
+    );
 
     function toggleDailyDay(day) {
         dailyDays = dailyDays.includes(day) ? dailyDays.filter((d) => d !== day) : [...dailyDays, day];
@@ -107,6 +127,7 @@
     }
 
     function apply() {
+        if (isNew && setsNothing) return;
         if (tab === 'daily' && noDays) return;
         if (tab === 'schedule' && hasInvalidWindow) return;
 
@@ -187,7 +208,8 @@
     errorMessage={tab === 'schedule' && hasInvalidWindow ? $t('webActivityWindowNoDays') : ''}
     disabled={(tab === 'daily' && noDays) ||
         (tab === 'schedule' && hasInvalidWindow) ||
-        (!applyToAll && isNew && !siteCheck.domain)}
+        (!applyToAll && isNew && !siteCheck.domain) ||
+        (isNew && setsNothing)}
     variant="wa-schedule-modal"
     onApply={apply}
     {onClose}
@@ -198,6 +220,7 @@
             <div class="wa-site-input-row">
                 <input
                     id="wa-limit-site"
+                    bind:this={siteInput}
                     type="text"
                     class:input-error={!!siteError}
                     bind:value={site}

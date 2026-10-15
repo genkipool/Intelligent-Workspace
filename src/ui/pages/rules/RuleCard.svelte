@@ -1,10 +1,12 @@
 <script>
-    import { getThemeColors } from '../../services/constants.js';
+    import { darkThemeColors, lightThemeColors } from '../../services/constants.js';
+    import { MediaQuery } from 'svelte/reactivity';
     import { onMount, untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { showNotification } from '../../../utils/i18n.js';
     import { showUrlTooltip, hideUrlTooltip } from './urlTooltip.js';
     import RuleCardActions from './card/RuleCardActions.svelte';
+    import { MAX_RULE_NAME_LENGTH } from './ruleValidation.js';
 
     let {
         rule,
@@ -32,7 +34,13 @@
     } = $props();
 
     let isStarred = $derived(rule.isStarred || false);
-    let groupColorHex = $derived(getThemeColors()[rule.color] || getThemeColors().blue);
+    // Reactive, unlike getThemeColors(): the dot follows the system switching between
+    // light and dark while the page is open.
+    const prefersDark = new MediaQuery('(prefers-color-scheme: dark)');
+    let groupColorHex = $derived.by(() => {
+        const palette = prefersDark.current ? darkThemeColors : lightThemeColors;
+        return palette[rule.color] || palette.blue;
+    });
 
     /**
      * Whether the card itself is a control, and so a stop on the way round with Tab.
@@ -88,7 +96,11 @@
     }
 
     function handleNameEditKeydown(e) {
-        if (e.key === 'Enter') {
+        // As in the modal: a rule name cannot hold spaces. A pasted one is caught by
+        // the validation the rename goes through.
+        if (e.key === ' ') {
+            e.preventDefault();
+        } else if (e.key === 'Enter') {
             saveEditedName();
         } else if (e.key === 'Escape') {
             isEditingName = false;
@@ -620,6 +632,7 @@
                 class="rule-name-edit"
                 type="text"
                 bind:value={editingNameValue}
+                maxlength={MAX_RULE_NAME_LENGTH}
                 style="width: {Math.max((editingNameValue || '').length, 1)}ch;"
                 onkeydown={handleNameEditKeydown}
                 onblur={handleNameEditBlur}

@@ -57,8 +57,10 @@ export function matchesRule(tabUrl, ruleUrl) {
         return false;
     }
 
-    const tabHost = parsedTab.hostname.toLowerCase();
-    const ruleHost = parsedRule.hostname.toLowerCase();
+    // A trailing dot (`example.com.`) names the same host; without dropping it a rule
+    // for example.com never matched a tab opened on the fully-qualified form.
+    const tabHost = parsedTab.hostname.toLowerCase().replace(/\.+$/, '');
+    const ruleHost = parsedRule.hostname.toLowerCase().replace(/\.+$/, '');
 
     const cleanTabHost = tabHost.startsWith('www.') ? tabHost.slice(4) : tabHost;
     const cleanRuleHost = ruleHost.startsWith('www.') ? ruleHost.slice(4) : ruleHost;
@@ -67,8 +69,18 @@ export function matchesRule(tabUrl, ruleUrl) {
         return false;
     }
 
-    if (parsedRule.port && parsedTab.port !== parsedRule.port) {
-        return false;
+    /*
+     * Ports compare as the port actually used. `URL` blanks a port that is the default
+     * for its own scheme, and rules are stored with `https://` in front of what was
+     * typed, so `intranet.local:80` became a rule with port 80 that could never equal the
+     * '' of `http://intranet.local:80/`. Only a rule that names a port is checked.
+     */
+    if (parsedRule.port) {
+        const defaultPorts = { 'http:': '80', 'https:': '443' };
+        const tabPort = parsedTab.port || defaultPorts[parsedTab.protocol] || '';
+        if (tabPort !== parsedRule.port) {
+            return false;
+        }
     }
 
     const normalizedRulePath = (parsedRule.pathname || '').replace(/\/+$/, '');

@@ -47,12 +47,29 @@
         if (open && !dialogEl.open) dialogEl.showModal();
         if (!open && dialogEl.open) dialogEl.close();
     });
+
+    /**
+     * Escape closes the drawer only when nothing is open on top of it. A dialog, picker
+     * or confirmation opened from inside lives inside it (see portal.js), as a child of
+     * the <dialog> beside the content; closing the drawer under it hid that one without
+     * closing it. So the Escape goes to the topmost of those instead, which closes
+     * itself on it wherever the focus happened to be left.
+     */
+    function handleCancel(event) {
+        const nested = [...(dialogEl?.children || [])].filter(
+            (child) => !child.classList.contains('itg-settings-dialog-content'),
+        );
+        if (!nested.length) return;
+        event.preventDefault();
+        nested[nested.length - 1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    }
 </script>
 
 <dialog
     class="itg-settings-dialog"
     bind:this={dialogEl}
     onclose={onClose}
+    oncancel={handleCancel}
     use:dismissOnBackdrop={onClose}
     aria-label={title}
 >
@@ -101,8 +118,12 @@
         opacity: 1;
     }
 
+    /* `none`, not a zero translation: any transform makes the drawer the containing
+       block of its `position: fixed` descendants, and the dialogs and pickers opened
+       from it live inside it (see portal.js) — they would be placed against the
+       drawer and clipped by it instead of covering the window. */
     dialog.itg-settings-dialog[open] {
-        transform: translateX(0);
+        transform: none;
     }
 
     /* The frame it comes *from*. Everything else about the entry is the same
@@ -159,7 +180,7 @@
         }
 
         dialog.itg-settings-dialog[open] {
-            transform: translateY(0);
+            transform: none;
         }
 
         @starting-style {

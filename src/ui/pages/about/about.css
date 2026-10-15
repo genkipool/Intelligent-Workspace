@@ -69,7 +69,8 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     width: 100vw;
-    min-width: 380px;
+    /* 360px, the narrowest common phone/side-panel width: 380 made the page scroll sideways there. */
+    min-width: 360px;
     overflow-x: hidden;
     scrollbar-gutter: stable both-edges;
 }

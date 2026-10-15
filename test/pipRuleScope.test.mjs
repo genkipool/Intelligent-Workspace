@@ -40,18 +40,23 @@ function loadDnr(tabs) {
     };
     vm.createContext(sandbox);
     vm.runInContext(dnrCode + '\nglobalThis.__prepare = handlePrepareVideoUrlForPip;', sandbox);
-    const prepare = (url) =>
-        new Promise((resolve) => sandbox.__prepare({ url }, resolve, SENDER)).then(() => state.rules);
-    return prepare;
+    const prepare = (url) => {
+        state.rules = null;
+        return new Promise((resolve) => sandbox.__prepare({ url }, resolve, SENDER)).then((response) => ({
+            rules: state.rules,
+            response,
+        }));
+    };
+    return { prepare };
 }
 
 describe('PiP framing rules scope', () => {
     it('covers only the float tab, not the page that asked', async () => {
-        const prepare = loadDnr([
+        const { prepare } = loadDnr([
             { id: SENDER, windowId: 1, url: 'https://attacker.example/' },
             { id: PIP, windowId: 2, openerTabId: SENDER, url: 'about:blank' },
         ]);
-        const rules = await prepare('https://victim.example/account');
+        const { rules } = await prepare('https://victim.example/account');
         assert.equal(rules.length, 2, 'framing rule and cookie rule');
         for (const rule of rules) {
             assert.deepEqual([...rule.condition.tabIds], [PIP]);
@@ -59,12 +64,46 @@ describe('PiP framing rules scope', () => {
         }
     });
 
-    it('leaves the requesting tab out when the float cannot be identified', async () => {
-        const prepare = loadDnr([{ id: SENDER, windowId: 1, url: 'https://attacker.example/' }]);
-        const rules = await prepare('https://victim.example/account');
-        for (const rule of rules) {
-            assert.equal(rule.condition.tabIds, undefined);
-            assert.deepEqual([...rule.condition.excludedTabIds], [SENDER]);
+    /*
+     * There used to be a fallback here that scoped the rules to every tab but the
+     * requesting one. The requesting page can bring that branch about on purpose (two
+     * `about:blank` popups of its own, or closing its float before the lookup), and its
+     * popups then got the site framable with its cookies — HttpOnly included — replayed.
+     * Unidentified now means nothing installed at all.
+     */
+    it('installs nothing when the float cannot be identified', async () => {
+        const { prepare } = loadDnr([{ id: SENDER, windowId: 1, url: 'https://attacker.example/' }]);
+        const { rules, response } = await prepare('https://victim.example/account');
+        assert.equal(rules, null);
+        assert.equal(response.success, false);
+    });
+
+    it('installs nothing when the page opened extra about:blank popups to blur the float', async () => {
+        const { prepare } = loadDnr([
+            { id: SENDER, windowId: 1, url: 'https://attacker.example/' },
+            { id: PIP, windowId: 2, openerTabId: SENDER, url: 'about:blank' },
+            { id: 88, windowId: 3, openerTabId: SENDER, url: 'about:blank' },
+        ]);
+        const { rules, response } = await prepare('https://victim.example/account');
+        assert.equal(rules, null);
+        assert.equal(response.success, false);
+    });
+
+    it('replays cookies into the www host the float actually loads, and only its own host', async () => {
+        const { prepare } = loadDnr([
+            { id: SENDER, windowId: 1, url: 'https://attacker.example/' },
+            { id: PIP, windowId: 2, openerTabId: SENDER, url: 'about:blank' },
+        ]);
+        for (const target of ['https://www.victim.example/watch?v=1', 'https://victim.example/watch?v=1']) {
+            const { rules } = await prepare(target);
+            const cookieRule = rules.find((r) => r.action.requestHeaders?.some((h) => h.header === 'Cookie'));
+            const re = new RegExp(cookieRule.condition.regexFilter);
+            assert.ok(re.test('https://www.victim.example/watch?v=1'), target);
+            assert.ok(re.test('https://victim.example/api'), target);
+            assert.ok(!re.test('https://cdn.victim.example/x'), 'subdomains keep their own cookies');
+            assert.ok(!re.test('https://victim.example.evil.com/x'));
+            assert.ok(!re.test('https://wwwxvictim.example/x'), 'the dot is literal');
+            assert.ok(!re.test('http://victim.example/x'));
         }
     });
 });
