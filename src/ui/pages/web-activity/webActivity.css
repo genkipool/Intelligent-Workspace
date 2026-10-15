@@ -680,6 +680,11 @@ td[data-col='state'] > * {
         padding-right: 2px;
     }
 
+    /* The site column is the narrowest, and the favicon took four letters of the name. */
+    .settings-page-compact .wa-rules-frame .wa-site-cell .si-favicon {
+        display: none;
+    }
+
     .settings-page-compact .wa-rules-frame th .wa-sort-label {
         font-size: 9px;
     }
