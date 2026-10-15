@@ -17,6 +17,8 @@
     import teamImg from '../../../../assets/images/about/team.png';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
 
+    const YOUTUBE_URL = 'https://www.youtube.com/@IntelligentWorkspace';
+
     onMount(async () => {
         await i18nStore.init();
         await themeStore.init();
@@ -126,6 +128,19 @@
                         >{$t('ThanksDesc_name')}</span
                     ><span>{$t('ThanksDesc_nameThanksDesc_part3')}</span>
                 </p>
+                <h3 class="social-media-title">{$t('socialMediaTitle')}</h3>
+                <div class="github-link-wrapper youtube-link-wrapper">
+                    <a href={YOUTUBE_URL} target="_blank" rel="noopener noreferrer" class="feedback-link">
+                        <svg class="youtube-logo" viewBox="0 0 28 20" aria-hidden="true">
+                            <path
+                                d="M27.4 3.1a3.5 3.5 0 0 0-2.46-2.48C22.77 0 14 0 14 0S5.23 0 3.06.62A3.5 3.5 0 0 0 .6 3.1C0 5.28 0 10 0 10s0 4.72.6 6.9a3.5 3.5 0 0 0 2.46 2.48C5.23 20 14 20 14 20s8.77 0 10.94-.62a3.5 3.5 0 0 0 2.46-2.48C28 14.72 28 10 28 10s0-4.72-.6-6.9"
+                                fill="#f00"
+                            />
+                            <path d="M11.2 14.29 18.5 10l-7.3-4.29z" fill="#fff" />
+                        </svg>
+                        <span>{$t('youtubeChannel')}</span>
+                    </a>
+                </div>
                 <h3 class="rate-extension-title">{$t('rateExtensionTitle')}</h3>
                 <p class="rate-extension-desc">{$t('rateExtensionDesc')}</p>
                 <div class="rate-button-container">

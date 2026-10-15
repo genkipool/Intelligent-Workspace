@@ -356,6 +356,21 @@ a,
         }
     }
 }
+.social-media-title {
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+.youtube-link-wrapper {
+    .feedback-link {
+        justify-content: center;
+        gap: var(--spacing-md);
+    }
+    .youtube-logo {
+        width: 28px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+}
 .rate-extension-title {
     margin-top: var(--spacing-lg);
 }

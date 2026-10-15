@@ -2085,6 +2085,14 @@
     "message": "Команда",
     "description": "Team section title"
   },
+  "socialMediaTitle": {
+    "message": "Соцсети",
+    "description": "About page: heading of the social media links"
+  },
+  "youtubeChannel": {
+    "message": "Канал на YouTube",
+    "description": "About page: link to the YouTube channel"
+  },
   "teamMember1Name": {
     "message": "Луис Реойо:",
     "description": "Developer name"

@@ -2085,6 +2085,14 @@
     "message": "Equipe",
     "description": "Team section title"
   },
+  "socialMediaTitle": {
+    "message": "Redes sociais",
+    "description": "About page: heading of the social media links"
+  },
+  "youtubeChannel": {
+    "message": "Canal no YouTube",
+    "description": "About page: link to the YouTube channel"
+  },
   "teamMember1Name": {
     "message": "Luis Reoyo:",
     "description": "Developer name"
