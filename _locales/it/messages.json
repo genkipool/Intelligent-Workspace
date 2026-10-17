@@ -13857,7 +13857,7 @@
     "message": "L'assistente invia la pagina che gli indichi, tutto ciò che alleghi e i titoli delle schede aperte quando le cerchi per descrizione all'API Gemini di Google, usando la tua chiave API. Il modello on-device integrato di Chrome non invia nulla. L'assistente resta disattivato finché non lo configuri."
   },
   "dataUseOcrItem": {
-    "message": "La lettura del testo di uno screenshot funziona offline in inglese e spagnolo, i cui modelli sono inclusi nell’estensione. Per qualsiasi altra lingua, il modello viene scaricato una sola volta da jsDelivr e il browser lo mette in cache. Non viene inviato nulla su di te."
+    "message": "La lettura del testo di uno screenshot funziona offline in inglese e spagnolo, i cui modelli sono inclusi nell’estensione. Per qualsiasi altra lingua, il modello viene scaricato una sola volta da jsDelivr e il browser lo mette in cache. Non viene inviato nulla su di te. Se una lettura non riesce, da lì viene scaricato una sola volta anche un rilevatore di scrittura per capire la lingua dell’immagine."
   },
   "dataUseContributionItem": {
     "message": "Sostenere il progetto apre la nostra pagina di pagamento, che gestisce la carta tramite Stripe. I dati della carta non raggiungono mai l'estensione."

@@ -13857,7 +13857,7 @@
     "message": "The assistant sends the page you point it at, anything you attach, and the titles of your open tabs when you search them by description, to Google's Gemini API under your own API key. Chrome's built-in on-device model sends nothing. The assistant stays off until you set it up."
   },
   "dataUseOcrItem": {
-    "message": "Reading text out of a screenshot works offline in English and Spanish, whose models ship with the extension. For any other language, its model is downloaded once from jsDelivr and the browser caches it. Nothing about you is sent."
+    "message": "Reading text out of a screenshot works offline in English and Spanish, whose models ship with the extension. For any other language, its model is downloaded once from jsDelivr and the browser caches it. Nothing about you is sent. If a reading fails, a script detector is also downloaded once from there to work out the image's language."
   },
   "dataUseContributionItem": {
     "message": "Supporting the project opens our payment page, which handles the card through Stripe. Card details never reach the extension."

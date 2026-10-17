@@ -36,7 +36,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
-- **OCR en el idioma de la extensión:** leer el texto de una captura usaba español e inglés fuera cual fuera el idioma de la interfaz, así que una captura en japonés, ruso o hindi salía como ruido. Ahora usa el idioma de la interfaz más inglés. Cuando una lectura falla (sin texto, un error o una confianza media por debajo de 50), al volver a pasar el ratón por el botón de OCR aparece un selector con los 11 idiomas, y el elegido se queda para esa captura. Dos mensajes nuevos en los 11 idiomas.
+- **OCR en el idioma de la extensión:** leer el texto de una captura usaba español e inglés fuera cual fuera el idioma de la interfaz, así que una captura en japonés, ruso o hindi salía como ruido. Ahora usa el idioma de la interfaz más inglés. Si esa lectura sale vacía o dudosa, la extensión detecta la escritura de la imagen (el modelo OSD de Tesseract, descargado una vez) y, si es japonesa, china, coreana, cirílica o devanagari, la vuelve a leer en ese idioma. Cuando aun así falla (sin texto, un error o una confianza media por debajo de 50), al volver a pasar el ratón por el botón de OCR aparece un selector con los 11 idiomas, y el elegido se queda para esa captura. Dos mensajes nuevos en los 11 idiomas.
 - **La IA local de Chrome en el omnibar:** `qai:` y `qaia:` responden con el modelo de Chrome en el equipo (Gemini Nano) cuando es el modelo elegido en el selector, o cuando todas las claves de API se han quedado sin cuota y la alternativa local está activada; las mismas reglas que ya seguía el asistente del panel lateral. Antes el omnibar iba siempre a la API y decía «cuota superada» con el modelo instalado. El marco del omnibar delega ahora `language-model` para que la Prompt API esté disponible dentro de él.
 
 ### Corregido
@@ -54,7 +54,7 @@ Novedades
 • Los comandos de IA del omnibar (qai:, qaia:) pueden usar la IA local de Chrome: cuando la eliges o cuando tus claves de API se quedan sin cuota.
 • Respaldar grupos nunca cierra el grupo en el que estás, y respaldarlos todos ya no cierra el navegador.
 • Correcciones del omnibar: se respaldan los grupos marcados con Espacio, los prefijos renombrados funcionan en todas partes y Ctrl+Intro sigue actuando sobre la fila resaltada.
-• El reconocimiento de texto (OCR) lee las capturas en el idioma de la extensión, funciona sin conexión en inglés y español, y si falla te deja elegir el idioma de la imagen.
+• El reconocimiento de texto (OCR) lee las capturas en el idioma de la extensión, reconoce solo el texto en japonés, chino, coreano, ruso e hindi, funciona sin conexión en inglés y español, y si aun así falla te deja elegir el idioma de la imagen.
 ```
 
 ---

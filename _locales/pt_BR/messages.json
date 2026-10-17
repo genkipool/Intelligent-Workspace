@@ -13857,7 +13857,7 @@
     "message": "O assistente envia a página que você indicar, tudo o que você anexar e os títulos das suas guias abertas quando você as pesquisa por descrição para a API Gemini do Google, usando sua própria chave de API. O modelo integrado do Chrome no dispositivo não envia nada. O assistente fica desativado até você configurá-lo."
   },
   "dataUseOcrItem": {
-    "message": "Ler o texto de uma captura funciona offline em inglês e espanhol, cujos modelos vêm com a extensão. Para qualquer outro idioma, o modelo é baixado uma única vez do jsDelivr e o navegador o guarda em cache. Nada sobre você é enviado."
+    "message": "Ler o texto de uma captura funciona offline em inglês e espanhol, cujos modelos vêm com a extensão. Para qualquer outro idioma, o modelo é baixado uma única vez do jsDelivr e o navegador o guarda em cache. Nada sobre você é enviado. Se uma leitura falhar, um detector de escrita também é baixado uma única vez de lá para descobrir o idioma da imagem."
   },
   "dataUseContributionItem": {
     "message": "Apoiar o projeto abre nossa página de pagamento, que processa o cartão pela Stripe. Os dados do cartão nunca chegam à extensão."

@@ -2,6 +2,7 @@
     import { t, currentLang, i18nStore, tt } from '../../stores/i18nStore.js';
     import { activeTheme, themeStore } from '../../stores/themeStore.js';
     import { SUPPORTED_LANGUAGES, LANGUAGE_PAIR_STORAGE_KEY, languagePair } from '../../../utils/i18n.js';
+    import LanguagePicker from './LanguagePicker.svelte';
 
     let { onNavigate } = $props();
 
@@ -105,22 +106,12 @@
                             onclick={() => setLanguage(language.code)}>{shortCode(language.code)}</button
                         >
                         {#if pickerSide === side}
-                            <div class="language-picker" role="listbox" aria-label={$t('languagePairPickerTitle')}>
-                                <div class="language-picker-title">{$t('languagePairPickerTitle')}</div>
-                                {#each SUPPORTED_LANGUAGES as option (option.code)}
-                                    <button
-                                        type="button"
-                                        role="option"
-                                        class="language-picker-option"
-                                        class:is-selected={option.code === pair[side]}
-                                        aria-selected={option.code === pair[side]}
-                                        lang={option.code}
-                                        onclick={() => chooseForSide(side, option.code)}
-                                    >
-                                        <span class="language-picker-name">{option.nativeName}</span>
-                                        <span class="language-picker-code">{shortCode(option.code)}</span>
-                                    </button>
-                                {/each}
+                            <div class="language-picker-anchor">
+                                <LanguagePicker
+                                    title={$t('languagePairPickerTitle')}
+                                    selected={pair[side]}
+                                    onSelect={(code) => chooseForSide(side, code)}
+                                />
                             </div>
                         {/if}
                     </div>
@@ -163,83 +154,12 @@
         display: flex;
     }
 
-    .language-picker {
+    /* The switch sits at the right edge of the header, so both lists open leftwards,
+       into the room there is. */
+    .language-picker-anchor {
         position: absolute;
         top: calc(100% + 4px);
         right: 0;
         z-index: 1000;
-        min-width: 180px;
-        max-height: 320px;
-        overflow-y: auto;
-        padding: 4px;
-        background: var(--bg-panel-color);
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-
-    /* The switch sits at the right edge of the header, so both lists open leftwards,
-       into the room there is. */
-    .language-picker-title {
-        padding: 4px 8px 6px;
-        font-size: 11px;
-        color: var(--text-color);
-        opacity: 0.7;
-        white-space: nowrap;
-    }
-
-    .language-picker-option {
-        display: flex;
-        width: 100%;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 5px 8px;
-        border: none;
-        border-radius: 5px;
-        background: none;
-        color: var(--text-color);
-        font-size: 13px;
-        text-align: start;
-        cursor: pointer;
-    }
-
-    .language-picker-option:hover,
-    .language-picker-option:focus-visible {
-        outline: none;
-        background-color: var(--action-color);
-    }
-
-    /* The language on this side stands out at a glance: a tinted row with an accent
-       bar at its edge, and bold. */
-    .language-picker-option.is-selected {
-        position: relative;
-        font-weight: bold;
-        background-color: color-mix(in srgb, var(--interactive-color) 22%, transparent);
-        color: var(--text-color);
-    }
-
-    .language-picker-option.is-selected::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 4px;
-        bottom: 4px;
-        width: 3px;
-        border-radius: 2px;
-        background-color: var(--interactive-color);
-    }
-
-    .language-picker-option.is-selected .language-picker-code {
-        opacity: 1;
-    }
-
-    .language-picker-code {
-        display: inline-flex;
-        align-items: center;
-        font-size: 11px;
-        opacity: 0.6;
-        text-transform: lowercase;
-        white-space: nowrap;
     }
 </style>

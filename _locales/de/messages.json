@@ -13857,7 +13857,7 @@
     "message": "Der Assistent sendet die Seite, auf die Sie ihn verweisen, alle Anhänge und – wenn Sie Ihre geöffneten Tabs per Beschreibung durchsuchen – deren Titel mit Ihrem eigenen API-Schlüssel an die Gemini API von Google. Das integrierte On-Device-Modell von Chrome sendet nichts. Der Assistent bleibt deaktiviert, bis Sie ihn einrichten."
   },
   "dataUseOcrItem": {
-    "message": "Das Auslesen von Text aus einem Screenshot funktioniert auf Englisch und Spanisch offline, da deren Modelle mit der Erweiterung geliefert werden. Für jede andere Sprache wird ihr Modell einmalig von jsDelivr heruntergeladen und vom Browser zwischengespeichert. Über dich wird nichts gesendet."
+    "message": "Das Auslesen von Text aus einem Screenshot funktioniert auf Englisch und Spanisch offline, da deren Modelle mit der Erweiterung geliefert werden. Für jede andere Sprache wird ihr Modell einmalig von jsDelivr heruntergeladen und vom Browser zwischengespeichert. Über dich wird nichts gesendet. Schlägt eine Erkennung fehl, wird von dort außerdem einmalig ein Schrifterkenner geladen, um die Sprache des Bildes zu ermitteln."
   },
   "dataUseContributionItem": {
     "message": "Wenn Sie das Projekt unterstützen, öffnet sich unsere Zahlungsseite, die die Karte über Stripe abwickelt. Kartendaten erreichen die Erweiterung nie."

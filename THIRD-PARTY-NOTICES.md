@@ -91,7 +91,13 @@ other language, the first OCR run in it fetches `<code>.traineddata.gz` from
 `https://cdn.jsdelivr.net/gh/naptha/tessdata@806cd9adc8c6e8abc11c782db1818c990576bebc/4.0.0_best_int`
 
 — a URL pinned to one commit, so the file behind it cannot change — and the engine caches it
-in IndexedDB; later runs fetch nothing. The URL is written in `src/ui/services/screenshotsService.js`
+in IndexedDB; later runs fetch nothing.
+
+When a reading comes out empty or unsure, and the user has not picked a language for that
+capture, the extension also fetches Tesseract's script detector, `osd.traineddata.gz`
+(4.3 MB), once, from the `4.0.0` folder of the same commit (`OCR_REMOTE_OSD_PATH`). If it
+finds Japanese, Chinese, Korean, Cyrillic or Devanagari script, the image is read again in
+that language. The URL is written in `src/ui/services/screenshotsService.js`
 (`OCR_REMOTE_LANG_PATH`), not in the library.
 
 It is data the recognizer reads, not code it runs — the engine that reads it, the WebAssembly

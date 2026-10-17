@@ -333,7 +333,7 @@ review, and it is the thing to check before any release that touches data.
 | **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking for an open tab — from the panel, or with the `find` keyword in Chrome's address bar — sends the titles and addresses of the open tabs, because that is the list being searched. It is matched locally first and only reaches the API when the local result is ambiguous, so most searches never leave the browser at all. | Only to the Google Gemini API, on the user's command |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
 | **Link domains** | Yes (transient) | **No** | Every site icon the extension draws or reads comes from Chrome's own favicon store — through the worker, or read directly by the omnibar, which runs as an extension page — so no address leaves the browser to fetch one. The omnibar's tab rows used to load each tab's own icon address from inside the page being viewed, which also meant that a tab open on `localhost` or the local network made that page ask the user for Local Network Access; they read the store as well now. That covers the omnibar rows, the panel and bookmark lists, and the colour an automatic group takes from the site it holds. The omnibar used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; the group colour used to fetch the icon address the page itself declared, which named the page being read to its own server for an image Chrome had already rasterised. Under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. Both are gone. | No |
-| **Nothing identifying** | — | Yes (first OCR run in a language other than English or Spanish) | OCR reads in the interface language plus English. The English and Spanish models ship inside the package (`src/lib/tessdata/`); any other language's Tesseract model (`<code>.traineddata.gz`) is fetched once from `cdn.jsdelivr.net`, at a URL pinned to one commit, and cached by the engine. It is model data, not code: the OCR engine's worker and WebAssembly core ship inside the package and cannot be fetched. Verified by observing the worker's own network on a clean profile. | No |
+| **Nothing identifying** | — | Yes (first OCR run in a language other than English or Spanish) | OCR reads in the interface language plus English. The English and Spanish models ship inside the package (`src/lib/tessdata/`); any other language's Tesseract model (`<code>.traineddata.gz`), and the script detector (`osd.traineddata.gz`) the first time a reading fails, are fetched once from `cdn.jsdelivr.net`, at a URL pinned to one commit, and cached by the engine. It is model data, not code: the OCR engine's worker and WebAssembly core ship inside the package and cannot be fetched. Verified by observing the worker's own network on a clean profile. | No |
 
 ### The assistant cannot be talked into exfiltrating
 
@@ -371,8 +371,10 @@ is worth a second look:
 - The English and Spanish language models ship in the package (`src/lib/tessdata/`). For any
   other language, what is fetched from `cdn.jsdelivr.net` is the trained **language model**,
   once, from a URL pinned to one commit and written in the extension's own code
-  (`OCR_REMOTE_LANG_PATH` in `screenshotsService.js`); the engine caches it. It is data the
-  recognizer reads, not code it runs.
+  (`OCR_REMOTE_LANG_PATH` in `screenshotsService.js`); the engine caches it. When a reading
+  fails, Tesseract's script detector (`osd.traineddata.gz`) is fetched the same way, once,
+  to pick the language for a second reading. Both are data the recognizer reads, not code it
+  runs.
 - Verified rather than asserted: in a real browser, an OCR run in English or Spanish makes no
   external request at all, a run in another language fetches only that `.traineddata.gz`, and
   creating the engine without a `corePath` fails with `corePath is required` rather than
@@ -523,7 +525,7 @@ phone home.
 | `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something, from the panel or by typing `find` and a space in Chrome’s address bar |
 | Chrome’s built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
 | `youtube.com · i.ytimg.com` | The video id, for the thumbnail and the embedded player | Only for a YouTube link you preview or play |
-| `cdn.jsdelivr.net` | Nothing about you. It fetches the OCR language model for a language other than English or Spanish, which ship with the extension; Chrome then caches it | The first time you run OCR in a language other than English or Spanish |
+| `cdn.jsdelivr.net` | Nothing about you. It fetches OCR models: the one for a language other than English or Spanish, which ship with the extension, and a script detector when a reading fails; Chrome then caches them | The first time OCR needs one of them |
 
 And, of course, the websites you open yourself. The extension arranges the tabs around a page; it
 does not sit between you and what is in it.

@@ -13837,7 +13837,7 @@
         "message": "El asistente envía la página que le señalas, lo que le adjuntes y los títulos de tus pestañas abiertas cuando las buscas por descripción, a la API de Gemini de Google con tu propia clave. El modelo local de Chrome no envía nada. El asistente está apagado hasta que lo configuras."
     },
     "dataUseOcrItem": {
-        "message": "Leer el texto de una captura funciona sin conexión en español e inglés, cuyos modelos vienen con la extensión. Para cualquier otro idioma, su modelo se descarga una vez desde jsDelivr y el navegador lo guarda en caché. No se envía nada sobre ti."
+        "message": "Leer el texto de una captura funciona sin conexión en español e inglés, cuyos modelos vienen con la extensión. Para cualquier otro idioma, su modelo se descarga una vez desde jsDelivr y el navegador lo guarda en caché. No se envía nada sobre ti. Si una lectura falla, también se descarga una vez desde ahí un detector de escritura para averiguar el idioma de la imagen."
     },
     "dataUseContributionItem": {
         "message": "Apoyar el proyecto abre nuestra página de pago, que gestiona la tarjeta a través de Stripe. Los datos de la tarjeta no llegan nunca a la extensión."

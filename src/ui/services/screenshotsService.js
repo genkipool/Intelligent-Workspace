@@ -9,7 +9,7 @@
  */
 
 import { get } from 'svelte/store';
-import { tick } from 'svelte';
+import { tick, mount, unmount } from 'svelte';
 
 /** Waits for a node that a Svelte view mounts in response to a store change. */
 async function waitForElement(selector, attempts = 30) {
@@ -29,7 +29,6 @@ import {
     msg as localizedMsg,
     pluralKey,
     getCurrentLang,
-    SUPPORTED_LANGUAGES,
 } from '../../utils/i18n.js';
 import {
     saveScreenshotToDb,
@@ -1411,6 +1410,25 @@ const OCR_LANG_CODES = {
 };
 
 /**
+ * The script detector (Tesseract's OSD model, 4.3 MB), fetched the first time a run fails
+ * and cached like the language models. It needs the legacy engine, which the packaged
+ * core includes, and lives in the plain `4.0.0` folder rather than `_best_int`.
+ *
+ * It names a writing system, not a language, so only the scripts that belong to one of
+ * the extension's languages are mapped; Latin text keeps the language it was read with.
+ */
+const OCR_REMOTE_OSD_PATH =
+    'https://cdn.jsdelivr.net/gh/naptha/tessdata@806cd9adc8c6e8abc11c782db1818c990576bebc/4.0.0';
+const OCR_SCRIPT_LANGS = {
+    Japanese: 'jpn',
+    Han: 'chi_sim',
+    Korean: 'kor',
+    Hangul: 'kor',
+    Cyrillic: 'rus',
+    Devanagari: 'hin',
+};
+
+/**
  * Below this mean confidence the text is mostly guesses, which is what recognising a
  * script with the wrong model looks like. It still gets copied, but the run counts as
  * failed so the language picker is offered.
@@ -1464,13 +1482,61 @@ async function ocrModelCached(lang) {
     }
 }
 
+/**
+ * Reads the image with the given models.
+ *
+ * A run that needs the CDN reads every model from there, so English is put in the cache
+ * from the package first; after that the CDN is only asked for the other one.
+ */
+async function ocrRecognize(Tesseract, dataUrl, langs, logger) {
+    const needsRemote = langs.some((l) => !OCR_BUNDLED_LANGS.has(l));
+    const localPath = chrome.runtime.getURL(OCR_LOCAL_LANG_PATH);
+    if (needsRemote && !(await ocrModelCached('eng'))) {
+        const warm = await Tesseract.createWorker('eng', 1, ocrWorkerOptions(localPath));
+        await warm.terminate();
+    }
+    const worker = await Tesseract.createWorker(
+        langs.join('+'),
+        1,
+        ocrWorkerOptions(needsRemote ? OCR_REMOTE_LANG_PATH : localPath, logger),
+    );
+    try {
+        const ret = await worker.recognize(dataUrl);
+        return { text: ret.data?.text?.trim() || '', confidence: ret.data?.confidence ?? 0 };
+    } finally {
+        await worker.terminate();
+    }
+}
+
+/** The OCR language the image's script points to, or null when it points nowhere new. */
+async function ocrDetectLang(Tesseract, dataUrl) {
+    try {
+        const worker = await Tesseract.createWorker('osd', 0, {
+            ...ocrWorkerOptions(OCR_REMOTE_OSD_PATH),
+            legacyCore: true,
+            legacyLang: true,
+        });
+        try {
+            const { data } = await worker.detect(dataUrl);
+            return OCR_SCRIPT_LANGS[data?.script] || null;
+        } finally {
+            await worker.terminate();
+        }
+    } catch (e) {
+        console.warn('OCR script detection failed:', e);
+        return null;
+    }
+}
+
 function ocrWorkerOptions(langPath, logger) {
     return {
         workerBlobURL: false,
         workerPath: chrome.runtime.getURL('src/lib/worker.min.js'),
         corePath: chrome.runtime.getURL('src/lib/tesseract-core.wasm.js'),
         langPath,
-        logger,
+        // Only when there is one: an explicit `undefined` replaces the library's no-op
+        // default, and the worker's first progress message then throws.
+        ...(logger && { logger }),
     };
 }
 
@@ -1487,39 +1553,39 @@ export async function handleOcrScreenshot(dataUrl, buttonEl, screenshotId = null
     let failed = true;
 
     try {
-        const langs = ocrPickedLang.get(screenshotId) || ocrLangsFor(await getCurrentLang());
-        const needsRemote = langs.some((l) => !OCR_BUNDLED_LANGS.has(l));
-        const localPath = chrome.runtime.getURL(OCR_LOCAL_LANG_PATH);
+        const picked = ocrPickedLang.get(screenshotId);
+        const langs = picked || ocrLangsFor(await getCurrentLang());
+        const logger = (m) => {
+            if (m.status === 'recognizing text' && m.progress != null) {
+                const pct = Math.round(m.progress * 100);
+                buttonEl.title = localizedMsg('ocrProgressTooltip', [String(pct)]) || `OCR... ${pct}%`;
+                progressNotice.updateProgress([String(pct)]);
+            }
+        };
+        let result = await ocrRecognize(Tesseract, dataUrl, langs, logger);
 
-        // A run that needs the CDN reads every model from there, so English is put in the
-        // cache from the package first; after that the CDN is only asked for the other one.
-        if (needsRemote && !(await ocrModelCached('eng'))) {
-            const warm = await Tesseract.createWorker('eng', 1, ocrWorkerOptions(localPath));
-            await warm.terminate();
-        }
-
-        const worker = await Tesseract.createWorker(
-            langs.join('+'),
-            1,
-            ocrWorkerOptions(needsRemote ? OCR_REMOTE_LANG_PATH : localPath, (m) => {
-                if (m.status === 'recognizing text' && m.progress != null) {
-                    const pct = Math.round(m.progress * 100);
-                    buttonEl.title = localizedMsg('ocrProgressTooltip', [String(pct)]) || `OCR... ${pct}%`;
-                    progressNotice.updateProgress([String(pct)]);
+        // A poor first read, in a language nobody chose by hand: ask the image which script
+        // it is written in, and read it again if that points to another of our languages.
+        // The picker is left for when this does not help either.
+        if (!picked && (!result.text || result.confidence < OCR_MIN_CONFIDENCE)) {
+            const detected = await ocrDetectLang(Tesseract, dataUrl);
+            if (detected && detected !== langs[0]) {
+                const retry = await ocrRecognize(Tesseract, dataUrl, [detected, 'eng'], logger);
+                if (retry.text && retry.confidence > result.confidence) {
+                    result = retry;
+                    if (screenshotId != null) ocrPickedLang.set(screenshotId, [detected, 'eng']);
                 }
-            }),
-        );
-        const ret = await worker.recognize(dataUrl);
-        await worker.terminate();
+            }
+        }
 
         progressNotice.close();
 
-        const text = ret.data?.text?.trim();
+        const text = result.text;
         if (!text) {
             showNotification('ocrNoText', true);
             return;
         }
-        failed = (ret.data?.confidence ?? 100) < OCR_MIN_CONFIDENCE;
+        failed = result.confidence < OCR_MIN_CONFIDENCE;
 
         try {
             if (navigator.hasFocus && navigator.hasFocus() && navigator.clipboard) {
@@ -1571,9 +1637,10 @@ export async function handleOcrScreenshot(dataUrl, buttonEl, screenshotId = null
 /*
  * The language picker offered on the OCR button after a failed run.
  *
- * One element for the whole page, moved to whichever button asked for it. It lives on
- * `body` because the card clips its overflow, and it stays open while the pointer is on
- * either the button or the picker, so moving from one to the other does not close it.
+ * The same `LanguagePicker` the popup's language switch opens, mounted on demand: one for
+ * the whole page, moved to whichever button asked for it. It lives on `body` because the
+ * card clips its overflow, and it stays open while the pointer is on either the button or
+ * the picker, so moving from one to the other does not close it.
  */
 let ocrPicker = null;
 let ocrPickerHideTimer = null;
@@ -1586,7 +1653,8 @@ function scheduleOcrPickerHide() {
 function hideOcrLanguagePicker() {
     clearTimeout(ocrPickerHideTimer);
     if (!ocrPicker) return;
-    ocrPicker.remove();
+    unmount(ocrPicker.component);
+    ocrPicker.host.remove();
     ocrPicker = null;
     document.removeEventListener('keydown', onOcrPickerKeydown, true);
 }
@@ -1601,49 +1669,46 @@ function onOcrPickerKeydown(e) {
 async function showOcrLanguagePicker(buttonEl, screenshot) {
     hideOcrLanguagePicker();
     const current = (ocrPickedLang.get(screenshot.id) || ocrLangsFor(await getCurrentLang()))[0];
+    // Loaded here rather than imported at the top: the tests load this service in Node,
+    // which cannot read a `.svelte` file, and the bundler splits it out either way.
+    const { default: LanguagePicker } = await import('../components/common/LanguagePicker.svelte');
     if (!buttonEl.matches(':hover')) return; // the pointer moved on while the language was read
 
-    const picker = document.createElement('div');
-    picker.className = 'ocr-lang-picker';
-    picker.setAttribute('role', 'menu');
-    const heading = document.createElement('p');
-    heading.className = 'ocr-lang-picker-title';
-    heading.textContent = localizedMsg('ocrPickLanguage');
-    picker.appendChild(heading);
+    const host = document.createElement('div');
+    host.className = 'ocr-lang-picker';
+    host.addEventListener('mouseenter', () => clearTimeout(ocrPickerHideTimer));
+    host.addEventListener('mouseleave', scheduleOcrPickerHide);
+    document.body.appendChild(host);
 
-    for (const { code, nativeName } of SUPPORTED_LANGUAGES) {
-        const tess = OCR_LANG_CODES[code];
-        if (!tess) continue;
-        const item = document.createElement('button');
-        item.type = 'button';
-        item.className = 'ocr-lang-picker-item';
-        item.setAttribute('role', 'menuitemradio');
-        item.setAttribute('aria-checked', String(tess === current));
-        item.lang = code.replace('_', '-');
-        item.textContent = nativeName;
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            ocrPickedLang.set(screenshot.id, tess === 'eng' ? ['eng'] : [tess, 'eng']);
-            hideOcrLanguagePicker();
-            handleOcrScreenshot(screenshot.dataUrl, buttonEl, screenshot.id);
-        });
-        picker.appendChild(item);
-    }
-
-    picker.addEventListener('mouseenter', () => clearTimeout(ocrPickerHideTimer));
-    picker.addEventListener('mouseleave', scheduleOcrPickerHide);
-    document.body.appendChild(picker);
-    ocrPicker = picker;
+    const component = mount(LanguagePicker, {
+        target: host,
+        props: {
+            title: localizedMsg('ocrPickLanguage'),
+            selected: Object.keys(OCR_LANG_CODES).find((code) => OCR_LANG_CODES[code] === current) ?? null,
+            onSelect: (code) => {
+                const tess = OCR_LANG_CODES[code] || 'eng';
+                ocrPickedLang.set(screenshot.id, tess === 'eng' ? ['eng'] : [tess, 'eng']);
+                hideOcrLanguagePicker();
+                handleOcrScreenshot(screenshot.dataUrl, buttonEl, screenshot.id);
+            },
+        },
+    });
+    ocrPicker = { host, component };
     document.addEventListener('keydown', onOcrPickerKeydown, true);
 
-    // Beside the button, flipped to the left or up when it would leave the window.
+    // Below the button, opening towards whichever side has more room: from its left edge
+    // rightwards, or from its right edge leftwards. Above it only when below would leave
+    // the window, since the list has no scrollbar to fall back on.
     const r = buttonEl.getBoundingClientRect();
-    const w = picker.offsetWidth;
-    const h = picker.offsetHeight;
-    const left = r.right + 4 + w > window.innerWidth ? Math.max(4, r.left - 4 - w) : r.right + 4;
-    const top = Math.max(4, Math.min(r.top, window.innerHeight - h - 4));
-    picker.style.left = `${left}px`;
-    picker.style.top = `${top}px`;
+    const w = host.offsetWidth;
+    const h = host.offsetHeight;
+    const roomRight = window.innerWidth - r.left;
+    const roomLeft = r.right;
+    const left = roomRight >= roomLeft ? r.left : r.right - w;
+    const below = r.bottom + 4;
+    const top = below + h <= window.innerHeight - 4 || r.top - 4 - h < 4 ? below : r.top - 4 - h;
+    host.style.left = `${Math.max(4, Math.min(left, window.innerWidth - w - 4))}px`;
+    host.style.top = `${Math.max(4, top)}px`;
 }
 
 /**

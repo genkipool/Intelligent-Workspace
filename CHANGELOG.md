@@ -36,7 +36,7 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
-- **OCR in the extension's language:** reading text out of a screenshot used Spanish and English whatever the interface was in, so a capture in Japanese, Russian or Hindi came out as noise. It now uses the interface language plus English. When a run fails (no text, an error, or a mean confidence under 50), hovering over the OCR button again offers a picker with the 11 languages, and the one chosen sticks to that capture. Two new messages in the 11 languages.
+- **OCR in the extension's language:** reading text out of a screenshot used Spanish and English whatever the interface was in, so a capture in Japanese, Russian or Hindi came out as noise. It now uses the interface language plus English. When that reading comes out empty or unsure, the extension detects the image's script (Tesseract's OSD model, downloaded once) and, if it is Japanese, Chinese, Korean, Cyrillic or Devanagari, reads it again in that language. When a run still fails (no text, an error, or a mean confidence under 50), hovering over the OCR button again offers a picker with the 11 languages, and the one chosen sticks to that capture. Two new messages in the 11 languages.
 - **Chrome's local AI in the omnibar:** `qai:` and `qaia:` answer with Chrome's on-device model (Gemini Nano) when it is the model picked in the selector, or when every API key is out of quota and the local fallback is on, the same rules the side panel's assistant already followed. Before, the omnibar always went to the API and said "quota exceeded" with the model installed. The omnibar frame now delegates `language-model` so the Prompt API is reachable from it.
 
 ### Fixed
@@ -54,7 +54,7 @@ What's new
 • The omnibar's AI commands (qai:, qaia:) can use Chrome's local AI: when you pick it, or when your API keys run out of quota.
 • Backing up groups never closes the group you are on, and backing up all of them no longer closes the browser.
 • Omnibar fixes: groups picked with Space are backed up, renamed prefixes work everywhere, and Ctrl+Enter keeps acting on the highlighted row.
-• Text recognition (OCR) reads screenshots in the extension's language, works offline in English and Spanish, and lets you pick the image's language if it fails.
+• Text recognition (OCR) reads screenshots in the extension's language, recognises Japanese, Chinese, Korean, Russian and Hindi text on its own, works offline in English and Spanish, and lets you pick the image's language if it still fails.
 ```
 
 ---
