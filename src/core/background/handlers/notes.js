@@ -180,12 +180,7 @@ async function handleCreateNoteFromSelection(message, sender, sendResponse) {
 
 /** The tray notice this handler puts up; the shape every other one uses. */
 function notifyNote(key, params = []) {
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '/assets/icons/icon128.png',
-        title: getI18nMsg('extName'),
-        message: getI18nMsg(key, params),
-    });
+    notifyExtension(key, params);
 }
 
 // --- Renaming a rule ---

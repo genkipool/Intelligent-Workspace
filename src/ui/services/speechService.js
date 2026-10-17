@@ -28,10 +28,6 @@ export const DEFAULT_SPEECH_SETTINGS = Object.freeze({ voiceURI: '', rate: 1, pi
  */
 let speechSettings = { ...DEFAULT_SPEECH_SETTINGS };
 
-export function getSpeechSettings() {
-    return { ...speechSettings };
-}
-
 async function loadSpeechSettings() {
     try {
         const stored = await chrome.storage.sync.get(SPEECH_SETTINGS_KEY);

@@ -1,11 +1,5 @@
 <script>
-    import {
-        msg as localizedMsg,
-        LANGUAGE_STORAGE_KEY,
-        getCurrentLang,
-        loadMessages,
-        resolveMessage,
-    } from '../../../utils/i18n.js';
+    import { LANGUAGE_STORAGE_KEY, localizedText } from '../../../utils/i18n.js';
     /**
      * Keyboard navigation & snippets page.
      *
@@ -37,16 +31,10 @@
 
     async function updateToggleTitle() {
         const key = linkPreviewEnabled ? 'linkPreviewToggleDisable' : 'linkPreviewToggleEnable';
-        try {
-            const lang = await getCurrentLang();
-            const messages = await loadMessages(lang);
-            const message = resolveMessage(messages[key], [], 'message');
-            previewToggleTitle =
-                message || localizedMsg(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
-        } catch {
-            previewToggleTitle =
-                localizedMsg(key) || (linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview');
-        }
+        previewToggleTitle = await localizedText(
+            key,
+            linkPreviewEnabled ? 'Disable link preview' : 'Enable link preview',
+        );
     }
 
     async function toggleLinkPreview(event) {

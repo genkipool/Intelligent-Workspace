@@ -70,8 +70,6 @@ export const STORAGE_KEYS = {
     ORPHAN_SECTION_DISPLAY: 'orphanSectionDisplayMode',
 };
 
-export const MAX_GEMINI_SCHEDULES = 7;
-
 /**
  * The reading modes a tab can be put into.
  *

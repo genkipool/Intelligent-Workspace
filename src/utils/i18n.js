@@ -182,6 +182,20 @@ export async function primeActiveMessages() {
 }
 
 /**
+ * The text for `key` in the extension's language, read fresh from the message files
+ * so it is right even before the page's own catalogue has loaded. Falls back to the
+ * active catalogue, then to `fallback`.
+ */
+export async function localizedText(key, fallback) {
+    try {
+        const messages = await loadMessages(await getCurrentLang());
+        return resolveMessage(messages[key], [], 'message') || msg(key) || fallback;
+    } catch {
+        return msg(key) || fallback;
+    }
+}
+
+/**
  * Drop-in replacement for `chrome.i18n.getMessage()` that follows the extension's
  * language setting. Same contract: a missing key yields an empty string.
  */
@@ -459,27 +473,4 @@ export async function showPersistentProgressNotification(messageKey, params = []
             }
         },
     };
-}
-
-export function capitalizeFirstLetter(input) {
-    if (input.value) {
-        input.value = input.value.charAt(0).toUpperCase() + input.value.slice(1);
-    }
-    return input;
-}
-
-export function debounce(func, wait) {
-    let timeout;
-    return function (...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-}
-
-// Normalizes a URL for comparisons
-export function normalizeUrl(url) {
-    return url
-        .toLowerCase()
-        .replace(/^(https?:\/\/)?(www\.)?/, '')
-        .replace(/\/$/, '');
 }

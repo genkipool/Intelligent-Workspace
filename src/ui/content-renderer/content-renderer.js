@@ -1,16 +1,7 @@
 import { extractYouTubeVideoIdFromUrl, createYouTubeEmbed } from '../../utils/youtubeEmbed.js';
 import { sanitizeNoteHtml } from '../../utils/noteHtml.js';
 import { msg as localizedMsg, activeLocale, plural } from '../../utils/i18n.js';
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
+import { escapeHtml } from '../services/utils.js';
 
 function highlightSyntax(code, language) {
     const lang = language.toLowerCase();

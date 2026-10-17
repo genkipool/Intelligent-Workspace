@@ -7,7 +7,7 @@
 import { get, writable } from 'svelte/store';
 import { isGeminiViewActive, searchToggles } from '../stores/appStore.svelte.js';
 import { openModal, showApiKeyModal as showApiKeyModalStore, showDownloadFormatModal } from '../stores/modalStore.js';
-import { downloadConversationFiles } from '../../utils/download/conversationExport.js';
+import { downloadConversationFiles, markdownToPlainText } from '../../utils/download/conversationExport.js';
 import {
     geminiStore,
     conversationHistory,
@@ -280,11 +280,7 @@ export function markdownToHtml(markdown) {
 }
 
 /** The same answer as plain text, with the markdown resolved rather than spelled out. */
-export function markdownToPlainText(markdown) {
-    const holder = document.createElement('div');
-    holder.innerHTML = parseMarkdown(markdown || '');
-    return (holder.textContent || '').trim();
-}
+export { markdownToPlainText };
 
 export function htmlToSpeechText(htmlString) {
     if (!htmlString) return '';

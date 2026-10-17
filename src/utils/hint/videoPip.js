@@ -759,14 +759,6 @@ var ItgVideoLoopController =
             }
         }
 
-        setPlaybackMode(mode) {
-            this.playbackMode = mode === 'sequence' ? 'sequence' : 'single';
-            this.currentLoopRepetition = 0;
-            this.currentSequenceCycle = 0;
-            this.saveToStorage();
-            this.notify();
-        }
-
         setSequenceRepeatCount(count) {
             if (typeof count === 'number' && !isNaN(count)) {
                 this.sequenceRepeatCount = Math.max(0, Math.floor(count));
@@ -801,10 +793,6 @@ var ItgVideoLoopController =
             this.currentLoopRepetition = 0;
             this.saveToStorage();
             this.notify();
-        }
-
-        setSettings({ startTime, endTime, repeatCount, name }) {
-            this.setLoopSettings(this.activeLoopIndex, { startTime, endTime, repeatCount, name });
         }
 
         resetSettings() {

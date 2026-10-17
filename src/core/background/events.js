@@ -518,20 +518,8 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         }
         return;
     }
-    if (menuItemId.startsWith('open-url_')) {
-        const parts = menuItemId.split('_');
-        if (parts.length >= 3) {
-            const urlIndex = parseInt(parts.pop(), 10);
-            parts.shift(); // Remove "open"
-            const ruleName = parts.join('_');
-            const rules = extensionSettings.customRules || [];
-            const rule = rules.find((r) => r.name === ruleName);
-            if (rule && rule.urls && !isNaN(urlIndex) && rule.urls[urlIndex]) {
-                await openUrlsCommand([rule.urls[urlIndex]]);
-            }
-        }
-        return;
-    }
+    // An `open-url_` id that `parseRuleActionId` could not read names no URL; it stops here.
+    if (menuItemId.startsWith('open-url_')) return;
     if (menuItemId.startsWith('remove-domain_')) {
         const domainToRemove = menuItemId.substring('remove-domain_'.length);
         if (domainToRemove) {
@@ -1038,7 +1026,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 path: 'src/ui/pages/rules/rules.html',
                 enabled: true,
             });
-            isSidePanelActive = true;
             chrome.sidePanel.open({
                 windowId: tab.windowId,
             });
@@ -1051,7 +1038,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 path: 'src/ui/pages/listGroup/listGroup.html',
                 enabled: true,
             });
-            isSidePanelActive = true;
             chrome.sidePanel.open({
                 windowId: tab.windowId,
             });
@@ -1061,7 +1047,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 path: 'src/ui/pages/savedThemes/savedThemes.html',
                 enabled: true,
             });
-            isSidePanelActive = true;
             chrome.sidePanel.open({
                 windowId: tab.windowId,
             });
@@ -1071,7 +1056,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 path: 'src/ui/pages/listGroup/listGroup.html?view=gemini',
                 enabled: true,
             });
-            isSidePanelActive = true;
             chrome.sidePanel.open({
                 windowId: tab.windowId,
             });
@@ -1081,7 +1065,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 path: 'src/ui/pages/customize_hints/customize_hints.html',
                 enabled: true,
             });
-            isSidePanelActive = true;
             chrome.sidePanel.open({
                 windowId: tab.windowId,
             });
@@ -1095,30 +1078,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         case 'toggle-clustering':
             await toggleClusteringCommand();
             break;
-        case 'toggle-domain-grouping':
-            await handleClusterToggle('domainsEnabled');
-            break;
-        case 'toggle-subdomain-grouping':
-            await handleClusterToggle('subdomainsEnabled');
-            break;
-        case 'toggle-compact-mode':
-            await handleClusterToggle('compactMode.enabled');
-            break;
-        case 'toggle-chrome-grouping':
-            await handleClusterToggle('specialGroups.chrome.enabled');
-            break;
-        case 'toggle-files-grouping':
-            await handleClusterToggle('specialGroups.files.enabled');
-            break;
-        case 'toggle-extensions-grouping':
-            await handleClusterToggle('specialGroups.extensions.enabled');
-            break;
-        case 'toggle-misc-grouping':
-            await handleClusterToggle('specialGroups.misc.enabled');
-            break;
-        case 'toggle-ip-address-grouping':
-            await handleClusterToggle('specialGroups.ipAddress.enabled');
-            break;
         case 'misc-sort-start':
         case 'misc-sort-end':
         case 'misc-sort-alpha':
@@ -1128,6 +1087,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
                 miscGroupSortOption: newSortOption,
             });
             break;
+        default:
+            if (Object.hasOwn(CLUSTER_TOGGLE_PATHS, menuItemId)) {
+                await handleClusterToggle(CLUSTER_TOGGLE_PATHS[menuItemId]);
+            }
     }
 });
 
@@ -1340,23 +1303,7 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         let optionChanged = true;
         switch (key) {
             case 'clusterConfig':
-                const storedConfig = newValue || {};
-                const mergedSpecialGroups = {};
-                for (const groupKey in DEFAULT_CLUSTER_CONFIG.specialGroups) {
-                    mergedSpecialGroups[groupKey] = {
-                        ...DEFAULT_CLUSTER_CONFIG.specialGroups[groupKey],
-                        ...(storedConfig.specialGroups?.[groupKey] || {}),
-                    };
-                }
-                extensionSettings.clusterConfig = {
-                    ...DEFAULT_CLUSTER_CONFIG,
-                    ...storedConfig,
-                    specialGroups: mergedSpecialGroups,
-                    compactMode: {
-                        ...DEFAULT_CLUSTER_CONFIG.compactMode,
-                        ...(storedConfig.compactMode || {}),
-                    },
-                };
+                extensionSettings.clusterConfig = mergeClusterConfig(newValue || {});
                 needsRegroup = true;
                 break;
             case 'clusteringEnabled':

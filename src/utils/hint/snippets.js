@@ -266,54 +266,6 @@ var SnippetManager = class SnippetManager {
         };
         return strategies[editorType] || strategies['standard'];
     }
-    _isElementVisible(element) {
-        if (!element) return false;
-
-        // Use checkVisibility if available
-        if (element.checkVisibility) {
-            try {
-                return element.checkVisibility({
-                    checkOpacity: true,
-                    checkVisibilityCSS: true,
-                });
-            } catch {
-                // Fallback
-            }
-        }
-
-        // Fallback manual
-        const style = window.getComputedStyle(element);
-        if (style.display === 'none') return false;
-        if (style.visibility === 'hidden') return false;
-        if (style.opacity === '0') return false;
-        const rect = element.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-    }
-
-    /**
-     * NEW: Verifies if the trigger is actually before the cursor
-     */
-    _isIntegratedEditor(element, trigger) {
-        if (!element || !trigger) return true;
-        if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
-            const value = element.value || '';
-            const pos = element.selectionStart || 0;
-            const textBefore = value.substring(0, pos);
-            return textBefore.toLowerCase().endsWith(trigger.toLowerCase() + ' ');
-        }
-        if (element.isContentEditable) {
-            const sel = window.getSelection();
-            if (!sel || !sel.rangeCount) return true;
-            const range = sel.getRangeAt(0);
-            const node = range.startContainer;
-            if (node.nodeType !== Node.TEXT_NODE) return true;
-            const text = node.textContent || '';
-            const offset = range.startOffset;
-            const textBefore = text.substring(0, offset);
-            return textBefore.toLowerCase().endsWith(trigger.toLowerCase() + ' ');
-        }
-        return true;
-    }
 
     /**
      * FIXED: Emulates Backspace with REAL deletion
@@ -898,19 +850,6 @@ var SnippetManager = class SnippetManager {
             itgDebug('[DEBUG] Snippets disponibles:', Object.keys(this.snippets));
         }
     }
-    _simulateKey(target, key, keyCode) {
-        const common = {
-            key: key,
-            keyCode: keyCode,
-            which: keyCode,
-            code: key,
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-        };
-        target.dispatchEvent(new KeyboardEvent('keydown', common));
-        target.dispatchEvent(new KeyboardEvent('keyup', common));
-    }
     async _reloadSnippets() {
         this.snippets = await HintCommon.Snippets.getAll();
     }
@@ -941,143 +880,6 @@ var SnippetManager = class SnippetManager {
         const textarea = document.createElement('textarea');
         textarea.innerHTML = stripped;
         return textarea.value;
-    }
-
-    /**
-     * Inserts text using the Clipboard API (recommended method for Google Docs)
-     */
-    _insertUsingPasteEvent(target, text, html) {
-        const dataTransfer = new DataTransfer();
-        dataTransfer.setData('text/plain', text);
-        if (html) {
-            // CRITICAL: Google Docs needs COMPLETE HTML structure
-            // Include DOCTYPE, meta tags and body wrapper
-
-            let finalHtml = html;
-
-            // Ensure it does not have duplicate meta
-            const meta = "<meta charset='utf-8'>";
-            if (finalHtml.startsWith(meta)) {
-                finalHtml = finalHtml.substring(meta.length);
-            }
-
-            // Wrap in full HTML structure if it doesn't have one
-            if (!finalHtml.toLowerCase().includes('<!doctype')) {
-                finalHtml = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <meta name='generator' content='Intelligent Workspace'>
-    <style>
-        body { margin: 0; padding: 0; }
-        p { margin: 0; }
-    </style>
-</head>
-<body>
-${finalHtml}
-</body>
-</html>`;
-            }
-            itgDebug('[SnippetManager] HTML para paste:', finalHtml.substring(0, 200));
-            dataTransfer.setData('text/html', finalHtml);
-        }
-
-        // 1. Try InputEvent (beforeinput) - modern method
-        const inputEvent = new InputEvent('beforeinput', {
-            inputType: 'insertFromPaste',
-            dataTransfer: dataTransfer,
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-        });
-        const inputHandled = target.dispatchEvent(inputEvent);
-        if (!inputHandled || inputEvent.defaultPrevented) {
-            itgDebug('[SnippetManager] [OK] Manejado por beforeinput');
-            return true;
-        }
-
-        // 2. Try ClipboardEvent (paste)
-        const pasteEvent = new ClipboardEvent('paste', {
-            clipboardData: dataTransfer,
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-        });
-        const pasteHandled = target.dispatchEvent(pasteEvent);
-        if (!pasteHandled || pasteEvent.defaultPrevented) {
-            itgDebug('[SnippetManager] [OK] Manejado por paste event');
-            return true;
-        }
-
-        // 3. Fallback: try execCommand paste (might work in some editors)
-        itgDebug('[SnippetManager] [WARN] Usando fallback execCommand');
-
-        // Try insertHTML first if there is HTML
-        if (html && this._isHTML(html)) {
-            const success = document.execCommand('insertHTML', false, html);
-            if (success) {
-                itgDebug('[SnippetManager] [OK] Insertado con insertHTML');
-                return true;
-            }
-        }
-
-        // Last resort: plain text
-        document.execCommand('insertText', false, text);
-        itgDebug('[SnippetManager] [WARN] Insertado como texto plano');
-        return true;
-    }
-
-    /**
-     * Inserts HTML using insertHTML (fallback when clipboard fails)
-     */
-    _insertHTMLDirect(range, selection, html, element) {
-        try {
-            const finalHTML = html + '&nbsp;';
-            if (!document.execCommand('insertHTML', false, finalHTML)) {
-                // Fallback manual
-                range.deleteContents();
-                const fragment = range.createContextualFragment(finalHTML);
-                range.insertNode(fragment);
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
-                element.dispatchEvent(
-                    new Event('input', {
-                        bubbles: true,
-                    }),
-                );
-            }
-            return true;
-        } catch (error) {
-            console.error('Error insertando HTML:', error);
-            return false;
-        }
-    }
-
-    /**
-     * Inserts plain text
-     */
-    _insertPlainText(range, selection, text, element) {
-        try {
-            const finalText = text + ' ';
-            if (!document.execCommand('insertText', false, finalText)) {
-                // Fallback manual
-                range.deleteContents();
-                range.insertNode(document.createTextNode(finalText));
-                range.collapse(false);
-                selection.removeAllRanges();
-                selection.addRange(range);
-                element.dispatchEvent(
-                    new Event('input', {
-                        bubbles: true,
-                    }),
-                );
-            }
-            return true;
-        } catch (error) {
-            console.error('Error insertando texto:', error);
-            return false;
-        }
     }
 
     /**
@@ -1296,26 +1098,6 @@ ${finalHtml}
         // _handleInput no longer does snippet expansion to avoid double expansion.
         // Detection and expansion is done exclusively via keyBuffer + _checkBlindMatch.
         return;
-    }
-
-    /**
-     * Gets text before the cursor
-     */
-    _getTextBeforeCursor(el) {
-        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-            const selectionStart = el.selectionStart || 0;
-            return (el.value || '').substring(0, selectionStart);
-        } else if (el.isContentEditable) {
-            const selection = window.getSelection();
-            if (!selection.rangeCount) return '';
-            const range = selection.getRangeAt(0);
-            const node = range.endContainer;
-            const offset = range.endOffset;
-            if (node.nodeType === Node.TEXT_NODE) {
-                return node.textContent.substring(0, offset);
-            }
-        }
-        return '';
     }
 
     /**

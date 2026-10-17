@@ -1,5 +1,6 @@
 <script>
     import { tick } from 'svelte';
+    import { DROPDOWN_UNPLACED_STYLE, dropdownBelowStyle } from '../../services/popupPositioning.js';
     import { portal } from '../../actions/portal.js';
     import { t } from '../../stores/i18nStore.js';
 
@@ -39,13 +40,7 @@
     let open = $state(false);
     let triggerEl = $state(null);
     let popupEl = $state(null);
-    /**
-     * Fixed from the moment it exists, and out of sight until placed. Measured while it
-     * was still a plain block it took the size of the page around it — 800px tall in the
-     * side panel — so it was placed above the top of the window and the first click
-     * seemed to do nothing.
-     */
-    const UNPLACED_STYLE = 'position: fixed; top: 0; left: 0; visibility: hidden;';
+    const UNPLACED_STYLE = DROPDOWN_UNPLACED_STYLE;
     let popupStyle = $state(UNPLACED_STYLE);
     let hour = $state('00');
     let minute = $state('00');
@@ -65,13 +60,7 @@
 
     function place() {
         if (!triggerEl || !popupEl) return;
-        const rect = triggerEl.getBoundingClientRect();
-        const padding = 5;
-        let top = rect.bottom + padding;
-        if (top + popupEl.offsetHeight > window.innerHeight) top = rect.top - popupEl.offsetHeight - padding;
-        let left = rect.left;
-        if (left + popupEl.offsetWidth > window.innerWidth) left = window.innerWidth - popupEl.offsetWidth - padding;
-        popupStyle = `position: fixed; top: ${Math.max(padding, top)}px; left: ${Math.max(padding, left)}px;`;
+        popupStyle = dropdownBelowStyle(triggerEl, popupEl);
     }
 
     function toggle() {

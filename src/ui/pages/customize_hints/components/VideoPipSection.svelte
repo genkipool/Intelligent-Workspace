@@ -1,11 +1,5 @@
 <script>
-    import {
-        msg as localizedMsg,
-        LANGUAGE_STORAGE_KEY,
-        getCurrentLang,
-        loadMessages,
-        resolveMessage,
-    } from '../../../../utils/i18n.js';
+    import { LANGUAGE_STORAGE_KEY, localizedText } from '../../../../utils/i18n.js';
     /**
      * Video Picture-in-Picture settings section.
      *
@@ -24,13 +18,7 @@
 
     async function updateTitle() {
         const key = enabled ? 'videoPipToggleDisable' : 'videoPipToggleEnable';
-        const fallback = enabled ? 'Turn off' : 'Turn on';
-        try {
-            const messages = await loadMessages(await getCurrentLang());
-            toggleTitle = resolveMessage(messages[key], [], 'message') || localizedMsg(key) || fallback;
-        } catch {
-            toggleTitle = localizedMsg(key) || fallback;
-        }
+        toggleTitle = await localizedText(key, enabled ? 'Turn off' : 'Turn on');
     }
 
     function togglePip(event) {

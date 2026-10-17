@@ -185,21 +185,6 @@ export async function deleteNoteFromDb(id) {
     });
 }
 
-export async function clearAllNotesFromDb() {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([NOTES_STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(NOTES_STORE_NAME);
-        const request = store.clear();
-
-        request.onsuccess = () => resolve();
-        request.onerror = (event) => {
-            console.error('Error clearing notes store in IndexedDB:', event.target.error);
-            reject(event.target.error);
-        };
-    });
-}
-
 export async function clearNotesForContext(contextKey, numericContextKey = null) {
     const db = await openDb();
     return new Promise((resolve, reject) => {
@@ -350,18 +335,6 @@ export async function saveGeminiEntryToDb(entry) {
     });
 }
 
-export async function getGeminiEntryFromDb(id) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([CONVERSATION_STORE_NAME], 'readonly');
-        const store = transaction.objectStore(CONVERSATION_STORE_NAME);
-        const request = store.get(id);
-
-        request.onsuccess = (event) => resolve(event.target.result);
-        request.onerror = (event) => reject(event.target.error);
-    });
-}
-
 /**
  * Gets all Gemini conversation entries from IndexedDB.
  * @returns {Promise<Array<object>>} - A promise that resolves to an array with all entries.
@@ -395,24 +368,6 @@ export async function deleteGeminiEntryFromDb(entryId) {
         request.onsuccess = () => resolve();
         request.onerror = (event) => {
             console.error('Error deleting Gemini entry from IndexedDB:', event.target.error);
-            reject(event.target.error);
-        };
-    });
-}
-
-/**
- * Deletes all Gemini conversation entries from IndexedDB.
- */
-export async function clearAllGeminiEntriesFromDb() {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([CONVERSATION_STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(CONVERSATION_STORE_NAME);
-        const request = store.clear();
-
-        request.onsuccess = () => resolve();
-        request.onerror = (event) => {
-            console.error('Error clearing Gemini conversations in IndexedDB:', event.target.error);
             reject(event.target.error);
         };
     });
@@ -455,21 +410,6 @@ export async function getAllBackupsFromDb() {
         request.onsuccess = (event) => resolve(event.target.result);
         request.onerror = (event) => {
             console.error('Error fetching all backups from IndexedDB:', event.target.error);
-            reject(event.target.error);
-        };
-    });
-}
-
-export async function getBackupFromDb(groupId) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([BACKUPS_STORE_NAME], 'readonly');
-        const store = transaction.objectStore(BACKUPS_STORE_NAME);
-        const request = store.get(groupId);
-
-        request.onsuccess = (event) => resolve(event.target.result || null);
-        request.onerror = (event) => {
-            console.error('Error fetching backup from IndexedDB:', event.target.error);
             reject(event.target.error);
         };
     });
@@ -549,32 +489,6 @@ export async function getAllPomoStatsFromDb() {
             console.error('Error fetching pomo stats:', event.target.error);
             reject(event.target.error);
         };
-    });
-}
-
-export async function getPomoStatsByProjectFromDb(projectName) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([POMO_STATS_STORE_NAME], 'readonly');
-        const store = transaction.objectStore(POMO_STATS_STORE_NAME);
-        const index = store.index('projectName');
-        const request = index.getAll(projectName);
-        request.onsuccess = (event) => resolve(event.target.result || []);
-        request.onerror = (event) => reject(event.target.error);
-    });
-}
-
-export async function deletePomoStatsFromDb(id) {
-    const db = await openDb();
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([POMO_STATS_STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(POMO_STATS_STORE_NAME);
-        const request = store.delete(id);
-        request.onsuccess = () => {
-            notifyPomoStatsChanged();
-            resolve();
-        };
-        request.onerror = (event) => reject(event.target.error);
     });
 }
 

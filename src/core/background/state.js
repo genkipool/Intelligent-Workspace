@@ -113,7 +113,6 @@ let isCreatingMenus = false;
 // Set by runtime.onStartup: this worker was started by the browser starting.
 let startedWithBrowser = false;
 let setupContextMenusTimer = null;
-let isSidePanelActive = false;
 let isInstallActive = false;
 let windowsRemove = false;
 let activeSidePanelPath = null;
@@ -256,6 +255,23 @@ const DEFAULT_SYSTEM_THEME = {
     },
 };
 
+/**
+ * The keyboard commands and context-menu items that each flip one clustering
+ * setting, by id, with that setting's path inside the cluster config. The commands
+ * and the menu items share ids, so `chrome.commands.onCommand` and
+ * `chrome.contextMenus.onClicked` both read this table.
+ */
+const CLUSTER_TOGGLE_PATHS = Object.freeze({
+    'toggle-domain-grouping': 'domainsEnabled',
+    'toggle-subdomain-grouping': 'subdomainsEnabled',
+    'toggle-compact-mode': 'compactMode.enabled',
+    'toggle-chrome-grouping': 'specialGroups.chrome.enabled',
+    'toggle-files-grouping': 'specialGroups.files.enabled',
+    'toggle-extensions-grouping': 'specialGroups.extensions.enabled',
+    'toggle-misc-grouping': 'specialGroups.misc.enabled',
+    'toggle-ip-address-grouping': 'specialGroups.ipAddress.enabled',
+});
+
 const DEFAULT_CLUSTER_CONFIG = {
     clusteringEnabled: true,
     domainsEnabled: true,
@@ -293,6 +309,30 @@ const DEFAULT_CLUSTER_CONFIG = {
         ipAddress: { enabled: true, threshold: 1, key: 'ipAddress' },
     },
 };
+
+/**
+ * A stored cluster config laid over the defaults, one level deeper for the special
+ * groups and compact mode, so a config saved by an older version still has every
+ * field this one reads.
+ */
+function mergeClusterConfig(storedConfig) {
+    const mergedSpecialGroups = {};
+    for (const key in DEFAULT_CLUSTER_CONFIG.specialGroups) {
+        mergedSpecialGroups[key] = {
+            ...DEFAULT_CLUSTER_CONFIG.specialGroups[key],
+            ...(storedConfig.specialGroups?.[key] || {}),
+        };
+    }
+    return {
+        ...DEFAULT_CLUSTER_CONFIG,
+        ...storedConfig,
+        specialGroups: mergedSpecialGroups,
+        compactMode: {
+            ...DEFAULT_CLUSTER_CONFIG.compactMode,
+            ...(storedConfig.compactMode || {}),
+        },
+    };
+}
 
 const DOWNLOADABLE_EXTENSIONS = [
     // Documents

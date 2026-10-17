@@ -59,35 +59,8 @@ chrome.commands.onCommand.addListener(async (command) => {
         case 'toggle-clustering':
             await toggleClusteringCommand();
             break;
-        case 'toggle-domain-grouping':
-            await handleClusterToggle('domainsEnabled');
-            break;
-        case 'toggle-subdomain-grouping':
-            await handleClusterToggle('subdomainsEnabled');
-            break;
-        case 'toggle-compact-mode':
-            await handleClusterToggle('compactMode.enabled');
-            break;
-        case 'toggle-chrome-grouping':
-            await handleClusterToggle('specialGroups.chrome.enabled');
-            break;
-        case 'toggle-files-grouping':
-            await handleClusterToggle('specialGroups.files.enabled');
-            break;
-        case 'toggle-extensions-grouping':
-            await handleClusterToggle('specialGroups.extensions.enabled');
-            break;
-        case 'toggle-misc-grouping':
-            await handleClusterToggle('specialGroups.misc.enabled');
-            break;
-        case 'toggle-ip-address-grouping':
-            await handleClusterToggle('specialGroups.ipAddress.enabled');
-            break;
         case 'regroup-all-tabs':
             await regroupAllTabsCommand();
-            break;
-        case 'toggle-current-group':
-            await toggleCurrentGroupCommand();
             break;
         case 'remove-duplicate-tabs':
             await removeDuplicateTabsCommand();
@@ -189,6 +162,10 @@ chrome.commands.onCommand.addListener(async (command) => {
             }
             break;
         default:
+            if (Object.hasOwn(CLUSTER_TOGGLE_PATHS, command)) {
+                await handleClusterToggle(CLUSTER_TOGGLE_PATHS[command]);
+                break;
+            }
             console.warn(`[onCommand] Unhandled command: ${command}.`);
     }
 });
@@ -323,13 +300,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
         // When the panel sends its path on connection.
         port.onMessage.addListener((message) => {
-            if (message.path) {
-                activeSidePanelPath = message.path;
-                chrome.storage.session.set({
-                    activeSidePanelPath: message.path,
-                });
-                logMessage(`Active side panel path updated to: ${activeSidePanelPath}`);
-            }
+            if (message.path) handleSidePanelPathUpdated(message);
         });
         port.onDisconnect.addListener(() => {
             activeSidePanelPorts.delete(port);

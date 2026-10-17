@@ -9,18 +9,7 @@
  */
 
 import { get } from 'svelte/store';
-import { tick, mount, unmount } from 'svelte';
-
-/** Waits for a node that a Svelte view mounts in response to a store change. */
-async function waitForElement(selector, attempts = 30) {
-    for (let i = 0; i < attempts; i++) {
-        const el = document.querySelector(selector);
-        if (el) return el;
-        await tick();
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
-    return null;
-}
+import { mount, unmount } from 'svelte';
 
 import {
     applyTranslations,
@@ -44,7 +33,7 @@ import { STORAGE_KEYS, screenshotConfig } from './constants.js';
 import { imagesToPdfBlob, toPdfFileName } from '../../utils/pdf.js';
 import { encodeImage, toImageFileName, ImageTooLargeError } from '../../utils/imageFormats.js';
 import { openModal, showDownloadFormatModal } from '../stores/modalStore.js';
-import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob } from './utils.js';
+import { getGroupInfoMap, getTotalScreenshotCount, dataUrlToBlob, waitForElement } from './utils.js';
 
 import {
     isUrlViewActive,

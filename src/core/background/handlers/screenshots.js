@@ -351,12 +351,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
  * the four copies of this block each carried one that never reached anything.
  */
 function notifyCapture(key) {
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '/assets/icons/icon128.png',
-        title: getI18nMsg('extName'),
-        message: getI18nMsg(key),
-    });
+    notifyExtension(key);
 }
 
 /** What is on screen, which is all `captureVisibleTab` ever returns. */

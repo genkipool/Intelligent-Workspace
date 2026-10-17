@@ -49,8 +49,6 @@ export function decodeKey(str) {
     }
 }
 
-export const MAX_GEMINI_SCHEDULES = 7;
-
 /** Speaker id used when the controls bar reads the whole conversation instead of one entry. */
 export const CONVERSATION_SPEECH_ID = '__conversation__';
 

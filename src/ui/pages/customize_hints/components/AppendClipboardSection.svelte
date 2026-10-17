@@ -1,11 +1,5 @@
 <script>
-    import {
-        msg as localizedMsg,
-        LANGUAGE_STORAGE_KEY,
-        getCurrentLang,
-        loadMessages,
-        resolveMessage,
-    } from '../../../../utils/i18n.js';
+    import { LANGUAGE_STORAGE_KEY, localizedText } from '../../../../utils/i18n.js';
     /**
      * The switch and status for the cumulative clipboard copy feature.
      *
@@ -22,13 +16,7 @@
 
     async function updateTitle() {
         const key = enabled ? 'appendClipboardToggleDisable' : 'appendClipboardToggleEnable';
-        const fallback = enabled ? 'Turn off' : 'Turn on';
-        try {
-            const messages = await loadMessages(await getCurrentLang());
-            toggleTitle = resolveMessage(messages[key], [], 'message') || localizedMsg(key) || fallback;
-        } catch {
-            toggleTitle = localizedMsg(key) || fallback;
-        }
+        toggleTitle = await localizedText(key, enabled ? 'Turn off' : 'Turn on');
     }
 
     function toggle(event) {

@@ -67,13 +67,6 @@ export async function prefetchData(type, force = false) {
     return fetchPromise;
 }
 
-export function prefetchAll() {
-    prefetchData('bookmarks');
-    prefetchData('history');
-    prefetchData('recent');
-    prefetchData('reading');
-}
-
 export function prefetchUrl(url) {
     if (!url) return;
 

@@ -49,25 +49,17 @@ var CommandRegistry = class CommandRegistry {
         await this._saveCustomShortcuts();
     }
 
-    // OBSOLETE METHOD (kept for compatibility if something external calls it, but we'll use the one above)
-    updateKey(oldKey, newKey) {
-        // This method was the problem, we will no longer use it from the Modal
-        const entry = this.mappings[oldKey];
-        if (entry) {
-            this.updateShortcut(entry.description, newKey);
-        }
-    }
     async _saveCustomShortcuts() {
         // We directly save the raw version that contains EVERYTHING (Omnibar + Mappings)
         await chrome.storage.sync.set({
-            'itg-ui-custom-shortcuts': this.rawCustomShortcuts,
+            [HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS]: this.rawCustomShortcuts,
         });
         chrome.runtime.sendMessage({
             action: 'hintCommandsUpdated',
         });
     }
     async resetToDefaults() {
-        await chrome.storage.sync.remove('itg-ui-custom-shortcuts');
+        await chrome.storage.sync.remove(HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS);
         this.rawCustomShortcuts = {}; // Clear raw
         this.mappings = this._getDefaultMappings();
         chrome.runtime.sendMessage({
@@ -687,18 +679,10 @@ var CommandRegistry = class CommandRegistry {
             },
         };
     }
-    async addUserCommand(keys, url, description) {
-        await HintCommon.Commands.add(keys, url, description);
-        await this.loadUserCommands();
-    }
-    async removeUserCommand(keys) {
-        await HintCommon.Commands.remove(keys);
-        await this.loadUserCommands();
-    }
     async loadUserCommands() {
         try {
-            const uiData = await chrome.storage.sync.get('itg-ui-custom-shortcuts');
-            const uiShortcuts = uiData['itg-ui-custom-shortcuts'] || {};
+            const uiData = await chrome.storage.sync.get(HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS);
+            const uiShortcuts = uiData[HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS] || {};
 
             // NEW: Keep raw reference of all overrides
             this.rawCustomShortcuts = uiShortcuts;

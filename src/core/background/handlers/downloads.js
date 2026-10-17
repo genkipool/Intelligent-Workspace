@@ -59,46 +59,31 @@ function handleGetDownloads(message, sendResponse) {
     });
 }
 
-function handlePauseDownload(message, sendResponse) {
+/** Runs one `chrome.downloads` method that takes only the download's id. */
+function callDownloadById(method, message, sendResponse) {
     if (!message.id) {
         sendResponse({ success: false, error: 'No download ID provided' });
         return;
     }
-    chrome.downloads.pause(message.id, () => {
+    chrome.downloads[method](message.id, () => {
         if (chrome.runtime.lastError) {
             sendResponse({ success: false, error: chrome.runtime.lastError.message });
         } else {
             sendResponse({ success: true });
         }
     });
+}
+
+function handlePauseDownload(message, sendResponse) {
+    callDownloadById('pause', message, sendResponse);
 }
 
 function handleResumeDownload(message, sendResponse) {
-    if (!message.id) {
-        sendResponse({ success: false, error: 'No download ID provided' });
-        return;
-    }
-    chrome.downloads.resume(message.id, () => {
-        if (chrome.runtime.lastError) {
-            sendResponse({ success: false, error: chrome.runtime.lastError.message });
-        } else {
-            sendResponse({ success: true });
-        }
-    });
+    callDownloadById('resume', message, sendResponse);
 }
 
 function handleCancelDownload(message, sendResponse) {
-    if (!message.id) {
-        sendResponse({ success: false, error: 'No download ID provided' });
-        return;
-    }
-    chrome.downloads.cancel(message.id, () => {
-        if (chrome.runtime.lastError) {
-            sendResponse({ success: false, error: chrome.runtime.lastError.message });
-        } else {
-            sendResponse({ success: true });
-        }
-    });
+    callDownloadById('cancel', message, sendResponse);
 }
 
 function handleEraseDownload(message, sendResponse) {

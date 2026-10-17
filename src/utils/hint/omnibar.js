@@ -78,11 +78,6 @@ var OmniLocalAi = {
             return false;
         }
     },
-    _quotaExhausted(stored) {
-        const list = stored.geminiApiKeysList || [];
-        if (list.length === 0) return !stored.geminiApiKey;
-        return list.every((entry) => entry?.hasQuotaError);
-    },
     /** The local model is picked in the selector, so it answers first. */
     async isSelected() {
         const { selectedGeminiModel } = await chrome.storage.local.get('selectedGeminiModel');
@@ -3061,20 +3056,6 @@ var OmniBar = class OmniBar {
         expandEl.innerHTML = `<p class="hint-omni-expand-title">${query.replace(/</g, '&lt;')}</p><hr class="hint-omni-expand-sep">${_omniParseMarkdown(answer)}`;
         li.style.flexWrap = 'wrap';
         li.appendChild(expandEl);
-    }
-    _copyImage(imgId, imgTitle, li) {
-        if (li) {
-            this._copyImageToClipboard(li);
-            return;
-        }
-        chrome.runtime.sendMessage({
-            action: 'openImageFromOmnibar',
-            id: parseInt(imgId || 0),
-        });
-        this.close();
-    }
-    _showImageModal(li) {
-        this._expandImage(li);
     }
     _sendNotification(title, message) {
         chrome.runtime.sendMessage({

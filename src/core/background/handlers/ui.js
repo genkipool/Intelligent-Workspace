@@ -20,7 +20,6 @@ function handleOpenSidePanelThemes(sendResponse) {
                     chrome.sidePanel.open({
                         windowId: tab.windowId,
                     });
-                    isSidePanelActive = true;
                     sendResponse({
                         status: 'ok',
                     });

@@ -33,8 +33,6 @@ async function reapplyActiveSearch() {
 
 // Live groups, exactly as Chrome reports them.
 const liveGroupsStore = writable([]);
-export const ungroupedTabsStore = writable([]);
-
 let listenersRegistered = false;
 let refetchTimer = null;
 

@@ -544,14 +544,6 @@ async function loadExtensionSettings() {
             const { linkPreviewEnabled } = await chrome.storage.sync.get('linkPreviewEnabled');
             data.linkPreviewEnabled = linkPreviewEnabled;
         }
-        const storedConfig = data.clusterConfig || {};
-        const mergedSpecialGroups = {};
-        for (const key in DEFAULT_CLUSTER_CONFIG.specialGroups) {
-            mergedSpecialGroups[key] = {
-                ...DEFAULT_CLUSTER_CONFIG.specialGroups[key],
-                ...(storedConfig.specialGroups?.[key] || {}),
-            };
-        }
         extensionSettings = {
             userPrefixes: data.userPrefixes || DEFAULT_USER_PREFIXES,
             sortGroupsAlphabetically: data.sortGroupsAlphabetically ?? true,
@@ -560,15 +552,7 @@ async function loadExtensionSettings() {
             activeCollapseTime: data.activeCollapseTime ?? INACTIVITY_THRESHOLD_ACTIVE_GROUP,
             miscGroupSortOption: data.miscGroupSortOption ?? 'start',
             enablePrefixes: data.enablePrefixes ?? false,
-            clusterConfig: {
-                ...DEFAULT_CLUSTER_CONFIG,
-                ...storedConfig,
-                specialGroups: mergedSpecialGroups,
-                compactMode: {
-                    ...DEFAULT_CLUSTER_CONFIG.compactMode,
-                    ...(storedConfig.compactMode || {}),
-                },
-            },
+            clusterConfig: mergeClusterConfig(data.clusterConfig || {}),
             clusteringEnabled: data.clusteringEnabled ?? true,
             customRules: data.customRules || [],
             linkPreviewEnabled: data.linkPreviewEnabled ?? true,

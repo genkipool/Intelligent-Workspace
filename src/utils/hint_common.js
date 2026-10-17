@@ -589,19 +589,6 @@ var HintCommon = {
             }
             return val;
         },
-
-        async getAssignedKey() {
-            if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
-                try {
-                    const data = await chrome.storage.sync.get(HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS);
-                    const overrides = data?.[HintCommon.STORAGE_KEYS.CUSTOM_SHORTCUTS] || {};
-                    if (overrides['hintDesc_y']) {
-                        return overrides['hintDesc_y'];
-                    }
-                } catch {}
-            }
-            return 'y';
-        },
     },
 
     /**
@@ -1767,102 +1754,6 @@ var HintCommon = {
             modal.innerHTML = `
                 <div class="itg-format-modal-content">
                     ${this._editorInnerHTML(true, true)}
-                </div>
-            `;
-
-            return modal;
-        },
-
-        /**
-         * @private legacy - replaced by createFormattingModal using _editorInnerHTML
-         */
-        _createFormattingModalLegacy_UNUSED() {
-            const modal = document.createElement('div');
-            modal.className = 'itg-format-modal';
-
-            modal.innerHTML = `
-                <div class="itg-format-modal-content">
-                    <div class="itg-format-modal-header">
-                        <h2>Text Formatting</h2>
-                        <button class="itg-format-close-btn" type="button">&times;</button>
-                    </div>
-                    
-                    <div class="itg-format-toolbar">
-                        <!-- Row 1: Basic styles, Font Size, Text Color, BG Color, Link -->
-                        <div class="itg-format-toolbar-row">
-                            <button type="button" data-command="bold" title="Bold (Ctrl+B)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M15.6 10.79c.97-.67 1.65-1.77 1.65-2.79 0-2.26-1.75-4-4-4H7v14h7.04c2.09 0 3.71-1.7 3.71-3.79 0-1.52-.86-2.82-2.15-3.42zM10 6.5h3c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5h-3v-3zm3.5 9H10v-3h3.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5z"/></svg>
-                            </button>
-                            <button type="button" data-command="italic" title="Italic (Ctrl+I)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 4v3h2.21l-3.42 8H6v3h8v-3h-2.21l3.42-8H18V4z"/></svg>
-                            </button>
-                            <button type="button" data-command="underline" title="Underline (Ctrl+U)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17c3.31 0 6-2.69 6-6V3h-2.5v8c0 1.93-1.57 3.5-3.5 3.5S8.5 12.93 8.5 11V3H6v8c0 3.31 2.69 6 6 6zm-7 2v2h14v-2H5z"/></svg>
-                            </button>
-                            <button type="button" data-command="strikeThrough" title="Strikethrough">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M18 5V4H6v1m6-1v16m-2 0h4M4 12h16"></path>
-                                </svg>
-                            </button>
-                            <button type="button" class="itg-format-trigger-fontSize" title="Font size">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9 4v3h5v12h3V7h5V4H9zm-6 8h3v7h3v-7h3V9H3v3z"/></svg>
-                            </button>
-                            <button type="button" class="itg-format-trigger-foreColor" title="Text color">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11 3L5.5 17h2.25l1.12-3h6.25l1.12 3h2.25L13 3h-2zm-1.38 9L12 5.67 14.38 12H9.62z"></path><rect class="itg-color-indicator" x="0" y="20" width="24" height="4" fill="#9fc5e8"></rect></svg>
-                            </button>
-                            <button type="button" class="itg-format-trigger-backColor" title="Background color">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.56 8.94L7.62 0 6.21 1.41l2.38 2.38-5.15 5.15c-.59.59-.59 1.54 0 2.12l5.5 5.5c.29.29.68.44 1.06.44s.77-.15 1.06-.44l5.5-5.5c.59-.58.59-1.53 0-2.12zM5.21 10L10 5.21 14.79 10H5.21zM19 11.5s-2 2.17-2 3.5c0 1.1.9 2 2 2s2-.9 2-2c0-1.33-2-3.5-2-3.5z"/><rect class="itg-color-indicator" x="0" y="20" width="24" height="4" fill="#ffff00"/></svg>
-                            </button>
-                            <button type="button" data-command="createLink" title="Insert link">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-                            </button>
-                        </div>
-                        
-                        <!-- Row 2: Alignments, Lists, Indent, Emoji -->
-                        <div class="itg-format-toolbar-row">
-                            <button type="button" data-command="justifyLeft" title="Align left">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 10h13M3 14h18M3 18h13M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" data-command="justifyCenter" title="Center">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 14h18m-4-4H7m10 8H7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" data-command="justifyRight" title="Align right">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" transform="scale(-1 1)"><path d="M3 10h13M3 14h18M3 18h13M3 6h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" data-command="insertOrderedList" title="Numbered list">
-                                <svg width="20" height="20" viewBox="0 0 56 56" fill="currentColor">
-                                    <path d="M9.496 19.012c.914 0 1.524-.516 1.524-1.57v-7.57c0-.985-.704-1.618-1.711-1.618-.844 0-1.36.281-1.946.68l-1.64 1.148c-.493.328-.75.633-.75 1.125 0 .61.492 1.031 1.03 1.031.282 0 .446-.047.845-.328l1.078-.726h.023v6.257c0 1.055.633 1.57 1.547 1.57m8.133-2.836h32.086c1.078 0 1.898-.82 1.898-1.875 0-1.078-.82-1.899-1.898-1.899H17.629c-1.055 0-1.875.82-1.875 1.899 0 1.054.82 1.875 1.875 1.875M5.723 33.145h6.023c.656 0 1.125-.446 1.125-1.102 0-.703-.469-1.148-1.125-1.148H8.395v-.07l1.921-1.548c1.617-1.312 2.227-2.062 2.227-3.445 0-1.875-1.57-3.14-4.102-3.14-2.226 0-3.867 1.171-3.867 2.671 0 .75.492 1.149 1.29 1.149.538 0 .913-.164 1.218-.703.328-.563.773-.868 1.406-.868.703 0 1.172.446 1.172 1.102 0 .563-.281 1.055-1.476 2.016l-3.094 2.53c-.445.376-.633.798-.633 1.313 0 .727.492 1.242 1.266 1.242m11.906-2.79h32.086a1.876 1.876 0 0 0 1.898-1.898c0-1.055-.82-1.875-1.898-1.875H17.629c-1.055 0-1.875.82-1.875 1.875s.82 1.898 1.875 1.898M8.512 47.747c2.765 0 4.43-1.242 4.43-3.21 0-1.29-.915-2.18-2.532-2.321v-.07c1.195-.211 2.11-1.008 2.11-2.368 0-1.78-1.735-2.765-4.032-2.765-1.851 0-3.843.867-3.843 2.414 0 .656.468 1.125 1.195 1.125.515 0 .75-.211 1.078-.563.539-.586.984-.773 1.547-.773.726 0 1.265.351 1.265 1.054 0 .657-.539.985-1.5.985h-.28c-.657 0-1.079.328-1.079 1.008 0 .633.398 1.008 1.078 1.008h.305c1.055 0 1.617.351 1.617 1.078 0 .633-.586 1.101-1.36 1.101-.843 0-1.429-.468-1.874-.914-.282-.258-.516-.445-.938-.445-.773 0-1.312.445-1.312 1.172 0 1.617 2.203 2.484 4.125 2.484m9.117-3.234h32.086c1.078 0 1.898-.82 1.898-1.875 0-1.078-.82-1.899-1.898-1.899H17.629c-1.055 0-1.875.82-1.875 1.899 0 1.054.82 1.875 1.875 1.875"/>
-                                </svg>
-                            </button>
-                            <button type="button" data-command="insertUnorderedList" title="Bullet list">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g stroke-width="0"/><g stroke-linecap="round" stroke-linejoin="round"/><path d="m8 6 13 .001m-13 6h13m-13 6h13M3.5 6h.01m-.01 6h.01m-.01 6h.01M4 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0m0 6a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                            </button>
-                            <button type="button" data-command="indent" title="Increase indent">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 21h18v-2H3v2zM3 8v8l4-4-4-4zm8 9h10v-2H11v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/></svg>
-                            </button>
-                            <button type="button" data-command="outdent" title="Decrease indent">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M3 21h18v-2H3v2zM3 12l4 4V8l-4 4zm8 5h10v-2H11v2zM3 3v2h18V3H3zm8 6h10V7H11v2zm0 4h10v-2H11v2z"/>
-                                </svg>
-                            </button>
-                            <button type="button" class="itg-emoji-trigger" title="Insert emoji">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="itg-emoji-picker itg-display-none">
-                        <div class="itg-emoji-grid"></div>
-                    </div>
-                    
-                    <div class="itg-format-preview-container">
-                        <label>Preview:</label>
-                        <div class="itg-format-preview" contenteditable="true" spellcheck="false"></div>
-                    </div>
-                    
-                    <div class="itg-format-modal-footer">
-                        <button type="button" class="itg-format-apply-btn button">Apply</button>
-                    </div>
                 </div>
             `;
 

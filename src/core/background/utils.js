@@ -319,6 +319,25 @@ function getI18nPluralKey(key, count) {
     return !currentLangMessages[candidate] && currentLangMessages[`${key}_other`] ? `${key}_other` : candidate;
 }
 
+/** The id of the first group recorded with this type and key, or -1 when there is none. */
+function findGroupIdByInfo(type, key) {
+    if (typeof groupInfoMap === 'undefined' || !groupInfoMap) return -1;
+    for (const [id, info] of groupInfoMap.entries()) {
+        if (info && info.type === type && info.key === key) return id;
+    }
+    return -1;
+}
+
+/** A browser notification from the extension, its text looked up in the user's language. */
+function notifyExtension(key, params = []) {
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: '/assets/icons/icon128.png',
+        title: getI18nMsg('extName'),
+        message: getI18nMsg(key, params),
+    });
+}
+
 function getI18nMsg(key, params = []) {
     const msgObj = currentLangMessages[key];
     if (!msgObj) {
@@ -610,15 +629,7 @@ const setupContextMenus = async () => {
         });
 
         // --- GROUP 2: Tab cleanup actions ---
-        let splitGroupId = -1;
-        if (typeof groupInfoMap !== 'undefined' && groupInfoMap) {
-            for (const [id, info] of groupInfoMap.entries()) {
-                if (info && info.type === 'manual' && info.key === 'Split') {
-                    splitGroupId = id;
-                    break;
-                }
-            }
-        }
+        const splitGroupId = findGroupIdByInfo('manual', 'Split');
         const duplicateUrlMap = new Map();
         for (const tab of allTabs) {
             if (splitGroupId !== -1 && tab.groupId === splitGroupId) continue;
@@ -2105,15 +2116,7 @@ async function removeDuplicateTabsCommand(targetWindowId = null) {
         typeof resolvedWinId === 'number' ? allTabs.filter((tab) => tab.windowId === resolvedWinId) : allTabs;
 
     // Check for split screen group to exclude
-    let splitGroupId = -1;
-    if (typeof groupInfoMap !== 'undefined' && groupInfoMap) {
-        for (const [id, info] of groupInfoMap.entries()) {
-            if (info && info.type === 'manual' && info.key === 'Split') {
-                splitGroupId = id;
-                break;
-            }
-        }
-    }
+    const splitGroupId = findGroupIdByInfo('manual', 'Split');
 
     // 2. Group tabs by URL, scoped strictly per window to prevent cross-window closing
     const urlMap = new Map();

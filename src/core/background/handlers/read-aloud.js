@@ -135,12 +135,8 @@ async function resolveTabForReader(message, sender) {
 }
 
 function notifyReader(messageKey, fallback) {
-    chrome.notifications.create({
-        type: 'basic',
-        iconUrl: '/assets/icons/icon128.png',
-        title: getI18nMsg('extName'),
-        message: getI18nMsg(messageKey, [], fallback),
-    });
+    // `getI18nMsg` takes no fallback, so a missing key shows the key itself.
+    notifyExtension(messageKey);
 }
 
 /** Brings a tab to the front and waits until it has a document to talk to. */

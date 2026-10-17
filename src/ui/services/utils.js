@@ -1,4 +1,5 @@
-import { msg as localizedMsg, activeLocale } from '../../utils/i18n.js';
+import { tick } from 'svelte';
+
 export const debounce = (func, delay) => {
     let timeout;
     return (...args) => {
@@ -6,24 +7,6 @@ export const debounce = (func, delay) => {
         timeout = setTimeout(() => func.apply(this, args), delay);
     };
 };
-
-export function sanitizeFilename(filename) {
-    if (!filename || filename.trim() === '') {
-        return 'gemini_conversation';
-    }
-    return filename
-        .replace(/[<>:"/\\|?*]/g, '_')
-        .substring(0, 100)
-        .trim();
-}
-
-export function normalizeUrl(url) {
-    if (!url) return '';
-    return url
-        .toLowerCase()
-        .replace(/^(https?:\/\/)?(www\.)?/, '')
-        .replace(/\/$/, '');
-}
 
 export function matchesRule(tabUrl, ruleUrl) {
     if (!tabUrl || typeof tabUrl !== 'string' || !ruleUrl || typeof ruleUrl !== 'string') {
@@ -298,53 +281,6 @@ export async function getTotalScreenshotCount() {
     return total;
 }
 
-export function fmt(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-export function fmtDur(sec) {
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    if (m > 0) return `${m}m ${s}s`;
-    return `${s}s`;
-}
-
-export function fmtDate(ts) {
-    return ts ? new Date(ts).toLocaleString(activeLocale()) : '—';
-}
-
-export function fmtTime(ts) {
-    return ts ? new Date(ts).toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' }) : '—';
-}
-
-export function fmtHMS(secs) {
-    const h = Math.floor(secs / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = secs % 60;
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-export function getModeDuration(state) {
-    if (state.currentMode === 'work') return state.workDuration;
-    if (state.currentMode === 'short') return state.shortBreak;
-    return state.longBreak;
-}
-
-export function isBreak(mode) {
-    return mode === 'short' || mode === 'long';
-}
-
-export function formatDateYMD(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
-
 export function groupHistoryByDate(historyItems) {
     const groups = new Map();
 
@@ -481,22 +417,6 @@ export function autolink(element) {
     traverse(element);
 }
 
-export function getRelativeTime(timestamp) {
-    if (!timestamp) return '';
-    const now = Date.now();
-    const diff = now - timestamp;
-
-    const seconds = Math.floor(diff / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (seconds < 60) return localizedMsg('justNow') || 'just now';
-    if (minutes < 60) return `${minutes} min ago`;
-    if (hours < 24) return `${hours} h ago`;
-    return `${days} days ago`;
-}
-
 /**
  * Ids of the live groups holding tabs already restored from a backup.
  *
@@ -541,4 +461,15 @@ export function getDomainOrSubdomainUrl(rawUrl) {
     } catch {
         return trimmed;
     }
+}
+
+/** Waits for a node that a Svelte view mounts in response to a store change. */
+export async function waitForElement(selector, attempts = 30) {
+    for (let i = 0; i < attempts; i++) {
+        const el = document.querySelector(selector);
+        if (el) return el;
+        await tick();
+        await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    return null;
 }

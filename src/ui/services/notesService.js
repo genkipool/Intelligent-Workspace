@@ -9,18 +9,6 @@
  */
 
 import { get } from 'svelte/store';
-import { tick } from 'svelte';
-
-/** Waits for a node that a Svelte view mounts in response to a store change. */
-async function waitForElement(selector, attempts = 30) {
-    for (let i = 0; i < attempts; i++) {
-        const el = document.querySelector(selector);
-        if (el) return el;
-        await tick();
-        await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
-    return null;
-}
 
 import { applyTranslations, showNotification, msg as localizedMsg } from '../../utils/i18n.js';
 import { openModal, showNoteModal } from '../stores/modalStore.js';
@@ -37,7 +25,7 @@ import {
 } from '../../utils/db.js';
 
 import { STORAGE_KEYS } from './constants.js';
-import { getGroupInfoMap, autolink, animateAndRemove } from './utils.js';
+import { getGroupInfoMap, autolink, animateAndRemove, waitForElement } from './utils.js';
 
 import {
     isNotesViewActive,
@@ -862,68 +850,6 @@ export async function deleteNote(noteId) {
     await renderGroups();
 }
 
-export function validateNoteForm(modalContent) {
-    if (!modalContent) return false;
-
-    const titleInput = modalContent.querySelector('#note-title-input');
-    const saveBtn = modalContent.querySelector('.modal-btn-save');
-    const activeType = modalContent.querySelector('.note-type-btn.active').dataset.type;
-    const addChecklistItemBtn = modalContent.querySelector('#add-checklist-item-btn');
-    const addKanbanItemBtn = modalContent.querySelector('#add-kanban-item-btn');
-
-    let isValid = true;
-    let hasListError = false;
-
-    if (titleInput.value.trim() === '') {
-        isValid = false;
-        titleInput.classList.add('input-error');
-    } else {
-        titleInput.classList.remove('input-error');
-    }
-
-    if (activeType === 'text') {
-        const contentEditor = modalContent.querySelector('#note-content-editor');
-        const hasContent = contentEditor.textContent.trim() !== '' || contentEditor.querySelector('img') !== null;
-        if (!hasContent) {
-            isValid = false;
-            contentEditor.classList.add('input-error');
-        } else {
-            contentEditor.classList.remove('input-error');
-        }
-        addChecklistItemBtn.classList.remove('error-state-text');
-        addKanbanItemBtn.classList.remove('error-state-text');
-    } else {
-        const itemInputs = modalContent.querySelectorAll('.checklist-item-input, .kanban-item-input');
-
-        if (itemInputs.length === 0) {
-            isValid = false;
-            hasListError = true;
-        } else {
-            itemInputs.forEach((itemInput) => {
-                if (itemInput.value.trim() === '') {
-                    isValid = false;
-                    hasListError = true;
-                    itemInput.classList.add('input-error');
-                } else {
-                    itemInput.classList.remove('input-error');
-                }
-            });
-        }
-
-        if (activeType === 'checklist') {
-            addChecklistItemBtn.classList.toggle('error-state-text', hasListError);
-            addKanbanItemBtn.classList.remove('error-state-text');
-        } else {
-            addKanbanItemBtn.classList.toggle('error-state-text', hasListError);
-            addChecklistItemBtn.classList.remove('error-state-text');
-        }
-    }
-
-    saveBtn.classList.toggle('error-state', !isValid);
-
-    return isValid;
-}
-
 export function handleNoteFilter(type, value) {
     const filters = get(activeNoteFilters);
     if (filters[type] === value) {
@@ -937,13 +863,6 @@ export function handleNoteFilter(type, value) {
 
 export async function openNoteModal(context, noteToEdit = null, options = {}) {
     openModal(showNoteModal, { context, note: noteToEdit, options });
-}
-
-export function closeNoteModal() {
-    const modalOverlay = document.body.querySelector('.modal-overlay .note-modal')?.closest('.modal-overlay');
-    if (modalOverlay) {
-        modalOverlay.remove();
-    }
 }
 
 export async function handleSaveNote(context, noteId = null, options = {}) {

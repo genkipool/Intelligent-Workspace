@@ -202,3 +202,28 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     // Harmless when the popup no longer scrolls: the browser clamps it back to zero.
     popupEl.scrollTop = previousScrollTop;
 }
+
+/**
+ * Fixed-position style for a dropdown opening below its trigger, flipped above it
+ * when it would run off the bottom and pulled left when it would run off the right.
+ *
+ * Starts fixed and hidden (`DROPDOWN_UNPLACED_STYLE`) until placed: measured while it
+ * was still a plain block it took the size of the page around it — 800px tall in the
+ * side panel — so it was placed above the top of the window and the first click
+ * seemed to do nothing.
+ *
+ * @param {HTMLElement} triggerEl
+ * @param {HTMLElement} popupEl
+ * @returns {string}
+ */
+export function dropdownBelowStyle(triggerEl, popupEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    const padding = 5;
+    let top = rect.bottom + padding;
+    if (top + popupEl.offsetHeight > window.innerHeight) top = rect.top - popupEl.offsetHeight - padding;
+    let left = rect.left;
+    if (left + popupEl.offsetWidth > window.innerWidth) left = window.innerWidth - popupEl.offsetWidth - padding;
+    return `position: fixed; top: ${Math.max(padding, top)}px; left: ${Math.max(padding, left)}px;`;
+}
+
+export const DROPDOWN_UNPLACED_STYLE = 'position: fixed; top: 0; left: 0; visibility: hidden;';

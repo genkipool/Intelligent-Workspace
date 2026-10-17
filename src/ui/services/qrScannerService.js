@@ -11,22 +11,6 @@
 import jsQR from '../../lib/jsQR.js';
 
 /**
- * Checks if the browser natively supports BarcodeDetector.
- * @returns {Promise<boolean>}
- */
-export async function isBarcodeDetectorSupported() {
-    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
-        try {
-            const formats = await window.BarcodeDetector.getSupportedFormats();
-            return formats.includes('qr_code');
-        } catch {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Decodes barcode/QR codes using the fallback jsQR engine.
  * @param {HTMLImageElement|HTMLCanvasElement|ImageData|ImageBitmap} source
  * @returns {Array<{ rawValue: string, format: string }>}

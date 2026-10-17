@@ -157,20 +157,3 @@ export const settings = writable({});
  */
 export const searchToggles = writable({ gemini: false, web: true, regex: false });
 export const splitScreenState = writable({ isActive: false, splitTabs: {} });
-
-export const isInputFocused = writable(false);
-
-// ─── Reset helper ─────────────────────────────────────────────────
-export function resetViewStates() {
-    isGeminiViewActive.set(false);
-    isBookmarksViewActive.set(false);
-    isUrlViewActive.set(false);
-    isNotesViewActive.set(false);
-    isGalleryViewActive.set(false);
-    isStandaloneGemini.set(false);
-    currentGalleryContext.set(null);
-    currentNotesContext.set(null);
-    hiddenYoutubeView.set(null);
-    currentPanelUrl.set(null);
-    currentPanelContext.set(null);
-}
