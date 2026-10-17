@@ -11,10 +11,11 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 - **El detalle** (`Añadido` / `Cambiado` / `Corregido`), que es para nosotros y para
   quien mire el repositorio.
-- **El texto de la tienda**, que es lo que se pega en el campo _Novedades_ de la
-  Chrome Web Store al subir la actualización. Es corto a propósito: la tienda lo
-  recorta. La redacción en inglés está en el registro en inglés, porque la ficha se
-  publica en los dos idiomas.
+- **El texto de la tienda**, un resumen corto para los usuarios de la ficha. La
+  Chrome Web Store no tiene un campo de novedades: el único texto que ven los usuarios
+  es la descripción de la pestaña _Store listing_, así que va al principio o al final de
+  esa descripción, en cada idioma de la ficha. Es opcional y corto a propósito. La
+  redacción en inglés está en el registro en inglés.
 
 ## Al publicar una versión
 
@@ -27,8 +28,14 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
    traducción en `_locales/es/messages.json` y `_locales/en/messages.json`.
 4. Si la versión trae funciones nuevas, añadirlas también a
    `src/ui/pages/about/components/FeatureCategoriesSection.svelte`.
-5. `npm run build` y subir el contenido de `dist/` como ZIP.
-6. Pegar el texto de la tienda en _Novedades_, en español y en inglés.
+5. `pnpm release`: pasa todas las comprobaciones, compila y genera
+   `intelligent-workspace-extension.zip` a partir de `dist/`, sin la `key` del manifest.
+6. En el panel de desarrollador, pestaña _Package_ → _Upload New Package_, con ese zip.
+7. Si se quiere, añadir el texto de la tienda a la descripción de la pestaña
+   _Store listing_.
+8. Si el revisor necesita contexto (credenciales, o la respuesta a un rechazo anterior),
+   escribirlo en la pestaña _Test instructions_: es el único campo que lee.
+9. _Submit for Review_.
 
 ---
 

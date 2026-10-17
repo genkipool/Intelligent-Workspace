@@ -11,10 +11,11 @@ Each version holds two different things, and they are worth keeping apart:
 
 - **The detail** (`Added` / `Changed` / `Fixed`), which is for us and for anyone
   reading the repository.
-- **The store text**, which is what goes into the _What's new_ field on the Chrome
-  Web Store when the update is uploaded. It is deliberately short: the store cuts it
-  off. The Spanish wording lives in the Spanish changelog, because the listing is
-  published in both languages.
+- **The store text**, a short summary for the listing's users. The Chrome Web Store
+  has no release-notes field: the only text users see is the description on the
+  _Store listing_ tab, so this goes at the top or bottom of that description, in each
+  language of the listing. It is optional and deliberately short. The Spanish wording
+  lives in the Spanish changelog.
 
 ## Releasing a version
 
@@ -27,8 +28,13 @@ Each version holds two different things, and they are worth keeping apart:
    keys in `_locales/en/messages.json` and `_locales/es/messages.json`.
 4. If the version brings new features, add them to
    `src/ui/pages/about/components/FeatureCategoriesSection.svelte` as well.
-5. `npm run build`, then upload the contents of `dist/` as a ZIP.
-6. Paste the store text into _What's new_, in English and in Spanish.
+5. `pnpm release`: it runs every check, builds, and writes
+   `intelligent-workspace-extension.zip` from `dist/`, without the manifest's `key`.
+6. In the Developer Dashboard, _Package_ tab → _Upload New Package_, with that zip.
+7. Optionally, add the store text to the description on the _Store listing_ tab.
+8. If the reviewer needs context (credentials, or the answer to an earlier rejection),
+   write it on the _Test instructions_ tab: it is the only field the reviewer reads.
+9. _Submit for Review_.
 
 ---
 
