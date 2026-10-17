@@ -39,7 +39,14 @@
     let open = $state(false);
     let triggerEl = $state(null);
     let popupEl = $state(null);
-    let popupStyle = $state('');
+    /**
+     * Fixed from the moment it exists, and out of sight until placed. Measured while it
+     * was still a plain block it took the size of the page around it — 800px tall in the
+     * side panel — so it was placed above the top of the window and the first click
+     * seemed to do nothing.
+     */
+    const UNPLACED_STYLE = 'position: fixed; top: 0; left: 0; visibility: hidden;';
+    let popupStyle = $state(UNPLACED_STYLE);
     let hour = $state('00');
     let minute = $state('00');
 
@@ -64,12 +71,13 @@
         if (top + popupEl.offsetHeight > window.innerHeight) top = rect.top - popupEl.offsetHeight - padding;
         let left = rect.left;
         if (left + popupEl.offsetWidth > window.innerWidth) left = window.innerWidth - popupEl.offsetWidth - padding;
-        popupStyle = `position: fixed; top: ${top}px; left: ${Math.max(padding, left)}px;`;
+        popupStyle = `position: fixed; top: ${Math.max(padding, top)}px; left: ${Math.max(padding, left)}px;`;
     }
 
     function toggle() {
         open = !open;
         if (!open) return;
+        popupStyle = UNPLACED_STYLE;
         // Opening on 00:00 means "not set yet", so offer the current time instead.
         const [h, m] = (value || '00:00').split(':');
         if (suggestNow && (value === '00:00' || !value)) {

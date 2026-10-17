@@ -1412,9 +1412,9 @@
     "message": "साइड पैनल में नियम मैनेज करें",
     "description": "Hover text of the control whose label is “openRulesPage”."
   },
-  "languageOptionTitle": {
-    "message": "इंटरफ़ेस के लिए $1 इस्तेमाल करें",
-    "description": "Language button in the popup. $1 is the language’s own name, e.g. “Español”."
+  "languageChooseTitle": {
+    "message": "भाषा चुनें",
+    "description": "Tooltip of the language names next to the language switch in the popup; a click opens the list of every language."
   },
   "languageSwitchTitle": {
     "message": "इंटरफ़ेस की भाषा बदलें",
@@ -1426,7 +1426,7 @@
   },
   "languagePairPickerTitle": {
     "message": "स्विच के इस ओर की भाषा",
-    "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+    "description": "Title of the list that opens when clicking a language name next to the language switch; choosing one puts it on that side."
   },
   "exportTheme": {
     "message": "मौजूदा कस्टम थीम एक्सपोर्ट करें",
@@ -2774,6 +2774,16 @@
       "theme_name": {
         "content": "$1",
         "example": "Old Theme"
+      }
+    }
+  },
+  "confirmDeleteTheme": {
+    "message": "थीम '$1' हटाएं? इसके शेड्यूल भी हटा दिए जाएंगे।",
+    "description": "Asks before deleting a saved theme; its schedules go with it.",
+    "placeholders": {
+      "theme_name": {
+        "content": "$1",
+        "example": "Sunset"
       }
     }
   },

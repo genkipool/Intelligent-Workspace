@@ -1372,9 +1372,9 @@
         "message": "Gestionar reglas en el panel lateral",
         "description": "Texto al pasar el ratón por el control cuya etiqueta es «openRulesPage»."
     },
-    "languageOptionTitle": {
-        "message": "Usar $1 en la interfaz",
-        "description": "Botón de idioma del popup. $1 es el nombre del idioma en su propia lengua, p. ej. «English»."
+    "languageChooseTitle": {
+        "message": "Elegir idioma",
+        "description": "Tooltip of the language names next to the language switch in the popup; a click opens the list of every language."
     },
     "languageSwitchTitle": {
         "message": "Cambiar el idioma de la interfaz",
@@ -1386,7 +1386,7 @@
     },
     "languagePairPickerTitle": {
         "message": "Idioma de este lado del interruptor",
-        "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+        "description": "Title of the list that opens when clicking a language name next to the language switch; choosing one puts it on that side."
     },
     "exportTheme": {
         "message": "Exportar el tema personalizado actual",
@@ -2738,6 +2738,16 @@
             "theme_name": {
                 "content": "$1",
                 "example": "Tema Viejo"
+            }
+        }
+    },
+    "confirmDeleteTheme": {
+        "message": "¿Eliminar el tema '$1'? También se eliminarán sus programaciones.",
+        "description": "Asks before deleting a saved theme; its schedules go with it.",
+        "placeholders": {
+            "theme_name": {
+                "content": "$1",
+                "example": "Sunset"
             }
         }
     },

@@ -430,6 +430,85 @@ async function fetchGeminiResponse(query, contentsHistory = null, attachments = 
     return await _executeGeminiRequest(requestBodyBuilder, { isAgent: false, useSearchTool: true });
 }
 
+/** The id the model selector gives Chrome's local model (see localAiService.js). */
+const LOCAL_AI_MODEL_ID = 'chrome-local-ai';
+
+/** The languages the local model will attest an answer in; anything else asks for English. */
+const LOCAL_AI_OUTPUT_LANGUAGES = ['de', 'en', 'es', 'fr', 'ja'];
+
+const LOCAL_AI_SYSTEM_PROMPT =
+    'You are Intelligent Workspace, an advanced AI browser assistant specializing in managing tab groups, ' +
+    'organizing browser tabs, answering user queries, and assisting with web productivity. ' +
+    'Answer in the language of the question.';
+
+/**
+ * Asks Chrome's local model from the worker.
+ *
+ * The Prompt API exists only in documents, so the question goes through the offscreen
+ * document; the answer comes back in the same shape as an API one.
+ */
+async function fetchLocalAiResponse(query) {
+    try {
+        const stored = await chrome.storage.local.get(ItgLanguages.STORAGE_KEY);
+        const lang = String(ItgLanguages.pickLanguage(stored?.[ItgLanguages.STORAGE_KEY]) || 'en')
+            .split('-')[0]
+            .toLowerCase();
+        await ensureOffscreenDocument('Answer a scheduled query with the on-device model', ['WORKERS']);
+        const response = await chrome.runtime.sendMessage({
+            action: 'offscreenLocalAiPrompt',
+            query,
+            systemPrompt: LOCAL_AI_SYSTEM_PROMPT,
+            language: LOCAL_AI_OUTPUT_LANGUAGES.includes(lang) ? lang : 'en',
+            timeoutMs: 120000,
+        });
+        if (response?.success) {
+            return {
+                success: true,
+                answer: response.answer,
+                modelVersion: LOCAL_AI_MODEL_ID,
+                modelId: LOCAL_AI_MODEL_ID,
+                isLocalAi: true,
+                groundingMetadata: null,
+            };
+        }
+        await loadI18nMessages();
+        const code = response?.error;
+        const LOCAL_AI_ERROR_KEYS = {
+            unsupported: 'localAiErrorUnsupported',
+            unavailable: 'localAiErrorNotEligible',
+            downloadable: 'localAiStatusDownloadable',
+            downloading: 'localAiStatusDownloading',
+            'empty-response': 'localAiErrorEmpty',
+        };
+        const key = LOCAL_AI_ERROR_KEYS[code] || 'localAiErrorGeneric';
+        if (key === 'localAiErrorGeneric') console.error('[LocalAI] Scheduled prompt failed:', code);
+        return { success: false, error: getI18nMsg(key) || code || getI18nMsg('unknownError') };
+    } catch (error) {
+        console.error('[LocalAI] Scheduled prompt failed:', error);
+        await loadI18nMessages().catch(() => {});
+        return { success: false, error: getI18nMsg('localAiErrorGeneric') || String(error?.message || error) };
+    } finally {
+        // Shared with the Pomodoro chimes: left open only while something still uses it.
+        if (!(await isMusicPlayingOffscreen())) await chrome.offscreen.closeDocument().catch(() => {});
+    }
+}
+
+/**
+ * A scheduled query, answered by whichever model the selector has on now: the local one
+ * when it is picked, the chosen Gemini model otherwise — and the local one again when
+ * the keys have nothing left and the user turned the fallback on, as in the panel.
+ */
+async function fetchScheduledGeminiResponse(query) {
+    const { selectedGeminiModel, localAiEnabled } = await chrome.storage.local.get([
+        'selectedGeminiModel',
+        'localAiEnabled',
+    ]);
+    if (selectedGeminiModel === LOCAL_AI_MODEL_ID) return fetchLocalAiResponse(query);
+    const response = await fetchGeminiResponse(query);
+    if (!response.success && response.allKeysExhausted && localAiEnabled) return fetchLocalAiResponse(query);
+    return response;
+}
+
 /**
  * Agent endpoint. Enforces JSON parsing and provides context explicitly.
  */

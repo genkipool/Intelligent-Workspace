@@ -11,6 +11,7 @@
     import { onMount, tick } from 'svelte';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
+    import { confirmAction } from '../../stores/confirmStore.js';
     import ThemeEditorModal from './components/ThemeEditorModal.svelte';
     import ThemeScheduleModal from './components/ThemeScheduleModal.svelte';
     import SavedThemesToolbar from './components/SavedThemesToolbar.svelte';
@@ -57,6 +58,10 @@
     // Schedule Modal State
     let schedules = $state([]);
     let currentThemeForScheduling = $state(null);
+    // What the list shows: the theme the dialog was opened for, or every theme. Kept
+    // apart from the theme being edited, so editing one schedule from "Scheduled
+    // Themes" no longer narrowed the list down to that theme.
+    let scheduleListFilter = $state(null);
     let totalScheduleCount = $state(0);
     let scheduleEditorState = $state({ mode: 'add', themeName: null, scheduleIndex: -1 });
 
@@ -125,7 +130,7 @@
             const isCurrentStorageChange = areaName === currentStorageArea && changes.savedThemes;
             if (isLocalChangeRelevant || isCurrentStorageChange) {
                 fetchThemes();
-                if (showScheduleModal) fetchSchedules(currentThemeForScheduling?.name);
+                if (showScheduleModal) fetchSchedules(scheduleListFilter);
             }
         });
 
@@ -420,6 +425,13 @@
 
     async function handleDelete(e) {
         const { theme, index } = e;
+        // One stray click on the cross took the theme and its schedules with no way back.
+        const accepted = await confirmAction({
+            messageKey: 'confirmDeleteTheme',
+            params: [theme.name],
+            confirmKey: 'delete',
+        });
+        if (!accepted) return;
         const storage = chrome.storage[currentStorageArea];
         let { savedThemes: currentThemes = [] } = await storage.get('savedThemes');
         currentThemes.splice(index, 1);
@@ -450,11 +462,8 @@
 
     // --- Schedules ---
     async function openScheduleModalFor(themeName = null) {
-        if (themeName) {
-            currentThemeForScheduling = { name: themeName };
-        } else {
-            currentThemeForScheduling = null;
-        }
+        scheduleListFilter = themeName;
+        currentThemeForScheduling = themeName ? { name: themeName } : null;
         resetScheduleForm();
         await fetchSchedules(themeName);
         showScheduleModal = true;
@@ -464,9 +473,13 @@
 
     async function fetchSchedules(themeNameFilter = null) {
         const { schedules: allSchedules = {} } = await chrome.storage.local.get('schedules');
+        // Only this storage area's schedules, the same ones the list shows.
         let count = 0;
         for (const tName in allSchedules) {
-            if (Array.isArray(allSchedules[tName])) count += allSchedules[tName].length;
+            if (!Array.isArray(allSchedules[tName])) continue;
+            count += allSchedules[tName].filter(
+                (sch) => !sch.storageArea || sch.storageArea === currentStorageArea,
+            ).length;
         }
         totalScheduleCount = count;
 
@@ -571,19 +584,31 @@
         // read "Schedule added for theme $1".
         showNotification(mode === 'add' ? 'scheduleAdded' : 'scheduleUpdated', false, [themeName]);
         resetScheduleForm();
-        fetchSchedules(currentThemeForScheduling?.name);
+        leaveScheduleEditor();
+        fetchSchedules(scheduleListFilter);
         return true;
+    }
+
+    /** Back to the dialog as it was opened, once the schedule being edited is done with. */
+    function leaveScheduleEditor() {
+        currentThemeForScheduling = scheduleListFilter ? { name: scheduleListFilter } : null;
     }
 
     async function handleDeleteSchedule(themeName, index) {
         const { schedules: allSchedules = {} } = await chrome.storage.local.get('schedules');
         if (!allSchedules[themeName]) return;
+        // The indexes of this theme shift, so a schedule open in the editor would be
+        // saved over the wrong one.
+        if (scheduleEditorState.mode === 'edit' && scheduleEditorState.themeName === themeName) {
+            resetScheduleForm();
+            leaveScheduleEditor();
+        }
         allSchedules[themeName].splice(index, 1);
         if (allSchedules[themeName].length === 0) delete allSchedules[themeName];
         await chrome.storage.local.set({ schedules: allSchedules });
         chrome.runtime.sendMessage({ action: 'schedulesUpdated' });
         showNotification('scheduleDeleted', false);
-        fetchSchedules(currentThemeForScheduling?.name);
+        fetchSchedules(scheduleListFilter);
     }
 
     async function handleEditSchedule(sch) {
@@ -788,7 +813,7 @@
     onToggleDay={toggleDay}
     onSaveSchedule={saveSchedule}
     onResetForm={resetScheduleForm}
-    onFetchSchedules={fetchSchedules}
+    onFetchSchedules={() => fetchSchedules(scheduleListFilter)}
     {formatDateTime}
     {getDayNames}
 />

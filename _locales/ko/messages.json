@@ -1412,9 +1412,9 @@
     "message": "사이드바에서 규칙을 관리합니다",
     "description": "Hover text of the control whose label is “openRulesPage”."
   },
-  "languageOptionTitle": {
-    "message": "인터페이스에 $1 사용",
-    "description": "Language button in the popup. $1 is the language’s own name, e.g. “Español”."
+  "languageChooseTitle": {
+    "message": "언어 선택",
+    "description": "Tooltip of the language names next to the language switch in the popup; a click opens the list of every language."
   },
   "languageSwitchTitle": {
     "message": "인터페이스 언어 전환",
@@ -1426,7 +1426,7 @@
   },
   "languagePairPickerTitle": {
     "message": "스위치 이쪽의 언어",
-    "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+    "description": "Title of the list that opens when clicking a language name next to the language switch; choosing one puts it on that side."
   },
   "exportTheme": {
     "message": "현재 맞춤 테마 내보내기",
@@ -2774,6 +2774,16 @@
       "theme_name": {
         "content": "$1",
         "example": "Old Theme"
+      }
+    }
+  },
+  "confirmDeleteTheme": {
+    "message": "'$1' 테마를 삭제할까요? 예약도 함께 삭제됩니다.",
+    "description": "Asks before deleting a saved theme; its schedules go with it.",
+    "placeholders": {
+      "theme_name": {
+        "content": "$1",
+        "example": "Sunset"
       }
     }
   },

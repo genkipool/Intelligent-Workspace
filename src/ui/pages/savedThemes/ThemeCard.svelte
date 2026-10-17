@@ -1,6 +1,4 @@
 <script>
-    import { untrack } from 'svelte';
-
     let {
         theme,
         index,
@@ -19,11 +17,23 @@
     } = $props();
 
     let isEditing = $state(false);
-    let labelText = $state(untrack(() => theme.name));
+    // A rename that lands comes back as a new name; one that is refused leaves it as it was.
+    let labelText = $derived(theme.name);
     let labelEl = $state(null);
     let clickTimer = null;
 
     const MAX_NAME_LENGTH = 20;
+
+    /**
+     * The label is written by hand, not rendered as {labelText}. While it is editable its
+     * text belongs to the browser: Svelte rewriting that node on every keystroke put the
+     * caret back at the start, so "Dusk" typed letter by letter came out as "ksuD". It is
+     * only written when editing is over, with whatever the name ended up being.
+     */
+    $effect(() => {
+        // eslint-disable-next-line svelte/no-dom-manipulating -- the node has no Svelte-rendered children
+        if (!isEditing && labelEl) labelEl.textContent = labelText;
+    });
 
     function activateTheme() {
         if (isEditing) return;
@@ -73,11 +83,8 @@
 
     /**
      * The cap is applied before the text lands, not by rewriting the element
-     * afterwards. Svelte renders {labelText} into this same node, so assigning to
-     * its textContent left the DOM and the component out of step, and the code that
-     * put the caret back at the end was only hiding that: typing in the middle of a
-     * full name jumped the caret to the end. Cancelling the event leaves the node
-     * the way Svelte expects it and the caret where the user put it.
+     * afterwards: rewriting it moves the caret, so typing in the middle of a full name
+     * jumped it to the end. Cancelling the event leaves the caret where the user put it.
      */
     function handleBeforeInput(e) {
         const inserted = e.data ?? e.dataTransfer?.getData('text/plain') ?? '';
@@ -87,10 +94,6 @@
         const replaced = selection && !selection.isCollapsed ? selection.toString().length : 0;
         const length = (labelEl?.textContent?.length || 0) - replaced + inserted.length;
         if (length > MAX_NAME_LENGTH) e.preventDefault();
-    }
-
-    function handleInput() {
-        labelText = labelEl.textContent;
     }
 
     function finishEditing(revert = false) {
@@ -154,13 +157,10 @@
         bind:this={labelEl}
         ondblclick={handleDblClick}
         onbeforeinput={handleBeforeInput}
-        oninput={handleInput}
         onblur={handleBlur}
         spellcheck="false"
         translate="no"
-    >
-        {labelText}
-    </div>
+    ></div>
     <div class="icons-container">
         <button
             type="button"

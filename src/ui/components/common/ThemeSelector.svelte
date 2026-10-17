@@ -18,13 +18,16 @@
 
     /*
      * The switch flips between two languages: the user's on the left, English on the
-     * right (`languagePair`). Hovering either name opens the list of every language,
+     * right (`languagePair`). Clicking either name opens the list of every language,
      * so any two can sit on the switch and be swapped with one click from then on.
+     * A click and not a hover: the list is how anyone finds out there are more than two
+     * languages, and a hover opened it by accident on the way across the header while
+     * never opening at all on a touch screen.
      */
     let pair = $state(languagePair(null));
     let pairLoaded = $state(false);
     let pickerSide = $state(null);
-    let closeTimer = null;
+    let selectorEl = $state(null);
 
     const byCode = new Map(SUPPORTED_LANGUAGES.map((language) => [language.code, language]));
     const shortCode = (code) => code.split('_')[0];
@@ -62,48 +65,44 @@
         pickerSide = null;
     }
 
-    function openPicker(side) {
-        clearTimeout(closeTimer);
-        pickerSide = side;
+    function togglePicker(side) {
+        pickerSide = pickerSide === side ? null : side;
     }
 
-    // A short grace period lets the pointer travel from the name into the list.
-    function closePickerSoon() {
-        clearTimeout(closeTimer);
-        closeTimer = setTimeout(() => (pickerSide = null), 250);
+    /** A click anywhere outside the two names and their lists puts the list away. */
+    function handleOutsideClick(event) {
+        if (pickerSide !== null && !selectorEl?.contains(event.target)) pickerSide = null;
     }
 
     function handlePickerKey(event) {
-        if (event.key === 'Escape') pickerSide = null;
+        if (event.key !== 'Escape' || pickerSide === null) return;
+        event.stopPropagation();
+        pickerSide = null;
+        // The keyboard goes back to the name that opened the list.
+        event.currentTarget.querySelector('.language-option')?.focus();
     }
 </script>
+
+<svelte:window onclickcapture={handleOutsideClick} />
 
 <section class="theme-selector">
     <div class="theme-selector-header">
         <div class="theme-title">{$t('selectTheme')}</div>
-        <menu class="language-selector">
+        <menu class="language-selector" bind:this={selectorEl}>
             {#each [0, null, 1] as side, i (i)}
                 {#if side !== null}
                     {@const language = byCode.get(pair[side])}
-                    <div
-                        class="language-slot"
-                        role="presentation"
-                        onmouseenter={() => openPicker(side)}
-                        onmouseleave={closePickerSoon}
-                        onfocusin={() => openPicker(side)}
-                        onfocusout={closePickerSoon}
-                        onkeydown={handlePickerKey}
-                    >
+                    <div class="language-slot" role="presentation" onkeydown={handlePickerKey}>
                         <button
                             class="language-option"
                             data-lang={language.code}
                             type="button"
                             lang={language.code}
-                            title={$tt('languageOptionTitle', [language.nativeName])}
+                            title={$tt('languageChooseTitle')}
                             aria-pressed={$currentLang === language.code}
                             aria-haspopup="listbox"
                             aria-expanded={pickerSide === side}
-                            onclick={() => setLanguage(language.code)}>{shortCode(language.code)}</button
+                            onclick={() => togglePicker(side)}>{shortCode(language.code)}</button
                         >
                         {#if pickerSide === side}
                             <div class="language-picker-anchor">

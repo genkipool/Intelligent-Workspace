@@ -88,6 +88,8 @@
 
     function onDragStart(e, storedIndex) {
         // Reordering an alphabetical view would write an order the view does not show.
+        // The handle stays draggable under A Z so this is reached and the user is told
+        // why nothing moves; with `draggable="false"` the drag never started at all.
         if ($sortAlphaStore) {
             e.preventDefault();
             showNotification('disableDragDrop', true);
@@ -158,7 +160,7 @@
             <RuleCard
                 {rule}
                 index={storedIndex}
-                isDraggable={!$sortAlphaStore}
+                isDraggable={true}
                 isExpanded={$expandedStatesStore.get(rule.name)}
                 isAlphaSort={$sortStatesStore.get(rule.name)}
                 searchTerm={$searchQueryStore}

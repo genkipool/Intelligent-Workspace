@@ -154,7 +154,23 @@ async function saveActiveTheme(theme) {
     }
 }
 
+let watchingActiveTheme = false;
+
+/**
+ * Follows the active theme wherever it is changed from. A schedule switches it from the
+ * worker, and its `themeChanged` notice only reached the pages that listen for it: the
+ * themes page showed the new theme ticked and kept the old colours until reloaded.
+ */
+function watchActiveTheme() {
+    if (watchingActiveTheme || !chrome.storage?.onChanged) return;
+    watchingActiveTheme = true;
+    chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.activeTheme) initializeActiveTheme();
+    });
+}
+
 async function initializeActiveTheme() {
+    watchActiveTheme();
     const { activeTheme } = await chrome.storage.local.get(['activeTheme']);
     if (activeTheme && activeTheme.name) {
         mirrorThemeToLocalStorage(activeTheme);

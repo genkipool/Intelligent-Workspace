@@ -39,6 +39,39 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
+## 1.0.4 (sin publicar)
+
+### Cambiado
+
+- Las **consultas programadas del asistente** se hacen con el modelo que esté elegido en
+  el selector, también con la IA local de Chrome. Con la IA local elegida, el botón del
+  reloj abre la ventana de programar en vez de pedir una clave de la API, y si las
+  claves se quedan sin cuota y la IA local está activada, la consulta la responde ella.
+- La **lista de idiomas** del inicio se abre con un clic en cualquiera de los dos
+  nombres que hay junto al interruptor, y no al pasar el ratón: ya no aparece sin querer
+  al cruzar la cabecera y funciona en pantallas táctiles. Se cierra al elegir, con un
+  clic fuera o con Escape.
+
+### Corregido
+
+- Programar un tema: el botón de añadir se pone en rojo entero cuando hay un error, no
+  solo su borde, y el reloj de la hora es igual que en el resto de la extensión.
+- Renombrar un tema escribiendo letra a letra lo dejaba al revés («Dusk» → «ksuD»).
+- Borrar un tema pide confirmación.
+- En «Temas programados», editar o borrar una programación ya no deja la lista solo con
+  ese tema, y el contador cuenta solo las programaciones de la zona que se está viendo.
+- Cuando una programación pone un tema, las páginas abiertas cambian de colores al
+  momento en vez de esperar a recargarse.
+- Con el orden A Z activo, arrastrar una regla avisa de que no se puede reordenar en vez
+  de no hacer nada.
+- El menú de más acciones se cerraba al hacer clic justo después de abrirse al pasar el
+  ratón.
+- El aviso «URL añadida a la regla» decía «$1» en vez del nombre de la regla.
+- Los relojes y calendarios de las ventanas no aparecían con el primer clic en el panel
+  lateral: se colocaban por encima del borde de la ventana.
+- El interruptor de «Gestionar reglas» del inicio se veía apagado y se encendía solo al
+  volver a la página; ahora sale ya con su estado.
+
 ## 1.0.3 - 2026-10-17
 
 ### Añadido

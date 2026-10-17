@@ -38,6 +38,37 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
+## 1.0.4 (unreleased)
+
+### Changed
+
+- **Scheduled assistant queries** run on the model picked in the selector, Chrome's
+  local AI included. With the local AI picked, the clock button opens the scheduling
+  dialog instead of asking for an API key, and when the keys run out of quota with the
+  local AI turned on, it answers the query.
+- The **language list** on the home page opens with a click on either name next to the
+  switch instead of on hover: it no longer pops up on the way across the header, and it
+  works on touch screens. Choosing, clicking outside or Escape closes it.
+
+### Fixed
+
+- Scheduling a theme: the add button turns fully red on an error, not just its border,
+  and the time picker matches the rest of the extension.
+- Renaming a theme by typing letter by letter wrote it backwards ("Dusk" → "ksuD").
+- Deleting a theme asks for confirmation.
+- In "Scheduled Themes", editing or deleting a schedule no longer narrows the list down
+  to that theme, and the counter only counts the schedules of the area being shown.
+- When a schedule switches the theme, open pages change colours right away instead of
+  waiting for a reload.
+- With A Z sorting on, dragging a rule says it cannot be reordered instead of doing
+  nothing.
+- The more-actions menu closed on a click right after it had opened on hover.
+- The "URL added to rule" notice read "$1" instead of the rule's name.
+- Time and date pickers in dialogs did not show on the first click in the side panel:
+  they were placed above the top of the window.
+- The "Manage Rules" switch on the home page was drawn off and then slid on every time
+  the page opened; it now starts in its real state.
+
 ## 1.0.3 - 2026-10-17
 
 ### Added

@@ -1412,9 +1412,9 @@
     "message": "サイドバーでルールを管理します",
     "description": "Hover text of the control whose label is “openRulesPage”."
   },
-  "languageOptionTitle": {
-    "message": "インターフェースに $1 を使用",
-    "description": "Language button in the popup. $1 is the language’s own name, e.g. “Español”."
+  "languageChooseTitle": {
+    "message": "言語を選択",
+    "description": "Tooltip of the language names next to the language switch in the popup; a click opens the list of every language."
   },
   "languageSwitchTitle": {
     "message": "インターフェースの言語を切り替え",
@@ -1426,7 +1426,7 @@
   },
   "languagePairPickerTitle": {
     "message": "スイッチのこちら側の言語",
-    "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+    "description": "Title of the list that opens when clicking a language name next to the language switch; choosing one puts it on that side."
   },
   "exportTheme": {
     "message": "現在のカスタム テーマをエクスポート",
@@ -2774,6 +2774,16 @@
       "theme_name": {
         "content": "$1",
         "example": "Old Theme"
+      }
+    }
+  },
+  "confirmDeleteTheme": {
+    "message": "テーマ「$1」を削除しますか？スケジュールも削除されます。",
+    "description": "Asks before deleting a saved theme; its schedules go with it.",
+    "placeholders": {
+      "theme_name": {
+        "content": "$1",
+        "example": "Sunset"
       }
     }
   },

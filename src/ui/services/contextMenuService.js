@@ -477,16 +477,25 @@ export function createOverflowMenu(actionsContainer, templateId, contextElement)
     actionsContainer.appendChild(overflowContainer);
 
     if (isNew) {
+        // When hovering opened the menu: the click that follows is the user reaching for
+        // the button they were already on, and toggling would close what just appeared.
+        let openedByHoverAt = 0;
+        const HOVER_CLICK_GRACE_MS = 700;
+
         overflowContainer.addEventListener('mouseenter', (event) => {
             cancelHideOverflowMenu();
             if (activeOverflowSource !== overflowContainer) {
                 populateAndShowOverflowPopup(event, templateId, contextElement);
+                openedByHoverAt = performance.now();
             }
         });
 
         overflowContainer.addEventListener('click', (event) => {
             event.stopPropagation();
             cancelHideOverflowMenu();
+            const justOpenedByHover = event.detail > 0 && performance.now() - openedByHoverAt < HOVER_CLICK_GRACE_MS;
+            openedByHoverAt = 0;
+            if (activeOverflowPopup && activeOverflowSource === overflowContainer && justOpenedByHover) return;
             if (activeOverflowPopup && activeOverflowSource === overflowContainer) {
                 closeOverflowMenu();
             } else {

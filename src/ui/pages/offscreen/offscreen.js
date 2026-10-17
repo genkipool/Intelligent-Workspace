@@ -1,6 +1,11 @@
-// offscreen.js -- runs in an offscreen document, plays Pomodoro sounds via Web Audio
+// offscreen.js -- runs in an offscreen document: plays Pomodoro sounds via Web Audio and
+// answers scheduled assistant queries with Chrome's local model, which the worker cannot
+// reach (the Prompt API only exists in documents).
 
 let isMusicActive = false;
+
+/** Local-model prompts in flight; the worker must not close the document under them. */
+let pendingLocalPrompts = 0;
 
 /**
  * Checks whether any audio or background music is actively playing in this offscreen document.
@@ -20,14 +25,63 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg?.action === 'pomodoroPlaySound') {
         playSound(msg.soundType);
     } else if (msg?.action === 'musicIsBusy') {
-        sendResponse({ busy: isMusicPlaying() });
+        sendResponse({ busy: isMusicPlaying() || pendingLocalPrompts > 0 });
         return true;
     } else if (msg?.action === 'setMusicBusy') {
         isMusicActive = Boolean(msg.busy);
         sendResponse({ success: true, busy: isMusicActive });
         return true;
+    } else if (msg?.action === 'offscreenLocalAiPrompt') {
+        pendingLocalPrompts++;
+        promptLocalModel(msg)
+            .then(sendResponse)
+            .finally(() => pendingLocalPrompts--);
+        return true;
     }
 });
+
+/**
+ * One question to the local model, without a conversation behind it.
+ *
+ * Nothing but chrome.runtime exists in an offscreen document, so the worker hands over
+ * everything that would otherwise be read from storage (the language, the system
+ * prompt), and a failure comes back as a code or Chrome's own text for the worker to
+ * translate. Every step is on the clock: with the model missing, `availability()` and
+ * `create()` can both sit there without ever settling.
+ */
+async function promptLocalModel({ query, systemPrompt, language, timeoutMs }) {
+    const LanguageModel = globalThis.LanguageModel;
+    if (!LanguageModel?.create) return { success: false, error: 'unsupported' };
+    const expectedOutputs = [{ type: 'text', languages: [language || 'en'] }];
+    let session;
+    const work = (async () => {
+        const status = await Promise.race([
+            LanguageModel.availability({ expectedOutputs }),
+            new Promise((resolve) => setTimeout(() => resolve('timeout'), 8000)),
+        ]);
+        if (status !== 'available') return { success: false, error: status };
+        session = await LanguageModel.create({
+            expectedOutputs,
+            initialPrompts: [{ role: 'system', content: systemPrompt }],
+        });
+        const answer = await session.prompt(query);
+        return answer ? { success: true, answer } : { success: false, error: 'empty-response' };
+    })();
+    try {
+        return await Promise.race([
+            work,
+            new Promise((resolve) =>
+                setTimeout(() => resolve({ success: false, error: 'timeout' }), timeoutMs || 120000),
+            ),
+        ]);
+    } catch (error) {
+        return { success: false, error: String(error?.message || error) };
+    } finally {
+        // A session still being created when the clock ran out is destroyed once it lands.
+        if (session) session.destroy?.();
+        else work.then(() => session?.destroy?.()).catch(() => {});
+    }
+}
 
 function playSound(type) {
     try {

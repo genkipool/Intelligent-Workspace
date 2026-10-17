@@ -94,20 +94,21 @@ function broadcastPomodoro(state, event, completedMode) {
 
 // ---- Offscreen audio playback ----
 /**
- * Makes sure the offscreen document exists. It is shared: the Pomodoro chimes and the
- * music player both sound through it.
+ * Makes sure the offscreen document exists. It is shared: the Pomodoro chimes sound
+ * through it, and scheduled assistant queries reach the local model through it.
  *
  * @param {string} justification what it is being opened for, for the browser's log
+ * @param {string[]} [reasons] why it is needed; only used when it has to be created
  * @returns {Promise<boolean>} whether it had to be created — a fresh one knows
  *   nothing, so whoever asked has to tell it what to play again
  */
-async function ensureOffscreenDocument(justification = 'Play audio in the background') {
+async function ensureOffscreenDocument(justification = 'Play audio in the background', reasons = ['AUDIO_PLAYBACK']) {
     const existing = await chrome.offscreen.hasDocument().catch(() => false);
     if (existing) return false;
     try {
         await chrome.offscreen.createDocument({
             url: chrome.runtime.getURL('src/ui/pages/offscreen/offscreen.html'),
-            reasons: ['AUDIO_PLAYBACK'],
+            reasons,
             justification,
         });
     } catch (error) {

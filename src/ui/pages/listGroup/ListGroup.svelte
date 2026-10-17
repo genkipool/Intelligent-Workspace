@@ -48,6 +48,7 @@
         initRenderContextListeners,
     } from '../../stores/renderContextStore.js';
     import GeminiPanel from '../../components/gemini/GeminiPanel.svelte';
+    import { isLocalAiEngine } from '../../services/localAiService.js';
     import ImportPanel from '../../components/common/ImportPanel.svelte';
     import { handleDownloadConversation, markdownToHtml, markdownToPlainText } from '../../services/geminiService.js';
     import { copyRichTextToClipboard } from '../../services/utils.js';
@@ -330,7 +331,9 @@
 
     async function handleScheduleGemini() {
         const data = await chrome.storage.local.get(['geminiApiKeysList', 'geminiApiKey']);
-        if ((data.geminiApiKeysList?.length || 0) === 0 && !data.geminiApiKey) {
+        // With the local model answering there is nothing to ask a key for: the worker
+        // runs the scheduled query on whichever model the selector has on.
+        if ((data.geminiApiKeysList?.length || 0) === 0 && !data.geminiApiKey && !(await isLocalAiEngine())) {
             openModal(showApiKeyModal);
             return;
         }

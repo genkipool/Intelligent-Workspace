@@ -363,7 +363,7 @@ export async function showAddToRuleModal(urlToAdd, baseTitle) {
 export async function saveAddToRule(url, ruleName) {
     chrome.runtime.sendMessage({ action: 'addUrlToRule', payload: { url, ruleName } }, (response) => {
         if (response && response.success) {
-            showNotification('urlAddedToRule');
+            showNotification('urlAddedToRule', false, [ruleName]);
         } else if (response) {
             // The write failed (the sync quota, typically): say so instead of nothing.
             showNotification(response.error?.messageKey || 'errorSavingRule', true);

@@ -1412,9 +1412,9 @@
     "message": "Regeln in der Seitenleiste verwalten",
     "description": "Hover text of the control whose label is “openRulesPage”."
   },
-  "languageOptionTitle": {
-    "message": "$1 für die Benutzeroberfläche verwenden",
-    "description": "Language button in the popup. $1 is the language’s own name, e.g. “Español”."
+  "languageChooseTitle": {
+    "message": "Sprache wählen",
+    "description": "Tooltip of the language names next to the language switch in the popup; a click opens the list of every language."
   },
   "languageSwitchTitle": {
     "message": "Sprache der Benutzeroberfläche wechseln",
@@ -1426,7 +1426,7 @@
   },
   "languagePairPickerTitle": {
     "message": "Sprache auf dieser Seite des Schalters",
-    "description": "Title of the list that opens when hovering a language name next to the language switch; choosing one puts it on that side."
+    "description": "Title of the list that opens when clicking a language name next to the language switch; choosing one puts it on that side."
   },
   "exportTheme": {
     "message": "Aktuelles benutzerdefiniertes Design exportieren",
@@ -2774,6 +2774,16 @@
       "theme_name": {
         "content": "$1",
         "example": "Old Theme"
+      }
+    }
+  },
+  "confirmDeleteTheme": {
+    "message": "Das Theme '$1' löschen? Seine Zeitpläne werden ebenfalls gelöscht.",
+    "description": "Asks before deleting a saved theme; its schedules go with it.",
+    "placeholders": {
+      "theme_name": {
+        "content": "$1",
+        "example": "Sunset"
       }
     }
   },

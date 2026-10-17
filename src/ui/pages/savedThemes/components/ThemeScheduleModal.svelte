@@ -60,7 +60,7 @@
             <section class="section">
                 <h3 class="titleSchedules">
                     <span data-i18n="existingSchedules"></span> (<span id="schedule-count">{totalScheduleCount}</span
-                    >/7)
+                    >/{MAX_GLOBAL_SCHEDULES})
                 </h3>
                 <ul id="schedules-list">
                     {#each schedules as sch (sch.themeName + '-' + sch.originalIndex)}
@@ -253,7 +253,7 @@
                                 const ok = await onSaveSchedule();
                                 if (ok) {
                                     onResetForm();
-                                    onFetchSchedules(currentThemeForScheduling?.name);
+                                    onFetchSchedules();
                                 }
                             }}
                         ></button>

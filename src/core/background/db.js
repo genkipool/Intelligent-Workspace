@@ -224,7 +224,7 @@ async function checkGeminiSchedules() {
                 entry: firstEntry,
             });
 
-            const response = await fetchGeminiResponse(schedule.query);
+            const response = await fetchScheduledGeminiResponse(schedule.query);
 
             if (response.success) {
                 firstEntry.isLoading = false;
