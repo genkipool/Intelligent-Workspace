@@ -1878,6 +1878,26 @@
     "message": "通过同步配色方案并支持浅色/深色双框架，修复了 Google 搜索页面上多功能框周围出现多余白框的问题。",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "2026年10月17日",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "多功能框的 AI 命令 qai: 和 qaia: 会在您选择 Chrome 本地 AI 时，或在 API 密钥配额用完且开启了本地替代时，使用本地 AI。",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "用 bg: 备份组时，绝不会关闭您当前标签页所在的组，并会提示这一点。备份所有组不再会关闭浏览器。",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "多功能框修复：用空格选中的组会被备份，重命名的前缀会显示其行，Ctrl+Enter 每次都作用于高亮的行。",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "文字识别（OCR）会按扩展程序的语言读取截图，英语和西班牙语可离线使用。如果识别失败，请再次将鼠标悬停在 OCR 按钮上，选择图片的语言。",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "2026年10月14日",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "从图片中提取文字时出错"
   },
+  "ocrLowConfidence": {
+    "message": "文字已复制，但可能不准确。请再次将鼠标悬停在 OCR 按钮上，选择图片的语言。",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "无法识别文字？请选择图片的语言",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "让 AI 查找任意已打开的标签页（例如：那个 Excel 表格在哪里？）"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "备份所有这些组",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "备份所有这些组。你当前所在的组 $1 保持打开，不会备份",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 是你当前所在的组：它保持打开，不会备份",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "恢复所有组（$1）",
@@ -13811,7 +13857,7 @@
     "message": "助手会使用您自己的 API 密钥，将您指定的页面、您附加的任何内容，以及在您按描述搜索已打开标签页时这些标签页的标题，发送到 Google 的 Gemini API。Chrome 内置的设备端模型不会发送任何内容。在您完成设置之前，助手始终处于关闭状态。"
   },
   "dataUseOcrItem": {
-    "message": "从截图中读取文字时，会从 jsDelivr 下载一次语言模型（西班牙语和英语），浏览器会将其缓存。不会发送任何有关您的信息。"
+    "message": "从截图中读取文字时，英语和西班牙语可离线使用，因为它们的模型随扩展程序一起提供。其他语言的模型会从 jsDelivr 下载一次，并由浏览器缓存。不会发送任何有关您的信息。"
   },
   "dataUseContributionItem": {
     "message": "支持本项目时会打开我们的付款页面，该页面通过 Stripe 处理银行卡付款。银行卡信息永远不会传到扩展程序。"

@@ -288,6 +288,7 @@ function handleGetActiveTab(message, sendResponse) {
                     url: tab.url,
                     title: tab.title,
                     id: tab.id,
+                    groupId: tab.groupId,
                 });
             } else {
                 sendResponse(null);

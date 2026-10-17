@@ -32,6 +32,33 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
+## 1.0.3 - 2026-10-17
+
+### Added
+
+- **OCR in the extension's language:** reading text out of a screenshot used Spanish and English whatever the interface was in, so a capture in Japanese, Russian or Hindi came out as noise. It now uses the interface language plus English. When a run fails (no text, an error, or a mean confidence under 50), hovering over the OCR button again offers a picker with the 11 languages, and the one chosen sticks to that capture. Two new messages in the 11 languages.
+- **Chrome's local AI in the omnibar:** `qai:` and `qaia:` answer with Chrome's on-device model (Gemini Nano) when it is the model picked in the selector, or when every API key is out of quota and the local fallback is on, the same rules the side panel's assistant already followed. Before, the omnibar always went to the API and said "quota exceeded" with the model installed. The omnibar frame now delegates `language-model` so the Prompt API is reachable from it.
+
+### Fixed
+
+- **Remotely hosted code (the reason 1.0.2 was rejected, violation "Blue Argon"):** the vendored tesseract.js files carried jsDelivr defaults for the worker, the WebAssembly core and the language models, and `worker.min.js` loaded the core with `importScripts` when no path was passed. The extension always passed the packaged files, so nothing remote ever ran, but the code was in the package. Both files are patched: with a path missing they throw, and the worker is never started from a Blob built out of a string. The English and Spanish models now ship in `src/lib/tessdata/`; any other language is downloaded once, as data, from a commit-pinned URL stated in `screenshotsService.js`. 1.0.2 was never published, so its changes reach users with this version.
+- **`bg:` closed the browser:** "Backup all groups" also put away the group of the tab being looked at, and with every tab in a group that closed the window. The group of the active tab is never backed up now, by the omnibar or by the worker, and the omnibar says so: the backup-all row names it, and when it is the only group left it explains why there is nothing to back up. Two new messages in the 11 languages.
+- **`bg:` with groups picked with Space backed up nothing:** the rows of that list were read as tabs and sent `<id>::undefined`.
+- **Renamed prefixes:** with `b:`, `h:`, `c:`, `dg:`, `dt:` or `ts:` renamed in the Navigation settings, the rows came out without titles, because their type was taken from the prefix itself. `f:`, `qai:` and `qaia:` ignored a renamed prefix.
+- **Ctrl+Enter in action lists (`dt:`, `dg:`, `dr:`, `bg:`):** the omnibar stayed open but the next Ctrl+Enter acted again on what had just been closed instead of on the highlighted row. The list is now drawn again without it, with the highlight where it was.
+
+### Store text
+
+```
+What's new
+• The omnibar's AI commands (qai:, qaia:) can use Chrome's local AI: when you pick it, or when your API keys run out of quota.
+• Backing up groups never closes the group you are on, and backing up all of them no longer closes the browser.
+• Omnibar fixes: groups picked with Space are backed up, renamed prefixes work everywhere, and Ctrl+Enter keeps acting on the highlighted row.
+• Text recognition (OCR) reads screenshots in the extension's language, works offline in English and Spanish, and lets you pick the image's language if it fails.
+```
+
+---
+
 ## 1.0.2 — 2026-10-14
 
 ### Added

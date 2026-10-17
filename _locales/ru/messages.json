@@ -1878,6 +1878,26 @@
     "message": "Исправлена нежелательная белая рамка вокруг омнибара в Google Поиске благодаря синхронизации color-scheme и поддержке светлой и тёмной рамки.",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "17 октября 2026 г.",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "Команды ИИ в омнибаре, qai: и qaia:, используют локальный ИИ Chrome, если вы его выбрали или если у ваших API-ключей закончилась квота и включена локальная замена.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "Резервное копирование групп через bg: никогда не закрывает группу текущей вкладки и сообщает об этом. Копирование всех групп больше не закрывает браузер.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "Исправления омнибара: группы, отмеченные пробелом, сохраняются, переименованные префиксы показывают свои строки, а Ctrl+Enter каждый раз действует на выделенную строку.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "Распознавание текста (OCR) читает скриншоты на языке расширения и работает без интернета на английском и испанском. Если не получилось, снова наведите курсор на кнопку OCR и выберите язык изображения.",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "14 октября 2026 г.",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "Ошибка при извлечении текста из изображения"
   },
+  "ocrLowConfidence": {
+    "message": "Текст скопирован, но может содержать ошибки. Снова наведите курсор на кнопку OCR, чтобы выбрать язык изображения.",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "Текст не распознан? Выберите язык изображения",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "Попросите ИИ найти любую открытую вкладку (например: где была таблица Excel?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "Создает резервные копии всех этих групп",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "Создает резервные копии всех этих групп. Группа $1, в которой вы находитесь, остается открытой и не копируется",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "Вы находитесь в группе $1: она остается открытой и не копируется",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "Восстановить все группы ($1)",
@@ -13811,7 +13857,7 @@
     "message": "Помощник отправляет в Gemini API от Google с вашим собственным ключом API страницу, на которую вы ему указываете, прикрепленные файлы и названия открытых вкладок, если вы ищете их по описанию. Встроенная локальная модель Chrome ничего не отправляет. Помощник отключен, пока вы его не настроите."
   },
   "dataUseOcrItem": {
-    "message": "Для распознавания текста на скриншоте один раз скачиваются языковые модели (испанский и английский) с jsDelivr, и браузер кеширует их. Никакие сведения о вас не отправляются."
+    "message": "Распознавание текста на скриншоте работает без интернета для английского и испанского: их модели входят в расширение. Для любого другого языка модель один раз скачивается с jsDelivr, и браузер кеширует её. Никакие сведения о вас не отправляются."
   },
   "dataUseContributionItem": {
     "message": "Чтобы поддержать проект, открывается наша платежная страница, которая обрабатывает карту через Stripe. Данные карты никогда не попадают в расширение."

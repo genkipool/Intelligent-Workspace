@@ -1878,6 +1878,26 @@
     "message": "Korrektur des unerwünschten weißen Rahmens um die Omnibar in der Google Suche durch Synchronisierung des Farbschemas und Unterstützung für helle/dunkle Rahmen.",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "17. Oktober 2026",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "Die KI-Befehle der Omnibar, qai: und qaia:, nutzen die lokale KI von Chrome, wenn Sie sie auswählen oder wenn Ihre API-Schlüssel kein Kontingent mehr haben und die lokale Alternative aktiviert ist.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "Beim Sichern von Gruppen mit bg: wird die Gruppe des aktuellen Tabs nie geschlossen, und das wird angezeigt. Das Sichern aller Gruppen schließt den Browser nicht mehr.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "Omnibar-Korrekturen: Mit der Leertaste markierte Gruppen werden gesichert, umbenannte Präfixe zeigen ihre Zeilen, und Strg+Enter wirkt jedes Mal auf die markierte Zeile.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "Die Texterkennung (OCR) liest Screenshots in der Sprache der Erweiterung und funktioniert auf Englisch und Spanisch offline. Schlägt sie fehl, fahre erneut über die OCR-Schaltfläche, um die Sprache des Bildes zu wählen.",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "14. Oktober 2026",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "Fehler beim Extrahieren des Textes aus dem Bild"
   },
+  "ocrLowConfidence": {
+    "message": "Text kopiert, kann aber Fehler enthalten. Fahre erneut über die OCR-Schaltfläche, um die Sprache des Bildes zu wählen.",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "Text nicht erkannt? Wähle die Sprache des Bildes",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "Die KI einen geöffneten Tab finden lassen (z. B. Wo war die Excel-Tabelle?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "Sichert alle diese Gruppen",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "Sichert alle diese Gruppen. $1, die Gruppe, in der Sie sich befinden, bleibt geöffnet und wird nicht gesichert",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 ist die Gruppe, in der Sie sich befinden: Sie bleibt geöffnet und wird nicht gesichert",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "Alle Gruppen wiederherstellen ($1)",
@@ -13811,7 +13857,7 @@
     "message": "Der Assistent sendet die Seite, auf die Sie ihn verweisen, alle Anhänge und – wenn Sie Ihre geöffneten Tabs per Beschreibung durchsuchen – deren Titel mit Ihrem eigenen API-Schlüssel an die Gemini API von Google. Das integrierte On-Device-Modell von Chrome sendet nichts. Der Assistent bleibt deaktiviert, bis Sie ihn einrichten."
   },
   "dataUseOcrItem": {
-    "message": "Zum Auslesen von Text aus einem Screenshot werden einmalig die Sprachmodelle – Spanisch und Englisch – von jsDelivr heruntergeladen und vom Browser zwischengespeichert. Es wird nichts über Sie gesendet."
+    "message": "Das Auslesen von Text aus einem Screenshot funktioniert auf Englisch und Spanisch offline, da deren Modelle mit der Erweiterung geliefert werden. Für jede andere Sprache wird ihr Modell einmalig von jsDelivr heruntergeladen und vom Browser zwischengespeichert. Über dich wird nichts gesendet."
   },
   "dataUseContributionItem": {
     "message": "Wenn Sie das Projekt unterstützen, öffnet sich unsere Zahlungsseite, die die Karte über Stripe abwickelt. Kartendaten erreichen die Erweiterung nie."

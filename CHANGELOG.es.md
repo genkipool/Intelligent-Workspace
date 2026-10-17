@@ -32,6 +32,33 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
+## 1.0.3 - 2026-10-17
+
+### Añadido
+
+- **OCR en el idioma de la extensión:** leer el texto de una captura usaba español e inglés fuera cual fuera el idioma de la interfaz, así que una captura en japonés, ruso o hindi salía como ruido. Ahora usa el idioma de la interfaz más inglés. Cuando una lectura falla (sin texto, un error o una confianza media por debajo de 50), al volver a pasar el ratón por el botón de OCR aparece un selector con los 11 idiomas, y el elegido se queda para esa captura. Dos mensajes nuevos en los 11 idiomas.
+- **La IA local de Chrome en el omnibar:** `qai:` y `qaia:` responden con el modelo de Chrome en el equipo (Gemini Nano) cuando es el modelo elegido en el selector, o cuando todas las claves de API se han quedado sin cuota y la alternativa local está activada; las mismas reglas que ya seguía el asistente del panel lateral. Antes el omnibar iba siempre a la API y decía «cuota superada» con el modelo instalado. El marco del omnibar delega ahora `language-model` para que la Prompt API esté disponible dentro de él.
+
+### Corregido
+
+- **Código alojado de forma remota (el motivo del rechazo de la 1.0.2, infracción «Blue Argon»):** los ficheros de tesseract.js incluidos traían valores por defecto de jsDelivr para el worker, el núcleo WebAssembly y los modelos de idioma, y `worker.min.js` cargaba el núcleo con `importScripts` si no se le pasaba ruta. La extensión siempre pasaba los ficheros del paquete, así que nunca se ejecutó nada remoto, pero el código estaba en el paquete. Los dos ficheros están parcheados: sin ruta lanzan un error, y el worker ya nunca se arranca desde un Blob construido con texto. Los modelos de inglés y español van ahora en `src/lib/tessdata/`; cualquier otro idioma se descarga una vez, como datos, desde una URL fijada a un commit y declarada en `screenshotsService.js`. La 1.0.2 nunca se publicó, así que sus cambios llegan a los usuarios con esta versión.
+- **`bg:` cerraba el navegador:** «Respaldar todos los grupos» guardaba también el grupo de la pestaña que se estaba viendo, y con todas las pestañas en grupos eso cerraba la ventana. Ahora el grupo de la pestaña activa no se respalda nunca, ni desde el omnibar ni desde el worker, y el omnibar lo avisa: la fila de respaldar todo lo nombra, y cuando es el único grupo que queda explica por qué no hay nada que respaldar. Dos mensajes nuevos en los 11 idiomas.
+- **`bg:` con grupos marcados con Espacio no respaldaba nada:** las filas de esa lista se leían como pestañas y se enviaba `<id>::undefined`.
+- **Prefijos renombrados:** con `b:`, `h:`, `c:`, `dg:`, `dt:` o `ts:` cambiados en los ajustes de Navegación, las filas salían sin título, porque su tipo se sacaba del propio prefijo. `f:`, `qai:` y `qaia:` no hacían caso del prefijo renombrado.
+- **Ctrl+Intro en las listas de acciones (`dt:`, `dg:`, `dr:`, `bg:`):** el omnibar seguía abierto, pero el siguiente Ctrl+Intro volvía a actuar sobre lo que se acababa de cerrar en lugar de sobre la fila resaltada. Ahora la lista se vuelve a pintar sin ello, con el resaltado donde estaba.
+
+### Texto de la tienda
+
+```
+Novedades
+• Los comandos de IA del omnibar (qai:, qaia:) pueden usar la IA local de Chrome: cuando la eliges o cuando tus claves de API se quedan sin cuota.
+• Respaldar grupos nunca cierra el grupo en el que estás, y respaldarlos todos ya no cierra el navegador.
+• Correcciones del omnibar: se respaldan los grupos marcados con Espacio, los prefijos renombrados funcionan en todas partes y Ctrl+Intro sigue actuando sobre la fila resaltada.
+• El reconocimiento de texto (OCR) lee las capturas en el idioma de la extensión, funciona sin conexión en inglés y español, y si falla te deja elegir el idioma de la imagen.
+```
+
+---
+
 ## 1.0.2 — 2026-10-14
 
 ### Añadido

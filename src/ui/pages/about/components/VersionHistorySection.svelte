@@ -6,6 +6,16 @@
 
     const versionData = [
         {
+            version: '1.0.3',
+            dateKey: 'date_2026_10_17',
+            features: [
+                'feature_v103_omnibarLocalAi',
+                'feature_v103_backupKeepsActiveGroup',
+                'feature_v103_omnibarFixes',
+                'feature_v103_ocrLanguages',
+            ],
+        },
+        {
             version: '1.0.2',
             dateKey: 'date_2026_10_14',
             features: [

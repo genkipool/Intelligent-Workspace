@@ -1878,6 +1878,26 @@
     "message": "Google Search पर ऑम्निबार के चारों ओर दिखने वाले अनचाहे सफ़ेद फ़्रेम को color-scheme सिंक करके और लाइट/डार्क दोनों फ़्रेम के सपोर्ट से ठीक किया गया।",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "17 अक्टूबर 2026",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "ऑम्निबार के एआई कमांड, qai: और qaia:, Chrome का लोकल एआई इस्तेमाल करते हैं जब आप उसे चुनते हैं, या जब आपकी API कुंजियों का कोटा खत्म हो जाए और लोकल विकल्प चालू हो.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "bg: से ग्रुप का बैकअप लेते समय आपके मौजूदा टैब का ग्रुप कभी बंद नहीं होता, और यह बताया जाता है. सभी ग्रुप का बैकअप लेने से अब ब्राउज़र बंद नहीं होता.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "ऑम्निबार सुधार: स्पेस से चुने गए ग्रुप का बैकअप होता है, नाम बदले प्रीफ़िक्स अपनी पंक्तियां दिखाते हैं, और Ctrl+Enter हर बार हाइलाइट की गई पंक्ति पर काम करता है.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "टेक्स्ट पहचान (OCR) स्क्रीनशॉट को एक्सटेंशन की भाषा में पढ़ती है और अंग्रेज़ी व स्पैनिश में ऑफ़लाइन काम करती है। अगर यह विफल हो, तो इमेज की भाषा चुनने के लिए OCR बटन पर फिर से माउस ले जाएँ।",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "14 अक्टूबर 2026",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "इमेज से टेक्स्ट निकालने में गड़बड़ी हुई"
   },
+  "ocrLowConfidence": {
+    "message": "टेक्स्ट कॉपी हो गया, लेकिन उसमें गलतियाँ हो सकती हैं। इमेज की भाषा चुनने के लिए OCR बटन पर फिर से माउस ले जाएँ।",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "टेक्स्ट नहीं पहचाना गया? इमेज की भाषा चुनें",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "कोई भी खुला टैब ढूंढने के लिए AI से पूछें (जैसे, Excel शीट कहां थी?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "इन सभी ग्रुप का बैकअप लेता है",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "इन सभी ग्रुप का बैकअप लेता है। $1, जिस ग्रुप में आप हैं, खुला रहता है और उसका बैकअप नहीं लिया जाता",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 वह ग्रुप है जिसमें आप हैं: यह खुला रहता है और इसका बैकअप नहीं लिया जाता",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "सभी ग्रुप वापस लाएं ($1)",
@@ -13811,7 +13857,7 @@
     "message": "असिस्टेंट आपका बताया गया पेज, आपके अटैच किए गए आइटम, और ब्यौरे से खोजने पर आपके खुले टैब के शीर्षक, आपकी अपनी API कुंजी के ज़रिए Google के Gemini API को भेजता है। Chrome का डिवाइस पर चलने वाला बिल्ट-इन मॉडल कुछ भी नहीं भेजता। जब तक आप इसे सेट अप नहीं करते, असिस्टेंट बंद रहता है।"
   },
   "dataUseOcrItem": {
-    "message": "किसी स्क्रीनशॉट से टेक्स्ट पढ़ने के लिए उसके भाषा मॉडल — स्पैनिश और अंग्रेज़ी — एक बार jsDelivr से डाउनलोड होते हैं, और ब्राउज़र उन्हें कैश कर लेता है। आपके बारे में कुछ भी नहीं भेजा जाता।"
+    "message": "स्क्रीनशॉट से टेक्स्ट पढ़ना अंग्रेज़ी और स्पैनिश में ऑफ़लाइन काम करता है, क्योंकि उनके मॉडल एक्सटेंशन के साथ आते हैं। किसी दूसरी भाषा के लिए उसका मॉडल एक बार jsDelivr से डाउनलोड होता है, और ब्राउज़र उसे कैश कर लेता है। आपके बारे में कुछ भी नहीं भेजा जाता।"
   },
   "dataUseContributionItem": {
     "message": "प्रोजेक्ट की मदद करने पर हमारा भुगतान पेज खुलता है, जो कार्ड को Stripe के ज़रिए संभालता है। कार्ड की जानकारी कभी एक्सटेंशन तक नहीं पहुंचती।"

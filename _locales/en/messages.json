@@ -1878,6 +1878,26 @@
     "message": "Fix for unwanted white frame around the omnibar on Google Search through color-scheme synchronization and dual light/dark frame support.",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "October 17, 2026",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "The omnibar's AI commands, qai: and qaia:, use Chrome's local AI when you pick it, or when your API keys run out of quota and the fallback is on.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "Backing up groups with bg: never closes the group of the tab you are on, and says so. Backing up every group no longer closes the browser.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "Omnibar fixes: groups picked with Space are backed up, renamed prefixes show their rows, and Ctrl+Enter acts on the highlighted row each time.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "Text recognition (OCR) reads screenshots in the extension's language and works offline in English and Spanish. If it fails, hover over the OCR button again to choose the image's language.",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "October 14, 2026",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "Error extracting text from image"
   },
+  "ocrLowConfidence": {
+    "message": "Text copied, but it may be inaccurate. Hover over the OCR button again to choose the image's language.",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "Text not recognised? Choose the image's language",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "Ask the AI to find any open tab (e.g., Where was the Excel sheet?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "Backs up all these groups",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "Backs up all these groups. $1, the group you are on, stays open and is not backed up",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 is the group you are on: it stays open and is not backed up",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "Restore all groups ($1)",
@@ -13811,7 +13857,7 @@
     "message": "The assistant sends the page you point it at, anything you attach, and the titles of your open tabs when you search them by description, to Google's Gemini API under your own API key. Chrome's built-in on-device model sends nothing. The assistant stays off until you set it up."
   },
   "dataUseOcrItem": {
-    "message": "Reading text out of a screenshot downloads its language models once — Spanish and English — from jsDelivr, and the browser caches them. Nothing about you is sent."
+    "message": "Reading text out of a screenshot works offline in English and Spanish, whose models ship with the extension. For any other language, its model is downloaded once from jsDelivr and the browser caches it. Nothing about you is sent."
   },
   "dataUseContributionItem": {
     "message": "Supporting the project opens our payment page, which handles the card through Stripe. Card details never reach the extension."

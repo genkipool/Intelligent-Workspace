@@ -118,6 +118,16 @@ export default defineConfig({
                     rename: { stripBase: true },
                 },
                 {
+                    /*
+                     * The English and Spanish OCR models, read by URL like the two files
+                     * above (`langPath`). Other languages come from the CDN the first time
+                     * they are needed; see `OCR_REMOTE_LANG_PATH` in screenshotsService.js.
+                     */
+                    src: 'src/lib/tessdata/*',
+                    dest: 'src/lib/tessdata',
+                    rename: { stripBase: true },
+                },
+                {
                     src: 'assets/images/*',
                     dest: 'assets/images',
                     rename: { stripBase: true },

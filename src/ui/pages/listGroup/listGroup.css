@@ -3749,6 +3749,57 @@ body.popup-window {
     animation: ocr-pulse 1.5s infinite ease-in-out;
 }
 
+/* Offered on the OCR button after a run on that capture failed: pick the image's language. */
+.ocr-lang-picker {
+    position: fixed;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+    max-height: calc(100vh - 8px);
+    overflow-y: auto;
+    padding: 8px;
+    background-color: var(--bg-panel-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 5px var(--interactive-color);
+    animation: zoomIn 0.15s ease-out forwards;
+}
+
+.ocr-lang-picker-title {
+    margin: 0 0 4px;
+    padding: 2px 8px 6px;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    border-bottom: 1px solid var(--border-color);
+    white-space: normal;
+}
+
+.ocr-lang-picker-item {
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--text-color);
+    font: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.ocr-lang-picker-item:hover,
+.ocr-lang-picker-item:focus-visible {
+    background-color: var(--bg-color);
+    outline: none;
+}
+
+.ocr-lang-picker-item[aria-checked='true'] {
+    color: var(--action-color);
+    font-weight: 600;
+}
+
 @keyframes ocr-pulse {
     0%,
     100% {

@@ -1878,6 +1878,26 @@
     "message": "Correção da moldura branca indesejada ao redor da omnibar na Pesquisa Google por meio da sincronização do color-scheme e do suporte a molduras duplas clara/escura.",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "17 de outubro de 2026",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "Os comandos de IA da omnibar, qai: e qaia:, usam a IA local do Chrome quando você a escolhe, ou quando suas chaves de API ficam sem cota e a alternativa local está ativada.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "Fazer backup de grupos com bg: nunca fecha o grupo da guia em que você está, e avisa isso. Fazer backup de todos os grupos não fecha mais o navegador.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "Correções da omnibar: os grupos marcados com Espaço entram no backup, os prefixos renomeados mostram suas linhas e Ctrl+Enter age sempre na linha destacada.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "O reconhecimento de texto (OCR) lê as capturas no idioma da extensão e funciona offline em inglês e espanhol. Se falhar, passe o mouse de novo sobre o botão de OCR para escolher o idioma da imagem.",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "14 de outubro de 2026",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "Erro ao extrair o texto da imagem"
   },
+  "ocrLowConfidence": {
+    "message": "Texto copiado, mas pode conter erros. Passe o mouse de novo sobre o botão de OCR para escolher o idioma da imagem.",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "Texto não reconhecido? Escolha o idioma da imagem",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "Peça à IA para encontrar qualquer guia aberta (ex.: Onde estava a planilha do Excel?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "Faz backup de todos esses grupos",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "Faz backup de todos esses grupos. $1, o grupo em que você está, continua aberto e não entra no backup",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 é o grupo em que você está: continua aberto e não entra no backup",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "Restaurar todos os grupos ($1)",
@@ -13811,7 +13857,7 @@
     "message": "O assistente envia a página que você indicar, tudo o que você anexar e os títulos das suas guias abertas quando você as pesquisa por descrição para a API Gemini do Google, usando sua própria chave de API. O modelo integrado do Chrome no dispositivo não envia nada. O assistente fica desativado até você configurá-lo."
   },
   "dataUseOcrItem": {
-    "message": "Ler o texto de uma captura de tela baixa uma única vez os modelos de idioma — espanhol e inglês — do jsDelivr, e o navegador os armazena em cache. Nada sobre você é enviado."
+    "message": "Ler o texto de uma captura funciona offline em inglês e espanhol, cujos modelos vêm com a extensão. Para qualquer outro idioma, o modelo é baixado uma única vez do jsDelivr e o navegador o guarda em cache. Nada sobre você é enviado."
   },
   "dataUseContributionItem": {
     "message": "Apoiar o projeto abre nossa página de pagamento, que processa o cartão pela Stripe. Os dados do cartão nunca chegam à extensão."

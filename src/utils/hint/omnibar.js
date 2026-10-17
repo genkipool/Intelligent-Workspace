@@ -20,6 +20,134 @@ var describeAiError = (error) => {
 };
 
 /**
+ * [AI INSTRUCTION]
+ * CHROME'S LOCAL AI (GEMINI NANO) FOR `qai:` AND `qaia:`, THE SAME RULES AS THE PANEL.
+ *
+ * The side panel's assistant has had the local model as a second engine since it was
+ * added (ui/services/localAiService.js): it answers when it is picked in the model
+ * selector, or when every API key is out of quota and the user turned the fallback on.
+ * The omnibar sent everything to the worker and said "quota exceeded" even with the
+ * model installed. This frame is an extension page, so the Prompt API is here too (the
+ * host delegates `language-model` to it); the service itself is a Svelte module this
+ * classic script cannot import, so the few rules it needs are repeated here and must
+ * stay in step with it: the storage keys, the model id, what counts as "exhausted", the
+ * output languages and the timeouts.
+ */
+var OmniLocalAi = {
+    MODEL_ID: 'chrome-local-ai',
+    /** Languages Chrome attests an answer in; anything else is asked for in English. */
+    OUTPUT_LANGUAGES: ['de', 'en', 'es', 'fr', 'ja'],
+    AVAILABILITY_TIMEOUT: 8000,
+    PROMPT_TIMEOUT: 120000,
+    SYSTEM_PROMPT:
+        'You are Intelligent Workspace, an advanced AI browser assistant specializing in managing tab groups, ' +
+        'organizing browser tabs, answering user queries, and assisting with web productivity. ' +
+        'Answer in the language of the question.',
+
+    _api() {
+        return globalThis.LanguageModel;
+    },
+    _outputOptions() {
+        const lang = String((typeof HintCommon !== 'undefined' && HintCommon.i18n?._lang) || 'en')
+            .split(/[-_]/)[0]
+            .toLowerCase();
+        const language = this.OUTPUT_LANGUAGES.includes(lang) ? lang : 'en';
+        return { expectedOutputs: [{ type: 'text', languages: [language] }] };
+    },
+    /** `availability()` can sit unresolved for ever on a profile that never saw the model. */
+    _withTimeout(promise, ms, fallback) {
+        let timer;
+        return Promise.race([
+            promise.finally(() => clearTimeout(timer)),
+            new Promise((resolve) => {
+                timer = setTimeout(() => resolve(fallback), ms);
+            }),
+        ]);
+    },
+    async available() {
+        const api = this._api();
+        if (!api?.availability) return false;
+        try {
+            const status = await this._withTimeout(
+                api.availability(this._outputOptions()),
+                this.AVAILABILITY_TIMEOUT,
+                'unavailable',
+            );
+            return status === 'available';
+        } catch {
+            return false;
+        }
+    },
+    _quotaExhausted(stored) {
+        const list = stored.geminiApiKeysList || [];
+        if (list.length === 0) return !stored.geminiApiKey;
+        return list.every((entry) => entry?.hasQuotaError);
+    },
+    /** The local model is picked in the selector, so it answers first. */
+    async isSelected() {
+        const { selectedGeminiModel } = await chrome.storage.local.get('selectedGeminiModel');
+        return selectedGeminiModel === this.MODEL_ID;
+    },
+    /** The worker's answer says no key is left, and the user turned the fallback on. */
+    async shouldFallback(response) {
+        const exhausted = response?.allKeysExhausted || response?.error === 'NO_API_KEY';
+        if (!exhausted) return false;
+        const { localAiEnabled } = await chrome.storage.local.get('localAiEnabled');
+        return !!localAiEnabled && (await this.available());
+    },
+    /**
+     * One answer from the local model, in the worker's shape (`success`, `answer`).
+     * @param {string} systemPrompt
+     * @param {Array<{ role: string, parts: Array<{ text?: string }> }>} contents The turns
+     *        in the API's format, ending on the one to answer.
+     */
+    async prompt(systemPrompt, contents) {
+        const api = this._api();
+        if (!api?.create) return { success: false, error: 'LanguageModel is not available' };
+        const turns = (contents || []).map((turn) => ({
+            role: turn.role === 'model' ? 'assistant' : 'user',
+            content: (turn.parts || [])
+                .map((part) => part.text || '')
+                .join('')
+                .trim(),
+        }));
+        const last = turns.pop();
+        let session;
+        try {
+            session = await api.create({
+                ...this._outputOptions(),
+                initialPrompts: [
+                    { role: 'system', content: systemPrompt || this.SYSTEM_PROMPT },
+                    ...turns.filter((t) => t.content),
+                ],
+            });
+            const answer = await this._withTimeout(session.prompt(last?.content || ''), this.PROMPT_TIMEOUT, null);
+            if (!answer) return { success: false, error: getOmniMsg('omnibarAiError') || 'Error' };
+            return { success: true, answer, isLocalAi: true };
+        } catch (error) {
+            console.error('[Omnibar LocalAI]', error);
+            return { success: false, error: error?.message || String(error) };
+        } finally {
+            session?.destroy?.();
+        }
+    },
+    /**
+     * Asks whichever engine should answer: the local model when it is picked, the worker
+     * otherwise, and the local model again when the worker reports every key spent.
+     */
+    async ask(workerMessage, systemPrompt, contents) {
+        if (await this.isSelected()) return this.prompt(systemPrompt, contents);
+        const response = await new Promise((resolve) => {
+            chrome.runtime.sendMessage(workerMessage, (res) =>
+                resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : res),
+            );
+        });
+        if (response?.success || !(await this.shouldFallback(response))) return response;
+        return this.prompt(systemPrompt, contents);
+    },
+};
+
+/**
  * Row kinds that stand for one open tab and can be gathered into a batch: what the
  * row is worth as an id is the tab it points at, whatever the batch is going to do
  * with it. Adding an action over tabs means adding its kind here.
@@ -74,6 +202,8 @@ var OmniBar = class OmniBar {
         this.registry = null; // Reference to CommandRegistry
         this.matches = [];
         this.tabs = [];
+        /** The group `bg:` leaves out because the user is on it, or null. */
+        this._bgKeptGroupTitle = null;
         this.selectedIndex = 0;
         this.debouncedSearch = null;
         this.selectedActionItems = new Set();
@@ -276,7 +406,10 @@ var OmniBar = class OmniBar {
         );
     }
     close() {
-        if (this._keepOpenOnClose) return;
+        if (this._keepOpenOnClose) {
+            this._redrawAfterKeptOpen();
+            return;
+        }
         if (!this.active) return;
         this.active = false;
         if (this._clipObservers) {
@@ -295,6 +428,26 @@ var OmniBar = class OmniBar {
         // The frame is the host's to remove; an empty one left behind would still sit
         // over the page.
         this.page.closed();
+    }
+    /**
+     * Ctrl+Enter acted on a list of tabs, groups or rules and the omnibar stays for the
+     * next one. What was picked is done with: left in the set, the next Ctrl+Enter acted
+     * on it again (a tab already closed) instead of on the highlighted row. The list is
+     * drawn again without what the action removed, with the highlight where it was so it
+     * does not fall back onto a "do it to all of them" row.
+     */
+    _redrawAfterKeptOpen() {
+        const first = this.shadow && this.shadow.querySelector('#hint-omni-results li');
+        const type = first ? first.dataset.type : '';
+        if (!(TAB_ACTION_TYPES.has(type) || ['dg', 'dr-item', 'bg-item'].includes(type))) return;
+        this.selectedActionItems.clear();
+        const keep = this.selectedIndex;
+        setTimeout(() => {
+            const input = this.shadow && this.shadow.getElementById('hint-omni-input');
+            if (!input || !this.active) return;
+            this._keepIndexOnce = keep;
+            this._handleInput({ target: input });
+        }, 250);
     }
     /**
      * The frame is as wide as the page's viewport *with* its scrollbar, so the bar's
@@ -589,13 +742,15 @@ var OmniBar = class OmniBar {
             this._renderResults(tutorialList, 'tutorial-hint');
             return;
         }
+        // The row type is the default prefix's, whatever the user renamed the prefix to:
+        // the renderer and the key handlers only know `b`, `h`, `c`, `dg`, `dt` and `ts`.
         const prefixes = {};
-        prefixes[this._getPrefixVal('b:', 'prefixSearchBookmarks')] = 'searchBookmarks';
-        prefixes[this._getPrefixVal('h:', 'prefixSearchHistory')] = 'getHistory';
-        prefixes[this._getPrefixVal('c:', 'prefixSearchRecentlyClosed')] = 'getRecentlyClosed';
-        prefixes[this._getPrefixVal('dg:', 'prefixDeleteGroup')] = 'getTabGroups';
-        prefixes[this._getPrefixVal('dt:', 'prefixDeleteTab')] = 'getOpenTabs';
-        prefixes[this._getPrefixVal('ts:', 'prefixSplitTabs')] = 'getOpenTabs';
+        prefixes[this._getPrefixVal('b:', 'prefixSearchBookmarks')] = { action: 'searchBookmarks', type: 'b' };
+        prefixes[this._getPrefixVal('h:', 'prefixSearchHistory')] = { action: 'getHistory', type: 'h' };
+        prefixes[this._getPrefixVal('c:', 'prefixSearchRecentlyClosed')] = { action: 'getRecentlyClosed', type: 'c' };
+        prefixes[this._getPrefixVal('dg:', 'prefixDeleteGroup')] = { action: 'getTabGroups', type: 'dg' };
+        prefixes[this._getPrefixVal('dt:', 'prefixDeleteTab')] = { action: 'getOpenTabs', type: 'dt' };
+        prefixes[this._getPrefixVal('ts:', 'prefixSplitTabs')] = { action: 'getOpenTabs', type: 'ts' };
 
         // -- we: Open Popup / wp: Open PiP / wv: Open Video PiP -----
         const pPopup = this._getPrefixVal('we:', 'omnibarPrefixPopupDesc');
@@ -1844,56 +1999,73 @@ var OmniBar = class OmniBar {
                     if (seq !== this._inputSeq) return;
                     const backups = backupRes && backupRes.success ? backupRes.backups : [];
                     const backedUpGroupIds = new Set(backups.map((b) => b.group?.id).filter((id) => id !== undefined));
-                    chrome.runtime.sendMessage(
-                        {
-                            action: 'getTabGroups',
-                        },
-                        (groupsRes) => {
-                            if (seq !== this._inputSeq) return;
-                            const groups = groupsRes && groupsRes.success ? groupsRes.results : [];
-                            const results = [];
-                            groups.forEach((g) => {
-                                if (!backedUpGroupIds.has(g.id)) {
-                                    const groupTitle =
-                                        g.title || getOmniMsg('omnibarGroupTitle', [g.color]) || `Group ${g.color}`;
-                                    if (!q || this._itemMatchesQuery('dg', g, q)) {
-                                        results.push({
-                                            type: 'bg-group',
-                                            id: g.id,
-                                            title: groupTitle,
-                                            color: g.color,
-                                            count: g.tabCount || 0,
-                                            url:
-                                                getOmniMsg('omnibarClickBackupGroup') ||
-                                                'Click to backup. Space / Ctrl+Click to select, Shift+Click to select range.',
-                                        });
+                    // The group of this tab is not offered: backing up closes it, and the
+                    // worker refuses to close the group the user is on.
+                    chrome.runtime.sendMessage({ action: 'getActiveTab' }, (activeTab) => {
+                        if (seq !== this._inputSeq) return;
+                        const activeGroupId =
+                            activeTab && typeof activeTab.groupId === 'number' ? activeTab.groupId : -1;
+                        chrome.runtime.sendMessage(
+                            {
+                                action: 'getTabGroups',
+                            },
+                            (groupsRes) => {
+                                if (seq !== this._inputSeq) return;
+                                const groups = groupsRes && groupsRes.success ? groupsRes.results : [];
+                                const results = [];
+                                // Named in the rows, so the user knows why it is missing.
+                                const kept = groups.find((g) => g.id === activeGroupId && !backedUpGroupIds.has(g.id));
+                                this._bgKeptGroupTitle = kept
+                                    ? kept.title ||
+                                      getOmniMsg('omnibarGroupTitle', [kept.color]) ||
+                                      `Group ${kept.color}`
+                                    : null;
+                                groups.forEach((g) => {
+                                    if (!backedUpGroupIds.has(g.id) && g.id !== activeGroupId) {
+                                        const groupTitle =
+                                            g.title || getOmniMsg('omnibarGroupTitle', [g.color]) || `Group ${g.color}`;
+                                        if (!q || this._itemMatchesQuery('dg', g, q)) {
+                                            results.push({
+                                                type: 'bg-group',
+                                                id: g.id,
+                                                title: groupTitle,
+                                                color: g.color,
+                                                count: g.tabCount || 0,
+                                                url:
+                                                    getOmniMsg('omnibarClickBackupGroup') ||
+                                                    'Click to backup. Space / Ctrl+Click to select, Shift+Click to select range.',
+                                            });
+                                        }
                                     }
+                                });
+                                if (results.length === 0) {
+                                    const keptTitle = this._bgKeptGroupTitle;
+                                    this._renderResults(
+                                        [
+                                            {
+                                                title: keptTitle
+                                                    ? getOmniMsg('omnibarBackupOnlyActiveGroup', [keptTitle]) ||
+                                                      `${keptTitle} is the group you are on: it stays open and is not backed up`
+                                                    : getOmniMsg('omnibarNoGroupsToBackup') ||
+                                                      'All groups already have a backup',
+                                                url: '',
+                                                icon: backupIcon,
+                                            },
+                                        ],
+                                        'ai-hint',
+                                    );
+                                } else {
+                                    this._renderResults(results, 'bg-item');
                                 }
-                            });
-                            if (results.length === 0) {
-                                this._renderResults(
-                                    [
-                                        {
-                                            title:
-                                                getOmniMsg('omnibarNoGroupsToBackup') ||
-                                                'All groups already have a backup',
-                                            url: '',
-                                            icon: backupIcon,
-                                        },
-                                    ],
-                                    'ai-hint',
-                                );
-                            } else {
-                                this._renderResults(results, 'bg-item');
-                            }
-                        },
-                    );
+                            },
+                        );
+                    });
                 },
             );
             return;
         }
         let handled = false;
-        for (const [prefix, action] of Object.entries(prefixes)) {
+        for (const [prefix, { action, type }] of Object.entries(prefixes)) {
             if (lower.startsWith(prefix)) {
                 const q = query.substring(prefix.length).trim();
                 const seq = ++this._inputSeq;
@@ -1914,15 +2086,16 @@ var OmniBar = class OmniBar {
                         } else {
                             matches = res && res.success ? res.results : [];
                         }
-                        this._renderResults(matches, prefix.slice(0, prefix.length - 1));
+                        this._renderResults(matches, type);
                     },
                 );
                 handled = true;
                 break;
             }
         }
-        if (!handled && lower.startsWith('f:')) {
-            const q = query.substring(2).trim();
+        const pFind = this._getPrefixVal('f:', 'prefixSearchText');
+        if (!handled && lower.startsWith(pFind)) {
+            const q = query.substring(pFind.length).trim();
             this.debouncedSearch(q);
             handled = true;
         }
@@ -2392,9 +2565,12 @@ var OmniBar = class OmniBar {
                 return;
             }
 
+            // qaia: starts with the qai: prefix when neither was renamed: it is checked first.
+            const pAgentPrefix = this._getPrefixVal('qaia:', 'prefixQueryAIAgent');
             // -- qai: AI Query --------------------------------------
-            if (currentLower.startsWith('qai:')) {
-                const q = currentValue.substring(4).trim();
+            const pQuery = this._getPrefixVal('qai:', 'prefixQueryAI');
+            if (currentLower.startsWith(pQuery) && !currentLower.startsWith(pAgentPrefix)) {
+                const q = currentValue.substring(pQuery.length).trim();
                 if (q) {
                     this._renderResults(
                         [
@@ -2406,29 +2582,25 @@ var OmniBar = class OmniBar {
                         ],
                         'ai-hint',
                     );
-                    chrome.runtime.sendMessage(
-                        {
-                            action: 'searchGemini',
-                            query: q,
-                        },
-                        (response) => {
-                            if (response && response.success) {
-                                this._renderAIResponse(q, response.answer);
-                            } else {
-                                const errMsg = describeAiError(response?.error);
-                                this._renderResults(
-                                    [
-                                        {
-                                            title: getOmniMsg('omnibarAiError') || '[ERR] Error consulting AI',
-                                            url: errMsg,
-                                            icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
-                                        },
-                                    ],
-                                    'ai-hint',
-                                );
-                            }
-                        },
-                    );
+                    OmniLocalAi.ask({ action: 'searchGemini', query: q }, null, [
+                        { role: 'user', parts: [{ text: q }] },
+                    ]).then((response) => {
+                        if (response && response.success) {
+                            this._renderAIResponse(q, response.answer);
+                        } else {
+                            const errMsg = describeAiError(response?.error);
+                            this._renderResults(
+                                [
+                                    {
+                                        title: getOmniMsg('omnibarAiError') || '[ERR] Error consulting AI',
+                                        url: errMsg,
+                                        icon: '<svg width="24" height="24" aria-hidden="true" viewBox="0 0 471 471" xmlns="http://www.w3.org/2000/svg"><path fill="var(--text-color)" d="M235.5 471q0-48.866-18.84-91.845-18.252-42.978-50.044-74.771T91.845 254.34Q48.867 235.5 0 235.5q48.867 0 91.845-18.251 42.979-18.84 74.771-50.633t50.044-74.771Q235.5 48.867 235.5 0q0 48.867 18.251 91.845 18.84 42.978 50.633 74.771t74.771 50.633Q422.134 235.499 471 235.5q-48.866 0-91.845 18.84-42.978 18.252-74.771 50.044-31.793 31.793-50.633 74.771Q235.501 422.134 235.5 471"></path></svg>',
+                                    },
+                                ],
+                                'ai-hint',
+                            );
+                        }
+                    });
                 }
                 if (event.ctrlKey) {
                     this._keepOpenOnClose = true;
@@ -2440,8 +2612,9 @@ var OmniBar = class OmniBar {
             }
 
             // -- qaia: AI Agent ---------------------------------------
-            if (currentLower.startsWith('qaia:')) {
-                const q = currentValue.substring(5).trim();
+            const pAgent = this._getPrefixVal('qaia:', 'prefixQueryAIAgent');
+            if (currentLower.startsWith(pAgent)) {
+                const q = currentValue.substring(pAgent.length).trim();
                 if (q) {
                     this._runOmniAgentQuery(q);
                 }
@@ -3840,24 +4013,11 @@ IMPORTANT RULES:
         ];
         this._renderAgentProgress(userQuery, steps);
         for (let step = 0; step < MAX_STEPS; step++) {
-            const geminiResult = await new Promise((resolve) => {
-                chrome.runtime.sendMessage(
-                    {
-                        action: 'geminiAgentStep',
-                        systemPrompt: OMNI_AGENT_SYSTEM_PROMPT,
-                        contents,
-                    },
-                    (response) =>
-                        resolve(
-                            chrome.runtime.lastError
-                                ? {
-                                      success: false,
-                                      error: chrome.runtime.lastError.message,
-                                  }
-                                : response,
-                        ),
-                );
-            });
+            const geminiResult = await OmniLocalAi.ask(
+                { action: 'geminiAgentStep', systemPrompt: OMNI_AGENT_SYSTEM_PROMPT, contents },
+                OMNI_AGENT_SYSTEM_PROMPT,
+                contents,
+            );
             if (!geminiResult?.success) {
                 finalResponse =
                     getOmniMsg('omnibarAgentErrorPrefix', [describeAiError(geminiResult?.error)]) ||
@@ -4075,7 +4235,10 @@ IMPORTANT RULES:
                         HintCommon.i18n.plural('omnibarGroupCount', count),
                         HintCommon.i18n.plural('omnibarTabCount', totalTabs),
                     ]) || `Backup all groups (${count} groups, ${totalTabs} tabs)`;
-                desc = getOmniMsg('omnibarBackupAllGroupsDesc') || 'Backs up all these groups';
+                desc = this._bgKeptGroupTitle
+                    ? getOmniMsg('omnibarBackupAllGroupsKeepsActive', [this._bgKeptGroupTitle]) ||
+                      `Backs up all these groups. ${this._bgKeptGroupTitle}, the group you are on, stays open and is not backed up`
+                    : getOmniMsg('omnibarBackupAllGroupsDesc') || 'Backs up all these groups';
             } else if (isBgr) {
                 specialType = 'restore-all-groups';
                 const groupsCount = items.filter((i) => i.type === 'bg-group').length;
@@ -5293,7 +5456,9 @@ IMPORTANT RULES:
             });
             container.appendChild(li);
         });
-        this.selectedIndex = 0;
+        const keep = this._keepIndexOnce;
+        this._keepIndexOnce = undefined;
+        this.selectedIndex = keep === undefined ? 0 : Math.max(0, Math.min(keep, container.children.length - 1));
         this._updateSelection(container.children, false);
     }
     _itemMatchesQuery(itemType, itemData, query) {
@@ -5407,9 +5572,10 @@ IMPORTANT RULES:
         const itemType = item.dataset.type;
         if (itemType === 'dg') return parseInt(item.dataset.groupId);
         if (itemType === 'bg-item') {
-            return item.dataset.bgType === 'bg-group'
-                ? parseInt(item.dataset.groupId)
-                : `${item.dataset.groupId}::${item.dataset.tabUrl}`;
+            // Every row `bg:` lists is a group, marked `bg-backup-mode` for its styling:
+            // read as a tab it gave `<id>::undefined`, and a picked group was never backed up.
+            const isGroup = item.dataset.bgType === 'bg-group' || item.dataset.bgType === 'bg-backup-mode';
+            return isGroup ? parseInt(item.dataset.groupId) : `${item.dataset.groupId}::${item.dataset.tabUrl}`;
         }
         if (TAB_ACTION_TYPES.has(itemType)) return parseInt(item.dataset.tabId);
         return item.dataset.actionId;

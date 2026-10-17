@@ -3,7 +3,8 @@
  * Delegates to side panel first for superior title-cleaning and in-memory state management.
  */
 async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
-    const { groupIds, windowId } = message || {};
+    const { windowId } = message || {};
+    let { groupIds } = message || {};
     try {
         let targetWinId =
             typeof windowId === 'number'
@@ -18,29 +19,9 @@ async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
             }
         }
 
-        // Try delegating to the side panel first (it handles baseName extraction, DOM index, and state.backedUpGroupData)
-        const delegatedAction = groupIds ? 'backupGroupsById' : 'backupAllGroupsFromBackground';
-        const delegatedMessage = {
-            action: delegatedAction,
-            ...(groupIds ? { groupIds } : {}),
-            ...(targetWinId !== null ? { windowId: targetWinId } : {}),
-        };
-        const delegated = await new Promise((resolve) => {
-            chrome.runtime.sendMessage(delegatedMessage, (res) => {
-                if (chrome.runtime.lastError || !res || !res.success) {
-                    resolve(false);
-                } else {
-                    resolve(res);
-                }
-            });
-        });
-
-        if (delegated) {
-            if (sendResponse) sendResponse(delegated);
-            return;
-        }
-
-        // Fallback: side panel is closed or specific groups requested, execute natively in background
+        // The group of the tab the user is on is never put away, even when it is asked for
+        // by id: backing up closes the group's tabs, and closing the one being looked at
+        // pulls the page out from under the user (and with every tab grouped, the window).
         const queryActiveOpts = { active: true };
         if (targetWinId !== null) {
             queryActiveOpts.windowId = targetWinId;
@@ -49,6 +30,38 @@ async function handleBackupAllGroupsFromKey(message, sendResponse, sender) {
         }
         const [activeTab] = await chrome.tabs.query(queryActiveOpts);
         const activeGroupId = activeTab ? activeTab.groupId : -1;
+        if (Array.isArray(groupIds)) {
+            groupIds = groupIds.filter((id) => id !== activeGroupId);
+        }
+
+        // Try delegating to the side panel first (it handles baseName extraction, DOM index, and state.backedUpGroupData)
+        const delegatedAction = groupIds ? 'backupGroupsById' : 'backupAllGroupsFromBackground';
+        const delegatedMessage = {
+            action: delegatedAction,
+            ...(groupIds ? { groupIds } : {}),
+            ...(targetWinId !== null ? { windowId: targetWinId } : {}),
+        };
+        // Nothing left to back up is answered below with the "no groups" notice; the panel
+        // would report an empty batch as a success.
+        const nothingAsked = Array.isArray(groupIds) && groupIds.length === 0;
+        const delegated = nothingAsked
+            ? false
+            : await new Promise((resolve) => {
+                  chrome.runtime.sendMessage(delegatedMessage, (res) => {
+                      if (chrome.runtime.lastError || !res || !res.success) {
+                          resolve(false);
+                      } else {
+                          resolve(res);
+                      }
+                  });
+              });
+
+        if (delegated) {
+            if (sendResponse) sendResponse(delegated);
+            return;
+        }
+
+        // Fallback: side panel is closed or specific groups requested, execute natively in background
 
         const queryGroupsOpts = targetWinId !== null ? { windowId: targetWinId } : {};
         const rawGroups = await chrome.tabGroups.query(queryGroupsOpts);

@@ -28,6 +28,8 @@ import {
     showPersistentProgressNotification,
     msg as localizedMsg,
     pluralKey,
+    getCurrentLang,
+    SUPPORTED_LANGUAGES,
 } from '../../utils/i18n.js';
 import {
     saveScreenshotToDb,
@@ -1101,7 +1103,23 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
     if (ocrBtn) {
         ocrBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            handleOcrScreenshot(fullScreenshot.dataUrl, ocrBtn);
+            hideOcrLanguagePicker();
+            handleOcrScreenshot(fullScreenshot.dataUrl, ocrBtn, fullScreenshot.id);
+        });
+        // Only after a run on this capture failed, the language was probably the wrong one,
+        // and only on the next visit: not while the pointer still rests where it clicked.
+        ocrBtn.addEventListener('mouseenter', () => {
+            if (
+                ocrFailedIds.has(fullScreenshot.id) &&
+                !ocrAwaitingLeave.has(fullScreenshot.id) &&
+                !ocrBtn.classList.contains('running')
+            ) {
+                showOcrLanguagePicker(ocrBtn, fullScreenshot);
+            }
+        });
+        ocrBtn.addEventListener('mouseleave', () => {
+            if (!ocrBtn.classList.contains('running')) ocrAwaitingLeave.delete(fullScreenshot.id);
+            scheduleOcrPickerHide();
         });
     }
     applyTranslations(galleryItem);
@@ -1363,7 +1381,100 @@ async function loadTesseract() {
     return Tesseract;
 }
 
-export async function handleOcrScreenshot(dataUrl, buttonEl) {
+/**
+ * Where the OCR language models come from.
+ *
+ * English and Spanish ship inside the package. Every other language is downloaded the
+ * first time it is needed, from one fixed commit of the tesseract.js model repository, and
+ * the engine caches it in IndexedDB. These are `.traineddata` files the recognizer reads —
+ * data, not code; the engine itself (`worker.min.js`, `tesseract-core.wasm.js`) only ever
+ * loads from the package, and the vendored files refuse to run without those paths.
+ */
+const OCR_BUNDLED_LANGS = new Set(['eng', 'spa']);
+const OCR_LOCAL_LANG_PATH = 'src/lib/tessdata';
+const OCR_REMOTE_LANG_PATH =
+    'https://cdn.jsdelivr.net/gh/naptha/tessdata@806cd9adc8c6e8abc11c782db1818c990576bebc/4.0.0_best_int';
+
+/** The extension's languages, by their `_locales` code, as Tesseract names them. */
+const OCR_LANG_CODES = {
+    en: 'eng',
+    es: 'spa',
+    de: 'deu',
+    fr: 'fra',
+    it: 'ita',
+    pt_BR: 'por',
+    ru: 'rus',
+    hi: 'hin',
+    ja: 'jpn',
+    zh_CN: 'chi_sim',
+    ko: 'kor',
+};
+
+/**
+ * Below this mean confidence the text is mostly guesses, which is what recognising a
+ * script with the wrong model looks like. It still gets copied, but the run counts as
+ * failed so the language picker is offered.
+ */
+const OCR_MIN_CONFIDENCE = 50;
+
+/**
+ * Captures whose last OCR run failed, the language picked for each, and the failed ones
+ * the pointer has not left since — all by id.
+ */
+const ocrFailedIds = new Set();
+const ocrPickedLang = new Map();
+const ocrAwaitingLeave = new Set();
+
+/** The model plus English, which almost every screenshot carries some of (URLs, UI). */
+function ocrLangsFor(uiLang) {
+    const primary = OCR_LANG_CODES[uiLang] || 'eng';
+    return primary === 'eng' ? ['eng'] : [primary, 'eng'];
+}
+
+/**
+ * Whether the engine already holds a model in its IndexedDB cache.
+ *
+ * The engine caches by file name, wherever the file came from, so once English has been
+ * read from the package a run that needs the CDN for its other language does not fetch
+ * English too. The database is the engine's own (`idb-keyval` defaults). It is only
+ * opened when it exists: opening a missing one would create it without its store and
+ * break the engine's own writes.
+ */
+async function ocrModelCached(lang) {
+    try {
+        const dbs = await indexedDB.databases();
+        if (!dbs.some((d) => d.name === 'keyval-store')) return false;
+        const db = await new Promise((resolve, reject) => {
+            const req = indexedDB.open('keyval-store');
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+        try {
+            if (!db.objectStoreNames.contains('keyval')) return false;
+            return await new Promise((resolve) => {
+                const req = db.transaction('keyval', 'readonly').objectStore('keyval').count(`./${lang}.traineddata`);
+                req.onsuccess = () => resolve(req.result > 0);
+                req.onerror = () => resolve(false);
+            });
+        } finally {
+            db.close();
+        }
+    } catch {
+        return false;
+    }
+}
+
+function ocrWorkerOptions(langPath, logger) {
+    return {
+        workerBlobURL: false,
+        workerPath: chrome.runtime.getURL('src/lib/worker.min.js'),
+        corePath: chrome.runtime.getURL('src/lib/tesseract-core.wasm.js'),
+        langPath,
+        logger,
+    };
+}
+
+export async function handleOcrScreenshot(dataUrl, buttonEl, screenshotId = null) {
     const Tesseract = await loadTesseract();
     if (!Tesseract) {
         showNotification('ocrError', true);
@@ -1373,20 +1484,31 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
     buttonEl.disabled = true;
     buttonEl.classList.add('running');
     const progressNotice = await showPersistentProgressNotification('ocrProcessing', ['0']);
+    let failed = true;
 
     try {
-        const worker = await Tesseract.createWorker('spa+eng', 1, {
-            workerBlobURL: false,
-            workerPath: chrome.runtime.getURL('src/lib/worker.min.js'),
-            corePath: chrome.runtime.getURL('src/lib/tesseract-core.wasm.js'),
-            logger: (m) => {
+        const langs = ocrPickedLang.get(screenshotId) || ocrLangsFor(await getCurrentLang());
+        const needsRemote = langs.some((l) => !OCR_BUNDLED_LANGS.has(l));
+        const localPath = chrome.runtime.getURL(OCR_LOCAL_LANG_PATH);
+
+        // A run that needs the CDN reads every model from there, so English is put in the
+        // cache from the package first; after that the CDN is only asked for the other one.
+        if (needsRemote && !(await ocrModelCached('eng'))) {
+            const warm = await Tesseract.createWorker('eng', 1, ocrWorkerOptions(localPath));
+            await warm.terminate();
+        }
+
+        const worker = await Tesseract.createWorker(
+            langs.join('+'),
+            1,
+            ocrWorkerOptions(needsRemote ? OCR_REMOTE_LANG_PATH : localPath, (m) => {
                 if (m.status === 'recognizing text' && m.progress != null) {
                     const pct = Math.round(m.progress * 100);
                     buttonEl.title = localizedMsg('ocrProgressTooltip', [String(pct)]) || `OCR... ${pct}%`;
                     progressNotice.updateProgress([String(pct)]);
                 }
-            },
-        });
+            }),
+        );
         const ret = await worker.recognize(dataUrl);
         await worker.terminate();
 
@@ -1397,6 +1519,7 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
             showNotification('ocrNoText', true);
             return;
         }
+        failed = (ret.data?.confidence ?? 100) < OCR_MIN_CONFIDENCE;
 
         try {
             if (navigator.hasFocus && navigator.hasFocus() && navigator.clipboard) {
@@ -1415,17 +1538,112 @@ export async function handleOcrScreenshot(dataUrl, buttonEl) {
             document.body.removeChild(textarea);
         }
 
-        showNotification('ocrSuccess');
+        showNotification(failed ? 'ocrLowConfidence' : 'ocrSuccess', failed);
     } catch (e) {
         console.error('OCR Error:', e);
         progressNotice.close();
         showNotification('ocrError', true);
     } finally {
+        if (screenshotId != null) {
+            if (failed) {
+                ocrFailedIds.add(screenshotId);
+                // The button ignored the pointer while it ran, so where the pointer is now is
+                // only known on its next move: elsewhere, and the next visit is a real one.
+                ocrAwaitingLeave.add(screenshotId);
+                document.addEventListener(
+                    'mousemove',
+                    (e) => {
+                        if (!buttonEl.contains(e.target)) ocrAwaitingLeave.delete(screenshotId);
+                    },
+                    { once: true },
+                );
+            } else {
+                ocrFailedIds.delete(screenshotId);
+            }
+        }
         buttonEl.disabled = false;
         buttonEl.classList.remove('running');
         buttonEl.setAttribute('data-i18n-title', 'ocrScreenshot');
         applyTranslations(buttonEl);
     }
+}
+
+/*
+ * The language picker offered on the OCR button after a failed run.
+ *
+ * One element for the whole page, moved to whichever button asked for it. It lives on
+ * `body` because the card clips its overflow, and it stays open while the pointer is on
+ * either the button or the picker, so moving from one to the other does not close it.
+ */
+let ocrPicker = null;
+let ocrPickerHideTimer = null;
+
+function scheduleOcrPickerHide() {
+    clearTimeout(ocrPickerHideTimer);
+    ocrPickerHideTimer = setTimeout(hideOcrLanguagePicker, 250);
+}
+
+function hideOcrLanguagePicker() {
+    clearTimeout(ocrPickerHideTimer);
+    if (!ocrPicker) return;
+    ocrPicker.remove();
+    ocrPicker = null;
+    document.removeEventListener('keydown', onOcrPickerKeydown, true);
+}
+
+function onOcrPickerKeydown(e) {
+    if (e.key === 'Escape') {
+        e.stopPropagation();
+        hideOcrLanguagePicker();
+    }
+}
+
+async function showOcrLanguagePicker(buttonEl, screenshot) {
+    hideOcrLanguagePicker();
+    const current = (ocrPickedLang.get(screenshot.id) || ocrLangsFor(await getCurrentLang()))[0];
+    if (!buttonEl.matches(':hover')) return; // the pointer moved on while the language was read
+
+    const picker = document.createElement('div');
+    picker.className = 'ocr-lang-picker';
+    picker.setAttribute('role', 'menu');
+    const heading = document.createElement('p');
+    heading.className = 'ocr-lang-picker-title';
+    heading.textContent = localizedMsg('ocrPickLanguage');
+    picker.appendChild(heading);
+
+    for (const { code, nativeName } of SUPPORTED_LANGUAGES) {
+        const tess = OCR_LANG_CODES[code];
+        if (!tess) continue;
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'ocr-lang-picker-item';
+        item.setAttribute('role', 'menuitemradio');
+        item.setAttribute('aria-checked', String(tess === current));
+        item.lang = code.replace('_', '-');
+        item.textContent = nativeName;
+        item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            ocrPickedLang.set(screenshot.id, tess === 'eng' ? ['eng'] : [tess, 'eng']);
+            hideOcrLanguagePicker();
+            handleOcrScreenshot(screenshot.dataUrl, buttonEl, screenshot.id);
+        });
+        picker.appendChild(item);
+    }
+
+    picker.addEventListener('mouseenter', () => clearTimeout(ocrPickerHideTimer));
+    picker.addEventListener('mouseleave', scheduleOcrPickerHide);
+    document.body.appendChild(picker);
+    ocrPicker = picker;
+    document.addEventListener('keydown', onOcrPickerKeydown, true);
+
+    // Beside the button, flipped to the left or up when it would leave the window.
+    const r = buttonEl.getBoundingClientRect();
+    const w = picker.offsetWidth;
+    const h = picker.offsetHeight;
+    const left = r.right + 4 + w > window.innerWidth ? Math.max(4, r.left - 4 - w) : r.right + 4;
+    const top = Math.max(4, Math.min(r.top, window.innerHeight - h - 4));
+    picker.style.left = `${left}px`;
+    picker.style.top = `${top}px`;
 }
 
 /**

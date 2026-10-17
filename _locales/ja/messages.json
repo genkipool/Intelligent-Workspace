@@ -1878,6 +1878,26 @@
     "message": "カラースキームの同期とライト / ダーク両対応のフレームにより、Google 検索でオムニバーの周囲に不要な白い枠が表示される問題を修正。",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "2026年10月17日",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "オムニバーの AI コマンド qai: と qaia: は、Chrome のローカル AI を選んだとき、または API キーのクォータが尽きてローカルの代替がオンのときに、ローカル AI を使います。",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "bg: でグループをバックアップしても、今いるタブのグループは閉じず、そのことを表示します。すべてのグループをバックアップしてもブラウザーが閉じなくなりました。",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "オムニバーの修正：スペースで選んだグループがバックアップされ、名前を変えたプレフィックスでも行が表示され、Ctrl+Enter が毎回選択中の行に作用します。",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "テキスト認識（OCR）は拡張機能の言語でスクリーンショットを読み取り、英語とスペイン語ではオフラインで動作します。うまくいかない場合は、OCR ボタンにもう一度マウスを合わせて画像の言語を選んでください。",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "2026年10月14日",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "画像からのテキスト抽出中にエラーが発生しました"
   },
+  "ocrLowConfidence": {
+    "message": "テキストをコピーしましたが、誤りがある可能性があります。もう一度 OCR ボタンにマウスを合わせて、画像の言語を選んでください。",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "テキストを認識できませんか？画像の言語を選んでください",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "開いているタブを AI に探してもらいましょう（例: Excel のシートはどこだった？）"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "これらのグループをすべてバックアップします",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "これらのグループをすべてバックアップします。今いるグループ $1 は開いたままで、バックアップされません",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 は今いるグループです。開いたままで、バックアップされません",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "すべてのグループを復元（$1）",
@@ -13811,7 +13857,7 @@
     "message": "アシスタントは、指定したページ、添付したファイル、および説明でタブを検索する場合は開いているタブのタイトルを、ご自身の API キーを使用して Google の Gemini API に送信します。Chrome に組み込まれたデバイス上のモデルは何も送信しません。アシスタントは設定するまでオフのままです。"
   },
   "dataUseOcrItem": {
-    "message": "スクリーンショットからテキストを読み取る際、言語モデル（スペイン語と英語）を jsDelivr から一度だけダウンロードし、ブラウザにキャッシュします。お客様に関する情報は一切送信されません。"
+    "message": "スクリーンショットからのテキスト読み取りは、英語とスペイン語なら拡張機能に含まれるモデルでオフラインで動作します。その他の言語では、そのモデルを jsDelivr から一度だけダウンロードし、ブラウザにキャッシュします。お客様に関する情報は一切送信されません。"
   },
   "dataUseContributionItem": {
     "message": "プロジェクトを支援すると支払いページが開き、カードは Stripe を通じて処理されます。カード情報が拡張機能に届くことはありません。"

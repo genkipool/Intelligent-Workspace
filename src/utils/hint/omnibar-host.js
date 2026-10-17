@@ -115,7 +115,8 @@ var OmniBarHost = class OmniBarHost {
         // loads is the extension's own origin: nothing was delegated and every copy from
         // the omnibar failed with "blocked because of a permissions policy" (measured).
         const extensionOrigin = `chrome-extension://${chrome.runtime.id}`;
-        frame.allow = `clipboard-read ${extensionOrigin}; clipboard-write ${extensionOrigin}`;
+        // `language-model` lets qai: and qaia: use Chrome's local AI from inside the frame.
+        frame.allow = `clipboard-read ${extensionOrigin}; clipboard-write ${extensionOrigin}; language-model ${extensionOrigin}`;
         // The query goes after getURL: inside its argument the `?` would be part of the path.
         frame.src = `${chrome.runtime.getURL('src/utils/hint/omnibar-frame.html')}?n=${nonce}`;
         const initialScheme = this._resolveColorScheme();

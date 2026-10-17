@@ -1878,6 +1878,26 @@
     "message": "Correzione della cornice bianca indesiderata attorno all'omnibar nella Ricerca Google tramite la sincronizzazione dello schema di colori e il supporto della doppia cornice chiara/scura.",
     "description": "Description of omnibar transparency fix in v1.0.2."
   },
+  "date_2026_10_17": {
+    "message": "17 ottobre 2026",
+    "description": "Release date for version 1.0.3."
+  },
+  "feature_v103_omnibarLocalAi": {
+    "message": "I comandi IA dell'omnibar, qai: e qaia:, usano l'IA locale di Chrome quando la scegli, o quando le tue chiavi API esauriscono la quota e l'alternativa locale è attiva.",
+    "description": "Description of the omnibar using Chrome local AI in v1.0.3."
+  },
+  "feature_v103_backupKeepsActiveGroup": {
+    "message": "Il backup dei gruppi con bg: non chiude mai il gruppo della scheda in cui sei, e lo segnala. Il backup di tutti i gruppi non chiude più il browser.",
+    "description": "Description of the backup that keeps the active group open in v1.0.3."
+  },
+  "feature_v103_omnibarFixes": {
+    "message": "Correzioni dell'omnibar: i gruppi segnati con Spazio vengono salvati, i prefissi rinominati mostrano le loro righe e Ctrl+Invio agisce ogni volta sulla riga evidenziata.",
+    "description": "Description of the omnibar fixes in v1.0.3."
+  },
+  "feature_v103_ocrLanguages": {
+    "message": "Il riconoscimento del testo (OCR) legge gli screenshot nella lingua dell’estensione e funziona offline in inglese e spagnolo. Se non riesce, passa di nuovo il mouse sul pulsante OCR per scegliere la lingua dell’immagine.",
+    "description": "Description of OCR in the extension's language in v1.0.3."
+  },
   "date_2026_10_14": {
     "message": "14 ottobre 2026",
     "description": "Release date for version 1.0.2."
@@ -10276,6 +10296,14 @@
   "ocrError": {
     "message": "Errore durante l'estrazione del testo dall'immagine"
   },
+  "ocrLowConfidence": {
+    "message": "Testo copiato, ma potrebbe contenere errori. Passa di nuovo il mouse sul pulsante OCR per scegliere la lingua dell’immagine.",
+    "description": "Gallery: OCR finished but the recognizer was unsure of most of the text"
+  },
+  "ocrPickLanguage": {
+    "message": "Testo non riconosciuto? Scegli la lingua dell’immagine",
+    "description": "Gallery: heading of the language picker shown on the OCR button after a failed run"
+  },
   "omniboxDefaultSuggestion": {
     "message": "Chiedi all'IA di trovare qualsiasi scheda aperta (ad es. Dov'era il foglio Excel?)"
   },
@@ -11320,6 +11348,24 @@
   "omnibarBackupAllGroupsDesc": {
     "message": "Esegue il backup di tutti questi gruppi",
     "description": "Description for backing up all groups action"
+  },
+  "omnibarBackupAllGroupsKeepsActive": {
+    "message": "Esegue il backup di tutti questi gruppi. $1, il gruppo in cui sei, resta aperto e non viene salvato",
+    "description": "Description of the backup-all row when the group of the current tab is left out; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "omnibarBackupOnlyActiveGroup": {
+    "message": "$1 è il gruppo in cui sei: resta aperto e non viene salvato",
+    "description": "Shown by bg: when the only group left is the one of the current tab; $1 is that group",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
   },
   "omnibarRestoreAllGroups": {
     "message": "Ripristina tutti i gruppi ($1)",
@@ -13811,7 +13857,7 @@
     "message": "L'assistente invia la pagina che gli indichi, tutto ciò che alleghi e i titoli delle schede aperte quando le cerchi per descrizione all'API Gemini di Google, usando la tua chiave API. Il modello on-device integrato di Chrome non invia nulla. L'assistente resta disattivato finché non lo configuri."
   },
   "dataUseOcrItem": {
-    "message": "La lettura del testo da uno screenshot scarica una sola volta i relativi modelli linguistici (spagnolo e inglese) da jsDelivr e il browser li memorizza nella cache. Non viene inviato nulla che ti riguardi."
+    "message": "La lettura del testo di uno screenshot funziona offline in inglese e spagnolo, i cui modelli sono inclusi nell’estensione. Per qualsiasi altra lingua, il modello viene scaricato una sola volta da jsDelivr e il browser lo mette in cache. Non viene inviato nulla su di te."
   },
   "dataUseContributionItem": {
     "message": "Sostenere il progetto apre la nostra pagina di pagamento, che gestisce la carta tramite Stripe. I dati della carta non raggiungono mai l'estensione."
