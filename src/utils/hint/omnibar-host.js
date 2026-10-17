@@ -432,9 +432,7 @@ var OmniBarHost = class OmniBarHost {
         let targetUrl = url;
         let pipWindow;
         try {
-            if (window.documentPictureInPicture.window) {
-                window.documentPictureInPicture.window.close();
-            }
+            itgCloseDocumentPip();
             try {
                 const currentCleanUrl = window.location.href.split('#')[0].split('?')[0];
                 const urlObj = new URL(url);
@@ -450,11 +448,7 @@ var OmniBarHost = class OmniBarHost {
             } catch (e) {
                 console.warn('Failed to append current video time:', e);
             }
-            document.querySelectorAll('video').forEach((v) => {
-                try {
-                    v.pause();
-                } catch {}
-            });
+            itgPauseAllVideos();
             pipWindow = await requestItgPipWindow(targetUrl, 450, 600);
         } catch (err) {
             console.warn('Omnibar direct PiP failed, attempting background fallback:', err);
@@ -464,10 +458,7 @@ var OmniBarHost = class OmniBarHost {
         return true;
     }
     async _fillDocumentPip(pipWindow, targetUrl) {
-        pipWindow.document.body.style.margin = '0';
-        pipWindow.document.body.style.padding = '0';
-        pipWindow.document.body.style.overflow = 'hidden';
-        pipWindow.document.body.style.backgroundColor = '#1e1e1e';
+        itgStylePipBody(pipWindow, '#1e1e1e');
         /*
          * AWAIT, and not for tidiness.
          *
@@ -484,15 +475,7 @@ var OmniBarHost = class OmniBarHost {
             action: 'prepareVideoUrlForPip',
             url: targetUrl,
         });
-        const iframe = document.createElement('iframe');
-        iframe.name = 'itg-page-pip-iframe';
-        iframe.src = targetUrl;
-        iframe.style.width = '100vw';
-        iframe.style.height = '100vh';
-        iframe.style.border = 'none';
-        iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
-        itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
-        pipWindow.document.body.appendChild(iframe);
+        itgAppendPagePipIframe(pipWindow, targetUrl);
         let lastKnownTime = 0;
         const timeTrackerInterval = setInterval(() => {
             try {
@@ -500,14 +483,8 @@ var OmniBarHost = class OmniBarHost {
                     clearInterval(timeTrackerInterval);
                     return;
                 }
-                const pipIframe = pipWindow.document.querySelector('iframe');
-                if (pipIframe) {
-                    const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
-                    const pipVideo = innerDoc?.querySelector('video');
-                    if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
-                        lastKnownTime = pipVideo.currentTime;
-                    }
-                }
+                const time = itgPipFrameVideoTime(pipWindow);
+                if (time > 0) lastKnownTime = time;
             } catch {}
         }, 250);
         let didResume = false;
@@ -515,23 +492,7 @@ var OmniBarHost = class OmniBarHost {
             if (didResume) return;
             didResume = true;
             clearInterval(timeTrackerInterval);
-            try {
-                const localVideo = document.querySelector('video');
-                if (localVideo) {
-                    if (lastKnownTime > 0) {
-                        localVideo.currentTime = lastKnownTime;
-                    }
-                    if (shouldPlay) {
-                        localVideo.play().catch((e) => {
-                            console.warn('Failed to autoplay original video on PiP close:', e);
-                        });
-                    } else {
-                        localVideo.pause();
-                    }
-                }
-            } catch (e) {
-                console.warn('Error resuming original video:', e);
-            }
+            itgResumePageVideo(lastKnownTime, shouldPlay);
         };
         // The framing rules asked for above are session rules and outlive this window
         // unless somebody takes them down.

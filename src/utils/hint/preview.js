@@ -409,14 +409,9 @@ var LinkPreviewManager = class LinkPreviewManager {
                     const height = Math.round(rect.height);
                     try {
                         if ('documentPictureInPicture' in window) {
-                            if (window.documentPictureInPicture.window) {
-                                window.documentPictureInPicture.window.close();
-                            }
+                            itgCloseDocumentPip();
                             const pipWindow = await requestItgPipWindow(targetUrl, width, height);
-                            pipWindow.document.body.style.margin = '0';
-                            pipWindow.document.body.style.padding = '0';
-                            pipWindow.document.body.style.overflow = 'hidden';
-                            pipWindow.document.body.style.backgroundColor = '#1e1e1e';
+                            itgStylePipBody(pipWindow, '#1e1e1e');
 
                             // Move existing iframe to PiP window to prevent duplicate audio and reload
                             if (existingIframe) {

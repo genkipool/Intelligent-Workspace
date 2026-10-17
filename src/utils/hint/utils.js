@@ -28,6 +28,86 @@ function itgCommandKey(event) {
     return event.shiftKey ? match[1] : match[1].toLowerCase();
 }
 
+/*
+ * Pieces of opening a page in the Document Picture-in-Picture window, shared by the
+ * `wp` command (registry.js), the omnibar (omnibar-host.js), the link preview
+ * (preview.js) and openVideoPip below. Only what every caller does the same way
+ * lives here; when to pause, what to give back on close and the window size stay
+ * with each caller.
+ */
+
+/** Closes the Document Picture-in-Picture window this page already has open, if any. */
+function itgCloseDocumentPip() {
+    if (window.documentPictureInPicture.window) {
+        window.documentPictureInPicture.window.close();
+    }
+}
+
+/** The floating window's body: no margin, no scrollbars, the given background. */
+function itgStylePipBody(pipWindow, backgroundColor) {
+    pipWindow.document.body.style.margin = '0';
+    pipWindow.document.body.style.padding = '0';
+    pipWindow.document.body.style.overflow = 'hidden';
+    pipWindow.document.body.style.backgroundColor = backgroundColor;
+}
+
+/** Pauses every video on this page. */
+function itgPauseAllVideos() {
+    document.querySelectorAll('video').forEach((v) => {
+        try {
+            v.pause();
+        } catch {}
+    });
+}
+
+/** Puts the page in the floating window as a full-size frame. */
+function itgAppendPagePipIframe(pipWindow, targetUrl) {
+    const iframe = document.createElement('iframe');
+    iframe.name = 'itg-page-pip-iframe';
+    iframe.src = targetUrl;
+    iframe.style.width = '100vw';
+    iframe.style.height = '100vh';
+    iframe.style.border = 'none';
+    iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
+    itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
+    pipWindow.document.body.appendChild(iframe);
+    return iframe;
+}
+
+/** Where the video playing inside the floating window's frame is, or 0 when unknown. */
+function itgPipFrameVideoTime(pipWindow) {
+    const pipIframe = pipWindow.document.querySelector('iframe');
+    if (pipIframe) {
+        const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
+        const pipVideo = innerDoc?.querySelector('video');
+        if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
+            return pipVideo.currentTime;
+        }
+    }
+    return 0;
+}
+
+/** Takes this page's video to where the floating one got to, and plays or pauses it. */
+function itgResumePageVideo(lastKnownTime, shouldPlay) {
+    try {
+        const localVideo = document.querySelector('video');
+        if (localVideo) {
+            if (lastKnownTime > 0) {
+                localVideo.currentTime = lastKnownTime;
+            }
+            if (shouldPlay) {
+                localVideo.play().catch((e) => {
+                    console.warn('Failed to autoplay original video on PiP close:', e);
+                });
+            } else {
+                localVideo.pause();
+            }
+        }
+    } catch (e) {
+        console.warn('Error resuming original video:', e);
+    }
+}
+
 /**
  * Tries the floating player's page again, a little later, when its frame came up as
  * Chrome's "refused to connect" page.
@@ -222,9 +302,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
 
     if (url && !isCurrentPage && 'documentPictureInPicture' in window) {
         try {
-            if (window.documentPictureInPicture.window) {
-                window.documentPictureInPicture.window.close();
-            }
+            itgCloseDocumentPip();
             let targetUrl = url;
             try {
                 const currentCleanUrl = window.location.href.split('#')[0].split('?')[0];
@@ -256,10 +334,7 @@ async function openVideoPip(url, defaultWidth, defaultHeight) {
             const width = defaultWidth || (isShort ? 318 : 800);
             const height = defaultHeight || (isShort ? 571 : 600);
             const pipWindow = await requestItgPipWindow(targetUrl, width, height);
-            pipWindow.document.body.style.margin = '0';
-            pipWindow.document.body.style.padding = '0';
-            pipWindow.document.body.style.overflow = 'hidden';
-            pipWindow.document.body.style.backgroundColor = '#000';
+            itgStylePipBody(pipWindow, '#000');
             pipWindow.document.body.style.position = 'relative';
             pipWindow.document.body.style.width = '100vw';
             pipWindow.document.body.style.height = '100vh';

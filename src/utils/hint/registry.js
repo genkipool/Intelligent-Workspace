@@ -253,9 +253,7 @@ var CommandRegistry = class CommandRegistry {
                 action: async () => {
                     try {
                         if ('documentPictureInPicture' in window) {
-                            if (window.documentPictureInPicture.window) {
-                                window.documentPictureInPicture.window.close();
-                            }
+                            itgCloseDocumentPip();
                             let targetUrl = window.location.href;
                             try {
                                 const video = document.querySelector('video');
@@ -268,18 +266,11 @@ var CommandRegistry = class CommandRegistry {
                             } catch (e) {
                                 console.warn('Failed to append current video time:', e);
                             }
-                            document.querySelectorAll('video').forEach((v) => {
-                                try {
-                                    v.pause();
-                                } catch {}
-                            });
+                            itgPauseAllVideos();
                             const width = Math.round(window.innerWidth * 0.8) || 800;
                             const height = Math.round(window.innerHeight * 0.8) || 600;
                             const pipWindow = await requestItgPipWindow(targetUrl, width, height);
-                            pipWindow.document.body.style.margin = '0';
-                            pipWindow.document.body.style.padding = '0';
-                            pipWindow.document.body.style.overflow = 'hidden';
-                            pipWindow.document.body.style.backgroundColor = '#1e1e1e';
+                            itgStylePipBody(pipWindow, '#1e1e1e');
                             // The same rules every other way into the float asks for, and
                             // given back when it closes. Without them the page only showed
                             // when its own service worker answered from cache, since the
@@ -292,15 +283,7 @@ var CommandRegistry = class CommandRegistry {
                             await chrome.runtime
                                 .sendMessage({ action: 'prepareVideoUrlForPip', url: targetUrl })
                                 .catch(() => {});
-                            const iframe = document.createElement('iframe');
-                            iframe.name = 'itg-page-pip-iframe';
-                            iframe.src = targetUrl;
-                            iframe.style.width = '100vw';
-                            iframe.style.height = '100vh';
-                            iframe.style.border = 'none';
-                            iframe.allow = 'fullscreen; clipboard-write; encrypted-media;';
-                            itgRetryIfPipFrameRefused(iframe, targetUrl, pipWindow);
-                            pipWindow.document.body.appendChild(iframe);
+                            itgAppendPagePipIframe(pipWindow, targetUrl);
                             let lastKnownTime = 0;
                             const originalPauseInterval = setInterval(() => {
                                 document.querySelectorAll('video').forEach((v) => {
@@ -318,14 +301,8 @@ var CommandRegistry = class CommandRegistry {
                                         clearInterval(originalPauseInterval);
                                         return;
                                     }
-                                    const pipIframe = pipWindow.document.querySelector('iframe');
-                                    if (pipIframe) {
-                                        const innerDoc = pipIframe.contentDocument || pipIframe.contentWindow?.document;
-                                        const pipVideo = innerDoc?.querySelector('video');
-                                        if (pipVideo && !isNaN(pipVideo.currentTime) && pipVideo.currentTime > 0) {
-                                            lastKnownTime = pipVideo.currentTime;
-                                        }
-                                    }
+                                    const time = itgPipFrameVideoTime(pipWindow);
+                                    if (time > 0) lastKnownTime = time;
                                 } catch {}
                             }, 250);
                             let didResume = false;
@@ -334,23 +311,7 @@ var CommandRegistry = class CommandRegistry {
                                 didResume = true;
                                 clearInterval(timeTrackerInterval);
                                 clearInterval(originalPauseInterval);
-                                try {
-                                    const localVideo = document.querySelector('video');
-                                    if (localVideo) {
-                                        if (lastKnownTime > 0) {
-                                            localVideo.currentTime = lastKnownTime;
-                                        }
-                                        if (shouldPlay) {
-                                            localVideo.play().catch((e) => {
-                                                console.warn('Failed to autoplay original video on PiP close:', e);
-                                            });
-                                        } else {
-                                            localVideo.pause();
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.warn('Error resuming original video:', e);
-                                }
+                                itgResumePageVideo(lastKnownTime, shouldPlay);
                             };
                             pipWindow.addEventListener('pagehide', () => {
                                 resumeOriginalVideo(!document.hidden);

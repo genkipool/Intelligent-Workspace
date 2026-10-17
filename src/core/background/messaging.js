@@ -513,37 +513,6 @@ const MESSAGE_HANDLERS = {
         handleSearchGoogle(message, sendResponse);
         return true;
     },
-    // The site prefixes (y:, d:, w:, gm:, x:, am:, ams:) all end here. handleSearchAction
-    // knew every one of these sites, but no route reached it, so those prefixes did
-    // nothing at all.
-    searchYoutube: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchDuckDuckGo: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchWikipedia: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchGoogleMaps: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchX: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchAmazon: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
-    searchAmazonEs: (message) => {
-        handleSearchAction(message);
-        return false;
-    },
     openPopupWindow: (message, sender, sendResponse) => {
         handleOpenPopupWindow(message, sendResponse);
         return true;
@@ -1276,6 +1245,24 @@ const MESSAGE_HANDLERS = {
         return true;
     },
 };
+
+// The site prefixes (y:, d:, w:, gm:, x:, am:, ams:) all end here. handleSearchAction
+// knew every one of these sites, but no route reached it, so those prefixes did
+// nothing at all.
+for (const action of [
+    'searchYoutube',
+    'searchDuckDuckGo',
+    'searchWikipedia',
+    'searchGoogleMaps',
+    'searchX',
+    'searchAmazon',
+    'searchAmazonEs',
+]) {
+    MESSAGE_HANDLERS[action] = (message) => {
+        handleSearchAction(message);
+        return false;
+    };
+}
 
 /**
  * Extension pages (side panel, popup, settings, pages opened in a tab) may call any
