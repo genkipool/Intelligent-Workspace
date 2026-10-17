@@ -1898,6 +1898,26 @@
     "message": "Text recognition (OCR) reads screenshots in the extension's language and works offline in English and Spanish. If it fails, hover over the OCR button again to choose the image's language.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "Scheduled assistant queries use the model picked in the selector, Chrome's local AI included. With the local AI picked, the clock button opens the scheduling dialog instead of asking for an API key.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "The language list on the home page opens with a click on either name next to the switch, instead of on hover.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Theme schedules: the list keeps every theme while you edit one, deleting a theme asks first, and a scheduled theme changes the colours of open pages right away.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "Time and date pickers open on the first click in the side panel, and the Manage Rules switch on the home page shows its state without sliding.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Fixes: renaming a theme no longer types backwards, dragging a rule with A Z sorting explains why it does not move, the more-actions menu stays open when clicked, and the \"URL added to rule\" notice names the rule.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "October 14, 2026",
     "description": "Release date for version 1.0.2."

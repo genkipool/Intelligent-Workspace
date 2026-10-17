@@ -1898,6 +1898,26 @@
     "message": "Il riconoscimento del testo (OCR) legge gli screenshot nella lingua dell’estensione e funziona offline in inglese e spagnolo. Se non riesce, passa di nuovo il mouse sul pulsante OCR per scegliere la lingua dell’immagine.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "Le richieste programmate dell’assistente usano il modello scelto nel selettore, compresa l’IA locale di Chrome. Con l’IA locale scelta, il pulsante dell’orologio apre la finestra di programmazione invece di chiedere una chiave API.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "L’elenco delle lingue nella home si apre con un clic su uno dei due nomi accanto all’interruttore, invece che al passaggio del mouse.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Programmazione dei temi: l’elenco mantiene tutti i temi mentre ne modifichi uno, eliminare un tema chiede conferma e un tema programmato cambia subito i colori delle pagine aperte.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "I selettori di ora e data si aprono al primo clic nel pannello laterale, e l’interruttore Gestisci regole della home mostra il suo stato senza scorrere.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Correzioni: rinominare un tema non scrive più al contrario, trascinare una regola con l’ordine A Z spiega perché non si sposta, il menu delle altre azioni resta aperto al clic e l’avviso «URL aggiunto alla regola» indica la regola.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14 ottobre 2026",
     "description": "Release date for version 1.0.2."

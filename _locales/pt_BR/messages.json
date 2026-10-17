@@ -1898,6 +1898,26 @@
     "message": "O reconhecimento de texto (OCR) lê as capturas no idioma da extensão e funciona offline em inglês e espanhol. Se falhar, passe o mouse de novo sobre o botão de OCR para escolher o idioma da imagem.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "As consultas programadas do assistente usam o modelo escolhido no seletor, inclusive a IA local do Chrome. Com a IA local escolhida, o botão do relógio abre a janela de agendamento em vez de pedir uma chave de API.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "A lista de idiomas da página inicial abre com um clique em qualquer um dos dois nomes ao lado do interruptor, em vez de ao passar o mouse.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Agendamento de temas: a lista mantém todos os temas enquanto você edita um, excluir um tema pede confirmação e um tema agendado muda as cores das páginas abertas na hora.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "Os seletores de hora e data abrem no primeiro clique no painel lateral, e o interruptor Gerenciar regras da página inicial mostra seu estado sem deslizar.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Correções: renomear um tema não escreve mais ao contrário, arrastar uma regra com a ordem A Z explica por que ela não se move, o menu de mais ações continua aberto ao clicar e o aviso \"URL adicionada à regra\" diz o nome da regra.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14 de outubro de 2026",
     "description": "Release date for version 1.0.2."

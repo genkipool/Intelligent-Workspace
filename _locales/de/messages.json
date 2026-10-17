@@ -1898,6 +1898,26 @@
     "message": "Die Texterkennung (OCR) liest Screenshots in der Sprache der Erweiterung und funktioniert auf Englisch und Spanisch offline. Schlägt sie fehl, fahre erneut über die OCR-Schaltfläche, um die Sprache des Bildes zu wählen.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "Geplante Assistenten-Anfragen verwenden das im Auswahlmenü gewählte Modell, auch Chromes lokale KI. Ist die lokale KI gewählt, öffnet die Uhr-Schaltfläche den Planungsdialog, statt nach einem API-Schlüssel zu fragen.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "Die Sprachliste auf der Startseite öffnet sich mit einem Klick auf einen der beiden Namen neben dem Schalter statt beim Überfahren mit der Maus.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Theme-Zeitpläne: Die Liste behält alle Themes, während du eines bearbeitest, das Löschen eines Themes fragt vorher nach, und ein geplantes Theme ändert die Farben offener Seiten sofort.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "Uhrzeit- und Datumsauswahl öffnen sich im Seitenbereich beim ersten Klick, und der Schalter „Regeln verwalten“ auf der Startseite zeigt seinen Zustand, ohne zu gleiten.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Korrekturen: Beim Umbenennen eines Themes wird nicht mehr rückwärts geschrieben, das Ziehen einer Regel bei A-Z-Sortierung erklärt, warum sie sich nicht bewegt, das Menü „Weitere Aktionen“ bleibt beim Klicken offen, und der Hinweis „URL zur Regel hinzugefügt“ nennt die Regel.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14. Oktober 2026",
     "description": "Release date for version 1.0.2."

@@ -38,7 +38,7 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
-## 1.0.4 (unreleased)
+## 1.0.4 - 2026-10-17
 
 ### Changed
 
@@ -68,6 +68,18 @@ Each version holds two different things, and they are worth keeping apart:
   they were placed above the top of the window.
 - The "Manage Rules" switch on the home page was drawn off and then slid on every time
   the page opened; it now starts in its real state.
+
+### Store text
+
+```
+What's new
+• Scheduled assistant queries use the model you pick, Chrome's local AI included.
+• The language list opens with a click next to the language switch.
+• Theme scheduling is more reliable: the list stays whole while editing, deleting a theme asks first, and a scheduled theme applies right away.
+• Fixes for side panel time and date pickers, the rules switch, theme renaming and several notices.
+```
+
+---
 
 ## 1.0.3 - 2026-10-17
 

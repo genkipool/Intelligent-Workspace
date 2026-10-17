@@ -1898,6 +1898,26 @@
     "message": "文字识别（OCR）会按扩展程序的语言读取截图，英语和西班牙语可离线使用。如果识别失败，请再次将鼠标悬停在 OCR 按钮上，选择图片的语言。",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "助手的定时查询会使用选择器中选定的模型，包括 Chrome 本地 AI。选定本地 AI 时，时钟按钮会直接打开定时窗口，而不再要求 API 密钥。",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "主页的语言列表改为点击开关旁任一语言名称打开，而不是鼠标悬停。",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "主题定时：编辑某个定时时列表仍保留所有主题，删除主题前会先确认，定时主题会立即改变已打开页面的颜色。",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "侧边栏中的时间和日期选择器第一次点击即可打开，主页的“管理规则”开关直接显示其状态，不再滑动。",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "修复：重命名主题不再倒着输入，按 A Z 排序时拖动规则会说明无法移动的原因，更多操作菜单点击后不再关闭，“URL 已添加到规则”提示会显示规则名称。",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "2026年10月14日",
     "description": "Release date for version 1.0.2."

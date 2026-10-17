@@ -1898,6 +1898,26 @@
     "message": "La reconnaissance de texte (OCR) lit les captures dans la langue de l’extension et fonctionne hors ligne en anglais et en espagnol. En cas d’échec, survolez à nouveau le bouton OCR pour choisir la langue de l’image.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "Les requêtes programmées de l’assistant utilisent le modèle choisi dans le sélecteur, IA locale de Chrome comprise. Avec l’IA locale choisie, le bouton horloge ouvre la fenêtre de programmation au lieu de demander une clé d’API.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "La liste des langues de l’accueil s’ouvre d’un clic sur l’un des deux noms à côté de l’interrupteur, et non plus au survol.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Programmation des thèmes : la liste garde tous les thèmes pendant que vous en modifiez un, supprimer un thème demande confirmation, et un thème programmé change aussitôt les couleurs des pages ouvertes.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "Les sélecteurs d’heure et de date s’ouvrent au premier clic dans le panneau latéral, et l’interrupteur Gérer les règles de l’accueil affiche son état sans glisser.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Corrections : renommer un thème n’écrit plus à l’envers, glisser une règle avec le tri A Z explique pourquoi elle ne bouge pas, le menu des autres actions reste ouvert au clic, et l’avis « URL ajoutée à la règle » nomme la règle.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14 octobre 2026",
     "description": "Release date for version 1.0.2."

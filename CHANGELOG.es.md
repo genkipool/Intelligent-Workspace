@@ -39,7 +39,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
-## 1.0.4 (sin publicar)
+## 1.0.4 - 2026-10-17
 
 ### Cambiado
 
@@ -71,6 +71,18 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   lateral: se colocaban por encima del borde de la ventana.
 - El interruptor de «Gestionar reglas» del inicio se veía apagado y se encendía solo al
   volver a la página; ahora sale ya con su estado.
+
+### Texto de la tienda
+
+```
+Novedades
+• Las consultas programadas del asistente usan el modelo que elijas, también la IA local de Chrome.
+• La lista de idiomas se abre con un clic junto al interruptor de idioma.
+• Programar temas es más fiable: la lista no se filtra al editar, borrar un tema pide confirmación y el tema programado se aplica al momento.
+• Correcciones en relojes y calendarios del panel lateral, el interruptor de reglas, el renombrado de temas y varios avisos.
+```
+
+---
 
 ## 1.0.3 - 2026-10-17
 

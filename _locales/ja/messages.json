@@ -1898,6 +1898,26 @@
     "message": "テキスト認識（OCR）は拡張機能の言語でスクリーンショットを読み取り、英語とスペイン語ではオフラインで動作します。うまくいかない場合は、OCR ボタンにもう一度マウスを合わせて画像の言語を選んでください。",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "アシスタントの予約クエリは、セレクターで選んだモデル（Chrome のローカル AI を含む）を使います。ローカル AI を選んでいると、時計ボタンは API キーを求めずに予約画面を開きます。",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "ホームの言語リストは、ホバーではなくスイッチ横のどちらかの言語名をクリックすると開きます。",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "テーマのスケジュール：1 つを編集中もリストにすべてのテーマが残り、テーマの削除前に確認し、スケジュールされたテーマは開いているページの色をすぐに変えます。",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "サイドパネルで時刻と日付のピッカーが最初のクリックで開き、ホームの「ルールを管理」スイッチはスライドせずに状態を表示します。",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "修正：テーマ名の変更で文字が逆順にならず、A Z 並べ替え中にルールをドラッグすると動かない理由を表示し、その他の操作メニューはクリックで閉じず、「ルールに URL を追加しました」の通知にルール名が入ります。",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "2026年10月14日",
     "description": "Release date for version 1.0.2."

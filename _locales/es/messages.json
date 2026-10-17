@@ -1848,6 +1848,26 @@
         "message": "El reconocimiento de texto (OCR) lee las capturas en el idioma de la extensión y funciona sin conexión en inglés y español. Si falla, vuelve a pasar el ratón por el botón de OCR para elegir el idioma de la imagen.",
         "description": "Description of OCR in the extension's language in v1.0.3."
     },
+    "feature_v104_scheduledQueriesModel": {
+        "message": "Las consultas programadas del asistente usan el modelo elegido en el selector, también la IA local de Chrome. Con la IA local elegida, el botón del reloj abre la ventana de programar en vez de pedir una clave de API.",
+        "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+    },
+    "feature_v104_languageListClick": {
+        "message": "La lista de idiomas del inicio se abre con un clic en cualquiera de los dos nombres junto al interruptor, en vez de al pasar el ratón.",
+        "description": "Description of the language list opening on click in v1.0.4."
+    },
+    "feature_v104_themeSchedules": {
+        "message": "Programación de temas: la lista conserva todos los temas mientras editas uno, borrar un tema pide confirmación y un tema programado cambia los colores de las páginas abiertas al momento.",
+        "description": "Description of the theme scheduling improvements in v1.0.4."
+    },
+    "feature_v104_pickersAndSwitch": {
+        "message": "Los relojes y calendarios se abren con el primer clic en el panel lateral, y el interruptor de Gestionar Reglas del inicio muestra su estado sin deslizarse.",
+        "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+    },
+    "feature_v104_fixes": {
+        "message": "Correcciones: renombrar un tema ya no escribe al revés, arrastrar una regla con el orden A Z explica por qué no se mueve, el menú de más acciones no se cierra al hacer clic y el aviso «URL añadida a la regla» dice el nombre de la regla.",
+        "description": "Description of the other fixes in v1.0.4."
+    },
     "date_2026_10_14": {
         "message": "14 de octubre de 2026",
         "description": "Fecha de la versión 1.0.2."

@@ -6,6 +6,17 @@
 
     const versionData = [
         {
+            version: '1.0.4',
+            dateKey: 'date_2026_10_17',
+            features: [
+                'feature_v104_scheduledQueriesModel',
+                'feature_v104_languageListClick',
+                'feature_v104_themeSchedules',
+                'feature_v104_pickersAndSwitch',
+                'feature_v104_fixes',
+            ],
+        },
+        {
             version: '1.0.3',
             dateKey: 'date_2026_10_17',
             features: [

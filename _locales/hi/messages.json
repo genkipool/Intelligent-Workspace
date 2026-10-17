@@ -1898,6 +1898,26 @@
     "message": "टेक्स्ट पहचान (OCR) स्क्रीनशॉट को एक्सटेंशन की भाषा में पढ़ती है और अंग्रेज़ी व स्पैनिश में ऑफ़लाइन काम करती है। अगर यह विफल हो, तो इमेज की भाषा चुनने के लिए OCR बटन पर फिर से माउस ले जाएँ।",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "असिस्टेंट की शेड्यूल की गई क्वेरी अब सिलेक्टर में चुने गए मॉडल का उपयोग करती हैं, Chrome का लोकल AI भी। लोकल AI चुना हो तो घड़ी बटन API कुंजी माँगने के बजाय शेड्यूल विंडो खोलता है।",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "होम पेज पर भाषा सूची अब माउस ले जाने पर नहीं, बल्कि स्विच के पास दोनों नामों में से किसी पर क्लिक करने से खुलती है।",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "थीम शेड्यूल: एक को संपादित करते समय भी सूची में सभी थीम रहती हैं, थीम हटाने से पहले पुष्टि माँगी जाती है, और शेड्यूल की गई थीम खुले पेजों के रंग तुरंत बदल देती है।",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "साइड पैनल में समय और तारीख चुनने वाले पहले क्लिक पर खुलते हैं, और होम पेज का नियम प्रबंधन स्विच बिना खिसके अपनी स्थिति दिखाता है।",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "सुधार: थीम का नाम बदलने पर अक्षर उल्टे नहीं लिखे जाते, A Z क्रम में नियम खींचने पर बताया जाता है कि वह क्यों नहीं हिलता, अधिक कार्रवाइयों वाला मेनू क्लिक पर बंद नहीं होता, और \"नियम में URL जोड़ा गया\" सूचना में नियम का नाम आता है।",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14 अक्टूबर 2026",
     "description": "Release date for version 1.0.2."

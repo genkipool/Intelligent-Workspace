@@ -1898,6 +1898,26 @@
     "message": "Распознавание текста (OCR) читает скриншоты на языке расширения и работает без интернета на английском и испанском. Если не получилось, снова наведите курсор на кнопку OCR и выберите язык изображения.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "feature_v104_scheduledQueriesModel": {
+    "message": "Запланированные запросы ассистента используют модель, выбранную в списке, включая локальный ИИ Chrome. Если выбран локальный ИИ, кнопка с часами открывает окно планирования, а не просит ключ API.",
+    "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
+  },
+  "feature_v104_languageListClick": {
+    "message": "Список языков на главной странице открывается щелчком по любому из двух названий рядом с переключателем, а не при наведении.",
+    "description": "Description of the language list opening on click in v1.0.4."
+  },
+  "feature_v104_themeSchedules": {
+    "message": "Расписания тем: список сохраняет все темы, пока вы редактируете одну, удаление темы требует подтверждения, а запланированная тема сразу меняет цвета открытых страниц.",
+    "description": "Description of the theme scheduling improvements in v1.0.4."
+  },
+  "feature_v104_pickersAndSwitch": {
+    "message": "Выбор времени и даты открывается с первого щелчка на боковой панели, а переключатель «Управление правилами» на главной сразу показывает своё состояние, не сдвигаясь.",
+    "description": "Description of the time/date pickers and the rules switch fixes in v1.0.4."
+  },
+  "feature_v104_fixes": {
+    "message": "Исправления: переименование темы больше не пишет задом наперёд, перетаскивание правила при сортировке A–Z объясняет, почему оно не двигается, меню дополнительных действий не закрывается по щелчку, а уведомление «URL добавлен в правило» называет правило.",
+    "description": "Description of the other fixes in v1.0.4."
+  },
   "date_2026_10_14": {
     "message": "14 октября 2026 г.",
     "description": "Release date for version 1.0.2."
