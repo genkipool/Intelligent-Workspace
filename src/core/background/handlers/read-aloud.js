@@ -135,8 +135,7 @@ async function resolveTabForReader(message, sender) {
 }
 
 function notifyReader(messageKey, fallback) {
-    // `getI18nMsg` takes no fallback, so a missing key shows the key itself.
-    notifyExtension(messageKey);
+    notifyExtension(messageKey, [], fallback);
 }
 
 /** Brings a tab to the front and waits until it has a document to talk to. */

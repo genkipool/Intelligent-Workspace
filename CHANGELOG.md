@@ -68,6 +68,12 @@ Each version holds two different things, and they are worth keeping apart:
   they were placed above the top of the window.
 - The "Manage Rules" switch on the home page was drawn off and then slid on every time
   the page opened; it now starts in its real state.
+- In the date pickers, Escape also closed the dialog underneath and lost what had been
+  typed into it; now it closes only the picker. A click outside closes it inside the
+  dialogs that used to leave it open, too.
+- The reader shortcuts "Hide or show the panel" (zv) and the word (zm) and block (zs)
+  marks were missing from the shortcut settings and the `?` help.
+- Hints did not use the theme's first colour (the action colour).
 
 ### Store text
 

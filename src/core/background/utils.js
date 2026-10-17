@@ -328,13 +328,18 @@ function findGroupIdByInfo(type, key) {
     return -1;
 }
 
-/** A browser notification from the extension, its text looked up in the user's language. */
-function notifyExtension(key, params = []) {
+/**
+ * A browser notification from the extension, its text looked up in the user's
+ * language. `getI18nMsg` answers a missing key with the key itself; `fallback`, when
+ * given, is shown instead.
+ */
+function notifyExtension(key, params = [], fallback = '') {
+    const text = getI18nMsg(key, params);
     chrome.notifications.create({
         type: 'basic',
         iconUrl: '/assets/icons/icon128.png',
         title: getI18nMsg('extName'),
-        message: getI18nMsg(key, params),
+        message: text === key && fallback ? fallback : text,
     });
 }
 

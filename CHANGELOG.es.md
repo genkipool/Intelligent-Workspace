@@ -71,6 +71,12 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
   lateral: se colocaban por encima del borde de la ventana.
 - El interruptor de «Gestionar reglas» del inicio se veía apagado y se encendía solo al
   volver a la página; ahora sale ya con su estado.
+- En los calendarios, Escape cerraba también la ventana de debajo y se perdía lo escrito
+  en ella; ahora cierra solo el calendario. Un clic fuera lo cierra también dentro de las
+  ventanas que antes lo dejaban abierto.
+- Los atajos del lector «Ocultar o mostrar el panel» (zv) y las marcas de palabra (zm) y
+  de bloque (zs) no aparecían en los ajustes de atajos ni en la ayuda `?`.
+- Los hints no usaban el primer color del tema (el de acción).
 
 ### Texto de la tienda
 

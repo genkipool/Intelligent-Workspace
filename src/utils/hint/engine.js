@@ -791,10 +791,14 @@ var HintEngine = class HintEngine {
             this.shadowUI.getContainer().appendChild(hintRoot);
         }
         if (themeColors) {
-            const cssVars = Object.entries(themeColors)
-                .map(([k, v]) => `--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}: ${v};`)
-                .join(' ');
-            hintRoot.style = hintRoot.getAttribute('style') + cssVars;
+            // One property per colour, and only real colours. Appending to
+            // getAttribute('style') wrote "null--…" when there was no attribute yet,
+            // which dropped the first colour, grew the attribute on every activation
+            // and let a theme value add declarations of its own.
+            for (const [k, v] of Object.entries(themeColors)) {
+                if (typeof v !== 'string' || /[;{}<>\\]/.test(v) || !CSS.supports('color', v)) continue;
+                hintRoot.style.setProperty(`--${k.replace(/([A-Z])/g, '-$1').toLowerCase()}`, v);
+            }
         }
     }
     _generateKeys(count) {

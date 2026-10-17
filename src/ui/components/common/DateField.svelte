@@ -119,9 +119,28 @@
         if (popupEl?.contains(e.target) || triggerEl?.contains(e.target)) return;
         open = false;
     }
+
+    /** Escape puts the calendar away and no more: the dialog underneath listens for it too. */
+    function handleKeydown(e) {
+        if (!open || e.key !== 'Escape') return;
+        e.preventDefault();
+        e.stopPropagation();
+        open = false;
+        triggerEl?.focus();
+    }
 </script>
 
-<svelte:window onclick={handleOutside} onresize={place} onscroll={place} />
+<!--
+    Capture, not bubble, as in TimeField: inside a dialog the content stops click from
+    propagating, so a bubbling listener on `window` never heard it and the calendar
+    stayed open. `scroll` does not bubble at all.
+-->
+<svelte:window
+    onclickcapture={handleOutside}
+    onkeydowncapture={handleKeydown}
+    onresize={place}
+    onscrollcapture={place}
+/>
 
 <div
     {id}

@@ -233,7 +233,10 @@ var HintCommon = {
             zp: 'hintDesc_readerPlay',
             zn: 'hintDesc_readerNext',
             zb: 'hintDesc_readerPrev',
+            zv: 'hintDesc_readerPanel',
             zq: 'hintDesc_readerClose',
+            zm: 'hintDesc_readerMarkWord',
+            zs: 'hintDesc_readerMarkBlock',
         },
         categoryOmnibarPrefixes: {
             '@': 'prefixSelector',
