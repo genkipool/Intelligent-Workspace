@@ -1,7 +1,7 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { decodeKey } from '../../stores/geminiStore.js';
     import { untrack } from 'svelte';
     import {
@@ -294,449 +294,426 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleOverlayDismiss}
+    <ModalShell
+        titleId="modal-title"
+        title={$t('geminiApiKeyTitle')}
+        contentClass="api-key-modal"
+        swallowClicks={false}
+        onclose={onClose}
+        ondismiss={handleOverlayDismiss}
         onkeydown={handleOverlayKeydown}
     >
-        <div class="modal-content api-key-modal">
-            <div class="modal-header">
-                <h2 id="modal-title">{$t('geminiApiKeyTitle')}</h2>
-                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={onClose}>&times;</button>
-            </div>
+        <div class="api-modal-tabs">
+            <button
+                type="button"
+                class="api-modal-tab-btn"
+                class:active={activeTab === 'api'}
+                onclick={() => (activeTab = 'api')}
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path
+                        d="M12 2a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5z"
+                    ></path>
+                </svg>
+                <span>{$t('geminiApiKeyTabApi')}</span>
+            </button>
+            <button
+                type="button"
+                class="api-modal-tab-btn"
+                class:active={activeTab === 'local'}
+                onclick={() => (activeTab = 'local')}
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+                    <rect x="9" y="9" width="6" height="6"></rect>
+                    <line x1="9" y1="1" x2="9" y2="4"></line>
+                    <line x1="15" y1="1" x2="15" y2="4"></line>
+                    <line x1="9" y1="20" x2="9" y2="23"></line>
+                    <line x1="15" y1="20" x2="15" y2="23"></line>
+                    <line x1="1" y1="9" x2="4" y2="9"></line>
+                    <line x1="1" y1="15" x2="4" y2="15"></line>
+                    <line x1="20" y1="9" x2="23" y2="9"></line>
+                    <line x1="20" y1="15" x2="23" y2="15"></line>
+                </svg>
+                <span>{$t('geminiApiKeyTabLocal')}</span>
+            </button>
+        </div>
 
-            <div class="api-modal-tabs">
-                <button
-                    type="button"
-                    class="api-modal-tab-btn"
-                    class:active={activeTab === 'api'}
-                    onclick={() => (activeTab = 'api')}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path
-                            d="M12 2a5 5 0 0 1 5 5v3h1a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h1V7a5 5 0 0 1 5-5z"
-                        ></path>
-                    </svg>
-                    <span>{$t('geminiApiKeyTabApi')}</span>
-                </button>
-                <button
-                    type="button"
-                    class="api-modal-tab-btn"
-                    class:active={activeTab === 'local'}
-                    onclick={() => (activeTab = 'local')}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="4" y="4" width="16" height="16" rx="3"></rect>
-                        <rect x="9" y="9" width="6" height="6"></rect>
-                        <line x1="9" y1="1" x2="9" y2="4"></line>
-                        <line x1="15" y1="1" x2="15" y2="4"></line>
-                        <line x1="9" y1="20" x2="9" y2="23"></line>
-                        <line x1="15" y1="20" x2="15" y2="23"></line>
-                        <line x1="1" y1="9" x2="4" y2="9"></line>
-                        <line x1="1" y1="15" x2="4" y2="15"></line>
-                        <line x1="20" y1="9" x2="23" y2="9"></line>
-                        <line x1="20" y1="15" x2="23" y2="15"></line>
-                    </svg>
-                    <span>{$t('geminiApiKeyTabLocal')}</span>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                {#if activeTab === 'api'}
-                    <p>{$t('geminiApiKeyDescription')}</p>
-                    <p class="get-api-key-link-container">
-                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
-                            >{$t('geminiGetApiKeyLink')}</a
-                        >
-                    </p>
-                    <div class="modal-input-container">
-                        <label for="gemini-api-key-input" class="visually-hidden">{$t('geminiApiKeyInputLabel')}</label>
-                        <div class="api-key-input-wrapper">
-                            <input
-                                type={showKey ? 'text' : 'password'}
-                                id="gemini-api-key-input"
-                                placeholder={$t('geminiApiKeyInputLabel')}
-                                bind:value={apiKeyValue}
-                                oninput={handleInput}
-                                onkeydown={handleKeydown}
-                                class:input-error={!!error}
-                            />
-                            <button
-                                type="button"
-                                class="toggle-password-btn"
-                                title={showKey ? $tt('hideApiKeyTitle') : $tt('showApiKeyTitle')}
-                                aria-label={showKey ? $t('hideApiKeyTitle') : $t('showApiKeyTitle')}
-                                onclick={handleToggleVisibility}
-                            >
-                                {#if showKey}
-                                    <svg width="18" height="18">
-                                        <use href="#icon-eye-off"></use>
-                                    </svg>
-                                {:else}
-                                    <svg width="18" height="18">
-                                        <use href="#icon-eye"></use>
-                                    </svg>
-                                {/if}
-                            </button>
-                        </div>
-                        <!-- Always in the layout with room for two lines, so a message
-                             appearing or going does not push the rest of the modal. -->
-                        <div
-                            id="gemini-api-key-error"
-                            class="modal-error-message api-key-error-slot"
-                            aria-live="polite"
-                        >
-                            {error}
-                        </div>
-                    </div>
-
-                    <div class="saved-api-keys-section">
-                        <div
-                            class="saved-api-keys-header-row"
-                            style="display:flex;align-items:center;margin-bottom:4px;"
-                        >
-                            <h3 style="margin:0;">{$t('geminiSavedKeys')}</h3>
-                            <span
-                                class="api-keys-counter"
-                                style="margin-left:auto;font-size:0.8em;opacity:0.7;font-weight:normal;"
-                                >{savedKeys.length}/10</span
-                            >
-                        </div>
-                        <div id="saved-api-keys-list" class="saved-api-keys-list">
-                            {#if savedKeys.length === 0}
-                                <div class="no-keys-message">{$t('geminiSavedKeysEmpty')}</div>
-                            {:else}
-                                {#each savedKeys as keyData, i (keyData.key)}
-                                    <div class="saved-api-key-item" class:has-quota-error={keyData.hasQuotaError}>
-                                        <div class="saved-api-key-header">
-                                            <div class="api-key-name-wrapper">
-                                                <input
-                                                    type="text"
-                                                    class="api-key-name-input"
-                                                    value={keyData.name || $t('geminiApiKeyNameDefault')}
-                                                    placeholder={$t('geminiApiKeyName')}
-                                                    maxlength="50"
-                                                    title={keyData.name || $t('geminiApiKeyNameDefault')}
-                                                    onchange={async (e) => {
-                                                        const newName =
-                                                            e.currentTarget.value.trim() ||
-                                                            $t('geminiApiKeyNameDefault');
-                                                        e.currentTarget.value = newName;
-                                                        e.currentTarget.title = newName;
-                                                        const { geminiApiKeysList = [] } =
-                                                            await chrome.storage.local.get('geminiApiKeysList');
-                                                        const item = geminiApiKeysList.find(
-                                                            (k) => decodeKey(k.key) === keyData.key,
-                                                        );
-                                                        if (item) {
-                                                            item.name = newName;
-                                                            await chrome.storage.local.set({ geminiApiKeysList });
-                                                        }
-                                                    }}
-                                                />
-                                                {#if keyData.hasQuotaError}
-                                                    <span
-                                                        class="api-key-quota-badge"
-                                                        style="margin-left:6px; font-size:0.72em; color:var(--error-color); font-weight:bold; white-space:nowrap;"
-                                                        >{$t('geminiQuotaErrorIndicator')}</span
-                                                    >
-                                                {/if}
-                                            </div>
-                                            <button
-                                                type="button"
-                                                class="saved-api-key-delete-btn"
-                                                title={$tt('deleteApiKeyTooltip')}
-                                                onclick={() => handleDelete(keyData, i)}>&times;</button
-                                            >
-                                        </div>
-                                        <div class="api-key-value-row">
-                                            <span class="saved-api-key-masked" title={keyData.key}
-                                                >{maskKey(keyData.key)}</span
-                                            >
-                                            <button
-                                                type="button"
-                                                class="copy-api-key-btn"
-                                                title={$tt('copyApiKeyTooltip')}
-                                                onclick={async () => {
-                                                    try {
-                                                        await navigator.clipboard.writeText(keyData.key);
-                                                    } catch (err) {
-                                                        console.error('Error copying API Key:', err);
-                                                    }
-                                                }}
-                                            >
-                                                <svg
-                                                    width="14"
-                                                    height="14"
-                                                    viewBox="0 0 24 24"
-                                                    fill="var(--text-color)"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <g fill-rule="evenodd" clip-rule="evenodd" fill="var(--text-color)">
-                                                        <path
-                                                            d="M7.4 6.6c0-2.198 1.75-4 3.934-4h5.333c2.184 0 3.934 1.802 3.934 4v6.8c0 2.198-1.75 4-3.934 4a0.6 0.6 0 0 1 0-1.2c1.498 0 2.734-1.242 2.734-2.8v-6.8c0-1.558-1.235-2.8-2.734-2.8h-5.333c-1.498 0-2.734 1.242-2.734 2.8a0.6 0.6 0 0 1-1.2 0"
-                                                        ></path>
-                                                        <path
-                                                            d="M3.4 10.6c0-2.198 1.75-4 3.934-4h5.333c2.184 0 3.934 1.802 3.934 4v6.8c0 2.198-1.75 4-3.934 4H7.334c-2.184 0-3.934-1.802-3.934-4zm3.934-2.8c-1.498 0-2.734 1.242-2.734 2.8v6.8c0 1.558 1.235 2.8 2.734 2.8h5.333c1.498 0 2.734-1.242 2.734-2.8v-6.8c0-1.558-1.235-2.8-2.734-2.8z"
-                                                        ></path>
-                                                    </g>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <details class="api-stats-dropdown">
-                                            <summary class="stats-toggle-btn">{$t('apiStatsLabel')}</summary>
-                                            <div class="api-stats-content">
-                                                {#if keyData.hasQuotaError}
-                                                    <div
-                                                        class="api-stats-row"
-                                                        style="border-left:3px solid var(--error-color);padding-left:6px;margin-bottom:4px;"
-                                                    >
-                                                        <span
-                                                            class="stat-label"
-                                                            style="color:var(--error-color);font-weight:bold;"
-                                                            >{$t('geminiQuotaErrorIndicator')}</span
-                                                        >
-                                                    </div>
-                                                {/if}
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('geminiLastUsed')}:</span>
-                                                    <span class="stat-value" style="font-size:0.85em;">
-                                                        {keyData.lastUsedAt
-                                                            ? new Date(keyData.lastUsedAt).toLocaleString(
-                                                                  activeLocale(),
-                                                              )
-                                                            : $t('geminiNeverUsed')}
-                                                    </span>
-                                                </div>
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('geminiTotalTokens')}:</span>
-                                                    <span class="stat-value"
-                                                        >{(keyData.tokensUsed || 0).toLocaleString(
-                                                            activeLocale(),
-                                                        )}</span
-                                                    >
-                                                </div>
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('tokensConsumedMinute')}:</span>
-                                                    <span class="stat-value"
-                                                        >{(keyData.tokensThisMinute || 0).toLocaleString(
-                                                            activeLocale(),
-                                                        )}</span
-                                                    >
-                                                </div>
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('tokensConsumedDay')}:</span>
-                                                    <span class="stat-value"
-                                                        >{(keyData.tokensToday || 0).toLocaleString(
-                                                            activeLocale(),
-                                                        )}</span
-                                                    >
-                                                </div>
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('queriesConsumedMinute')}:</span>
-                                                    <span class="stat-value"
-                                                        >{(keyData.queriesThisMinute || 0).toLocaleString(
-                                                            activeLocale(),
-                                                        )}</span
-                                                    >
-                                                </div>
-                                                <div class="api-stats-row">
-                                                    <span class="stat-label">{$t('queriesConsumedDay')}:</span>
-                                                    <span class="stat-value"
-                                                        >{(keyData.queriesToday || 0).toLocaleString(
-                                                            activeLocale(),
-                                                        )}</span
-                                                    >
-                                                </div>
-                                            </div>
-                                        </details>
-                                    </div>
-                                {/each}
-                            {/if}
-                        </div>
-                    </div>
-                {:else}
-                    <p>{$t('localAiIntro')}</p>
-
-                    <div
-                        class="local-ai-status"
-                        class:is-ready={isInstalled}
-                        class:is-blocked={localStatus === LOCAL_AI_STATUS.UNSUPPORTED ||
-                            localStatus === LOCAL_AI_STATUS.UNAVAILABLE}
+        <div class="modal-body">
+            {#if activeTab === 'api'}
+                <p>{$t('geminiApiKeyDescription')}</p>
+                <p class="get-api-key-link-container">
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+                        >{$t('geminiGetApiKeyLink')}</a
                     >
-                        <span class="local-ai-dot"></span>
-                        <span>
-                            {#if checkingLocalAi}
-                                {$t('localAiStatusChecking')}
-                            {:else if downloadPercent !== null}
-                                {$t('localAiStatusDownloading')} {downloadPercent}%
-                            {:else}
-                                {$t(statusKey)}
-                            {/if}
-                        </span>
+                </p>
+                <div class="modal-input-container">
+                    <label for="gemini-api-key-input" class="visually-hidden">{$t('geminiApiKeyInputLabel')}</label>
+                    <div class="api-key-input-wrapper">
+                        <input
+                            type={showKey ? 'text' : 'password'}
+                            id="gemini-api-key-input"
+                            placeholder={$t('geminiApiKeyInputLabel')}
+                            bind:value={apiKeyValue}
+                            oninput={handleInput}
+                            onkeydown={handleKeydown}
+                            class:input-error={!!error}
+                        />
                         <button
                             type="button"
-                            class="local-ai-recheck"
-                            title={$t('localAiRecheck')}
-                            aria-label={$t('localAiRecheck')}
-                            onclick={() => checkLocalAi({ retest: true })}
-                            disabled={checkingLocalAi || installing}
+                            class="toggle-password-btn"
+                            title={showKey ? $tt('hideApiKeyTitle') : $tt('showApiKeyTitle')}
+                            aria-label={showKey ? $t('hideApiKeyTitle') : $t('showApiKeyTitle')}
+                            onclick={handleToggleVisibility}
                         >
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-                                <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
-                                <polyline points="20 4 20 11 13 11"></polyline>
-                            </svg>
+                            {#if showKey}
+                                <svg width="18" height="18">
+                                    <use href="#icon-eye-off"></use>
+                                </svg>
+                            {:else}
+                                <svg width="18" height="18">
+                                    <use href="#icon-eye"></use>
+                                </svg>
+                            {/if}
                         </button>
-                        {#if isInstalled}
-                            <button
-                                type="button"
-                                class="local-ai-uninstall"
-                                onclick={handleUninstall}
-                                disabled={checkingLocalAi || installing}
-                            >
-                                {$t('localAiUninstallBtn')}
-                            </button>
-                        {/if}
                     </div>
+                    <!-- Always in the layout with room for two lines, so a message
+                             appearing or going does not push the rest of the modal. -->
+                    <div id="gemini-api-key-error" class="modal-error-message api-key-error-slot" aria-live="polite">
+                        {error}
+                    </div>
+                </div>
 
-                    <!-- Not while the browser is still being asked: until it answers the
-                         status is only a default, and the wrong explanation under it reads
-                         as an answer. -->
-                    {#if checkingLocalAi}
-                        <!-- nothing to explain yet -->
-                    {:else if localStatus === LOCAL_AI_STATUS.UNSUPPORTED}
-                        <p class="local-ai-help">{$t('localAiUnsupportedHelp')}</p>
-                    {:else if localStatus === LOCAL_AI_STATUS.UNAVAILABLE}
-                        <p class="local-ai-help">{$t('localAiUnavailableHelp')}</p>
-                    {/if}
-
-                    <p class="local-ai-help local-ai-stale">{$t('localAiStaleHint')}</p>
-
-                    <!-- Folded, because it is only needed when something goes wrong; and
-                         first among the sections, because when it is needed it is the
-                         only thing on this tab that helps. -->
-                    <details class="local-ai-guide">
-                        <summary>{$t('localAiGuideTitle')}</summary>
-                        {#snippet sentence(
-                            text,
-                        )}<!-- prettier-ignore -->{#each guideParts(text) as part, i (i)}{#if part.kind === 'link'}<button type="button" class="chrome-link" onclick={() => openChromePage(part.value)}>{part.value}</button>{:else if part.kind === 'mark'}<mark>{part.value}</mark>{:else}{part.value}{/if}{/each}{/snippet}
-                        <ol>
-                            {#each GUIDE_STEPS as step (step)}
-                                <li>{@render sentence($t(step))}</li>
+                <div class="saved-api-keys-section">
+                    <div class="saved-api-keys-header-row" style="display:flex;align-items:center;margin-bottom:4px;">
+                        <h3 style="margin:0;">{$t('geminiSavedKeys')}</h3>
+                        <span
+                            class="api-keys-counter"
+                            style="margin-left:auto;font-size:0.8em;opacity:0.7;font-weight:normal;"
+                            >{savedKeys.length}/10</span
+                        >
+                    </div>
+                    <div id="saved-api-keys-list" class="saved-api-keys-list">
+                        {#if savedKeys.length === 0}
+                            <div class="no-keys-message">{$t('geminiSavedKeysEmpty')}</div>
+                        {:else}
+                            {#each savedKeys as keyData, i (keyData.key)}
+                                <div class="saved-api-key-item" class:has-quota-error={keyData.hasQuotaError}>
+                                    <div class="saved-api-key-header">
+                                        <div class="api-key-name-wrapper">
+                                            <input
+                                                type="text"
+                                                class="api-key-name-input"
+                                                value={keyData.name || $t('geminiApiKeyNameDefault')}
+                                                placeholder={$t('geminiApiKeyName')}
+                                                maxlength="50"
+                                                title={keyData.name || $t('geminiApiKeyNameDefault')}
+                                                onchange={async (e) => {
+                                                    const newName =
+                                                        e.currentTarget.value.trim() || $t('geminiApiKeyNameDefault');
+                                                    e.currentTarget.value = newName;
+                                                    e.currentTarget.title = newName;
+                                                    const { geminiApiKeysList = [] } =
+                                                        await chrome.storage.local.get('geminiApiKeysList');
+                                                    const item = geminiApiKeysList.find(
+                                                        (k) => decodeKey(k.key) === keyData.key,
+                                                    );
+                                                    if (item) {
+                                                        item.name = newName;
+                                                        await chrome.storage.local.set({ geminiApiKeysList });
+                                                    }
+                                                }}
+                                            />
+                                            {#if keyData.hasQuotaError}
+                                                <span
+                                                    class="api-key-quota-badge"
+                                                    style="margin-left:6px; font-size:0.72em; color:var(--error-color); font-weight:bold; white-space:nowrap;"
+                                                    >{$t('geminiQuotaErrorIndicator')}</span
+                                                >
+                                            {/if}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            class="saved-api-key-delete-btn"
+                                            title={$tt('deleteApiKeyTooltip')}
+                                            onclick={() => handleDelete(keyData, i)}>&times;</button
+                                        >
+                                    </div>
+                                    <div class="api-key-value-row">
+                                        <span class="saved-api-key-masked" title={keyData.key}
+                                            >{maskKey(keyData.key)}</span
+                                        >
+                                        <button
+                                            type="button"
+                                            class="copy-api-key-btn"
+                                            title={$tt('copyApiKeyTooltip')}
+                                            onclick={async () => {
+                                                try {
+                                                    await navigator.clipboard.writeText(keyData.key);
+                                                } catch (err) {
+                                                    console.error('Error copying API Key:', err);
+                                                }
+                                            }}
+                                        >
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="var(--text-color)"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <g fill-rule="evenodd" clip-rule="evenodd" fill="var(--text-color)">
+                                                    <path
+                                                        d="M7.4 6.6c0-2.198 1.75-4 3.934-4h5.333c2.184 0 3.934 1.802 3.934 4v6.8c0 2.198-1.75 4-3.934 4a0.6 0.6 0 0 1 0-1.2c1.498 0 2.734-1.242 2.734-2.8v-6.8c0-1.558-1.235-2.8-2.734-2.8h-5.333c-1.498 0-2.734 1.242-2.734 2.8a0.6 0.6 0 0 1-1.2 0"
+                                                    ></path>
+                                                    <path
+                                                        d="M3.4 10.6c0-2.198 1.75-4 3.934-4h5.333c2.184 0 3.934 1.802 3.934 4v6.8c0 2.198-1.75 4-3.934 4H7.334c-2.184 0-3.934-1.802-3.934-4zm3.934-2.8c-1.498 0-2.734 1.242-2.734 2.8v6.8c0 1.558 1.235 2.8 2.734 2.8h5.333c1.498 0 2.734-1.242 2.734-2.8v-6.8c0-1.558-1.235-2.8-2.734-2.8z"
+                                                    ></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <details class="api-stats-dropdown">
+                                        <summary class="stats-toggle-btn">{$t('apiStatsLabel')}</summary>
+                                        <div class="api-stats-content">
+                                            {#if keyData.hasQuotaError}
+                                                <div
+                                                    class="api-stats-row"
+                                                    style="border-left:3px solid var(--error-color);padding-left:6px;margin-bottom:4px;"
+                                                >
+                                                    <span
+                                                        class="stat-label"
+                                                        style="color:var(--error-color);font-weight:bold;"
+                                                        >{$t('geminiQuotaErrorIndicator')}</span
+                                                    >
+                                                </div>
+                                            {/if}
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('geminiLastUsed')}:</span>
+                                                <span class="stat-value" style="font-size:0.85em;">
+                                                    {keyData.lastUsedAt
+                                                        ? new Date(keyData.lastUsedAt).toLocaleString(activeLocale())
+                                                        : $t('geminiNeverUsed')}
+                                                </span>
+                                            </div>
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('geminiTotalTokens')}:</span>
+                                                <span class="stat-value"
+                                                    >{(keyData.tokensUsed || 0).toLocaleString(activeLocale())}</span
+                                                >
+                                            </div>
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('tokensConsumedMinute')}:</span>
+                                                <span class="stat-value"
+                                                    >{(keyData.tokensThisMinute || 0).toLocaleString(
+                                                        activeLocale(),
+                                                    )}</span
+                                                >
+                                            </div>
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('tokensConsumedDay')}:</span>
+                                                <span class="stat-value"
+                                                    >{(keyData.tokensToday || 0).toLocaleString(activeLocale())}</span
+                                                >
+                                            </div>
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('queriesConsumedMinute')}:</span>
+                                                <span class="stat-value"
+                                                    >{(keyData.queriesThisMinute || 0).toLocaleString(
+                                                        activeLocale(),
+                                                    )}</span
+                                                >
+                                            </div>
+                                            <div class="api-stats-row">
+                                                <span class="stat-label">{$t('queriesConsumedDay')}:</span>
+                                                <span class="stat-value"
+                                                    >{(keyData.queriesToday || 0).toLocaleString(activeLocale())}</span
+                                                >
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
                             {/each}
-                        </ol>
-                        <p class="local-ai-help">{@render sentence($t('localAiGuideModelChoice'))}</p>
-                        <!-- Chrome does not let a page link to its own pages, so these
-                             open in a tab of their own instead. -->
-                        <div class="local-ai-guide-links">
-                            <button type="button" onclick={() => openChromePage('chrome://settings/system')}>
-                                {$t('localAiGuideOpenSettings')}
-                            </button>
-                            <button type="button" onclick={() => openChromePage('chrome://on-device-internals')}>
-                                {$t('localAiGuideOpenInternals')}
-                            </button>
-                        </div>
-                    </details>
-
-                    <div class="local-ai-section">
-                        <h3>{$t('localAiCapabilities')}</h3>
-                        <ul class="local-ai-caps">
-                            <li class:supported={$localAiSupportsImages}>
-                                {$localAiSupportsImages ? $t('localAiImagesYes') : $t('localAiImagesNo')}
-                            </li>
-                            <li class:supported={$localAiSupportsTools}>
-                                {#if probingTools}
-                                    {$t('localAiAgentsChecking')}
-                                {:else if $localAiSupportsTools}
-                                    {$t('localAiAgentsYes')}
-                                {:else}
-                                    {$t('localAiAgentsNo')}
-                                {/if}
-                            </li>
-                            <li>{$t('localAiWebNo')}</li>
-                        </ul>
-                        <p class="local-ai-help">{$t('localAiWebNote')}</p>
-                        <p class="local-ai-help">{$t('localAiLimitsNote')}</p>
-                        {#if isInstalled}
-                            <p class="local-ai-help">{$t('localAiAgentProbeNote')}</p>
                         {/if}
                     </div>
+                </div>
+            {:else}
+                <p>{$t('localAiIntro')}</p>
 
-                    <!-- What the download costs is a question about a download that has
-                         not happened yet; once it has, the folder below answers it. -->
-                    {#if !isInstalled}
-                        <div class="local-ai-section">
-                            <h3>{$t('localAiSizeTitle')}</h3>
-                            <p class="local-ai-help">{$t('localAiSizeDescription')}</p>
-                        </div>
-                    {/if}
-
-                    {#if isInstalled}
-                        <div class="local-ai-section">
-                            <h3>{$t('localAiLocationTitle')}</h3>
-                            <p class="local-ai-help">{$t('localAiLocationHelp')}</p>
-                            <code class="local-ai-path">{modelDirectory}</code>
-                            <p class="local-ai-help">{$t('localAiModelUnknown')}</p>
-                        </div>
-                    {/if}
-
-                    {#if uninstallNote}
-                        <p class="local-ai-help local-ai-note">{uninstallNote}</p>
-                    {/if}
-
-                    {#if installError}
-                        <div class="modal-error-message">{installError}</div>
-                    {/if}
-                {/if}
-            </div>
-            <div class="modal-actions">
-                {#if activeTab === 'api'}
+                <div
+                    class="local-ai-status"
+                    class:is-ready={isInstalled}
+                    class:is-blocked={localStatus === LOCAL_AI_STATUS.UNSUPPORTED ||
+                        localStatus === LOCAL_AI_STATUS.UNAVAILABLE}
+                >
+                    <span class="local-ai-dot"></span>
+                    <span>
+                        {#if checkingLocalAi}
+                            {$t('localAiStatusChecking')}
+                        {:else if downloadPercent !== null}
+                            {$t('localAiStatusDownloading')} {downloadPercent}%
+                        {:else}
+                            {$t(statusKey)}
+                        {/if}
+                    </span>
                     <button
                         type="button"
-                        class="modal-btn-save api-key-add-btn"
-                        class:error-state={!!error}
-                        aria-busy={saving}
-                        onclick={handleSave}
+                        class="local-ai-recheck"
+                        title={$t('localAiRecheck')}
+                        aria-label={$t('localAiRecheck')}
+                        onclick={() => checkLocalAi({ retest: true })}
+                        disabled={checkingLocalAi || installing}
                     >
-                        {showChecking ? $t('checkingApiKey') : $t('addApiKeyBtn')}
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                        >
+                            <path d="M20 11a8 8 0 1 0-2.3 5.7"></path>
+                            <polyline points="20 4 20 11 13 11"></polyline>
+                        </svg>
                     </button>
-                {:else}
-                    <!-- The button is the whole decision: it downloads the model and turns
+                    {#if isInstalled}
+                        <button
+                            type="button"
+                            class="local-ai-uninstall"
+                            onclick={handleUninstall}
+                            disabled={checkingLocalAi || installing}
+                        >
+                            {$t('localAiUninstallBtn')}
+                        </button>
+                    {/if}
+                </div>
+
+                <!-- Not while the browser is still being asked: until it answers the
+                         status is only a default, and the wrong explanation under it reads
+                         as an answer. -->
+                {#if checkingLocalAi}
+                    <!-- nothing to explain yet -->
+                {:else if localStatus === LOCAL_AI_STATUS.UNSUPPORTED}
+                    <p class="local-ai-help">{$t('localAiUnsupportedHelp')}</p>
+                {:else if localStatus === LOCAL_AI_STATUS.UNAVAILABLE}
+                    <p class="local-ai-help">{$t('localAiUnavailableHelp')}</p>
+                {/if}
+
+                <p class="local-ai-help local-ai-stale">{$t('localAiStaleHint')}</p>
+
+                <!-- Folded, because it is only needed when something goes wrong; and
+                         first among the sections, because when it is needed it is the
+                         only thing on this tab that helps. -->
+                <details class="local-ai-guide">
+                    <summary>{$t('localAiGuideTitle')}</summary>
+                    {#snippet sentence(
+                        text,
+                    )}<!-- prettier-ignore -->{#each guideParts(text) as part, i (i)}{#if part.kind === 'link'}<button type="button" class="chrome-link" onclick={() => openChromePage(part.value)}>{part.value}</button>{:else if part.kind === 'mark'}<mark>{part.value}</mark>{:else}{part.value}{/if}{/each}{/snippet}
+                    <ol>
+                        {#each GUIDE_STEPS as step (step)}
+                            <li>{@render sentence($t(step))}</li>
+                        {/each}
+                    </ol>
+                    <p class="local-ai-help">{@render sentence($t('localAiGuideModelChoice'))}</p>
+                    <!-- Chrome does not let a page link to its own pages, so these
+                             open in a tab of their own instead. -->
+                    <div class="local-ai-guide-links">
+                        <button type="button" onclick={() => openChromePage('chrome://settings/system')}>
+                            {$t('localAiGuideOpenSettings')}
+                        </button>
+                        <button type="button" onclick={() => openChromePage('chrome://on-device-internals')}>
+                            {$t('localAiGuideOpenInternals')}
+                        </button>
+                    </div>
+                </details>
+
+                <div class="local-ai-section">
+                    <h3>{$t('localAiCapabilities')}</h3>
+                    <ul class="local-ai-caps">
+                        <li class:supported={$localAiSupportsImages}>
+                            {$localAiSupportsImages ? $t('localAiImagesYes') : $t('localAiImagesNo')}
+                        </li>
+                        <li class:supported={$localAiSupportsTools}>
+                            {#if probingTools}
+                                {$t('localAiAgentsChecking')}
+                            {:else if $localAiSupportsTools}
+                                {$t('localAiAgentsYes')}
+                            {:else}
+                                {$t('localAiAgentsNo')}
+                            {/if}
+                        </li>
+                        <li>{$t('localAiWebNo')}</li>
+                    </ul>
+                    <p class="local-ai-help">{$t('localAiWebNote')}</p>
+                    <p class="local-ai-help">{$t('localAiLimitsNote')}</p>
+                    {#if isInstalled}
+                        <p class="local-ai-help">{$t('localAiAgentProbeNote')}</p>
+                    {/if}
+                </div>
+
+                <!-- What the download costs is a question about a download that has
+                         not happened yet; once it has, the folder below answers it. -->
+                {#if !isInstalled}
+                    <div class="local-ai-section">
+                        <h3>{$t('localAiSizeTitle')}</h3>
+                        <p class="local-ai-help">{$t('localAiSizeDescription')}</p>
+                    </div>
+                {/if}
+
+                {#if isInstalled}
+                    <div class="local-ai-section">
+                        <h3>{$t('localAiLocationTitle')}</h3>
+                        <p class="local-ai-help">{$t('localAiLocationHelp')}</p>
+                        <code class="local-ai-path">{modelDirectory}</code>
+                        <p class="local-ai-help">{$t('localAiModelUnknown')}</p>
+                    </div>
+                {/if}
+
+                {#if uninstallNote}
+                    <p class="local-ai-help local-ai-note">{uninstallNote}</p>
+                {/if}
+
+                {#if installError}
+                    <div class="modal-error-message">{installError}</div>
+                {/if}
+            {/if}
+        </div>
+        <div class="modal-actions">
+            {#if activeTab === 'api'}
+                <button
+                    type="button"
+                    class="modal-btn-save api-key-add-btn"
+                    class:error-state={!!error}
+                    aria-busy={saving}
+                    onclick={handleSave}
+                >
+                    {showChecking ? $t('checkingApiKey') : $t('addApiKeyBtn')}
+                </button>
+            {:else}
+                <!-- The button is the whole decision: it downloads the model and turns
                          the fallback on, so a user who wanted it does not have to find a
                          second control afterwards. -->
-                    <!-- Only "no such API" and "already there" close the door. A machine
+                <!-- Only "no such API" and "already there" close the door. A machine
                          Chrome says does not qualify is still worth one attempt: the
                          check itself can go unanswered, and a refusal from `create()` is
                          a real answer where a dead button is only a guess. -->
-                    <button
-                        type="button"
-                        class="modal-btn-save"
-                        disabled={installing || (!isInstalled && localStatus === LOCAL_AI_STATUS.UNSUPPORTED)}
-                        onclick={handleAccept}
-                    >
-                        {#if installing}
-                            {$t('localAiInstallingBtn')}{downloadPercent === null ? '' : ` ${downloadPercent}%`}
-                        {:else if isInstalled}
-                            {$t('localAiAcceptBtn')}
-                        {:else}
-                            {$t('localAiAcceptInstallBtn')}
-                        {/if}
-                    </button>
-                {/if}
-            </div>
+                <button
+                    type="button"
+                    class="modal-btn-save"
+                    disabled={installing || (!isInstalled && localStatus === LOCAL_AI_STATUS.UNSUPPORTED)}
+                    onclick={handleAccept}
+                >
+                    {#if installing}
+                        {$t('localAiInstallingBtn')}{downloadPercent === null ? '' : ` ${downloadPercent}%`}
+                    {:else if isInstalled}
+                        {$t('localAiAcceptBtn')}
+                    {:else}
+                        {$t('localAiAcceptInstallBtn')}
+                    {/if}
+                </button>
+            {/if}
         </div>
-    </div>
+    </ModalShell>
 {/if}
 
 <style>

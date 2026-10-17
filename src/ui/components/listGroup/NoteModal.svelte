@@ -1,6 +1,6 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import ModalShell from '../common/ModalShell.svelte';
+    import { t } from '../../stores/i18nStore.js';
     import NoteTextEditor from '../notes/editors/NoteTextEditor.svelte';
     import NoteChecklistEditor from '../notes/editors/NoteChecklistEditor.svelte';
     import NoteKanbanEditor from '../notes/editors/NoteKanbanEditor.svelte';
@@ -202,123 +202,108 @@
     }
 </script>
 
-<div
-    class="modal-overlay"
-    class:visible={show}
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="note-modal-title"
-    tabindex="-1"
-    use:dismissOnBackdrop={handleClose}
-    onkeydown={(e) => e.key === 'Escape' && handleClose()}
+<ModalShell
+    visible={show}
+    titleId="note-modal-title"
+    title={$t(note ? 'editNote' : 'createNote')}
+    contentClass="note-modal"
+    onclose={handleClose}
 >
-    <div class="modal-content note-modal" role="none" onclick={(e) => e.stopPropagation()}>
-        <div class="modal-header">
-            <h2 id="note-modal-title">
-                {$t(note ? 'editNote' : 'createNote')}
-            </h2>
-            <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button>
-        </div>
+    <!-- Title input -->
+    <div class="form-group">
+        <label for="note-title-input">{$t('noteTitle')}</label>
+        <input
+            type="text"
+            id="note-title-input"
+            placeholder={$t('noteTitlePlaceholder')}
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="100"
+            bind:value={title}
+            class:input-error={showValidation && title.trim().length === 0}
+            bind:this={titleInput}
+        />
+    </div>
 
-        <!-- Title input -->
-        <div class="form-group">
-            <label for="note-title-input">{$t('noteTitle')}</label>
-            <input
-                type="text"
-                id="note-title-input"
-                placeholder={$t('noteTitlePlaceholder')}
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="100"
-                bind:value={title}
-                class:input-error={showValidation && title.trim().length === 0}
-                bind:this={titleInput}
-            />
-        </div>
+    <!-- Type selector label -->
+    <div class="form-group" style="padding: 0 16px;">
+        <div class="field-label">{$t('noteTypeLabel')}</div>
+    </div>
 
-        <!-- Type selector label -->
-        <div class="form-group" style="padding: 0 16px;">
-            <div class="field-label">{$t('noteTypeLabel')}</div>
-        </div>
+    <!-- Type selector buttons -->
+    <div class="note-type-selector">
+        <button
+            type="button"
+            class="note-type-btn"
+            class:active={noteType === 'text'}
+            data-type="text"
+            onclick={() => handleTypeChange('text')}>{$t('noteTypeText')}</button
+        >
+        <button
+            type="button"
+            class="note-type-btn"
+            class:active={noteType === 'checklist'}
+            data-type="checklist"
+            onclick={() => handleTypeChange('checklist')}>{$t('noteTypeChecklist')}</button
+        >
+        <button
+            type="button"
+            class="note-type-btn"
+            class:active={noteType === 'kanban'}
+            data-type="kanban"
+            onclick={() => handleTypeChange('kanban')}>{$t('noteTypeKanban')}</button
+        >
+    </div>
 
-        <!-- Type selector buttons -->
-        <div class="note-type-selector">
-            <button
-                type="button"
-                class="note-type-btn"
-                class:active={noteType === 'text'}
-                data-type="text"
-                onclick={() => handleTypeChange('text')}>{$t('noteTypeText')}</button
-            >
-            <button
-                type="button"
-                class="note-type-btn"
-                class:active={noteType === 'checklist'}
-                data-type="checklist"
-                onclick={() => handleTypeChange('checklist')}>{$t('noteTypeChecklist')}</button
-            >
-            <button
-                type="button"
-                class="note-type-btn"
-                class:active={noteType === 'kanban'}
-                data-type="kanban"
-                onclick={() => handleTypeChange('kanban')}>{$t('noteTypeKanban')}</button
-            >
-        </div>
+    <!-- Editor container -->
+    <div class="note-editor-container">
+        {#if noteType === 'text'}
+            <NoteTextEditor bind:contentHTML {showValidation} {noteType} />
+        {:else if noteType === 'checklist'}
+            <NoteChecklistEditor bind:items={checklistItems} {showValidation} />
+        {:else if noteType === 'kanban'}
+            <NoteKanbanEditor bind:items={kanbanItems} {showValidation} />
+        {/if}
+    </div>
 
-        <!-- Editor container -->
-        <div class="note-editor-container">
-            {#if noteType === 'text'}
-                <NoteTextEditor bind:contentHTML {showValidation} {noteType} />
-            {:else if noteType === 'checklist'}
-                <NoteChecklistEditor bind:items={checklistItems} {showValidation} />
-            {:else if noteType === 'kanban'}
-                <NoteKanbanEditor bind:items={kanbanItems} {showValidation} />
-            {/if}
-        </div>
-
-        <!-- Category selector -->
-        <div class="form-group">
-            <div class="field-label">{$t('noteCategory')}</div>
-            <div class="note-categories">
-                {#each CATEGORIES as cat (cat)}
-                    <button
-                        type="button"
-                        class="category-btn"
-                        class:active={selectedCategory === cat && !showCustomInput}
-                        data-category={cat}
-                        onclick={() => selectCategory(cat)}>{$t('noteCat' + cat)}</button
-                    >
-                {/each}
+    <!-- Category selector -->
+    <div class="form-group">
+        <div class="field-label">{$t('noteCategory')}</div>
+        <div class="note-categories">
+            {#each CATEGORIES as cat (cat)}
                 <button
                     type="button"
-                    class="category-btn custom"
-                    class:active={showCustomInput}
-                    data-category="Custom"
-                    onclick={() => selectCategory('Custom')}>{$t('noteCatCustom')}</button
+                    class="category-btn"
+                    class:active={selectedCategory === cat && !showCustomInput}
+                    data-category={cat}
+                    onclick={() => selectCategory(cat)}>{$t('noteCat' + cat)}</button
                 >
-            </div>
-            <label for="note-custom-tag-input" class="visually-hidden">{$t('noteCustomTagPlaceholder')}</label>
-            <input
-                type="text"
-                id="note-custom-tag-input"
-                class:visible={showCustomInput}
-                placeholder={$t('noteCustomTagPlaceholder')}
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="15"
-                bind:value={customCategory}
-            />
-        </div>
-
-        <!-- Action buttons -->
-        <div class="modal-actions">
+            {/each}
             <button
                 type="button"
-                class="modal-btn-save"
-                class:error-state={showValidation && !isValid}
-                onclick={handleSave}>{$t('save')}</button
+                class="category-btn custom"
+                class:active={showCustomInput}
+                data-category="Custom"
+                onclick={() => selectCategory('Custom')}>{$t('noteCatCustom')}</button
             >
         </div>
+        <label for="note-custom-tag-input" class="visually-hidden">{$t('noteCustomTagPlaceholder')}</label>
+        <input
+            type="text"
+            id="note-custom-tag-input"
+            class:visible={showCustomInput}
+            placeholder={$t('noteCustomTagPlaceholder')}
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="15"
+            bind:value={customCategory}
+        />
     </div>
-</div>
+
+    <!-- Action buttons -->
+    <div class="modal-actions">
+        <button type="button" class="modal-btn-save" class:error-state={showValidation && !isValid} onclick={handleSave}
+            >{$t('save')}</button
+        >
+    </div>
+</ModalShell>

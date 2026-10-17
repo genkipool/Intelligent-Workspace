@@ -1,7 +1,7 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { msg as localizedMsg, activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
     let {
         show = false,
@@ -91,169 +91,150 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleClose}
-        onkeydown={(e) => e.key === 'Escape' && handleClose()}
-    >
-        <div class="modal-content special-delete-modal" role="none" onclick={(e) => e.stopPropagation()}>
-            <div class="modal-header">
-                <h2 class="modal-title">{$t(titleKey)}</h2>
-                {#if type === 'broken' && onReset}
+    <ModalShell titleClass="modal-title" title={$t(titleKey)} contentClass="special-delete-modal" onclose={handleClose}>
+        {#snippet headerExtra()}
+            {#if type === 'broken' && onReset}
+                <button type="button" class="restart-scan-btn control-btn" title={$tt('restartScan')} onclick={onReset}>
+                    <svg width="18" height="18" aria-hidden="true" focusable="false">
+                        <use href="#icon-refresh"></use>
+                    </svg>
+                </button>
+            {/if}
+        {/snippet}
+        <div class="modal-body">
+            <p class="modal-description">{$t(descriptionKey)}</p>
+
+            {#if type === 'broken' && !isLoading && filteredItems.length > 0}
+                <div class="modal-filters">
                     <button
                         type="button"
-                        class="restart-scan-btn control-btn"
-                        title={$tt('restartScan')}
-                        onclick={onReset}
+                        class="filter-btn"
+                        class:active={filterType === 'all'}
+                        onclick={() => (filterType = 'all')}>{$t('filterAll')}</button
                     >
-                        <svg width="18" height="18" aria-hidden="true" focusable="false">
-                            <use href="#icon-refresh"></use>
-                        </svg>
-                    </button>
-                {/if}
-                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
-                >
-            </div>
-            <div class="modal-body">
-                <p class="modal-description">{$t(descriptionKey)}</p>
-
-                {#if type === 'broken' && !isLoading && filteredItems.length > 0}
-                    <div class="modal-filters">
-                        <button
-                            type="button"
-                            class="filter-btn"
-                            class:active={filterType === 'all'}
-                            onclick={() => (filterType = 'all')}>{$t('filterAll')}</button
-                        >
-                        <button
-                            type="button"
-                            class="filter-btn"
-                            class:active={filterType === '4xx'}
-                            onclick={() => (filterType = '4xx')}>{$t('filter4xx')}</button
-                        >
-                        <button
-                            type="button"
-                            class="filter-btn"
-                            class:active={filterType === '5xx'}
-                            onclick={() => (filterType = '5xx')}>{$t('filterTimeouts')}</button
-                        >
-                        <button
-                            type="button"
-                            class="filter-btn"
-                            class:active={filterType === 'timeout'}
-                            onclick={() => (filterType = 'timeout')}>{$t('filterTimeouts')}</button
-                        >
-                        <button
-                            type="button"
-                            class="filter-btn"
-                            class:active={filterType === 'other'}
-                            onclick={() => (filterType = 'other')}>{$t('filterOther')}</button
-                        >
-                    </div>
-                {/if}
-
-                {#if isLoading}
-                    <div class="scanning-progress-container">
-                        <div class="progress-labels">
-                            <span class="progress-count-current">{scanProgress.current}</span>
-                            <span>/</span>
-                            <span class="progress-count-total">{scanProgress.total}</span>
-                        </div>
-                        <div class="progress-track">
-                            <div class="progress-fill" style="width: {progressPercent}%">
-                                <span class="progress-percentage">{progressPercent}%</span>
-                            </div>
-                        </div>
-                        <!-- The count is substituted into its own message. It used to be
-                             glued on as a second message that carried its own "$1" and its
-                             own brackets, so the line read "Escaneando (0 ($1 encontrados))". -->
-                        <p class="scanning-status-text">
-                            <span class="scanning-status-label">{$t('scanningBookmarks')}</span>
-                            <span class="scanning-status-found" class:has-results={filteredItems.length > 0}>
-                                {filteredItems.length === 1
-                                    ? $t('itemsFoundOne')
-                                    : $t('itemsFoundCount', [filteredItems.length])}
-                            </span>
-                        </p>
-                    </div>
-                {:else if filteredItems.length > 0}
-                    <div class="bookmarks-delete-list-container">
-                        <ul class="bookmarks-delete-list">
-                            {#each filteredItems as item (item.id)}
-                                <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-                                <li
-                                    class="delete-list-item card-style"
-                                    data-id={item.id}
-                                    data-status={item.status || 'unknown'}
-                                    style="cursor: pointer;"
-                                    title={item.url}
-                                    onclick={(e) => handleItemClick(item, e)}
-                                >
-                                    <div class="delete-item-info">
-                                        <a
-                                            href={item.url}
-                                            target="_blank"
-                                            class="delete-item-title"
-                                            rel="noopener noreferrer"
-                                            onclick={(e) => e.stopPropagation()}>{item.title || item.url}</a
-                                        >
-                                        <span class="delete-item-url">{item.url}</span>
-                                        <span
-                                            class="delete-item-error"
-                                            style="color: {formatErrorStyle(getMetaText(item))
-                                                ? 'var(--error-color)'
-                                                : 'var(--text-color)'}; font-weight: {formatErrorStyle(
-                                                getMetaText(item),
-                                            )
-                                                ? 'bold'
-                                                : 'normal'}; opacity: {formatErrorStyle(getMetaText(item)) ? 1 : 0.7};"
-                                            >{getMetaText(item)}</span
-                                        >
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="delete-item-action-btn"
-                                        title={$tt('deleteButton')}
-                                        onclick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleTrashClick(item);
-                                        }}
-                                    >
-                                        <svg width="18" height="18" aria-hidden="true" focusable="false">
-                                            <use href="#icon-trash"></use>
-                                        </svg>
-                                    </button>
-                                </li>
-                            {/each}
-                        </ul>
-                    </div>
-                {:else}
-                    <div class="bookmarks-delete-list-container">
-                        <ul class="bookmarks-delete-list">
-                            <li style="padding: 20px; text-align: center; opacity: 0.7;">{$t(emptyMessageKey)}</li>
-                        </ul>
-                    </div>
-                {/if}
-            </div>
-
-            {#if !isLoading}
-                <div class="modal-footer">
-                    <span class="items-count-label">
-                        {filteredItems.length}
-                        {$t('items') || 'items'}
-                    </span>
                     <button
                         type="button"
-                        class="modal-btn-delete-all-listed error-state"
-                        disabled={filteredItems.length === 0}
-                        onclick={handleDeleteAll}>{$t('deleteAllListed')}</button
+                        class="filter-btn"
+                        class:active={filterType === '4xx'}
+                        onclick={() => (filterType = '4xx')}>{$t('filter4xx')}</button
+                    >
+                    <button
+                        type="button"
+                        class="filter-btn"
+                        class:active={filterType === '5xx'}
+                        onclick={() => (filterType = '5xx')}>{$t('filterTimeouts')}</button
+                    >
+                    <button
+                        type="button"
+                        class="filter-btn"
+                        class:active={filterType === 'timeout'}
+                        onclick={() => (filterType = 'timeout')}>{$t('filterTimeouts')}</button
+                    >
+                    <button
+                        type="button"
+                        class="filter-btn"
+                        class:active={filterType === 'other'}
+                        onclick={() => (filterType = 'other')}>{$t('filterOther')}</button
                     >
                 </div>
             {/if}
+
+            {#if isLoading}
+                <div class="scanning-progress-container">
+                    <div class="progress-labels">
+                        <span class="progress-count-current">{scanProgress.current}</span>
+                        <span>/</span>
+                        <span class="progress-count-total">{scanProgress.total}</span>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width: {progressPercent}%">
+                            <span class="progress-percentage">{progressPercent}%</span>
+                        </div>
+                    </div>
+                    <!-- The count is substituted into its own message. It used to be
+                             glued on as a second message that carried its own "$1" and its
+                             own brackets, so the line read "Escaneando (0 ($1 encontrados))". -->
+                    <p class="scanning-status-text">
+                        <span class="scanning-status-label">{$t('scanningBookmarks')}</span>
+                        <span class="scanning-status-found" class:has-results={filteredItems.length > 0}>
+                            {filteredItems.length === 1
+                                ? $t('itemsFoundOne')
+                                : $t('itemsFoundCount', [filteredItems.length])}
+                        </span>
+                    </p>
+                </div>
+            {:else if filteredItems.length > 0}
+                <div class="bookmarks-delete-list-container">
+                    <ul class="bookmarks-delete-list">
+                        {#each filteredItems as item (item.id)}
+                            <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+                            <li
+                                class="delete-list-item card-style"
+                                data-id={item.id}
+                                data-status={item.status || 'unknown'}
+                                style="cursor: pointer;"
+                                title={item.url}
+                                onclick={(e) => handleItemClick(item, e)}
+                            >
+                                <div class="delete-item-info">
+                                    <a
+                                        href={item.url}
+                                        target="_blank"
+                                        class="delete-item-title"
+                                        rel="noopener noreferrer"
+                                        onclick={(e) => e.stopPropagation()}>{item.title || item.url}</a
+                                    >
+                                    <span class="delete-item-url">{item.url}</span>
+                                    <span
+                                        class="delete-item-error"
+                                        style="color: {formatErrorStyle(getMetaText(item))
+                                            ? 'var(--error-color)'
+                                            : 'var(--text-color)'}; font-weight: {formatErrorStyle(getMetaText(item))
+                                            ? 'bold'
+                                            : 'normal'}; opacity: {formatErrorStyle(getMetaText(item)) ? 1 : 0.7};"
+                                        >{getMetaText(item)}</span
+                                    >
+                                </div>
+                                <button
+                                    type="button"
+                                    class="delete-item-action-btn"
+                                    title={$tt('deleteButton')}
+                                    onclick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        handleTrashClick(item);
+                                    }}
+                                >
+                                    <svg width="18" height="18" aria-hidden="true" focusable="false">
+                                        <use href="#icon-trash"></use>
+                                    </svg>
+                                </button>
+                            </li>
+                        {/each}
+                    </ul>
+                </div>
+            {:else}
+                <div class="bookmarks-delete-list-container">
+                    <ul class="bookmarks-delete-list">
+                        <li style="padding: 20px; text-align: center; opacity: 0.7;">{$t(emptyMessageKey)}</li>
+                    </ul>
+                </div>
+            {/if}
         </div>
-    </div>
+
+        {#if !isLoading}
+            <div class="modal-footer">
+                <span class="items-count-label">
+                    {filteredItems.length}
+                    {$t('items') || 'items'}
+                </span>
+                <button
+                    type="button"
+                    class="modal-btn-delete-all-listed error-state"
+                    disabled={filteredItems.length === 0}
+                    onclick={handleDeleteAll}>{$t('deleteAllListed')}</button
+                >
+            </div>
+        {/if}
+    </ModalShell>
 {/if}

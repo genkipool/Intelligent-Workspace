@@ -1,10 +1,10 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { activeLocale } from '../../../utils/i18n.js';
     import { get } from 'svelte/store';
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
     let { show = false, schedules = [], onClose = () => {}, onSave = () => {}, onDelete = () => {} } = $props();
 
@@ -172,219 +172,203 @@
 </script>
 
 {#if show}
-    <div
-        id="gemini-schedule-modal"
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="gemini-schedule-modal-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={onClose}
-        onkeydown={(e) => {
-            if (e.key === 'Escape') onClose();
-        }}
+    <ModalShell
+        overlayId="gemini-schedule-modal"
+        closeId="close-gemini-schedule-modal"
+        titleId="gemini-schedule-modal-title"
+        title={$t('scheduleGeminiQuery')}
+        contentClass="gemini-schedule-modal"
+        swallowClicks={false}
+        onclose={onClose}
     >
-        <div class="modal-content gemini-schedule-modal">
-            <div class="modal-header">
-                <h2 id="gemini-schedule-modal-title">{$t('scheduleGeminiQuery')}</h2>
-                <button
-                    type="button"
-                    id="close-gemini-schedule-modal"
-                    class="close-modal-btn"
-                    onclick={onClose}
-                    title={$tt('close')}>&times;</button
-                >
-            </div>
+        <div class="modal-body">
+            <h3 class="titleSchedules">
+                <span>{$t('existingSchedules')}</span> ({schedules.length}/7)
+            </h3>
 
-            <div class="modal-body">
-                <h3 class="titleSchedules">
-                    <span>{$t('existingSchedules')}</span> ({schedules.length}/7)
-                </h3>
-
-                <ul id="gemini-schedules-list">
-                    {#if schedules.length > 0}
-                        {#each schedules as schedule, i (schedule.title + schedule.query + (schedule.startDateTime || schedule.startTime || ''))}
-                            <li class="schedule-item">
-                                <div class="schedule-item-header">
-                                    <span class="schedule-query-text" title={schedule.query}>{schedule.title}</span>
-                                    <div class="schedule-item-actions">
-                                        <button
-                                            type="button"
-                                            class="edit-schedule-btn"
-                                            onclick={() => handleEdit(i)}
-                                            title={$tt('editGeminiQuery')}
-                                        >
-                                            <svg width="20" height="20">
-                                                <use href="#icon-edit" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="delete-schedule-btn"
-                                            onclick={() => handleDelete(i)}
-                                            title={$tt('deleteSchedule')}
-                                        >
-                                            &times;
-                                        </button>
-                                    </div>
+            <ul id="gemini-schedules-list">
+                {#if schedules.length > 0}
+                    {#each schedules as schedule, i (schedule.title + schedule.query + (schedule.startDateTime || schedule.startTime || ''))}
+                        <li class="schedule-item">
+                            <div class="schedule-item-header">
+                                <span class="schedule-query-text" title={schedule.query}>{schedule.title}</span>
+                                <div class="schedule-item-actions">
+                                    <button
+                                        type="button"
+                                        class="edit-schedule-btn"
+                                        onclick={() => handleEdit(i)}
+                                        title={$tt('editGeminiQuery')}
+                                    >
+                                        <svg width="20" height="20">
+                                            <use href="#icon-edit" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="delete-schedule-btn"
+                                        onclick={() => handleDelete(i)}
+                                        title={$tt('deleteSchedule')}
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                                <div class="schedule-details">
-                                    {#if schedule.type === 'repeating'}
-                                        {schedule.days.map((d) => $t(dayKeys[d])).join(', ')} - {timesOf(schedule).join(
-                                            ', ',
-                                        )}
-                                    {:else}
-                                        {new Date(schedule.startDateTime).toLocaleDateString(activeLocale())} - {timesOf(
-                                            schedule,
-                                        ).join(', ')}
-                                    {/if}
-                                </div>
-                            </li>
-                        {/each}
-                    {/if}
-                </ul>
-                {#if schedules.length === 0}
-                    <p id="no-gemini-schedules-message">{$t('noGeminiSchedulesFound')}</p>
+                            </div>
+                            <div class="schedule-details">
+                                {#if schedule.type === 'repeating'}
+                                    {schedule.days.map((d) => $t(dayKeys[d])).join(', ')} - {timesOf(schedule).join(
+                                        ', ',
+                                    )}
+                                {:else}
+                                    {new Date(schedule.startDateTime).toLocaleDateString(activeLocale())} - {timesOf(
+                                        schedule,
+                                    ).join(', ')}
+                                {/if}
+                            </div>
+                        </li>
+                    {/each}
                 {/if}
-
-                {#if schedules.length < 7}
-                    <div id="add-gemini-schedule-section">
-                        <h3 class="section-title">{$t('addNewSchedule')}</h3>
-
-                        <div class="form-group">
-                            <label for="gemini-schedule-title">{$t('conversationTitle')}</label>
-                            <input
-                                type="text"
-                                id="gemini-schedule-title"
-                                bind:value={formTitle}
-                                maxlength="40"
-                                placeholder={$t('conversationTitlePlaceholder')}
-                                autocomplete="off"
-                                translate="no"
-                            />
-                        </div>
-
-                        <div class="form-group">
-                            <label for="gemini-schedule-query">{$t('geminiScheduleQueryLabel')}</label>
-                            <div class="note-content-wrapper">
-                                <textarea
-                                    id="gemini-schedule-query"
-                                    bind:value={formQuery}
-                                    maxlength={MAX_QUERY_CHARS}
-                                    placeholder={$t('geminiQueryPlaceholder')}
-                                ></textarea>
-                                <span
-                                    class="note-editor-stats"
-                                    title={$tt('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
-                                >
-                                    {$t('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="field-label">{$t('daysOfWeek')}</div>
-                            <div id="gemini-schedule-days" class="days-selector">
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(1)}
-                                    onclick={() => handleDayToggle(1)}>{$t('dayMon')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(2)}
-                                    onclick={() => handleDayToggle(2)}>{$t('dayTue')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(3)}
-                                    onclick={() => handleDayToggle(3)}>{$t('dayWed')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(4)}
-                                    onclick={() => handleDayToggle(4)}>{$t('dayThu')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(5)}
-                                    onclick={() => handleDayToggle(5)}>{$t('dayFri')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(6)}
-                                    onclick={() => handleDayToggle(6)}>{$t('daySat')}</button
-                                >
-                                <button
-                                    type="button"
-                                    class:selected={selectedDays.includes(0)}
-                                    onclick={() => handleDayToggle(0)}>{$t('daySun')}</button
-                                >
-                            </div>
-                        </div>
-
-                        {#if !isRepeating}
-                            <div id="onetime-gemini-schedule-group" class="form-group">
-                                <div class="datetime-row">
-                                    <div class="field-container">
-                                        <div class="field-label">{$t('scheduleDateTime')}</div>
-                                        <DateField id="gemini-start-date-trigger" bind:value={formDate} />
-                                    </div>
-                                </div>
-                            </div>
-                        {/if}
-
-                        <!-- The same query can be launched at several times of day, on
-                             the chosen date or on each of the chosen weekdays. -->
-                        <div id="gemini-schedule-times" class="form-group">
-                            <div class="field-label">{$t('scheduleTimes')}</div>
-                            <div class="schedule-times-list">
-                                {#each formTimes as _, index (index)}
-                                    <div class="schedule-time-row">
-                                        <TimeField
-                                            id={`gemini-start-time-trigger${index === 0 ? '' : `-${index}`}`}
-                                            bind:value={formTimes[index]}
-                                        />
-                                        <button
-                                            type="button"
-                                            class="remove-time-btn"
-                                            disabled={formTimes.length <= 1}
-                                            onclick={() => removeTime(index)}
-                                            title={$tt('removeScheduleTime')}
-                                            aria-label={$tt('removeScheduleTime')}>&times;</button
-                                        >
-                                    </div>
-                                {/each}
-                            </div>
-                            <button
-                                type="button"
-                                id="add-gemini-schedule-time"
-                                class="add-time-btn"
-                                disabled={!canAddTime}
-                                onclick={addTime}
-                            >
-                                + {$t('addScheduleTime')}
-                            </button>
-                        </div>
-                    </div>
-                {/if}
-            </div>
+            </ul>
+            {#if schedules.length === 0}
+                <p id="no-gemini-schedules-message">{$t('noGeminiSchedulesFound')}</p>
+            {/if}
 
             {#if schedules.length < 7}
-                <div class="modal-actions">
-                    <button
-                        type="button"
-                        id="save-gemini-schedule-btn"
-                        class:error-state={!!formError}
-                        onclick={handleSave}
-                    >
-                        {$t(formMode === 'add' ? 'addSchedule' : 'updateSchedule')}
-                    </button>
-                    {#if formError}
-                        <div class="modal-error-message">{formError}</div>
+                <div id="add-gemini-schedule-section">
+                    <h3 class="section-title">{$t('addNewSchedule')}</h3>
+
+                    <div class="form-group">
+                        <label for="gemini-schedule-title">{$t('conversationTitle')}</label>
+                        <input
+                            type="text"
+                            id="gemini-schedule-title"
+                            bind:value={formTitle}
+                            maxlength="40"
+                            placeholder={$t('conversationTitlePlaceholder')}
+                            autocomplete="off"
+                            translate="no"
+                        />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gemini-schedule-query">{$t('geminiScheduleQueryLabel')}</label>
+                        <div class="note-content-wrapper">
+                            <textarea
+                                id="gemini-schedule-query"
+                                bind:value={formQuery}
+                                maxlength={MAX_QUERY_CHARS}
+                                placeholder={$t('geminiQueryPlaceholder')}
+                            ></textarea>
+                            <span
+                                class="note-editor-stats"
+                                title={$tt('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
+                            >
+                                {$t('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="field-label">{$t('daysOfWeek')}</div>
+                        <div id="gemini-schedule-days" class="days-selector">
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(1)}
+                                onclick={() => handleDayToggle(1)}>{$t('dayMon')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(2)}
+                                onclick={() => handleDayToggle(2)}>{$t('dayTue')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(3)}
+                                onclick={() => handleDayToggle(3)}>{$t('dayWed')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(4)}
+                                onclick={() => handleDayToggle(4)}>{$t('dayThu')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(5)}
+                                onclick={() => handleDayToggle(5)}>{$t('dayFri')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(6)}
+                                onclick={() => handleDayToggle(6)}>{$t('daySat')}</button
+                            >
+                            <button
+                                type="button"
+                                class:selected={selectedDays.includes(0)}
+                                onclick={() => handleDayToggle(0)}>{$t('daySun')}</button
+                            >
+                        </div>
+                    </div>
+
+                    {#if !isRepeating}
+                        <div id="onetime-gemini-schedule-group" class="form-group">
+                            <div class="datetime-row">
+                                <div class="field-container">
+                                    <div class="field-label">{$t('scheduleDateTime')}</div>
+                                    <DateField id="gemini-start-date-trigger" bind:value={formDate} />
+                                </div>
+                            </div>
+                        </div>
                     {/if}
+
+                    <!-- The same query can be launched at several times of day, on
+                             the chosen date or on each of the chosen weekdays. -->
+                    <div id="gemini-schedule-times" class="form-group">
+                        <div class="field-label">{$t('scheduleTimes')}</div>
+                        <div class="schedule-times-list">
+                            {#each formTimes as _, index (index)}
+                                <div class="schedule-time-row">
+                                    <TimeField
+                                        id={`gemini-start-time-trigger${index === 0 ? '' : `-${index}`}`}
+                                        bind:value={formTimes[index]}
+                                    />
+                                    <button
+                                        type="button"
+                                        class="remove-time-btn"
+                                        disabled={formTimes.length <= 1}
+                                        onclick={() => removeTime(index)}
+                                        title={$tt('removeScheduleTime')}
+                                        aria-label={$tt('removeScheduleTime')}>&times;</button
+                                    >
+                                </div>
+                            {/each}
+                        </div>
+                        <button
+                            type="button"
+                            id="add-gemini-schedule-time"
+                            class="add-time-btn"
+                            disabled={!canAddTime}
+                            onclick={addTime}
+                        >
+                            + {$t('addScheduleTime')}
+                        </button>
+                    </div>
                 </div>
             {/if}
         </div>
-    </div>
+
+        {#if schedules.length < 7}
+            <div class="modal-actions">
+                <button
+                    type="button"
+                    id="save-gemini-schedule-btn"
+                    class:error-state={!!formError}
+                    onclick={handleSave}
+                >
+                    {$t(formMode === 'add' ? 'addSchedule' : 'updateSchedule')}
+                </button>
+                {#if formError}
+                    <div class="modal-error-message">{formError}</div>
+                {/if}
+            </div>
+        {/if}
+    </ModalShell>
 {/if}

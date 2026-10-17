@@ -1,9 +1,9 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { SvelteMap } from 'svelte/reactivity';
     import DateField from '../common/DateField.svelte';
     import TimeField from '../common/TimeField.svelte';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import ImportPanel from '../common/ImportPanel.svelte';
     import { showNotification } from '../../../utils/i18n.js';
     import { tick } from 'svelte';
@@ -205,14 +205,7 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="cookie-modal-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={onClose}
-    >
+    <ModalShell bare titleId="cookie-modal-title" onclose={onClose} closeOnEscape={false}>
         {#if !showImportPanel}
             <!-- Cookie Editor Modal -->
             <div class="modal-content cookie-editor-modal">
@@ -480,5 +473,5 @@
                 <p class="import-error">{importError}</p>
             {/if}
         {/if}
-    </div>
+    </ModalShell>
 {/if}
