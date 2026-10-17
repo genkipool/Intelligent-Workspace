@@ -7,6 +7,7 @@
      * and sync storage, so any window or open tab agrees without a reload.
      */
     import { onMount } from 'svelte';
+    import ToggleSectionHeader from './ToggleSectionHeader.svelte';
 
     const KEY = 'appendClipboardEnabled';
 
@@ -65,22 +66,14 @@
 </script>
 
 <section class="section itg-manage-section" id="append-clipboard-settings">
-    <div class="section-header">
-        <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="appendClipboardSectionTitle">Cumulative clipboard copy</h2>
-            <label class="switch" id="append-clipboard-toggle-label" title={toggleTitle}>
-                <input
-                    type="checkbox"
-                    id="append-clipboard-toggle"
-                    tabindex="0"
-                    aria-label={toggleTitle}
-                    checked={enabled}
-                    onchange={toggle}
-                />
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
+    <ToggleSectionHeader
+        titleKey="appendClipboardSectionTitle"
+        title="Cumulative clipboard copy"
+        toggleId="append-clipboard-toggle"
+        {toggleTitle}
+        checked={enabled}
+        onchange={toggle}
+    />
     <p class="append-clipboard-desc" data-i18n="appendClipboardDesc"></p>
     <div class="append-clipboard-shortcut-badge">
         <span class="append-clipboard-key-label" data-i18n="appendClipboardAssignedKey">Shortcut key</span>:

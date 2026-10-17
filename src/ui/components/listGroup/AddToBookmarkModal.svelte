@@ -1,6 +1,6 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import ModalShell from '../common/ModalShell.svelte';
+    import { t } from '../../stores/i18nStore.js';
     import { notificationStore } from '../../stores/notificationStore.js';
     import { untrack } from 'svelte';
     import BookmarkFolderTree from './BookmarkFolderTree.svelte';
@@ -177,72 +177,53 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-to-bookmark-modal-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleClose}
-        onkeydown={(e) => e.key === 'Escape' && handleClose()}
+    <ModalShell
+        titleId="add-to-bookmark-modal-title"
+        title={mode === 'edit' && bookmarkData ? $t('editBookmark') : $t('addToBookmarkFolder')}
+        contentClass="add-to-bookmark-modal"
+        onclose={handleClose}
     >
-        <div class="modal-content add-to-bookmark-modal" role="none" onclick={(e) => e.stopPropagation()}>
-            <div class="modal-header">
-                <h2 id="add-to-bookmark-modal-title">
-                    {mode === 'edit' && bookmarkData ? $t('editBookmark') : $t('addToBookmarkFolder')}
-                </h2>
-                <button class="close-modal-btn" type="button" title={$tt('close')} onclick={handleClose}>&times;</button
-                >
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="bookmark-title-input">{$t('bookmarkTargetTitleLabel')}</label>
+                <input
+                    id="bookmark-title-input"
+                    type="text"
+                    bind:value={title}
+                    placeholder={$t('bookmarkTitlePlaceholder')}
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
+                />
             </div>
-
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="bookmark-title-input">{$t('bookmarkTargetTitleLabel')}</label>
-                    <input
-                        id="bookmark-title-input"
-                        type="text"
-                        bind:value={title}
-                        placeholder={$t('bookmarkTitlePlaceholder')}
-                        autocomplete="off"
-                        spellcheck="false"
-                        translate="no"
-                    />
-                </div>
-                <div class="form-group">
-                    <label for="bookmark-url-input">{$t('bookmarkTargetUrlLabel')}</label>
-                    <input
-                        id="bookmark-url-input"
-                        type="url"
-                        bind:value={url}
-                        placeholder="https://"
-                        autocomplete="off"
-                        spellcheck="false"
-                        translate="no"
-                    />
-                </div>
-
-                <BookmarkFolderTree
-                    {folderTree}
-                    {isLoading}
-                    bind:selectedFolderId
-                    onSelectFolder={(id) => (selectedFolderId = id)}
-                    onCreateFolder={handleCreateFolder}
-                    onRenameFolder={handleRenameFolder}
-                    onDeleteFolder={handleDeleteFolder}
+            <div class="form-group">
+                <label for="bookmark-url-input">{$t('bookmarkTargetUrlLabel')}</label>
+                <input
+                    id="bookmark-url-input"
+                    type="url"
+                    bind:value={url}
+                    placeholder="https://"
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
                 />
             </div>
 
-            <div class="modal-actions">
-                <button
-                    id="save-bookmark-btn"
-                    class="modal-btn-save"
-                    type="button"
-                    disabled={saving}
-                    onclick={handleSave}
-                >
-                    {mode === 'edit' && bookmarkData ? $t('updateBookmark') : $t('saveBookmark')}
-                </button>
-            </div>
+            <BookmarkFolderTree
+                {folderTree}
+                {isLoading}
+                bind:selectedFolderId
+                onSelectFolder={(id) => (selectedFolderId = id)}
+                onCreateFolder={handleCreateFolder}
+                onRenameFolder={handleRenameFolder}
+                onDeleteFolder={handleDeleteFolder}
+            />
         </div>
-    </div>
+
+        <div class="modal-actions">
+            <button id="save-bookmark-btn" class="modal-btn-save" type="button" disabled={saving} onclick={handleSave}>
+                {mode === 'edit' && bookmarkData ? $t('updateBookmark') : $t('saveBookmark')}
+            </button>
+        </div>
+    </ModalShell>
 {/if}

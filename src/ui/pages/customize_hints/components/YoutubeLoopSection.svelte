@@ -7,6 +7,7 @@
      * and YouTube Shorts.
      */
     import { onMount } from 'svelte';
+    import ToggleSectionHeader from './ToggleSectionHeader.svelte';
 
     const KEY = 'youtubeLoopEnabled';
 
@@ -44,22 +45,14 @@
 </script>
 
 <section class="section itg-manage-section">
-    <div class="section-header">
-        <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="youtubeLoopSectionTitle">YouTube Loop</h2>
-            <label class="switch" id="youtube-loop-toggle-label" title={toggleTitle}>
-                <input
-                    type="checkbox"
-                    id="youtube-loop-toggle"
-                    tabindex="0"
-                    aria-label={toggleTitle}
-                    checked={enabled}
-                    onchange={toggle}
-                />
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
+    <ToggleSectionHeader
+        titleKey="youtubeLoopSectionTitle"
+        title="YouTube Loop"
+        toggleId="youtube-loop-toggle"
+        {toggleTitle}
+        checked={enabled}
+        onchange={toggle}
+    />
     <p class="section-desc" data-i18n="youtubeLoopSectionDesc"></p>
 </section>
 

@@ -7,6 +7,7 @@
      * Shorts, TikTok and HTML5 video players, along with automatic PiP triggers.
      */
     import { onMount } from 'svelte';
+    import ToggleSectionHeader from './ToggleSectionHeader.svelte';
 
     const PIP_KEY = 'videoPipEnabled';
     const AUTO_KEYS = { scroll: 'itgAutoPipOnScroll', hidden: 'itgAutoPipOnHidden' };
@@ -76,22 +77,14 @@
 </script>
 
 <section class="section itg-manage-section">
-    <div class="section-header">
-        <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="videoPipSectionTitle">Picture-in-Picture (Video)</h2>
-            <label class="switch" id="video-pip-toggle-label" title={toggleTitle}>
-                <input
-                    type="checkbox"
-                    id="video-pip-toggle"
-                    tabindex="0"
-                    aria-label={toggleTitle}
-                    checked={enabled}
-                    onchange={togglePip}
-                />
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
+    <ToggleSectionHeader
+        titleKey="videoPipSectionTitle"
+        title="Picture-in-Picture (Video)"
+        toggleId="video-pip-toggle"
+        {toggleTitle}
+        checked={enabled}
+        onchange={togglePip}
+    />
     <p class="section-desc" data-i18n="videoPipSectionDesc"></p>
 
     <div class="autopip-grid" class:is-disabled={!enabled}>

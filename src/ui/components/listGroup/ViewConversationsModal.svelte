@@ -1,7 +1,7 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { activeLocale } from '../../../utils/i18n.js';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
 
     /**
      * @typedef {object} Conversation
@@ -112,101 +112,84 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="view-conversations-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleClose}
+    <ModalShell
+        titleId="view-conversations-title"
+        title={$t('savedConversationsTitle')}
+        contentClass="view-conversations-modal"
+        onclose={handleClose}
         onkeydown={handleKeydown}
     >
-        <div class="modal-content view-conversations-modal" role="none" onclick={(e) => e.stopPropagation()}>
-            <div class="modal-header">
-                <h2 id="view-conversations-title">{$t('savedConversationsTitle')}</h2>
-                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
+        <div class="modal-body">
+            <div class="search-container">
+                <span class="search-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </span>
+                <label for="conversation-search-input" class="visually-hidden"
+                    >{$t('searchConversationsPlaceholder')}</label
                 >
+                <input
+                    type="search"
+                    id="conversation-search-input"
+                    placeholder={$t('searchConversationsPlaceholder')}
+                    autocomplete="off"
+                    bind:value={searchTerm}
+                />
             </div>
 
-            <div class="modal-body">
-                <div class="search-container">
-                    <span class="search-icon">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-                            <circle cx="11" cy="11" r="8"></circle>
-                            <path d="m21 21-4.35-4.35"></path>
-                        </svg>
-                    </span>
-                    <label for="conversation-search-input" class="visually-hidden"
-                        >{$t('searchConversationsPlaceholder')}</label
-                    >
-                    <input
-                        type="search"
-                        id="conversation-search-input"
-                        placeholder={$t('searchConversationsPlaceholder')}
-                        autocomplete="off"
-                        bind:value={searchTerm}
-                    />
-                </div>
-
-                <ul id="saved-conversations-list">
-                    {#each filteredConversations as conv (getConvKey(conv))}
-                        <li class:fading-out={deleting === getConvKey(conv)} class:is-scheduled={conv.isScheduled}>
-                            <button type="button" class="conversation-select-btn" onclick={() => handleSelect(conv)}>
-                                <div class="conversation-info">
-                                    <span class="conversation-title" title={conv.title}>{conv.title}</span>
-                                    <div class="conversation-date-row">
-                                        <span class="conversation-date">{formatDate(getCreationTimestamp(conv))}</span>
-                                        {#if !conv.isTemporary}
-                                            <span class="conversation-status status-saved"
-                                                >{$t('conversationStatusSaved')}</span
-                                            >
-                                        {:else}
-                                            <span class="conversation-status status-unsaved"
-                                                >{$t('conversationStatusUnsaved')}</span
-                                            >
-                                        {/if}
-                                        {#if conv.isScheduled}
-                                            <span class="conversation-status status-scheduled"
-                                                >{$t('conversationStatusScheduled')}</span
-                                            >
-                                        {/if}
-                                    </div>
-                                    {#if hasMultipleEntries(conv)}
-                                        <div class="conversation-edited-date-row">
-                                            <span
-                                                class="conversation-edited-date"
-                                                title={$tt('conversationEditedDateTooltip')}
-                                            >
-                                                {formatDate(getLastTimestamp(conv))}
-                                            </span>
-                                        </div>
+            <ul id="saved-conversations-list">
+                {#each filteredConversations as conv (getConvKey(conv))}
+                    <li class:fading-out={deleting === getConvKey(conv)} class:is-scheduled={conv.isScheduled}>
+                        <button type="button" class="conversation-select-btn" onclick={() => handleSelect(conv)}>
+                            <div class="conversation-info">
+                                <span class="conversation-title" title={conv.title}>{conv.title}</span>
+                                <div class="conversation-date-row">
+                                    <span class="conversation-date">{formatDate(getCreationTimestamp(conv))}</span>
+                                    {#if !conv.isTemporary}
+                                        <span class="conversation-status status-saved"
+                                            >{$t('conversationStatusSaved')}</span
+                                        >
+                                    {:else}
+                                        <span class="conversation-status status-unsaved"
+                                            >{$t('conversationStatusUnsaved')}</span
+                                        >
+                                    {/if}
+                                    {#if conv.isScheduled}
+                                        <span class="conversation-status status-scheduled"
+                                            >{$t('conversationStatusScheduled')}</span
+                                        >
                                     {/if}
                                 </div>
-                            </button>
-                            <button
-                                type="button"
-                                class="delete-conversation-btn"
-                                title={$tt('deleteConversation')}
-                                onclick={(e) => {
-                                    e.stopPropagation();
-                                    handleDelete(conv);
-                                }}>&times;</button
-                            >
-                        </li>
-                    {/each}
-                </ul>
+                                {#if hasMultipleEntries(conv)}
+                                    <div class="conversation-edited-date-row">
+                                        <span
+                                            class="conversation-edited-date"
+                                            title={$tt('conversationEditedDateTooltip')}
+                                        >
+                                            {formatDate(getLastTimestamp(conv))}
+                                        </span>
+                                    </div>
+                                {/if}
+                            </div>
+                        </button>
+                        <button
+                            type="button"
+                            class="delete-conversation-btn"
+                            title={$tt('deleteConversation')}
+                            onclick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(conv);
+                            }}>&times;</button
+                        >
+                    </li>
+                {/each}
+            </ul>
 
-                {#if !hasConversations || filteredConversations.length === 0}
-                    <p class="no-conversations-msg">{noResultsMessage}</p>
-                {/if}
-            </div>
+            {#if !hasConversations || filteredConversations.length === 0}
+                <p class="no-conversations-msg">{noResultsMessage}</p>
+            {/if}
         </div>
-    </div>
+    </ModalShell>
 {/if}

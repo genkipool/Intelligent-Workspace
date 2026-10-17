@@ -1,6 +1,6 @@
 <script>
-    import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
+    import ModalShell from '../common/ModalShell.svelte';
+    import { t } from '../../stores/i18nStore.js';
     import { getDomainOrSubdomainUrl } from '../../services/utils.js';
 
     /** @type {{
@@ -81,88 +81,80 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-to-rule-modal-title"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleOverlayDismiss}
+    <ModalShell
+        titleId="add-to-rule-modal-title"
+        title={$t('addToExistingRule')}
+        contentClass="add-to-rule-modal"
+        onclose={onClose}
+        ondismiss={handleOverlayDismiss}
         onkeydown={handleOverlayKeydown}
     >
-        <div class="modal-content add-to-rule-modal" role="none" onclick={(e) => e.stopPropagation()}>
-            <div class="modal-header">
-                <h2 id="add-to-rule-modal-title">{$t('addToExistingRule')}</h2>
-                <button class="close-modal-btn" type="button" title={$tt('close')} onclick={onClose}>&times;</button>
+        <div class="modal-body">
+            <div class="search-container-modal">
+                <label for="search-rules-modal-input" class="visually-hidden">{$t('searchRulePlaceholder')}</label>
+                <input
+                    type="search"
+                    id="search-rules-modal-input"
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
+                    placeholder={$t('searchRulePlaceholder')}
+                    bind:value={searchQuery}
+                />
             </div>
 
-            <div class="modal-body">
-                <div class="search-container-modal">
-                    <label for="search-rules-modal-input" class="visually-hidden">{$t('searchRulePlaceholder')}</label>
-                    <input
-                        type="search"
-                        id="search-rules-modal-input"
-                        autocomplete="off"
-                        spellcheck="false"
-                        translate="no"
-                        placeholder={$t('searchRulePlaceholder')}
-                        bind:value={searchQuery}
-                    />
-                </div>
+            <div class="form-group">
+                <label for="add-to-rule-url-input">{$t('urlToAdd')}</label>
+                <textarea
+                    id="add-to-rule-url-input"
+                    bind:value={urlText}
+                    autocomplete="off"
+                    spellcheck="false"
+                    translate="no"
+                ></textarea>
+            </div>
 
-                <div class="form-group">
-                    <label for="add-to-rule-url-input">{$t('urlToAdd')}</label>
-                    <textarea
-                        id="add-to-rule-url-input"
-                        bind:value={urlText}
-                        autocomplete="off"
-                        spellcheck="false"
-                        translate="no"
-                    ></textarea>
-                </div>
+            <div class="rules-selection-label">{$t('rules')}</div>
 
-                <div class="rules-selection-label">{$t('rules')}</div>
-
-                <div class="rules-selection-container">
-                    {#each filteredRules as rule (rule.name)}
-                        <button
-                            type="button"
-                            class="rule-selection-btn"
-                            class:selected={selectedRuleName === rule.name}
-                            aria-pressed={selectedRuleName === rule.name}
-                            title={rule.urls?.join('\n') || ''}
-                            onclick={() => (selectedRuleName = rule.name)}
-                            ondblclick={() => {
-                                selectedRuleName = rule.name;
+            <div class="rules-selection-container">
+                {#each filteredRules as rule (rule.name)}
+                    <button
+                        type="button"
+                        class="rule-selection-btn"
+                        class:selected={selectedRuleName === rule.name}
+                        aria-pressed={selectedRuleName === rule.name}
+                        title={rule.urls?.join('\n') || ''}
+                        onclick={() => (selectedRuleName = rule.name)}
+                        ondblclick={() => {
+                            selectedRuleName = rule.name;
+                            handleRuleSelect(rule.name);
+                        }}
+                        onkeydown={(e) => {
+                            if (e.key === 'Enter' && selectedRuleName === rule.name) {
+                                e.preventDefault();
                                 handleRuleSelect(rule.name);
-                            }}
-                            onkeydown={(e) => {
-                                if (e.key === 'Enter' && selectedRuleName === rule.name) {
-                                    e.preventDefault();
-                                    handleRuleSelect(rule.name);
-                                }
-                            }}
-                        >
-                            {rule.name}
-                        </button>
-                    {/each}
-                </div>
-
-                {#if filteredRules.length === 0}
-                    <p class="no-rules-found-modal">{$t('noRulesFoundForSearch')}</p>
-                {/if}
+                            }
+                        }}
+                    >
+                        {rule.name}
+                    </button>
+                {/each}
             </div>
 
-            <div class="modal-actions">
-                <button
-                    type="button"
-                    class="modal-btn-save"
-                    disabled={!selectedRuleName || !urlText.trim()}
-                    onclick={() => selectedRuleName && handleRuleSelect(selectedRuleName)}
-                >
-                    {$t('add') || 'Añadir'}
-                </button>
-            </div>
+            {#if filteredRules.length === 0}
+                <p class="no-rules-found-modal">{$t('noRulesFoundForSearch')}</p>
+            {/if}
         </div>
-    </div>
+
+        <div class="modal-actions">
+            <button
+                type="button"
+                class="modal-btn-save"
+                disabled={!selectedRuleName || !urlText.trim()}
+                onclick={() => selectedRuleName && handleRuleSelect(selectedRuleName)}
+            >
+                {$t('add') || 'Añadir'}
+            </button>
+        </div>
+    </ModalShell>
 {/if}

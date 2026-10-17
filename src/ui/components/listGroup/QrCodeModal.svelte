@@ -1,7 +1,7 @@
 <script>
+    import ModalShell from '../common/ModalShell.svelte';
     import { untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
-    import { dismissOnBackdrop } from '../../actions/dismissOnBackdrop.js';
     import { decodeBarcodeFromFile, decodeBarcodeFromDataUrl } from '../../services/qrScannerService.js';
     import { showNotification } from '../../../utils/i18n.js';
 
@@ -191,169 +191,180 @@
 </script>
 
 {#if show}
-    <div
-        class="modal-overlay"
-        role="dialog"
-        aria-modal="true"
-        tabindex="-1"
-        use:dismissOnBackdrop={handleClose}
+    <ModalShell
+        title={title || (activeTab === 'generate' ? $t('qrCodeForUrl') : $t('qrScanTitle'))}
+        contentClass="qr-code-modal"
+        onclose={handleClose}
         onkeydown={handleOverlayKeydown}
     >
-        <div class="modal-content qr-code-modal" role="none" onclick={(e) => e.stopPropagation()}>
-            <div class="modal-header">
-                <h2>{title || (activeTab === 'generate' ? $t('qrCodeForUrl') : $t('qrScanTitle'))}</h2>
-                <button type="button" class="close-modal-btn" title={$tt('close')} onclick={handleClose}>&times;</button
-                >
-            </div>
+        <!-- Tabs: Generate / Scan -->
+        <div class="qr-modal-tabs">
+            <button
+                type="button"
+                class="qr-modal-tab-btn"
+                class:active={activeTab === 'generate'}
+                onclick={() => (activeTab = 'generate')}
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>{$t('qrTabGenerate')}</span>
+            </button>
+            <button
+                type="button"
+                class="qr-modal-tab-btn"
+                class:active={activeTab === 'scan'}
+                onclick={() => (activeTab = 'scan')}
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+                    <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+                    <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+                    <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+                    <line x1="7" y1="12" x2="17" y2="12"></line>
+                </svg>
+                <span>{$t('qrTabScan')}</span>
+            </button>
+        </div>
 
-            <!-- Tabs: Generate / Scan -->
-            <div class="qr-modal-tabs">
-                <button
-                    type="button"
-                    class="qr-modal-tab-btn"
-                    class:active={activeTab === 'generate'}
-                    onclick={() => (activeTab = 'generate')}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="3" width="7" height="7"></rect>
-                        <rect x="14" y="14" width="7" height="7"></rect>
-                        <rect x="3" y="14" width="7" height="7"></rect>
-                    </svg>
-                    <span>{$t('qrTabGenerate')}</span>
-                </button>
-                <button
-                    type="button"
-                    class="qr-modal-tab-btn"
-                    class:active={activeTab === 'scan'}
-                    onclick={() => (activeTab = 'scan')}
-                >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
-                        <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
-                        <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
-                        <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
-                        <line x1="7" y1="12" x2="17" y2="12"></line>
-                    </svg>
-                    <span>{$t('qrTabScan')}</span>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                {#if activeTab === 'generate'}
-                    {#if url}
-                        <div id="qrcode-container" use:qrCodeAction></div>
-                        <p id="qrcode-url-display">{url}</p>
-                    {:else}
-                        <p class="qr-no-url">{$t('noUrlForQr')}</p>
-                    {/if}
+        <div class="modal-body">
+            {#if activeTab === 'generate'}
+                {#if url}
+                    <div id="qrcode-container" use:qrCodeAction></div>
+                    <p id="qrcode-url-display">{url}</p>
                 {:else}
-                    <!-- Scan Tab Content -->
-                    <div class="qr-scanner-content">
-                        <!-- Action buttons for scan methods -->
-                        <div class="qr-scan-actions">
-                            <button
-                                type="button"
-                                class="qr-action-btn primary"
-                                onclick={handleScreenAreaScan}
-                                disabled={isScanning}
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"></path>
-                                    <circle cx="12" cy="12" r="3"></circle>
-                                </svg>
-                                <span>{$t('qrScanScreenArea')}</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="qr-action-btn secondary"
-                                onclick={() => fileInputEl?.click()}
-                                disabled={isScanning}
-                            >
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                >
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                    <polyline points="17 8 12 3 7 8"></polyline>
-                                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                <span>{$t('qrUploadImage')}</span>
-                            </button>
-                            <input
-                                bind:this={fileInputEl}
-                                type="file"
-                                accept="image/*"
-                                class="visually-hidden"
-                                onchange={handleFileSelect}
-                            />
-                        </div>
-
-                        <!-- Drag and Drop Dropzone -->
-                        <div
-                            class="qr-dropzone"
-                            class:dragging={isDragging}
-                            role="button"
-                            aria-label={$t('qrDragDropPlaceholder')}
-                            ondrop={handleDrop}
-                            ondragover={handleDragOver}
-                            ondragleave={handleDragLeave}
-                            onclick={() => fileInputEl?.click()}
-                            onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputEl?.click()}
-                            tabindex="0"
+                    <p class="qr-no-url">{$t('noUrlForQr')}</p>
+                {/if}
+            {:else}
+                <!-- Scan Tab Content -->
+                <div class="qr-scanner-content">
+                    <!-- Action buttons for scan methods -->
+                    <div class="qr-scan-actions">
+                        <button
+                            type="button"
+                            class="qr-action-btn primary"
+                            onclick={handleScreenAreaScan}
+                            disabled={isScanning}
                         >
-                            {#if isScanning}
-                                <div class="qr-scanning-spinner">
-                                    <span>{$t('qrScanningInProgress')}</span>
-                                </div>
-                            {:else}
-                                <svg
-                                    width="32"
-                                    height="32"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="1.5"
-                                >
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21 15 16 10 5 21"></polyline>
-                                </svg>
-                                <p>{$t('qrDragDropPlaceholder')}</p>
-                            {/if}
-                        </div>
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <span>{$t('qrScanScreenArea')}</span>
+                        </button>
 
-                        <!-- Results List -->
-                        {#if scanResults.length > 0}
-                            <div class="qr-results-container">
-                                <h3>{$t('qrResultsTitle')}</h3>
-                                <div class="qr-results-list">
-                                    {#each scanResults as res, i (i)}
-                                        <div class="qr-result-item">
-                                            <div class="qr-result-format-badge">
-                                                {res.format.replace('_', ' ').toUpperCase()}
-                                            </div>
-                                            <div class="qr-result-text" title={res.rawValue}>
-                                                {res.rawValue}
-                                            </div>
-                                            <div class="qr-result-item-actions">
+                        <button
+                            type="button"
+                            class="qr-action-btn secondary"
+                            onclick={() => fileInputEl?.click()}
+                            disabled={isScanning}
+                        >
+                            <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <span>{$t('qrUploadImage')}</span>
+                        </button>
+                        <input
+                            bind:this={fileInputEl}
+                            type="file"
+                            accept="image/*"
+                            class="visually-hidden"
+                            onchange={handleFileSelect}
+                        />
+                    </div>
+
+                    <!-- Drag and Drop Dropzone -->
+                    <div
+                        class="qr-dropzone"
+                        class:dragging={isDragging}
+                        role="button"
+                        aria-label={$t('qrDragDropPlaceholder')}
+                        ondrop={handleDrop}
+                        ondragover={handleDragOver}
+                        ondragleave={handleDragLeave}
+                        onclick={() => fileInputEl?.click()}
+                        onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && fileInputEl?.click()}
+                        tabindex="0"
+                    >
+                        {#if isScanning}
+                            <div class="qr-scanning-spinner">
+                                <span>{$t('qrScanningInProgress')}</span>
+                            </div>
+                        {:else}
+                            <svg
+                                width="32"
+                                height="32"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                            >
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                            <p>{$t('qrDragDropPlaceholder')}</p>
+                        {/if}
+                    </div>
+
+                    <!-- Results List -->
+                    {#if scanResults.length > 0}
+                        <div class="qr-results-container">
+                            <h3>{$t('qrResultsTitle')}</h3>
+                            <div class="qr-results-list">
+                                {#each scanResults as res, i (i)}
+                                    <div class="qr-result-item">
+                                        <div class="qr-result-format-badge">
+                                            {res.format.replace('_', ' ').toUpperCase()}
+                                        </div>
+                                        <div class="qr-result-text" title={res.rawValue}>
+                                            {res.rawValue}
+                                        </div>
+                                        <div class="qr-result-item-actions">
+                                            <button
+                                                type="button"
+                                                class="qr-item-btn"
+                                                title={$tt('copy')}
+                                                onclick={() => copyToClipboard(res.rawValue)}
+                                            >
+                                                <svg
+                                                    width="14"
+                                                    height="14"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                >
+                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                                    ></path>
+                                                </svg>
+                                            </button>
+                                            {#if /^https?:\/\//i.test(res.rawValue)}
                                                 <button
                                                     type="button"
-                                                    class="qr-item-btn"
-                                                    title={$tt('copy')}
-                                                    onclick={() => copyToClipboard(res.rawValue)}
+                                                    class="qr-item-btn primary"
+                                                    title={$tt('openUrl')}
+                                                    onclick={() => openResultUrl(res.rawValue)}
                                                 >
                                                     <svg
                                                         width="14"
@@ -363,46 +374,24 @@
                                                         stroke="currentColor"
                                                         stroke-width="2"
                                                     >
-                                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                                         <path
-                                                            d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
+                                                            d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
                                                         ></path>
+                                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                                        <line x1="10" y1="14" x2="21" y2="3"></line>
                                                     </svg>
                                                 </button>
-                                                {#if /^https?:\/\//i.test(res.rawValue)}
-                                                    <button
-                                                        type="button"
-                                                        class="qr-item-btn primary"
-                                                        title={$tt('openUrl')}
-                                                        onclick={() => openResultUrl(res.rawValue)}
-                                                    >
-                                                        <svg
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            stroke-width="2"
-                                                        >
-                                                            <path
-                                                                d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
-                                                            ></path>
-                                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                                        </svg>
-                                                    </button>
-                                                {/if}
-                                            </div>
+                                            {/if}
                                         </div>
-                                    {/each}
-                                </div>
+                                    </div>
+                                {/each}
                             </div>
-                        {/if}
-                    </div>
-                {/if}
-            </div>
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
-    </div>
+    </ModalShell>
 {/if}
 
 <style>

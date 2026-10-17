@@ -8,6 +8,7 @@
      * every tab already loaded — agrees without a reload.
      */
     import { onMount } from 'svelte';
+    import ToggleSectionHeader from './ToggleSectionHeader.svelte';
 
     const KEY = 'allowRightClickEnabled';
 
@@ -44,22 +45,14 @@
 </script>
 
 <section class="section itg-manage-section">
-    <div class="section-header">
-        <div class="section-header-alignment">
-            <h2 class="section-title" data-i18n="allowRightClickSectionTitle">Right-click and copying</h2>
-            <label class="switch" id="allow-right-click-toggle-label" title={toggleTitle}>
-                <input
-                    type="checkbox"
-                    id="allow-right-click-toggle"
-                    tabindex="0"
-                    aria-label={toggleTitle}
-                    checked={enabled}
-                    onchange={toggle}
-                />
-                <span class="slider"></span>
-            </label>
-        </div>
-    </div>
+    <ToggleSectionHeader
+        titleKey="allowRightClickSectionTitle"
+        title="Right-click and copying"
+        toggleId="allow-right-click-toggle"
+        {toggleTitle}
+        checked={enabled}
+        onchange={toggle}
+    />
     <p class="allow-right-click-desc" data-i18n="allowRightClickDesc"></p>
 </section>
 
