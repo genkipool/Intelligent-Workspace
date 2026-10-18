@@ -259,6 +259,8 @@ describe('Remediation Defects & Defenses Test Suite', () => {
             ITG_WEB_ACTIVITY: {
                 KEYS: { SETTINGS: 'wa:settings' },
                 DEFAULT_SETTINGS: { enabled: true, idleSeconds: 60, countAudible: true, ignoredDomains: [] },
+                isIgnored: (domain, list = []) =>
+                    list.some((entry) => domain === entry || domain.endsWith('.' + entry)),
                 domainOf: (url) => {
                     try {
                         return new URL(url).hostname;

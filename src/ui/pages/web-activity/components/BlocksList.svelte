@@ -138,19 +138,24 @@
                     </div>
 
                     <div class="wa-row-actions wa-block-actions-col">
-                        <button
-                            class="wa-icon-btn"
-                            type="button"
-                            title={$t(pluralKey('webActivitySnoozeWithTime', snoozeMinutes), [String(snoozeMinutes)])}
-                            aria-label={$t(pluralKey('webActivityBlockedSnooze', snoozeMinutes), [
-                                String(snoozeMinutes),
-                            ])}
-                            onclick={() => onSnooze(row.domain)}
-                        >
-                            <svg width="14" height="14" aria-hidden="true" focusable="false"
-                                ><use href="#wa-snooze"></use></svg
+                        <!-- No grace at all is a setting, and the block screen hides its button for it. -->
+                        {#if snoozeMinutes > 0}
+                            <button
+                                class="wa-icon-btn"
+                                type="button"
+                                title={$t(pluralKey('webActivitySnoozeWithTime', snoozeMinutes), [
+                                    String(snoozeMinutes),
+                                ])}
+                                aria-label={$t(pluralKey('webActivityBlockedSnooze', snoozeMinutes), [
+                                    String(snoozeMinutes),
+                                ])}
+                                onclick={() => onSnooze(row.domain)}
                             >
-                        </button>
+                                <svg width="14" height="14" aria-hidden="true" focusable="false"
+                                    ><use href="#wa-snooze"></use></svg
+                                >
+                            </button>
+                        {/if}
                         <button
                             class="wa-icon-btn"
                             type="button"

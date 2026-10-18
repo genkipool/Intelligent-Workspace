@@ -12252,7 +12252,16 @@
     "message": "Maximum daily time limit allowed for this site"
   },
   "webActivityColScheduleDesc": {
-    "message": "Configured time window during which the site is blocked"
+    "message": "Hours during which the site is allowed; outside them it is blocked"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Automatic ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Subdomains"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Also covers every subdomain: google.com would then include mail.google.com and docs.google.com. Off, only the site and its mobile and www versions."
   },
   "webActivityColStateDesc": {
     "message": "Current blocking status or percentage of daily quota used"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Time on these sites is never counted and they never appear in the log."
+    "message": "Time on these sites is never counted and they never appear in the log. Write *.example.com to include all its subdomains."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "Time on these sites is never counted and they never appear in the log",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Everything is stored on this device only. Nothing is ever sent anywhere."
+    "message": "Everything is stored on this device only, unless you turn on sync across browsers. Nothing is sent anywhere else."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Everything is stored on this device only",
+    "message": "Stored on this device only, unless sync across browsers is on",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

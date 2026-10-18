@@ -137,13 +137,13 @@ async function waGetOpenSegment() {
 }
 
 /**
- * Seconds spent on a site today, subdomains included, which is what every limit is
- * measured against — the block rule covers the subdomains too.
+ * Seconds spent on a site today over every host its rule covers, which is what the
+ * limit is measured against — the block rule covers the same hosts.
  */
-async function waUsedToday(domain, now = Date.now()) {
+async function waUsedToday(domain, now = Date.now(), includeSubdomains = false) {
     if (!domain) return 0;
     const day = await waGetDay(ITG_WEB_ACTIVITY.dayKey(now));
-    return ITG_WEB_ACTIVITY.secondsUnder(domain, day.domains);
+    return ITG_WEB_ACTIVITY.secondsUnder(domain, day.domains, includeSubdomains);
 }
 
 /**
@@ -176,16 +176,21 @@ async function waWeekTotals(now = Date.now()) {
 }
 
 /**
- * Seconds spent on a site since Monday, subdomains included, which is what a weekly
- * allowance is measured against.
+ * Seconds spent on a site since Monday over every host its rule covers, which is what
+ * a weekly allowance is measured against.
  */
-async function waUsedThisWeek(domain, now = Date.now()) {
+async function waUsedThisWeek(domain, now = Date.now(), includeSubdomains = false) {
     if (!domain) return 0;
     const keys = ITG_WEB_ACTIVITY.weekDayKeys(now);
     const stored = await chrome.storage.local.get(keys.map((day) => ITG_WEB_ACTIVITY.dayStorageKey(day)));
     return keys.reduce(
         (total, day) =>
-            total + ITG_WEB_ACTIVITY.secondsUnder(domain, stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains),
+            total +
+            ITG_WEB_ACTIVITY.secondsUnder(
+                domain,
+                stored[ITG_WEB_ACTIVITY.dayStorageKey(day)]?.domains,
+                includeSubdomains,
+            ),
         0,
     );
 }
@@ -303,7 +308,7 @@ async function waAudibleContext(settings) {
     }
     if (!tab || tab.incognito) return null;
     const domain = ITG_WEB_ACTIVITY.domainOf(tab?.url);
-    if (!domain || settings.ignoredDomains.includes(domain)) return null;
+    if (!domain || ITG_WEB_ACTIVITY.isIgnored(domain, settings.ignoredDomains)) return null;
     return { domain, tabId: tab.id, url: tab.url, title: tab.title || '' };
 }
 
@@ -345,7 +350,7 @@ async function waResolveActiveContext(settings) {
     // sites read as far quieter than they are.
     const domain = ITG_WEB_ACTIVITY.domainOf(tab?.url);
     if (!domain) return settings.countAudible ? waAudibleContext(settings) : null;
-    if (settings.ignoredDomains.includes(domain)) return null;
+    if (ITG_WEB_ACTIVITY.isIgnored(domain, settings.ignoredDomains)) return null;
     return { domain, tabId: tab.id, url: tab.url, title: tab.title || '' };
 }
 
@@ -419,11 +424,12 @@ async function waSyncNow({ idleSince = null } = {}) {
         // Every limit whose reach includes the site in front, not only one keyed by its
         // exact hostname: a limit on `youtube.com` has to warn and block while the user
         // sits on `m.youtube.com`. The total `waAddTime` returns is the exact hostname's
-        // alone, so the figure a limit is judged on is read back with its subdomains.
+        // alone, so the figure a limit is judged on is read back over its whole reach.
         const limits = await waGetLimits();
         for (const limited of Object.keys(limits)) {
-            if (!ITG_WEB_ACTIVITY.limitCovers(limited, focus)) continue;
-            await waEnforce(limited, await waUsedToday(limited, now), settings, now);
+            const reach = ITG_WEB_ACTIVITY.reachesSubdomains(limits[limited]);
+            if (!ITG_WEB_ACTIVITY.limitCovers(limited, focus, reach)) continue;
+            await waEnforce(limited, await waUsedToday(limited, now, reach), settings, now);
         }
     }
     await waRebuildBlockRules();
@@ -448,12 +454,33 @@ async function waBlockedDomains(now = new Date()) {
                 ITG_WEB_ACTIVITY.evaluate(
                     domain,
                     limits,
-                    ITG_WEB_ACTIVITY.secondsUnder(domain, today.domains),
+                    ITG_WEB_ACTIVITY.secondsUnder(
+                        domain,
+                        today.domains,
+                        ITG_WEB_ACTIVITY.reachesSubdomains(limits[domain]),
+                    ),
                     now,
-                    week ? ITG_WEB_ACTIVITY.secondsUnder(domain, week) : null,
+                    week
+                        ? ITG_WEB_ACTIVITY.secondsUnder(
+                              domain,
+                              week,
+                              ITG_WEB_ACTIVITY.reachesSubdomains(limits[domain]),
+                          )
+                        : null,
                 ).blocked,
         )
         .sort();
+}
+
+/**
+ * What may stand in front of a blocked hostname in its DNR regexFilter: any subdomain
+ * when the rule reaches them, or only the mobile and `www.` forms of the same site —
+ * the same reach `limitCovers` gives the counter.
+ */
+function waHostPrefixPattern(includeSubdomains) {
+    if (includeSubdomains) return '([a-z0-9_-]+\\.)*';
+    const prefixes = ITG_WEB_ACTIVITY.SAME_SITE_PREFIXES.map((prefix) => escapeForRegexFilter(prefix.slice(0, -1)));
+    return `((${prefixes.join('|')})\\.)?`;
 }
 
 /** A hostname as a literal inside a DNR regexFilter. */
@@ -468,7 +495,14 @@ function escapeForRegexFilter(domain) {
  */
 async function waRebuildBlockRules() {
     const domains = await waBlockedDomains();
-    const signature = domains.join('|');
+    const limits = await waGetLimits();
+    const reach = Object.fromEntries(
+        domains.map((domain) => [domain, ITG_WEB_ACTIVITY.reachesSubdomains(limits[domain])]),
+    );
+    // The reach is part of the rule, so a change of it alone has to rewrite them.
+    const signature = domains
+        .map((domain) => (reach[domain] ? ITG_WEB_ACTIVITY.SUBDOMAIN_WILDCARD : '') + domain)
+        .join('|');
     if (waInstalledRuleSignature === null) {
         // The rules outlive the worker, so without this every worker start rewrote them.
         // A browser restart empties session storage, which is right: the block page's
@@ -492,7 +526,7 @@ async function waRebuildBlockRules() {
             redirect: { regexSubstitution: `${blockedPage}?d=${encodeURIComponent(domain)}&u=\\1` },
         },
         condition: {
-            regexFilter: `^(https?://([a-z0-9_-]+\\.)*${escapeForRegexFilter(domain)}(:\\d+)?/.*)$`,
+            regexFilter: `^(https?://${waHostPrefixPattern(reach[domain])}${escapeForRegexFilter(domain)}(:\\d+)?/.*)$`,
             resourceTypes: ['main_frame'],
         },
     }));
@@ -519,16 +553,22 @@ async function waRebuildBlockRules() {
  */
 async function waEnforce(domain, usedToday, settings, now = Date.now()) {
     const limits = await waGetLimits();
-    const usedWeek = Number(limits[domain]?.weeklyLimitSeconds) > 0 ? await waUsedThisWeek(domain, now) : null;
+    const reach = ITG_WEB_ACTIVITY.reachesSubdomains(limits[domain]);
+    const usedWeek = Number(limits[domain]?.weeklyLimitSeconds) > 0 ? await waUsedThisWeek(domain, now, reach) : null;
     const verdict = ITG_WEB_ACTIVITY.evaluate(domain, limits, usedToday, new Date(now), usedWeek);
     if (!verdict.configured) return;
 
     const warnAt = limits[domain]?.notifyAtPercent ?? settings.notifyAtPercent;
     const stamp = `${ITG_WEB_ACTIVITY.dayKey(now)}|${domain}`;
+    // Only while there is still something left to warn about. A site already past its
+    // allowance is either blocked or let through by a snooze, and "almost out of time"
+    // on the way back from "five more minutes" told the user something that stopped
+    // being true before the warning was written.
     if (
         !verdict.blocked &&
         warnAt > 0 &&
         verdict.limitSeconds > 0 &&
+        verdict.remainingSeconds > 0 &&
         verdict.percent >= warnAt &&
         !(await waAlreadyWarned(stamp))
     ) {
@@ -540,19 +580,22 @@ async function waEnforce(domain, usedToday, settings, now = Date.now()) {
             title: getI18nMsg('webActivityLimitNearTitle'),
             message: getI18nMsg('webActivityLimitNearBody', [
                 domain,
-                String(Math.round(verdict.remainingSeconds / 60)),
+                String(Math.max(1, Math.round(verdict.remainingSeconds / 60))),
             ]),
         });
     }
 
-    if (verdict.blocked) await waRedirectOpenTabs(domain);
+    if (verdict.blocked) await waRedirectOpenTabs(domain, reach);
 }
 
-/** Sends every tab already on a blocked site to the block screen. */
-async function waRedirectOpenTabs(domain) {
+/** Sends every tab already on a blocked site — as far as its rule reaches — to the block screen. */
+async function waRedirectOpenTabs(domain, includeSubdomains = false) {
     const blockedPage = chrome.runtime.getURL('src/ui/pages/web-activity/blocked.html');
+    const hosts = includeSubdomains
+        ? [domain, `*.${domain}`]
+        : [domain, ...ITG_WEB_ACTIVITY.SAME_SITE_PREFIXES.map((prefix) => prefix + domain)];
     try {
-        const tabs = await chrome.tabs.query({ url: [`*://${domain}/*`, `*://*.${domain}/*`] });
+        const tabs = await chrome.tabs.query({ url: hosts.map((host) => `*://${host}/*`) });
         await Promise.all(
             tabs.map((tab) => chrome.tabs.update(tab.id, { url: `${blockedPage}?d=${encodeURIComponent(domain)}` })),
         );
@@ -870,9 +913,12 @@ function handleWebActivityGetStatus(message, sendResponse) {
     (async () => {
         const now = Date.now();
         const limits = await waGetLimits();
-        const used = await waUsedToday(message.domain, now);
+        const reach = ITG_WEB_ACTIVITY.reachesSubdomains(limits[message.domain]);
+        const used = await waUsedToday(message.domain, now, reach);
         const usedWeek =
-            Number(limits[message.domain]?.weeklyLimitSeconds) > 0 ? await waUsedThisWeek(message.domain, now) : null;
+            Number(limits[message.domain]?.weeklyLimitSeconds) > 0
+                ? await waUsedThisWeek(message.domain, now, reach)
+                : null;
         sendResponse({
             success: true,
             verdict: ITG_WEB_ACTIVITY.evaluate(message.domain, limits, used, new Date(now), usedWeek),
@@ -932,8 +978,10 @@ function handleWebActivitySnooze(message, sendResponse) {
     waSerial(async () => {
         const settings = await waGetSettings();
         const limits = await waGetLimits();
-        const minutes = Number(message.minutes) || settings.snoozeMinutes;
-        if (!limits[message.domain]) {
+        const minutes = Number(message.minutes) || Number(settings.snoozeMinutes) || 0;
+        // Zero is "no grace at all", which the settings offer; a snooze of no minutes
+        // would only count as a use and lift nothing.
+        if (!limits[message.domain] || minutes <= 0) {
             sendResponse({ success: false });
             return;
         }
@@ -1096,7 +1144,7 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.url) {
         const settings = await waGetSettings();
         const domain = ITG_WEB_ACTIVITY.domainOf(changeInfo.url);
-        if (settings.enabled && domain && !settings.ignoredDomains.includes(domain)) {
+        if (settings.enabled && domain && !ITG_WEB_ACTIVITY.isIgnored(domain, settings.ignoredDomains)) {
             // In the same queue as every other write to the day record: two navigations at
             // once (a restored session) or one landing while a tab switch banks time
             // used to overwrite each other.

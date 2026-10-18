@@ -12232,7 +12232,16 @@
         "message": "Límite de tiempo diario máximo permitido para este sitio"
     },
     "webActivityColScheduleDesc": {
-        "message": "Franja horaria configurada en la que el sitio permanece bloqueado"
+        "message": "Horas en las que el sitio está permitido; fuera de ellas queda bloqueado"
+    },
+    "webActivityCategoryAuto": {
+        "message": "Automática ($1)"
+    },
+    "webActivityIncludeSubdomains": {
+        "message": "Subdominios"
+    },
+    "webActivityIncludeSubdomains_tooltip": {
+        "message": "Cubre también todos los subdominios: google.com incluiría entonces mail.google.com y docs.google.com. Desactivado, solo el sitio y sus versiones móvil y www."
     },
     "webActivityColStateDesc": {
         "message": "Estado actual de bloqueo o porcentaje de cuota diaria consumida"
@@ -12625,7 +12634,7 @@
         "description": "Sitios en los que el reloj no corre nunca"
     },
     "webActivitySettingsIgnoredHint": {
-        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro."
+        "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro. Escribe *.example.com para incluir todos sus subdominios."
     },
     "webActivitySettingsIgnoredHint_tooltip": {
         "message": "El tiempo en estos sitios no se cuenta nunca y no aparecen en el registro",
@@ -12636,10 +12645,10 @@
         "description": "Llévatelos, recupéralos o bórralos"
     },
     "webActivitySettingsDataHint": {
-        "message": "Todo se guarda solo en este dispositivo. No se envía nada a ninguna parte."
+        "message": "Todo se guarda solo en este dispositivo, salvo que actives la sincronización entre navegadores. No se envía nada a ningún otro sitio."
     },
     "webActivitySettingsDataHint_tooltip": {
-        "message": "Todo se guarda solo en este dispositivo",
+        "message": "Se guarda solo en este dispositivo, salvo con la sincronización entre navegadores activada",
         "description": "Texto al pasar el ratón por el control cuya etiqueta es «webActivitySettingsDataHint»."
     },
     "webActivitySettingsSaved": {

@@ -12252,7 +12252,16 @@
     "message": "Maximal erlaubte tägliche Zeit für diese Website"
   },
   "webActivityColScheduleDesc": {
-    "message": "Konfiguriertes Zeitfenster, in dem die Website gesperrt ist"
+    "message": "Zeiten, in denen die Website erlaubt ist; außerhalb davon ist sie gesperrt"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Automatisch ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Subdomains"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Gilt auch für alle Subdomains: google.com umfasst dann auch mail.google.com und docs.google.com. Aus: nur die Website und ihre Mobil- und www-Version."
   },
   "webActivityColStateDesc": {
     "message": "Aktueller Sperrstatus oder verbrauchter Anteil des Tageskontingents"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Die Zeit auf diesen Websites wird nie gezählt und sie erscheinen nie im Protokoll."
+    "message": "Die Zeit auf diesen Websites wird nie gezählt und sie erscheinen nie im Protokoll. Schreibe *.example.com, um alle Subdomains einzuschließen."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "Die Zeit auf diesen Websites wird nie gezählt und sie erscheinen nie im Protokoll",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Alles wird nur auf diesem Gerät gespeichert. Nichts wird jemals irgendwohin gesendet."
+    "message": "Alles wird nur auf diesem Gerät gespeichert, außer du aktivierst die Synchronisierung zwischen Browsern. Nichts wird anderswohin gesendet."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Alles wird nur auf diesem Gerät gespeichert",
+    "message": "Nur auf diesem Gerät gespeichert, außer die Synchronisierung zwischen Browsern ist aktiv",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

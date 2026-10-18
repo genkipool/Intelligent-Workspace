@@ -1056,6 +1056,21 @@ td[data-col='state'] > * {
     font-weight: 600;
 }
 
+.wa-all-sites-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.wa-all-sites-btn:disabled:hover {
+    border-color: var(--border-color);
+}
+
+/* The site of an existing rule is text, not a field: it takes the room the input would. */
+.wa-site-input-row .wa-modal-site {
+    flex: 1;
+    min-width: 0;
+}
+
 .wa-all-sites-btn:focus-visible {
     outline: 2px solid var(--interactive-color);
     outline-offset: 1px;

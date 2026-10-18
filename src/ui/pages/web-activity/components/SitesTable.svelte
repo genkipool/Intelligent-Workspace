@@ -19,7 +19,7 @@
     import { fmtDateShort, fmtDur, fmtHm } from '../../../services/dashboard/format.js';
     import SelectField from '../../../components/common/SelectField.svelte';
     import RuleControls from './RuleControls.svelte';
-    import { categoryOptions } from '../categories.js';
+    import { categoryLabel, categoryOptions } from '../categories.js';
     import { MAX_TABLE_ROWS, SITE_COLUMNS, columnWidths, sortRows } from './siteColumns.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
@@ -103,6 +103,18 @@
         }),
     );
 
+    /**
+     * A site the user filed by hand also offers the way back to the category the
+     * extension works out by itself, named, so it is plain what choosing it means.
+     * The empty value is that choice: it clears the stored one.
+     */
+    const AUTO_CATEGORY = '';
+    const choicesFor = (domain) => {
+        if (!limits[domain]?.category) return categoryChoices;
+        const detected = categoryLabel(WA.categoryOf(domain), customCategories, (key) => $t(key));
+        return [{ value: AUTO_CATEGORY, label: $t('webActivityCategoryAuto', [detected]) }, ...categoryChoices];
+    };
+
     async function setCategory(domain, category) {
         await onSaveLimit(domain, { ...limitOf(domain), category: category || null });
     }
@@ -158,7 +170,7 @@
             value={row.category}
             title={$tt('webActivityColCategoryDesc')}
             ariaLabel={$t('webActivityColCategory')}
-            options={categoryChoices}
+            options={choicesFor(row.domain)}
             onchange={(next) => setCategory(row.domain, next)}
         />
     {:else if column.id === 'visits'}

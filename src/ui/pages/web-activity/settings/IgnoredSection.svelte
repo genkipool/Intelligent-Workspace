@@ -29,7 +29,7 @@
     let error = $state('');
 
     const faviconFor = (domain) =>
-        `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent('https://' + domain)}&size=16`;
+        `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent('https://' + domain.replace(WA.SUBDOMAIN_WILDCARD, ''))}&size=16`;
 
     /**
      * The hostname a typed entry means, or null when it is not a site.
@@ -42,8 +42,17 @@
     function hostOf(raw) {
         const text = raw.trim();
         if (!text) return null;
+        // `*.google.com` is every subdomain of it; `google.com` is the site and its
+        // mobile and `www.` forms. Kept as typed, which is what `WA.isIgnored` reads.
+        if (text.startsWith(WA.SUBDOMAIN_WILDCARD)) {
+            const host = hostOf(text.slice(WA.SUBDOMAIN_WILDCARD.length));
+            return host ? WA.SUBDOMAIN_WILDCARD + host : null;
+        }
         const host = WA.domainOf(text.includes('://') ? text : `https://${text}`);
         if (!host) return null;
+        // A local development server is a site the tracker does record, under one of
+        // these two names, so it has to be possible to leave it out.
+        if (host === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return host;
         return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)*\.[a-z]{2,}$/i.test(host) ? host : null;
     }
 

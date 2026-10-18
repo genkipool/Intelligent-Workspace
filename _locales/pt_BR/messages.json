@@ -12252,7 +12252,16 @@
     "message": "Limite máximo de tempo diário permitido para este site"
   },
   "webActivityColScheduleDesc": {
-    "message": "Intervalo de tempo configurado durante o qual o site fica bloqueado"
+    "message": "Horários em que o site é permitido; fora deles, fica bloqueado"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Automática ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Subdomínios"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Também cobre todos os subdomínios: google.com incluiria então mail.google.com e docs.google.com. Desativado, apenas o site e suas versões móvel e www."
   },
   "webActivityColStateDesc": {
     "message": "Status atual do bloqueio ou porcentagem da cota diária usada"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "O tempo nestes sites nunca é contado e eles nunca aparecem no registro."
+    "message": "O tempo nestes sites nunca é contado e eles nunca aparecem no registro. Escreva *.example.com para incluir todos os seus subdomínios."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "O tempo nestes sites nunca é contado e eles nunca aparecem no registro",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Tudo fica armazenado somente neste dispositivo. Nada é enviado para lugar nenhum."
+    "message": "Tudo fica armazenado somente neste dispositivo, a menos que você ative a sincronização entre navegadores. Nada é enviado para nenhum outro lugar."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Tudo fica armazenado somente neste dispositivo",
+    "message": "Armazenado somente neste dispositivo, a menos que a sincronização entre navegadores esteja ativada",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

@@ -12252,7 +12252,16 @@
     "message": "이 사이트에 허용된 최대 일일 시간 한도"
   },
   "webActivityColScheduleDesc": {
-    "message": "사이트가 차단되는 설정된 시간대"
+    "message": "사이트 사용이 허용되는 시간대 (그 외 시간에는 차단)"
+  },
+  "webActivityCategoryAuto": {
+    "message": "자동 ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "하위 도메인"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "모든 하위 도메인도 포함합니다. google.com이라면 mail.google.com과 docs.google.com도 포함됩니다. 끄면 사이트 자체와 모바일·www 버전만 해당됩니다."
   },
   "webActivityColStateDesc": {
     "message": "현재 차단 상태 또는 사용한 일일 할당량 비율"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "이 사이트에서 보낸 시간은 집계되지 않으며 기록에도 표시되지 않습니다."
+    "message": "이 사이트에서 보낸 시간은 집계되지 않으며 기록에도 표시되지 않습니다. 모든 하위 도메인을 포함하려면 *.example.com이라고 입력하세요."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "이 사이트에서 보낸 시간은 집계되지 않으며 기록에도 표시되지 않습니다",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "모든 데이터는 이 기기에만 저장되며 어디에도 전송되지 않습니다."
+    "message": "브라우저 간 동기화를 켜지 않는 한 모든 데이터는 이 기기에만 저장되며, 그 밖의 곳으로는 전송되지 않습니다."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "모든 데이터는 이 기기에만 저장됩니다",
+    "message": "브라우저 간 동기화를 켜지 않는 한 이 기기에만 저장됩니다",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

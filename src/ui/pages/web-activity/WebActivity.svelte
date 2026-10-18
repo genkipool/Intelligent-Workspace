@@ -83,12 +83,10 @@
     } from '../../services/dashboard/chartTheme.js';
     import { dayKey, fmtDur, fmtH, weekdayNames } from '../../services/dashboard/format.js';
     import { initNumberSpinnerArrows } from '../../../utils/numberSpinner.js';
+    import { openDashboard } from '../../services/dashboard/dashboardPages.js';
     import { DEFAULT_TABLE_PREFS, SITE_TABLE_PREFS_KEY, normalizeTablePrefs } from './components/siteColumns.js';
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
-
-    /** This page, for the panel's "open in a tab" button. */
-    const PAGE_PATH = 'src/ui/pages/web-activity/web-activity.html';
 
     // The palette is already on <html> from the localStorage mirror, so Chart.js can
     // resolve its defaults now rather than after the first paint.
@@ -218,12 +216,12 @@
     /** Every site in the period, before the sidebar filters — the sidebar lists them all. */
     const allSites = $derived(
         aggregateSites(payload.days, dayKeys, payload.limits).filter(
-            (site) => !(payload.settings?.ignoredDomains || []).includes(site.domain),
+            (site) => !WA.isIgnored(site.domain, payload.settings?.ignoredDomains),
         ),
     );
     const allKnownDomains = $derived(
         Array.from(new Set([...allSites.map((s) => s.domain), ...Object.keys(payload.limits || {})])).filter(
-            (d) => !(payload.settings?.ignoredDomains || []).includes(d) && d !== '*',
+            (d) => !WA.isIgnored(d, payload.settings?.ignoredDomains) && d !== '*',
         ),
     );
     const sites = $derived(
@@ -240,7 +238,11 @@
     const hourCounts = $derived(activeSitesPerHour(sites));
     const perDay = $derived(secondsPerDay(payload.days, dayKeys, siteFilter));
     const heatmap = $derived(heatmapCells(payload.days));
-    const rows = $derived(limitRows(payload.limits, payload.days));
+    /** Re-read on the minute as well: a snooze that runs out has to leave the lists by itself. */
+    const rows = $derived.by(() => {
+        minuteTick;
+        return limitRows(payload.limits, payload.days);
+    });
     const verdicts = $derived(Object.fromEntries(rows.map((row) => [row.domain, row.verdict])));
     const hasData = $derived(allSites.length > 0);
 
@@ -289,7 +291,7 @@
     const panelSites = $derived.by(() => {
         minuteTick;
         return aggregateSites(payload.days, daysInPeriod(payload.days, panelPeriod), payload.limits).filter(
-            (site) => !(payload.settings?.ignoredDomains || []).includes(site.domain),
+            (site) => !WA.isIgnored(site.domain, payload.settings?.ignoredDomains),
         );
     });
     const panelTotal = $derived(panelSites.reduce((sum, site) => sum + site.seconds, 0));
@@ -622,6 +624,9 @@
         // A dialog opened on an existing rule asked when it opened, so what it saves is
         // already past the lock; everything else — a switch in a table, a cross in the panel — arrives
         // here unannounced and is checked against what is stored.
+        // "All" with no site known yet has nothing to apply to; written as it was, it
+        // stored a rule for the literal host `*`.
+        if (Array.isArray(domains) && !domains.length) return;
         if (domains && Array.isArray(domains)) {
             // "All" overwrites every rule there is with what the dialog holds, and with no
             // password set nothing else stood between a stray click and losing them.
@@ -645,7 +650,7 @@
         }
 
         if (domains && Array.isArray(domains)) {
-            const response = await saveLimit('*', limit, domains.length ? domains : ['*']);
+            const response = await saveLimit('*', limit, domains);
             if (response?.success) {
                 payload = { ...payload, limits: response.limits };
                 if (announce) showNotification('webActivityLimitsAppliedToAll');
@@ -656,13 +661,7 @@
             return;
         }
 
-        const stripped = WA.normalizeLimit(limit || {});
-        const setsNothing =
-            !stripped.dailyLimitSeconds &&
-            !stripped.weeklyLimitSeconds &&
-            !stripped.blockAlways &&
-            !stripped.schedules.some((schedule) => schedule.start && schedule.end) &&
-            !stripped.category;
+        const setsNothing = !WA.setsRule(limit) && !limit?.category;
         const response = await saveLimit(domain, setsNothing ? null : limit);
         if (response?.success) {
             payload = { ...payload, limits: response.limits };
@@ -708,6 +707,9 @@
     }
 
     async function snooze(domain) {
+        // A grace period of no minutes is the setting for "no grace"; the lists hide
+        // the button for it, and nothing else should be able to ask for one.
+        if (!(Number(payload.settings?.snoozeMinutes) > 0)) return;
         // The grace button is the one that undoes a block on purpose, so it is the one
         // the password was set for; how soon it starts asking is `snoozePasswordAfter`.
         if (
@@ -716,8 +718,8 @@
         ) {
             return;
         }
-        await snoozeLimit(domain);
-        showNotification('webActivitySnoozed');
+        const response = await snoozeLimit(domain);
+        if (response?.success) showNotification('webActivitySnoozed');
         await load();
     }
 
@@ -882,7 +884,12 @@
                         exportedAt: new Date().toISOString(),
                         days: payload.days,
                         limits: payload.limits,
-                        settings: payload.settings,
+                        // Not the lock: its salt and hash are enough to try passwords
+                        // against away from the browser, and the importer keeps the
+                        // lock already in place when a file has none.
+                        settings: Object.fromEntries(
+                            Object.entries(payload.settings || {}).filter(([key]) => key !== 'blockPassword'),
+                        ),
                     },
                     null,
                     2,
@@ -946,6 +953,11 @@
             if (document.visibilityState === 'visible') load();
         };
         document.addEventListener('visibilitychange', onVisibility);
+
+        // The tab does not re-read on its own (see below), but what is snoozed and what
+        // is blocked is a matter of the clock as much as of the record: a snooze that
+        // ran out stayed under "grace" until the page was reloaded.
+        if (!isPanel) minuteTimer = setInterval(() => (minuteTick += 1), 60000);
 
         // The panel sits open beside the browsing it is counting, so it re-reads on
         // its own. A tab does not: it has a refresh button, and a page that reloads
@@ -1079,7 +1091,7 @@
             {activeDomain}
             period={panelPeriod}
             onPeriodChange={selectPanelPeriod}
-            onOpenInTab={() => chrome.tabs.create({ url: chrome.runtime.getURL(PAGE_PATH) })}
+            onOpenInTab={() => openDashboard('webActivity')}
             onOpenSettings={() => (panelSettingsOpen = true)}
         />
 
@@ -1470,7 +1482,7 @@
                                     visits={payload.recent.filter(
                                         (v) =>
                                             (!siteFilter || v.d === siteFilter) &&
-                                            !(payload.settings?.ignoredDomains || []).includes(v.d),
+                                            !WA.isIgnored(v.d, payload.settings?.ignoredDomains),
                                     )}
                                 />
                             </div>
@@ -1500,6 +1512,8 @@
         domain={editingLimit.domain}
         limit={editingLimit.limit}
         initialTab={editingLimit.tab}
+        defaultNotifyAt={payload.settings?.notifyAtPercent ?? WA.DEFAULT_SETTINGS.notifyAtPercent}
+        canApplyToAll={allKnownDomains.length > 0}
         onSave={(domain, limit, applyToAll) => {
             // Only a dialog opened on an existing rule asked for the password on the way
             // in. The "Add rule" one did not, yet the site typed into it can be one that
@@ -1509,7 +1523,10 @@
             if (applyToAll) {
                 commitLimit('*', limit, true, unlocked, allKnownDomains);
             } else {
-                commitLimit(domain, limit, true, unlocked);
+                // The category the site is filed under is not part of the rule, so a
+                // new rule for a site that already has one does not throw it away.
+                const category = limit.category ?? payload.limits[domain]?.category ?? null;
+                commitLimit(domain, { ...limit, category }, true, unlocked);
             }
         }}
         onClose={() => (editingLimit = null)}

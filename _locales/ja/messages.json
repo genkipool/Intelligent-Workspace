@@ -12252,7 +12252,16 @@
     "message": "このサイトに許可される 1 日の最大時間"
   },
   "webActivityColScheduleDesc": {
-    "message": "サイトがブロックされる設定済みの時間帯"
+    "message": "サイトの利用が許可される時間帯（それ以外はブロック）"
+  },
+  "webActivityCategoryAuto": {
+    "message": "自動（$1）"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "サブドメイン"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "すべてのサブドメインも対象にします。google.com なら mail.google.com や docs.google.com も含まれます。オフの場合はサイト本体とモバイル版・www 版のみ。"
   },
   "webActivityColStateDesc": {
     "message": "現在のブロック状態、または 1 日の許容時間の使用率"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "これらのサイトで過ごした時間は計測されず、ログにも表示されません。"
+    "message": "これらのサイトで過ごした時間は計測されず、ログにも表示されません。すべてのサブドメインを含めるには *.example.com と入力します。"
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "これらのサイトで過ごした時間は計測されず、ログにも表示されません",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "すべてこのデバイスにのみ保存されます。外部に送信されることはありません。"
+    "message": "ブラウザ間の同期を有効にしない限り、すべてこのデバイスにのみ保存されます。それ以外の場所に送信されることはありません。"
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "すべてこのデバイスにのみ保存されます",
+    "message": "ブラウザ間の同期を有効にしない限り、このデバイスにのみ保存されます",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

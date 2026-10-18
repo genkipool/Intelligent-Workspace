@@ -18,6 +18,9 @@
     import { fmtHm } from '../../../services/dashboard/format.js';
     import RuleControls from '../components/RuleControls.svelte';
     import RuleActionsMenu from '../components/RuleActionsMenu.svelte';
+    import '../../../../core/services/webActivitySchema.js';
+
+    const WA = globalThis.ITG_WEB_ACTIVITY;
 
     let {
         rows = [],
@@ -190,7 +193,9 @@
                             <td data-col="site" class="td-name" style:text-align="left">
                                 <span class="wa-site-cell" title={row.domain}>
                                     <img class="si-favicon" src={faviconFor(row.domain)} alt="" loading="lazy" />
-                                    <span class="wa-site-name">{row.domain}</span>
+                                    <span class="wa-site-name"
+                                        >{row.limit.includeSubdomains ? WA.SUBDOMAIN_WILDCARD : ''}{row.domain}</span
+                                    >
                                 </span>
                             </td>
 

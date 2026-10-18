@@ -83,14 +83,68 @@ export function snoozeNeedsPassword(lock, usesToday, after) {
 /** Whichever half of a rule this change is about to take away. */
 const hasWindows = (limit) => !!(limit?.blockAlways || (limit?.schedules || []).some((s) => s.start && s.end));
 
+const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
+const DAY_MINUTES = 24 * 60;
+
+const minuteOf = (hhmm) => {
+    const [h, m] = String(hhmm || '0:00')
+        .split(':')
+        .map((n) => parseInt(n, 10) || 0);
+    return h * 60 + m;
+};
+
+/**
+ * Every minute of the week the windows let the site through, as indexes from Sunday
+ * 00:00. Read the way the schema's `isWithinSchedule` reads a window: an overnight one
+ * belongs to the day it starts on, and a window that starts and ends at the same
+ * minute allows nothing.
+ */
+function allowedMinutes(schedules) {
+    const allowed = new Set();
+    for (const window of schedules || []) {
+        if (!window?.start || !window?.end) continue;
+        const start = minuteOf(window.start);
+        const end = minuteOf(window.end);
+        if (start === end) continue;
+        const length = end > start ? end - start : DAY_MINUTES - start + end;
+        const days = Array.isArray(window.days) && window.days.length ? window.days : ALL_DAYS;
+        for (const day of days) {
+            const from = day * DAY_MINUTES + start;
+            for (let offset = 0; offset < length; offset++) allowed.add((from + offset) % (7 * DAY_MINUTES));
+        }
+    }
+    return allowed;
+}
+
+/** Whether `after` lets the site through at some minute `before` did not. */
+function widensWindows(before, after) {
+    if (before.blockAlways) return !after.blockAlways;
+    if (after.blockAlways) return false;
+    const was = allowedMinutes(before.schedules);
+    for (const minute of allowedMinutes(after.schedules)) if (!was.has(minute)) return true;
+    return false;
+}
+
+/**
+ * Whether an allowance that was biting bites less afterwards: switched off, cleared,
+ * raised, or — for the daily one — no longer applying on a day it used to.
+ */
+function loosensAllowance(beforeOn, beforeSeconds, afterOn, afterSeconds) {
+    if (!beforeOn || beforeSeconds <= 0) return false;
+    return !afterOn || afterSeconds <= 0 || afterSeconds > beforeSeconds;
+}
+
 /**
  * Whether going from `before` to `after` loosens the rule, which is the only kind of
  * change the password stands in front of.
  *
  * Deleting the record outright is `after === null`. Anything that makes the rule
- * stricter — a shorter allowance, a new window, switching a paused half back on —
- * goes through untouched: a lock that argued with somebody trying to be stricter with
- * themselves would be a lock nobody keeps.
+ * stricter — a shorter allowance, more days it applies on, fewer allowed hours,
+ * switching a paused half back on — goes through untouched: a lock that argued with
+ * somebody trying to be stricter with themselves would be a lock nobody keeps.
+ *
+ * Only a half that is in force can be loosened. Editing a paused allowance, or the
+ * hours of a paused schedule, changes nothing that is stopping anyone today.
  *
  * @param {object} before The stored rule, normalized.
  * @param {object|null} after What is about to be written, normalized, or null.
@@ -98,12 +152,39 @@ const hasWindows = (limit) => !!(limit?.blockAlways || (limit?.schedules || []).
 export function loosensRule(before, after) {
     if (!before) return false;
     if (after === null) return true;
-    if (before.dailyLimitSeconds > 0 && before.dailyLimitEnabled && !after.dailyLimitEnabled) return true;
-    if (before.weeklyLimitSeconds > 0 && before.weeklyLimitEnabled && !after.weeklyLimitEnabled) return true;
-    if (hasWindows(before) && before.scheduleEnabled && !after.scheduleEnabled) return true;
     if (before.enabled && !after.enabled) return true;
-    if (before.dailyLimitSeconds > 0 && after.dailyLimitSeconds < before.dailyLimitSeconds) return true;
-    if (before.weeklyLimitSeconds > 0 && after.weeklyLimitSeconds < before.weeklyLimitSeconds) return true;
-    if (hasWindows(before) && !hasWindows(after)) return true;
+    // Fewer hosts under the rule: whatever it was stopping on the subdomains, it stops
+    // no more.
+    if (before.enabled && before.includeSubdomains && !after.includeSubdomains) return true;
+
+    if (
+        loosensAllowance(
+            before.dailyLimitEnabled,
+            before.dailyLimitSeconds,
+            after.dailyLimitEnabled,
+            after.dailyLimitSeconds,
+        )
+    )
+        return true;
+    if (
+        before.dailyLimitEnabled &&
+        before.dailyLimitSeconds > 0 &&
+        before.dailyLimitDays.some((day) => !after.dailyLimitDays.includes(day))
+    )
+        return true;
+    if (
+        loosensAllowance(
+            before.weeklyLimitEnabled,
+            before.weeklyLimitSeconds,
+            after.weeklyLimitEnabled,
+            after.weeklyLimitSeconds,
+        )
+    )
+        return true;
+
+    if (hasWindows(before) && before.scheduleEnabled) {
+        if (!after.scheduleEnabled || !hasWindows(after)) return true;
+        if (widensWindows(before, after)) return true;
+    }
     return false;
 }

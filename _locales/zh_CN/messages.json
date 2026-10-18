@@ -12252,7 +12252,16 @@
     "message": "此网站允许的每日最长时间"
   },
   "webActivityColScheduleDesc": {
-    "message": "已配置的网站拦截时段"
+    "message": "允许访问该网站的时段，其余时间将被拦截"
+  },
+  "webActivityCategoryAuto": {
+    "message": "自动（$1）"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "子域名"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "同时涵盖所有子域名：例如 google.com 将包括 mail.google.com 和 docs.google.com。关闭时仅包括该网站本身及其移动版和 www 版。"
   },
   "webActivityColStateDesc": {
     "message": "当前拦截状态或每日配额的已用百分比"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "在这些网站上花费的时间永远不会被统计，它们也不会出现在日志中。"
+    "message": "在这些网站上花费的时间永远不会被统计，它们也不会出现在日志中。输入 *.example.com 可包含其所有子域名。"
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "在这些网站上花费的时间永远不会被统计，它们也不会出现在日志中",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "所有数据仅存储在此设备上，绝不会发送到任何地方。"
+    "message": "除非开启跨浏览器同步，否则所有数据仅存储在此设备上，不会发送到其他任何地方。"
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "所有数据仅存储在此设备上",
+    "message": "仅存储在此设备上，除非开启了跨浏览器同步",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

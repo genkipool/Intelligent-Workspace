@@ -30,9 +30,18 @@ const WA = globalThis.ITG_WEB_ACTIVITY;
 export function daysInPeriod(days, periodDays, now = Date.now()) {
     const present = Object.keys(days).sort();
     if (!present.length) return [];
-    if (!periodDays) return present;
-    const cutoff = dayKey(now - (periodDays - 1) * 86400000);
-    return present.filter((day) => day >= cutoff);
+    const today = dayKey(now);
+    // "Everything" starts at the first day on record; a period, wherever it says.
+    const first = periodDays ? dayKey(now - (periodDays - 1) * 86400000) : present[0];
+    const keys = [];
+    // Walked by calendar date rather than by adding 24 hours, which lands on the
+    // same day twice, or skips one, across a daylight saving change.
+    const cursor = new Date(dayKeyToTime(first));
+    for (let key = first; key <= today; key = dayKey(cursor.getTime())) {
+        keys.push(key);
+        cursor.setDate(cursor.getDate() + 1);
+    }
+    return keys;
 }
 
 /**
@@ -237,7 +246,8 @@ export function computeKpis({ sites, days, dayKeys, limits, lang, i18n, category
     ).length;
 
     const perDay = secondsPerDay(days, dayKeys);
-    const busiestIndex = perDay.length ? perDay.indexOf(Math.max(...perDay)) : -1;
+    // The period lists its quiet days too, so one with nothing in it is no busiest day.
+    const busiestIndex = perDay.some((seconds) => seconds > 0) ? perDay.indexOf(Math.max(...perDay)) : -1;
     const hours = secondsPerHour(sites);
     const peakHour = hours.some((h) => h > 0) ? hours.indexOf(Math.max(...hours)) : -1;
     const weekdays = secondsPerWeekday(dayKeys, perDay);
@@ -249,7 +259,10 @@ export function computeKpis({ sites, days, dayKeys, limits, lang, i18n, category
     );
     const top = sites[0];
     const categories = aggregateCategories(sites);
-    const blockedCount = Object.values(limits).filter((limit) => limit?.enabled !== false).length;
+    // A record that only files the site under a category is not a limit.
+    const blockedCount = Object.values(limits).filter(
+        (limit) => WA.setsRule(limit) && WA.normalizeLimit(limit).enabled,
+    ).length;
     const hAbbrev = i18n('dashboardFocusH_abbrev');
 
     const accent = 'var(--interactive-color)';
@@ -375,18 +388,23 @@ export function limitRows(limits, days, now = Date.now()) {
         }
     }
     return Object.keys(limits)
-        .map((domain) => ({
-            domain,
-            limit: WA.normalizeLimit(limits[domain]),
-            // Subdomains included, as the worker counts them: the badge has to agree with
-            // the block rule, which covers `m.youtube.com` under a limit on `youtube.com`.
-            verdict: WA.evaluate(
+        .filter((domain) => WA.setsRule(limits[domain]))
+        .map((domain) => {
+            const limit = WA.normalizeLimit(limits[domain]);
+            return {
                 domain,
-                limits,
-                WA.secondsUnder(domain, today),
-                new Date(now),
-                WA.secondsUnder(domain, week),
-            ),
-        }))
+                limit,
+                // Over the rule's whole reach, as the worker counts it: the badge has to
+                // agree with the block rule, which covers `m.youtube.com` under a limit
+                // on `youtube.com`, and every subdomain when the rule says so.
+                verdict: WA.evaluate(
+                    domain,
+                    limits,
+                    WA.secondsUnder(domain, today, limit.includeSubdomains),
+                    new Date(now),
+                    WA.secondsUnder(domain, week, limit.includeSubdomains),
+                ),
+            };
+        })
         .sort((a, b) => b.verdict.usedSeconds - a.verdict.usedSeconds);
 }

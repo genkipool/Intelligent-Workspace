@@ -12252,7 +12252,16 @@
     "message": "Максимальное время в день, разрешенное для этого сайта"
   },
   "webActivityColScheduleDesc": {
-    "message": "Настроенный интервал времени, в течение которого сайт заблокирован"
+    "message": "Часы, когда сайт разрешён; в остальное время он заблокирован"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Автоматически ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Поддомены"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Охватывает и все поддомены: тогда google.com включает mail.google.com и docs.google.com. Если выключено — только сам сайт и его мобильная и www-версии."
   },
   "webActivityColStateDesc": {
     "message": "Текущее состояние блокировки или процент использованного дневного лимита"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Время на этих сайтах не учитывается, и они не появляются в журнале."
+    "message": "Время на этих сайтах не учитывается, и они не появляются в журнале. Напишите *.example.com, чтобы включить все его поддомены."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "Время на этих сайтах не учитывается, и они не появляются в журнале",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Все хранится только на этом устройстве. Ничего никуда не отправляется."
+    "message": "Всё хранится только на этом устройстве, если вы не включите синхронизацию между браузерами. Больше никуда ничего не отправляется."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Все хранится только на этом устройстве",
+    "message": "Хранится только на этом устройстве, если не включена синхронизация между браузерами",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

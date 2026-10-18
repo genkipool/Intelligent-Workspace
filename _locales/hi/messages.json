@@ -12252,7 +12252,16 @@
     "message": "इस साइट के लिए हर दिन की ज़्यादा से ज़्यादा समय सीमा"
   },
   "webActivityColScheduleDesc": {
-    "message": "कॉन्फ़िगर की गई समय-सीमा, जिसके दौरान साइट ब्लॉक रहती है"
+    "message": "वे घंटे जिनमें साइट की अनुमति है; इनके बाहर वह ब्लॉक रहती है"
+  },
+  "webActivityCategoryAuto": {
+    "message": "अपने-आप ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "सबडोमेन"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "सभी सबडोमेन भी शामिल करता है: तब google.com में mail.google.com और docs.google.com भी आएँगे। बंद होने पर सिर्फ़ साइट और उसके मोबाइल व www संस्करण।"
   },
   "webActivityColStateDesc": {
     "message": "ब्लॉक होने की मौजूदा स्थिति या हर दिन के कोटे का इस्तेमाल हुआ प्रतिशत"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "इन साइटों पर बिताया गया समय कभी नहीं गिना जाता और ये लॉग में कभी नहीं दिखतीं।"
+    "message": "इन साइटों पर बिताया गया समय कभी नहीं गिना जाता और ये लॉग में कभी नहीं दिखतीं। सभी सबडोमेन शामिल करने के लिए *.example.com लिखें।"
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "इन साइटों पर बिताया गया समय कभी नहीं गिना जाता और ये लॉग में कभी नहीं दिखतीं",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "सब कुछ सिर्फ़ इसी डिवाइस पर सेव होता है। कुछ भी कभी कहीं नहीं भेजा जाता।"
+    "message": "सब कुछ सिर्फ़ इसी डिवाइस पर सेव होता है, जब तक आप ब्राउज़रों के बीच सिंक चालू नहीं करते। और कहीं कुछ नहीं भेजा जाता।"
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "सब कुछ सिर्फ़ इसी डिवाइस पर सेव होता है",
+    "message": "सिर्फ़ इसी डिवाइस पर सेव होता है, जब तक ब्राउज़रों के बीच सिंक चालू न हो",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

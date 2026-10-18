@@ -27,7 +27,7 @@
  *   DomainDay = { t: seconds, v: visits, s: sessions, h: { hour: seconds } }
  *   Limit     = { limitEnabled, scheduleEnabled, dailyLimitSeconds, dailyLimitDays,
  *                 weeklyLimitSeconds, blockAlways, schedules: [{start,end,days}],
- *                 notifyAtPercent, snoozeUntil, category }
+ *                 notifyAtPercent, snoozeUntil, category, includeSubdomains }
  * The two halves of a rule switch on and off separately: pausing a night-time window
  * for one evening should not also hand back a daily allowance that was already spent.
  * `enabled` is the old single flag; it is still written, as the OR of the two, so
@@ -444,34 +444,86 @@ const ITG_WEB_ACTIVITY = {
     },
 
     /**
-     * Whether a limit set on `limitDomain` covers the site `domain`: the site itself
-     * or any subdomain of it. This is the same reach the block rule has, so the time
-     * a limit counts and the pages it stops are the same set.
+     * The prefixes that name the same site rather than another one: the mobile
+     * version (`m.youtube.com`) and the `www.` form. A site always reaches these.
      */
-    limitCovers(limitDomain, domain) {
+    SAME_SITE_PREFIXES: ['www.', 'm.', 'mobile.'],
+
+    /** How an entry in the "not recorded" list asks for every subdomain: `*.google.com`. */
+    SUBDOMAIN_WILDCARD: '*.',
+
+    /**
+     * Whether a rule set on `limitDomain` covers the site `domain`.
+     *
+     * Without `includeSubdomains`, the site itself and its mobile and `www.` forms —
+     * `youtube.com` is also `m.youtube.com`, but `google.com` is not `mail.google.com`,
+     * `docs.google.com` and the rest of a company's products. With it, every subdomain,
+     * which is what the user asks for explicitly. The block rule has the same reach, so
+     * the time a limit counts and the pages it stops are the same set.
+     */
+    limitCovers(limitDomain, domain, includeSubdomains = false) {
         if (!limitDomain || !domain) return false;
-        return domain === limitDomain || domain.endsWith('.' + limitDomain);
+        if (domain === limitDomain) return true;
+        if (includeSubdomains) return domain.endsWith('.' + limitDomain);
+        return ITG_WEB_ACTIVITY.SAME_SITE_PREFIXES.some((prefix) => domain === prefix + limitDomain);
+    },
+
+    /** Whether the rule stored for a site reaches its subdomains. */
+    reachesSubdomains(limit) {
+        return !!limit && ITG_WEB_ACTIVITY.normalizeLimit(limit).includeSubdomains;
     },
 
     /**
-     * Seconds a limit on `domain` is measured against: the site's own time plus its
-     * subdomains'. Time is recorded per hostname (`m.youtube.com` apart from
-     * `youtube.com`, which the dashboard shows as two rows), but the block rule for
-     * `youtube.com` also stops `m.youtube.com`, so an allowance counting only the
-     * exact key could be spent forever on a subdomain it blocks.
+     * Seconds a limit on `domain` is measured against: the time of every host it
+     * covers (see `limitCovers`). Time is recorded per hostname (`m.youtube.com` apart
+     * from `youtube.com`, which the dashboard shows as two rows), but the block rule
+     * for `youtube.com` also stops `m.youtube.com`, so an allowance counting only the
+     * exact key could be spent forever on a host it blocks.
      *
      * @param {string} domain
      * @param {object} perSite either a day's `domains` record (entries with `t`) or a
      *   plain `{ domain: seconds }` map such as a week's totals.
+     * @param {boolean} [includeSubdomains] The rule's reach.
      */
-    secondsUnder(domain, perSite) {
+    secondsUnder(domain, perSite, includeSubdomains = false) {
         if (!domain || !perSite) return 0;
         let total = 0;
         for (const [site, value] of Object.entries(perSite)) {
-            if (!ITG_WEB_ACTIVITY.limitCovers(domain, site)) continue;
+            if (!ITG_WEB_ACTIVITY.limitCovers(domain, site, includeSubdomains)) continue;
             total += (typeof value === 'number' ? value : value?.t) || 0;
         }
         return total;
+    },
+
+    /**
+     * Whether a site is left off the record. An entry reaches what a rule does: the
+     * site and its mobile and `www.` forms, or every subdomain when it is written
+     * `*.google.com`.
+     */
+    isIgnored(domain, ignoredDomains = []) {
+        if (!domain || !Array.isArray(ignoredDomains)) return false;
+        const wildcard = ITG_WEB_ACTIVITY.SUBDOMAIN_WILDCARD;
+        return ignoredDomains.some((entry) =>
+            typeof entry === 'string' && entry.startsWith(wildcard)
+                ? ITG_WEB_ACTIVITY.limitCovers(entry.slice(wildcard.length), domain, true)
+                : ITG_WEB_ACTIVITY.limitCovers(entry, domain, false),
+        );
+    },
+
+    /**
+     * Whether a stored record sets up a rule at all: an allowance, a block or an
+     * allowed window. A record can also hold only the category the user picked for
+     * the site, which files it somewhere but limits nothing, and must not be counted
+     * or shown as a rule.
+     */
+    setsRule(limit) {
+        if (!limit) return false;
+        return (
+            Number(limit.dailyLimitSeconds) > 0 ||
+            Number(limit.weeklyLimitSeconds) > 0 ||
+            !!limit.blockAlways ||
+            (Array.isArray(limit.schedules) && limit.schedules.some((s) => s && s.start && s.end))
+        );
     },
 
     /** An empty per-day record for a site. */
@@ -536,6 +588,17 @@ const ITG_WEB_ACTIVITY = {
             blockAlways,
             schedules,
             notifyAtPercent: limit.notifyAtPercent === undefined ? null : limit.notifyAtPercent,
+            /**
+             * Whether the rule also covers every subdomain (see `limitCovers`). Rules
+             * stored before this choice existed always did, so a rule without the field
+             * keeps doing so: a limit that quietly stopped covering a subdomain it used
+             * to block would be loosened without anyone having asked. A record that is
+             * not a rule at all — only a category — starts without it.
+             */
+            includeSubdomains:
+                limit.includeSubdomains === undefined
+                    ? ITG_WEB_ACTIVITY.setsRule(limit)
+                    : limit.includeSubdomains === true,
             snoozeUntil: Number(limit.snoozeUntil) || 0,
             category: limit.category || null,
         };
@@ -590,7 +653,8 @@ const ITG_WEB_ACTIVITY = {
         const raw = limits?.[domain];
         const verdict = {
             domain,
-            configured: !!raw,
+            // A record holding only a category limits nothing.
+            configured: ITG_WEB_ACTIVITY.setsRule(raw),
             blocked: false,
             reason: null,
             limitSeconds: 0,

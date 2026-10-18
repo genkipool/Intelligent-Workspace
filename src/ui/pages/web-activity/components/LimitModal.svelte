@@ -22,10 +22,20 @@
 
     const WA = globalThis.ITG_WEB_ACTIVITY;
 
-    let { domain = '', limit = null, initialTab = 'daily', onSave, onClose } = $props();
+    let {
+        domain = '',
+        limit = null,
+        initialTab = 'daily',
+        /** The warning threshold from the settings, which a rule follows unless it sets its own. */
+        defaultNotifyAt = 80,
+        /** Whether "All" has any site to apply to. */
+        canApplyToAll = true,
+        onSave,
+        onClose,
+    } = $props();
 
     // The rule as it stood when the dialog opened: the fields below are a draft seeded from it.
-    const opening = untrack(() => ({ domain, limit, initialTab }));
+    const opening = untrack(() => ({ domain, limit, initialTab, defaultNotifyAt }));
     const base = WA.normalizeLimit(opening.limit || {});
     const isNew = !opening.domain;
     const storedWindows = base.schedules.filter((schedule) => schedule.start && schedule.end);
@@ -41,9 +51,23 @@
     let dailyTime = $state(secondsToHhMm(base.dailyLimitSeconds));
     let weeklyTime = $state(secondsToHhMm(base.weeklyLimitSeconds, 168));
     let dailyDays = $state([...base.dailyLimitDays]);
-    let notifyAtPercent = $state(base.notifyAtPercent ?? 0);
+    /**
+     * A rule with no threshold of its own follows the one in the settings, so that is
+     * what the field shows. It is only written to the rule once it is changed: a copy
+     * of the default would stop following the settings the day they change, and 0 —
+     * what this used to start at — is "never warn", not "the usual".
+     */
+    const inheritedNotifyAt = Number(opening.defaultNotifyAt) || 0;
+    let notifyAtPercent = $state(base.notifyAtPercent ?? inheritedNotifyAt);
 
     let hasClearedWindows = $state(false);
+    /**
+     * Whether the windows on screen are the 09:00-18:00 one the schedule tab puts up
+     * by itself so there is something to edit. Merely looking at that tab is not
+     * asking for it: it is saved only if it was touched or Apply is pressed with the
+     * schedule tab in front.
+     */
+    let windowsArePlaceholder = $state(!storedWindows.length && opening.initialTab === 'schedule');
     let windows = $state(
         storedWindows.length
             ? storedWindows.map((schedule) => ({
@@ -55,6 +79,16 @@
               ? [blankWindow()]
               : [],
     );
+
+    /**
+     * Whether the rule reaches every subdomain, or only the site and its mobile and
+     * `www.` forms (see `limitCovers` in the schema). Off for a new rule: `google.com`
+     * is not Gmail. Typing `*.google.com` asks for it as well, the way the list of
+     * sites that are not recorded is written.
+     */
+    let includeSubdomains = $state(base.includeSubdomains);
+    const typedWildcard = $derived(isNew && site.trim().startsWith(WA.SUBDOMAIN_WILDCARD));
+    const reachesSubdomains = $derived(includeSubdomains || typedWildcard);
 
     const dailySeconds = $derived(hhMmToSeconds(dailyTime));
     const weeklySeconds = $derived(hhMmToSeconds(weeklyTime));
@@ -71,7 +105,11 @@
      * already telling the user off for an empty field is a dialog that tells them off
      * for opening it.
      */
-    const siteCheck = $derived(isNew && !applyToAll ? validateSite(site) : { domain, errorKey: '' });
+    const siteCheck = $derived(
+        isNew && !applyToAll
+            ? validateSite(typedWildcard ? site.trim().slice(WA.SUBDOMAIN_WILDCARD.length) : site)
+            : { domain, errorKey: '' },
+    );
     const siteError = $derived(isNew && !applyToAll && site.trim() && siteCheck.errorKey ? $t(siteCheck.errorKey) : '');
 
     /** A window that ends before it starts runs past midnight, which is worth saying. */
@@ -87,6 +125,17 @@
         requestAnimationFrame(() => siteInput?.focus());
     });
 
+    const isPlaceholderWindow = (list) =>
+        list.length === 1 &&
+        list[0].start === blankWindow().start &&
+        list[0].end === blankWindow().end &&
+        list[0].days.length === 7;
+
+    /** The windows Apply would store. */
+    const effectiveWindows = $derived(
+        tab !== 'schedule' && windowsArePlaceholder && isPlaceholderWindow(windows) ? [] : windows,
+    );
+
     const hasInvalidWindow = $derived(windows.some((w) => !w.days?.length));
 
     /**
@@ -96,7 +145,7 @@
      * back — emptying it is how it is deleted.
      */
     const setsNothing = $derived(
-        dailySeconds === 0 && weeklySeconds === 0 && !windows.some((window) => window.start && window.end),
+        dailySeconds === 0 && weeklySeconds === 0 && !effectiveWindows.some((window) => window.start && window.end),
     );
 
     function toggleDailyDay(day) {
@@ -104,15 +153,18 @@
     }
 
     function toggleScheduleDay(index, day) {
+        windowsArePlaceholder = false;
         const current = windows[index].days;
         windows[index].days = current.includes(day) ? current.filter((d) => d !== day) : [...current, day];
     }
 
     function addWindow() {
+        windowsArePlaceholder = false;
         windows = [...windows, blankWindow()];
     }
 
     function removeWindow(index) {
+        windowsArePlaceholder = false;
         windows = windows.filter((_, i) => i !== index);
         if (!windows.length) {
             hasClearedWindows = true;
@@ -123,6 +175,7 @@
         tab = nextTab;
         if (nextTab === 'schedule' && !windows.length && !storedWindows.length && !hasClearedWindows) {
             windows = [blankWindow()];
+            windowsArePlaceholder = true;
         }
     }
 
@@ -131,24 +184,29 @@
         if (tab === 'daily' && noDays) return;
         if (tab === 'schedule' && hasInvalidWindow) return;
 
+        const typedNotifyAt = Number(notifyAtPercent) || 0;
         const limitPayload = {
             ...base,
             dailyLimitEnabled: base.dailyLimitEnabled || (base.dailyLimitSeconds === 0 && dailySeconds > 0),
             weeklyLimitEnabled: base.weeklyLimitEnabled || (base.weeklyLimitSeconds === 0 && weeklySeconds > 0),
-            scheduleEnabled: base.scheduleEnabled || (!storedWindows.length && windows.length > 0),
+            scheduleEnabled: base.scheduleEnabled || (!storedWindows.length && effectiveWindows.length > 0),
             blockAlways: false,
+            includeSubdomains: reachesSubdomains,
             dailyLimitSeconds: dailySeconds,
             dailyLimitDays: [...dailyDays],
             weeklyLimitSeconds: weeklySeconds,
-            // Zero is 'no warning for this site'; the general default lives on the
-            // settings page.
-            notifyAtPercent: Number(notifyAtPercent) || 0,
-            schedules: windows
+            // Null follows the settings; a number, 0 included ("never warn for this
+            // site"), is the rule's own. Left at what the settings say, a rule that had
+            // no threshold of its own keeps having none.
+            notifyAtPercent:
+                base.notifyAtPercent === null && typedNotifyAt === inheritedNotifyAt ? null : typedNotifyAt,
+            schedules: effectiveWindows
                 .filter((window) => window.start && window.end && window.days?.length)
                 .map((window) => ({ start: window.start, end: window.end, days: [...window.days] })),
         };
 
         if (applyToAll) {
+            if (!canApplyToAll) return;
             onSave('*', limitPayload, true);
             return;
         }
@@ -201,6 +259,21 @@
     </div>
 {/snippet}
 
+<!-- Next to the site, because it says how much of the site the rule is about. -->
+{#snippet subdomainsToggle(disabled)}
+    <button
+        type="button"
+        class="wa-all-sites-btn"
+        class:selected={reachesSubdomains}
+        aria-pressed={reachesSubdomains}
+        disabled={disabled || typedWildcard}
+        title={$tt('webActivityIncludeSubdomains')}
+        onclick={() => (includeSubdomains = !includeSubdomains)}
+    >
+        {$t('webActivityIncludeSubdomains')}
+    </button>
+{/snippet}
+
 <RuleModalShell
     titleId={tab === 'schedule' ? 'wa-schedule-title' : 'wa-limit-title'}
     title={tab === 'schedule' ? $t('webActivityScheduleModalTitle') : $t('webActivityLimitModalTitle')}
@@ -230,11 +303,13 @@
                     spellcheck="false"
                     title={$tt('webActivityFieldSite')}
                 />
+                {@render subdomainsToggle(applyToAll)}
                 <button
                     type="button"
                     class="wa-all-sites-btn"
                     class:selected={applyToAll}
                     aria-pressed={applyToAll}
+                    disabled={!canApplyToAll && !applyToAll}
                     title={$tt('webActivityApplyToAllSitesHint')}
                     onclick={() => {
                         applyToAll = !applyToAll;
@@ -289,7 +364,10 @@
     {#if !isNew}
         <div class="form-group wa-site-group">
             <div class="field-label">{$t('webActivityFieldSite')}</div>
-            <p class="wa-modal-site">{domain}</p>
+            <div class="wa-site-input-row">
+                <p class="wa-modal-site">{reachesSubdomains ? WA.SUBDOMAIN_WILDCARD : ''}{domain}</p>
+                {@render subdomainsToggle(false)}
+            </div>
         </div>
     {/if}
 

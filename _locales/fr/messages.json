@@ -12252,7 +12252,16 @@
     "message": "Durée quotidienne maximale autorisée pour ce site"
   },
   "webActivityColScheduleDesc": {
-    "message": "Plage horaire configurée pendant laquelle le site est bloqué"
+    "message": "Heures pendant lesquelles le site est autorisé ; en dehors, il est bloqué"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Automatique ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Sous-domaines"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Couvre aussi tous les sous-domaines : google.com inclurait alors mail.google.com et docs.google.com. Désactivé : seulement le site et ses versions mobile et www."
   },
   "webActivityColStateDesc": {
     "message": "État de blocage actuel ou pourcentage du quota quotidien utilisé"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Le temps passé sur ces sites n'est jamais compté et ils n'apparaissent jamais dans le journal."
+    "message": "Le temps passé sur ces sites n'est jamais compté et ils n'apparaissent jamais dans le journal. Écrivez *.example.com pour inclure tous ses sous-domaines."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "Le temps passé sur ces sites n'est jamais compté et ils n'apparaissent jamais dans le journal",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Tout est stocké uniquement sur cet appareil. Rien n'est jamais envoyé nulle part."
+    "message": "Tout est stocké uniquement sur cet appareil, sauf si vous activez la synchronisation entre navigateurs. Rien n’est envoyé ailleurs."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Tout est stocké uniquement sur cet appareil",
+    "message": "Stocké uniquement sur cet appareil, sauf si la synchronisation entre navigateurs est activée",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {

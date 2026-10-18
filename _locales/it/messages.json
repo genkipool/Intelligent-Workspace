@@ -12252,7 +12252,16 @@
     "message": "Limite di tempo giornaliero massimo consentito per questo sito"
   },
   "webActivityColScheduleDesc": {
-    "message": "Fascia oraria configurata durante la quale il sito è bloccato"
+    "message": "Ore in cui il sito è consentito; al di fuori è bloccato"
+  },
+  "webActivityCategoryAuto": {
+    "message": "Automatica ($1)"
+  },
+  "webActivityIncludeSubdomains": {
+    "message": "Sottodomini"
+  },
+  "webActivityIncludeSubdomains_tooltip": {
+    "message": "Copre anche tutti i sottodomini: google.com includerebbe allora mail.google.com e docs.google.com. Disattivato, solo il sito e le sue versioni mobile e www."
   },
   "webActivityColStateDesc": {
     "message": "Stato di blocco attuale o percentuale della quota giornaliera utilizzata"
@@ -12645,7 +12654,7 @@
     "description": "Sites the clock never runs on"
   },
   "webActivitySettingsIgnoredHint": {
-    "message": "Il tempo trascorso su questi siti non viene mai conteggiato e non compaiono mai nel registro."
+    "message": "Il tempo trascorso su questi siti non viene mai conteggiato e non compaiono mai nel registro. Scrivi *.example.com per includere tutti i suoi sottodomini."
   },
   "webActivitySettingsIgnoredHint_tooltip": {
     "message": "Il tempo trascorso su questi siti non viene mai conteggiato e non compaiono mai nel registro",
@@ -12656,10 +12665,10 @@
     "description": "Take it away, bring it back, or delete it"
   },
   "webActivitySettingsDataHint": {
-    "message": "Tutto viene archiviato solo su questo dispositivo. Non viene mai inviato nulla da nessuna parte."
+    "message": "Tutto viene archiviato solo su questo dispositivo, a meno che non attivi la sincronizzazione tra browser. Non viene inviato nulla altrove."
   },
   "webActivitySettingsDataHint_tooltip": {
-    "message": "Tutto viene archiviato solo su questo dispositivo",
+    "message": "Archiviato solo su questo dispositivo, salvo con la sincronizzazione tra browser attiva",
     "description": "Hover text of the control whose label is “webActivitySettingsDataHint”."
   },
   "webActivitySettingsSaved": {
