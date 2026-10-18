@@ -2,6 +2,7 @@ import { mountPage } from '../../mountPage.js';
 import ListGroup from './ListGroup.svelte';
 import '../../../styles/fonts.css';
 import '../../../styles/themes.css';
+import '../../../styles/select.css';
 import './listGroup.css';
 import '../../../styles/pomodoro-panel.css';
 import '../../content-renderer/content-renderer.css';

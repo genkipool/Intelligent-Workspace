@@ -1,5 +1,14 @@
 @charset "UTF-8";
 
+/* The extension's two type families, as tokens every page reads. Pages used to spell
+   out their own font stacks (Inter on one, Segoe UI on another, Open Sans fallbacks
+   on most), so the same text came out in different faces from page to page. Use
+   `var(--sans)` for interface text; `var(--mono)` only where digits must line up. */
+:root {
+    --sans: 'Roboto Flex', system-ui, sans-serif;
+    --mono: 'Roboto Mono', monospace;
+}
+
 @font-face {
     /* Deliberately left at the `block` default: `swap` paints the fallback face first
        and re-lays the text out when the real one arrives, which shows up as the header

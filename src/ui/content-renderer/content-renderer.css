@@ -12,7 +12,7 @@
     /* <-- The correct height calculation for all */
     overflow-y: auto;
     background-color: var(--bg-color);
-    font-family: 'Roboto Flex', 'Open Sans', sans-serif;
+    font-family: var(--sans);
     scroll-behavior: smooth;
 }
 
@@ -176,7 +176,7 @@
     margin-top: 16px;
     font-size: 0.8rem;
     color: var(--text-on-color);
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 10px;
 }
 
@@ -1066,7 +1066,7 @@ body:not([data-theme='dark']) .token.builtin {
     border-top: 1px dashed var(--border-color);
     /* A more subtle separator */
     font-size: 0.8rem;
-    font-family: 'Roboto Flex', 'Open Sans', sans-serif;
+    font-family: var(--sans);
 }
 
 .grounding-container h4 {

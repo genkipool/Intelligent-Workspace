@@ -6,16 +6,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family:
-        'Roboto Flex',
-        'Open Sans',
-        -apple-system,
-        BlinkMacSystemFont,
-        'Segoe UI',
-        Roboto,
-        Ubuntu,
-        Arial,
-        sans-serif;
+    font-family: var(--sans);
 }
 
 ::-webkit-scrollbar {
@@ -325,7 +316,7 @@ button:focus-visible {
 }
 
 .saved-theme-item .theme-label {
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 10px;
     white-space: normal;
     word-wrap: break-word;
@@ -739,7 +730,7 @@ button:focus-visible {
     background-color: var(--bg-color);
     border: 1px solid var(--action-color);
     border-radius: 6px;
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
 }
 
 .schedule-item:hover {
@@ -1247,7 +1238,7 @@ button:focus-visible {
     display: flex;
     align-items: center;
     color: var(--text-color);
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 13px;
 }
 

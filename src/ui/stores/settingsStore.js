@@ -1,43 +1,19 @@
 /* global chrome */
 import { writable } from 'svelte/store';
+import { readMirror, writeMirror } from '../../utils/firstPaintMirror.js';
 
 /**
- * The switches start from what they showed last time, mirrored in localStorage, which
- * can be read before the first paint. chrome.storage is asynchronous: starting from a
- * fixed `false`, the rules switch was drawn off and then slid on in front of the user
- * every time the home page was opened.
+ * The switches start from what they showed last time (`firstPaintMirror.js`): starting
+ * from a fixed `false`, the rules switch was drawn off and then slid on in front of the
+ * user every time the home page was opened.
  */
-const SWITCH_MIRROR_KEY = 'settings-switch-mirror';
+export const hintsEnabled = writable(readMirror('hintsEnabled', true));
+export const allRulesActive = writable(readMirror('allRulesActive', false));
+export const hasRules = writable(readMirror('hasRules', false));
 
-function readSwitchMirror() {
-    try {
-        return JSON.parse(localStorage.getItem(SWITCH_MIRROR_KEY)) || {};
-    } catch {
-        return {};
-    }
-}
-
-const mirrored = readSwitchMirror();
-
-export const hintsEnabled = writable(mirrored.hintsEnabled ?? true);
-export const allRulesActive = writable(mirrored.allRulesActive ?? false);
-export const hasRules = writable(mirrored.hasRules ?? false);
-
-function mirrorSwitch(key) {
-    return (value) => {
-        try {
-            const current = readSwitchMirror();
-            if (current[key] === value) return;
-            localStorage.setItem(SWITCH_MIRROR_KEY, JSON.stringify({ ...current, [key]: value }));
-        } catch {
-            // No localStorage: the switches only lose their head start.
-        }
-    };
-}
-
-hintsEnabled.subscribe(mirrorSwitch('hintsEnabled'));
-allRulesActive.subscribe(mirrorSwitch('allRulesActive'));
-hasRules.subscribe(mirrorSwitch('hasRules'));
+hintsEnabled.subscribe((value) => writeMirror('hintsEnabled', value));
+allRulesActive.subscribe((value) => writeMirror('allRulesActive', value));
+hasRules.subscribe((value) => writeMirror('hasRules', value));
 export const visibilitySettings = writable({});
 export const actionVisibilitySettings = writable({});
 

@@ -9901,10 +9901,6 @@
     "message": "— 当前时段 —",
     "description": "Label for the current session in Pomodoro statistics"
   },
-  "pomoSearchProjectPlaceholder": {
-    "message": "搜索项目...",
-    "description": "Placeholder for project search in Pomodoro settings"
-  },
   "pomodoroStopFinalizeNoPause": {
     "message": "停止即结束任务（不暂停）",
     "description": "Label for the option to finish task on stop without pausing"

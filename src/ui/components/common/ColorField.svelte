@@ -817,7 +817,7 @@
         border: 1px solid var(--border-color, #ccc);
         border-radius: 6px;
         color: var(--text-on-color, #333);
-        font-family: 'Roboto Mono', monospace;
+        font-family: var(--mono);
         font-size: 12px;
         letter-spacing: 0.3px;
         text-align: center;

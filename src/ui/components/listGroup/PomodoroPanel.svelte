@@ -663,32 +663,30 @@
     <div id="pomodoro-stats-panel" class="pomo-stats-panel hidden">
         <div class="pomo-settings-header pomo-stats-header">
             <span class="pomo-stats-title-text">{$t('pomodoroStats') || 'Statistics'}</span>
-            <!-- Project selector (Gemini-style) -->
-            <div class="pomo-project-selector-wrapper" id="pomo-project-selector-wrapper">
-                <button id="pomo-stat-project-btn" class="pomo-project-selector-btn" type="button">
-                    <span id="pomo-stat-project-name">{$t('pomodoroCurrentSessionLabel') || '— current session —'}</span
+            <!-- What the stats show: the extension's select (select.css). The options are
+                 the saved projects, so the controller fills them in. -->
+            <select
+                id="pomo-stat-project-select"
+                class="itg-select itg-select-compact itg-select-centered pomo-stat-project-select"
+                aria-label={$t('pomodoroStats') || 'Statistics'}
+            >
+                <button type="button">
+                    <selectedcontent></selectedcontent>
+                    <svg
+                        class="picker-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="3"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                        focusable="false"
                     >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
                 </button>
-            </div>
-            <div id="pomo-project-dropdown" class="pomo-project-dropdown">
-                <div class="pomo-dropdown-search-container">
-                    <span class="pomo-search-icon">
-                        <svg width="14" height="14" aria-hidden="true" focusable="false">
-                            <use href="#icon-search"></use>
-                        </svg>
-                    </span>
-                    <label for="pomo-project-search-input" class="visually-hidden"
-                        >{$t('pomoSearchProjectPlaceholder')}</label
-                    >
-                    <input
-                        type="search"
-                        id="pomo-project-search-input"
-                        placeholder={$t('pomoSearchProjectPlaceholder') || 'Search project…'}
-                        autocomplete="off"
-                    />
-                </div>
-                <ul id="pomo-project-list"></ul>
-            </div>
+            </select>
         </div>
         <div class="pomo-stats-grid">
             <div class="pomo-stat">

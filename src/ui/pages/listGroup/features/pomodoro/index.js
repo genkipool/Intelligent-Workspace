@@ -162,11 +162,7 @@ export function initPomodoro({ embedded = false } = {}) {
     const importInput = $('pomodoro-import-stats-input');
 
     // Project selector for stats
-    const statProjectBtn = $('pomo-stat-project-btn');
-    const statProjectName = $('pomo-stat-project-name');
-    const statProjectDropdown = $('pomo-project-dropdown');
-    const statProjectList = $('pomo-project-list');
-    const statProjectSearch = $('pomo-project-search-input');
+    const statProjectSelect = $('pomo-stat-project-select');
 
     // The group list needs both: without the toolbar button there is no way to reach
     // the panel, and wiring a panel nobody can open is wasted work. The side panel
@@ -1352,62 +1348,33 @@ export function initPomodoro({ embedded = false } = {}) {
                 name,
                 entries: projectMap[name].sort((a, b) => b.savedAt - a.savedAt),
             }));
-            renderProjectDropdown();
+            renderProjectOptions();
             refreshStatsView();
         } catch (e) {
             console.error('Error loading pomo projects:', e);
         }
     }
 
-    function renderProjectDropdown() {
-        if (!statProjectList) return;
-        statProjectList.innerHTML = '';
+    /**
+     * The options of the stats picker: the current session, the totals once anything is
+     * saved, and each saved project. The value of the current session is '' because an
+     * option's value is a string; `selectedStatProject` keeps it as null.
+     */
+    function renderProjectOptions() {
+        if (!statProjectSelect) return;
+        const views = [[null, localizedMsg('pomodoroCurrentSessionLabel') || '— current session —']];
+        if (savedStatProjects.length > 0) views.push([TOTALS, localizedMsg('pomodoroStatsTotalAll') || 'Totals (all)']);
+        savedStatProjects.forEach((proj) =>
+            views.push([proj.name, `${projectLabel(proj.name)} (${proj.entries.length})`]),
+        );
 
-        // Option: current session
-        const currentItem = document.createElement('li');
-        currentItem.className = 'pomo-project-item' + (selectedStatProject === null ? ' active' : '');
-        const currentBtn = document.createElement('button');
-        currentBtn.type = 'button';
-        currentBtn.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
-        currentBtn.addEventListener('click', () => selectStatView(null));
-        currentItem.appendChild(currentBtn);
-        statProjectList.appendChild(currentItem);
-
-        // Option: totals (sum of all saved projects)
-        if (savedStatProjects.length > 0) {
-            const totalsItem = document.createElement('li');
-            totalsItem.className = 'pomo-project-item' + (selectedStatProject === TOTALS ? ' active' : '');
-            totalsItem.dataset.projectName = TOTALS;
-            const totalsBtn = document.createElement('button');
-            totalsBtn.type = 'button';
-            totalsBtn.textContent = localizedMsg('pomodoroStatsTotalAll') || 'Totals (all)';
-            totalsBtn.addEventListener('click', () => selectStatView(TOTALS));
-            totalsItem.appendChild(totalsBtn);
-            statProjectList.appendChild(totalsItem);
-        }
-
-        savedStatProjects.forEach((proj) => {
-            const projLabel = projectLabel(proj.name);
-            const item = document.createElement('li');
-            item.className = 'pomo-project-item' + (selectedStatProject === proj.name ? ' active' : '');
-            item.dataset.projectName = proj.name;
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = `${projLabel}  (${proj.entries.length})`;
-            btn.addEventListener('click', () => selectStatView(proj.name));
-            item.appendChild(btn);
-            statProjectList.appendChild(item);
-        });
+        // Only the options: the select's first child is its trigger button.
+        statProjectSelect.querySelectorAll('option').forEach((option) => option.remove());
+        views.forEach(([view, label]) => statProjectSelect.appendChild(new Option(label, view ?? '')));
+        statProjectSelect.value = selectedStatProject ?? '';
     }
 
-    // Search filter. Registered once: the list is rebuilt on every refresh, the box is not.
-    statProjectSearch?.addEventListener('input', () => {
-        const term = statProjectSearch.value.toLowerCase().trim();
-        statProjectList?.querySelectorAll('.pomo-project-item').forEach((item) => {
-            const name = (item.dataset.projectName || '').toLowerCase();
-            item.classList.toggle('hidden', !!term && !name.includes(term));
-        });
-    });
+    statProjectSelect?.addEventListener('change', () => selectStatView(statProjectSelect.value || null));
 
     /** Unnamed sessions are stored as the English "Unnamed"; translate only the label. */
     function projectLabel(name) {
@@ -1416,7 +1383,6 @@ export function initPomodoro({ embedded = false } = {}) {
 
     function selectStatView(view) {
         selectedStatProject = view;
-        closeProjectDropdown();
         refreshStatsView();
     }
 
@@ -1433,14 +1399,7 @@ export function initPomodoro({ embedded = false } = {}) {
     function refreshStatsView() {
         if (selectedStatProject !== null && viewedSavedEntries().length === 0) selectedStatProject = null;
         const view = selectedStatProject;
-        if (statProjectName) {
-            statProjectName.textContent =
-                view === null
-                    ? localizedMsg('pomodoroCurrentSessionLabel') || '— current session —'
-                    : view === TOTALS
-                      ? localizedMsg('pomodoroStatsTotal') || 'Totals'
-                      : projectLabel(view);
-        }
+        if (statProjectSelect) statProjectSelect.value = view ?? '';
         if (view === null) {
             if (localState) renderStats(localState);
         } else if (view === TOTALS) {
@@ -1509,21 +1468,6 @@ export function initPomodoro({ embedded = false } = {}) {
         // Aggregate task logs
         const allTaskLogs = allEntries.flatMap((e) => e.taskLog || []);
         renderTaskStatsFromData(allTaskLogs);
-    }
-
-    function openProjectDropdown() {
-        if (!statProjectDropdown) return;
-        statProjectDropdown.classList.add('visible');
-        if (statProjectSearch) {
-            statProjectSearch.value = '';
-            // Clear hidden state
-            statProjectList?.querySelectorAll('.pomo-project-item').forEach((i) => i.classList.remove('hidden'));
-            setTimeout(() => statProjectSearch.focus(), 50);
-        }
-    }
-
-    function closeProjectDropdown() {
-        statProjectDropdown?.classList.remove('visible');
     }
 
     // ─── Note counter management ────────────────────────────────
@@ -1654,10 +1598,7 @@ export function initPomodoro({ embedded = false } = {}) {
         if (opening) {
             otherPanelEl.classList.add('hidden');
             otherBtn.classList.remove('active-panel');
-            if (panelEl === statsPanel) {
-                loadSavedProjects();
-                renderProjectDropdown();
-            }
+            if (panelEl === statsPanel) loadSavedProjects();
         }
     }
     settingsBtn?.addEventListener('click', () => toggleSubPanel(settingsPanel, settingsBtn, statsPanel, statsBtn));
@@ -2025,22 +1966,6 @@ export function initPomodoro({ embedded = false } = {}) {
             tiempoClock = null;
         }
     }
-
-    // ─── Project dropdown toggle ────────────────────────────────
-    statProjectBtn?.addEventListener('click', () => {
-        const isVisible = statProjectDropdown?.classList.contains('visible');
-        if (isVisible) {
-            closeProjectDropdown();
-        } else {
-            renderProjectDropdown();
-            openProjectDropdown();
-        }
-    });
-    document.addEventListener('click', (e) => {
-        if (!statProjectBtn?.contains(e.target) && !statProjectDropdown?.contains(e.target)) {
-            closeProjectDropdown();
-        }
-    });
 
     // ─── Controls ──────────────────────────────────────────────
     startBtn?.addEventListener('click', async () => {
@@ -2615,6 +2540,8 @@ export function initPomodoro({ embedded = false } = {}) {
     // ─── Init ───────────────────────────────────────────────────
     initPomoTiempoCalendar();
     updateUnitTooltips();
+    // The picker has the current session to show before the saved projects are read.
+    renderProjectOptions();
     (async () => {
         const {
             pomodoroPanelOpen,

@@ -9901,10 +9901,6 @@
     "message": "— मौजूदा सेशन —",
     "description": "Label for the current session in Pomodoro statistics"
   },
-  "pomoSearchProjectPlaceholder": {
-    "message": "प्रोजेक्ट खोजें...",
-    "description": "Placeholder for project search in Pomodoro settings"
-  },
   "pomodoroStopFinalizeNoPause": {
     "message": "बंद करने से टास्क खत्म हो जाता है (रुकता नहीं)",
     "description": "Label for the option to finish task on stop without pausing"

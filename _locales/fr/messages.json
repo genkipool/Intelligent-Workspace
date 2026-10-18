@@ -9901,10 +9901,6 @@
     "message": "— session en cours —",
     "description": "Label for the current session in Pomodoro statistics"
   },
-  "pomoSearchProjectPlaceholder": {
-    "message": "Rechercher un projet...",
-    "description": "Placeholder for project search in Pomodoro settings"
-  },
   "pomodoroStopFinalizeNoPause": {
     "message": "Arrêter termine la tâche (sans pause)",
     "description": "Label for the option to finish task on stop without pausing"

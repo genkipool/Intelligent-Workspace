@@ -9901,10 +9901,6 @@
     "message": "— 현재 세션 —",
     "description": "Label for the current session in Pomodoro statistics"
   },
-  "pomoSearchProjectPlaceholder": {
-    "message": "프로젝트 검색...",
-    "description": "Placeholder for project search in Pomodoro settings"
-  },
   "pomodoroStopFinalizeNoPause": {
     "message": "정지하면 작업이 종료됩니다(일시중지 없음)",
     "description": "Label for the option to finish task on stop without pausing"

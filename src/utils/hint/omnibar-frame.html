@@ -15,11 +15,13 @@
                 overflow: hidden;
             }
             /* On the page the bar inherited whatever font the site had; here there is no
-               site, and the default would be a serif. This is the hints' own stack. */
+               site, and the default would be a serif. It is an extension page, so it
+               wears the extension's face like every other one. */
             body {
-                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-family: var(--sans);
             }
         </style>
+        <link rel="stylesheet" href="../../styles/fonts.css" />
     </head>
     <body>
         <script src="../languages.js"></script>

@@ -255,7 +255,7 @@ li.shortcuts-grid .command-description-wrapper .command-description {
 }
 
 .command-keys {
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-weight: bold;
     font-size: 13px;
     color: var(--text-on-color);
@@ -805,7 +805,7 @@ input.itg-input-error:focus {
 }
 
 .edit-input-keys {
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-weight: bold;
     text-align: center;
 }
@@ -1118,7 +1118,7 @@ input.itg-input-error {
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px dashed var(--border-color);
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 11px;
     color: var(--text-color);
     opacity: 0.8;
@@ -1794,7 +1794,7 @@ input.itg-input-error {
     border: 1px solid var(--border-color);
     border-radius: 3px;
     padding: 2px 6px;
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 12px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }

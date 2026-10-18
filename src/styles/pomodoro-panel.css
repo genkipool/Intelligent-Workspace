@@ -17,6 +17,13 @@
 
 /* === Outer panel === */
 .pomodoro-panel {
+    /* The panel brings its own type, line height and corner radius rather than taking
+       the page's. Two pages mount it — the group list and the pomodoro side panel —
+       and inheriting from each (line-height normal in one, 1.5 in the other; a page
+       token for the radius) drew the same component at two different sizes. */
+    --pomo-radius: 8px;
+    font-family: var(--sans);
+    line-height: normal;
     background-color: var(--bg-color);
     border-bottom: 1px solid var(--border-color);
 }
@@ -367,7 +374,7 @@ input.pomo-project-edit::placeholder {
     padding: 6px 4px;
     background: transparent;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius, 6px);
+    border-radius: var(--pomo-radius);
     color: var(--text-color);
     cursor: pointer;
     font-size: 0.6rem;
@@ -413,7 +420,7 @@ input.pomo-project-edit::placeholder {
     padding: 4px 6px;
     background: var(--input-bg, var(--bg-color));
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius, 4px);
+    border-radius: var(--pomo-radius);
     color: var(--text-color);
     font-size: 0.75rem;
 }
@@ -792,7 +799,7 @@ input.pomo-project-edit::placeholder {
     display: flex;
     align-items: center;
     color: var(--text-color);
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 12px;
     transition: border-color 0.2s ease;
 }
@@ -984,7 +991,7 @@ input.pomo-project-edit::placeholder {
     background: transparent;
     border: none;
     color: var(--text-on-color);
-    font-family: 'Roboto Mono', monospace;
+    font-family: var(--mono);
     font-size: 1.5rem;
     text-align: center;
     outline: none;
@@ -1110,142 +1117,21 @@ input.pomo-project-edit::placeholder {
     flex-shrink: 0;
 }
 
-/* ─── Project selector wrapper — Gemini model selector style ── */
-.pomo-project-selector-wrapper {
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    opacity: 1;
-}
-
-.pomo-project-selector-btn {
-    background-color: transparent;
-    border: none;
-    color: var(--text-color);
-    padding: 3px 10px;
-    font-size: 0.72rem;
-    font-family: 'Roboto Mono', monospace;
-    cursor: pointer;
-    opacity: 1;
-    transition: background-color 0.2s ease;
-    max-width: 180px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.pomo-project-selector-btn:hover {
-    background-color: var(--bg-color);
-}
-
-/* ─── Dropdown ─────────────────────────────────────────────── */
-.pomo-project-dropdown {
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 12px;
-    background-color: var(--bg-panel-color, var(--bg-color));
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-    z-index: 200;
-    width: 220px;
-    max-height: 200px;
-    overflow-y: auto;
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(-4px);
-    transition:
-        opacity 0.15s ease,
-        transform 0.15s ease;
-}
-
-.pomo-project-dropdown.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-/* Search row inside dropdown */
-.pomo-dropdown-search-container {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    padding: 6px 8px;
-    border-bottom: 1px solid var(--border-color);
-    background-color: var(--bg-color);
-    gap: 6px;
-}
-
-.pomo-search-icon {
-    display: flex;
-    align-items: center;
-    opacity: 0.5;
-    flex-shrink: 0;
-}
-
-#pomo-project-search-input {
-    width: 100%;
-    padding: 5px 8px;
-    font-size: 0.78rem;
-    color: var(--text-color);
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    outline: none;
-    transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
-}
-
-#pomo-project-search-input:focus {
-    border-color: var(--interactive-color);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-color) 25%, transparent);
-}
-
-/* List items — identical to .gemini-model-item */
-#pomo-project-list {
-    list-style: none;
-    margin: 0;
-    padding: 4px;
-}
-
-.pomo-project-item {
-    list-style: none;
-}
-
-.pomo-project-item button {
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text-color);
-    padding: 8px 12px;
-    text-align: left;
-    font-size: 0.78rem;
-    font-family: 'Roboto Mono', monospace;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.pomo-project-item button:hover {
-    background-color: var(--bg-color);
-}
-
-.pomo-project-item.active button {
-    background-color: var(--action-color);
-    color: var(--text-color);
-    font-weight: bold;
-}
-
-.pomo-project-item.hidden {
-    display: none;
+/* ─── What the stats show ───────────────────────── */
+/* The look is the shared select's (select.css); here only where it sits — at the
+   far right of the header — its width, and the normal weight the header's bold would
+   otherwise pass down to it. */
+.pomo-stat-project-select {
+    margin-left: auto;
+    max-width: 200px;
+    font-weight: 400;
 }
 
 /* ─── Task completion stats ─────────────────────── */
 .pomo-task-stats-section {
-    padding: 6px 12px 4px;
+    /* Ends on the same 10px as the stats grid, so the actions row below sits the same
+       distance from whichever of the two comes last. */
+    padding: 6px 12px 10px;
     border-top: 1px solid var(--border-color);
 }
 
@@ -1311,10 +1197,21 @@ input.pomo-project-edit::placeholder {
 }
 
 /* ─── Stats actions row ─────────────────────────── */
+/* The same 12px above and below the buttons: the block above already ends on 10px of
+   its own (plus a pixel of line box under its last line), so this adds only the rest.
+   Centred as a group, 32px apart as they always were, so a language with longer
+   labels moves them out evenly instead of piling the space up on the right. In a
+   narrow column the space between them gives way first (down to 8px), so the longest
+   labels (German, French) still fit on one row. */
 .pomo-stats-actions {
     display: flex;
-    gap: 8px;
-    padding: 0 12px 10px;
+    justify-content: center;
+    gap: clamp(8px, calc(100vw - 340px), 32px);
+    padding: 1px 12px 12px;
+}
+
+.pomo-stats-actions .pomo-clear-btn {
+    margin: 0;
 }
 
 .pomo-export-btn {
@@ -1350,27 +1247,32 @@ input.pomo-project-edit::placeholder {
 }
 
 /* --- A COLUMN NARROWER THAN THE CONTROLS ------------------------
-   The control row is nine buttons, three mode tabs and two rules: it needs 328px and
-   it is `nowrap`, so under that the last buttons — statistics and settings — were
-   simply cut off. Not scrolled to, cut off: the panel's scroller hides overflow on
-   the x axis, which is right for a column and fatal for a row inside it.
+   The control row is twelve 28px buttons and two rules, about 366px, and it stays one
+   row however narrow the column gets: wrapped onto two lines it looked broken. Below
+   its natural width the buttons give way instead, each icon shrinking with its button
+   (`max-width: 100%` against a button allowed to go under its content). With room to
+   spare nothing here applies: a button's basis is its natural size.
 
-   A side panel can be dragged well below that, so the row wraps instead. The tabs
-   take the first line and the actions the second, both centred, and the rules between
-   them go: a divider that no longer divides anything is just a mark. */
-@media (max-width: 340px) {
-    .pomo-row-controls {
-        flex-wrap: wrap;
-        justify-content: center;
-        row-gap: 2px;
-    }
+   Without this the row simply overflowed, and the panel's scroller hides overflow on
+   the x axis — so the last button, the timer's collapse toggle in the side panel, was
+   cut off, worst when a scrollbar took its width out of the column. */
+.pomo-row-controls,
+.pomo-row-controls .pomo-mode-tabs,
+.pomo-row-controls .pomo-actions {
+    min-width: 0;
+}
 
-    .pomo-actions {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+.pomo-row-controls .pomo-mode-tabs,
+.pomo-row-controls .pomo-actions {
+    flex-shrink: 1;
+}
 
-    .pomo-row-controls > .pomo-divider {
-        display: none;
-    }
+.pomo-row-controls button {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.pomo-row-controls button svg {
+    max-width: 100%;
+    height: auto;
 }

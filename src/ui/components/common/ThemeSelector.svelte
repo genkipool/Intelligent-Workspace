@@ -1,12 +1,21 @@
 <script>
     import { t, currentLang, i18nStore, tt } from '../../stores/i18nStore.js';
     import { activeTheme, themeStore } from '../../stores/themeStore.js';
-    import { SUPPORTED_LANGUAGES, LANGUAGE_PAIR_STORAGE_KEY, languagePair } from '../../../utils/i18n.js';
+    import { SUPPORTED_LANGUAGES, LANGUAGE_PAIR_STORAGE_KEY, languagePair, loadMessages } from '../../../utils/i18n.js';
+    import { fitLabel } from '../../actions/fitLabel.js';
+    import { readMirror, writeMirror } from '../../../utils/firstPaintMirror.js';
     import LanguagePicker from './LanguagePicker.svelte';
 
     let { onNavigate } = $props();
 
     const themes = ['light', 'dark', 'system', 'viridian', 'custom'];
+
+    /**
+     * The theme names in English: a translation too long for its button (Spanish
+     * "Viridiano" in a narrow side panel) is shown in English rather than cut short.
+     */
+    let english = $state({});
+    loadMessages('en').then((messages) => (english = messages));
 
     function handleThemeClick(themeName) {
         if (themeName === 'custom') {
@@ -24,7 +33,10 @@
      * languages, and a hover opened it by accident on the way across the header while
      * never opening at all on a touch screen.
      */
-    let pair = $state(languagePair(null));
+    // Started from the pair shown last time, like the rules switch: read from
+    // chrome.storage alone, the switch was drawn on the default pair and then slid
+    // across in front of the user every time the home page was opened.
+    let pair = $state(languagePair(readMirror(LANGUAGE_PAIR_STORAGE_KEY, null)));
     let pairLoaded = $state(false);
     let pickerSide = $state(null);
     let selectorEl = $state(null);
@@ -34,6 +46,7 @@
 
     chrome.storage?.local?.get(LANGUAGE_PAIR_STORAGE_KEY).then((stored) => {
         pair = languagePair(stored?.[LANGUAGE_PAIR_STORAGE_KEY]);
+        writeMirror(LANGUAGE_PAIR_STORAGE_KEY, pair);
         pairLoaded = true;
     });
 
@@ -47,6 +60,7 @@
 
     function savePair(next) {
         pair = next;
+        writeMirror(LANGUAGE_PAIR_STORAGE_KEY, next);
         chrome.storage?.local?.set({ [LANGUAGE_PAIR_STORAGE_KEY]: next });
     }
 
@@ -140,7 +154,7 @@
                     title={$tt(`select${theme.charAt(0).toUpperCase() + theme.slice(1)}Theme`)}
                     onclick={() => handleThemeClick(theme)}
                 >
-                    <span>{$t(theme)}</span>
+                    <span use:fitLabel={{ label: $t(theme), fallback: english[theme]?.message }}></span>
                 </button>
             </div>
         {/each}

@@ -14,8 +14,6 @@
 /* --- DESIGN TOKENS ---------------------------------------------- */
 :root {
     --sidebar-w: 210px;
-    --mono: 'Roboto Mono', monospace;
-    --sans: 'Roboto Flex', system-ui, sans-serif;
     /* Secondary and tertiary text.
        These replace twenty-eight hand-picked `color-mix(... N%, transparent)`
        values that ranged from 40% to 65%. The low end was unreadable in the dark

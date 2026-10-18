@@ -285,7 +285,7 @@
         border: none;
         border-radius: 0;
         color: var(--text-on-color);
-        font-family: 'Roboto Mono', monospace;
+        font-family: var(--mono);
         font-size: 1.5rem;
         font-weight: 400;
         line-height: 1.15;

@@ -198,6 +198,12 @@ selectedcontent {
     }
 }
 
+/* Opened centred under the control instead of flush with its left edge. */
+.itg-select-centered::picker(select) {
+    position-area: bottom;
+    justify-self: anchor-center;
+}
+
 /* --- OPTIONS ----------------------------------------------------- */
 .itg-select option,
 .tag-select option,

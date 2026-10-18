@@ -10147,10 +10147,6 @@
             }
         }
     },
-    "pomoSearchProjectPlaceholder": {
-        "message": "Buscar o crear proyecto...",
-        "description": "Buscar o crear proyecto..."
-    },
     "pomodoroStopFinalizeNoPause": {
         "message": "Detener y guardar sesión",
         "description": "Detener y guardar sesión"
