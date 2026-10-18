@@ -22,6 +22,7 @@
     import { DASHBOARD_PAGES } from '../../../services/dashboard/dashboardPages.js';
     import Icons from '../../../components/Icons.svelte';
     import PanelNavIcons from '../../../components/common/PanelNavIcons.svelte';
+    import ConfirmDialog from '../../../components/common/ConfirmDialog.svelte';
     import SidePanelHeader from '../../../components/common/SidePanelHeader.svelte';
     import KpiGrid from '../../../components/dashboard/KpiGrid.svelte';
     import PeriodChips from '../../../components/common/PeriodChips.svelte';
@@ -206,3 +207,6 @@
 
     <ScrollButtons target={() => listEl} minScroll={10} edge={5} />
 </div>
+
+<!-- The pomodoro panel's "clear all saved sessions" asks through it. -->
+<ConfirmDialog />

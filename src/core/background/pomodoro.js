@@ -87,6 +87,31 @@ async function getRemainingSeconds(state) {
     return Math.max(0, getModeDuration(state.mode, state.settings) - elapsed);
 }
 
+/** How long the current phase has actually run: 0 for one that was never started. */
+async function getElapsedSeconds(state) {
+    const isIdle = !state.isRunning && state.pausedRemaining === null;
+    if (isIdle) return 0;
+    return Math.max(0, getModeDuration(state.mode, state.settings) - (await getRemainingSeconds(state)));
+}
+
+/**
+ * The session stats with the pause that is open right now, if any, closed.
+ *
+ * A pause in a focus phase is interruption time. It is only *counted* when it ends, so
+ * every way out of it (resuming, resetting, skipping, switching mode) has to fold it in
+ * and drop `pausedAt` with it; a stale `pausedAt` left behind is read by the panel as a
+ * pause still going on, and the interruption time keeps climbing with the clock stopped.
+ */
+function closePause(state) {
+    const stats = { ...state.stats };
+    const isPaused = !state.isRunning && state.pausedAt && state.pausedRemaining !== null;
+    if (isPaused && state.mode === 'work') {
+        const pauseSecs = Math.max(0, Math.floor((Date.now() - state.pausedAt) / 1000));
+        stats.totalInterruptionSeconds = (stats.totalInterruptionSeconds || 0) + pauseSecs;
+    }
+    return stats;
+}
+
 function broadcastPomodoro(state, event, completedMode) {
     const msg = { action: 'pomodoroStateUpdate', state, event, completedMode: completedMode || null };
     chrome.runtime.sendMessage(msg).catch(() => {});
@@ -153,37 +178,44 @@ async function playPomodoroSoundBackground(soundType) {
     }
 }
 
-async function onPomodoroComplete(state) {
+/**
+ * Ends the current phase and moves on to the next one.
+ *
+ * Two ways in: the phase ran out (the alarm), or the person skipped it. A skipped phase
+ * is credited with the time it actually ran and nothing more — skipping a pomodoro one
+ * second in is not 25 minutes of focus — and a skipped focus phase is not a pomodoro
+ * done, so it neither counts towards the goal nor earns the long break. It also says
+ * nothing: the sound and the notification are for a phase that finished on its own.
+ */
+async function onPomodoroComplete(state, { skipped = false } = {}) {
     const wasWork = state.mode === 'work';
-    const duration = getModeDuration(state.mode, state.settings);
+    const duration = skipped ? await getElapsedSeconds(state) : getModeDuration(state.mode, state.settings);
+    const countsAsPomodoro = wasWork && !skipped;
 
     // Update stats
-    const newStats = { ...state.stats };
-    if (!newStats.sessionStarted) newStats.sessionStarted = Date.now() - duration * 1000;
+    const newStats = closePause(state);
+    if (!newStats.sessionStarted && duration > 0) newStats.sessionStarted = Date.now() - duration * 1000;
     if (wasWork) {
         newStats.totalFocusSeconds = (newStats.totalFocusSeconds || 0) + duration;
-        newStats.sessionFocusList = [...(newStats.sessionFocusList || []), duration];
+        if (countsAsPomodoro) newStats.sessionFocusList = [...(newStats.sessionFocusList || []), duration];
     } else {
         newStats.totalBreakSeconds = (newStats.totalBreakSeconds || 0) + duration;
     }
 
-    let newCompletedWork = state.completedWork + (wasWork ? 1 : 0);
-    let newCompletedCycles = state.completedCycles + (wasWork ? 1 : 0);
+    const newCompletedWork = state.completedWork + (countsAsPomodoro ? 1 : 0);
+    const newCompletedCycles = state.completedCycles + (countsAsPomodoro ? 1 : 0);
     let nextMode;
     let nextSession = state.currentSession;
 
     if (wasWork) {
-        if (newCompletedWork % state.settings.sessionsBeforeLong === 0) {
-            nextMode = 'long';
-        } else {
-            nextMode = 'short';
-        }
-        nextSession = state.currentSession + 1;
+        const earnedLongBreak = countsAsPomodoro && newCompletedWork % state.settings.sessionsBeforeLong === 0;
+        nextMode = earnedLongBreak ? 'long' : 'short';
+        if (countsAsPomodoro) nextSession = state.currentSession + 1;
     } else {
         nextMode = 'work';
     }
 
-    const allDone = wasWork && newCompletedWork > 0 && newCompletedCycles >= state.settings.endAfter;
+    const allDone = countsAsPomodoro && newCompletedCycles >= state.settings.endAfter;
 
     await clearPomodoroAlarms();
 
@@ -195,6 +227,7 @@ async function onPomodoroComplete(state) {
         isRunning: shouldAutostart,
         startTime: shouldAutostart ? Date.now() : null,
         pausedRemaining: null,
+        pausedAt: null,
         currentSession: allDone ? 1 : nextSession,
         completedWork: allDone ? 0 : newCompletedWork,
         completedCycles: newCompletedCycles, // Keep this to show the goal reached
@@ -208,7 +241,9 @@ async function onPomodoroComplete(state) {
     }
 
     const completedMode = state.mode;
-    broadcastPomodoro(newState, allDone ? 'allDone' : 'completed', completedMode);
+    const event = skipped ? 'skipped' : allDone ? 'allDone' : 'completed';
+    broadcastPomodoro(newState, event, completedMode);
+    if (skipped) return;
 
     // Play sound via offscreen if enabled
     if (state.settings.sound) {

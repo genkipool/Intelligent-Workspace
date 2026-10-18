@@ -58,6 +58,36 @@ export const DEFAULT_WORKER_SETTINGS = {
     projectFolder: '',
 };
 
+/**
+ * The range of every number the clock takes, in the unit its box shows (minutes for the
+ * three durations). The panel's drawer and the dashboard's settings page both read it:
+ * with a range of their own each, a value one of them allowed was out of range in the
+ * other, and its "+" pulled it down to that other maximum.
+ */
+export const POMODORO_LIMITS = {
+    workDuration: { min: 1, max: 180 },
+    shortBreak: { min: 1, max: 120 },
+    longBreak: { min: 1, max: 180 },
+    sessionsBeforeLong: { min: 1, max: 12 },
+    endAfter: { min: 1, max: 99 },
+};
+
+/**
+ * Where a stepper lands after one press: inside the range, but never moved against the
+ * press. A value already past the edge (written before the ranges agreed) stays where it
+ * is on a "+" instead of dropping to the maximum.
+ *
+ * @param {number} value what the box holds now
+ * @param {number} delta +1 or -1
+ * @param {{min: number, max: number}} limits
+ */
+export function stepWithin(value, delta, { min, max }) {
+    const next = Math.min(max, Math.max(min, value + delta));
+    if (delta > 0) return Math.max(value, next);
+    if (delta < 0) return Math.min(value, next);
+    return next;
+}
+
 /** What `pomoLocalSettings` holds, and what an empty profile means. */
 export const DEFAULT_LOCAL_SETTINGS = {
     timerHours: 0,
@@ -95,8 +125,8 @@ export async function readPomodoroSettings() {
  *
  * A patch, not the whole object: the worker merges, so a page that only knows about
  * half of them cannot blank the other half. It answers with the settled state, which
- * is what the caller should redraw from — the worker clamps and the answer is the
- * truth.
+ * is what the caller should redraw from. Saving never touches the clock: a phase under
+ * way keeps running, and keeps the time it has done if its own length changes.
  *
  * @param {object} patch
  * @returns {Promise<object|null>} the whole new settings object, or null if the worker
@@ -138,9 +168,9 @@ export async function savePomodoroMethod(method) {
  * so a caller still redraws from its own writes itself.
  *
  * `running` rides along with `settings` because it comes from the same broadcast and
- * a settings screen needs it: changing a duration clears the worker's alarm, so the
- * controls that would do that are held while the clock is going. Without it a page
- * left open while a session was started elsewhere would still offer them.
+ * a settings screen needs it: the method cannot change while the clock is going, so
+ * those controls are held. Without it a page left open while a session was started
+ * elsewhere would still offer them.
  *
  * @param {(change: {settings?: object, running?: boolean, local?: object, method?: string}) => void} onChange
  * @returns {() => void} unsubscribe

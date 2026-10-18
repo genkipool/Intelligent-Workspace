@@ -9002,6 +9002,22 @@
     "message": "Clear stats",
     "description": "Clear stats button"
   },
+  "pomodoroClearAllConfirm_one": {
+    "message": "Delete the only saved session? This cannot be undone.",
+    "description": "Confirmation before clearing every saved pomodoro session from the stats drawer's Totals view. Form for a count of one."
+  },
+  "pomodoroClearAllConfirm_other": {
+    "message": "Delete all $1 saved sessions? This cannot be undone.",
+    "description": "Confirmation before clearing every saved pomodoro session ($1 = how many). General plural form."
+  },
+  "pomodoroClearAllConfirm_few": {
+    "message": "Delete all $1 saved sessions? This cannot be undone.",
+    "description": "Same, for counts in the CLDR \"few\" category. Same as \"other\" in languages without it."
+  },
+  "pomodoroClearAllConfirm_many": {
+    "message": "Delete all $1 saved sessions? This cannot be undone.",
+    "description": "Same, for counts in the CLDR \"many\" category. Same as \"other\" in languages without it."
+  },
   "pomodoroStatsSessions": {
     "message": "Sessions",
     "description": "Sessions stat label (fully completed pomodoro sets)"

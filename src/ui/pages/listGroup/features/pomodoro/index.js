@@ -1,5 +1,18 @@
 import { showNotification, activeLocale, msg as localizedMsg, pluralKey } from '../../../../../utils/i18n.js';
-import { savePomoStatsToDb, getAllPomoStatsFromDb, clearPomoStatsFromDb } from '../../../../../utils/db.js';
+import {
+    savePomoStatsToDb,
+    savePomoStatsBatchToDb,
+    getAllPomoStatsFromDb,
+    clearPomoStatsFromDb,
+} from '../../../../../utils/db.js';
+import {
+    averageOf,
+    buildPomoBackup,
+    parsePomoStatsFile,
+    PomoStatsFormatError,
+} from '../../../../../utils/pomoStatsFile.js';
+import { stepWithin } from '../../../../services/pomodoroSettingsService.js';
+import { confirmAction } from '../../../../stores/confirmStore.js';
 import { openDashboard } from '../../../../services/dashboard/dashboardPages.js';
 import { escapeHtml } from '../../../../../utils/noteHtml.js';
 
@@ -49,6 +62,11 @@ export function initPomodoro({ embedded = false } = {}) {
     }
     function fmtTime(ts) {
         return ts ? new Date(ts).toLocaleTimeString(activeLocale(), { hour: '2-digit', minute: '2-digit' }) : '—';
+    }
+
+    /** "1 session", "3 sessions", in the extension's language. */
+    function sessionsLabel(count) {
+        return `${count} ${localizedMsg(pluralKey('dashboardSessionWord', count))}`;
     }
 
     function getModeDuration(state) {
@@ -160,7 +178,8 @@ export function initPomodoro({ embedded = false } = {}) {
     let localRemaining = 0;
     let uiInterval = null;
     let lastTickMs = null;
-    let pomodoroNoteCount = 0; // notes created during current session
+    let saveTimer = null; // pending settings save, see schedSave
+    let pomodoroNoteCount = 0; // notes created during current session, mirrored in NOTE_COUNT_KEY
     let pomoMethod = 'pomodoro'; // 'pomodoro' | 'cronometro' | 'temporizador' | 'tiempo'
     let cronometroElapsed = 0; // seconds elapsed in stopwatch mode
     let cronometroRunning = false;
@@ -387,7 +406,9 @@ export function initPomodoro({ embedded = false } = {}) {
     // Register global callback so handleSaveNote can increment the counter
     window._onPomoNoteSaved = () => updateNoteCounter(pomodoroNoteCount + 1);
     let taskCompletionLog = []; // [{name, startTime, endTime, duration, cycle}]
-    let selectedStatProject = null; // null = current session
+    /** What the stats drawer shows: null = current session, TOTALS = every saved one, else a project name. */
+    const TOTALS = '__totals__';
+    let selectedStatProject = null;
     let savedStatProjects = [];
 
     // ─── Local interval (smooth countdown) ─────────────────────
@@ -702,15 +723,14 @@ export function initPomodoro({ embedded = false } = {}) {
         }
     }
 
+    // Locked with `aria-disabled` rather than `disabled`: a disabled button swallows the
+    // click, so the reason it cannot be pressed (the method click handler's notice)
+    // never reached anyone.
     function disableMethodButtons() {
-        methodBtns.forEach((b) => {
-            b.disabled = true;
-        });
+        methodBtns.forEach((b) => b.setAttribute('aria-disabled', 'true'));
     }
     function enableMethodButtons() {
-        methodBtns.forEach((b) => {
-            b.disabled = false;
-        });
+        methodBtns.forEach((b) => b.removeAttribute('aria-disabled'));
     }
 
     // ─── Stopwatch ──────────────────────────────────
@@ -1054,16 +1074,10 @@ export function initPomodoro({ embedded = false } = {}) {
                 timeDisplay.classList.remove('alt-running', 'alt-finished', 'pomo-time-warning');
             }
         }
-        // Update editable project display
-        if (projectDisplay && projectDisplay.tagName === 'INPUT') {
-            if (document.activeElement !== projectDisplay) {
-                projectDisplay.value = state.settings.projectName || '';
-            }
-        }
-        // Sync inline project input
-        if (projectInline && document.activeElement !== projectInline) {
-            projectInline.value = state.settings.projectName || '';
-        }
+        // The settings fields are left alone while an edit waits to be saved: with the
+        // clock running a tick arrives every second carrying the old values, and
+        // writing them back put the old project name in the box `schedSave` reads.
+        if (!isSaveScheduled()) syncProjectAndSettings(state);
 
         // Disable method buttons when pomodoro is running
         if (pomoMethod === 'pomodoro') {
@@ -1086,11 +1100,22 @@ export function initPomodoro({ embedded = false } = {}) {
         // Update unit tooltips with current values
         updateUnitTooltips();
 
-        // Settings sync
-        syncSettingsInputs(state);
-
         // Stats
         if (selectedStatProject === null) renderStats(state);
+    }
+
+    function syncProjectAndSettings(state) {
+        // Editable project display
+        if (projectDisplay && projectDisplay.tagName === 'INPUT') {
+            if (document.activeElement !== projectDisplay) {
+                projectDisplay.value = state.settings.projectName || '';
+            }
+        }
+        // Sync inline project input
+        if (projectInline && document.activeElement !== projectInline) {
+            projectInline.value = state.settings.projectName || '';
+        }
+        syncSettingsInputs(state);
     }
 
     function syncSettingsInputs(state) {
@@ -1118,7 +1143,11 @@ export function initPomodoro({ embedded = false } = {}) {
         const breakSecs = st.totalBreakSeconds || 0;
         const totalSecs = focusSecs + breakSecs;
         let interruptSecs = st.totalInterruptionSeconds || 0;
-        if (!state.isRunning && state.pausedAt && state.mode === 'work') {
+        // A pause still open counts as it goes. Only a real pause: the worker drops
+        // `pausedAt` on reset and on a change of phase, and a stale one would keep this
+        // climbing with the clock stopped.
+        const isPaused = !state.isRunning && state.pausedAt && state.pausedRemaining != null;
+        if (isPaused && state.mode === 'work') {
             interruptSecs += Math.floor((Date.now() - state.pausedAt) / 1000);
         }
 
@@ -1135,10 +1164,7 @@ export function initPomodoro({ embedded = false } = {}) {
         const endAfterSessions = state.settings.endAfter || 8;
         const completedSessions =
             endAfterSessions > 0 ? Math.floor((state.completedCycles || 0) / endAfterSessions) : 0;
-        set(
-            'stat-completed-sessions',
-            completedSessions > 0 ? `${completedSessions} session${completedSessions !== 1 ? 's' : ''}` : '0',
-        );
+        set('stat-completed-sessions', completedSessions > 0 ? sessionsLabel(completedSessions) : '0');
         set('stat-interruptions', state.interruptions || 0);
         set('stat-started', fmtDate(st.sessionStarted));
 
@@ -1200,12 +1226,7 @@ export function initPomodoro({ embedded = false } = {}) {
         set('stat-completed-cycles', entry.completedCycles || 0);
         const endAfterS = entry.endAfter || 8;
         const completedSessionsSaved = endAfterS > 0 ? Math.floor((entry.completedCycles || 0) / endAfterS) : 0;
-        set(
-            'stat-completed-sessions',
-            completedSessionsSaved > 0
-                ? `${completedSessionsSaved} session${completedSessionsSaved !== 1 ? 's' : ''}`
-                : '0',
-        );
+        set('stat-completed-sessions', completedSessionsSaved > 0 ? sessionsLabel(completedSessionsSaved) : '0');
         set('stat-interruptions', entry.interruptions || 0);
         set('stat-started', fmtDate(entry.sessionStarted));
         set('stat-finished', fmtDate(entry.savedAt));
@@ -1230,28 +1251,10 @@ export function initPomodoro({ embedded = false } = {}) {
         }
         if (effPct) effPct.textContent = eff + '%';
 
+        // Only drawn: the session under way, its task log and its note count stay what
+        // they are. They used to be replaced by this entry's, so after a look at another
+        // project, finishing a task, saving or exporting acted on that project instead.
         renderTaskStatsFromData(entry.taskLog || []);
-
-        // Update local state and logs so that the Export button reflects what's being viewed
-        taskCompletionLog = [...(entry.taskLog || [])];
-        pomodoroNoteCount = entry.noteCount || 0;
-
-        localState = {
-            settings: {
-                projectName: entry.projectName || 'Unnamed',
-                projectFolder: entry.projectFolder || '',
-                projectTag: entry.projectTag || '',
-                endAfter: entry.endAfter || 8,
-            },
-            stats: {
-                totalFocusSeconds: entry.totalFocusSeconds || 0,
-                totalBreakSeconds: entry.totalBreakSeconds || 0,
-                totalInterruptionSeconds: entry.totalInterruptionSeconds || 0,
-                sessionStarted: entry.sessionStarted,
-            },
-            completedCycles: entry.completedCycles || 0,
-            interruptions: entry.interruptions || 0,
-        };
     }
 
     function renderTaskStats() {
@@ -1298,12 +1301,11 @@ export function initPomodoro({ embedded = false } = {}) {
     }
 
     // ─── Save stats to IndexedDB ────────────────────────────────
-    async function saveStatsToDb(state) {
-        if (!state) return;
+    /** The session under way as the store keeps it — what Save writes and Export carries. */
+    function buildStatsEntry(state) {
         const st = state.stats || {};
-        const fl = st.sessionFocusList || [];
         const projectN = state.settings.projectName || 'Unnamed';
-        const entry = {
+        return {
             id: `${projectN}_${st.sessionStarted || Date.now()}`,
             projectName: projectN,
             projectFolder: state.settings.projectFolder || '',
@@ -1316,12 +1318,17 @@ export function initPomodoro({ embedded = false } = {}) {
             completedCycles: state.completedCycles || 0,
             endAfter: state.settings.endAfter || 8,
             interruptions: state.interruptions || 0,
-            avgFocus: fl.length > 0 ? Math.round(fl.reduce((a, b) => a + b, 0) / fl.length) : 0,
+            avgFocus: averageOf(st.sessionFocusList || []),
+            sessionFocusList: [...(st.sessionFocusList || [])],
             taskLog: [...taskCompletionLog],
             noteCount: pomodoroNoteCount,
         };
+    }
+
+    async function saveStatsToDb(state) {
+        if (!state) return;
         try {
-            await savePomoStatsToDb(entry);
+            await savePomoStatsToDb(buildStatsEntry(state));
             // Refresh project list
             await loadSavedProjects();
             showNotification('pomodoroStatsSaved', false);
@@ -1346,6 +1353,7 @@ export function initPomodoro({ embedded = false } = {}) {
                 entries: projectMap[name].sort((a, b) => b.savedAt - a.savedAt),
             }));
             renderProjectDropdown();
+            refreshStatsView();
         } catch (e) {
             console.error('Error loading pomo projects:', e);
         }
@@ -1361,62 +1369,84 @@ export function initPomodoro({ embedded = false } = {}) {
         const currentBtn = document.createElement('button');
         currentBtn.type = 'button';
         currentBtn.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
-        currentBtn.addEventListener('click', () => {
-            selectedStatProject = null;
-            if (statProjectName)
-                statProjectName.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
-            closeProjectDropdown();
-            if (localState) renderStats(localState);
-        });
+        currentBtn.addEventListener('click', () => selectStatView(null));
         currentItem.appendChild(currentBtn);
         statProjectList.appendChild(currentItem);
 
         // Option: totals (sum of all saved projects)
         if (savedStatProjects.length > 0) {
             const totalsItem = document.createElement('li');
-            totalsItem.className = 'pomo-project-item' + (selectedStatProject === '__totals__' ? ' active' : '');
-            totalsItem.dataset.projectName = '__totals__';
+            totalsItem.className = 'pomo-project-item' + (selectedStatProject === TOTALS ? ' active' : '');
+            totalsItem.dataset.projectName = TOTALS;
             const totalsBtn = document.createElement('button');
             totalsBtn.type = 'button';
             totalsBtn.textContent = localizedMsg('pomodoroStatsTotalAll') || 'Totals (all)';
-            totalsBtn.addEventListener('click', () => {
-                selectedStatProject = '__totals__';
-                if (statProjectName) statProjectName.textContent = localizedMsg('pomodoroStatsTotal') || 'Totals';
-                closeProjectDropdown();
-                renderTotalsStats();
-            });
+            totalsBtn.addEventListener('click', () => selectStatView(TOTALS));
             totalsItem.appendChild(totalsBtn);
             statProjectList.appendChild(totalsItem);
         }
 
         savedStatProjects.forEach((proj) => {
-            // Unnamed sessions are stored as the English "Unnamed"; translate only the label.
-            const projLabel = proj.name === 'Unnamed' ? localizedMsg('dashboardNoName') || proj.name : proj.name;
+            const projLabel = projectLabel(proj.name);
             const item = document.createElement('li');
             item.className = 'pomo-project-item' + (selectedStatProject === proj.name ? ' active' : '');
             item.dataset.projectName = proj.name;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.textContent = `${projLabel}  (${proj.entries.length})`;
-            btn.addEventListener('click', () => {
-                selectedStatProject = proj.name;
-                if (statProjectName) statProjectName.textContent = projLabel;
-                closeProjectDropdown();
-                if (proj.entries.length > 0) renderSavedStats(proj.entries[0]);
-            });
+            btn.addEventListener('click', () => selectStatView(proj.name));
             item.appendChild(btn);
             statProjectList.appendChild(item);
         });
+    }
 
-        // Search filter
-        if (statProjectSearch) {
-            statProjectSearch.addEventListener('input', () => {
-                const term = statProjectSearch.value.toLowerCase().trim();
-                statProjectList.querySelectorAll('.pomo-project-item').forEach((item) => {
-                    const name = (item.dataset.projectName || '').toLowerCase();
-                    item.classList.toggle('hidden', !!term && !name.includes(term));
-                });
-            });
+    // Search filter. Registered once: the list is rebuilt on every refresh, the box is not.
+    statProjectSearch?.addEventListener('input', () => {
+        const term = statProjectSearch.value.toLowerCase().trim();
+        statProjectList?.querySelectorAll('.pomo-project-item').forEach((item) => {
+            const name = (item.dataset.projectName || '').toLowerCase();
+            item.classList.toggle('hidden', !!term && !name.includes(term));
+        });
+    });
+
+    /** Unnamed sessions are stored as the English "Unnamed"; translate only the label. */
+    function projectLabel(name) {
+        return name === 'Unnamed' ? localizedMsg('dashboardNoName') || name : name;
+    }
+
+    function selectStatView(view) {
+        selectedStatProject = view;
+        closeProjectDropdown();
+        refreshStatsView();
+    }
+
+    /** The saved sessions the drawer is showing; for the current session, none. */
+    function viewedSavedEntries() {
+        if (selectedStatProject === TOTALS) return savedStatProjects.flatMap((p) => p.entries);
+        return savedStatProjects.find((p) => p.name === selectedStatProject)?.entries || [];
+    }
+
+    /**
+     * Draws the drawer for whatever is selected. A selection whose sessions are gone
+     * (cleared here or in the dashboard) falls back to the current session.
+     */
+    function refreshStatsView() {
+        if (selectedStatProject !== null && viewedSavedEntries().length === 0) selectedStatProject = null;
+        const view = selectedStatProject;
+        if (statProjectName) {
+            statProjectName.textContent =
+                view === null
+                    ? localizedMsg('pomodoroCurrentSessionLabel') || '— current session —'
+                    : view === TOTALS
+                      ? localizedMsg('pomodoroStatsTotal') || 'Totals'
+                      : projectLabel(view);
+        }
+        if (view === null) {
+            if (localState) renderStats(localState);
+        } else if (view === TOTALS) {
+            renderTotalsStats();
+        } else {
+            renderSavedStats(viewedSavedEntries()[0]);
         }
     }
 
@@ -1447,7 +1477,7 @@ export function initPomodoro({ embedded = false } = {}) {
         set('stat-total-time', fmtDur(totalTime));
         set('stat-interrupt-time', totalInterrupt > 0 ? fmtDur(totalInterrupt) : '—');
         set('stat-completed-cycles', totalCycles);
-        set('stat-completed-sessions', `${allEntries.length} ${localizedMsg('pomodoroStatsSessions') || 'sessions'}`);
+        set('stat-completed-sessions', sessionsLabel(allEntries.length));
         set('stat-interruptions', totalInterruptions);
         set('stat-avg-focus', avgFocus > 0 ? fmtDur(avgFocus) : '—');
 
@@ -1497,7 +1527,19 @@ export function initPomodoro({ embedded = false } = {}) {
     }
 
     // ─── Note counter management ────────────────────────────────
+    /**
+     * The notes taken in this session. Kept in storage, not only here: the panel is
+     * rebuilt every time it is opened, and the count went back to 0 with the notes and
+     * the session still there. The store also carries it to the other open panel.
+     */
+    const NOTE_COUNT_KEY = 'pomoSessionNoteCount';
+
     function updateNoteCounter(count) {
+        if (count !== pomodoroNoteCount) chrome.storage.local.set({ [NOTE_COUNT_KEY]: count });
+        showNoteCount(count);
+    }
+
+    function showNoteCount(count) {
         pomodoroNoteCount = count;
         if (!noteCounter) return;
         if (count > 0) {
@@ -2260,16 +2302,26 @@ export function initPomodoro({ embedded = false } = {}) {
 
     // Clear stats button
     clearBtn?.addEventListener('click', async () => {
-        stopTick();
-        if (selectedStatProject && selectedStatProject !== null) {
-            // Clear saved stats for this project from DB
-            await clearPomoStatsFromDb(selectedStatProject);
-            await loadSavedProjects();
+        if (selectedStatProject === TOTALS) {
+            // The whole history, which nothing else in the extension can clear — so it
+            // is asked first, with the number of sessions about to go.
+            const count = viewedSavedEntries().length;
+            const accepted = await confirmAction({
+                messageKey: pluralKey('pomodoroClearAllConfirm', count),
+                params: [String(count)],
+                confirmKey: 'delete',
+            });
+            if (!accepted) return;
+            await clearPomoStatsFromDb();
             selectedStatProject = null;
-            if (statProjectName)
-                statProjectName.textContent = localizedMsg('pomodoroCurrentSessionLabel') || '— current session —';
-            if (localState) renderStats(localState);
+            await loadSavedProjects();
+        } else if (selectedStatProject !== null) {
+            // Clear saved stats for this project from DB; the clock is not touched.
+            await clearPomoStatsFromDb(selectedStatProject);
+            selectedStatProject = null;
+            await loadSavedProjects();
         } else {
+            stopTick();
             taskCompletionLog = [];
             updateNoteCounter(0);
             const resp = await chrome.runtime.sendMessage({ action: 'pomodoroClearStats' });
@@ -2277,61 +2329,23 @@ export function initPomodoro({ embedded = false } = {}) {
         }
     });
 
-    // Export stats
+    // Export stats: what the drawer is showing, in the file the dashboard reads too.
     exportBtn?.addEventListener('click', async () => {
-        let stateToExport = localState;
-
-        // If localState is null, try to get it from background
-        if (!stateToExport) {
+        if (selectedStatProject === null && !localState) {
             const resp = await chrome.runtime.sendMessage({ action: 'pomodoroGetState' });
-            if (resp?.state) {
-                stateToExport = resp.state;
-                localState = resp.state;
-            }
+            if (resp?.state) localState = resp.state;
         }
+        const entries =
+            selectedStatProject === null ? (localState ? [buildStatsEntry(localState)] : []) : viewedSavedEntries();
+        if (entries.length === 0) return;
 
-        if (!stateToExport) return;
-
-        const st = stateToExport.stats || {};
-        const data = {
-            project: stateToExport.settings?.projectName || 'Unnamed',
-            exportedAt: new Date().toISOString(),
-            focusTime: fmtDur(st.totalFocusSeconds || 0),
-            breakTime: fmtDur(st.totalBreakSeconds || 0),
-            totalTime: fmtDur((st.totalFocusSeconds || 0) + (st.totalBreakSeconds || 0)),
-            completedCycles: stateToExport.completedCycles || 0,
-            interruptions: stateToExport.interruptions || 0,
-            taskLog: taskCompletionLog,
-            noteCount: pomodoroNoteCount,
-            // The fields above are formatted for a person to read ("1h 20m"), which
-            // the importer cannot turn back into a session. It already knows how to
-            // read a `raw` block, so the numbers travel alongside the summary and the
-            // exported file can be imported again.
-            raw: {
-                stats: {
-                    sessionStarted: st.sessionStarted,
-                    totalFocusSeconds: st.totalFocusSeconds || 0,
-                    totalBreakSeconds: st.totalBreakSeconds || 0,
-                    totalInterruptionSeconds: st.totalInterruptionSeconds || 0,
-                    completedCycles: stateToExport.completedCycles || 0,
-                    interruptions: stateToExport.interruptions || 0,
-                    avgFocus: st.avgFocus || 0,
-                    sessionFocusList: st.sessionFocusList || [],
-                },
-                settings: {
-                    projectName: stateToExport.settings?.projectName || 'Unnamed',
-                    projectFolder: stateToExport.settings?.projectFolder || '',
-                    projectTag: stateToExport.settings?.projectTag || '',
-                },
-            },
-        };
-
+        const name = selectedStatProject === TOTALS ? 'all' : entries[0].projectName || 'Unnamed';
         try {
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(buildPomoBackup(entries), null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            const safeProjectName = (data.project || 'Unnamed').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            const safeProjectName = name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             a.download = `pomodoro_${safeProjectName}_${Date.now()}.json`;
             document.body.appendChild(a); // Crucial for some environments
             a.click();
@@ -2347,113 +2361,21 @@ export function initPomodoro({ embedded = false } = {}) {
         importInput?.click();
     });
 
-    /**
-     * Checks one entry of an imported stats file and returns it in the shape the
-     * dashboard reads, or null when it is not a session at all.
-     *
-     * The dashboard sums these fields without checking them, so a string where a
-     * number belongs turns every total it feeds into `NaN`. Anything that cannot be
-     * read as a session is dropped rather than stored.
-     */
-    function sanitizePomoStatsEntry(entry) {
-        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
-        if (typeof entry.id !== 'string' || !entry.id) return null;
-
-        const num = (value) => {
-            const n = Number(value);
-            return Number.isFinite(n) && n >= 0 ? n : 0;
-        };
-        // A session with no timestamp cannot be placed on any chart, and every one of
-        // them would pile onto the same day.
-        const savedAt = Number(entry.savedAt);
-        if (!Number.isFinite(savedAt) || savedAt <= 0) return null;
-
-        return {
-            id: entry.id,
-            projectName: typeof entry.projectName === 'string' ? entry.projectName : '',
-            projectFolder: typeof entry.projectFolder === 'string' ? entry.projectFolder : '',
-            projectTag: typeof entry.projectTag === 'string' ? entry.projectTag : '',
-            sessionStarted: num(entry.sessionStarted),
-            savedAt,
-            totalFocusSeconds: num(entry.totalFocusSeconds),
-            totalBreakSeconds: num(entry.totalBreakSeconds),
-            totalInterruptionSeconds: num(entry.totalInterruptionSeconds),
-            completedCycles: num(entry.completedCycles),
-            interruptions: num(entry.interruptions),
-            avgFocus: num(entry.avgFocus),
-            sessionFocusList: Array.isArray(entry.sessionFocusList) ? entry.sessionFocusList.map(num) : [],
-        };
-    }
-
     importInput?.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const json = JSON.parse(event.target.result);
-                let entries = [];
-
-                if (Array.isArray(json)) {
-                    entries = json;
-                } else if (json.type === 'pomodoro_backup') {
-                    entries = json.data || [];
-                } else if (json.raw) {
-                    const st = json.raw.stats || {};
-                    const projectN = json.raw.settings?.projectName || 'Unnamed';
-                    entries = [
-                        {
-                            id: `${projectN}_${st.sessionStarted || Date.now()}`,
-                            projectName: projectN,
-                            projectFolder: json.raw.settings?.projectFolder || '',
-                            projectTag: json.raw.settings?.projectTag || '',
-                            sessionStarted: st.sessionStarted,
-                            savedAt: Date.now(),
-                            totalFocusSeconds: st.totalFocusSeconds || 0,
-                            totalBreakSeconds: st.totalBreakSeconds || 0,
-                            totalInterruptionSeconds: st.totalInterruptionSeconds || 0,
-                            completedCycles: st.completedCycles || 0,
-                            interruptions: st.interruptions || 0,
-                            avgFocus: st.avgFocus || 0,
-                            sessionFocusList: st.sessionFocusList || [],
-                        },
-                    ];
-                } else {
-                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
-                }
-
-                if (!Array.isArray(entries) || entries.length === 0) {
-                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
-                }
-
-                // Entries were written with a `savePomoStats` message that no handler
-                // in the worker answers, so nothing was ever stored — and success was
-                // reported all the same. Sessions are saved straight to the database
-                // here, the same way the rest of this file does it.
-                let imported = 0;
-                for (const entry of entries) {
-                    const clean = sanitizePomoStatsEntry(entry);
-                    if (!clean) continue;
-                    await savePomoStatsToDb(clean);
-                    imported++;
-                }
-
-                if (imported === 0) {
-                    throw new Error(localizedMsg('unsupportedFileFormat') || 'Unsupported format');
-                }
-
-                showNotification('pomodoroStatsSaved', false);
-                await loadSavedProjects();
-            } catch (err) {
-                console.error('Import error:', err);
-                // A native alert blocks the page and ignores the theme; the app's own
-                // notification says the same thing in place.
-                showNotification('dashboardErrorLoad', true, [err.message || String(err)]);
-            }
-        };
-        reader.readAsText(file);
         e.target.value = '';
+        try {
+            await savePomoStatsBatchToDb(parsePomoStatsFile(JSON.parse(await file.text())));
+            showNotification('pomodoroStatsSaved', false);
+            await loadSavedProjects();
+        } catch (err) {
+            console.error('Import error:', err);
+            // A native alert blocks the page and ignores the theme; the app's own
+            // notification says the same thing in place.
+            const isFormat = err instanceof PomoStatsFormatError || err instanceof SyntaxError;
+            showNotification(isFormat ? 'invalidFileFormat' : 'dashboardErrorLoad', true);
+        }
     });
 
     // ─── Stepper buttons ────────────────────────────────────────
@@ -2462,9 +2384,8 @@ export function initPomodoro({ embedded = false } = {}) {
             const input = $(btn.dataset.target);
             if (!input) return;
             const delta = parseInt(btn.dataset.delta);
-            const min = parseInt(input.min) || 0;
-            const max = parseInt(input.max) || 999;
-            input.value = Math.min(max, Math.max(min, (parseInt(input.value) || 0) + delta));
+            const limits = { min: parseInt(input.min) || 0, max: parseInt(input.max) || 999 };
+            input.value = stepWithin(parseInt(input.value) || 0, delta, limits);
             schedSave();
             saveLocalSettings();
             // Real-time temporizador display + cycles update
@@ -2479,10 +2400,13 @@ export function initPomodoro({ embedded = false } = {}) {
     });
 
     // ─── Settings save ──────────────────────────────────────────
-    let saveTimer = null;
+    function isSaveScheduled() {
+        return saveTimer !== null;
+    }
     function schedSave() {
         clearTimeout(saveTimer);
         saveTimer = setTimeout(async () => {
+            saveTimer = null;
             const settings = {
                 workDuration: Math.max(1, parseInt(workInput?.value) || 25) * 60,
                 shortBreak: Math.max(1, parseInt(shortInput?.value) || 5) * 60,
@@ -2498,7 +2422,9 @@ export function initPomodoro({ embedded = false } = {}) {
                 projectFolder: projFolder?.value.trim() || '',
             };
             const resp = await chrome.runtime.sendMessage({ action: 'pomodoroSaveSettings', settings });
-            if (resp?.state) render(resp.state, getModeDuration(resp.state));
+            // The clock keeps going through a settings save, so it is redrawn from the
+            // time the worker says is left, not from the top of the phase.
+            if (resp?.state) render(resp.state, resp.remaining);
         }, 700);
     }
 
@@ -2581,43 +2507,39 @@ export function initPomodoro({ embedded = false } = {}) {
 
         render(state, remaining);
 
-        if (event === 'start' || event === 'tick') {
-            if (state.isRunning && !uiInterval) {
-                lastTickMs = Date.now();
-                startTick();
-            }
-        } else if (['pause', 'reset', 'modeChange', 'settingsChange'].includes(event)) {
-            stopTick();
-        } else if (event === 'completed' || event === 'allDone') {
-            stopTick();
-            if (state.settings.sound) {
-                const snd = event === 'allDone' ? 'allDone' : completedMode === 'work' ? 'work' : 'break';
-                playSound(snd);
-            }
+        // The local countdown follows the worker's clock whatever the event was: a
+        // settings save or a skip leaves it running, and must not stop it here. The
+        // interval is shared with the other three methods, so with one of them showing
+        // it is theirs — typing a project name next to a running stopwatch froze it.
+        if (pomoMethod === 'pomodoro') {
+            if (!state.isRunning) stopTick();
+            else if (!uiInterval || event === 'completed' || event === 'skipped') startTick();
+        }
 
-            // Auto-save when work session completes
-            if (event === 'completed' && completedMode === 'work' && state.settings.autosave) {
-                saveStatsToDb(state);
-            }
+        if (event !== 'completed' && event !== 'allDone') return;
+        // The chime is the worker's, which plays it through the offscreen document
+        // whether or not a panel is open; playing it here too sounded it once more
+        // per open panel.
+        const projectN = state.settings.projectName || localizedMsg('pomodoroUntitledProject') || 'sin título';
 
-            // Auto-finish: when all cycles done and autofinish enabled
-            if (event === 'allDone' && state.settings.autofinish) {
-                const projectN = state.settings.projectName || localizedMsg('pomodoroUntitledProject') || 'sin título';
-                taskCompletionLog.push({
-                    name: projectN,
-                    startTime: state.stats?.sessionStarted || Date.now(),
-                    endTime: Date.now(),
-                    duration: state.stats?.totalFocusSeconds || 0,
-                    cycle: state.completedCycles || 0,
-                });
-                if (state.settings.autosave) saveStatsToDb(state);
-                showNotification('pomodoroSessionComplete', false, [projectN]);
-            }
+        // Auto-finish: when all cycles done and autofinish enabled
+        if (event === 'allDone' && state.settings.autofinish) {
+            taskCompletionLog.push({
+                name: projectN,
+                startTime: state.stats?.sessionStarted || Date.now(),
+                endTime: Date.now(),
+                duration: state.stats?.totalFocusSeconds || 0,
+                cycle: state.completedCycles || 0,
+            });
+            renderTaskStats();
+        }
 
-            if (state.isRunning) {
-                lastTickMs = Date.now();
-                startTick();
-            }
+        // Auto-save when a focus phase completes — the one that ends the session too,
+        // auto-finish or not, or the last pomodoro of every session was never saved.
+        if (completedMode === 'work' && state.settings.autosave) saveStatsToDb(state);
+
+        if (event === 'allDone' && state.settings.autofinish) {
+            showNotification('pomodoroSessionComplete', false, [projectN]);
         }
     };
 
@@ -2656,6 +2578,7 @@ export function initPomodoro({ embedded = false } = {}) {
             const next = changes.pomoMethod.newValue || 'pomodoro';
             if (next !== pomoMethod && !isAnyTaskRunning()) applyMethod(next);
         }
+        if (changes[NOTE_COUNT_KEY]) showNoteCount(changes[NOTE_COUNT_KEY].newValue || 0);
         if (changes.pomoLocalSettings) {
             if (JSON.stringify(changes.pomoLocalSettings.newValue) === lastLocalWrite) return;
             loadLocalSettings().then(() => validateAllMethods());
@@ -2693,10 +2616,12 @@ export function initPomodoro({ embedded = false } = {}) {
     initPomoTiempoCalendar();
     updateUnitTooltips();
     (async () => {
-        const { pomodoroPanelOpen, pomoMethod: savedMethod } = await chrome.storage.local.get([
-            'pomodoroPanelOpen',
-            'pomoMethod',
-        ]);
+        const {
+            pomodoroPanelOpen,
+            pomoMethod: savedMethod,
+            [NOTE_COUNT_KEY]: noteCount,
+        } = await chrome.storage.local.get(['pomodoroPanelOpen', 'pomoMethod', NOTE_COUNT_KEY]);
+        showNoteCount(noteCount || 0);
         if (savedMethod) applyMethod(savedMethod);
         // Load local settings (timer inputs, toggles, tiempo date/time) in all cases
         await loadLocalSettings();

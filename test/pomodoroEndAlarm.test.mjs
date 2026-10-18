@@ -6,44 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { readFileSync } from 'node:fs';
-
-function loadPomodoro() {
-    const storage = {};
-    const alarms = new Map();
-    const listeners = [];
-    const notifications = [];
-    const context = {
-        console,
-        setTimeout,
-        clearTimeout,
-        Date,
-        chrome: {
-            storage: {
-                local: {
-                    get: async (key) => (key in storage ? { [key]: structuredClone(storage[key]) } : {}),
-                    set: async (obj) => Object.assign(storage, structuredClone(obj)),
-                },
-            },
-            alarms: {
-                create: async (name, info) => alarms.set(name, info),
-                clear: async (name) => alarms.delete(name),
-                onAlarm: { addListener: (fn) => listeners.push(fn) },
-            },
-            notifications: { create: (...args) => notifications.push(args) },
-            runtime: { sendMessage: () => Promise.resolve(), getContexts: async () => [] },
-            offscreen: { createDocument: async () => {} },
-        },
-        getI18nMsg: (key) => key,
-    };
-    vm.createContext(context);
-    vm.runInContext(readFileSync('src/core/background/handlers/pomodoro-handlers.js', 'utf8'), context);
-    vm.runInContext(readFileSync('src/core/background/pomodoro.js', 'utf8'), context);
-    // Sound goes through the offscreen document; not what is under test.
-    vm.runInContext('playPomodoroSoundBackground = async () => {};', context);
-    const fire = (name) => Promise.all(listeners.map((fn) => fn({ name })));
-    return { context, storage, alarms, fire, notifications };
-}
+import { loadPomodoro } from './helpers/pomodoroWorker.mjs';
 
 const start = (context) => new Promise((resolve) => vm.runInContext('handlePomodoroStart', context)(resolve));
 

@@ -9002,6 +9002,22 @@
     "message": "통계 지우기",
     "description": "Clear stats button"
   },
+  "pomodoroClearAllConfirm_one": {
+    "message": "저장된 세션 $1개를 모두 삭제할까요? 되돌릴 수 없습니다.",
+    "description": "Confirmation before clearing every saved pomodoro session from the stats drawer's Totals view. Form for a count of one."
+  },
+  "pomodoroClearAllConfirm_other": {
+    "message": "저장된 세션 $1개를 모두 삭제할까요? 되돌릴 수 없습니다.",
+    "description": "Confirmation before clearing every saved pomodoro session ($1 = how many). General plural form."
+  },
+  "pomodoroClearAllConfirm_few": {
+    "message": "저장된 세션 $1개를 모두 삭제할까요? 되돌릴 수 없습니다.",
+    "description": "Same, for counts in the CLDR \"few\" category. Same as \"other\" in languages without it."
+  },
+  "pomodoroClearAllConfirm_many": {
+    "message": "저장된 세션 $1개를 모두 삭제할까요? 되돌릴 수 없습니다.",
+    "description": "Same, for counts in the CLDR \"many\" category. Same as \"other\" in languages without it."
+  },
   "pomodoroStatsSessions": {
     "message": "세션",
     "description": "Sessions stat label (fully completed pomodoro sets)"

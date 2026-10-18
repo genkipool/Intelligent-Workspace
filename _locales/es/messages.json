@@ -9072,6 +9072,22 @@
         "message": "Limpiar estadísticas",
         "description": "Limpiar estadísticas"
     },
+    "pomodoroClearAllConfirm_one": {
+        "message": "¿Borrar la única sesión guardada? No se puede deshacer.",
+        "description": "Confirmación antes de borrar todas las sesiones de pomodoro guardadas desde la vista Totales de las estadísticas. Forma para la cantidad uno."
+    },
+    "pomodoroClearAllConfirm_other": {
+        "message": "¿Borrar las $1 sesiones guardadas? No se puede deshacer.",
+        "description": "Confirmación antes de borrar todas las sesiones guardadas ($1 = cuántas). Forma general del plural."
+    },
+    "pomodoroClearAllConfirm_few": {
+        "message": "¿Borrar las $1 sesiones guardadas? No se puede deshacer.",
+        "description": "Igual, para la categoría CLDR «few». Igual que «other» en los idiomas que no la tienen."
+    },
+    "pomodoroClearAllConfirm_many": {
+        "message": "¿Borrar las $1 sesiones guardadas? No se puede deshacer.",
+        "description": "Igual, para la categoría CLDR «many». Igual que «other» en los idiomas que no la tienen."
+    },
     "pomodoroStatsSessions": {
         "message": "Sesiones",
         "description": "Sesiones"

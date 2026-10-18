@@ -9002,6 +9002,22 @@
     "message": "清除统计信息",
     "description": "Clear stats button"
   },
+  "pomodoroClearAllConfirm_one": {
+    "message": "删除全部 $1 个已保存的时段？此操作无法撤销。",
+    "description": "Confirmation before clearing every saved pomodoro session from the stats drawer's Totals view. Form for a count of one."
+  },
+  "pomodoroClearAllConfirm_other": {
+    "message": "删除全部 $1 个已保存的时段？此操作无法撤销。",
+    "description": "Confirmation before clearing every saved pomodoro session ($1 = how many). General plural form."
+  },
+  "pomodoroClearAllConfirm_few": {
+    "message": "删除全部 $1 个已保存的时段？此操作无法撤销。",
+    "description": "Same, for counts in the CLDR \"few\" category. Same as \"other\" in languages without it."
+  },
+  "pomodoroClearAllConfirm_many": {
+    "message": "删除全部 $1 个已保存的时段？此操作无法撤销。",
+    "description": "Same, for counts in the CLDR \"many\" category. Same as \"other\" in languages without it."
+  },
   "pomodoroStatsSessions": {
     "message": "时段",
     "description": "Sessions stat label (fully completed pomodoro sets)"

@@ -13,6 +13,7 @@
      */
     import { onMount } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
+    import { POMODORO_LIMITS } from '../../services/pomodoroSettingsService.js';
 
     let { embedded = false } = $props();
 
@@ -359,8 +360,8 @@
                                 <input
                                     type="number"
                                     id="pomodoro-work-input"
-                                    min="1"
-                                    max="120"
+                                    min={POMODORO_LIMITS.workDuration.min}
+                                    max={POMODORO_LIMITS.workDuration.max}
                                     value="25"
                                     class="pomo-num-input"
                                 />
@@ -385,8 +386,8 @@
                                 <input
                                     type="number"
                                     id="pomodoro-short-input"
-                                    min="1"
-                                    max="60"
+                                    min={POMODORO_LIMITS.shortBreak.min}
+                                    max={POMODORO_LIMITS.shortBreak.max}
                                     value="5"
                                     class="pomo-num-input"
                                 />
@@ -411,8 +412,8 @@
                                 <input
                                     type="number"
                                     id="pomodoro-long-input"
-                                    min="1"
-                                    max="120"
+                                    min={POMODORO_LIMITS.longBreak.min}
+                                    max={POMODORO_LIMITS.longBreak.max}
                                     value="15"
                                     class="pomo-num-input"
                                 />
@@ -447,8 +448,8 @@
                                 <input
                                     type="number"
                                     id="pomodoro-sessions-input"
-                                    min="1"
-                                    max="12"
+                                    min={POMODORO_LIMITS.sessionsBeforeLong.min}
+                                    max={POMODORO_LIMITS.sessionsBeforeLong.max}
                                     value="4"
                                     class="pomo-num-input"
                                 />
@@ -477,8 +478,8 @@
                                 <input
                                     type="number"
                                     id="pomodoro-endafter-input"
-                                    min="1"
-                                    max="20"
+                                    min={POMODORO_LIMITS.endAfter.min}
+                                    max={POMODORO_LIMITS.endAfter.max}
                                     value="8"
                                     class="pomo-num-input"
                                 />

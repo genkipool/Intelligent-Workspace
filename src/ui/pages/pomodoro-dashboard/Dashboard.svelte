@@ -11,7 +11,8 @@
         pluralKey,
         localeOf,
     } from '../../../utils/i18n.js';
-    import { notifyPomoStatsChanged } from '../../../utils/db.js';
+    import { notifyPomoStatsChanged, savePomoStatsBatchToDb } from '../../../utils/db.js';
+    import { buildPomoBackup, parsePomoStatsFile, PomoStatsFormatError } from '../../../utils/pomoStatsFile.js';
     import { applyCustomTheme } from '../../../utils/theme.js';
     import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
     import { t, i18nStore } from '../../stores/i18nStore.js';
@@ -1097,14 +1098,10 @@
     }
 
     // --- EXPORT/IMPORT JSON ------------------------------------------
+    // The file format, and the reading of every version of it, is shared with the
+    // panel's stats drawer: `utils/pomoStatsFile.js`.
     function exportJSON() {
-        const backup = {
-            type: 'pomodoro_backup',
-            version: 1,
-            exportedAt: new Date().toISOString(),
-            data: allData,
-        };
-        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const blob = new Blob([JSON.stringify(buildPomoBackup(allData), null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.getElementById('download-link');
         a.href = url;
@@ -1118,36 +1115,15 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                const backup = JSON.parse(e.target.result);
-                if (backup.type !== 'pomodoro_backup' && !Array.isArray(backup)) {
-                    // Support both full backup format and raw array format
-                    throw new Error(i18n('invalidFileFormat'));
-                }
-                const data = Array.isArray(backup) ? backup : backup.data || [];
-
-                const db = await openDb();
-                const tx = db.transaction([STORE], 'readwrite');
-                const store = tx.objectStore(STORE);
-
-                for (const entry of data) {
-                    if (!entry.id) continue;
-                    await new Promise((res, rej) => {
-                        const req = store.put(entry);
-                        req.onsuccess = () => res();
-                        req.onerror = () => rej(req.error);
-                    });
-                }
-
-                tx.oncomplete = () => {
-                    db.close();
-                    loadData();
-                    notifyPomoStatsChanged();
-                };
+                await savePomoStatsBatchToDb(parsePomoStatsFile(JSON.parse(e.target.result)));
+                loadData();
             } catch (err) {
                 console.error('Import error:', err);
+                // A file that is not ours says so; anything else is a failure to load.
                 // A native alert blocks the page and ignores the theme; the app's own
                 // notification says the same thing in place.
-                showNotification('dashboardErrorLoad', true, [err.message || String(err)]);
+                const isFormat = err instanceof PomoStatsFormatError || err instanceof SyntaxError;
+                showNotification(isFormat ? 'invalidFileFormat' : 'dashboardErrorLoad', true);
             }
         };
         reader.readAsText(file);

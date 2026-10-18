@@ -5,7 +5,7 @@
  * All handlers interact with the Pomodoro state defined in `pomodoro.js`.
  *
  * Dependencies: getPomodoroState(), savePomodoroState(), getRemainingSeconds(),
- *               getModeDuration(), pomodoroDefaults(), broadcastPomodoro(),
+ *               getModeDuration(), pomodoroDefaults(), broadcastPomodoro(), closePause(),
  *               startPomodoroAlarms(), clearPomodoroAlarms() (all from pomodoro.js)
  */
 
@@ -44,12 +44,8 @@ function handlePomodoroStart(sendResponse) {
 
         const total = getModeDuration(state.mode, state.settings);
         const resumeFrom = state.pausedRemaining !== null ? state.pausedRemaining : total;
-        // Calculate interruption time if resuming from pause
-        const newStats = { ...state.stats };
-        if (state.pausedAt && state.pausedRemaining !== null && state.mode === 'work') {
-            const pauseDurationSecs = Math.floor((Date.now() - state.pausedAt) / 1000);
-            newStats.totalInterruptionSeconds = (newStats.totalInterruptionSeconds || 0) + pauseDurationSecs;
-        }
+        // Resuming from a pause turns it into interruption time
+        const newStats = closePause(state);
 
         const newState = {
             ...state,
@@ -74,12 +70,13 @@ function handlePomodoroPause(sendResponse) {
     (async () => {
         const state = await getPomodoroState();
         const remaining = await getRemainingSeconds(state);
-        const wasWork = state.mode === 'work';
-        const elapsed = getModeDuration(state.mode, state.settings) - remaining;
-        const newStats = { ...state.stats };
-        if (wasWork && elapsed > 0) {
-            newStats.totalInterruptionSeconds = newStats.totalInterruptionSeconds || 0;
+        // Pausing a clock that is not going would restart the open pause and count
+        // a second interruption for it.
+        if (!state.isRunning) {
+            sendResponse({ success: true, state, remaining });
+            return;
         }
+        const wasWork = state.mode === 'work';
         const newState = {
             ...state,
             isRunning: false,
@@ -87,7 +84,6 @@ function handlePomodoroPause(sendResponse) {
             pausedRemaining: remaining,
             pausedAt: Date.now(),
             interruptions: (state.interruptions || 0) + (wasWork ? 1 : 0),
-            stats: newStats,
         };
         await savePomodoroState(newState);
         await clearPomodoroAlarms();
@@ -117,10 +113,18 @@ function handlePomodoroReset(sendResponse) {
                 isRunning: false,
                 startTime: null,
                 pausedRemaining: null,
+                pausedAt: null,
                 stats: { ...defaults.stats },
             };
         } else {
-            newState = { ...state, isRunning: false, startTime: null, pausedRemaining: null };
+            newState = {
+                ...state,
+                isRunning: false,
+                startTime: null,
+                pausedRemaining: null,
+                pausedAt: null,
+                stats: closePause(state),
+            };
         }
 
         await savePomodoroState(newState);
@@ -133,7 +137,7 @@ function handlePomodoroReset(sendResponse) {
 function handlePomodoroSkip(sendResponse) {
     (async () => {
         const state = await getPomodoroState();
-        await onPomodoroComplete(state);
+        await onPomodoroComplete(state, { skipped: true });
         const newState = await getPomodoroState();
         const remaining = await getRemainingSeconds(newState);
         sendResponse({ success: true, state: newState, remaining });
@@ -144,7 +148,15 @@ function handlePomodoroSetMode(message, sendResponse) {
     (async () => {
         const state = await getPomodoroState();
         await clearPomodoroAlarms();
-        const newState = { ...state, mode: message.mode, isRunning: false, startTime: null, pausedRemaining: null };
+        const newState = {
+            ...state,
+            mode: message.mode,
+            isRunning: false,
+            startTime: null,
+            pausedRemaining: null,
+            pausedAt: null,
+            stats: closePause(state),
+        };
         await savePomodoroState(newState);
         const remaining = getModeDuration(message.mode, state.settings);
         broadcastPomodoro(newState, 'modeChange', null);
@@ -152,15 +164,29 @@ function handlePomodoroSetMode(message, sendResponse) {
     })();
 }
 
+/**
+ * Saving settings leaves the clock alone.
+ *
+ * Most settings have nothing to do with the phase under way (the project name is typed
+ * with the clock going, and used to send it back to 25:00 on every key), and the one
+ * that does — the length of the current phase — keeps the time already done: a running
+ * phase keeps its start, so only its end moves; a paused one keeps how far it got.
+ */
 function handlePomodoroSaveSettings(message, sendResponse) {
     (async () => {
         const state = await getPomodoroState();
-        await clearPomodoroAlarms();
         const newSettings = { ...state.settings, ...message.settings };
-        const newState = { ...state, settings: newSettings, isRunning: false, startTime: null, pausedRemaining: null };
+        const newState = { ...state, settings: newSettings };
+        if (!state.isRunning && state.pausedRemaining !== null) {
+            const done = getModeDuration(state.mode, state.settings) - state.pausedRemaining;
+            newState.pausedRemaining = Math.max(0, getModeDuration(state.mode, newSettings) - done);
+        }
         await savePomodoroState(newState);
+        // Re-created alarms replace the old ones, so the end alarm follows a new length.
+        if (newState.isRunning) await startPomodoroAlarms(newState);
+        const remaining = await getRemainingSeconds(newState);
         broadcastPomodoro(newState, 'settingsChange', null);
-        sendResponse({ success: true, state: newState });
+        sendResponse({ success: true, state: newState, remaining });
     })();
 }
 
@@ -177,6 +203,7 @@ function handlePomodoroClearStats(sendResponse) {
             isRunning: false,
             startTime: null,
             pausedRemaining: null,
+            pausedAt: null,
             stats: { ...defaults.stats },
         };
         await clearPomodoroAlarms();

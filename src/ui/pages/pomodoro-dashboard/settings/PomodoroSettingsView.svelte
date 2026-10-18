@@ -32,6 +32,7 @@
     import DateField from '../../../components/common/DateField.svelte';
     import TimeField from '../../../components/common/TimeField.svelte';
     import {
+        POMODORO_LIMITS,
         POMODORO_METHODS,
         readPomodoroSettings,
         saveLocalPomodoroSettings,
@@ -45,9 +46,8 @@
     let method = $state('pomodoro');
 
     /**
-     * Whether the clock is running. Changing a duration mid-session restarts it — the
-     * worker clears the alarm on `pomodoroSaveSettings` — so the fields that would do
-     * that are held until it stops, the way the panel holds its method buttons.
+     * Whether the clock is running. The method cannot change mid-session, so its
+     * buttons are held until the clock stops, the way the panel holds its own.
      */
     let running = $state(false);
 
@@ -81,9 +81,6 @@
         settings = { ...settings, ...next };
         const settled = await savePomodoroSettings(next);
         if (settled) settings = settled;
-        // The worker clears the alarm on every settings write, so by the time it has
-        // answered the clock is stopped whatever it was doing before.
-        running = false;
     }
 
     async function patchLocal(next) {
@@ -226,8 +223,8 @@
                                 <NumberField
                                     wide
                                     value={mins(settings.workDuration)}
-                                    min={1}
-                                    max={180}
+                                    min={POMODORO_LIMITS.workDuration.min}
+                                    max={POMODORO_LIMITS.workDuration.max}
                                     ariaLabel={$t('pomodoroWorkDuration')}
                                     onchange={(next) => patch({ workDuration: next * 60 })}
                                 />
@@ -244,8 +241,8 @@
                                 <NumberField
                                     wide
                                     value={mins(settings.shortBreak)}
-                                    min={1}
-                                    max={120}
+                                    min={POMODORO_LIMITS.shortBreak.min}
+                                    max={POMODORO_LIMITS.shortBreak.max}
                                     ariaLabel={$t('pomodoroShortDuration')}
                                     onchange={(next) => patch({ shortBreak: next * 60 })}
                                 />
@@ -262,8 +259,8 @@
                                 <NumberField
                                     wide
                                     value={mins(settings.longBreak)}
-                                    min={1}
-                                    max={180}
+                                    min={POMODORO_LIMITS.longBreak.min}
+                                    max={POMODORO_LIMITS.longBreak.max}
                                     ariaLabel={$t('pomodoroLongDuration')}
                                     onchange={(next) => patch({ longBreak: next * 60 })}
                                 />
@@ -287,8 +284,8 @@
                                 <NumberField
                                     wide
                                     value={settings.sessionsBeforeLong}
-                                    min={1}
-                                    max={12}
+                                    min={POMODORO_LIMITS.sessionsBeforeLong.min}
+                                    max={POMODORO_LIMITS.sessionsBeforeLong.max}
                                     digits={2}
                                     ariaLabel={$t('pomodoroSessionsBeforeLong')}
                                     onchange={(next) => patch({ sessionsBeforeLong: next })}
@@ -305,8 +302,8 @@
                                 <NumberField
                                     wide
                                     value={settings.endAfter}
-                                    min={1}
-                                    max={99}
+                                    min={POMODORO_LIMITS.endAfter.min}
+                                    max={POMODORO_LIMITS.endAfter.max}
                                     digits={2}
                                     ariaLabel={$t('pomodoroEndAfter')}
                                     onchange={(next) => patch({ endAfter: next })}

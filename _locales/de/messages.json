@@ -9002,6 +9002,22 @@
     "message": "Statistiken löschen",
     "description": "Clear stats button"
   },
+  "pomodoroClearAllConfirm_one": {
+    "message": "Die einzige gespeicherte Sitzung löschen? Das kann nicht rückgängig gemacht werden.",
+    "description": "Confirmation before clearing every saved pomodoro session from the stats drawer's Totals view. Form for a count of one."
+  },
+  "pomodoroClearAllConfirm_other": {
+    "message": "Alle $1 gespeicherten Sitzungen löschen? Das kann nicht rückgängig gemacht werden.",
+    "description": "Confirmation before clearing every saved pomodoro session ($1 = how many). General plural form."
+  },
+  "pomodoroClearAllConfirm_few": {
+    "message": "Alle $1 gespeicherten Sitzungen löschen? Das kann nicht rückgängig gemacht werden.",
+    "description": "Same, for counts in the CLDR \"few\" category. Same as \"other\" in languages without it."
+  },
+  "pomodoroClearAllConfirm_many": {
+    "message": "Alle $1 gespeicherten Sitzungen löschen? Das kann nicht rückgängig gemacht werden.",
+    "description": "Same, for counts in the CLDR \"many\" category. Same as \"other\" in languages without it."
+  },
   "pomodoroStatsSessions": {
     "message": "Sitzungen",
     "description": "Sessions stat label (fully completed pomodoro sets)"

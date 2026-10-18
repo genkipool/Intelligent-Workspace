@@ -730,11 +730,13 @@ input.pomo-project-edit::placeholder {
     opacity: 0.4;
 }
 
-/* Method buttons disabled state when task is running */
-.pomo-method-btn:disabled {
+/* Method buttons locked while a task is running. `aria-disabled`, not `disabled`, so
+   the click still arrives and can say why nothing changes. */
+.pomo-method-btn[aria-disabled='true'],
+.pomo-method-btn[aria-disabled='true']:hover {
     opacity: 0.35;
     cursor: not-allowed;
-    pointer-events: none;
+    background: none;
 }
 
 /* Break mode specific overrides: timer and labels in --text-color */

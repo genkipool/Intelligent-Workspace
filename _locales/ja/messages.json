@@ -9002,6 +9002,22 @@
     "message": "統計を消去",
     "description": "Clear stats button"
   },
+  "pomodoroClearAllConfirm_one": {
+    "message": "保存済みの $1 件のセッションをすべて削除しますか？元に戻せません。",
+    "description": "Confirmation before clearing every saved pomodoro session from the stats drawer's Totals view. Form for a count of one."
+  },
+  "pomodoroClearAllConfirm_other": {
+    "message": "保存済みの $1 件のセッションをすべて削除しますか？元に戻せません。",
+    "description": "Confirmation before clearing every saved pomodoro session ($1 = how many). General plural form."
+  },
+  "pomodoroClearAllConfirm_few": {
+    "message": "保存済みの $1 件のセッションをすべて削除しますか？元に戻せません。",
+    "description": "Same, for counts in the CLDR \"few\" category. Same as \"other\" in languages without it."
+  },
+  "pomodoroClearAllConfirm_many": {
+    "message": "保存済みの $1 件のセッションをすべて削除しますか？元に戻せません。",
+    "description": "Same, for counts in the CLDR \"many\" category. Same as \"other\" in languages without it."
+  },
   "pomodoroStatsSessions": {
     "message": "セッション",
     "description": "Sessions stat label (fully completed pomodoro sets)"

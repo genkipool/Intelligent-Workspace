@@ -478,6 +478,24 @@ export async function savePomoStatsToDb(statsEntry) {
     });
 }
 
+/** Saves many sessions in one transaction and tells everyone once, when it commits. */
+export async function savePomoStatsBatchToDb(entries) {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([POMO_STATS_STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(POMO_STATS_STORE_NAME);
+        entries.forEach((entry) => store.put(entry));
+        transaction.oncomplete = () => {
+            notifyPomoStatsChanged();
+            resolve();
+        };
+        transaction.onerror = () => {
+            console.error('Error saving pomo stats:', transaction.error);
+            reject(transaction.error);
+        };
+    });
+}
+
 export async function getAllPomoStatsFromDb() {
     const db = await openDb();
     return new Promise((resolve, reject) => {
