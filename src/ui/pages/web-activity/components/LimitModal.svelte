@@ -290,19 +290,22 @@
     {#if isNew}
         <div class="form-group">
             <label for="wa-limit-site">{$t('webActivityFieldSite')}</label>
-            <div class="wa-site-input-row">
-                <input
-                    id="wa-limit-site"
-                    bind:this={siteInput}
-                    type="text"
-                    class:input-error={!!siteError}
-                    bind:value={site}
-                    placeholder={applyToAll ? $t('webActivityAllSitesPlaceholder') : 'example.com'}
-                    disabled={applyToAll}
-                    autocomplete="off"
-                    spellcheck="false"
-                    title={$tt('webActivityFieldSite')}
-                />
+            <!-- The address the full width of the dialog, and what it reaches underneath:
+                 side by side, the two buttons left the field too narrow for a long
+                 hostname. -->
+            <input
+                id="wa-limit-site"
+                bind:this={siteInput}
+                type="text"
+                class:input-error={!!siteError}
+                bind:value={site}
+                placeholder={applyToAll ? $t('webActivityAllSitesPlaceholder') : 'example.com'}
+                disabled={applyToAll}
+                autocomplete="off"
+                spellcheck="false"
+                title={$tt('webActivityFieldSite')}
+            />
+            <div class="wa-site-options">
                 {@render subdomainsToggle(applyToAll)}
                 <button
                     type="button"

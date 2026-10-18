@@ -819,11 +819,15 @@ td[data-col='state'] > * {
     scrollbar-color: var(--border-color) var(--bg-color);
 }
 
-/* The schedule dialog grows a window at a time and is the only one that can run off
-   the screen, so it is the only one with a ceiling: past three windows it scrolls
-   instead of pushing its own Apply button out of reach. */
+/* The schedule dialog grows a window at a time and can run off the screen, so its
+   body scrolls instead of pushing its own Apply button out of reach. The ceiling is
+   the window itself (`.modal-content` stops at the viewport, header and Apply always
+   in it), not a share of it: a fixed 46vh scrolled a dialog that had room to spare
+   on any window under about 800px tall. */
 .wa-schedule-modal .wa-modal-body {
-    max-height: 46vh;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 /* Password prompt dialog */
@@ -1024,6 +1028,19 @@ td[data-col='state'] > * {
 .wa-site-input-row input {
     flex: 1;
     min-width: 0;
+}
+
+/* Under the site field of a new rule: how far it reaches, sharing the width. */
+.wa-site-options {
+    display: flex;
+    gap: 8px;
+}
+
+.wa-site-options .wa-all-sites-btn {
+    flex: 1;
+    /* The height of the field above them, so the two rows read as one control. */
+    height: 32px;
+    padding: 4px 12px;
 }
 
 .wa-all-sites-btn {
