@@ -1901,7 +1901,7 @@ function decodePunycodeLabel(label) {
     let basic = input.lastIndexOf('-');
     if (basic < 0) basic = 0;
     for (let j = 0; j < basic; j++) output.push(input.charCodeAt(j));
-    for (let idx = basic > 0 ? basic + 1 : 0; idx < input.length; ) {
+    for (let idx = basic > 0 ? basic + 1 : 0; idx < input.length;) {
         const oldi = i;
         for (let w = 1, k = base; ; k += base) {
             if (idx >= input.length) return label;

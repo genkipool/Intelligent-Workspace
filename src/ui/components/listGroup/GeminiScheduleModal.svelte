@@ -256,8 +256,7 @@
                                 id="gemini-schedule-query"
                                 bind:value={formQuery}
                                 maxlength={MAX_QUERY_CHARS}
-                                placeholder={$t('geminiQueryPlaceholder')}
-                            ></textarea>
+                                placeholder={$t('geminiQueryPlaceholder')}></textarea>
                             <span
                                 class="note-editor-stats"
                                 title={$tt('charCountLimit', [queryCharCount, MAX_QUERY_CHARS])}

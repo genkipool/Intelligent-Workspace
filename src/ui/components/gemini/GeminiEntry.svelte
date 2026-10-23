@@ -294,8 +294,7 @@
                 translate="no"
                 bind:this={editTextarea}
                 bind:value={editText}
-                onkeydown={handleEditKeydown}
-            ></textarea>
+                onkeydown={handleEditKeydown}></textarea>
             <div class="gemini-edit-actions">
                 <button type="button" class="gemini-edit-btn-save" onclick={handleSaveEdit}>{$t('send')}</button>
             </div>

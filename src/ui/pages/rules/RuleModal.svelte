@@ -478,8 +478,7 @@
                     oninput={handleUrlInput}
                     onscroll={handleScroll}
                     placeholder={urlsPlaceholder}
-                    title={$tt('enterRuleUrls') || 'Enter rule URLs'}
-                ></textarea>
+                    title={$tt('enterRuleUrls') || 'Enter rule URLs'}></textarea>
                 <div bind:this={overlayEl} class="error-overlay" id="urls-overlay" spellcheck="false" translate="no">
                     {#each overlayLines as line, i (i)}
                         <span class={line.classes} translate="no">{line.text}</span>

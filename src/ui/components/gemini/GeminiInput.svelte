@@ -168,8 +168,7 @@
                 onkeydown={handleKeydown}
                 onpaste={handlePaste}
                 ondragover={handleDragOver}
-                ondrop={handleDrop}
-            ></textarea>
+                ondrop={handleDrop}></textarea>
             <button id="gemini-send-btn" class="gemini-send" title={$tt('send')} onclick={handleSend} type="button">
                 <svg width="24" height="24">
                     <use href="#icon-send"></use>

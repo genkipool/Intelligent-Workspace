@@ -206,7 +206,7 @@ function createEchoingBrowser() {
             await vm.runInContext('groupTabs()', browser.context);
             // Waits until no pass is running or scheduled for several ticks in a row, so a
             // queued pass (timers are capped at 50 ms here) gets to start and finish.
-            for (let idle = 0; idle < 6; ) {
+            for (let idle = 0; idle < 6;) {
                 await new Promise((resolve) => setTimeout(resolve, 50));
                 const busy = vm.runInContext('isGrouping || groupTabsTimer !== null', browser.context);
                 idle = busy ? 0 : idle + 1;

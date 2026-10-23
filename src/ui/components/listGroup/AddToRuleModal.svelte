@@ -110,8 +110,7 @@
                     bind:value={urlText}
                     autocomplete="off"
                     spellcheck="false"
-                    translate="no"
-                ></textarea>
+                    translate="no"></textarea>
             </div>
 
             <div class="rules-selection-label">{$t('rules')}</div>

@@ -304,8 +304,7 @@
                                                         workingCookies.indexOf(cookie),
                                                         'value',
                                                         e.target.value,
-                                                    )}
-                                            ></textarea>
+                                                    )}></textarea>
                                         </div>
                                         <div class="form-group">
                                             <div class="field-label">{$t('cookieDomain')}</div>

@@ -231,8 +231,7 @@
                                     maxlength={MAX_REMINDER_CHARS}
                                     data-i18n-placeholder="scheduleReminderPlaceholder"
                                     bind:value={scheduleReminder}
-                                    oninput={() => (scheduleError = '')}
-                                ></textarea>
+                                    oninput={() => (scheduleError = '')}></textarea>
                                 <span
                                     class="schedule-reminder-stats note-editor-stats"
                                     title={$tt('charCountLimit', [reminderCharCount, MAX_REMINDER_CHARS])}
