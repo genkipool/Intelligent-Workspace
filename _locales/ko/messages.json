@@ -211,9 +211,6 @@
   "apiKeySaved": {
     "message": "API 키가 저장되었습니다"
   },
-  "listGroupViewTitle": {
-    "message": "그룹 목록"
-  },
   "agentMaxStepsReached": {
     "message": "에이전트가 최대 단계 수에 도달했습니다"
   },
@@ -3543,8 +3540,8 @@
     "description": "General loading message"
   },
   "geminiWaitingForResponse": {
-    "message": "Gemini의 응답을 기다리는 중...",
-    "description": "Message displayed while waiting for a response from the Gemini API."
+    "message": "응답을 기다리는 중...",
+    "description": "Shown on a question while its answer is on its way, from Gemini or from Chrome local AI."
   },
   "viewGeminiConversations": {
     "message": "Gemini 대화 보기",
@@ -3823,6 +3820,10 @@
   "localAiErrorEmpty": {
     "message": "로컬 모델에서 답변을 반환하지 않았습니다. 다시 시도하세요.",
     "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorFileType": {
+    "message": "Chrome의 로컬 AI는 이 파일을 읽을 수 없습니다. JPEG, PNG, WebP 이미지나 텍스트 파일을 첨부하거나 Gemini 모델을 선택하세요.",
+    "description": "Shown when, with the local AI selected, the user attaches a file the local model cannot read (a PDF or a HEIC image)."
   },
   "localAiErrorGeneric": {
     "message": "Chrome 로컬 AI에서 답변할 수 없습니다. 다시 시도하거나 chrome://on-device-internals에서 상태를 확인하세요.",
@@ -5898,8 +5899,12 @@
     "description": "Option for paper mode in the page mode dropdown."
   },
   "modeAppliedSuccessfully": {
-    "message": "$1 모드를 적용했습니다.",
-    "description": "Notification shown when a page mode is applied. $1 is the mode name."
+    "message": "$1을(를) 적용했습니다.",
+    "description": "Notification shown when a page mode is applied. $1 is the full name of the mode (e.g. \"Paper Mode\"), which already contains the word \"mode\"."
+  },
+  "modeRemoved": {
+    "message": "$1을(를) 해제했습니다.",
+    "description": "Notification shown when the page mode in force is chosen again, which takes it off. $1 is the full name of the mode (e.g. \"Paper Mode\")."
   },
   "errorApplyingMode": {
     "message": "페이지 모드를 적용하는 중 오류가 발생했습니다.",

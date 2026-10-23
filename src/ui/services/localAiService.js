@@ -55,7 +55,28 @@ const LOCAL_AI_ERROR_PATTERNS = [
 const LOCAL_AI_ERROR_CODES = {
     unsupported: 'localAiErrorUnsupported',
     'empty-response': 'localAiErrorEmpty',
+    'unsupported-attachment': 'localAiErrorFileType',
 };
+
+/**
+ * What the local model can take from an attachment: images Chrome decodes for it, and
+ * text, which goes into the prompt. A PDF has no reader on this side, and HEIC is a
+ * format Chrome does not decode.
+ */
+const LOCAL_AI_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const LOCAL_AI_TEXT_TYPES = ['text/plain', 'text/csv'];
+
+export function localAiReadsAttachment(mimeType) {
+    return LOCAL_AI_IMAGE_TYPES.includes(mimeType) || LOCAL_AI_TEXT_TYPES.includes(mimeType);
+}
+
+/** The bytes of an attachment, which the store keeps as a data URL. */
+function attachmentBytes(attachment) {
+    const binary = atob(attachment.data.slice(attachment.data.indexOf(',') + 1));
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+}
 
 /**
  * The message key that explains a local-model failure, or null when the reason is
@@ -506,10 +527,33 @@ const MAX_LOCAL_TURNS = 6;
  * @param {string} query The question.
  * @param {Array<{ role: string, parts: Array<{ text?: string }> }>} [contents] History
  *        in the API's format, as the store already builds it.
+ * @param {Array<{ name: string, mimeType: string, data: string }>} [attachments] Files sent
+ *        with the question.
  */
-export async function promptLocalAi(query, contents = null) {
+export async function promptLocalAi(query, contents = null, attachments = []) {
     const LanguageModel = api();
     if (!LanguageModel?.create) return { success: false, error: localAiErrorMessage('unsupported') };
+    if (attachments.some((file) => !localAiReadsAttachment(file.mimeType))) {
+        return { success: false, error: localAiErrorMessage('unsupported-attachment') };
+    }
+
+    // Images travel as images, in a session that has been told to expect them; text
+    // files are read into the question.
+    const images = attachments
+        .filter((file) => LOCAL_AI_IMAGE_TYPES.includes(file.mimeType))
+        .map((file) => new Blob([attachmentBytes(file)], { type: file.mimeType }));
+    const texts = attachments
+        .filter((file) => LOCAL_AI_TEXT_TYPES.includes(file.mimeType))
+        .map((file) => `${file.name}:\n${new TextDecoder().decode(attachmentBytes(file))}`);
+    const text = texts.length ? `${query}\n\n${texts.join('\n\n')}` : query;
+    const input = images.length
+        ? [
+              {
+                  role: 'user',
+                  content: [{ type: 'text', value: text }, ...images.map((value) => ({ type: 'image', value }))],
+              },
+          ]
+        : text;
 
     let session;
     try {
@@ -528,8 +572,12 @@ export async function promptLocalAi(query, contents = null) {
             }
         }
 
-        session = await LanguageModel.create({ ...(await outputOptions()), initialPrompts });
-        const answer = await withTimeout(session.prompt(query), PROMPT_TIMEOUT, null);
+        session = await LanguageModel.create({
+            ...(await outputOptions()),
+            initialPrompts,
+            ...(images.length ? { expectedInputs: [{ type: 'image' }] } : {}),
+        });
+        const answer = await withTimeout(session.prompt(input), PROMPT_TIMEOUT, null);
 
         if (!answer) return { success: false, error: localAiErrorMessage('empty-response') };
 

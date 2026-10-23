@@ -40,13 +40,17 @@ export function markdownToPlainText(markdown) {
         holder.innerHTML = parseMarkdown(markdown);
         return (holder.textContent || '').trim();
     }
-    return markdown
-        .replace(/^#{1,6}\s+/gm, '')
-        .replace(/\*\*(.*?)\*\*/g, '$1')
-        .replace(/\*(.*?)\*/g, '$1')
-        .replace(/`([^`]+)`/g, '$1')
-        .replace(/^\s*[\*-]\s+/gm, '')
-        .trim();
+    return (
+        markdown
+            .replace(/^#{1,6}\s+/gm, '')
+            // Bullets before emphasis, as in parseMarkdown: a "* " bullet would otherwise
+            // pair with the asterisk of an italic title further along the line.
+            .replace(/^\s*[*-]\s+/gm, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?!\w)/g, '$1$2')
+            .replace(/`([^`]+)`/g, '$1')
+            .trim()
+    );
 }
 
 /**

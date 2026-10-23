@@ -83,11 +83,29 @@ async function handleGetHistory(message, sendResponse) {
 }
 
 /**
+ * What the user took off the recently closed list (`STORAGE_KEYS.RECENT_HIDDEN` in the UI).
+ *
+ * Chrome has no way to delete a closed session, so "Clear recent list" and the cross of
+ * a row used to empty the panel's copy only, and the next load brought every entry back.
+ * Now they are remembered here: everything closed up to `clearedAt` (ms), and the
+ * `sessionId`s removed one by one.
+ */
+const RECENT_HIDDEN_KEY = 'recentlyClosedHidden';
+
+/**
  * Gets recently closed tabs.
  */
 async function handleGetRecentlyClosed(message, sendResponse) {
     try {
-        const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: 25 });
+        const [sessions, { [RECENT_HIDDEN_KEY]: hidden = {} }] = await Promise.all([
+            chrome.sessions.getRecentlyClosed({ maxResults: 25 }),
+            chrome.storage.local.get(RECENT_HIDDEN_KEY),
+        ]);
+        const clearedAt = hidden.clearedAt || 0;
+        const hiddenIds = new Set(hidden.ids || []);
+        // `lastModified` comes in seconds.
+        const closedAtMs = (session) =>
+            session.lastModified > 1000000000000 ? session.lastModified : session.lastModified * 1000;
 
         // Map to include lastModified from Session object, not just tab data
         const results = sessions
@@ -102,7 +120,8 @@ async function handleGetRecentlyClosed(message, sendResponse) {
                     type: session.tab ? 'tab' : 'window',
                 };
             })
-            .filter((item) => item !== null); // Filter nulls just in case
+            .filter((item) => item !== null) // Filter nulls just in case
+            .filter((item) => !hiddenIds.has(item.sessionId) && closedAtMs(item) > clearedAt);
 
         // Filter by search if query exists
         const matchingResults = message.query
@@ -289,12 +308,16 @@ async function handleSetPageMode(message, sender, sendResponse) {
         }
     }
 
+    // Choosing the mode already in force takes it off: the caller has to know which of
+    // the two happened, or it announces "applied" for a mode it has just removed.
+    let removed = false;
     if (scope === 'global') {
         const { [GLOBAL_MODE_KEY]: currentGlobalMode } = await chrome.storage.local.get(GLOBAL_MODE_KEY);
         // If new mode is the same as current global mode, we're deactivating it.
         const newGlobalMode = currentGlobalMode === mode ? null : mode;
 
         await chrome.storage.local.set({ [GLOBAL_MODE_KEY]: newGlobalMode });
+        removed = newGlobalMode === null;
 
         // Clear all tab-specific overrides when setting a new global mode.
         tabModes.clear();
@@ -319,6 +342,7 @@ async function handleSetPageMode(message, sender, sendResponse) {
         const effectiveCurrentMode = tabModes.has(tabId) ? tabModes.get(tabId) : globalMode;
         // If new mode is same as currently active, deactivate it.
         const newTabMode = effectiveCurrentMode === mode ? null : mode;
+        removed = newTabMode === null;
 
         if (newTabMode === null) {
             tabModes.delete(tabId); // Reverts to global mode.
@@ -341,7 +365,7 @@ async function handleSetPageMode(message, sender, sendResponse) {
     }
 
     chrome.runtime.sendMessage({ action: 'pageModeChanged' });
-    sendResponse({ success: true, mode: mode, scope: scope });
+    sendResponse({ success: true, mode: mode, scope: scope, removed });
 }
 
 /**

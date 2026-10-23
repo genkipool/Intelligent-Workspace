@@ -59,11 +59,15 @@ export function parseMarkdown(text) {
         .replace(/^\s*### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^\s*## (.*$)/gim, '<h2>$1</h2>')
         .replace(/^\s*# (.*$)/gim, '<h1>$1</h1>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/^\s*[\*-] (.*$)/gim, '<ul><li>$1</li></ul>')
+        // List markers go first: a "* " bullet is an asterisk too, and with emphasis
+        // read before it, the bullet paired with the first asterisk of an italic title
+        // further along the line and the item came out as a stray <em> paragraph.
+        .replace(/^\s*[*-] (.*$)/gim, '<ul><li>$1</li></ul>')
         .replace(/^\s*(\d+)\. (.*$)/gim, '<ol start="$1"><li>$2</li></ol>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Emphasis hugs its text, as in Markdown: "2 * 3 * 4" is not italic.
+        .replace(/(^|[^*\w])\*(?=\S)([^*\n]*?\S)\*(?!\w)/g, '$1<em>$2</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/<\/ul>\s*<ul>/g, '')
         .replace(/<\/ol>\s*<ol>/g, '');
     return html
@@ -140,7 +144,7 @@ export function renderGeminiResponse(entryContainer, entry) {
 
     if (isLoading) {
         const loadingP = document.createElement('p');
-        loadingP.textContent = localizedMsg('geminiWaitingForResponse') || "Waiting for Gemini's response...";
+        loadingP.textContent = localizedMsg('geminiWaitingForResponse') || 'Waiting for the answer...';
         contentEl.appendChild(loadingP);
         entryContainer.classList.add('loading');
     } else {

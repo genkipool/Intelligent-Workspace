@@ -50,6 +50,8 @@ export const STORAGE_KEYS = {
     ORDER: 'userGroupOrder',
     PINS: 'pinnedGroupIds',
     HIDDEN: 'hiddenGroupIds',
+    /** What was taken off the recently closed list: `{ clearedAt, ids }`. Read by the worker too. */
+    RECENT_HIDDEN: 'recentlyClosedHidden',
     SETTINGS: 'listGroupSettings',
     PINNED_AT_LAST: 'pinnedAtLastPositionId',
     API_KEY: 'geminiApiKey',

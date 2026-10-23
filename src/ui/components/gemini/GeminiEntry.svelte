@@ -1,5 +1,5 @@
 <script>
-    import { onMount, untrack } from 'svelte';
+    import { onMount, tick, untrack } from 'svelte';
     import { t, tt } from '../../stores/i18nStore.js';
     import { activateOnKey } from '../../../utils/keyboardNav.js';
     import { geminiStore } from '../../stores/geminiStore.js';
@@ -21,6 +21,7 @@
     let entryEl = $state();
     let isEditing = $state(false);
     let editText = $state('');
+    let editTextarea = $state();
 
     let isSpeaking = $state(false);
     let isPaused = $state(false);
@@ -61,9 +62,15 @@
         return () => unsubscribe?.();
     });
 
-    export function enterEditMode() {
-        isEditing = true;
+    export async function enterEditMode() {
         editText = entry?.query || '';
+        isEditing = true;
+        // The box is below the summary, so a folded card has to open to show it; and
+        // the focus goes into it, rather than staying on the pencil that was clicked.
+        if (entryEl) entryEl.open = true;
+        await tick();
+        editTextarea?.focus();
+        editTextarea?.setSelectionRange(editText.length, editText.length);
     }
 
     export function exitEditMode() {
@@ -256,19 +263,7 @@
                 </div>
             </div>
         </div>
-        {#if isEditing}
-            <div class="gemini-edit-container">
-                <textarea
-                    class="gemini-edit-textarea"
-                    translate="no"
-                    bind:value={editText}
-                    onkeydown={handleEditKeydown}
-                ></textarea>
-                <div class="gemini-edit-actions">
-                    <button type="button" class="gemini-edit-btn-save" onclick={handleSaveEdit}>{$t('send')}</button>
-                </div>
-            </div>
-        {:else}
+        {#if !isEditing}
             <h2 data-original-text={entry?.query || ''} data-svelte-managed="true" class="entry-title">
                 {displayQuery}{#if isLongQuery}<button
                         type="button"
@@ -290,6 +285,22 @@
             {/if}
         {/if}
     </summary>
+    {#if isEditing}
+        <!-- Outside the <summary>: in there, every space typed into the box folded or
+             unfolded the card, because Space is how a summary toggles its <details>. -->
+        <div class="gemini-edit-container">
+            <textarea
+                class="gemini-edit-textarea"
+                translate="no"
+                bind:this={editTextarea}
+                bind:value={editText}
+                onkeydown={handleEditKeydown}
+            ></textarea>
+            <div class="gemini-edit-actions">
+                <button type="button" class="gemini-edit-btn-save" onclick={handleSaveEdit}>{$t('send')}</button>
+            </div>
+        </div>
+    {/if}
     {#if entry?.isAgent && entry?.agentSteps?.length}
         <div class="agent-steps">
             <!-- The steps are only ever appended (agent-ui.js), never removed or

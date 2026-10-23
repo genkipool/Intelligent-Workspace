@@ -211,9 +211,6 @@
   "apiKeySaved": {
     "message": "已保存 API 密钥"
   },
-  "listGroupViewTitle": {
-    "message": "组列表"
-  },
   "agentMaxStepsReached": {
     "message": "智能体已达到最大步骤数"
   },
@@ -3543,8 +3540,8 @@
     "description": "General loading message"
   },
   "geminiWaitingForResponse": {
-    "message": "正在等待 Gemini 回复...",
-    "description": "Message displayed while waiting for a response from the Gemini API."
+    "message": "正在等待回复...",
+    "description": "Shown on a question while its answer is on its way, from Gemini or from Chrome local AI."
   },
   "viewGeminiConversations": {
     "message": "查看 Gemini 对话",
@@ -3823,6 +3820,10 @@
   "localAiErrorEmpty": {
     "message": "本地模型未返回任何回答，请重试。",
     "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorFileType": {
+    "message": "Chrome 本地 AI 无法读取此文件。请附加 JPEG、PNG 或 WebP 图片或文本文件，或选择 Gemini 模型。",
+    "description": "Shown when, with the local AI selected, the user attaches a file the local model cannot read (a PDF or a HEIC image)."
   },
   "localAiErrorGeneric": {
     "message": "Chrome 本地 AI 无法作答。请重试，或在 chrome://on-device-internals 中查看其状态。",
@@ -5898,8 +5899,12 @@
     "description": "Option for paper mode in the page mode dropdown."
   },
   "modeAppliedSuccessfully": {
-    "message": "已成功应用 $1。",
-    "description": "Notification shown when a page mode is applied. $1 is the mode name."
+    "message": "已应用 $1。",
+    "description": "Notification shown when a page mode is applied. $1 is the full name of the mode (e.g. \"Paper Mode\"), which already contains the word \"mode\"."
+  },
+  "modeRemoved": {
+    "message": "已关闭 $1。",
+    "description": "Notification shown when the page mode in force is chosen again, which takes it off. $1 is the full name of the mode (e.g. \"Paper Mode\")."
   },
   "errorApplyingMode": {
     "message": "应用页面模式时出错。",

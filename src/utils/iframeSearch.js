@@ -1,4 +1,7 @@
-if (window.self !== window.top) {
+// Search inside a page opened in the side panel. The page is a frame of the extension's
+// own page, so this is declared for every frame — with `all_frames: false` it never ran
+// where it is needed — and stays only in a frame whose parent is the extension.
+if (window.self !== window.top && location.ancestorOrigins?.[0] === chrome.runtime.getURL('').slice(0, -1)) {
     const extensionOrigin = chrome.runtime.getURL('').slice(0, -1);
 
     // STATE: Maintains the list of results and the current index

@@ -7,7 +7,6 @@ import { applyTranslations, showNotification, msg as localizedMsg } from '../../
 import { renderNoteEntry as renderNoteEntryFromModule } from '../../content-renderer/content-renderer.js';
 import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
 import { initAgentUI } from '../../../utils/agent-ui.js';
-import { exportBookmarkFolder } from '../../../utils/importExport.js';
 import { initializeBookmarksView } from '../../bookmarks/bookmarks.js';
 import { getProvider } from '../../../config/contributionProviders.js';
 import { warmPaymentOrigin } from '../../services/paymentService.js';
@@ -29,14 +28,13 @@ import {
     openPaymentInPanel,
     closeUrlInPanel,
     hideYoutubeView,
-    updateScrollButtons,
-    updateExpandAllButtonState,
     updateHeaderButtonsVisibility,
+    bookmarksViewUtils,
     initViewEvents,
     registerViewService,
 } from '../../services/viewsService.js';
 import { markViewControlsWired, replayEarlyViewClick } from '../../services/earlyViewClicks.js';
-import { openAddToBookmarkModal, showAddToRuleModal, initBookmarkEvents } from '../../services/bookmarksService.js';
+import { initBookmarkEvents } from '../../services/bookmarksService.js';
 import {
     updateCombinedConversationDisplay,
     updateScheduledConversationBadge,
@@ -88,7 +86,7 @@ import {
     updateSubButtonVisibility,
     initSettingsEvents,
 } from '../../services/settingsService.js';
-import { createOverflowMenu, initContextMenuEvents } from '../../services/contextMenuService.js';
+import { initContextMenuEvents } from '../../services/contextMenuService.js';
 
 import {
     isGeminiViewActive,
@@ -418,6 +416,8 @@ function initDeleteAllContextButton() {
                 c.recent = [];
                 return c;
             });
+            const { recentStore } = await import('../../stores/recentStore.js');
+            await recentStore.clearAll();
             renderRecentlyClosedView();
             showNotification('recentCleared');
         } else if (view === 'reading') {
@@ -473,16 +473,7 @@ function refreshBookmarksView() {
         if (bookmarksList) {
             await initializeBookmarksView(
                 bookmarksList,
-                {
-                    applyTranslations,
-                    updateScrollButtons,
-                    updateExpandAllButtonState,
-                    createOverflowMenu,
-                    showAddToRuleModal,
-                    exportBookmarkFolder,
-                    showNotification,
-                    openAddToBookmarkModal,
-                },
+                bookmarksViewUtils(),
                 get(currentBookmarkSort),
                 get(viewExpandStates).bookmarks,
             );

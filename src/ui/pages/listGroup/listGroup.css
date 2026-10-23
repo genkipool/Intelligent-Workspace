@@ -2143,6 +2143,9 @@ body.show-domain-headers .subgroup-tab-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
+    /* In a short panel the modal body is what scrolls; shrinking the list instead
+       squeezed it to nothing and left the schedules unreachable. */
+    flex-shrink: 0;
 }
 
 .schedule-item-actions {
@@ -5034,7 +5037,10 @@ body:not(.groups-view-active):not(.bookmarks-view-active) #visibility-controls-p
     color: var(--text-on-color);
 }
 
-.page-mode-item.active {
+/* The page mode in force, in the hover menu and in the context and overflow menus. */
+.page-mode-item.active,
+.context-menu-item.active,
+.overflow-popup-item.active {
     color: var(--text-on-color);
     font-weight: bold;
 }
@@ -7174,6 +7180,9 @@ a.delete-item-title:hover {
 }
 
 .delete-history-group-btn {
+    /* Laid over the header row, which is positioned: a static button was painted
+       beneath it, so a click on the bin folded the day instead. */
+    position: relative;
     margin-left: auto;
     opacity: 0;
     pointer-events: none;

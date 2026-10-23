@@ -200,8 +200,9 @@
     width: 100%;
 }
 
-.gemini-entry.loading .entry-content::before {
-    content: 'Esperando la respuesta de Gemini...';
+/* The waiting line is written by renderGeminiResponse in the user's language. This
+   used to add a second, hard-coded Spanish copy of it through ::before. */
+.gemini-entry.loading .entry-content p {
     font-style: italic;
     color: var(--text-on-color);
     animation: pulse 1.8s infinite ease-in-out;

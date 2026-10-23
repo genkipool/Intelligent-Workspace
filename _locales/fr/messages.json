@@ -211,9 +211,6 @@
   "apiKeySaved": {
     "message": "Clé API enregistrée"
   },
-  "listGroupViewTitle": {
-    "message": "Liste des groupes"
-  },
   "agentMaxStepsReached": {
     "message": "L'agent a atteint le nombre maximal d'étapes"
   },
@@ -3543,8 +3540,8 @@
     "description": "General loading message"
   },
   "geminiWaitingForResponse": {
-    "message": "En attente d'une réponse de Gemini...",
-    "description": "Message displayed while waiting for a response from the Gemini API."
+    "message": "En attente de la réponse...",
+    "description": "Shown on a question while its answer is on its way, from Gemini or from Chrome local AI."
   },
   "viewGeminiConversations": {
     "message": "Afficher les conversations Gemini",
@@ -3823,6 +3820,10 @@
   "localAiErrorEmpty": {
     "message": "Le modèle local n'a renvoyé aucune réponse. Réessayez.",
     "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorFileType": {
+    "message": "L'IA locale de Chrome ne peut pas lire ce fichier. Joignez une image JPEG, PNG ou WebP ou un fichier texte, ou choisissez un modèle Gemini.",
+    "description": "Shown when, with the local AI selected, the user attaches a file the local model cannot read (a PDF or a HEIC image)."
   },
   "localAiErrorGeneric": {
     "message": "L'IA locale de Chrome n'a pas pu répondre. Réessayez ou vérifiez son état sur chrome://on-device-internals.",
@@ -5898,8 +5899,12 @@
     "description": "Option for paper mode in the page mode dropdown."
   },
   "modeAppliedSuccessfully": {
-    "message": "Mode $1 appliqué.",
-    "description": "Notification shown when a page mode is applied. $1 is the mode name."
+    "message": "$1 appliqué.",
+    "description": "Notification shown when a page mode is applied. $1 is the full name of the mode (e.g. \"Paper Mode\"), which already contains the word \"mode\"."
+  },
+  "modeRemoved": {
+    "message": "$1 désactivé.",
+    "description": "Notification shown when the page mode in force is chosen again, which takes it off. $1 is the full name of the mode (e.g. \"Paper Mode\")."
   },
   "errorApplyingMode": {
     "message": "Erreur lors de l'application du mode de page.",

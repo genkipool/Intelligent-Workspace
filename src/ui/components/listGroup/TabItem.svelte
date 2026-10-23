@@ -98,7 +98,11 @@
             tabEl.blur();
         }
 
-        const handled = tabEl ? handleTabActivation(e, tabEl) : false;
+        // Opened in the panel (Ctrl+click, or the popup window): the browser's active
+        // tab has not changed and this one was never visited, so the row is neither
+        // marked active nor counted as seen. Marking it left two "active" rows, and the
+        // stale one made scrollToActiveGroupIfNeeded open its group on the next switch.
+        if (tabEl && handleTabActivation(e, tabEl)) return;
 
         const currentActive = document.querySelector('.tab-item.active');
         if (currentActive && currentActive !== tabEl) {
@@ -124,8 +128,6 @@
             updateCounters(tabEl);
         }
         seenTabIds.add(tab.id);
-
-        if (handled) return;
 
         if (!isNaN(tab.id)) {
             isProgrammaticActivation.set(true);

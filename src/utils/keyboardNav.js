@@ -1,8 +1,35 @@
 // --- START OF FILE keyboardNav.js ---
 
+/**
+ * The card whose header row holds `el`, when `el` is that row: its <summary> or one of
+ * the controls laid over it (see `header-with-controls` in listGroup.css).
+ */
+function headerRowOf(el) {
+    const owner = el?.closest?.('.header-with-controls');
+    if (!owner) return null;
+    for (let node = el; node && node !== owner; node = node.parentElement) {
+        if (node.parentElement === owner) {
+            return node.tagName === 'SUMMARY' || node.matches('.header-lead, .header-controls') ? owner : null;
+        }
+    }
+    return null;
+}
+
 function findSpatialTarget(currentElement, focusableElements, direction) {
     if (!currentElement) return null;
-    const currentRect = currentElement.getBoundingClientRect();
+
+    // Up and down, a header row is one stop: its summary. The colour dot is a narrow
+    // column of its own, so measured on its own it only ever lined up with the dot of
+    // the next card and never reached a tab; and the controls of the row sit a few
+    // pixels lower than the summary, so from the summary "down" landed on a button of
+    // the same row. The controls are still reached with left and right.
+    const row = headerRowOf(currentElement);
+    const anchor = row?.querySelector(':scope > summary') || currentElement;
+    focusableElements = focusableElements.filter((el) => {
+        const elRow = headerRowOf(el);
+        return !elRow || (elRow !== row && el.tagName === 'SUMMARY');
+    });
+    const currentRect = anchor.getBoundingClientRect();
 
     // --- Pass 1: Find candidates that are visually aligned in the same column ---
     const alignedCandidates = focusableElements.filter((candidate) => {
@@ -221,6 +248,9 @@ export function initializeKeyboardNavigation(customHandlers = {}) {
                 'input:not([disabled]):not([tabindex="-1"])',
                 'textarea:not([disabled]):not([tabindex="-1"])',
                 'select:not([disabled]):not([tabindex="-1"])',
+                // Focusable without a tabindex, and the header of every card: left out,
+                // the arrow up from a group's first tab skipped its own header.
+                'details > summary:not([tabindex="-1"])',
                 '[tabindex]:not([tabindex="-1"]):not([disabled])',
             ].join(', ');
 

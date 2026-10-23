@@ -130,7 +130,9 @@ export async function showDownloadPopup(button, url) {
         });
 
         downloadBtn.addEventListener('click', () => {
-            const selectedItems = [...listContainer.querySelectorAll('.download-item.selected')];
+            // What is on screen is what is downloaded: the button counts only the files the
+            // filter shows, and the ones it hides keep their selection for when it is cleared.
+            const selectedItems = [...listContainer.querySelectorAll('.download-item.selected:not(.hidden)')];
             const filesToDownload = selectedItems.map((item) => ({ url: item.dataset.url, name: item.dataset.name }));
 
             if (filesToDownload.length > 0) {

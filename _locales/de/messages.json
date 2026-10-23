@@ -211,9 +211,6 @@
   "apiKeySaved": {
     "message": "API-Schlüssel gespeichert"
   },
-  "listGroupViewTitle": {
-    "message": "Gruppen auflisten"
-  },
   "agentMaxStepsReached": {
     "message": "Der Agent hat die maximale Anzahl an Schritten erreicht"
   },
@@ -3543,8 +3540,8 @@
     "description": "General loading message"
   },
   "geminiWaitingForResponse": {
-    "message": "Warten auf eine Antwort von Gemini...",
-    "description": "Message displayed while waiting for a response from the Gemini API."
+    "message": "Warten auf die Antwort...",
+    "description": "Shown on a question while its answer is on its way, from Gemini or from Chrome local AI."
   },
   "viewGeminiConversations": {
     "message": "Gemini-Unterhaltungen ansehen",
@@ -3823,6 +3820,10 @@
   "localAiErrorEmpty": {
     "message": "Das lokale Modell hat keine Antwort geliefert. Versuchen Sie es erneut.",
     "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorFileType": {
+    "message": "Die lokale KI von Chrome kann diese Datei nicht lesen. Hängen Sie ein JPEG-, PNG- oder WebP-Bild oder eine Textdatei an oder wählen Sie ein Gemini-Modell.",
+    "description": "Shown when, with the local AI selected, the user attaches a file the local model cannot read (a PDF or a HEIC image)."
   },
   "localAiErrorGeneric": {
     "message": "Die lokale KI von Chrome konnte nicht antworten. Versuchen Sie es erneut oder prüfen Sie ihren Status unter chrome://on-device-internals.",
@@ -5898,8 +5899,12 @@
     "description": "Option for paper mode in the page mode dropdown."
   },
   "modeAppliedSuccessfully": {
-    "message": "Modus „$1“ erfolgreich angewendet.",
-    "description": "Notification shown when a page mode is applied. $1 is the mode name."
+    "message": "$1 angewendet.",
+    "description": "Notification shown when a page mode is applied. $1 is the full name of the mode (e.g. \"Paper Mode\"), which already contains the word \"mode\"."
+  },
+  "modeRemoved": {
+    "message": "$1 deaktiviert.",
+    "description": "Notification shown when the page mode in force is chosen again, which takes it off. $1 is the full name of the mode (e.g. \"Paper Mode\")."
   },
   "errorApplyingMode": {
     "message": "Fehler beim Anwenden des Seitenmodus.",

@@ -223,9 +223,6 @@
     "apiKeySaved": {
         "message": "Clave API guardada"
     },
-    "listGroupViewTitle": {
-        "message": "Listar Grupos"
-    },
     "agentMaxStepsReached": {
         "message": "El agente ha alcanzado el número máximo de pasos"
     },
@@ -3499,7 +3496,7 @@
         "description": "Mensaje de carga general"
     },
     "geminiWaitingForResponse": {
-        "message": "Esperando la respuesta de Gemini...",
+        "message": "Esperando la respuesta...",
         "description": "Mensaje que se muestra mientras se espera una respuesta de la API de Gemini."
     },
     "viewGeminiConversations": {
@@ -3779,6 +3776,10 @@
     "localAiErrorEmpty": {
         "message": "El modelo local no ha devuelto ninguna respuesta. Inténtalo de nuevo.",
         "description": "Error cuando el modelo local responde vacío."
+    },
+    "localAiErrorFileType": {
+        "message": "La IA local de Chrome no puede leer este archivo. Adjunta una imagen JPEG, PNG o WebP o un archivo de texto, o elige un modelo de Gemini.",
+        "description": "Aviso cuando se adjunta, con la IA local elegida, un archivo que el modelo local no puede leer (un PDF o una imagen HEIC)."
     },
     "localAiErrorGeneric": {
         "message": "La IA local de Chrome no ha podido responder. Inténtalo de nuevo o revisa su estado en chrome://on-device-internals.",
@@ -5911,8 +5912,12 @@
         "description": "Opción para el modo papel en el menú de modos de página."
     },
     "modeAppliedSuccessfully": {
-        "message": "$1 aplicado correctamente.",
-        "description": "Notificación que se muestra cuando se aplica un modo de página. $1 es el nombre del modo."
+        "message": "$1 aplicado.",
+        "description": "Notificación que se muestra cuando se aplica un modo de página. $1 es el nombre completo del modo (p. ej. \"Modo Papel\"), que ya lleva la palabra \"modo\"."
+    },
+    "modeRemoved": {
+        "message": "$1 desactivado.",
+        "description": "Notificación que se muestra al elegir otra vez el modo de página que está puesto, lo que lo quita. $1 es el nombre completo del modo (p. ej. \"Modo Papel\")."
     },
     "errorApplyingMode": {
         "message": "Error al aplicar el modo de página.",

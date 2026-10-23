@@ -3,7 +3,7 @@ import { saveGeminiEntryToDb, getAllGeminiEntriesFromDb, deleteGeminiEntryFromDb
 import { showNotification, getCurrentLang, loadMessages, msg as localizedMsg } from '../../utils/i18n.js';
 import { handleAgentQuery, setSendButtonBusy, cancelAgentQuery } from '../../utils/agent-ui.js';
 import { parseMarkdown } from '../content-renderer/content-renderer.js';
-import { LOCAL_AI_MODEL_ID } from '../services/localAiService.js';
+import { LOCAL_AI_MODEL_ID, localAiReadsAttachment } from '../services/localAiService.js';
 
 /** The Gemini model chosen when the first API key is added. */
 const DEFAULT_REMOTE_MODEL = 'gemini-2.5-flash';
@@ -262,10 +262,38 @@ function createGeminiStore() {
      * @returns {Promise<object|null>} A response in the API client's shape, or null when
      *          the selected model is a remote one.
      */
-    async function answerWithSelectedLocalAi(query, entryId) {
+    async function answerWithSelectedLocalAi(query, entryId, attachments = []) {
         if (get(state).selectedModel !== LOCAL_AI_MODEL_ID) return null;
         const { promptLocalAi } = await import('../services/localAiService.js');
-        return await promptLocalAi(query, buildGeminiHistoryContents(entryId));
+        return await promptLocalAi(query, buildGeminiHistoryContents(entryId), attachments);
+    }
+
+    /**
+     * Asks again for the answer of a card already on screen — resend and edit — by the
+     * same road a new question takes: the local model when it is the one chosen, the
+     * worker otherwise. `previous` is what the card goes back to if no answer comes.
+     */
+    async function answerEntryAgain(entryId, query, previous) {
+        setSendButtonBusy(true);
+        try {
+            const localResponse = await answerWithSelectedLocalAi(query, entryId);
+            if (localResponse) {
+                await applyGeminiAnswer(entryId, localResponse, { fallback: previous });
+                return;
+            }
+            chrome.runtime.sendMessage(
+                {
+                    action: 'searchGemini',
+                    query,
+                    contents: buildGeminiHistoryContents(entryId),
+                    attachments: [],
+                },
+                (response) => applyGeminiAnswer(entryId, response, { fallback: previous }),
+            );
+        } catch (e) {
+            setSendButtonBusy(false);
+            console.error('Error asking the assistant again:', e);
+        }
     }
 
     function buildGeminiHistoryContents(targetEntryId) {
@@ -682,7 +710,7 @@ function createGeminiStore() {
             update((st) => ({ ...st, pendingAttachments: [] }));
 
             try {
-                const localResponse = await answerWithSelectedLocalAi(query, newEntry.id);
+                const localResponse = await answerWithSelectedLocalAi(query, newEntry.id, currentAttachments);
                 if (localResponse) {
                     await applyGeminiAnswer(newEntry.id, localResponse);
                     return;
@@ -1001,81 +1029,29 @@ function createGeminiStore() {
                 conversationHistory: st.conversationHistory.map((e) => (e.id === entryId ? waiting : e)),
             }));
             await saveGeminiEntryToDb(waiting);
-            setSendButtonBusy(true);
-
-            try {
-                chrome.runtime.sendMessage(
-                    {
-                        action: 'searchGemini',
-                        query,
-                        contents: buildGeminiHistoryContents(entryId),
-                        attachments: [],
-                    },
-                    (response) => applyGeminiAnswer(entryId, response, { fallback: previous }),
-                );
-            } catch (e) {
-                setSendButtonBusy(false);
-                console.error('Error resending Gemini query:', e);
-            }
+            await answerEntryAgain(entryId, query, previous);
         },
 
+        /**
+         * Replaces the question of a card and answers it again, on the same card.
+         *
+         * It used to go straight to the worker, which only speaks to Gemini: with the
+         * local model chosen the answer was an error, and an error deleted the card —
+         * the edited question vanished with its old answer and nothing came back. Now
+         * it is asked like any other question, and a failure puts the card back as it was.
+         */
         submitEdit: async (entryId, newQuery) => {
-            const s = get(state);
-            const entryIndex = s.conversationHistory.findIndex((e) => e.id === entryId);
-            if (entryIndex === -1 || !newQuery) return;
+            const previous = get(state).conversationHistory.find((e) => e.id === entryId);
+            if (!previous || !newQuery || newQuery === previous.query) return;
 
-            const originalQuery = s.conversationHistory[entryIndex].query;
-            if (newQuery === originalQuery) return;
-
-            update((st) => {
-                st.conversationHistory[entryIndex] = {
-                    ...st.conversationHistory[entryIndex],
-                    query: newQuery,
-                    data: null,
-                    isLoading: true,
-                };
-                return { ...st, conversationHistory: [...st.conversationHistory] };
-            });
-
-            const s2 = get(state);
-            await saveGeminiEntryToDb(s2.conversationHistory[entryIndex]);
+            const waiting = { ...previous, query: newQuery, data: null, isLoading: true };
+            update((st) => ({
+                ...st,
+                conversationHistory: st.conversationHistory.map((e) => (e.id === entryId ? waiting : e)),
+            }));
+            await saveGeminiEntryToDb(waiting);
             chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-
-            chrome.runtime.sendMessage(
-                { action: 'searchGemini', query: newQuery, contents: buildGeminiHistoryContents(entryId) },
-                async (response) => {
-                    const s3 = get(state);
-                    const finalEntryIndex = s3.conversationHistory.findIndex((e) => e.id === entryId);
-                    if (finalEntryIndex === -1) return;
-
-                    let errorMsg = '';
-                    if (chrome.runtime.lastError) {
-                        errorMsg =
-                            chrome.runtime.lastError.message || localizedMsg('connectionError') || 'Connection error';
-                    } else if (!response || response.error) {
-                        errorMsg =
-                            response && response.error
-                                ? response.error
-                                : localizedMsg('aiConnectionUnknownError') || 'Unknown error connecting to AI';
-                    }
-
-                    if (errorMsg) {
-                        update((st) => ({
-                            ...st,
-                            conversationHistory: st.conversationHistory.filter((e) => e.id !== entryId),
-                        }));
-                        await deleteGeminiEntryFromDb(entryId);
-                        chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-                        return;
-                    }
-
-                    s3.conversationHistory[finalEntryIndex].data = response;
-                    s3.conversationHistory[finalEntryIndex].isLoading = false;
-                    await saveGeminiEntryToDb(s3.conversationHistory[finalEntryIndex]);
-                    chrome.runtime.sendMessage({ action: 'geminiConversationUpdated' });
-                    update((st) => ({ ...st, conversationHistory: [...st.conversationHistory] }));
-                },
-            );
+            await answerEntryAgain(entryId, newQuery, previous);
         },
 
         htmlToSpeechText: (htmlString) => {
@@ -1324,6 +1300,10 @@ function createGeminiStore() {
                 }
                 if (!validTypes.includes(file.type)) {
                     showNotification('geminiUnsupportedFileType', true);
+                    continue;
+                }
+                if (s.selectedModel === LOCAL_AI_MODEL_ID && !localAiReadsAttachment(file.type)) {
+                    showNotification('localAiErrorFileType', true);
                     continue;
                 }
                 if (file.size > maxSize) {

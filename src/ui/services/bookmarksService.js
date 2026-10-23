@@ -19,19 +19,13 @@ import {
 } from '../stores/modalStore.js';
 import { get } from 'svelte/store';
 
-import {
-    overwriteBookmarks,
-    addImportedBookmarks,
-    exportBookmarks,
-    exportBookmarkFolder,
-} from '../../utils/importExport.js';
+import { overwriteBookmarks, addImportedBookmarks, exportBookmarks } from '../../utils/importExport.js';
 
 import { STORAGE_KEYS } from './constants.js';
 
 import { currentBookmarkSort, isBookmarksViewActive, isAllExpanded } from '../stores/appStore.svelte.js';
 
-import { updateScrollButtons, updateExpandAllButtonState } from './viewsService.js';
-import { createOverflowMenu } from './contextMenuService.js';
+import { updateScrollButtons, bookmarksViewUtils } from './viewsService.js';
 import { getStorage } from './settingsService.js';
 
 import { initializeBookmarksView } from '../bookmarks/bookmarks.js';
@@ -96,7 +90,7 @@ export async function handleShowBrokenBookmarks() {
     if (cachedBrokenBookmarks && Array.isArray(cachedBrokenBookmarks)) {
         openModal(showSpecialDeleteModal, {
             titleKey: 'deleteBrokenBookmarksTitle',
-            descriptionKey: 'deleteBrokenBookmarksDesc',
+            descriptionKey: cachedBrokenBookmarks.length ? 'brokenBookmarksFoundDesc' : '',
             items: cachedBrokenBookmarks,
             type: 'broken',
             emptyMessageKey: 'noBrokenBookmarksFound',
@@ -218,6 +212,9 @@ async function startBrokenBookmarksScan(items) {
     await chrome.storage.session.set({ [STORAGE_KEYS.BROKEN_BOOKMARKS_SESSION]: brokenBookmarks });
     modalData.set({
         ...get(modalData),
+        // "Scanning links…" stayed at the top once the scan was over. With nothing
+        // found, the empty-list message says all there is to say.
+        descriptionKey: brokenBookmarks.length ? 'brokenBookmarksFoundDesc' : '',
         items: brokenBookmarks,
         isLoading: false,
         scanProgress: { current: totalCount, total: totalCount },
@@ -573,16 +570,7 @@ export function initBookmarkEvents() {
             if (bookmarksList && get(isBookmarksViewActive)) {
                 await initializeBookmarksView(
                     bookmarksList,
-                    {
-                        showNotification,
-                        applyTranslations,
-                        updateScrollButtons,
-                        updateExpandAllButtonState,
-                        createOverflowMenu,
-                        showAddToRuleModal,
-                        exportBookmarkFolder,
-                        openAddToBookmarkModal,
-                    },
+                    bookmarksViewUtils(),
                     get(currentBookmarkSort),
                     get(isAllExpanded),
                 );

@@ -102,7 +102,9 @@
             {/if}
         {/snippet}
         <div class="modal-body">
-            <p class="modal-description">{$t(descriptionKey)}</p>
+            {#if descriptionKey}
+                <p class="modal-description">{$t(descriptionKey)}</p>
+            {/if}
 
             {#if type === 'broken' && !isLoading && filteredItems.length > 0}
                 <div class="modal-filters">
@@ -122,7 +124,7 @@
                         type="button"
                         class="filter-btn"
                         class:active={filterType === '5xx'}
-                        onclick={() => (filterType = '5xx')}>{$t('filterTimeouts')}</button
+                        onclick={() => (filterType = '5xx')}>{$t('filter5xx')}</button
                     >
                     <button
                         type="button"

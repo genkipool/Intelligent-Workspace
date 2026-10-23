@@ -1,5 +1,5 @@
 <script>
-    import { msg as localizedMsg, applyTranslations } from '../../../utils/i18n.js';
+    import { applyTranslations } from '../../../utils/i18n.js';
     import { onMount } from 'svelte';
     import { geminiStore, isGeminiViewActive, agentModeEnabled, selectedModel } from '../../stores/geminiStore.js';
     import { t, tt } from '../../stores/i18nStore.js';
@@ -99,10 +99,11 @@
         if (searchContainer) searchContainer.classList.remove('hidden');
 
         const headerTitle = document.getElementById('main-header-title');
+        // The same key the list is opened with (restoreMainView, the header button): a
+        // second key of its own read "List groups" here and "List Groups" everywhere else.
         if (headerTitle) {
-            headerTitle.removeAttribute('data-i18n');
-            const originalText = localizedMsg('listGroupViewTitle');
-            if (originalText) headerTitle.textContent = originalText;
+            headerTitle.setAttribute('data-i18n', 'listTabGroups');
+            applyTranslations(headerTitle);
         }
 
         updateSubButtonVisibility?.();

@@ -211,9 +211,6 @@
   "apiKeySaved": {
     "message": "API कुंजी सेव की गई"
   },
-  "listGroupViewTitle": {
-    "message": "ग्रुप की सूची"
-  },
   "agentMaxStepsReached": {
     "message": "एजेंट चरणों की अधिकतम संख्या तक पहुंच गया"
   },
@@ -3543,8 +3540,8 @@
     "description": "General loading message"
   },
   "geminiWaitingForResponse": {
-    "message": "Gemini के जवाब का इंतज़ार किया जा रहा है...",
-    "description": "Message displayed while waiting for a response from the Gemini API."
+    "message": "जवाब का इंतज़ार किया जा रहा है...",
+    "description": "Shown on a question while its answer is on its way, from Gemini or from Chrome local AI."
   },
   "viewGeminiConversations": {
     "message": "Gemini बातचीत देखें",
@@ -3823,6 +3820,10 @@
   "localAiErrorEmpty": {
     "message": "लोकल मॉडल ने कोई जवाब नहीं दिया। फिर से कोशिश करें।",
     "description": "Error when the local model answers with nothing."
+  },
+  "localAiErrorFileType": {
+    "message": "Chrome का लोकल AI यह फ़ाइल नहीं पढ़ सकता। JPEG, PNG या WebP इमेज या टेक्स्ट फ़ाइल अटैच करें, या कोई Gemini मॉडल चुनें।",
+    "description": "Shown when, with the local AI selected, the user attaches a file the local model cannot read (a PDF or a HEIC image)."
   },
   "localAiErrorGeneric": {
     "message": "Chrome का लोकल AI जवाब नहीं दे सका। फिर से कोशिश करें या chrome://on-device-internals पर उसकी स्थिति देखें।",
@@ -5898,8 +5899,12 @@
     "description": "Option for paper mode in the page mode dropdown."
   },
   "modeAppliedSuccessfully": {
-    "message": "$1 मोड सफलतापूर्वक लागू किया गया।",
-    "description": "Notification shown when a page mode is applied. $1 is the mode name."
+    "message": "$1 लागू किया गया।",
+    "description": "Notification shown when a page mode is applied. $1 is the full name of the mode (e.g. \"Paper Mode\"), which already contains the word \"mode\"."
+  },
+  "modeRemoved": {
+    "message": "$1 हटाया गया।",
+    "description": "Notification shown when the page mode in force is chosen again, which takes it off. $1 is the full name of the mode (e.g. \"Paper Mode\")."
   },
   "errorApplyingMode": {
     "message": "पेज मोड लागू करने में गड़बड़ी हुई।",

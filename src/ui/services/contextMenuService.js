@@ -7,7 +7,7 @@ import {
 } from '../stores/appStore.svelte.js';
 export { activeContextMenu };
 import { ACTION_GROUPS, BOOKMARK_ACTION_GROUPS, PAGE_MODES } from './constants.js';
-import { applyPageMode, closeActiveHoverPopup } from './groupsService.js';
+import { applyPageMode, closeActiveHoverPopup, effectivePageMode } from './groupsService.js';
 import { positionSmartPopup, forwardWheelToScrollParent } from './popupPositioning.js';
 import { captureGroupTabsById, captureTabArea, handleScreenshotRequest } from './screenshotsService.js';
 import { readAloudTargetOf, startReadAloud } from './readAloudService.js';
@@ -44,6 +44,9 @@ function appendOverflowItem(popupEl, itemTemplate, iconHtml, options, onClick) {
     const textEl = item.querySelector('.overflow-item-text');
     if (options.i18n) textEl.setAttribute('data-i18n', options.i18n);
     else textEl.textContent = options.text || '';
+
+    // The option already in force (a page mode), marked like its hover menu marks it.
+    if (options.active) item.classList.add('active');
 
     if (options.count !== null && options.count !== undefined && options.count !== '') {
         const counter = document.createElement('span');
@@ -206,7 +209,7 @@ function mountOverflowPopup(popupEl, container, actionsContainer, extraClasses =
     window.addEventListener('resize', handleScrollPositioning, { passive: true });
 }
 
-export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey }) {
+export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onClick, i18nKey, active = false }) {
     const menuItem = itemTemplate.content.cloneNode(true).firstElementChild;
     menuItem.querySelector('.context-menu-icon').innerHTML = iconHtml;
     const textEl = menuItem.querySelector('.context-menu-text');
@@ -216,6 +219,7 @@ export function createMenuItem({ list, itemTemplate, iconHtml, text, count, onCl
     } else {
         textEl.textContent = text;
     }
+    if (active) menuItem.classList.add('active');
 
     const counterContainer = menuItem.querySelector('.context-menu-counter');
 
@@ -420,8 +424,10 @@ export async function showContextMenu(event, contextElement) {
             } else if (originalButton.classList.contains('page-mode-btn')) {
                 const tabId = parseInt(contextElement.dataset.tabId, 10);
                 if (!isNaN(tabId)) {
+                    const inForce = effectivePageMode(tabId);
                     PAGE_MODES.forEach(({ mode, i18n }) => {
                         createMenuItem({
+                            active: mode === inForce,
                             list,
                             itemTemplate,
                             iconHtml: iconHtml,
@@ -664,8 +670,9 @@ export function populateGroupOverflowPopup(event, templateId, contextElement) {
                     const tabItemEl = contextElement.closest('.tab-item');
                     if (tabItemEl) {
                         const tabId = parseInt(tabItemEl.dataset.tabId, 10);
+                        const inForce = effectivePageMode(tabId);
                         PAGE_MODES.forEach(({ mode, i18n }) =>
-                            addRow({ i18n }, () => applyPageMode(tabId, mode, i18n)),
+                            addRow({ i18n, active: mode === inForce }, () => applyPageMode(tabId, mode, i18n)),
                         );
                     }
                 } else {
@@ -733,7 +740,8 @@ export function initContextMenuEvents() {
     document.addEventListener('contextmenu', (event) => {
         const ctx = get(activeContextMenu);
         if (ctx) {
-            const newContextTarget = event.target.closest('.group-item, .domain-subgroup, .tab-item');
+            const newContextTarget =
+                event.target.closest('.group-item, .domain-subgroup, .tab-item') || bookmarkContextTarget(event.target);
             if (!newContextTarget) {
                 event.preventDefault();
                 ctx.remove();
@@ -762,6 +770,30 @@ export function initContextMenuEvents() {
             }
         });
     }
+
+    const bookmarksList = document.getElementById('bookmarks-list');
+    if (bookmarksList) {
+        bookmarksList.addEventListener('contextmenu', (event) => {
+            const contextElement = bookmarkContextTarget(event.target);
+            if (contextElement) {
+                event.preventDefault();
+                showContextMenu(event, contextElement);
+            }
+        });
+    }
+}
+
+/**
+ * The bookmark or folder a right click in the bookmarks view is about. A folder only
+ * counts through its own header: the space around the bookmarks inside it is not a
+ * click on the folder.
+ */
+function bookmarkContextTarget(target) {
+    return (
+        target.closest('.bookmark-item') ||
+        target.closest('.bookmark-folder > summary, .bookmark-folder > .folder-actions')?.parentElement ||
+        null
+    );
 }
 
 export function populateBookmarkOverflowPopup(container, templateId, contextElement) {

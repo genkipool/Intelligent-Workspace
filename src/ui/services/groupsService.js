@@ -71,6 +71,7 @@ import {
 
 // Import themeColors from listGroupStore (not in appStore)
 import { listGroupState } from '../stores/listGroupStore.js';
+import { renderContext } from '../stores/renderContextStore.js';
 
 // ─── Local writable stores for state not in appStore ───
 
@@ -276,8 +277,7 @@ export function createHoverActionPopup(container, buildItems) {
 export function createPageModePopup(container, tabEl, pageModes) {
     createHoverActionPopup(container, () => {
         const tabId = parseInt(tabEl.dataset.tabId, 10);
-        const tabMode = pageModes.tabModes?.[tabId];
-        const effectiveMode = tabMode !== undefined ? tabMode : pageModes.globalMode;
+        const effectiveMode = effectivePageMode(tabId, pageModes);
 
         return PAGE_MODES.map(({ mode, i18n }) => ({
             i18n,
@@ -285,6 +285,15 @@ export function createPageModePopup(container, tabEl, pageModes) {
             onSelect: () => applyPageMode(tabId, mode, i18n),
         }));
     });
+}
+
+/**
+ * The mode a tab is shown in: its own, or the global one when it has none.
+ * Without `pageModes` it reads the ones the list was last drawn with.
+ */
+export function effectivePageMode(tabId, pageModes = get(renderContext).pageModes || {}) {
+    const tabMode = pageModes.tabModes?.[tabId];
+    return tabMode !== undefined ? tabMode : pageModes.globalMode;
 }
 
 /** Sends one page mode to one tab and reports back the way every caller expects. */
@@ -295,7 +304,10 @@ export function applyPageMode(tabId, mode, i18nKey) {
             console.error('Error sending setPageMode message:', chrome.runtime.lastError.message);
             showNotification('errorApplyingMode', true);
         } else if (response && response.success) {
-            showNotification('modeAppliedSuccessfully', false, [localizedMsg(i18nKey) || mode]);
+            // Choosing the mode in force takes it off, and the notice has to say so.
+            showNotification(response.removed ? 'modeRemoved' : 'modeAppliedSuccessfully', false, [
+                localizedMsg(i18nKey) || mode,
+            ]);
             renderGroups();
         }
     });
@@ -1618,11 +1630,22 @@ export async function handleRestoreGroup(groupId, suppressNotification = false, 
         const createdTabs = await createTabsInBatches(backupData.tabs, 4, 100, targetWinId);
 
         const newTabIds = createdTabs.map((t) => t.id);
-        const newGroupId = await chrome.tabs.group({ tabIds: newTabIds });
-        await chrome.tabGroups.update(newGroupId, {
-            title: backupData.group.title,
-            color: backupData.group.color,
-        });
+        // Tabs restored one at a time already live in a group of their own. The rest
+        // join it: a second group with the same name showed up as a duplicate card
+        // until the grouping merged the two.
+        const linkedGroup = backupData.linkedGroupId
+            ? await chrome.tabGroups.get(backupData.linkedGroupId).catch(() => null)
+            : null;
+        let newGroupId;
+        if (linkedGroup) {
+            newGroupId = await chrome.tabs.group({ groupId: linkedGroup.id, tabIds: newTabIds });
+        } else {
+            newGroupId = await chrome.tabs.group({ tabIds: newTabIds });
+            await chrome.tabGroups.update(newGroupId, {
+                title: backupData.group.title,
+                color: backupData.group.color,
+            });
+        }
 
         const currentRestored = get(restoredGroupIds);
         currentRestored.add(newGroupId);
@@ -1633,6 +1656,14 @@ export async function handleRestoreGroup(groupId, suppressNotification = false, 
         );
 
         await deleteBackupFromDb(groupId);
+
+        // A hidden group stays hidden: the restored one has a new id, and the old id
+        // left in the hidden list made the group come back into view on its own.
+        if (get(listGroupState).hiddenGroupIds.has(Number(groupId))) {
+            const { listGroupStore } = await import('../stores/listGroupStore.js');
+            await listGroupStore.actions.hideGroup(newGroupId);
+            await listGroupStore.actions.unhideGroup(groupId);
+        }
 
         if (!suppressNotification) {
             showNotification('groupRestored', false, [backupData.group.title]);

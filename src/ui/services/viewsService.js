@@ -53,6 +53,7 @@ import {
     expandedGroupStates,
     expandedSubgroupStates,
     viewExpandStates,
+    lastIframeSearchResultCount,
 } from '../stores/appStore.svelte.js';
 
 // ─── Svelte Stores (other) ───────────────────────────────────────
@@ -128,6 +129,29 @@ export function showWelcomeMessage(container, viewType) {
 
     container.appendChild(welcomeContainer);
     applyTranslations(welcomeContainer);
+}
+
+/**
+ * What the bookmarks view is given to work with.
+ *
+ * The view is drawn from four places — opening it, a bookmark changing, a new sort
+ * order, the switch of views — and each used to build this list by hand. Three of them
+ * left things out, so once a bookmark changed and the view was redrawn, "Open all
+ * bookmarks in new tabs" quietly did nothing and Ctrl+click no longer opened the panel.
+ */
+export function bookmarksViewUtils() {
+    return {
+        showNotification,
+        applyTranslations,
+        updateScrollButtons,
+        updateExpandAllButtonState,
+        createOverflowMenu,
+        showAddToRuleModal,
+        exportBookmarkFolder,
+        openAddToBookmarkModal,
+        createTabsInBatches,
+        openUrlInPanel,
+    };
 }
 
 export async function restoreMainView() {
@@ -330,16 +354,7 @@ export async function toggleViews() {
 
                 await initializeBookmarksView(
                     bookmarksList,
-                    {
-                        showNotification,
-                        applyTranslations,
-                        updateScrollButtons,
-                        updateExpandAllButtonState,
-                        createOverflowMenu,
-                        showAddToRuleModal,
-                        openAddToBookmarkModal,
-                        openUrlInPanel,
-                    },
+                    bookmarksViewUtils(),
                     get(currentBookmarkSort),
                     legacyState.viewExpandStates.bookmarks,
                 );
@@ -773,18 +788,7 @@ export async function switchMainView(
                 if (bookmarksList) {
                     await initializeBookmarksView(
                         bookmarksList,
-                        {
-                            showNotification,
-                            applyTranslations,
-                            updateScrollButtons,
-                            updateExpandAllButtonState,
-                            createOverflowMenu,
-                            showAddToRuleModal,
-                            exportBookmarkFolder,
-                            openAddToBookmarkModal,
-                            createTabsInBatches,
-                            openUrlInPanel,
-                        },
+                        bookmarksViewUtils(),
                         get(currentBookmarkSort),
                         legacyState.viewExpandStates.bookmarks,
                     );
@@ -1240,10 +1244,15 @@ export function createGenericListItem(item, type) {
 }
 
 export function handleIframeMessage(event) {
-    const { type, payload } = event.data;
+    const { type, payload } = event.data || {};
 
+    // Only the page open in the panel reports matches. The count goes to the store
+    // `handleSearchEnter` reads: it used to land on a field of the legacy state that
+    // nothing read, so Enter never moved to the next match and searched the web instead.
     if (type === 'iframe-search-result') {
-        legacyState.lastIframeSearchResultCount = payload.count;
+        const frame = document.getElementById('side-panel-iframe-viewer');
+        if (!frame || event.source !== frame.contentWindow) return;
+        lastIframeSearchResultCount.set(payload?.count || 0);
     }
 }
 
