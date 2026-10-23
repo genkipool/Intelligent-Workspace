@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "स्क्रीनशॉट अनपिन किया गया"
   },
+  "screenshotDeleted": {
+    "message": "स्क्रीनशॉट हटाया गया"
+  },
   "themesExportedSuccessfully_one": {
     "message": "$1 थीम एक्सपोर्ट की गई",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "डिफ़ॉल्ट सेटिंग वापस लाई गईं",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "डिफ़ॉल्ट कुंजियाँ बहाल करें? आपकी बदली हुई सभी कुंजियाँ, प्रीव्यू की होल्ड कुंजी और स्निपेट मेनू की कुंजी डिफ़ॉल्ट पर लौट आएँगी, और संचयी कॉपी फिर से चालू हो जाएगी। आपके साइट शॉर्टकट और स्निपेट बने रहेंगे। अगर उन्हें वापस चाहें तो पहले एक्सपोर्ट कर लें।",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "क्लिपबोर्ड पर कॉपी नहीं हो सका। फिर से कोशिश करें या हाथ से कॉपी करें।",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "इंपोर्ट की प्रोसेस रद्द करें"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "$COUNT$ लूप पूरे हुए",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "$1 लूप पूरा हुआ",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "$1 लूप पूरे हुए",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "$1 लूप पूरे हुए",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "$1 लूप पूरे हुए",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "लूप जोड़ें"

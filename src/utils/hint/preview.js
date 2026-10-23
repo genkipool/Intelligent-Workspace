@@ -9,6 +9,31 @@ var getPreviewMsg = (key, fallback = '') => {
 };
 
 /**
+ * Points a preview iframe at `url` without touching the tab's history.
+ *
+ * An iframe that is already in the document and navigates by its `src` adds an entry
+ * to the history of the page holding it, so every preview opened, reused or closed
+ * that way left one more step for Back to walk through. A navigation by
+ * `location.replace` takes the place of the frame's current entry instead. The
+ * address the preview stands for is kept in `data-url`, because `src` no longer
+ * follows the frame once it is navigated that way.
+ */
+var itgSetPreviewIframeUrl = (iframe, url) => {
+    if (!iframe) return;
+    if (url !== 'about:blank') iframe.dataset.url = url;
+    if (iframe.isConnected && iframe.contentWindow) {
+        try {
+            iframe.contentWindow.location.replace(url);
+            return;
+        } catch {}
+    }
+    iframe.src = url;
+};
+
+/** The address a preview iframe stands for, even while it is blanked. */
+var itgPreviewIframeUrl = (iframe) => iframe?.dataset.url || iframe?.src || '';
+
+/**
  * @class LinkPreviewManager
  * @description Manages floating, debounced, glassmorphic link previews with iframes.
  */
@@ -118,8 +143,6 @@ var LinkPreviewManager = class LinkPreviewManager {
         this.removePreview(true);
         for (const item of this.pool.values()) {
             if (item.container && item.container.parentNode) {
-                const iframe = item.container.querySelector('.hint-preview-iframe');
-                if (iframe) iframe.src = 'about:blank';
                 item.container.parentNode.removeChild(item.container);
             }
         }
@@ -226,7 +249,7 @@ var LinkPreviewManager = class LinkPreviewManager {
     }
     preLoadPreview(url) {
         // If already loaded or being loaded, do nothing
-        if (this.previewEl && this.previewEl.querySelector('.hint-preview-iframe')?.src === url) {
+        if (this.previewEl && itgPreviewIframeUrl(this.previewEl.querySelector('.hint-preview-iframe')) === url) {
             return;
         }
 
@@ -238,10 +261,8 @@ var LinkPreviewManager = class LinkPreviewManager {
             const pooled = this.pool.get(url);
             container = pooled.container;
             this.pool.delete(url);
-            const iframe = container.querySelector('.hint-preview-iframe');
-            if (iframe && iframe.src !== url) {
-                iframe.src = url;
-            }
+            // Closing it blanked the frame, so it loads the page again either way.
+            itgSetPreviewIframeUrl(container.querySelector('.hint-preview-iframe'), url);
 
             // Reset loader opacity if present
             const loader = container.querySelector('.hint-preview-loader');
@@ -301,7 +322,8 @@ var LinkPreviewManager = class LinkPreviewManager {
             iframe.setAttribute('fetchpriority', 'high');
             iframe.setAttribute('loading', 'eager');
             iframe.setAttribute('referrerpolicy', 'no-referrer');
-            iframe.src = url;
+            // Not in the document yet, so setting `src` here adds nothing to the history.
+            itgSetPreviewIframeUrl(iframe, url);
             const openBtn = container.querySelector('.hint-preview-open-btn');
             openBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -383,7 +405,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                 pipBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const existingIframe = container.querySelector('.hint-preview-iframe');
-                    const targetUrl = existingIframe ? existingIframe.src : url;
+                    const targetUrl = existingIframe ? itgPreviewIframeUrl(existingIframe) : url;
                     const rect = container.getBoundingClientRect();
                     const isYouTubeOrVideo =
                         targetUrl.includes('youtube.com') ||
@@ -429,9 +451,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                     }
 
                     // Fallback to standard popup window if PiP fails
-                    if (existingIframe) {
-                        existingIframe.src = 'about:blank';
-                    }
+                    itgSetPreviewIframeUrl(existingIframe, 'about:blank');
                     const left = Math.round(e.screenX - e.clientX + rect.left);
                     const top = Math.round(e.screenY - e.clientY + rect.top);
                     chrome.runtime.sendMessage({
@@ -454,10 +474,7 @@ var LinkPreviewManager = class LinkPreviewManager {
                     const height = Math.round(rect.height);
 
                     // Stop audio immediately in the old iframe before removing it
-                    const oldIframe = container.querySelector('.hint-preview-iframe');
-                    if (oldIframe) {
-                        oldIframe.src = 'about:blank';
-                    }
+                    itgSetPreviewIframeUrl(container.querySelector('.hint-preview-iframe'), 'about:blank');
                     const left = Math.round(e.screenX - e.clientX + rect.left);
                     const top = Math.round(e.screenY - e.clientY + rect.top);
                     chrome.runtime.sendMessage({
@@ -591,7 +608,7 @@ var LinkPreviewManager = class LinkPreviewManager {
             this.previewEl = null;
             return;
         }
-        const activeUrl = el.querySelector('.hint-preview-iframe')?.src;
+        const activeUrl = itgPreviewIframeUrl(el.querySelector('.hint-preview-iframe'));
 
         // Universally dispatch pause instruction to the preview iframe regardless of its domain
         const iframe = el.querySelector('.hint-preview-iframe');
@@ -604,8 +621,8 @@ var LinkPreviewManager = class LinkPreviewManager {
                     '*',
                 );
             } catch {}
-            // FIX: Definitively stop all background media/audio by clearing the iframe source
-            iframe.src = 'about:blank';
+            // Definitively stop all background media/audio by blanking the frame
+            itgSetPreviewIframeUrl(iframe, 'about:blank');
         }
         if (el === this.previewEl) {
             this.previewEl = null;
@@ -628,8 +645,6 @@ var LinkPreviewManager = class LinkPreviewManager {
                 if (oldestUrl) {
                     const oldData = this.pool.get(oldestUrl);
                     if (oldData.container && oldData.container.parentNode) {
-                        const oldIframe = oldData.container.querySelector('.hint-preview-iframe');
-                        if (oldIframe) oldIframe.src = 'about:blank';
                         oldData.container.parentNode.removeChild(oldData.container);
                     }
                     this.pool.delete(oldestUrl);
@@ -639,8 +654,6 @@ var LinkPreviewManager = class LinkPreviewManager {
             setTimeout(() => {
                 try {
                     if (el && el.parentNode && (!this.pool.has(activeUrl) || forceDestroy)) {
-                        const targetIframe = el.querySelector('.hint-preview-iframe');
-                        if (targetIframe) targetIframe.src = 'about:blank';
                         el.parentNode.removeChild(el);
                     }
                 } catch {}

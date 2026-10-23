@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "스크린샷 고정이 해제되었습니다"
   },
+  "screenshotDeleted": {
+    "message": "스크린샷이 삭제되었습니다"
+  },
   "themesExportedSuccessfully_one": {
     "message": "테마 $1개를 내보냈습니다",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "기본값이 복원되었습니다",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "기본 키로 되돌릴까요? 변경한 모든 키, 미리보기 누름 키, 스니펫 메뉴 키가 기본값으로 돌아가고 누적 복사가 다시 켜집니다. 사이트 바로가기와 스니펫은 유지됩니다. 다시 필요할 수 있다면 먼저 내보내세요.",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "클립보드에 복사하지 못했습니다. 다시 시도하거나 직접 복사하세요.",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "가져오기 프로세스 취소"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "반복 $COUNT$회 완료",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "반복 $1회 완료",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "반복 $1회 완료",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "반복 $1회 완료",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "반복 $1회 완료",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "구간 반복 추가"

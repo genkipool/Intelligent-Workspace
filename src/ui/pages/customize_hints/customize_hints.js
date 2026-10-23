@@ -11,6 +11,7 @@ import {
 } from '../../../utils/i18n.js';
 import { exportHintsConfig, importHintsConfig } from '../../../utils/importExport.js';
 import { updateScrollButtons } from '../../components/common/scrollButtonsBridge.js';
+import { confirmAction } from '../../stores/confirmStore.js';
 
 // Resolved when the page initialises: `hint_common.js` publishes window.HintCommon
 // as a side effect, so reading it at module scope would depend on import order.
@@ -1905,6 +1906,9 @@ export async function initCustomizeHints() {
 
     // --- RESTORE ---
     restoreButton.addEventListener('click', async () => {
+        // Every changed key goes at once and only an earlier export brings them back.
+        if (!(await confirmAction({ messageKey: 'confirmRestoreHintDefaults', confirmKey: 'resetClusterDefaults' })))
+            return;
         await saveCustomShortcuts({});
         linkPreviewTriggerKey = '';
         snippetPopupTriggerKey = '$$';

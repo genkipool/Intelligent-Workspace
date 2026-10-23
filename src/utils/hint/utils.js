@@ -442,7 +442,10 @@ var Utils = class Utils {
             // Check if element contains an active or focused input/textarea inside its shadow DOM
             if (el.shadowRoot) {
                 const innerActive = el.shadowRoot.activeElement;
-                if (innerActive && checkSingleElement(innerActive)) return true;
+                // Focus is on something known inside: that decides it. A host holding an
+                // input somewhere is not a field when what has focus is a button beside
+                // it, as with the toggle in the link preview's header.
+                if (innerActive) return checkSingleElement(innerActive);
                 if (
                     el.shadowRoot.querySelector(
                         'input, textarea, [contenteditable="true"], [role="textbox"], [role="searchbox"]',

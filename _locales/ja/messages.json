@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "スクリーンショットの固定を解除しました"
   },
+  "screenshotDeleted": {
+    "message": "スクリーンショットを削除しました"
+  },
   "themesExportedSuccessfully_one": {
     "message": "$1 個のテーマをエクスポートしました",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "デフォルトに戻しました",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "既定のキーに戻しますか？変更したすべてのキー、プレビューの長押しキー、スニペットメニューのキーが既定に戻り、累積コピーが再びオンになります。サイトへのショートカットとスニペットは残ります。元に戻したい場合は先にエクスポートしてください。",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "クリップボードにコピーできませんでした。もう一度試すか、手動でコピーしてください。",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "インポート処理をキャンセル"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "$COUNT$ 回のループが完了しました",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "$1 回のループが完了しました",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "$1 回のループが完了しました",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "$1 回のループが完了しました",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "$1 回のループが完了しました",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "ループを追加"

@@ -2907,11 +2907,14 @@ body.popup-window {
 }
 
 /* Editor container */
+/* Only the editor scrolls: the add button below it stays in view however long the
+   list grows. The side padding lives on the scrolling box so focus rings aren't clipped. */
 .note-editor-container {
-    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
     min-height: 98px;
     max-height: 250px;
-    overflow-y: auto;
 }
 
 .note-editor {
@@ -2924,9 +2927,14 @@ body.popup-window {
 
 .note-editor.active {
     display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2px 16px;
 }
 
 .note-editor-actions {
+    flex-shrink: 0;
     padding: 8px 16px 0;
 }
 

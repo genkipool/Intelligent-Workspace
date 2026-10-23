@@ -251,6 +251,42 @@ async function handleCaptureFullPage(message, sender, sendResponse) {
 // --- Screenshot Handlers ---
 
 /**
+ * Puts a crop on the clipboard from the page it was drawn on.
+ *
+ * Once the selection ends the focus is on the page: the panel that asked for the
+ * capture lost it with the first click into the page, and `navigator.clipboard`
+ * refuses a document without focus. So the copy is made there, and the answer says
+ * whether it worked rather than the notice taking it for granted.
+ *
+ * @param {number} tabId
+ * @param {string} dataUrl A PNG data URL.
+ * @returns {Promise<boolean>}
+ */
+async function copyImageFromPage(tabId, dataUrl) {
+    try {
+        const [injection] = await chrome.scripting.executeScript({
+            target: { tabId },
+            world: 'ISOLATED',
+            args: [dataUrl],
+            func: async (url) => {
+                try {
+                    // Decoded by hand: a page's CSP can forbid fetching a data: URL.
+                    const bytes = Uint8Array.from(atob(url.split(',')[1]), (c) => c.charCodeAt(0));
+                    const blob = new Blob([bytes], { type: 'image/png' });
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    return true;
+                } catch {
+                    return false;
+                }
+            },
+        });
+        return injection?.result === true;
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Captures a selected area of the page as a screenshot.
  */
 async function handleCaptureAreaScreenshot(message, sender) {
@@ -292,6 +328,9 @@ async function handleCaptureAreaScreenshot(message, sender) {
                 reader.readAsDataURL(croppedBlob);
             });
 
+            // First, while the page still has the focus the selection left on it.
+            const copied = saveToGallery ? await copyImageFromPage(tab.id, croppedDataUrl) : false;
+
             // Save to database and update session index ONLY if saveToGallery is true
             if (saveToGallery) {
                 const screenshotId = Date.now();
@@ -320,7 +359,7 @@ async function handleCaptureAreaScreenshot(message, sender) {
             }
             startNextAreaCapture();
             if (saveToGallery) {
-                notifyCapture('screenshotSavedAndCopied');
+                notifyCapture(copied ? 'screenshotSavedAndCopied' : 'screenshotSavedNoCopy');
             }
         } catch (error) {
             console.error('Error capturing screen area:', error);

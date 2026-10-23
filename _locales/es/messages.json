@@ -242,6 +242,9 @@
     "screenshotUnarchived": {
         "message": "Captura desfijada"
     },
+    "screenshotDeleted": {
+        "message": "Captura eliminada"
+    },
     "themesExportedSuccessfully_one": {
         "message": "$1 tema exportado",
         "description": "Forma para un recuento de uno (categoría CLDR «one»); el plural se elige al ejecutar."
@@ -6854,6 +6857,14 @@
         "message": "Valores predeterminados restaurados",
         "description": "Notificación de restauración exitosa"
     },
+    "confirmRestoreHintDefaults": {
+        "message": "¿Restablecer las teclas predeterminadas? Todas las teclas que cambiaste, la tecla para mantener de la vista previa y la del menú de snippets vuelven a su valor inicial, y la copia acumulativa se vuelve a activar. Tus atajos a sitios y tus snippets se conservan. Exporta antes si quizá quieras recuperarlas.",
+        "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+    },
+    "copyFailedNotice": {
+        "message": "No se ha podido copiar al portapapeles. Inténtalo de nuevo o cópialo a mano.",
+        "description": "Notification when a copy shortcut could not put the text on the clipboard."
+    },
     "noConfigToExport": {
         "message": "No hay configuración para exportar",
         "description": "Notificación cuando no hay configuración para exportar"
@@ -7644,13 +7655,21 @@
             }
         }
     },
-    "pipLoopCompleted": {
-        "message": "$COUNT$ bucles completados",
-        "placeholders": {
-            "count": {
-                "content": "$1"
-            }
-        }
+    "pipLoopCompleted_one": {
+        "message": "$1 bucle completado",
+        "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+    },
+    "pipLoopCompleted_other": {
+        "message": "$1 bucles completados",
+        "description": "Form for any other count (CLDR \"other\")."
+    },
+    "pipLoopCompleted_few": {
+        "message": "$1 bucles completados",
+        "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+    },
+    "pipLoopCompleted_many": {
+        "message": "$1 bucles completados",
+        "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
     },
     "pipLoopAdd": {
         "message": "Añadir bucle"

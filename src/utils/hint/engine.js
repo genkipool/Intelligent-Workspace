@@ -703,16 +703,16 @@ var HintEngine = class HintEngine {
                 text = link ? link.href : '';
             }
             if (text) {
-                navigator.clipboard
-                    .writeText(text)
-                    .then(() => {
-                        hintObj.hintElement.style.background = '#28a745';
-                        setTimeout(() => this.clear(false), 150);
-                    })
-                    .catch((e) => {
-                        console.error('Copy failed', e);
+                // HintCommon.copyText gets past a page that withholds the clipboard, and
+                // the worker tells the user when nothing could copy it.
+                HintCommon.copyText(text).then((copied) => {
+                    if (!copied) {
                         this.clear(false);
-                    });
+                        return;
+                    }
+                    hintObj.hintElement.style.background = '#28a745';
+                    setTimeout(() => this.clear(false), 150);
+                });
             } else {
                 this.clear(false);
             }

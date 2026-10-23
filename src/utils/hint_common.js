@@ -474,6 +474,61 @@ var HintCommon = {
     },
 
     /**
+     * Puts `text` on the clipboard from a content script, whatever the page allows.
+     *
+     * The async Clipboard API obeys the page's Permissions-Policy, and a site that
+     * withholds `clipboard-write` (Stack Overflow does) makes it reject. The old copy
+     * command is tried next, and last the worker, which copies through the extension's
+     * offscreen document and tells the user when even that fails, so a copy never just
+     * leaves the clipboard as it was without a word.
+     *
+     * @param {string} text
+     * @returns {Promise<boolean>} whether the text reached the clipboard
+     */
+    async copyText(text) {
+        if (!text) return false;
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {}
+
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.setAttribute('readonly', '');
+            textarea.style.contain = 'strict';
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.left = '-9999px';
+            const curSel = window.getSelection();
+            const originalRange = curSel && curSel.rangeCount > 0 ? curSel.getRangeAt(0) : null;
+            const previousFocus = document.activeElement;
+            (document.body || document.documentElement).appendChild(textarea);
+            textarea.select();
+            textarea.setSelectionRange(0, text.length);
+            const copied = document.execCommand('copy');
+            // Blurred before it goes, so the focusout that ends insert mode is not skipped.
+            textarea.blur();
+            textarea.remove();
+            if (originalRange && curSel) {
+                curSel.removeAllRanges();
+                curSel.addRange(originalRange);
+            }
+            if (previousFocus && previousFocus !== document.body && typeof previousFocus.focus === 'function') {
+                previousFocus.focus({ preventScroll: true });
+            }
+            if (copied) return true;
+        } catch {}
+
+        try {
+            const res = await chrome.runtime.sendMessage({ action: 'copyTextFromPage', text });
+            return Boolean(res?.success);
+        } catch {
+            return false;
+        }
+    },
+
+    /**
      * Cumulative clipboard: `y` adds the selection to what was collected before.
      *
      * The collection is kept by the extension, not read back from the system
@@ -527,37 +582,7 @@ var HintCommon = {
                 : '';
             const combinedText = existingText ? `${existingText}${delimiter}${selectedText}` : selectedText;
 
-            let success = false;
-            try {
-                if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-                    await navigator.clipboard.writeText(combinedText);
-                    success = true;
-                }
-            } catch {}
-
-            if (!success && typeof document !== 'undefined') {
-                try {
-                    const textarea = document.createElement('textarea');
-                    textarea.value = combinedText;
-                    textarea.setAttribute('readonly', '');
-                    textarea.style.contain = 'strict';
-                    textarea.style.position = 'fixed';
-                    textarea.style.opacity = '0';
-                    textarea.style.left = '-9999px';
-                    const curSel = window.getSelection();
-                    const originalRange = curSel && curSel.rangeCount > 0 ? curSel.getRangeAt(0) : null;
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    textarea.setSelectionRange(0, combinedText.length);
-                    success = document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    if (originalRange && curSel) {
-                        curSel.removeAllRanges();
-                        curSel.addRange(originalRange);
-                    }
-                } catch {}
-            }
-
+            const success = await HintCommon.copyText(combinedText);
             if (success) this.remember(combinedText);
             return success;
         },

@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "已取消固定截图"
   },
+  "screenshotDeleted": {
+    "message": "已删除截图"
+  },
   "themesExportedSuccessfully_one": {
     "message": "已导出 $1 个主题",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "已恢复默认设置",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "恢复默认按键？你更改过的所有按键、预览的按住键和片段菜单键都会恢复默认，累积复制也会重新开启。你的网站快捷方式和片段会保留。如果之后可能需要它们，请先导出。",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "无法复制到剪贴板。请重试或手动复制。",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "取消导入过程"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "已完成 $COUNT$ 次循环",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "已完成 $1 次循环",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "已完成 $1 次循环",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "已完成 $1 次循环",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "已完成 $1 次循环",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "添加循环"

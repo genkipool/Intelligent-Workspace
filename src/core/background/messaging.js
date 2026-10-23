@@ -269,6 +269,8 @@ const ALLOWED_CONTENT_SCRIPT_ACTIONS = new Set([
     'getActiveTheme',
     'getExtensionFileContent',
     'getI18nMessages',
+    // The copy a page's permissions policy refused (hint_common.js, HintCommon.copyText).
+    'copyTextFromPage',
 ]);
 
 /** The ports the worker itself answers; anything else is addressed to someone else. */
@@ -728,6 +730,10 @@ const MESSAGE_HANDLERS = {
     },
     getOmnibarConversationContent: (message, sender, sendResponse) => {
         handleGetOmnibarConversationContent(message, sendResponse);
+        return true;
+    },
+    copyTextFromPage: (message, sender, sendResponse) => {
+        handleCopyTextFromPage(message, sendResponse);
         return true;
     },
     showOmnibarNotification: (message, sender, sendResponse) => {

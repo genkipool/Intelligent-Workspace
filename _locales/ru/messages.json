@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "Скриншот откреплен"
   },
+  "screenshotDeleted": {
+    "message": "Скриншот удален"
+  },
   "themesExportedSuccessfully_one": {
     "message": "Экспортирована $1 тема",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "Настройки по умолчанию восстановлены",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "Восстановить клавиши по умолчанию? Все изменённые клавиши, клавиша удержания для предпросмотра и клавиша меню сниппетов вернутся к исходным значениям, а накопительное копирование снова включится. Ярлыки сайтов и сниппеты сохранятся. Если они могут понадобиться, сначала сделайте экспорт.",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "Не удалось скопировать в буфер обмена. Попробуйте ещё раз или скопируйте вручную.",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "Отменить импорт"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "Выполнено повторов: $COUNT$",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "Выполнено повторов: $1",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "Выполнено повторов: $1",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "Выполнено повторов: $1",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "Выполнено повторов: $1",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "Добавить фрагмент"

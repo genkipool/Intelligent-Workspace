@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "Screenshot unpinned"
   },
+  "screenshotDeleted": {
+    "message": "Screenshot deleted"
+  },
   "themesExportedSuccessfully_one": {
     "message": "$1 theme exported",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "Defaults restored",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "Restore the default keys? Every key you changed, the preview hold key and the snippet menu key go back to their defaults, and cumulative copy is turned back on. Your site shortcuts and snippets are kept. Export first if you may want them back.",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "Could not copy to the clipboard. Try again or copy it by hand.",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "Cancel import process"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "$COUNT$ loops completed",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "$1 loop completed",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "$1 loops completed",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "$1 loops completed",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "$1 loops completed",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "Add loop"

@@ -706,17 +706,20 @@ export async function handleScreenshotRequest(tab, context, options = {}) {
 /**
  * The area picker over one tab.
  *
- * The selector is injected into the tab and the cropped image comes back as a
- * broadcast rather than as a response, because the selection happens long after the
- * request returns — which is why this waits on a one-off listener. The header button,
- * the tab card and the overflow menu all used to carry their own copy of this dance.
+ * The selector is injected into the tab and the result comes back as a broadcast
+ * rather than as a response, because the selection happens long after the request
+ * returns — which is why this waits on a one-off listener. The header button, the tab
+ * card and the overflow menu all used to carry their own copy of this dance.
+ *
+ * The worker files the crop, copies it from the page and says how both went. Copying
+ * from here failed whenever drawing the selection had moved the focus to the page,
+ * and the worker's notice already said "copied" before the copy was even tried.
  *
  * @param {chrome.tabs.Tab} tab
  */
 export async function captureTabArea(tab) {
     if (!tab?.id) return;
 
-    let areaDataUrl = null;
     await withTabActivation(
         tab,
         () =>
@@ -725,15 +728,12 @@ export async function captureTabArea(tab) {
                     // Escape closes the selector without capturing anything, and it
                     // says so: without that branch this waited for a crop that was
                     // never coming, and the listener stayed behind with it.
-                    if (message.action === 'areaSelectionCancelled') {
-                        chrome.runtime.onMessage.removeListener(listener);
-                        resolve();
+                    if (
+                        message.action !== 'areaSelectionCancelled' &&
+                        message.action !== 'areaScreenshotProcessFinished'
+                    )
                         return;
-                    }
-                    if (message.action !== 'areaScreenshotProcessFinished') return;
                     chrome.runtime.onMessage.removeListener(listener);
-                    if (message.success) areaDataUrl = message.dataUrl || null;
-                    else showNotification('errorTakingScreenshot', true);
                     resolve();
                 };
                 chrome.runtime.onMessage.addListener(listener);
@@ -743,16 +743,6 @@ export async function captureTabArea(tab) {
 
     // The badge on the card counts what the gallery holds, and it just changed.
     await renderGroups();
-
-    if (!areaDataUrl) return;
-    try {
-        const blob = await dataUrlToBlob(areaDataUrl);
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        showNotification('screenshotCopied');
-    } catch (error) {
-        console.error('Clipboard copy failed:', error);
-        showNotification('screenshotSavedNoCopy', true);
-    }
 }
 
 /** Pages a capture can actually be taken from; Chrome refuses its own and the store. */
@@ -1067,6 +1057,7 @@ function fillGalleryItem(galleryItem, fullScreenshot) {
     galleryItem.querySelector('.delete-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
         await deleteScreenshot(fullScreenshot.id);
+        showNotification('screenshotDeleted');
     });
 
     if (pinBtn) {

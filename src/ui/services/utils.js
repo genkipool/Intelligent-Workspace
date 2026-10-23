@@ -366,7 +366,10 @@ export function linkifyHtml(text) {
 }
 
 export function autolink(element) {
-    const urlRegex = /((https?:\/\/|www\.)[\w\.-]+\.[\w\.-]+[\/\w\.-?&=#%~]*)/g;
+    // The hyphen goes last in the path class: between two other characters it reads as a
+    // range (`.-?` spans `./0-9:;<=>?`) and a link like `watch?v=aqz-KE-bpKQ` stops at the
+    // first hyphen.
+    const urlRegex = /((https?:\/\/|www\.)[\w.-]+\.[\w.-]+[\/\w.?&=#%~+:;@-]*)/g;
 
     function traverse(node) {
         if (node.nodeName.toLowerCase() === 'a') {

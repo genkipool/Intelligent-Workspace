@@ -8,6 +8,7 @@
     import { themeStore } from '../../stores/themeStore.js';
 
     import { settingsStore } from '../../stores/settingsStore.js';
+    import { readMirror, writeMirror } from '../../../utils/firstPaintMirror.js';
     import { initializeKeyboardNavigation } from '../../../utils/keyboardNav.js';
     import ThemeSelector from '../../components/common/ThemeSelector.svelte';
     import SettingsSection from '../../components/common/SettingsSection.svelte';
@@ -196,18 +197,27 @@
      * Whether the clock is running, mirrored from the same key the settings page
      * writes. Both are views of one setting, so both listen: flipping it here moves
      * the switch on a settings page that is already open, and the other way round.
+     *
+     * It starts from what it showed last time (`firstPaintMirror.js`), like the rules
+     * and language switches: from a fixed `true`, a stopped clock's switch was drawn on
+     * and slid off every time the home page was opened.
      */
-    let trackingEnabled = $state(true);
+    const TRACKING_MIRROR = 'webActivityEnabled';
+    let trackingEnabled = $state(readMirror(TRACKING_MIRROR, true));
     let onSettingsChanged = null;
+
+    function showTracking(stored) {
+        trackingEnabled = { ...WA.DEFAULT_SETTINGS, ...(stored || {}) }.enabled !== false;
+        writeMirror(TRACKING_MIRROR, trackingEnabled);
+    }
 
     onMount(async () => {
         const { [WA.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(WA.KEYS.SETTINGS);
-        trackingEnabled = { ...WA.DEFAULT_SETTINGS, ...(stored || {}) }.enabled !== false;
+        showTracking(stored);
 
         onSettingsChanged = (changes, area) => {
             if (area !== 'local' || !changes[WA.KEYS.SETTINGS]) return;
-            trackingEnabled =
-                { ...WA.DEFAULT_SETTINGS, ...(changes[WA.KEYS.SETTINGS].newValue || {}) }.enabled !== false;
+            showTracking(changes[WA.KEYS.SETTINGS].newValue);
         };
         chrome.storage.onChanged.addListener(onSettingsChanged);
     });
@@ -220,7 +230,7 @@
     async function setTracking(next) {
         const { [WA.KEYS.SETTINGS]: stored } = await chrome.storage.local.get(WA.KEYS.SETTINGS);
         const settings = { ...WA.DEFAULT_SETTINGS, ...(stored || {}), enabled: next };
-        trackingEnabled = next;
+        showTracking(settings);
         await saveSettings(settings);
     }
 

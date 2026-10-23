@@ -865,50 +865,26 @@ export async function openNoteModal(context, noteToEdit = null, options = {}) {
     openModal(showNoteModal, { context, note: noteToEdit, options });
 }
 
-export async function handleSaveNote(context, noteId = null, options = {}) {
-    const modalContent = document.querySelector('.note-modal');
-    if (!modalContent) return;
+/**
+ * Files the note the modal hands over.
+ *
+ * The draft is the modal's own state, not a fresh read of its DOM: the checklist editor
+ * shows no checkboxes, so reading the inputs back reset every tick on each edit.
+ *
+ * @param {object} context
+ * @param {{id: number|null, title: string, content: string|object[], category: string, type: string}} draft
+ */
+export async function handleSaveNote(context, draft) {
+    const noteId = draft.id ?? null;
+    const { title, category: selectedCategory, type: activeType } = draft;
+    let content = draft.content;
 
-    const title = modalContent.querySelector('#note-title-input').value.trim();
-    const activeType = modalContent.querySelector('.note-type-btn.active').dataset.type;
-    let content;
-
-    switch (activeType) {
-        case 'checklist':
-            content = Array.from(modalContent.querySelectorAll('.checklist-item'))
-                .map((item) => ({
-                    text: item.querySelector('.checklist-item-input').value,
-                    checked: false,
-                }))
-                .filter((item) => item.text.trim());
-            break;
-
-        case 'kanban':
-            content = Array.from(modalContent.querySelectorAll('.kanban-item'))
-                .map((item) => ({
-                    text: item.querySelector('.kanban-item-input').value,
-                    state: item.querySelector('.kanban-item-state').dataset.state,
-                }))
-                .filter((item) => item.text.trim());
-            break;
-
-        default:
-            const contentEditor = modalContent.querySelector('#note-content-editor');
-            autolink(contentEditor);
-            content = contentEditor.innerHTML.trim();
-            break;
-    }
-
-    let selectedCategory = 'Work';
-    const activeCategoryBtn = modalContent.querySelector('.note-categories .category-btn.active');
-
-    if (activeCategoryBtn) {
-        if (activeCategoryBtn.classList.contains('custom')) {
-            const customValue = modalContent.querySelector('#note-custom-tag-input').value.trim();
-            selectedCategory = customValue || activeCategoryBtn.dataset.category || 'Custom';
-        } else {
-            selectedCategory = activeCategoryBtn.dataset.category;
-        }
+    if (activeType === 'text') {
+        // A template keeps the markup inert while it is relinked: nothing in it loads.
+        const body = document.createElement('template');
+        body.innerHTML = content;
+        autolink(body.content);
+        content = body.innerHTML.trim();
     }
 
     const existingNote = noteId ? await getNoteFromDb(noteId) : null;
@@ -1000,9 +976,6 @@ export async function handleSaveNote(context, noteId = null, options = {}) {
     }
 
     showNotification(noteId ? 'noteUpdated' : 'noteSaved');
-    if (!options.keepOpen) {
-        modalContent.closest('.modal-overlay')?.remove();
-    }
 
     if (get(isNotesViewActive)) {
         await renderGroups();

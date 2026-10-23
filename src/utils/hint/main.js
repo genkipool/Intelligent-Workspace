@@ -976,8 +976,11 @@ var Main = class Main {
                 this.cleanup();
                 return;
             }
-            const target = (e.composedPath && e.composedPath()[0]) || e.target;
-            if (Utils.isInputLikeElement(target)) this.insertMode = false;
+            // Whatever focus leaves, it is no longer in a field: the focusin that follows
+            // when it lands on one turns insert mode back on. Asking again here whether
+            // the target was a field could answer differently than the focusin did, and
+            // insert mode then stayed on with every shortcut dead until Escape.
+            this.insertMode = false;
         };
         this._boundMainKeyDownHandler = (e) => this._handleKeyDown(e);
         this._boundMainKeyUpHandler = (e) => this._handleKeyUp(e);

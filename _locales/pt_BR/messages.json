@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "Captura de tela liberada"
   },
+  "screenshotDeleted": {
+    "message": "Captura de tela excluída"
+  },
   "themesExportedSuccessfully_one": {
     "message": "$1 tema exportado",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "Padrões restaurados",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "Restaurar as teclas padrão? Todas as teclas que você alterou, a tecla de segurar da pré-visualização e a do menu de snippets voltam ao padrão, e a cópia cumulativa é reativada. Seus atalhos para sites e snippets são mantidos. Exporte antes se quiser recuperá-las.",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "Não foi possível copiar para a área de transferência. Tente de novo ou copie manualmente.",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "Cancelar o processo de importação"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "$COUNT$ loops concluídos",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "$1 loop concluído",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "$1 loops concluídos",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "$1 loops concluídos",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "$1 loops concluídos",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "Adicionar loop"

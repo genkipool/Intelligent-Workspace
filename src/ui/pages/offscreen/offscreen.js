@@ -1,6 +1,7 @@
-// offscreen.js -- runs in an offscreen document: plays Pomodoro sounds via Web Audio and
+// offscreen.js -- runs in an offscreen document: plays Pomodoro sounds via Web Audio,
 // answers scheduled assistant queries with Chrome's local model, which the worker cannot
-// reach (the Prompt API only exists in documents).
+// reach (the Prompt API only exists in documents), and copies text a page would not let
+// its content script copy.
 
 let isMusicActive = false;
 
@@ -37,8 +38,33 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             .then(sendResponse)
             .finally(() => pendingLocalPrompts--);
         return true;
+    } else if (msg?.action === 'offscreenCopyText') {
+        sendResponse({ success: copyText(msg.text) });
+        return true;
     }
 });
+
+/**
+ * Puts text on the clipboard for a page that would not allow it.
+ *
+ * An offscreen document never has focus, so the async Clipboard API refuses it; the
+ * old copy command does not ask for focus, and the extension's `clipboardWrite`
+ * permission is what lets it through.
+ */
+function copyText(text) {
+    if (!text) return false;
+    const scratch = document.createElement('textarea');
+    scratch.value = text;
+    document.body.appendChild(scratch);
+    scratch.select();
+    try {
+        return document.execCommand('copy');
+    } catch {
+        return false;
+    } finally {
+        scratch.remove();
+    }
+}
 
 /**
  * One question to the local model, without a conversation behind it.

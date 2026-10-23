@@ -23,10 +23,11 @@ before(async () => {
  * Places a popup of `popupHeight` under the described conditions and reports
  * where it landed.
  */
-function place({ anchorTop, popupHeight, panelContent = 600, panelViewport = 600, panelScrollTop = 0 }) {
+function place({ anchorTop, popupHeight, panelContent = 600, panelViewport = 600, panelScrollTop = 0, listTop = 0 }) {
     const { list, anchor, window } = panel;
     placeAnchor(anchor, { top: anchorTop });
     modelPanelScroll(list, { content: panelContent, viewport: panelViewport, scrollTop: panelScrollTop });
+    list.getBoundingClientRect = () => ({ top: listTop, bottom: listTop + panelViewport, left: 0, right: 400 });
 
     const popup = window.document.createElement('div');
     window.document.body.appendChild(popup);
@@ -68,6 +69,20 @@ describe('positionSmartPopup', () => {
         assert.equal(result.placement, 'below');
         assert.equal(result.scrolls, false, 'no debe recortarse: el panel puede subirlo hasta verlo entero');
         assert.equal(result.overflowsViewport, true, 'empieza sobresaliendo y entra al hacer scroll');
+    });
+
+    it('se recorta cuando no cabria entero ni con el ancla arriba del todo de la lista', () => {
+        // The list starts under a 125px sticky header: the anchor can rise to 125 and no
+        // further, which leaves 447px under it for a 505px popup.
+        const result = place({
+            anchorTop: 300,
+            popupHeight: 500,
+            panelContent: 1400,
+            panelViewport: 475,
+            listTop: 125,
+        });
+        assert.equal(result.scrolls, true, 'subirlo con la lista solo esconde el ancla bajo la cabecera');
+        assert.equal(result.overflowsViewport, false);
     });
 
     it('se recorta con scroll propio cuando el panel ya esta al final', () => {

@@ -627,13 +627,8 @@ export async function initializeAllEvents() {
         }
     });
 
-    document.body.addEventListener('click', (event) => {
-        const aboutLink = event.target.closest('#about-link-list-group');
-        if (aboutLink) {
-            event.preventDefault();
-            chrome.tabs.create({ url: chrome.runtime.getURL('src/ui/pages/about/about.html') });
-        }
-    });
+    // The footer's About link opens its tab from its own onclick in ListGroup.svelte; a
+    // second listener here on the body opened it twice.
 
     // Resolve the requested view before loading any data: switchMainView only touches
     // the DOM and the stores, so doing it first lets the right view paint immediately

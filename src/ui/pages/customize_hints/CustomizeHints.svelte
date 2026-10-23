@@ -23,6 +23,7 @@
     import VoiceSection from './components/VoiceSection.svelte';
     import SnippetHelpModal from './components/SnippetHelpModal.svelte';
     import Notification from '../../components/common/Notification.svelte';
+    import ConfirmDialog from '../../components/common/ConfirmDialog.svelte';
 
     // Link preview on/off. The same flag the keyboard shortcut and the context menu
     // toggle, so all three always agree.
@@ -214,3 +215,5 @@
         >
     </footer>
 </div>
+
+<ConfirmDialog />

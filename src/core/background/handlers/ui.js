@@ -604,6 +604,39 @@ function handleToggleAutoPipFromKey(message, sendResponse) {
     });
 }
 
+/**
+ * Copies text a page would not let its content script copy.
+ *
+ * A site's Permissions-Policy can withhold `clipboard-write` (Stack Overflow does), and
+ * the content script obeys the page it runs in. The offscreen document is the
+ * extension's own, so the page has no say there. When even that fails the user is told,
+ * instead of being left to find an empty clipboard.
+ */
+async function handleCopyTextFromPage(message, sendResponse) {
+    const text = typeof message.text === 'string' ? message.text : '';
+    let success = false;
+    if (text) {
+        try {
+            const created = await ensureOffscreenDocument('Copy text the page does not allow to copy', ['CLIPBOARD']);
+            const res = await chrome.runtime.sendMessage({ action: 'offscreenCopyText', text });
+            success = Boolean(res?.success);
+            // Opened only for this: nothing else needs it now, unless music came in meanwhile.
+            if (created && !(await isMusicPlayingOffscreen())) await chrome.offscreen.closeDocument().catch(() => {});
+        } catch (error) {
+            console.warn('[Clipboard] Offscreen copy failed:', error);
+        }
+    }
+    if (!success) {
+        chrome.notifications.create(`copy-failed-${Date.now()}`, {
+            type: 'basic',
+            iconUrl: '/assets/icons/icon128.png',
+            title: getI18nMsg('extName'),
+            message: getI18nMsg('copyFailedNotice'),
+        });
+    }
+    sendResponse({ success });
+}
+
 function handleShowOmnibarNotification(message, sender, sendResponse) {
     chrome.notifications.create(`omnibar - notify - ${Date.now()} `, {
         type: 'basic',

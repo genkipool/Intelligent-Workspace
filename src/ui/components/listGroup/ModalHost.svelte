@@ -76,7 +76,7 @@
         note={$modalData?.note ?? null}
         onClose={() => closeModal(showNoteModal)}
         onSave={async (noteData) => {
-            await handleSaveNote($modalData?.context, noteData.id);
+            await handleSaveNote($modalData?.context, noteData);
             closeModal(showNoteModal);
         }}
     />

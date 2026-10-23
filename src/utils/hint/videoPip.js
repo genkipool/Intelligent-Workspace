@@ -1318,9 +1318,13 @@ function itgCreateLoopPopupContent(container, controller = itgVideoLoop, isPipMo
                         [state.currentRepetition + 1, state.repeatCount],
                     );
                 } else if (state.currentRepetition > 0) {
-                    statusEl.textContent = itgPipMsg('pipLoopCompleted', `${state.currentRepetition} loops completed`, [
-                        state.currentRepetition,
-                    ]);
+                    const n = state.currentRepetition;
+                    // A form per CLDR category, so a single lap does not read "1 loops".
+                    let key =
+                        window.HintCommon?.i18n?.pluralKey?.('pipLoopCompleted', n) ??
+                        (n === 1 ? 'pipLoopCompleted_one' : 'pipLoopCompleted_other');
+                    if (!itgPipMsg(key)) key = 'pipLoopCompleted_other';
+                    statusEl.textContent = itgPipMsg(key, n === 1 ? '1 loop completed' : `${n} loops completed`, [n]);
                 } else {
                     statusEl.textContent = itgPipMsg('pipLoopActive', 'Loop active');
                 }

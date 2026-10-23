@@ -118,7 +118,8 @@ export function forwardWheelToScrollParent(popupEl, anchorEl) {
  * 1. Whole, below the anchor.
  * 2. Whole, above it.
  * 3. Whole, below it and past the bottom edge — only when the panel can still
- *    scroll down far enough to bring the rest into view. The popup rides the
+ *    scroll down far enough to bring the rest into view, and the popup fits under
+ *    the anchor once it reaches the top of its scroller. The popup rides the
  *    anchor up on every scroll event, so it ends up fully visible.
  * 4. Clamped to the roomier side, scrolling on its own.
  *
@@ -163,13 +164,19 @@ export function positionSmartPopup(anchorEl, popupEl, options = {}) {
     // than being clamped and given a scrollbar of its own.
     const scroller = getScrollParent(anchorEl);
     const borrowable = scroller ? scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight : 0;
+    // The anchor can ride up no further than the top of its scroller — past that it is
+    // under the sticky header — so borrowing only helps a popup that fits below it there.
+    const roomBelowScrollerTop = scroller
+        ? windowHeight - margin - Math.max(0, scroller.getBoundingClientRect().top) - rect.height
+        : 0;
+    const canBorrow = neededHeight <= roomBelowScrollerTop && spaceBelow + borrowable >= neededHeight;
     const fitsBelow = spaceBelow >= neededHeight;
     const fitsAbove = spaceAbove >= neededHeight;
 
     if (fitsAbove && !fitsBelow) {
         popupEl.style.top = `${rect.top - popupHeight - gap}px`;
         popupEl.classList.add('popup-upwards');
-    } else if (fitsBelow || spaceBelow + borrowable >= neededHeight) {
+    } else if (fitsBelow || canBorrow) {
         // Below, whole. In the borrowed case it starts off past the bottom edge and
         // walks back into view as the panel scrolls, repositioned on every scroll event.
         popupEl.style.top = `${rect.bottom + gap}px`;

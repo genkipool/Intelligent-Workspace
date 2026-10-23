@@ -230,6 +230,9 @@
   "screenshotUnarchived": {
     "message": "Screenshot losgelöst"
   },
+  "screenshotDeleted": {
+    "message": "Screenshot gelöscht"
+  },
   "themesExportedSuccessfully_one": {
     "message": "$1 Design exportiert",
     "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
@@ -1348,6 +1351,14 @@
   "restoredDefaults": {
     "message": "Standardwerte wiederhergestellt",
     "description": "Successful restoration notification"
+  },
+  "confirmRestoreHintDefaults": {
+    "message": "Standardtasten wiederherstellen? Alle geänderten Tasten, die Haltetaste der Vorschau und die Taste des Snippet-Menüs werden zurückgesetzt, und das kumulative Kopieren wird wieder eingeschaltet. Deine Website-Kürzel und Snippets bleiben erhalten. Exportiere vorher, falls du sie zurückhaben möchtest.",
+    "description": "Asked before \"Reset Defaults\" in the Navigation settings restores the default keys."
+  },
+  "copyFailedNotice": {
+    "message": "Konnte nicht in die Zwischenablage kopieren. Versuche es erneut oder kopiere es von Hand.",
+    "description": "Notification when a copy shortcut could not put the text on the clipboard."
   },
   "cancelImport": {
     "message": "Importvorgang abbrechen"
@@ -7577,13 +7588,21 @@
       }
     }
   },
-  "pipLoopCompleted": {
-    "message": "$COUNT$ Schleifen abgeschlossen",
-    "placeholders": {
-      "count": {
-        "content": "$1"
-      }
-    }
+  "pipLoopCompleted_one": {
+    "message": "$1 Schleife abgeschlossen",
+    "description": "Form for a count of one (CLDR \"one\"); the plural is chosen at run time."
+  },
+  "pipLoopCompleted_other": {
+    "message": "$1 Schleifen abgeschlossen",
+    "description": "Form for any other count (CLDR \"other\")."
+  },
+  "pipLoopCompleted_few": {
+    "message": "$1 Schleifen abgeschlossen",
+    "description": "Form for counts in the CLDR \"few\" category (Russian: 2–4, 22–24…). Same as \"other\" in languages without it."
+  },
+  "pipLoopCompleted_many": {
+    "message": "$1 Schleifen abgeschlossen",
+    "description": "Form for counts in the CLDR \"many\" category (Russian: 5–20, 25–30…). Same as \"other\" in languages without it."
   },
   "pipLoopAdd": {
     "message": "Schleife hinzufügen"

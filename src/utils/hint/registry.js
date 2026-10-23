@@ -122,7 +122,7 @@ var CommandRegistry = class CommandRegistry {
                 description: 'hintDesc_l_tab_page',
             },
             c: {
-                action: () => navigator.clipboard.writeText(window.location.href),
+                action: () => HintCommon.copyText(window.location.href),
                 description: 'hintDesc_c',
             },
             y: {
