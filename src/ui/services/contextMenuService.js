@@ -452,9 +452,32 @@ export async function showContextMenu(event, contextElement) {
     }
 
     if (list.childElementCount === 0) return;
+    if (actionsSelector === '.bookmark-actions' || actionsSelector === '.folder-actions') {
+        // A folder is the whole <details>, its bookmarks included: the row is its header.
+        const row = contextElement.querySelector(':scope > summary') || contextElement;
+        anchorMenuToRow(menuOverlay, menu, row.getBoundingClientRect());
+    }
     document.body.appendChild(menuOverlay);
     activeContextMenu.set(menuOverlay);
     applyTranslations(menuOverlay);
+}
+
+/**
+ * Opens the menu next to the row that was right-clicked, on whichever side has more
+ * room: under its bottom edge, or above its top edge. It never covers the row, so it
+ * stays clear which bookmark the menu is for. A long folder menu that does not fit on
+ * that side scrolls within it.
+ */
+function anchorMenuToRow(menuOverlay, menu, rowRect) {
+    const MARGIN = 8;
+    const above = Math.max(0, rowRect.top);
+    const below = Math.max(0, window.innerHeight - rowRect.bottom);
+    const opensDown = below >= above;
+    menuOverlay.style.alignItems = opensDown ? 'flex-start' : 'flex-end';
+    menuOverlay.style.paddingTop = opensDown ? `${rowRect.bottom}px` : `${MARGIN}px`;
+    menuOverlay.style.paddingBottom = opensDown ? `${MARGIN}px` : `${window.innerHeight - rowRect.top}px`;
+    menu.style.maxHeight = `${(opensDown ? below : above) - MARGIN}px`;
+    menu.style.transformOrigin = opensDown ? 'top center' : 'bottom center';
 }
 
 export function createOverflowMenu(actionsContainer, templateId, contextElement) {

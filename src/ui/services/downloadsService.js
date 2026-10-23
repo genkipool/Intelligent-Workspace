@@ -145,6 +145,31 @@ export async function showDownloadPopup(button, url) {
         currentDownloadModal.set(modalOverlay);
         updateModalUI(modal);
         applyTranslations();
+
+        // The list keeps the height it has with every file showing, so a filter that
+        // leaves fewer rows does not shrink the window under the pointer. The stylesheet's
+        // max-height still caps it in a short panel, and a resized panel measures again.
+        const listBox = modal.querySelector('.download-list-container');
+        listBox.style.boxSizing = 'border-box';
+        const lockListHeight = () => {
+            if (!listBox.isConnected) {
+                window.removeEventListener('resize', lockListHeight);
+                return;
+            }
+            // Measured with the filter lifted and put back in the same task, so nothing
+            // of it is ever painted.
+            const filtered = [...listContainer.querySelectorAll('.download-item.hidden')];
+            const message = modal.querySelector('.no-files-filtered-message');
+            const messageHidden = message?.classList.contains('hidden');
+            filtered.forEach((item) => item.classList.remove('hidden'));
+            message?.classList.add('hidden');
+            listBox.style.height = '';
+            listBox.style.height = `${listBox.getBoundingClientRect().height}px`;
+            filtered.forEach((item) => item.classList.add('hidden'));
+            message?.classList.toggle('hidden', messageHidden);
+        };
+        lockListHeight();
+        window.addEventListener('resize', lockListHeight);
     } catch (error) {
         console.error('Error fetching downloadable files:', error);
         showNotification('errorFetchingDownloads', true);

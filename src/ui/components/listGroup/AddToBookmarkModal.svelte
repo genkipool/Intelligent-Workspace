@@ -1,7 +1,9 @@
 <script>
     import ModalShell from '../common/ModalShell.svelte';
     import { t } from '../../stores/i18nStore.js';
-    import { notificationStore } from '../../stores/notificationStore.js';
+    // The group list paints notices with showNotification and never mounts
+    // <Notification />, so notificationStore writes from here were never seen.
+    import { showNotification } from '../../../utils/i18n.js';
     import { untrack } from 'svelte';
     import BookmarkFolderTree from './BookmarkFolderTree.svelte';
 
@@ -69,13 +71,13 @@
             if (response.success && response.folder) {
                 await loadBookmarks(false);
                 selectedFolderId = response.folder.id;
-                notificationStore.show($t('folderCreated'), 'success');
+                showNotification('folderCreated');
                 return response.folder;
             }
             throw new Error(response.error);
         } catch (err) {
             console.error('Error creating folder:', err);
-            notificationStore.show($t('errorCreatingFolder'), 'error');
+            showNotification('errorCreatingFolder', true);
             return null;
         }
     }
@@ -88,13 +90,13 @@
             });
             if (response.success) {
                 await loadBookmarks(false);
-                notificationStore.show($t('folderRenamed'), 'success');
+                showNotification('folderRenamed');
             } else {
                 throw new Error(response.error);
             }
         } catch (err) {
             console.error('Error renaming folder:', err);
-            notificationStore.show($t('errorRenamingFolder'), 'error');
+            showNotification('errorRenamingFolder', true);
         }
     }
 
@@ -115,10 +117,10 @@
             if (selectedFolderId && (selectedFolderId === node.id || !folderExists(folderTree, selectedFolderId))) {
                 selectedFolderId = null;
             }
-            notificationStore.show($t('folderDeleted'), 'success');
+            showNotification('folderDeleted');
         } catch (err) {
             console.error('Error deleting folder:', err);
-            notificationStore.show($t('errorDeletingFolder'), 'error');
+            showNotification('errorDeletingFolder', true);
         }
     }
 
@@ -127,7 +129,7 @@
         const titleVal = title.trim();
         const urlVal = url.trim();
         if (!titleVal || !urlVal) {
-            notificationStore.show($t('bookmarkTitleUrlRequired'), 'error');
+            showNotification('bookmarkTitleUrlRequired', true);
             return false;
         }
         saving = true;
@@ -149,7 +151,7 @@
                     });
                     if (!moveResponse?.success) throw new Error(moveResponse?.error || 'Error moving bookmark');
                 }
-                notificationStore.show($t('bookmarkUpdated'), 'success');
+                showNotification('bookmarkUpdated');
             } else {
                 const response = await chrome.runtime.sendMessage({
                     action: 'createBookmark',
@@ -157,14 +159,14 @@
                 });
                 if (!response?.success) throw new Error(response?.error || 'Error creating bookmark');
                 await chrome.storage.local.set({ lastUsedBookmarkFolderId: targetParentId });
-                notificationStore.show($t('bookmarkSaved'), 'success');
+                showNotification('bookmarkSaved');
             }
             onSaved?.();
             onClose?.();
             return true;
         } catch (err) {
             console.error('Error saving bookmark:', err);
-            notificationStore.show($t('errorSavingBookmark'), 'error');
+            showNotification('errorSavingBookmark', true);
             return false;
         } finally {
             saving = false;
