@@ -8,6 +8,7 @@
         currentRadioStation,
         isRadioActive,
         isPlaying,
+        isBuffering,
         addRadioStation,
         removeRadioStation,
         playRadioStation,
@@ -43,15 +44,12 @@
         }
     });
 
-    let filteredSavedStations = $derived.by(() => {
-        const query = searchQuery.trim().toLowerCase();
-        if (!query) return $radioStations;
-        const words = query.split(/\s+/).filter(Boolean);
-        return $radioStations.filter((s) => {
-            const haystack = `${s.name || ''} ${s.url || ''}`.toLowerCase();
-            return words.every((w) => haystack.includes(w));
-        });
-    });
+    /*
+     * The search field above the tabs searches the online directory — its label says
+     * so. It used to filter the saved list as well, so a search for "rock" left "My
+     * stations" saying 0 / 2 under a tab badge of 2, as if the stations were gone.
+     */
+    let savedStations = $derived($radioStations);
 
     let sortedOnlineStations = $derived.by(() => {
         if (!onlineStations || onlineStations.length === 0) return [];
@@ -253,6 +251,8 @@
         const query = e.currentTarget.value;
         searchQuery = query;
         clearTimeout(searchTimeout);
+        // Typing is an online search, so its results are what should be on screen.
+        if (query.trim()) activeModalTab = 'online';
 
         if (query.trim().length >= 2) {
             searchTimeout = setTimeout(() => {
@@ -514,6 +514,7 @@
                                             type="button"
                                             class="radio-preview-btn"
                                             class:is-previewing={isStationPlaying}
+                                            class:is-loading={isStationPlaying && $isBuffering}
                                             title={isStationPlaying
                                                 ? $t('musicPlayerPause') + ': ' + station.name
                                                 : $t('radioStationPlay') + ': ' + station.name}
@@ -590,20 +591,16 @@
                     <div class="form-group saved-radio-section">
                         <div class="saved-radio-header">
                             <div class="field-label">{$t('radioStationSavedList')}</div>
-                            <span class="saved-radio-counter"
-                                >{filteredSavedStations.length} / {$radioStations.length}</span
-                            >
+                            <span class="saved-radio-counter">{savedStations.length}</span>
                         </div>
 
                         <div class="saved-radio-list" role="list">
-                            {#if filteredSavedStations.length === 0}
+                            {#if savedStations.length === 0}
                                 <div class="radio-empty-state">
-                                    <p class="radio-empty-text">
-                                        {searchQuery.trim() ? $t('noRadioStationsFound') : $t('radioStationEmptyList')}
-                                    </p>
+                                    <p class="radio-empty-text">{$t('radioStationEmptyList')}</p>
                                 </div>
                             {:else}
-                                {#each filteredSavedStations as station (station.id)}
+                                {#each savedStations as station (station.id)}
                                     {@const isCurrentPlaying =
                                         $isRadioActive && $currentRadioStation?.id === station.id && $isPlaying}
                                     {@const isCurrentSelected =
@@ -620,6 +617,7 @@
                                             type="button"
                                             class="saved-radio-play-btn"
                                             class:is-playing={isCurrentPlaying}
+                                            class:is-loading={isCurrentPlaying && $isBuffering}
                                             title={isCurrentPlaying
                                                 ? $t('musicPlayerPause') + ': ' + station.name
                                                 : $t('radioStationPlay') + ': ' + station.name}

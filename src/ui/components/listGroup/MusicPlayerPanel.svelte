@@ -29,6 +29,7 @@
         currentTrack,
         currentIndex,
         isPlaying,
+        isBuffering,
         currentTime,
         duration,
         progressRatio,
@@ -1402,6 +1403,7 @@
                 <button
                     type="button"
                     class="music-action-btn music-play-btn"
+                    class:is-loading={$isPlaying && $isBuffering}
                     title={playButtonTitle}
                     aria-label={playButtonTitle}
                     onclick={togglePlay}

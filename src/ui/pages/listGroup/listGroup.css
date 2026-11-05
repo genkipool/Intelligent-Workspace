@@ -9574,6 +9574,36 @@ body:not(.groups-view-active) .music-panel,
     animation: spin 0.7s linear infinite;
 }
 
+/* A play button whose stream is still connecting: a spinner instead of the icon, so the
+   second of silence before a station starts reads as loading rather than as broken. */
+.radio-preview-btn.is-loading,
+.saved-radio-play-btn.is-loading,
+.music-play-btn.is-loading {
+    position: relative;
+}
+
+.radio-preview-btn.is-loading svg,
+.saved-radio-play-btn.is-loading svg,
+.music-play-btn.is-loading svg {
+    visibility: hidden;
+}
+
+.radio-preview-btn.is-loading::after,
+.saved-radio-play-btn.is-loading::after,
+.music-play-btn.is-loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 14px;
+    height: 14px;
+    box-sizing: border-box;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
 .radio-search-spinner.large {
     width: 24px;
     height: 24px;

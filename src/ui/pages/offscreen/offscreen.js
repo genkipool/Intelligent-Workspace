@@ -196,7 +196,9 @@ function musicAudio() {
     const audio = new Audio();
     audio.preload = 'metadata';
     music.audio = audio;
-    for (const event of ['play', 'pause', 'durationchange', 'loadedmetadata', 'seeked']) {
+    // `waiting` and `playing` bracket the silence while a stream connects and buffers,
+    // which is what `isBuffering` reports.
+    for (const event of ['play', 'pause', 'durationchange', 'loadedmetadata', 'seeked', 'waiting', 'playing']) {
         audio.addEventListener(event, reportMusicState);
     }
     audio.addEventListener('ended', async () => {
@@ -225,6 +227,9 @@ function musicSnapshot() {
         isRadio,
         currentRadio: music.currentRadio,
         isPlaying: Boolean(audio && !audio.paused && !audio.ended),
+        // Asked to play but nothing to play yet (HAVE_FUTURE_DATA is 3). A radio stream
+        // spends 0.3–1 s here while its server answers; the buttons show it as loading.
+        isBuffering: Boolean(audio && !audio.paused && !audio.ended && audio.readyState < 3),
         currentTime: audio?.currentTime || 0,
         duration: !isRadio && Number.isFinite(audio?.duration) ? audio.duration : 0,
         volume: audio ? audio.volume : 1,

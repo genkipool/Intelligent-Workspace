@@ -71,6 +71,8 @@ export const playlistFolder = writable('');
 /** Position in `tracks`, or -1 when nothing is loaded. */
 export const currentIndex = writable(-1);
 export const isPlaying = writable(false);
+/** Playing was asked for but no sound yet: a stream connecting, or a track loading. */
+export const isBuffering = writable(false);
 export const currentTime = writable(0);
 export const duration = writable(0);
 export const volume = writable(1);
@@ -245,6 +247,7 @@ function applyState(state) {
         currentIndex.set(state.index ?? -1);
     }
     isPlaying.set(Boolean(state.isPlaying));
+    isBuffering.set(Boolean(state.isBuffering));
     duration.set(state.duration || 0);
     currentTime.set(state.currentTime || 0);
     if (typeof state.volume === 'number') volume.set(state.volume);
@@ -624,6 +627,8 @@ export async function playRadioStation(station) {
     isRadioActive.set(true);
     currentRadioStation.set(station);
     currentIndex.set(-1);
+    // Shown at once, not when the offscreen document first reports back.
+    isBuffering.set(true);
     currentTime.set(0);
     duration.set(0);
     await sendCommand('playRadio', { station, radioStations: get(radioStations), autoplay: true });
