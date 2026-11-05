@@ -38,6 +38,73 @@ Each version holds two different things, and they are worth keeping apart:
 
 ---
 
+## 1.1.0 - 2026-11-05
+
+### Added
+
+- **The music player and the online radio are back.** They left in September to
+  narrow what the listing had to defend; they return from the `feature/musica-y-radio`
+  branch with the player panel, the stations window, their two IndexedDB stores and the
+  audio half of the offscreen document. The extension talks again to
+  `api.radio-browser.info` while you search for stations and to the server of the
+  station you play, and both are declared in the data-use section and the dossier. No
+  manifest permission is added: `offscreen` was already there for the Pomodoro.
+- The Music & Radio strings in the nine languages added since the player left.
+
+### Changed
+
+- A station's play button spins while it connects. The 0.3–1 s before a stream sounds
+  is the station's server, not the extension (measured: the message round trip and the
+  offscreen document add 1–16 ms, and a bare `<audio>` takes the same time on any
+  page), but the button used to switch to "pause" at once and leave a silence that
+  looked broken. The playing button looks the same in both tabs of the stations window.
+
+### Fixed
+
+- "My Stations" said 0 / 2 under a tab badge of 2 after an online search: the online
+  search box also filtered the saved list. It now lists every saved station, and typing
+  in the box goes to the online results.
+- The offscreen document could be closed with the music playing: the check that keeps
+  it open did not see the player's audio element.
+- **Web activity:** a new rule's warning follows the percentage in Settings (it saved 0
+  and never warned); the password is asked when a rule is loosened, not when it is
+  tightened; visiting the "Schedule" tab no longer saves a 9-to-18 window; changing the
+  category no longer creates a rule; a site covers its `www.`/`m.`/`mobile.` forms and
+  other subdomains only with "Subdomains" or `*.domain`; localhost and IP addresses can
+  be left out; the export no longer carries the lock password; the limit dialog grows to
+  the window before it scrolls.
+- **Pomodoro:** saving the settings no longer stops the clock; Skip counts only the time
+  that ran; the panel and the dashboard share one export format (old files still import)
+  and the same limits; the stats picker is the common dropdown; the timer has the same
+  font and spacing in the group list and the side panel.
+- **Group list and assistant:** Ctrl+click opens a tab in the panel without marking it
+  as seen; restoring a backup adds to the existing group and a hidden group stays
+  hidden; the arrow keys step between group headers and their tabs; the local AI gets
+  attached images and `.txt`/`.csv` files; editing or resending a question with the local
+  AI answers again.
+- **Clipboard, hints, notes and captures:** copying from hints works on pages that deny
+  the clipboard; link previews no longer add steps to the tab's history; insert mode no
+  longer stays on with every shortcut dead; editing a to-do list keeps its ticks;
+  autolinks no longer stop at the first hyphen.
+- **Bookmarks:** the right-click menu opens next to the row without covering it; the
+  edit dialog shows its notices; the downloads window keeps its size when the filter
+  changes.
+- One typeface (Roboto Flex) on every page; theme names share the width and fall back to
+  English when a translation does not fit; the language switch starts in its real
+  position.
+
+### Store text
+
+```
+What's new
+• The music player and online radio are back: play your own music folder or save internet radio stations, and keep listening while you move between tabs.
+• Web activity rules are more reliable: correct warnings, the password only when loosening a rule, and clear subdomain coverage.
+• Pomodoro: saving settings no longer stops the clock, and the panel and dashboard share one export format.
+• Fixes for copying from hints, link previews, to-do lists, the bookmark menu and the group list.
+```
+
+---
+
 ## 1.0.4 - 2026-10-17
 
 ### Changed
@@ -148,11 +215,6 @@ What's new
 
 ### Added
 
-- **The music player and the online radio are back.** The player panel, the stations
-  window, their two IndexedDB stores and the audio half of the offscreen document return
-  from the `feature/musica-y-radio` branch. The extension talks again to
-  `api.radio-browser.info` while you search for stations and to the server of the
-  station you play, and both are declared in the data-use section and the dossier.
 - The cookie editor can **add cookies**: the "Add" button creates a card with its own
   name field; with the domain left empty the cookie is for the tab's site only, and it
   is not saved without a name.

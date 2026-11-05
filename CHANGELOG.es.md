@@ -39,6 +39,76 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ---
 
+## 1.1.0 - 2026-11-05
+
+### Añadido
+
+- **Vuelven el reproductor de música y la radio en línea.** Salieron para estrechar lo
+  que la ficha tenía que defender; vuelven desde la rama `feature/musica-y-radio` con el
+  panel del reproductor, la ventana de emisoras, sus dos almacenes de IndexedDB y la
+  mitad del documento offscreen que reproduce el audio. La extensión vuelve a hablar
+  con `api.radio-browser.info` mientras buscas emisoras y con el servidor de la emisora
+  que suena, y las dos conexiones se declaran en el uso de datos y el dossier. No se
+  añade ningún permiso: `offscreen` ya estaba por el pomodoro.
+- Los textos de Música y radio en los nueve idiomas añadidos desde que se retiró.
+
+### Cambiado
+
+- El botón de play de una emisora gira mientras conecta. Los 0,3–1 s hasta que suena
+  un stream son del servidor de la emisora, no de la extensión (medido: el viaje de
+  mensajes y el documento offscreen suman 1–16 ms, y un `<audio>` pelado tarda lo mismo
+  en cualquier página), pero el botón pasaba a «pausa» al instante y dejaba un silencio
+  que parecía un fallo. El botón sonando se ve igual en las dos pestañas de la ventana
+  de emisoras.
+
+### Corregido
+
+- «Mis emisoras» decía 0 / 2 bajo una pestaña que marcaba 2 tras una búsqueda online:
+  el cuadro de búsqueda online filtraba también la lista guardada. Ahora salen todas, y
+  escribir en el cuadro lleva a los resultados online.
+- El documento offscreen se podía cerrar con la música sonando: la comprobación que lo
+  mantiene abierto no veía el elemento de audio del reproductor.
+- **Actividad web:** el aviso de una regla nueva sigue el porcentaje de Ajustes (guardaba
+  0 y no avisaba nunca); la contraseña se pide al aflojar una regla, no al endurecerla;
+  pasar por la pestaña «Horario» ya no guarda una franja de 9 a 18; cambiar la categoría
+  ya no crea una regla; un sitio cubre sus formas `www.`/`m.`/`mobile.` y los demás
+  subdominios solo con «Subdominios» o `*.dominio`; localhost y las IP se pueden dejar
+  fuera; la exportación ya no lleva la contraseña de bloqueo; el diálogo de límite crece
+  hasta el alto de la ventana antes de desplazarse.
+- **Pomodoro:** guardar los ajustes ya no para el reloj; Saltar cuenta solo el tiempo que
+  corrió; el panel y el dashboard comparten un formato de exportación (los archivos
+  antiguos se siguen importando) y los mismos límites; el selector de estadísticas es el
+  desplegable común; el temporizador tiene la misma letra y espaciado en la lista de
+  grupos y en el panel lateral.
+- **Lista de grupos y asistente:** Ctrl+clic abre una pestaña en el panel sin marcarla
+  como vista; restaurar una copia la añade al grupo existente y un grupo oculto sigue
+  oculto; las flechas pasan por las cabeceras de grupo y sus pestañas; la IA local
+  recibe las imágenes y los `.txt`/`.csv` adjuntos; editar o reenviar una pregunta con
+  la IA local vuelve a responder.
+- **Portapapeles, hints, notas y capturas:** copiar desde los hints funciona en páginas
+  que niegan el portapapeles; las previsualizaciones de enlaces ya no añaden pasos al
+  historial de la pestaña; el modo inserción ya no se queda encendido con todos los
+  atajos muertos; editar una lista de tareas conserva las casillas; los enlaces
+  automáticos ya no se cortan en el primer guion.
+- **Marcadores:** el menú del clic derecho se abre junto a la fila sin taparla; la
+  ventana de editar muestra sus avisos; la ventana de descargas mantiene el tamaño al
+  cambiar de filtro.
+- Una sola tipografía (Roboto Flex) en todas las páginas; los nombres de tema reparten el
+  ancho y salen en inglés si la traducción no cabe; el interruptor de idioma arranca en
+  su posición.
+
+### Texto de la tienda
+
+```
+Novedades
+• Vuelven el reproductor de música y la radio en línea: reproduce tu carpeta de música o guarda emisoras de radio por internet, y sigue escuchando mientras cambias de pestaña.
+• Las reglas de actividad web son más fiables: avisos correctos, contraseña solo al aflojar una regla y un alcance de subdominios claro.
+• Pomodoro: guardar los ajustes ya no para el reloj, y el panel y el dashboard comparten un formato de exportación.
+• Correcciones al copiar desde los hints, en las previsualizaciones de enlaces, las listas de tareas, el menú de marcadores y la lista de grupos.
+```
+
+---
+
 ## 1.0.4 - 2026-10-17
 
 ### Cambiado
@@ -151,11 +221,6 @@ Novedades
 
 ### Añadido
 
-- **Vuelven el reproductor de música y la radio en línea.** El panel del reproductor, la
-  ventana de emisoras, sus dos almacenes de IndexedDB y la mitad del documento offscreen
-  que reproduce el audio regresan desde la rama `feature/musica-y-radio`. La extensión
-  vuelve a hablar con `api.radio-browser.info` mientras buscas emisoras y con el servidor
-  de la emisora que suena, y las dos conexiones se declaran en el uso de datos y el dossier.
 - El editor de cookies puede **añadir cookies**: el botón «Añadir» crea una tarjeta con
   su propio campo de nombre; con el dominio vacío la cookie es solo para el sitio de la
   pestaña, y no se guarda sin nombre.

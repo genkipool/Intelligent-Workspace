@@ -1906,6 +1906,34 @@
     "message": "文字识别（OCR）会按扩展程序的语言读取截图，英语和西班牙语可离线使用。如果识别失败，请再次将鼠标悬停在 OCR 按钮上，选择图片的语言。",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "2026年11月5日",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "音乐播放器和在线电台回来了：无需离开工作区，即可播放你自己的音乐文件夹，或搜索网络电台目录并保存电台。切换标签页时播放不会中断。",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "电台连接时播放按钮会转动，开始播放前的短暂静音不再像是出错；“我的电台”始终显示所有已保存的电台，无论在线搜索框中输入了什么。",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "网页活动：新规则的提醒遵循设置中的百分比；放宽规则时要求输入密码，收紧时则不需要；一个网站涵盖其 www 和移动版，其他子域名仅在指定时才包含；可以排除 localhost 和 IP 地址；限制对话框无需滚动即可完整显示。",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "番茄钟：保存设置不再停止计时，“跳过”只计算实际经过的时间，面板和仪表盘共用同一种导出格式和相同的限制，计时器在分组列表和侧边栏中的外观一致。",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "分组列表和助手：Ctrl+点击在面板中打开标签页时不会将其标记为已查看，恢复备份会添加到已存在的分组中，方向键可在分组标题及其标签页之间移动，本地 AI 能收到附加的图片。",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "修复：在屏蔽剪贴板的页面上也能通过提示复制，链接预览不再向标签页历史添加记录，编辑待办列表时勾选状态得以保留，书签的右键菜单在其所在行旁打开，下载窗口保持大小不变。",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "助手的定时查询会使用选择器中选定的模型，包括 Chrome 本地 AI。选定本地 AI 时，时钟按钮会直接打开定时窗口，而不再要求 API 密钥。",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

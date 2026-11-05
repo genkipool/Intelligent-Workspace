@@ -1906,6 +1906,34 @@
     "message": "Il riconoscimento del testo (OCR) legge gli screenshot nella lingua dell’estensione e funziona offline in inglese e spagnolo. Se non riesce, passa di nuovo il mouse sul pulsante OCR per scegliere la lingua dell’immagine.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "5 novembre 2026",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "Tornano il lettore musicale e la radio online: riproduci una cartella con la tua musica, oppure cerca nella directory delle radio internet e salva le tue stazioni, senza uscire dall’area di lavoro. La riproduzione continua mentre passi da una scheda all’altra.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "Il pulsante play di una stazione gira mentre si connette, così il breve silenzio prima dell’avvio non sembra più un errore, e “Le mie stazioni” mostra sempre tutte quelle salvate, qualunque cosa ci sia nella ricerca online.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "Attività web: l’avviso di una nuova regola segue la percentuale delle Impostazioni, la password viene chiesta per allentare una regola e non per inasprirla, un sito include le sue forme www e mobile ma gli altri sottodomini solo su richiesta, localhost e gli indirizzi IP si possono escludere, e la finestra del limite entra senza scorrere.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "Pomodoro: salvare le impostazioni non ferma più l’orologio, Salta conta solo il tempo trascorso, il pannello e la dashboard condividono un formato di esportazione e gli stessi limiti, e il timer appare uguale nell’elenco dei gruppi e nel pannello laterale.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "Elenco dei gruppi e assistente: Ctrl+clic apre una scheda nel pannello senza segnarla come vista, ripristinare un backup lo aggiunge al gruppo già esistente, le frecce passano per le intestazioni dei gruppi e le loro schede, e l’IA locale riceve le immagini allegate.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "Correzioni: copiare dagli hint funziona sulle pagine che bloccano gli appunti, le anteprime dei link non aggiungono più passaggi alla cronologia della scheda, modificare un elenco di attività mantiene le spunte, il menu del clic destro di un segnalibro si apre accanto alla sua riga e la finestra dei download mantiene le dimensioni.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "Le richieste programmate dell’assistente usano il modello scelto nel selettore, compresa l’IA locale di Chrome. Con l’IA locale scelta, il pulsante dell’orologio apre la finestra di programmazione invece di chiedere una chiave API.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

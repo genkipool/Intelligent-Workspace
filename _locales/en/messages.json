@@ -1906,6 +1906,34 @@
     "message": "Text recognition (OCR) reads screenshots in the extension's language and works offline in English and Spanish. If it fails, hover over the OCR button again to choose the image's language.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "November 5, 2026",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "The music player and online radio are back: play a folder of your own music, or search the internet radio directory and save your stations, without leaving the workspace. It keeps playing while you move between tabs.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "A station's play button spins while it connects, so the moment of silence before it starts no longer looks broken, and \"My Stations\" always lists every saved station, whatever is typed in the online search.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "Web activity: a new rule's warning follows the percentage in Settings, the password is asked when a rule is loosened and not when it is tightened, a site covers its www and mobile forms but other subdomains only on request, localhost and IP addresses can be left out, and the limit dialog fits without scrolling.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "Pomodoro: saving the settings no longer stops the clock, Skip counts only the time that ran, the panel and the dashboard share one export format and the same limits, and the timer looks the same in the group list and the side panel.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "Group list and assistant: Ctrl+click opens a tab in the panel without marking it as seen, restoring a backup adds to the group that already exists, the arrow keys step between group headers and their tabs, and the local AI receives attached images.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "Fixes: copying from hints works on pages that block the clipboard, link previews no longer add steps to the tab's history, editing a to-do list keeps its ticks, a bookmark's right-click menu opens next to its row, and the downloads window keeps its size.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "Scheduled assistant queries use the model picked in the selector, Chrome's local AI included. With the local AI picked, the clock button opens the scheduling dialog instead of asking for an API key.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

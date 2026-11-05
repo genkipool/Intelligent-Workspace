@@ -1906,6 +1906,34 @@
     "message": "テキスト認識（OCR）は拡張機能の言語でスクリーンショットを読み取り、英語とスペイン語ではオフラインで動作します。うまくいかない場合は、OCR ボタンにもう一度マウスを合わせて画像の言語を選んでください。",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "2026年11月5日",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "音楽プレーヤーとオンラインラジオが戻ってきました。ワークスペースを離れずに、自分の音楽フォルダーを再生したり、インターネットラジオのディレクトリを検索して局を保存したりできます。タブを切り替えても再生は続きます。",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "接続中は局の再生ボタンが回転するので、再生が始まる前の短い無音が不具合に見えなくなりました。また「マイ局」には、オンライン検索に何が入力されていても、保存したすべての局が表示されます。",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "ウェブアクティビティ：新しいルールの警告は設定のパーセンテージに従い、パスワードはルールを緩めるときに求められ、厳しくするときには求められません。サイトは www 版とモバイル版を含み、その他のサブドメインは指定した場合のみ対象になります。localhost と IP アドレスは除外でき、制限ダイアログはスクロールなしで収まります。",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "ポモドーロ：設定を保存しても時計が止まらなくなり、「スキップ」は実際に経過した時間だけを数えます。パネルとダッシュボードはエクスポート形式と上限値を共有し、タイマーはグループ一覧とサイドパネルで同じ見た目になりました。",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "グループ一覧とアシスタント：Ctrl+クリックでパネルにタブを開いても既読になりません。バックアップの復元は既存のグループに追加され、矢印キーでグループの見出しとそのタブを移動でき、ローカル AI に添付画像が届くようになりました。",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "修正：クリップボードをブロックするページでもヒントからコピーでき、リンクのプレビューがタブの履歴に項目を追加しなくなり、ToDo リストを編集してもチェックが外れず、ブックマークの右クリックメニューがその行の横に開き、ダウンロードウィンドウのサイズが保たれます。",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "アシスタントの予約クエリは、セレクターで選んだモデル（Chrome のローカル AI を含む）を使います。ローカル AI を選んでいると、時計ボタンは API キーを求めずに予約画面を開きます。",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

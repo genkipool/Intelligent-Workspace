@@ -1906,6 +1906,34 @@
     "message": "La reconnaissance de texte (OCR) lit les captures dans la langue de l’extension et fonctionne hors ligne en anglais et en espagnol. En cas d’échec, survolez à nouveau le bouton OCR pour choisir la langue de l’image.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "5 novembre 2026",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "Le lecteur de musique et la radio en ligne sont de retour : écoutez un dossier de votre propre musique, ou parcourez l’annuaire des radios Internet et enregistrez vos stations, sans quitter l’espace de travail. La lecture continue pendant que vous changez d’onglet.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "Le bouton de lecture d’une station tourne pendant la connexion, si bien que le court silence avant le démarrage ne ressemble plus à une panne, et « Mes stations » affiche toujours toutes les stations enregistrées, quoi que contienne la recherche en ligne.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "Activité web : l’alerte d’une nouvelle règle suit le pourcentage des Paramètres, le mot de passe est demandé pour assouplir une règle et non pour la durcir, un site couvre ses formes www et mobile mais les autres sous-domaines seulement sur demande, localhost et les adresses IP peuvent être exclus, et la fenêtre de limite tient sans défilement.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "Pomodoro : enregistrer les réglages n’arrête plus l’horloge, Passer ne compte que le temps écoulé, le panneau et le tableau de bord partagent un format d’export et les mêmes limites, et le minuteur a le même aspect dans la liste des groupes et dans le panneau latéral.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "Liste des groupes et assistant : Ctrl+clic ouvre un onglet dans le panneau sans le marquer comme vu, restaurer une sauvegarde complète le groupe existant, les flèches passent par les en-têtes de groupe et leurs onglets, et l’IA locale reçoit les images jointes.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "Corrections : copier depuis les hints fonctionne sur les pages qui bloquent le presse-papiers, les aperçus de liens n’ajoutent plus d’étapes à l’historique de l’onglet, modifier une liste de tâches conserve les cases cochées, le menu contextuel d’un favori s’ouvre à côté de sa ligne et la fenêtre des téléchargements garde sa taille.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "Les requêtes programmées de l’assistant utilisent le modèle choisi dans le sélecteur, IA locale de Chrome comprise. Avec l’IA locale choisie, le bouton horloge ouvre la fenêtre de programmation au lieu de demander une clé d’API.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

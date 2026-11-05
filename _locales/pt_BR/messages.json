@@ -1906,6 +1906,34 @@
     "message": "O reconhecimento de texto (OCR) lê as capturas no idioma da extensão e funciona offline em inglês e espanhol. Se falhar, passe o mouse de novo sobre o botão de OCR para escolher o idioma da imagem.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "5 de novembro de 2026",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "O player de música e a rádio online estão de volta: toque uma pasta com suas músicas ou pesquise no diretório de rádios da internet e salve suas estações, sem sair do espaço de trabalho. A reprodução continua enquanto você troca de aba.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "O botão de play de uma estação gira enquanto ela conecta, então o breve silêncio antes de começar não parece mais um erro, e “Minhas estações” sempre mostra todas as salvas, seja o que for digitado na busca online.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "Atividade web: o aviso de uma nova regra segue a porcentagem das Configurações, a senha é pedida ao afrouxar uma regra e não ao endurecê-la, um site cobre suas formas www e móvel mas os outros subdomínios só se pedidos, localhost e endereços IP podem ficar de fora, e a janela de limite cabe sem rolagem.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "Pomodoro: salvar as configurações não para mais o relógio, Pular conta só o tempo que correu, o painel e o dashboard compartilham um formato de exportação e os mesmos limites, e o timer aparece igual na lista de grupos e no painel lateral.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "Lista de grupos e assistente: Ctrl+clique abre uma aba no painel sem marcá-la como vista, restaurar um backup adiciona ao grupo que já existe, as setas passam pelos cabeçalhos de grupo e suas abas, e a IA local recebe as imagens anexadas.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "Correções: copiar pelos hints funciona em páginas que bloqueiam a área de transferência, as prévias de links não adicionam mais passos ao histórico da aba, editar uma lista de tarefas mantém as marcações, o menu do clique direito de um favorito abre ao lado da sua linha e a janela de downloads mantém o tamanho.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "As consultas programadas do assistente usam o modelo escolhido no seletor, inclusive a IA local do Chrome. Com a IA local escolhida, o botão do relógio abre a janela de agendamento em vez de pedir uma chave de API.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

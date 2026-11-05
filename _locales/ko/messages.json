@@ -1906,6 +1906,34 @@
     "message": "텍스트 인식(OCR)은 확장 프로그램의 언어로 스크린샷을 읽으며, 영어와 스페인어는 오프라인에서 작동합니다. 실패하면 OCR 버튼 위에 다시 마우스를 올려 이미지의 언어를 선택하세요.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "2026년 11월 5일",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "음악 플레이어와 온라인 라디오가 돌아왔습니다. 작업 공간을 떠나지 않고 내 음악 폴더를 재생하거나 인터넷 라디오 목록에서 방송국을 검색해 저장할 수 있습니다. 탭을 옮겨 다녀도 재생은 계속됩니다.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "방송국이 연결되는 동안 재생 버튼이 회전하므로 시작 전의 짧은 무음이 더 이상 오류처럼 보이지 않으며, ‘내 방송국’에는 온라인 검색에 무엇을 입력했든 저장한 모든 방송국이 표시됩니다.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "웹 활동: 새 규칙의 알림은 설정의 백분율을 따르고, 비밀번호는 규칙을 완화할 때 묻고 강화할 때는 묻지 않습니다. 사이트는 www와 모바일 주소를 포함하며 다른 하위 도메인은 요청할 때만 포함됩니다. localhost와 IP 주소는 제외할 수 있고, 제한 대화상자는 스크롤 없이 들어맞습니다.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "뽀모도로: 설정을 저장해도 시계가 멈추지 않고, ‘건너뛰기’는 실제로 흐른 시간만 셉니다. 패널과 대시보드는 같은 내보내기 형식과 같은 제한을 사용하며, 타이머는 그룹 목록과 사이드 패널에서 같은 모습입니다.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "그룹 목록과 어시스턴트: Ctrl+클릭으로 패널에서 탭을 열어도 본 것으로 표시되지 않고, 백업을 복원하면 이미 있는 그룹에 추가되며, 화살표 키로 그룹 머리글과 그 탭 사이를 이동할 수 있고, 로컬 AI가 첨부한 이미지를 받습니다.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "수정: 클립보드를 막는 페이지에서도 힌트로 복사할 수 있고, 링크 미리보기가 더 이상 탭 기록에 항목을 추가하지 않으며, 할 일 목록을 편집해도 체크 표시가 유지되고, 북마크의 오른쪽 클릭 메뉴가 해당 행 옆에 열리며, 다운로드 창이 크기를 유지합니다.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "어시스턴트 예약 질의는 선택기에서 고른 모델을 사용하며, Chrome 로컬 AI도 포함됩니다. 로컬 AI를 고르면 시계 버튼이 API 키를 요구하지 않고 예약 창을 엽니다.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."

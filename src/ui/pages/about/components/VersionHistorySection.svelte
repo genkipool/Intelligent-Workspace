@@ -6,6 +6,18 @@
 
     const versionData = [
         {
+            version: '1.1.0',
+            dateKey: 'date_2026_11_05',
+            features: [
+                'feature_v110_musicRadio',
+                'feature_v110_radioPlayback',
+                'feature_v110_webActivity',
+                'feature_v110_pomodoro',
+                'feature_v110_listGroups',
+                'feature_v110_fixes',
+            ],
+        },
+        {
             version: '1.0.4',
             dateKey: 'date_2026_10_17',
             features: [

@@ -1906,6 +1906,34 @@
     "message": "Die Texterkennung (OCR) liest Screenshots in der Sprache der Erweiterung und funktioniert auf Englisch und Spanisch offline. Schlägt sie fehl, fahre erneut über die OCR-Schaltfläche, um die Sprache des Bildes zu wählen.",
     "description": "Description of OCR in the extension's language in v1.0.3."
   },
+  "date_2026_11_05": {
+    "message": "5. November 2026",
+    "description": "Release date for version 1.1.0."
+  },
+  "feature_v110_musicRadio": {
+    "message": "Musikplayer und Online-Radio sind zurück: Spiele einen Ordner mit deiner eigenen Musik ab oder durchsuche das Internetradio-Verzeichnis und speichere deine Sender, ohne den Arbeitsbereich zu verlassen. Die Wiedergabe läuft weiter, während du zwischen Tabs wechselst.",
+    "description": "Description of the music player and online radio returning in v1.1.0."
+  },
+  "feature_v110_radioPlayback": {
+    "message": "Die Wiedergabetaste eines Senders dreht sich, während er verbindet, sodass die kurze Stille vor dem Start nicht mehr wie ein Fehler wirkt, und „Meine Sender“ zeigt immer alle gespeicherten Sender, egal was in der Online-Suche steht.",
+    "description": "Description of the radio play button and saved-stations list improvements in v1.1.0."
+  },
+  "feature_v110_webActivity": {
+    "message": "Webaktivität: Die Warnung einer neuen Regel folgt dem Prozentsatz in den Einstellungen, das Passwort wird beim Lockern einer Regel abgefragt und nicht beim Verschärfen, eine Website umfasst ihre www- und Mobilvarianten, andere Subdomains nur auf Wunsch, localhost und IP-Adressen lassen sich ausnehmen, und der Limit-Dialog passt ohne Scrollen.",
+    "description": "Description of the web activity fixes in v1.1.0."
+  },
+  "feature_v110_pomodoro": {
+    "message": "Pomodoro: Das Speichern der Einstellungen stoppt die Uhr nicht mehr, Überspringen zählt nur die tatsächlich gelaufene Zeit, Panel und Dashboard teilen ein Exportformat und dieselben Grenzen, und der Timer sieht in der Gruppenliste und im Seitenbereich gleich aus.",
+    "description": "Description of the Pomodoro fixes in v1.1.0."
+  },
+  "feature_v110_listGroups": {
+    "message": "Gruppenliste und Assistent: Strg+Klick öffnet einen Tab im Panel, ohne ihn als gesehen zu markieren, das Wiederherstellen einer Sicherung ergänzt die bereits vorhandene Gruppe, die Pfeiltasten wechseln zwischen Gruppenköpfen und ihren Tabs, und die lokale KI erhält angehängte Bilder.",
+    "description": "Description of the group list and assistant fixes in v1.1.0."
+  },
+  "feature_v110_fixes": {
+    "message": "Korrekturen: Kopieren aus den Hints funktioniert auf Seiten, die die Zwischenablage sperren, Linkvorschauen fügen dem Tab-Verlauf keine Schritte mehr hinzu, beim Bearbeiten einer Aufgabenliste bleiben die Häkchen erhalten, das Rechtsklickmenü eines Lesezeichens öffnet sich neben seiner Zeile, und das Download-Fenster behält seine Größe.",
+    "description": "Description of the other fixes in v1.1.0."
+  },
   "feature_v104_scheduledQueriesModel": {
     "message": "Geplante Assistenten-Anfragen verwenden das im Auswahlmenü gewählte Modell, auch Chromes lokale KI. Ist die lokale KI gewählt, öffnet die Uhr-Schaltfläche den Planungsdialog, statt nach einem API-Schlüssel zu fragen.",
     "description": "Description of scheduled assistant queries using the chosen model in v1.0.4."
