@@ -42,14 +42,16 @@ Each version holds two different things, and they are worth keeping apart:
 
 ### Added
 
-- **The music player and the online radio are back.** They left in September to
-  narrow what the listing had to defend; they return from the `feature/musica-y-radio`
-  branch with the player panel, the stations window, their two IndexedDB stores and the
-  audio half of the offscreen document. The extension talks again to
-  `api.radio-browser.info` while you search for stations and to the server of the
-  station you play, and both are declared in the data-use section and the dossier. No
-  manifest permission is added: `offscreen` was already there for the Pomodoro.
-- The Music & Radio strings in the nine languages added since the player left.
+- **Audio player and online radio.** An audio player in the workspace for the sounds
+  that help people concentrate: white noise, rain, nature or anything else, played from
+  the user's own files (a folder or single files), with search, reordering by dragging,
+  and playback that carries on while the user moves between tabs or closes the page.
+  Next to it, internet radio: search thousands of live stations by name, country or
+  genre, used by many people to learn a language or to focus, and save, import, export
+  and sync your stations. The audio plays in the offscreen document, so no manifest
+  permission is added (`offscreen` was already there for the Pomodoro). The extension
+  talks to `api.radio-browser.info` while you search for stations and to the server of
+  the station you play, and both are declared in the data-use section and the dossier.
 
 ### Changed
 
@@ -64,8 +66,8 @@ Each version holds two different things, and they are worth keeping apart:
 - "My Stations" said 0 / 2 under a tab badge of 2 after an online search: the online
   search box also filtered the saved list. It now lists every saved station, and typing
   in the box goes to the online results.
-- The offscreen document could be closed with the music playing: the check that keeps
-  it open did not see the player's audio element.
+- The offscreen document could be closed with audio playing: the check that keeps it
+  open did not see the player's audio element.
 - **Web activity:** a new rule's warning follows the percentage in Settings (it saved 0
   and never warned); the password is asked when a rule is loosened, not when it is
   tightened; visiting the "Schedule" tab no longer saves a 9-to-18 window; changing the
@@ -97,7 +99,7 @@ Each version holds two different things, and they are worth keeping apart:
 
 ```
 What's new
-• The music player and online radio are back: play your own music folder or save internet radio stations, and keep listening while you move between tabs.
+• New audio player: play white noise, rain or any sound that helps you concentrate, or search and save internet radio stations to learn or focus, and keep listening while you move between tabs.
 • Web activity rules are more reliable: correct warnings, the password only when loosening a rule, and clear subdomain coverage.
 • Pomodoro: saving settings no longer stops the clock, and the panel and dashboard share one export format.
 • Fixes for copying from hints, link previews, to-do lists, the bookmark menu and the group list.

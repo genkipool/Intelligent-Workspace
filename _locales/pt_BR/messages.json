@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "O player de música e a rádio online estão de volta: toque uma pasta com suas músicas ou pesquise no diretório de rádios da internet e salve suas estações, sem sair do espaço de trabalho. A reprodução continua enquanto você troca de aba.",
+    "message": "Novo player de áudio: toque ruído branco, chuva ou qualquer som que ajude você a se concentrar a partir dos seus arquivos, ou pesquise e salve rádios da internet para aprender ou se concentrar, sem sair do espaço de trabalho. A reprodução continua enquanto você troca de aba.",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "Reprodutor de música"
+    "message": "Player de áudio"
   },
   "musicPlayerEmpty": {
     "message": "Nenhuma faixa selecionada"
@@ -14304,13 +14304,13 @@
     "message": "Fechar busca"
   },
   "musicPlayerSelectFolder": {
-    "message": "Adicionar pasta de música"
+    "message": "Adicionar pasta de áudio"
   },
   "musicPlayerAddFolder": {
-    "message": "Adicionar pasta de música"
+    "message": "Adicionar pasta de áudio"
   },
   "musicPlayerSelectFiles": {
-    "message": "Adicionar arquivos de música"
+    "message": "Adicionar arquivos de áudio"
   },
   "musicPlayerRemoveFolder": {
     "message": "Remover pasta da playlist"
@@ -14331,10 +14331,10 @@
     "message": "Tocando agora: $1"
   },
   "musicPlayerShow": {
-    "message": "Mostrar reprodutor de música"
+    "message": "Mostrar player de áudio"
   },
   "musicPlayerHide": {
-    "message": "Ocultar reprodutor de música"
+    "message": "Ocultar player de áudio"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "Nenhum arquivo de áudio encontrado na pasta selecionada"
@@ -14376,7 +14376,7 @@
     "message": "Rádio: $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "Adicionar música (pasta ou arquivos)"
+    "message": "Adicionar áudio (pasta ou arquivos)"
   },
   "musicPlayerAddFolderOption": {
     "message": "Adicionar pasta"
@@ -14397,7 +14397,7 @@
     "message": "Remover arquivos da playlist"
   },
   "musicTabMusic": {
-    "message": "Música"
+    "message": "Áudio"
   },
   "musicTabRadio": {
     "message": "Rádio"
@@ -14514,43 +14514,43 @@
     "message": "Estação anterior: $1"
   },
   "sectionMusicPlayer": {
-    "message": "Áudio para foco e concentração"
+    "message": "Player de áudio para concentração"
   },
   "feature_music_local_folder": {
-    "message": "Toque músicas de pastas locais diretamente no navegador."
+    "message": "Toque seus próprios arquivos de áudio de uma pasta — ruído branco, chuva, natureza ou qualquer som que ajude você a se concentrar — direto no navegador."
   },
   "feature_music_playback": {
-    "message": "Controles completos de reprodução: tocar, pausar, pular e repetir."
+    "message": "Controles completos: tocar, pausar, anterior, próximo e parar."
   },
   "feature_music_seek": {
-    "message": "Navegue e avance dentro das faixas com precisão."
+    "message": "Avance e volte dentro de um som com precisão."
   },
   "feature_music_search": {
-    "message": "Busque e filtre as faixas da sua playlist na hora."
+    "message": "Encontre na hora qualquer som da sua lista."
   },
   "feature_music_playlist": {
-    "message": "Crie e gerencie playlists personalizadas arrastando e soltando."
+    "message": "Adicione pastas ou arquivos avulsos e reordene sua lista arrastando."
   },
   "feature_music_keeps_playing": {
-    "message": "A música continua tocando mesmo ao navegar entre abas."
+    "message": "O som continua enquanto você troca de aba, mesmo com a página fechada."
   },
   "feature_radio_online_search": {
-    "message": "Busque milhares de rádios online ao vivo do mundo todo por nome, país ou gênero."
+    "message": "Pesquise milhares de rádios ao vivo do mundo todo por nome, país ou gênero: para aprender um idioma, acompanhar uma rádio falada ou ajudar você a se concentrar."
   },
   "feature_radio_saved_stations": {
-    "message": "Salve suas estações favoritas no IndexedDB para um acesso rápido e permanente."
+    "message": "Salve suas estações favoritas para acesso rápido."
   },
   "feature_radio_batch_add": {
-    "message": "Selecione e adicione várias estações de rádio online à sua biblioteca com um clique."
+    "message": "Selecione várias estações e adicione-as com um clique."
   },
   "feature_radio_import_export": {
-    "message": "Exporte e importe suas estações salvas de/para arquivos JSON, sem duplicatas."
+    "message": "Exporte e importe suas estações em um arquivo JSON, sem duplicatas."
   },
   "feature_radio_sync": {
-    "message": "Sincronize suas estações favoritas entre navegadores e dispositivos pela sincronização na nuvem."
+    "message": "Sincronize suas estações entre navegadores com a sincronização do Chrome."
   },
   "feature_radio_unified_tabs": {
-    "message": "Alterne sem esforço entre música local, estações de rádio ou uma fila de reprodução unificada."
+    "message": "Alterne entre seus sons, suas estações de rádio ou uma lista combinada."
   },
   "radioExportBtn": {
     "message": "Exportar"

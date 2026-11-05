@@ -1853,7 +1853,7 @@
         "description": "Release date for version 1.1.0."
     },
     "feature_v110_musicRadio": {
-        "message": "Vuelven el reproductor de música y la radio en línea: reproduce una carpeta con tu música, o busca en el directorio de radios de internet y guarda tus emisoras, sin salir del espacio de trabajo. Sigue sonando mientras cambias de pestaña.",
+        "message": "Nuevo reproductor de audio: pon ruido blanco, lluvia o cualquier sonido que te ayude a concentrarte desde tus propios archivos, o busca y guarda emisoras de radio por internet para aprender o concentrarte, sin salir del espacio de trabajo. Sigue sonando mientras cambias de pestaña.",
         "description": "Description of the music player and online radio returning in v1.1.0."
     },
     "feature_v110_radioPlayback": {
@@ -11550,7 +11550,7 @@
         }
     },
     "musicPlayer": {
-        "message": "Reproductor de música"
+        "message": "Reproductor de audio"
     },
     "musicPlayerEmpty": {
         "message": "Sin pista seleccionada"
@@ -11595,13 +11595,13 @@
         "message": "Cerrar búsqueda"
     },
     "musicPlayerSelectFolder": {
-        "message": "Añadir carpeta de música"
+        "message": "Añadir carpeta de audio"
     },
     "musicPlayerAddFolder": {
-        "message": "Añadir carpeta de música"
+        "message": "Añadir carpeta de audio"
     },
     "musicPlayerSelectFiles": {
-        "message": "Añadir archivos de música"
+        "message": "Añadir archivos de audio"
     },
     "musicPlayerRemoveFolder": {
         "message": "Eliminar carpeta de la lista"
@@ -11622,10 +11622,10 @@
         "message": "Reproduciendo: $1"
     },
     "musicPlayerShow": {
-        "message": "Mostrar reproductor"
+        "message": "Mostrar reproductor de audio"
     },
     "musicPlayerHide": {
-        "message": "Ocultar reproductor"
+        "message": "Ocultar reproductor de audio"
     },
     "musicPlayerNoAudioInFolder": {
         "message": "No se encontraron archivos de audio en la carpeta seleccionada"
@@ -11667,7 +11667,7 @@
         "message": "Radio: $1"
     },
     "musicPlayerAddMusicMenu": {
-        "message": "Añadir música (carpetas o archivos)"
+        "message": "Añadir audio (carpetas o archivos)"
     },
     "musicPlayerAddFolderOption": {
         "message": "Añadir carpeta"
@@ -11688,7 +11688,7 @@
         "message": "Eliminar archivos de la lista"
     },
     "musicTabMusic": {
-        "message": "Música"
+        "message": "Audio"
     },
     "musicTabRadio": {
         "message": "Radio"
@@ -11805,43 +11805,43 @@
         "message": "Anterior emisora: $1"
     },
     "sectionMusicPlayer": {
-        "message": "Audio y música de concentración"
+        "message": "Reproductor de audio para concentrarte"
     },
     "feature_music_local_folder": {
-        "message": "Reproduce música desde carpetas locales directamente en el navegador."
+        "message": "Reproduce tus propios archivos de audio desde una carpeta —ruido blanco, lluvia, naturaleza o cualquier sonido que te ayude a concentrarte— directamente en el navegador."
     },
     "feature_music_playback": {
-        "message": "Controles completos de reproducción: reproducir, pausar, saltar y repetir."
+        "message": "Controles completos: reproducir, pausar, anterior, siguiente y detener."
     },
     "feature_music_seek": {
-        "message": "Avanza y retrocede dentro de las pistas con precisión."
+        "message": "Avanza y retrocede dentro de un sonido con precisión."
     },
     "feature_music_search": {
-        "message": "Busca y filtra pistas en tu lista de reproducción al instante."
+        "message": "Encuentra al instante cualquier sonido de tu lista."
     },
     "feature_music_playlist": {
-        "message": "Crea y gestiona listas de reproducción personalizadas con arrastrar y soltar."
+        "message": "Añade carpetas o archivos sueltos y reordena tu lista arrastrando."
     },
     "feature_music_keeps_playing": {
-        "message": "La música sigue sonando incluso al navegar entre pestañas."
+        "message": "El sonido sigue mientras cambias de pestaña, incluso con la página cerrada."
     },
     "feature_radio_online_search": {
-        "message": "Busca miles de emisoras de radio online en directo por nombre, país o género."
+        "message": "Busca miles de emisoras de radio en directo de todo el mundo por nombre, país o género: para aprender un idioma, seguir una emisora hablada o ayudarte a concentrarte."
     },
     "feature_radio_saved_stations": {
-        "message": "Guarda tus emisoras favoritas en IndexedDB para un acceso rápido y persistente."
+        "message": "Guarda tus emisoras favoritas para tenerlas a mano."
     },
     "feature_radio_batch_add": {
-        "message": "Selecciona y añade múltiples emisoras online a tu biblioteca con un solo clic."
+        "message": "Selecciona varias emisoras y añádelas con un solo clic."
     },
     "feature_radio_import_export": {
-        "message": "Exporta e importa tu lista de emisoras guardadas en formato JSON sin duplicados."
+        "message": "Exporta e importa tus emisoras en un archivo JSON, sin duplicados."
     },
     "feature_radio_sync": {
-        "message": "Sincroniza tus emisoras favoritas entre navegadores y dispositivos mediante la nube."
+        "message": "Sincroniza tus emisoras entre navegadores con la sincronización de Chrome."
     },
     "feature_radio_unified_tabs": {
-        "message": "Alterna entre tu música local, emisoras de radio o una lista combinada de reproducción."
+        "message": "Alterna entre tus sonidos, tus emisoras o una lista combinada."
     },
     "radioExportBtn": {
         "message": "Exportar"

@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "Le lecteur de musique et la radio en ligne sont de retour : écoutez un dossier de votre propre musique, ou parcourez l’annuaire des radios Internet et enregistrez vos stations, sans quitter l’espace de travail. La lecture continue pendant que vous changez d’onglet.",
+    "message": "Nouveau lecteur audio : écoutez du bruit blanc, de la pluie ou tout son qui vous aide à vous concentrer depuis vos propres fichiers, ou recherchez et enregistrez des radios Internet pour apprendre ou vous concentrer, sans quitter l’espace de travail. La lecture continue pendant que vous changez d’onglet.",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "Lecteur de musique"
+    "message": "Lecteur audio"
   },
   "musicPlayerEmpty": {
     "message": "Aucun titre sélectionné"
@@ -14304,13 +14304,13 @@
     "message": "Fermer la recherche"
   },
   "musicPlayerSelectFolder": {
-    "message": "Ajouter un dossier de musique"
+    "message": "Ajouter un dossier audio"
   },
   "musicPlayerAddFolder": {
-    "message": "Ajouter un dossier de musique"
+    "message": "Ajouter un dossier audio"
   },
   "musicPlayerSelectFiles": {
-    "message": "Ajouter des fichiers de musique"
+    "message": "Ajouter des fichiers audio"
   },
   "musicPlayerRemoveFolder": {
     "message": "Retirer le dossier de la playlist"
@@ -14331,10 +14331,10 @@
     "message": "En cours de lecture : $1"
   },
   "musicPlayerShow": {
-    "message": "Afficher le lecteur de musique"
+    "message": "Afficher le lecteur audio"
   },
   "musicPlayerHide": {
-    "message": "Masquer le lecteur de musique"
+    "message": "Masquer le lecteur audio"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "Aucun fichier audio trouvé dans le dossier sélectionné"
@@ -14376,7 +14376,7 @@
     "message": "Radio : $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "Ajouter de la musique (dossier ou fichiers)"
+    "message": "Ajouter de l’audio (dossier ou fichiers)"
   },
   "musicPlayerAddFolderOption": {
     "message": "Ajouter un dossier"
@@ -14397,7 +14397,7 @@
     "message": "Retirer les fichiers de la playlist"
   },
   "musicTabMusic": {
-    "message": "Musique"
+    "message": "Audio"
   },
   "musicTabRadio": {
     "message": "Radio"
@@ -14514,43 +14514,43 @@
     "message": "Station précédente : $1"
   },
   "sectionMusicPlayer": {
-    "message": "Audio pour la concentration"
+    "message": "Lecteur audio pour la concentration"
   },
   "feature_music_local_folder": {
-    "message": "Écoutez la musique de vos dossiers locaux directement dans le navigateur."
+    "message": "Écoutez vos propres fichiers audio depuis un dossier — bruit blanc, pluie, nature ou tout son qui vous aide à vous concentrer — directement dans le navigateur."
   },
   "feature_music_playback": {
-    "message": "Commandes de lecture complètes : lecture, pause, passer et répéter."
+    "message": "Commandes complètes : lecture, pause, précédent, suivant et arrêt."
   },
   "feature_music_seek": {
-    "message": "Avancez et reculez précisément dans les titres."
+    "message": "Avancez ou reculez avec précision dans un son."
   },
   "feature_music_search": {
-    "message": "Recherchez et filtrez instantanément les titres de votre playlist."
+    "message": "Trouvez instantanément n’importe quel son de votre liste."
   },
   "feature_music_playlist": {
-    "message": "Créez et gérez vos playlists par glisser-déposer."
+    "message": "Ajoutez des dossiers ou des fichiers isolés et réorganisez votre liste par glisser-déposer."
   },
   "feature_music_keeps_playing": {
-    "message": "La musique continue de jouer quand vous changez d’onglet."
+    "message": "Le son continue pendant que vous changez d’onglet, même page fermée."
   },
   "feature_radio_online_search": {
-    "message": "Recherchez parmi des milliers de stations de radio en direct du monde entier par nom, pays ou genre."
+    "message": "Parcourez des milliers de radios en direct du monde entier par nom, pays ou genre : pour apprendre une langue, suivre une radio parlée ou vous aider à vous concentrer."
   },
   "feature_radio_saved_stations": {
-    "message": "Enregistrez vos stations préférées dans IndexedDB pour un accès rapide et durable."
+    "message": "Enregistrez vos stations préférées pour y accéder rapidement."
   },
   "feature_radio_batch_add": {
-    "message": "Sélectionnez plusieurs stations de radio en ligne et ajoutez-les à votre bibliothèque en un clic."
+    "message": "Sélectionnez plusieurs stations et ajoutez-les en un clic."
   },
   "feature_radio_import_export": {
-    "message": "Exportez et importez vos stations enregistrées dans des fichiers JSON, sans doublons."
+    "message": "Exportez et importez vos stations dans un fichier JSON, sans doublons."
   },
   "feature_radio_sync": {
-    "message": "Synchronisez vos stations préférées entre navigateurs et appareils grâce à la synchronisation cloud."
+    "message": "Synchronisez vos stations entre navigateurs avec la synchronisation de Chrome."
   },
   "feature_radio_unified_tabs": {
-    "message": "Passez facilement de la musique locale aux stations de radio ou à une file de lecture unifiée."
+    "message": "Passez de vos sons à vos stations de radio ou à une liste combinée."
   },
   "radioExportBtn": {
     "message": "Exporter"

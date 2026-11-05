@@ -51,10 +51,11 @@ speed of a task: it is also whether the person can concentrate, and how much fri
 stress the work carries. Each tool below is here because it removes friction from a working
 session, and none of them is a separate product bolted on.
 
-- **Music and internet radio.** Background sound is how a great many people hold their
-  concentration while they study or work, and how they take the edge off a stressful stretch.
-  It plays in the workspace so that keeping it going does not cost another tab, another
-  window and another thing to manage.
+- **Audio player and internet radio.** Background sound is how a great many people hold
+  their concentration while they study or work: white noise, rain or any sound of their own,
+  played from their own files. Radio stations serve the same purpose, and many people also
+  use them to learn a language. It plays in the workspace so that keeping it going does not
+  cost another tab, another window and another thing to manage.
 - **Text recognition on a screenshot.** People work with images that have words in them —
   a scanned invoice, a slide, a screenshot a colleague sent — and then need those words in
   an email or a message. Reading them out of the picture is the difference between a

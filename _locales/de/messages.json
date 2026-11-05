@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "Musikplayer und Online-Radio sind zurück: Spiele einen Ordner mit deiner eigenen Musik ab oder durchsuche das Internetradio-Verzeichnis und speichere deine Sender, ohne den Arbeitsbereich zu verlassen. Die Wiedergabe läuft weiter, während du zwischen Tabs wechselst.",
+    "message": "Neuer Audioplayer: Spiele weißes Rauschen, Regen oder jedes Geräusch, das dir beim Konzentrieren hilft, aus deinen eigenen Dateien ab, oder suche und speichere Internetradiosender zum Lernen oder Konzentrieren, ohne den Arbeitsbereich zu verlassen. Die Wiedergabe läuft weiter, während du zwischen Tabs wechselst.",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "Musik-Player"
+    "message": "Audioplayer"
   },
   "musicPlayerEmpty": {
     "message": "Kein Titel ausgewählt"
@@ -14304,13 +14304,13 @@
     "message": "Suche schließen"
   },
   "musicPlayerSelectFolder": {
-    "message": "Musikordner hinzufügen"
+    "message": "Audioordner hinzufügen"
   },
   "musicPlayerAddFolder": {
-    "message": "Musikordner hinzufügen"
+    "message": "Audioordner hinzufügen"
   },
   "musicPlayerSelectFiles": {
-    "message": "Musikdateien hinzufügen"
+    "message": "Audiodateien hinzufügen"
   },
   "musicPlayerRemoveFolder": {
     "message": "Ordner aus der Wiedergabeliste entfernen"
@@ -14331,10 +14331,10 @@
     "message": "Läuft gerade: $1"
   },
   "musicPlayerShow": {
-    "message": "Musik-Player anzeigen"
+    "message": "Audioplayer anzeigen"
   },
   "musicPlayerHide": {
-    "message": "Musik-Player ausblenden"
+    "message": "Audioplayer ausblenden"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "Im ausgewählten Ordner wurden keine Audiodateien gefunden"
@@ -14376,7 +14376,7 @@
     "message": "Radio: $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "Musik hinzufügen (Ordner oder Dateien)"
+    "message": "Audio hinzufügen (Ordner oder Dateien)"
   },
   "musicPlayerAddFolderOption": {
     "message": "Ordner hinzufügen"
@@ -14397,7 +14397,7 @@
     "message": "Dateien aus der Wiedergabeliste entfernen"
   },
   "musicTabMusic": {
-    "message": "Musik"
+    "message": "Audio"
   },
   "musicTabRadio": {
     "message": "Radio"
@@ -14514,43 +14514,43 @@
     "message": "Vorheriger Sender: $1"
   },
   "sectionMusicPlayer": {
-    "message": "Audio für Fokus und Konzentration"
+    "message": "Audioplayer für Konzentration"
   },
   "feature_music_local_folder": {
-    "message": "Spiele Musik aus lokalen Ordnern direkt im Browser ab."
+    "message": "Spiele deine eigenen Audiodateien aus einem Ordner ab – weißes Rauschen, Regen, Natur oder jedes Geräusch, das dir beim Konzentrieren hilft – direkt im Browser."
   },
   "feature_music_playback": {
-    "message": "Alle Wiedergabesteuerungen: Wiedergabe, Pause, Überspringen und Wiederholen."
+    "message": "Vollständige Steuerung: Wiedergabe, Pause, zurück, weiter und Stopp."
   },
   "feature_music_seek": {
-    "message": "Spule präzise innerhalb von Titeln vor und zurück."
+    "message": "Springe präzise vor und zurück innerhalb eines Klangs."
   },
   "feature_music_search": {
-    "message": "Durchsuche und filtere die Titel deiner Wiedergabeliste sofort."
+    "message": "Finde jeden Klang in deiner Liste sofort."
   },
   "feature_music_playlist": {
-    "message": "Erstelle und verwalte eigene Wiedergabelisten per Drag-and-drop."
+    "message": "Füge Ordner oder einzelne Dateien hinzu und sortiere deine Liste per Ziehen."
   },
   "feature_music_keeps_playing": {
-    "message": "Die Musik läuft weiter, auch wenn du zwischen Tabs wechselst."
+    "message": "Der Klang läuft weiter, während du zwischen Tabs wechselst, auch bei geschlossener Seite."
   },
   "feature_radio_online_search": {
-    "message": "Durchsuche Tausende Live-Radiosender weltweit nach Name, Land oder Genre."
+    "message": "Durchsuche Tausende Live-Radiosender weltweit nach Name, Land oder Genre: um eine Sprache zu lernen, einem Wortsender zu folgen oder dich zu konzentrieren."
   },
   "feature_radio_saved_stations": {
-    "message": "Speichere deine Lieblingssender in IndexedDB für schnellen, dauerhaften Zugriff."
+    "message": "Speichere deine Lieblingssender für den schnellen Zugriff."
   },
   "feature_radio_batch_add": {
-    "message": "Wähle mehrere Online-Radiosender aus und füge sie mit einem Klick zu deiner Bibliothek hinzu."
+    "message": "Wähle mehrere Sender aus und füge sie mit einem Klick hinzu."
   },
   "feature_radio_import_export": {
-    "message": "Exportiere und importiere deine gespeicherten Radiosender als JSON-Dateien, ohne Duplikate."
+    "message": "Exportiere und importiere deine Sender als JSON-Datei, ohne Duplikate."
   },
   "feature_radio_sync": {
-    "message": "Synchronisiere deine Lieblingssender per Cloud-Sync über Browser und Geräte hinweg."
+    "message": "Synchronisiere deine Sender über Browser hinweg mit der Chrome-Synchronisierung."
   },
   "feature_radio_unified_tabs": {
-    "message": "Wechsle nahtlos zwischen lokaler Musik, Radiosendern und einer gemeinsamen Wiedergabeliste."
+    "message": "Wechsle zwischen deinen Klängen, deinen Radiosendern oder einer gemeinsamen Liste."
   },
   "radioExportBtn": {
     "message": "Exportieren"

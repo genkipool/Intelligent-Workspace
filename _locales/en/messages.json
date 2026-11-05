@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "The music player and online radio are back: play a folder of your own music, or search the internet radio directory and save your stations, without leaving the workspace. It keeps playing while you move between tabs.",
+    "message": "New audio player: play white noise, rain or any sound that helps you concentrate from your own files, or search and save internet radio stations to learn or focus, without leaving the workspace. It keeps playing while you move between tabs.",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -11570,7 +11570,7 @@
     }
   },
   "musicPlayer": {
-    "message": "Music Player"
+    "message": "Audio Player"
   },
   "musicPlayerEmpty": {
     "message": "No track selected"
@@ -11615,13 +11615,13 @@
     "message": "Close search"
   },
   "musicPlayerSelectFolder": {
-    "message": "Add music folder"
+    "message": "Add audio folder"
   },
   "musicPlayerAddFolder": {
-    "message": "Add music folder"
+    "message": "Add audio folder"
   },
   "musicPlayerSelectFiles": {
-    "message": "Add music files"
+    "message": "Add audio files"
   },
   "musicPlayerRemoveFolder": {
     "message": "Remove folder from playlist"
@@ -11642,10 +11642,10 @@
     "message": "Now playing: $1"
   },
   "musicPlayerShow": {
-    "message": "Show music player"
+    "message": "Show audio player"
   },
   "musicPlayerHide": {
-    "message": "Hide music player"
+    "message": "Hide audio player"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "No audio files found in selected folder"
@@ -11687,7 +11687,7 @@
     "message": "Radio: $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "Add music (folder or files)"
+    "message": "Add audio (folder or files)"
   },
   "musicPlayerAddFolderOption": {
     "message": "Add folder"
@@ -11708,7 +11708,7 @@
     "message": "Remove files from playlist"
   },
   "musicTabMusic": {
-    "message": "Music"
+    "message": "Audio"
   },
   "musicTabRadio": {
     "message": "Radio"
@@ -11825,43 +11825,43 @@
     "message": "Previous station: $1"
   },
   "sectionMusicPlayer": {
-    "message": "Focus Audio & Concentration"
+    "message": "Audio Player for Focus"
   },
   "feature_music_local_folder": {
-    "message": "Play music from local folders directly in the browser."
+    "message": "Play your own audio files from a folder — white noise, rain, nature or any sound that helps you concentrate — right in the browser."
   },
   "feature_music_playback": {
-    "message": "Full playback controls: play, pause, skip, and repeat."
+    "message": "Full playback controls: play, pause, previous, next and stop."
   },
   "feature_music_seek": {
-    "message": "Seek and fast-forward within tracks with precision."
+    "message": "Move forward or back within a sound with precision."
   },
   "feature_music_search": {
-    "message": "Search and filter tracks in your playlist instantly."
+    "message": "Find any sound in your list instantly."
   },
   "feature_music_playlist": {
-    "message": "Create and manage custom playlists with drag-and-drop."
+    "message": "Add folders or single files and reorder your list by dragging."
   },
   "feature_music_keeps_playing": {
-    "message": "Music keeps playing even when navigating between tabs."
+    "message": "The sound keeps playing while you move between tabs, even with the page closed."
   },
   "feature_radio_online_search": {
-    "message": "Search thousands of live online radio stations worldwide by name, country, or genre."
+    "message": "Search thousands of live radio stations worldwide by name, country or genre: to learn a language, follow a talk station or help you focus."
   },
   "feature_radio_saved_stations": {
-    "message": "Save your favorite radio stations in IndexedDB for quick, persistent access."
+    "message": "Save your favourite stations for quick access."
   },
   "feature_radio_batch_add": {
-    "message": "Select and add multiple online radio stations to your library in one click."
+    "message": "Select several stations and add them in one click."
   },
   "feature_radio_import_export": {
-    "message": "Export and import your saved radio stations to/from JSON files without duplicates."
+    "message": "Export and import your stations as a JSON file, without duplicates."
   },
   "feature_radio_sync": {
-    "message": "Sync your favorite radio stations across browsers and devices using cloud sync."
+    "message": "Sync your stations across browsers with Chrome sync."
   },
   "feature_radio_unified_tabs": {
-    "message": "Switch seamlessly between local music, radio stations, or a unified playlist queue."
+    "message": "Switch between your sounds, your radio stations or one combined list."
   },
   "radioExportBtn": {
     "message": "Export"

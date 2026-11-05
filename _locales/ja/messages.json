@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "音楽プレーヤーとオンラインラジオが戻ってきました。ワークスペースを離れずに、自分の音楽フォルダーを再生したり、インターネットラジオのディレクトリを検索して局を保存したりできます。タブを切り替えても再生は続きます。",
+    "message": "新しいオーディオプレーヤー：自分のファイルからホワイトノイズや雨音など集中に役立つ音を再生したり、学習や集中のためにインターネットラジオ局を検索・保存したりできます。ワークスペースを離れる必要はありません。タブを切り替えても再生は続きます。",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "ミュージックプレーヤー"
+    "message": "オーディオプレーヤー"
   },
   "musicPlayerEmpty": {
     "message": "トラックが選択されていません"
@@ -14304,13 +14304,13 @@
     "message": "検索を閉じる"
   },
   "musicPlayerSelectFolder": {
-    "message": "音楽フォルダを追加"
+    "message": "オーディオフォルダーを追加"
   },
   "musicPlayerAddFolder": {
-    "message": "音楽フォルダを追加"
+    "message": "オーディオフォルダーを追加"
   },
   "musicPlayerSelectFiles": {
-    "message": "音楽ファイルを追加"
+    "message": "オーディオファイルを追加"
   },
   "musicPlayerRemoveFolder": {
     "message": "フォルダをリストから削除"
@@ -14331,10 +14331,10 @@
     "message": "再生中: $1"
   },
   "musicPlayerShow": {
-    "message": "プレーヤーを表示"
+    "message": "オーディオプレーヤーを表示"
   },
   "musicPlayerHide": {
-    "message": "プレーヤーを非表示"
+    "message": "オーディオプレーヤーを非表示"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "選択したフォルダに音声ファイルが見つかりません"
@@ -14376,7 +14376,7 @@
     "message": "ラジオ: $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "音楽を追加（フォルダまたはファイル）"
+    "message": "オーディオを追加（フォルダーまたはファイル）"
   },
   "musicPlayerAddFolderOption": {
     "message": "フォルダを追加"
@@ -14397,7 +14397,7 @@
     "message": "ファイルをリストから削除"
   },
   "musicTabMusic": {
-    "message": "音楽"
+    "message": "オーディオ"
   },
   "musicTabRadio": {
     "message": "ラジオ"
@@ -14514,43 +14514,43 @@
     "message": "前の局: $1"
   },
   "sectionMusicPlayer": {
-    "message": "集中のためのオーディオ"
+    "message": "集中のためのオーディオプレーヤー"
   },
   "feature_music_local_folder": {
-    "message": "ローカルフォルダの音楽をブラウザでそのまま再生できます。"
+    "message": "フォルダー内の自分のオーディオファイルをブラウザーで直接再生できます。ホワイトノイズ、雨音、自然音など、集中に役立つ音なら何でも。"
   },
   "feature_music_playback": {
-    "message": "再生、一時停止、スキップ、リピートなど、すべての操作に対応しています。"
+    "message": "再生、一時停止、前へ、次へ、停止の完全な操作。"
   },
   "feature_music_seek": {
-    "message": "トラック内を正確にシークして早送り・早戻しできます。"
+    "message": "音の中を正確に早送り・巻き戻しできます。"
   },
   "feature_music_search": {
-    "message": "プレイリスト内のトラックをすばやく検索して絞り込めます。"
+    "message": "リスト内の音をすぐに見つけられます。"
   },
   "feature_music_playlist": {
-    "message": "ドラッグ＆ドロップでカスタムプレイリストを作成・管理できます。"
+    "message": "フォルダーや個別のファイルを追加し、ドラッグでリストを並べ替えられます。"
   },
   "feature_music_keeps_playing": {
-    "message": "タブを切り替えても音楽は再生され続けます。"
+    "message": "タブを切り替えても、ページを閉じても音は流れ続けます。"
   },
   "feature_radio_online_search": {
-    "message": "世界中の数千のオンラインライブラジオ局を、名前・国・ジャンルで検索できます。"
+    "message": "世界中の数千のライブラジオ局を名前、国、ジャンルで検索できます。語学学習、トーク番組、集中のために。"
   },
   "feature_radio_saved_stations": {
-    "message": "お気に入りのラジオ局をIndexedDBに保存して、すばやく確実にアクセスできます。"
+    "message": "お気に入りの局を保存してすぐに聴けます。"
   },
   "feature_radio_batch_add": {
-    "message": "複数のオンラインラジオ局を選択して、1クリックでライブラリに追加できます。"
+    "message": "複数の局を選んでワンクリックで追加できます。"
   },
   "feature_radio_import_export": {
-    "message": "保存したラジオ局を重複なしでJSONファイルにエクスポート・インポートできます。"
+    "message": "局を JSON ファイルに重複なしでエクスポート・インポートできます。"
   },
   "feature_radio_sync": {
-    "message": "クラウド同期で、お気に入りのラジオ局をブラウザやデバイス間で同期できます。"
+    "message": "Chrome の同期で局をブラウザー間で同期できます。"
   },
   "feature_radio_unified_tabs": {
-    "message": "ローカル音楽、ラジオ局、統合キューをスムーズに切り替えられます。"
+    "message": "自分の音、ラジオ局、まとめたリストを切り替えられます。"
   },
   "radioExportBtn": {
     "message": "エクスポート"

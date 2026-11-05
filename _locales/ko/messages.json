@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "음악 플레이어와 온라인 라디오가 돌아왔습니다. 작업 공간을 떠나지 않고 내 음악 폴더를 재생하거나 인터넷 라디오 목록에서 방송국을 검색해 저장할 수 있습니다. 탭을 옮겨 다녀도 재생은 계속됩니다.",
+    "message": "새 오디오 플레이어: 내 파일로 화이트 노이즈, 빗소리 등 집중에 도움이 되는 소리를 재생하거나, 학습이나 집중을 위해 인터넷 라디오 방송국을 검색하고 저장하세요. 작업 공간을 떠날 필요가 없습니다. 탭을 옮겨도 재생은 계속됩니다.",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "음악 플레이어"
+    "message": "오디오 플레이어"
   },
   "musicPlayerEmpty": {
     "message": "선택된 트랙 없음"
@@ -14304,13 +14304,13 @@
     "message": "검색 닫기"
   },
   "musicPlayerSelectFolder": {
-    "message": "음악 폴더 추가"
+    "message": "오디오 폴더 추가"
   },
   "musicPlayerAddFolder": {
-    "message": "음악 폴더 추가"
+    "message": "오디오 폴더 추가"
   },
   "musicPlayerSelectFiles": {
-    "message": "음악 파일 추가"
+    "message": "오디오 파일 추가"
   },
   "musicPlayerRemoveFolder": {
     "message": "목록에서 폴더 삭제"
@@ -14331,10 +14331,10 @@
     "message": "재생 중: $1"
   },
   "musicPlayerShow": {
-    "message": "플레이어 표시"
+    "message": "오디오 플레이어 표시"
   },
   "musicPlayerHide": {
-    "message": "플레이어 숨기기"
+    "message": "오디오 플레이어 숨기기"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "선택한 폴더에 오디오 파일이 없습니다"
@@ -14376,7 +14376,7 @@
     "message": "라디오: $1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "음악 추가(폴더 또는 파일)"
+    "message": "오디오 추가(폴더 또는 파일)"
   },
   "musicPlayerAddFolderOption": {
     "message": "폴더 추가"
@@ -14397,7 +14397,7 @@
     "message": "목록에서 파일 삭제"
   },
   "musicTabMusic": {
-    "message": "음악"
+    "message": "오디오"
   },
   "musicTabRadio": {
     "message": "라디오"
@@ -14514,43 +14514,43 @@
     "message": "이전 방송국: $1"
   },
   "sectionMusicPlayer": {
-    "message": "집중을 위한 오디오"
+    "message": "집중을 위한 오디오 플레이어"
   },
   "feature_music_local_folder": {
-    "message": "로컬 폴더의 음악을 브라우저에서 바로 재생합니다."
+    "message": "폴더에 있는 내 오디오 파일을 브라우저에서 바로 재생하세요. 화이트 노이즈, 빗소리, 자연의 소리 등 집중에 도움이 되는 어떤 소리든 좋습니다."
   },
   "feature_music_playback": {
-    "message": "재생, 일시정지, 건너뛰기, 반복 등 모든 재생 컨트롤을 제공합니다."
+    "message": "재생, 일시정지, 이전, 다음, 정지까지 모든 조작."
   },
   "feature_music_seek": {
-    "message": "트랙 안에서 정확하게 빨리 감기와 되감기를 할 수 있습니다."
+    "message": "소리 안에서 정확하게 앞뒤로 이동합니다."
   },
   "feature_music_search": {
-    "message": "재생목록의 트랙을 즉시 검색하고 필터링합니다."
+    "message": "목록에서 원하는 소리를 바로 찾습니다."
   },
   "feature_music_playlist": {
-    "message": "끌어서 놓기로 나만의 재생목록을 만들고 관리합니다."
+    "message": "폴더나 개별 파일을 추가하고 끌어서 목록 순서를 바꿉니다."
   },
   "feature_music_keeps_playing": {
-    "message": "탭을 옮겨 다녀도 음악이 계속 재생됩니다."
+    "message": "탭을 옮겨도, 페이지를 닫아도 소리는 계속 재생됩니다."
   },
   "feature_radio_online_search": {
-    "message": "이름, 국가, 장르로 전 세계 수천 개의 온라인 라이브 라디오 방송국을 검색합니다."
+    "message": "전 세계 수천 개의 라이브 라디오 방송국을 이름, 국가, 장르로 검색하세요. 언어 학습, 토크 방송 청취, 집중에 활용할 수 있습니다."
   },
   "feature_radio_saved_stations": {
-    "message": "즐겨찾는 라디오 방송국을 IndexedDB에 저장해 빠르고 안정적으로 접근하세요."
+    "message": "좋아하는 방송국을 저장해 빠르게 들을 수 있습니다."
   },
   "feature_radio_batch_add": {
-    "message": "온라인 라디오 방송국 여러 개를 선택해 한 번에 라이브러리에 추가합니다."
+    "message": "여러 방송국을 선택해 한 번에 추가합니다."
   },
   "feature_radio_import_export": {
-    "message": "저장된 라디오 방송국을 중복 없이 JSON 파일로 내보내고 가져옵니다."
+    "message": "방송국을 중복 없이 JSON 파일로 내보내고 가져옵니다."
   },
   "feature_radio_sync": {
-    "message": "클라우드 동기화로 즐겨찾는 라디오 방송국을 브라우저와 기기 간에 동기화합니다."
+    "message": "Chrome 동기화로 브라우저 간에 방송국을 동기화합니다."
   },
   "feature_radio_unified_tabs": {
-    "message": "로컬 음악, 라디오 방송국, 통합 재생 대기열 사이를 매끄럽게 전환합니다."
+    "message": "내 소리, 라디오 방송국, 통합 목록 사이를 전환합니다."
   },
   "radioExportBtn": {
     "message": "내보내기"

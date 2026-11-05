@@ -1911,7 +1911,7 @@
     "description": "Release date for version 1.1.0."
   },
   "feature_v110_musicRadio": {
-    "message": "音乐播放器和在线电台回来了：无需离开工作区，即可播放你自己的音乐文件夹，或搜索网络电台目录并保存电台。切换标签页时播放不会中断。",
+    "message": "全新音频播放器：从你自己的文件播放白噪音、雨声或任何有助于专注的声音，或搜索并保存网络电台用于学习或专注，无需离开工作区。切换标签页时播放不会中断。",
     "description": "Description of the music player and online radio returning in v1.1.0."
   },
   "feature_v110_radioPlayback": {
@@ -14259,7 +14259,7 @@
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
   },
   "musicPlayer": {
-    "message": "音乐播放器"
+    "message": "音频播放器"
   },
   "musicPlayerEmpty": {
     "message": "未选择曲目"
@@ -14304,13 +14304,13 @@
     "message": "关闭搜索"
   },
   "musicPlayerSelectFolder": {
-    "message": "添加音乐文件夹"
+    "message": "添加音频文件夹"
   },
   "musicPlayerAddFolder": {
-    "message": "添加音乐文件夹"
+    "message": "添加音频文件夹"
   },
   "musicPlayerSelectFiles": {
-    "message": "添加音乐文件"
+    "message": "添加音频文件"
   },
   "musicPlayerRemoveFolder": {
     "message": "从列表中移除文件夹"
@@ -14331,10 +14331,10 @@
     "message": "正在播放：$1"
   },
   "musicPlayerShow": {
-    "message": "显示播放器"
+    "message": "显示音频播放器"
   },
   "musicPlayerHide": {
-    "message": "隐藏播放器"
+    "message": "隐藏音频播放器"
   },
   "musicPlayerNoAudioInFolder": {
     "message": "所选文件夹中未找到音频文件"
@@ -14376,7 +14376,7 @@
     "message": "电台：$1"
   },
   "musicPlayerAddMusicMenu": {
-    "message": "添加音乐（文件夹或文件）"
+    "message": "添加音频（文件夹或文件）"
   },
   "musicPlayerAddFolderOption": {
     "message": "添加文件夹"
@@ -14397,7 +14397,7 @@
     "message": "从列表中移除文件"
   },
   "musicTabMusic": {
-    "message": "音乐"
+    "message": "音频"
   },
   "musicTabRadio": {
     "message": "电台"
@@ -14514,43 +14514,43 @@
     "message": "上一个电台：$1"
   },
   "sectionMusicPlayer": {
-    "message": "专注音频"
+    "message": "专注音频播放器"
   },
   "feature_music_local_folder": {
-    "message": "直接在浏览器中播放本地文件夹里的音乐。"
+    "message": "直接在浏览器中播放文件夹里你自己的音频文件——白噪音、雨声、自然声或任何有助于专注的声音。"
   },
   "feature_music_playback": {
-    "message": "完整的播放控制：播放、暂停、跳转和循环。"
+    "message": "完整控制：播放、暂停、上一个、下一个和停止。"
   },
   "feature_music_seek": {
-    "message": "可精确拖动进度，在曲目内快进快退。"
+    "message": "在声音中精确地前进和后退。"
   },
   "feature_music_search": {
-    "message": "即时搜索并筛选播放列表中的曲目。"
+    "message": "立即找到列表中的任何声音。"
   },
   "feature_music_playlist": {
-    "message": "通过拖放创建和管理自定义播放列表。"
+    "message": "添加文件夹或单个文件，并通过拖动调整列表顺序。"
   },
   "feature_music_keeps_playing": {
-    "message": "切换标签页时音乐持续播放。"
+    "message": "切换标签页时声音继续播放，即使页面已关闭。"
   },
   "feature_radio_online_search": {
-    "message": "按名称、国家或类型搜索全球数千个在线直播电台。"
+    "message": "按名称、国家或类型搜索全球数千个直播电台：用于学习语言、收听谈话节目或帮助专注。"
   },
   "feature_radio_saved_stations": {
-    "message": "将喜爱的电台保存到 IndexedDB，快速且持久地访问。"
+    "message": "保存你喜爱的电台，随时快速收听。"
   },
   "feature_radio_batch_add": {
-    "message": "一键选择并添加多个在线电台到你的库中。"
+    "message": "选择多个电台，一键添加。"
   },
   "feature_radio_import_export": {
-    "message": "将已保存的电台导出为 JSON 文件或从中导入，不会产生重复。"
+    "message": "将电台导出或导入为 JSON 文件，不会重复。"
   },
   "feature_radio_sync": {
-    "message": "通过云同步，在不同浏览器和设备间同步你喜爱的电台。"
+    "message": "通过 Chrome 同步在浏览器之间同步你的电台。"
   },
   "feature_radio_unified_tabs": {
-    "message": "在本地音乐、电台或合并的播放队列之间无缝切换。"
+    "message": "在你的声音、电台或合并列表之间切换。"
   },
   "radioExportBtn": {
     "message": "导出"

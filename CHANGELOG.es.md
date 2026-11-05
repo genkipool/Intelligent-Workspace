@@ -43,14 +43,17 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ### Añadido
 
-- **Vuelven el reproductor de música y la radio en línea.** Salieron para estrechar lo
-  que la ficha tenía que defender; vuelven desde la rama `feature/musica-y-radio` con el
-  panel del reproductor, la ventana de emisoras, sus dos almacenes de IndexedDB y la
-  mitad del documento offscreen que reproduce el audio. La extensión vuelve a hablar
-  con `api.radio-browser.info` mientras buscas emisoras y con el servidor de la emisora
-  que suena, y las dos conexiones se declaran en el uso de datos y el dossier. No se
-  añade ningún permiso: `offscreen` ya estaba por el pomodoro.
-- Los textos de Música y radio en los nueve idiomas añadidos desde que se retiró.
+- **Reproductor de audio y radio en línea.** Un reproductor de audio en el espacio de
+  trabajo para los sonidos que ayudan a concentrarse: ruido blanco, lluvia, naturaleza o
+  cualquier otro, desde los archivos del propio usuario (una carpeta o archivos
+  sueltos), con búsqueda, orden arrastrando y una reproducción que sigue mientras se
+  cambia de pestaña o se cierra la página. Junto a él, la radio por internet: busca
+  miles de emisoras en directo por nombre, país o género, que mucha gente usa para
+  aprender un idioma o para concentrarse, y guarda, importa, exporta y sincroniza tus
+  emisoras. El audio suena en el documento offscreen, así que no se añade ningún permiso
+  (`offscreen` ya estaba por el pomodoro). La extensión habla con
+  `api.radio-browser.info` mientras buscas emisoras y con el servidor de la emisora que
+  suena, y las dos conexiones se declaran en el uso de datos y el dossier.
 
 ### Cambiado
 
@@ -66,7 +69,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 - «Mis emisoras» decía 0 / 2 bajo una pestaña que marcaba 2 tras una búsqueda online:
   el cuadro de búsqueda online filtraba también la lista guardada. Ahora salen todas, y
   escribir en el cuadro lleva a los resultados online.
-- El documento offscreen se podía cerrar con la música sonando: la comprobación que lo
+- El documento offscreen se podía cerrar con el audio sonando: la comprobación que lo
   mantiene abierto no veía el elemento de audio del reproductor.
 - **Actividad web:** el aviso de una regla nueva sigue el porcentaje de Ajustes (guardaba
   0 y no avisaba nunca); la contraseña se pide al aflojar una regla, no al endurecerla;
@@ -101,7 +104,7 @@ Cada versión trae dos cosas distintas y conviene no mezclarlas:
 
 ```
 Novedades
-• Vuelven el reproductor de música y la radio en línea: reproduce tu carpeta de música o guarda emisoras de radio por internet, y sigue escuchando mientras cambias de pestaña.
+• Nuevo reproductor de audio: pon ruido blanco, lluvia o cualquier sonido que te ayude a concentrarte, o busca y guarda emisoras de radio por internet para aprender o concentrarte, y sigue escuchando mientras cambias de pestaña.
 • Las reglas de actividad web son más fiables: avisos correctos, contraseña solo al aflojar una regla y un alcance de subdominios claro.
 • Pomodoro: guardar los ajustes ya no para el reloj, y el panel y el dashboard comparten un formato de exportación.
 • Correcciones al copiar desde los hints, en las previsualizaciones de enlaces, las listas de tareas, el menú de marcadores y la lista de grupos.
