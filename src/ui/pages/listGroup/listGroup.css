@@ -9846,17 +9846,14 @@ body:not(.groups-view-active) .music-panel,
     transform: scale(1.08);
 }
 
-.radio-preview-btn.is-previewing {
+/* One look for a playing station in both tabs. The saved list used to paint it in the
+   interactive colour, the same as its active row, so the button vanished into it. */
+.radio-preview-btn.is-previewing,
+.saved-radio-play-btn.is-playing {
     background-color: var(--error-color);
     color: #fff;
     border-color: var(--error-color);
     animation: livePulse 1.2s infinite ease-in-out;
-}
-
-.saved-radio-play-btn.is-playing {
-    background-color: var(--interactive-color);
-    color: #fff;
-    border-color: var(--interactive-color);
 }
 
 .radio-online-info,
