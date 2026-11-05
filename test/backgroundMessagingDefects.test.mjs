@@ -218,7 +218,10 @@ describe('Defects #10, #11, #12, #13: Background messaging and event handlers', 
     });
 
     describe('Defect #12: Audio coexistence (offscreen.js & pomodoro.js)', () => {
-        const offscreenCode = readFileSync('src/ui/pages/offscreen/offscreen.js', 'utf8');
+        const offscreenSource = readFileSync('src/ui/pages/offscreen/offscreen.js', 'utf8');
+        // vm runs a classic script, so the module's imports (the music player's IndexedDB
+        // reader) are dropped; the busy check never reaches them.
+        const offscreenCode = offscreenSource.replace(/^import .*;$/gm, '');
 
         it('offscreen.js handles musicIsBusy and setMusicBusy actions', () => {
             assert.match(offscreenCode, /msg\?\.action\s*===\s*['"]musicIsBusy['"]/);
@@ -233,7 +236,7 @@ describe('Defects #10, #11, #12, #13: Background messaging and event handlers', 
                     runtime: {
                         onMessage: {
                             addListener: (fn) => {
-                                messageListener = fn;
+                                messageListener ??= fn;
                             },
                         },
                     },
@@ -260,7 +263,7 @@ describe('Defects #10, #11, #12, #13: Background messaging and event handlers', 
                     runtime: {
                         onMessage: {
                             addListener: (fn) => {
-                                messageListener = fn;
+                                messageListener ??= fn;
                             },
                         },
                     },

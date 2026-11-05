@@ -11,6 +11,7 @@
     import HiddenGroupsBar from '../../components/listGroup/HiddenGroupsBar.svelte';
     import PomodoroPopups from '../../components/listGroup/PomodoroPopups.svelte';
     import PomodoroPanel from '../../components/listGroup/PomodoroPanel.svelte';
+    import MusicPlayerPanel from '../../components/listGroup/MusicPlayerPanel.svelte';
     import PersistentConversationControls from '../../components/listGroup/PersistentConversationControls.svelte';
     import { onMount, tick } from 'svelte';
     import { groupStore, groupsStore } from '../../stores/groupStore.js';
@@ -645,6 +646,8 @@
         </section>
 
         <PomodoroPanel />
+
+        <MusicPlayerPanel />
 
         <section id="visibility-controls-panel" class="hidden">
             <button

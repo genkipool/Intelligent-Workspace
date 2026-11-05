@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "Не указан адрес или название правила",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "Музыкальный плеер"
+  },
+  "musicPlayerEmpty": {
+    "message": "Трек не выбран"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "Воспроизвести"
+  },
+  "musicPlayerPause": {
+    "message": "Пауза"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "Воспроизвести «$1»"
+  },
+  "musicPlayerStop": {
+    "message": "Стоп"
+  },
+  "musicPlayerPrevious": {
+    "message": "Предыдущий"
+  },
+  "musicPlayerNext": {
+    "message": "Следующий"
+  },
+  "musicPlayerRewind": {
+    "message": "Назад на $1 с"
+  },
+  "musicPlayerForward": {
+    "message": "Вперёд на $1 с"
+  },
+  "musicPlayerSeek": {
+    "message": "Перемотка"
+  },
+  "musicPlayerSearch": {
+    "message": "Поиск треков"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "Поиск треков…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "Закрыть поиск"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "Добавить папку с музыкой"
+  },
+  "musicPlayerAddFolder": {
+    "message": "Добавить папку с музыкой"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "Добавить файлы с музыкой"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "Удалить папку из плейлиста"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "Удалить из плейлиста"
+  },
+  "musicPlayerNoResults": {
+    "message": "Треки не найдены"
+  },
+  "musicPlayerTrackCount": {
+    "message": "Треков: $1"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "Выберите папку, чтобы начать воспроизведение"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "Сейчас играет: $1"
+  },
+  "musicPlayerShow": {
+    "message": "Показать музыкальный плеер"
+  },
+  "musicPlayerHide": {
+    "message": "Скрыть музыкальный плеер"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "В выбранной папке нет аудиофайлов"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "Папка слишком большая; загружены первые $1 треков"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "Загружено треков из «$2»: $1"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "Загружено треков: $1"
+  },
+  "musicPlayerVolume": {
+    "message": "Громкость"
+  },
+  "musicPlayerMute": {
+    "message": "Выключить звук"
+  },
+  "musicPlayerUnmute": {
+    "message": "Включить звук"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "Пропущено дубликатов, уже имеющихся в плейлисте: $1"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "Все выбранные файлы уже есть в плейлисте"
+  },
+  "musicPlayerRadioStations": {
+    "message": "Радиостанции"
+  },
+  "musicPlayerAddRadio": {
+    "message": "Добавить радиостанцию"
+  },
+  "musicPlayerRadioLive": {
+    "message": "В ЭФИРЕ"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "Радио: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "Добавить музыку (папку или файлы)"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "Добавить папку"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "Добавить файлы"
+  },
+  "musicPlayerLiveStream": {
+    "message": "Прямой радиоэфир"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "Перетащите, чтобы изменить порядок"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "Файлы"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "Удалить файлы из плейлиста"
+  },
+  "musicTabMusic": {
+    "message": "Музыка"
+  },
+  "musicTabRadio": {
+    "message": "Радио"
+  },
+  "musicTabAll": {
+    "message": "Все"
+  },
+  "radioStationsModalTitle": {
+    "message": "Радиостанции"
+  },
+  "radioStationNameLabel": {
+    "message": "Название станции"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "Напр.: BBC Radio 1, SomaFM, Jazz FM…"
+  },
+  "radioStationUrlLabel": {
+    "message": "URL радиопотока"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "Добавить"
+  },
+  "radioStationSavedList": {
+    "message": "Сохранённые станции"
+  },
+  "radioStationEmptyList": {
+    "message": "Нет сохранённых радиостанций"
+  },
+  "radioStationEmptyHint": {
+    "message": "Добавьте URL потока, чтобы слушать радио онлайн"
+  },
+  "radioStationDelete": {
+    "message": "Удалить станцию"
+  },
+  "radioStationPlay": {
+    "message": "Включить станцию"
+  },
+  "radioStationInvalidUrl": {
+    "message": "Введите корректный URL (http:// или https://)"
+  },
+  "radioStationNameRequired": {
+    "message": "Укажите название станции"
+  },
+  "radioStationAddedSuccess": {
+    "message": "Станция «$1» успешно добавлена"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "Станция удалена"
+  },
+  "radioPresetsTitle": {
+    "message": "Рекомендуемые станции"
+  },
+  "radioSearchOnlineTab": {
+    "message": "Поиск в сети"
+  },
+  "radioSavedTab": {
+    "message": "Мои станции"
+  },
+  "radioSelectAll": {
+    "message": "Выбрать все"
+  },
+  "radioDeselectAll": {
+    "message": "Снять выбор со всех"
+  },
+  "radioSelectToAdd": {
+    "message": "Выбрать станцию"
+  },
+  "radioDeselect": {
+    "message": "Снять выбор со станции"
+  },
+  "radioAddSelected": {
+    "message": "Добавить выбранные ($1)"
+  },
+  "radioAddedBadge": {
+    "message": "Добавлена"
+  },
+  "radioSearching": {
+    "message": "Поиск станций…"
+  },
+  "radioNoOnlineResults": {
+    "message": "Станции по запросу «$1» не найдены"
+  },
+  "radioPreviewPlay": {
+    "message": "Прослушать"
+  },
+  "radioPreviewStop": {
+    "message": "Остановить прослушивание"
+  },
+  "radioBitrate": {
+    "message": "$1 кбит/с"
+  },
+  "searchRadioStations": {
+    "message": "Поиск радиостанций в интернете"
+  },
+  "searchRadioPlaceholder": {
+    "message": "Поиск по названию, стране или жанру (напр.: Rock, BBC, Jazz, Los 40…)"
+  },
+  "noRadioStationsFound": {
+    "message": "По вашему запросу радиостанции не найдены"
+  },
+  "musicPlayerNextTrack": {
+    "message": "Далее: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "Назад: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "Следующая станция: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "Предыдущая станция: $1"
+  },
+  "sectionMusicPlayer": {
+    "message": "Звук для фокуса и концентрации"
+  },
+  "feature_music_local_folder": {
+    "message": "Воспроизводите музыку из локальных папок прямо в браузере."
+  },
+  "feature_music_playback": {
+    "message": "Полное управление воспроизведением: пуск, пауза, переключение и повтор."
+  },
+  "feature_music_seek": {
+    "message": "Точная перемотка внутри треков."
+  },
+  "feature_music_search": {
+    "message": "Мгновенный поиск и фильтрация треков в плейлисте."
+  },
+  "feature_music_playlist": {
+    "message": "Создавайте плейлисты и управляйте ими перетаскиванием."
+  },
+  "feature_music_keeps_playing": {
+    "message": "Музыка продолжает играть при переключении между вкладками."
+  },
+  "feature_radio_online_search": {
+    "message": "Тысячи радиостанций по всему миру: поиск по названию, стране или жанру."
+  },
+  "feature_radio_saved_stations": {
+    "message": "Сохраняйте любимые радиостанции в IndexedDB для быстрого и постоянного доступа."
+  },
+  "feature_radio_batch_add": {
+    "message": "Выбирайте и добавляйте сразу несколько онлайн-радиостанций в библиотеку одним щелчком."
+  },
+  "feature_radio_import_export": {
+    "message": "Экспорт и импорт сохранённых станций в файлы JSON без дубликатов."
+  },
+  "feature_radio_sync": {
+    "message": "Синхронизируйте любимые радиостанции между браузерами и устройствами через облако."
+  },
+  "feature_radio_unified_tabs": {
+    "message": "Переключайтесь между локальной музыкой, радиостанциями и общей очередью воспроизведения."
+  },
+  "radioExportBtn": {
+    "message": "Экспорт"
+  },
+  "radioExportTooltip": {
+    "message": "Экспортировать все сохранённые радиостанции в файл JSON"
+  },
+  "radioImportBtn": {
+    "message": "Импорт"
+  },
+  "radioImportTooltip": {
+    "message": "Импортировать радиостанции из файла JSON без дубликатов"
+  },
+  "radioSyncBtn": {
+    "message": "Синхронизация"
+  },
+  "radioSyncTooltip": {
+    "message": "Синхронизировать радиостанции между браузерами через аккаунт Google"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "Синхронизация радиостанций включена (нажмите, чтобы отключить)"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "Синхронизация радиостанций отключена (нажмите, чтобы включить)"
+  },
+  "radioSyncActiveNotification": {
+    "message": "Синхронизация радиостанций включена"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "Синхронизация радиостанций отключена"
+  },
+  "radioImportSuccess": {
+    "message": "Импортировано радиостанций: $1"
+  },
+  "radioImportNoNew": {
+    "message": "Новые станции не добавлены (все уже есть или недействительны)"
+  },
+  "radioImportInvalidFile": {
+    "message": "Выбранный файл не содержит радиостанций в допустимом формате"
+  },
+  "radioExportSuccess": {
+    "message": "Радиостанции успешно экспортированы"
+  },
+  "radioExportEmpty": {
+    "message": "Нет сохранённых радиостанций для экспорта"
+  },
+  "radioStationAddTooltip": {
+    "message": "Добавить или найти новые онлайн-радиостанции"
+  },
+  "dataUseRadioItem": {
+    "message": "При поиске интернет-радио введённый вами запрос отправляется в общедоступный каталог radio-browser.info."
   }
 }

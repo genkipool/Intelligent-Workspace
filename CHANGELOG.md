@@ -148,6 +148,11 @@ What's new
 
 ### Added
 
+- **The music player and the online radio are back.** The player panel, the stations
+  window, their two IndexedDB stores and the audio half of the offscreen document return
+  from the `feature/musica-y-radio` branch. The extension talks again to
+  `api.radio-browser.info` while you search for stations and to the server of the
+  station you play, and both are declared in the data-use section and the dossier.
 - The cookie editor can **add cookies**: the "Add" button creates a card with its own
   name field; with the domain left empty the cookie is for the tab's site only, and it
   is not saved without a name.

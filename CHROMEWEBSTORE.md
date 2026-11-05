@@ -41,15 +41,20 @@
   So the description below states the purpose and groups the tools **under** it, with one
   bullet for the working tools as a family rather than a line each. Everything that touches
   a sensitive permission is named there: capture and text recognition, reading aloud, the
-  floating video player, the cookie editor, and the assistant.
+  media players, the cookie editor, and the assistant.
 
 ### How each tool serves that one purpose
 
-The reasonable question a reviewer asks of a workspace this wide is what a screenshot has
-to do with tab management. The answer the product is built on is that productivity is not
-only the speed of a task: it is also whether the person can concentrate, and how much
-friction and stress the work carries. Each tool below is here because it removes friction
-from a working session, and none of them is a separate product bolted on.
+The reasonable question a reviewer asks of a workspace this wide is what a radio has to do
+with tab management. The answer the product is built on is that productivity is not only the
+speed of a task: it is also whether the person can concentrate, and how much friction and
+stress the work carries. Each tool below is here because it removes friction from a working
+session, and none of them is a separate product bolted on.
+
+- **Music and internet radio.** Background sound is how a great many people hold their
+  concentration while they study or work, and how they take the edge off a stressful stretch.
+  It plays in the workspace so that keeping it going does not cost another tab, another
+  window and another thing to manage.
 - **Text recognition on a screenshot.** People work with images that have words in them —
   a scanned invoice, a slide, a screenshot a colleague sent — and then need those words in
   an email or a message. Reading them out of the picture is the difference between a
@@ -118,7 +123,7 @@ HOW IT WORKS
 
 • The keyboard, for all of it. Link hints, jump markers, and an omnibar that searches tabs, history, bookmarks and your own notes by prefix.
 
-• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, and a floating video player.
+• Working tools, in the same panel. The small tools a working session keeps needing, without a separate extension for each: screenshot capture with a gallery and text recognition, QR codes, a colour picker, a cookie inspector for the site you are on, a list of the files a page links to so you can save several at once, reading a page aloud, a floating video player, and background music and radio.
 
 • An optional assistant. Ask Google Gemini with your own API key, or Chrome's own built-in on-device model. To jump to an open tab in your own words, type `find` and a space in Chrome's address bar and describe the one you are after. It answers about a page you point it at and carries out workspace actions you ask it for. It stays off until you set it up.
 
@@ -155,7 +160,7 @@ CÓMO FUNCIONA
 
 • El teclado, para todo. Etiquetas sobre los enlaces, marcadores de salto y una barra de comandos que busca por prefijo en pestañas, historial, marcadores y tus notas.
 
-• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, y reproductor de vídeo flotante.
+• Herramientas de trabajo, en el mismo panel. Las cosas pequeñas que una sesión de trabajo acaba necesitando, sin una extensión distinta para cada una: capturas con galería y reconocimiento de texto, códigos QR, cuentagotas de color, inspector de cookies del sitio en el que estás, una lista de los ficheros que enlaza una página para guardar varios de una vez, lectura de la página en voz alta, reproductor de vídeo flotante, y música y radio de fondo.
 
 • Un asistente opcional. Pregunta a Google Gemini con tu propia clave de API, o al modelo local que Chrome trae integrado. Para saltar a una pestaña abierta con tus palabras, escribe `find` y un espacio en la barra de direcciones de Chrome y descríbela. Responde sobre una página que le señales y ejecuta acciones del espacio de trabajo que le pidas. Está apagado hasta que lo configuras.
 
@@ -322,7 +327,7 @@ places, the listing and that section. One without the other is the discrepancy t
 review, and it is the thing to check before any release that touches data.
 
 ### Data Collection Checklist
-- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download for languages other than English and Spanish).
+- **Does the extension collect user data?** **YES** (Stored locally on the client. Every external request is user-initiated and named in section 5: Gemini queries under the user's own API key, the radio directory and the station being played, YouTube thumbnails for a link being previewed, and a one-off OCR language-model download for languages other than English and Spanish).
 
 | Data Type | Collected? | Transmitted Off-Device? | Purpose | Shared with 3rd Parties? |
 |:---|:---|:---|:---|:---|
@@ -332,6 +337,7 @@ review, and it is the thing to check before any release that touches data.
 | **User Activity** | Yes (local) | No | Local Pomodoro session focus tracking and auto-collapse timers | No |
 | **Open tab titles and URLs** | Yes (transient) | Yes (only when asked to find a tab) | Asking for an open tab — from the panel, or with the `find` keyword in Chrome's address bar — sends the titles and addresses of the open tabs, because that is the list being searched. It is matched locally first and only reaches the API when the local result is ambiguous, so most searches never leave the browser at all. | Only to the Google Gemini API, on the user's command |
 | **Website Content** | Yes (transient) | Yes (only on an assistant request the user makes) | The text of the page the user points the assistant at, plus any screenshot they attach, goes to the Google Gemini API under the user's own API key. The assistant is not only a summarizer: on the user's instruction it also carries out workspace actions (opening or grouping tabs, creating a bookmark or a rule), so the page text can be what it reasons over, not just what it condenses. Choosing Chrome's built-in on-device model instead sends nothing at all. | Only to the Google Gemini API, on the user's command |
+| **Search terms (in-extension)** | Yes (transient) | Yes (radio search only) | The station name or genre typed into the radio browser, sent to the public radio-browser.info directory | Only to radio-browser.info upon user command |
 | **Link domains** | Yes (transient) | **No** | Every site icon the extension draws or reads comes from Chrome's own favicon store — through the worker, or read directly by the omnibar, which runs as an extension page — so no address leaves the browser to fetch one. The omnibar's tab rows used to load each tab's own icon address from inside the page being viewed, which also meant that a tab open on `localhost` or the local network made that page ask the user for Local Network Access; they read the store as well now. That covers the omnibar rows, the panel and bookmark lists, and the colour an automatic group takes from the site it holds. The omnibar used to ask `google.com/s2/favicons`, which sent the address of every listed bookmark, history entry and rule to Google for a picture the browser already had; the group colour used to fetch the icon address the page itself declared, which named the page being read to its own server for an image Chrome had already rasterised. Under the Limited Use rule that data has to be strictly necessary, and an avoidable request naming a page the reader is looking at is not. Both are gone. | No |
 | **Nothing identifying** | — | Yes (first OCR run in a language other than English or Spanish) | OCR reads in the interface language plus English. The English and Spanish models ship inside the package (`src/lib/tessdata/`); any other language's Tesseract model (`<code>.traineddata.gz`), and the script detector (`osd.traineddata.gz`) the first time a reading fails, are fetched once from `cdn.jsdelivr.net`, at a URL pinned to one commit, and cached by the engine. It is model data, not code: the OCR engine's worker and WebAssembly core ship inside the package and cannot be fetched. Verified by observing the worker's own network on a clean profile. | No |
 
@@ -524,6 +530,8 @@ phone home.
 |:---|:---|:---|
 | `generativelanguage.googleapis.com` | Your prompt, whatever page text or screenshot you attached to it, and your own API key. Asking it to find an open tab also sends the titles and addresses of the tabs you have open, because that is the list it searches | Only when you ask the assistant for something, from the panel or by typing `find` and a space in Chrome’s address bar |
 | Chrome’s built-in on-device model | Nothing. It runs inside Chrome, on this machine, and makes no request at all | When you choose it instead of Gemini |
+| `api.radio-browser.info` | The station name or genre you typed, and nothing else | While you search or browse online radio |
+| The radio station you press play on | An ordinary audio request to that station’s own server, which sees your IP address as any website does | While a station is playing |
 | `youtube.com · i.ytimg.com` | The video id, for the thumbnail and the embedded player | Only for a YouTube link you preview or play |
 | `cdn.jsdelivr.net` | Nothing about you. It fetches OCR models: the one for a language other than English or Spanish, which ship with the extension, and a script detector when a reading fails; Chrome then caches them | The first time OCR needs one of them |
 

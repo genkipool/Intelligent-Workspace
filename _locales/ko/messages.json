@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "주소 또는 규칙 이름이 없습니다",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "음악 플레이어"
+  },
+  "musicPlayerEmpty": {
+    "message": "선택된 트랙 없음"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "재생"
+  },
+  "musicPlayerPause": {
+    "message": "일시정지"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "“$1” 재생"
+  },
+  "musicPlayerStop": {
+    "message": "정지"
+  },
+  "musicPlayerPrevious": {
+    "message": "이전"
+  },
+  "musicPlayerNext": {
+    "message": "다음"
+  },
+  "musicPlayerRewind": {
+    "message": "$1초 뒤로"
+  },
+  "musicPlayerForward": {
+    "message": "$1초 앞으로"
+  },
+  "musicPlayerSeek": {
+    "message": "재생 위치"
+  },
+  "musicPlayerSearch": {
+    "message": "트랙 검색"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "트랙 검색…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "검색 닫기"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "음악 폴더 추가"
+  },
+  "musicPlayerAddFolder": {
+    "message": "음악 폴더 추가"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "음악 파일 추가"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "목록에서 폴더 삭제"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "목록에서 삭제"
+  },
+  "musicPlayerNoResults": {
+    "message": "트랙을 찾을 수 없음"
+  },
+  "musicPlayerTrackCount": {
+    "message": "트랙 $1개"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "폴더를 선택해 재생을 시작하세요"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "재생 중: $1"
+  },
+  "musicPlayerShow": {
+    "message": "플레이어 표시"
+  },
+  "musicPlayerHide": {
+    "message": "플레이어 숨기기"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "선택한 폴더에 오디오 파일이 없습니다"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "폴더가 너무 커서 처음 $1개 트랙만 불러왔습니다"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "“$2”에서 트랙 $1개를 불러왔습니다"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "트랙 $1개를 불러왔습니다"
+  },
+  "musicPlayerVolume": {
+    "message": "볼륨"
+  },
+  "musicPlayerMute": {
+    "message": "음소거"
+  },
+  "musicPlayerUnmute": {
+    "message": "음소거 해제"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "재생목록에 이미 있는 중복 트랙 $1개를 건너뛰었습니다"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "선택한 파일이 모두 이미 재생목록에 있습니다"
+  },
+  "musicPlayerRadioStations": {
+    "message": "라디오 방송국"
+  },
+  "musicPlayerAddRadio": {
+    "message": "라디오 방송국 추가"
+  },
+  "musicPlayerRadioLive": {
+    "message": "LIVE"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "라디오: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "음악 추가(폴더 또는 파일)"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "폴더 추가"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "파일 추가"
+  },
+  "musicPlayerLiveStream": {
+    "message": "라디오 생방송"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "끌어서 순서 변경"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "파일"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "목록에서 파일 삭제"
+  },
+  "musicTabMusic": {
+    "message": "음악"
+  },
+  "musicTabRadio": {
+    "message": "라디오"
+  },
+  "musicTabAll": {
+    "message": "전체"
+  },
+  "radioStationsModalTitle": {
+    "message": "라디오 방송국"
+  },
+  "radioStationNameLabel": {
+    "message": "방송국 이름"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "라디오 스트림 URL"
+  },
+  "radioStationUrlLabel": {
+    "message": "예: KBS 쿨FM, MBC FM4U, SomaFM…"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "추가"
+  },
+  "radioStationSavedList": {
+    "message": "저장된 방송국"
+  },
+  "radioStationEmptyList": {
+    "message": "저장된 라디오 방송국이 없습니다"
+  },
+  "radioStationEmptyHint": {
+    "message": "스트리밍 URL을 추가하면 라디오를 생방송으로 들을 수 있습니다"
+  },
+  "radioStationDelete": {
+    "message": "방송국 삭제"
+  },
+  "radioStationPlay": {
+    "message": "방송국 재생"
+  },
+  "radioStationInvalidUrl": {
+    "message": "올바른 URL(http:// 또는 https://)을 입력하세요"
+  },
+  "radioStationNameRequired": {
+    "message": "방송국 이름은 필수입니다"
+  },
+  "radioStationAddedSuccess": {
+    "message": "방송국 ‘$1’을(를) 추가했습니다"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "방송국을 삭제했습니다"
+  },
+  "radioPresetsTitle": {
+    "message": "추천 방송국"
+  },
+  "radioSearchOnlineTab": {
+    "message": "온라인 검색"
+  },
+  "radioSavedTab": {
+    "message": "내 방송국"
+  },
+  "radioSelectAll": {
+    "message": "모두 선택"
+  },
+  "radioDeselectAll": {
+    "message": "모두 선택 해제"
+  },
+  "radioSelectToAdd": {
+    "message": "방송국 선택"
+  },
+  "radioDeselect": {
+    "message": "방송국 선택 해제"
+  },
+  "radioAddSelected": {
+    "message": "선택 항목 추가($1)"
+  },
+  "radioAddedBadge": {
+    "message": "추가됨"
+  },
+  "radioSearching": {
+    "message": "방송국 검색 중…"
+  },
+  "radioNoOnlineResults": {
+    "message": "‘$1’과(와) 일치하는 방송국이 없습니다"
+  },
+  "radioPreviewPlay": {
+    "message": "미리 듣기"
+  },
+  "radioPreviewStop": {
+    "message": "미리 듣기 중지"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "온라인 라디오 방송국 검색"
+  },
+  "searchRadioPlaceholder": {
+    "message": "이름, 국가 또는 장르로 검색(예: 록, BBC, 재즈…)"
+  },
+  "noRadioStationsFound": {
+    "message": "검색과 일치하는 라디오 방송국이 없습니다"
+  },
+  "musicPlayerNextTrack": {
+    "message": "다음: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "이전: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "다음 방송국: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "이전 방송국: $1"
+  },
+  "sectionMusicPlayer": {
+    "message": "집중을 위한 오디오"
+  },
+  "feature_music_local_folder": {
+    "message": "로컬 폴더의 음악을 브라우저에서 바로 재생합니다."
+  },
+  "feature_music_playback": {
+    "message": "재생, 일시정지, 건너뛰기, 반복 등 모든 재생 컨트롤을 제공합니다."
+  },
+  "feature_music_seek": {
+    "message": "트랙 안에서 정확하게 빨리 감기와 되감기를 할 수 있습니다."
+  },
+  "feature_music_search": {
+    "message": "재생목록의 트랙을 즉시 검색하고 필터링합니다."
+  },
+  "feature_music_playlist": {
+    "message": "끌어서 놓기로 나만의 재생목록을 만들고 관리합니다."
+  },
+  "feature_music_keeps_playing": {
+    "message": "탭을 옮겨 다녀도 음악이 계속 재생됩니다."
+  },
+  "feature_radio_online_search": {
+    "message": "이름, 국가, 장르로 전 세계 수천 개의 온라인 라이브 라디오 방송국을 검색합니다."
+  },
+  "feature_radio_saved_stations": {
+    "message": "즐겨찾는 라디오 방송국을 IndexedDB에 저장해 빠르고 안정적으로 접근하세요."
+  },
+  "feature_radio_batch_add": {
+    "message": "온라인 라디오 방송국 여러 개를 선택해 한 번에 라이브러리에 추가합니다."
+  },
+  "feature_radio_import_export": {
+    "message": "저장된 라디오 방송국을 중복 없이 JSON 파일로 내보내고 가져옵니다."
+  },
+  "feature_radio_sync": {
+    "message": "클라우드 동기화로 즐겨찾는 라디오 방송국을 브라우저와 기기 간에 동기화합니다."
+  },
+  "feature_radio_unified_tabs": {
+    "message": "로컬 음악, 라디오 방송국, 통합 재생 대기열 사이를 매끄럽게 전환합니다."
+  },
+  "radioExportBtn": {
+    "message": "내보내기"
+  },
+  "radioExportTooltip": {
+    "message": "저장된 모든 라디오 방송국을 JSON 파일로 내보내기"
+  },
+  "radioImportBtn": {
+    "message": "가져오기"
+  },
+  "radioImportTooltip": {
+    "message": "JSON 파일에서 라디오 방송국을 중복 없이 가져오기"
+  },
+  "radioSyncBtn": {
+    "message": "동기화"
+  },
+  "radioSyncTooltip": {
+    "message": "Google 계정으로 브라우저 간에 라디오 방송국 동기화"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "라디오 방송국 동기화 켜짐(클릭하여 끄기)"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "라디오 방송국 동기화 꺼짐(클릭하여 켜기)"
+  },
+  "radioSyncActiveNotification": {
+    "message": "라디오 방송국 동기화를 켰습니다"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "라디오 방송국 동기화를 껐습니다"
+  },
+  "radioImportSuccess": {
+    "message": "라디오 방송국 $1개를 가져왔습니다"
+  },
+  "radioImportNoNew": {
+    "message": "새로 추가된 방송국이 없습니다(모두 이미 있거나 올바르지 않음)"
+  },
+  "radioImportInvalidFile": {
+    "message": "선택한 파일이 올바른 라디오 방송국 형식이 아닙니다"
+  },
+  "radioExportSuccess": {
+    "message": "라디오 방송국을 내보냈습니다"
+  },
+  "radioExportEmpty": {
+    "message": "내보낼 저장된 라디오 방송국이 없습니다"
+  },
+  "radioStationAddTooltip": {
+    "message": "온라인 라디오 방송국 추가 또는 검색"
+  },
+  "dataUseRadioItem": {
+    "message": "인터넷 라디오를 검색하면 입력한 내용이 공개 디렉터리 radio-browser.info로 전송됩니다."
   }
 }

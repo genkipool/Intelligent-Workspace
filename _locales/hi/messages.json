@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "पता या नियम का नाम मौजूद नहीं है",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "म्यूज़िक प्लेयर"
+  },
+  "musicPlayerEmpty": {
+    "message": "कोई ट्रैक चुना नहीं गया"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "चलाएँ"
+  },
+  "musicPlayerPause": {
+    "message": "रोकें"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "“$1” चलाएँ"
+  },
+  "musicPlayerStop": {
+    "message": "बंद करें"
+  },
+  "musicPlayerPrevious": {
+    "message": "पिछला"
+  },
+  "musicPlayerNext": {
+    "message": "अगला"
+  },
+  "musicPlayerRewind": {
+    "message": "$1 सेकंड पीछे"
+  },
+  "musicPlayerForward": {
+    "message": "$1 सेकंड आगे"
+  },
+  "musicPlayerSeek": {
+    "message": "प्रगति खिसकाएँ"
+  },
+  "musicPlayerSearch": {
+    "message": "ट्रैक खोजें"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "ट्रैक खोजें…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "खोज बंद करें"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "संगीत फ़ोल्डर जोड़ें"
+  },
+  "musicPlayerAddFolder": {
+    "message": "संगीत फ़ोल्डर जोड़ें"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "संगीत फ़ाइलें जोड़ें"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "प्लेलिस्ट से फ़ोल्डर हटाएँ"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "प्लेलिस्ट से हटाएँ"
+  },
+  "musicPlayerNoResults": {
+    "message": "कोई ट्रैक नहीं मिला"
+  },
+  "musicPlayerTrackCount": {
+    "message": "$1 ट्रैक"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "चलाना शुरू करने के लिए फ़ोल्डर चुनें"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "अभी चल रहा है: $1"
+  },
+  "musicPlayerShow": {
+    "message": "म्यूज़िक प्लेयर दिखाएँ"
+  },
+  "musicPlayerHide": {
+    "message": "म्यूज़िक प्लेयर छिपाएँ"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "चुने गए फ़ोल्डर में कोई ऑडियो फ़ाइल नहीं मिली"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "फ़ोल्डर बहुत बड़ा है; पहले $1 ट्रैक लोड किए गए"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "“$2” से $1 ट्रैक लोड किए गए"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "$1 ट्रैक लोड किए गए"
+  },
+  "musicPlayerVolume": {
+    "message": "वॉल्यूम"
+  },
+  "musicPlayerMute": {
+    "message": "म्यूट करें"
+  },
+  "musicPlayerUnmute": {
+    "message": "अनम्यूट करें"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "प्लेलिस्ट में पहले से मौजूद $1 डुप्लिकेट ट्रैक छोड़ दिए गए"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "चुनी गई सभी फ़ाइलें पहले से प्लेलिस्ट में हैं"
+  },
+  "musicPlayerRadioStations": {
+    "message": "रेडियो स्टेशन"
+  },
+  "musicPlayerAddRadio": {
+    "message": "रेडियो स्टेशन जोड़ें"
+  },
+  "musicPlayerRadioLive": {
+    "message": "लाइव"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "रेडियो: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "संगीत जोड़ें (फ़ोल्डर या फ़ाइलें)"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "फ़ोल्डर जोड़ें"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "फ़ाइलें जोड़ें"
+  },
+  "musicPlayerLiveStream": {
+    "message": "लाइव रेडियो प्रसारण"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "क्रम बदलने के लिए खींचें"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "फ़ाइलें"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "प्लेलिस्ट से फ़ाइलें हटाएँ"
+  },
+  "musicTabMusic": {
+    "message": "संगीत"
+  },
+  "musicTabRadio": {
+    "message": "रेडियो"
+  },
+  "musicTabAll": {
+    "message": "सभी"
+  },
+  "radioStationsModalTitle": {
+    "message": "रेडियो स्टेशन"
+  },
+  "radioStationNameLabel": {
+    "message": "स्टेशन का नाम"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "जैसे BBC Radio 1, SomaFM, Jazz FM…"
+  },
+  "radioStationUrlLabel": {
+    "message": "रेडियो स्ट्रीम URL"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "जोड़ें"
+  },
+  "radioStationSavedList": {
+    "message": "सहेजे गए स्टेशन"
+  },
+  "radioStationEmptyList": {
+    "message": "कोई रेडियो स्टेशन सहेजा नहीं गया"
+  },
+  "radioStationEmptyHint": {
+    "message": "लाइव रेडियो सुनने के लिए स्ट्रीमिंग URL जोड़ें"
+  },
+  "radioStationDelete": {
+    "message": "स्टेशन हटाएँ"
+  },
+  "radioStationPlay": {
+    "message": "स्टेशन चलाएँ"
+  },
+  "radioStationInvalidUrl": {
+    "message": "कृपया मान्य URL दर्ज करें (http:// या https://)"
+  },
+  "radioStationNameRequired": {
+    "message": "स्टेशन का नाम आवश्यक है"
+  },
+  "radioStationAddedSuccess": {
+    "message": "स्टेशन “$1” सफलतापूर्वक जोड़ा गया"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "स्टेशन हटा दिया गया"
+  },
+  "radioPresetsTitle": {
+    "message": "सुझाए गए स्टेशन"
+  },
+  "radioSearchOnlineTab": {
+    "message": "ऑनलाइन खोजें"
+  },
+  "radioSavedTab": {
+    "message": "मेरे स्टेशन"
+  },
+  "radioSelectAll": {
+    "message": "सभी चुनें"
+  },
+  "radioDeselectAll": {
+    "message": "सभी का चयन हटाएँ"
+  },
+  "radioSelectToAdd": {
+    "message": "स्टेशन चुनें"
+  },
+  "radioDeselect": {
+    "message": "स्टेशन का चयन हटाएँ"
+  },
+  "radioAddSelected": {
+    "message": "चुने हुए जोड़ें ($1)"
+  },
+  "radioAddedBadge": {
+    "message": "जोड़ा गया"
+  },
+  "radioSearching": {
+    "message": "स्टेशन खोजे जा रहे हैं…"
+  },
+  "radioNoOnlineResults": {
+    "message": "“$1” से मेल खाता कोई स्टेशन नहीं मिला"
+  },
+  "radioPreviewPlay": {
+    "message": "पूर्वावलोकन"
+  },
+  "radioPreviewStop": {
+    "message": "पूर्वावलोकन रोकें"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "ऑनलाइन रेडियो स्टेशन खोजें"
+  },
+  "searchRadioPlaceholder": {
+    "message": "नाम, देश या शैली से खोजें (जैसे Rock, BBC, Jazz, Los 40…)"
+  },
+  "noRadioStationsFound": {
+    "message": "आपकी खोज से मेल खाता कोई रेडियो स्टेशन नहीं मिला"
+  },
+  "musicPlayerNextTrack": {
+    "message": "अगला: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "पिछला: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "अगला स्टेशन: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "पिछला स्टेशन: $1"
+  },
+  "sectionMusicPlayer": {
+    "message": "फ़ोकस ऑडियो और एकाग्रता"
+  },
+  "feature_music_local_folder": {
+    "message": "स्थानीय फ़ोल्डरों का संगीत सीधे ब्राउज़र में चलाएँ।"
+  },
+  "feature_music_playback": {
+    "message": "पूरे प्लेबैक नियंत्रण: चलाएँ, रोकें, छोड़ें और दोहराएँ।"
+  },
+  "feature_music_seek": {
+    "message": "ट्रैक के भीतर सटीकता से आगे-पीछे जाएँ।"
+  },
+  "feature_music_search": {
+    "message": "अपनी प्लेलिस्ट के ट्रैक तुरंत खोजें और फ़िल्टर करें।"
+  },
+  "feature_music_playlist": {
+    "message": "ड्रैग-एंड-ड्रॉप से कस्टम प्लेलिस्ट बनाएँ और प्रबंधित करें।"
+  },
+  "feature_music_keeps_playing": {
+    "message": "टैब बदलने पर भी संगीत चलता रहता है।"
+  },
+  "feature_radio_online_search": {
+    "message": "नाम, देश या शैली से दुनिया भर के हज़ारों लाइव ऑनलाइन रेडियो स्टेशन खोजें।"
+  },
+  "feature_radio_saved_stations": {
+    "message": "अपने पसंदीदा रेडियो स्टेशन IndexedDB में सहेजें और उन्हें तेज़ी से, स्थायी रूप से पाएँ।"
+  },
+  "feature_radio_batch_add": {
+    "message": "एक क्लिक में कई ऑनलाइन रेडियो स्टेशन चुनकर अपनी लाइब्रेरी में जोड़ें।"
+  },
+  "feature_radio_import_export": {
+    "message": "सहेजे गए रेडियो स्टेशनों को JSON फ़ाइलों में निर्यात और उनसे आयात करें, बिना डुप्लिकेट के।"
+  },
+  "feature_radio_sync": {
+    "message": "क्लाउड सिंक से अपने पसंदीदा रेडियो स्टेशन ब्राउज़रों और डिवाइसों में सिंक करें।"
+  },
+  "feature_radio_unified_tabs": {
+    "message": "स्थानीय संगीत, रेडियो स्टेशन या एकीकृत प्लेलिस्ट कतार के बीच आसानी से बदलें।"
+  },
+  "radioExportBtn": {
+    "message": "निर्यात करें"
+  },
+  "radioExportTooltip": {
+    "message": "सभी सहेजे गए रेडियो स्टेशन JSON फ़ाइल में निर्यात करें"
+  },
+  "radioImportBtn": {
+    "message": "आयात करें"
+  },
+  "radioImportTooltip": {
+    "message": "JSON फ़ाइल से रेडियो स्टेशन बिना डुप्लिकेट के आयात करें"
+  },
+  "radioSyncBtn": {
+    "message": "सिंक"
+  },
+  "radioSyncTooltip": {
+    "message": "अपने Google खाते से ब्राउज़रों में रेडियो स्टेशन सिंक करें"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "रेडियो स्टेशन सिंक चालू है (बंद करने के लिए क्लिक करें)"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "रेडियो स्टेशन सिंक बंद है (चालू करने के लिए क्लिक करें)"
+  },
+  "radioSyncActiveNotification": {
+    "message": "रेडियो स्टेशन सिंक चालू किया गया"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "रेडियो स्टेशन सिंक बंद किया गया"
+  },
+  "radioImportSuccess": {
+    "message": "$1 रेडियो स्टेशन सफलतापूर्वक आयात किए गए"
+  },
+  "radioImportNoNew": {
+    "message": "कोई नया स्टेशन नहीं जोड़ा गया (सभी पहले से मौजूद थे या अमान्य थे)"
+  },
+  "radioImportInvalidFile": {
+    "message": "चुनी गई फ़ाइल में रेडियो स्टेशनों का मान्य फ़ॉर्मेट नहीं है"
+  },
+  "radioExportSuccess": {
+    "message": "रेडियो स्टेशन सफलतापूर्वक निर्यात किए गए"
+  },
+  "radioExportEmpty": {
+    "message": "निर्यात करने के लिए कोई सहेजा गया रेडियो स्टेशन नहीं है"
+  },
+  "radioStationAddTooltip": {
+    "message": "नए ऑनलाइन रेडियो स्टेशन जोड़ें या खोजें"
+  },
+  "dataUseRadioItem": {
+    "message": "इंटरनेट रेडियो खोजने पर आपका टाइप किया हुआ टेक्स्ट सार्वजनिक radio-browser.info डायरेक्टरी को भेजा जाता है।"
   }
 }

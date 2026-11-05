@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "アドレスまたはルール名がありません",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "ミュージックプレーヤー"
+  },
+  "musicPlayerEmpty": {
+    "message": "トラックが選択されていません"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "再生"
+  },
+  "musicPlayerPause": {
+    "message": "一時停止"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "「$1」を再生"
+  },
+  "musicPlayerStop": {
+    "message": "停止"
+  },
+  "musicPlayerPrevious": {
+    "message": "前へ"
+  },
+  "musicPlayerNext": {
+    "message": "次へ"
+  },
+  "musicPlayerRewind": {
+    "message": "$1秒戻る"
+  },
+  "musicPlayerForward": {
+    "message": "$1秒進む"
+  },
+  "musicPlayerSeek": {
+    "message": "再生位置"
+  },
+  "musicPlayerSearch": {
+    "message": "トラックを検索"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "トラックを検索…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "検索を閉じる"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "音楽フォルダを追加"
+  },
+  "musicPlayerAddFolder": {
+    "message": "音楽フォルダを追加"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "音楽ファイルを追加"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "フォルダをリストから削除"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "リストから削除"
+  },
+  "musicPlayerNoResults": {
+    "message": "トラックが見つかりません"
+  },
+  "musicPlayerTrackCount": {
+    "message": "$1曲"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "フォルダを選択して再生を始めましょう"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "再生中: $1"
+  },
+  "musicPlayerShow": {
+    "message": "プレーヤーを表示"
+  },
+  "musicPlayerHide": {
+    "message": "プレーヤーを非表示"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "選択したフォルダに音声ファイルが見つかりません"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "フォルダが大きすぎるため、最初の$1曲を読み込みました"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "「$2」から$1曲を読み込みました"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "$1曲を読み込みました"
+  },
+  "musicPlayerVolume": {
+    "message": "音量"
+  },
+  "musicPlayerMute": {
+    "message": "ミュート"
+  },
+  "musicPlayerUnmute": {
+    "message": "ミュート解除"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "プレイリストに既にある$1曲の重複をスキップしました"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "選択したファイルはすべてプレイリストに追加済みです"
+  },
+  "musicPlayerRadioStations": {
+    "message": "ラジオ局"
+  },
+  "musicPlayerAddRadio": {
+    "message": "ラジオ局を追加"
+  },
+  "musicPlayerRadioLive": {
+    "message": "ライブ"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "ラジオ: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "音楽を追加（フォルダまたはファイル）"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "フォルダを追加"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "ファイルを追加"
+  },
+  "musicPlayerLiveStream": {
+    "message": "ライブラジオ放送"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "ドラッグして並べ替え"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "ファイル"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "ファイルをリストから削除"
+  },
+  "musicTabMusic": {
+    "message": "音楽"
+  },
+  "musicTabRadio": {
+    "message": "ラジオ"
+  },
+  "musicTabAll": {
+    "message": "すべて"
+  },
+  "radioStationsModalTitle": {
+    "message": "ラジオ局"
+  },
+  "radioStationNameLabel": {
+    "message": "局名"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "ラジオのストリームURL"
+  },
+  "radioStationUrlLabel": {
+    "message": "例: J-WAVE、NHKラジオ、SomaFM…"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "追加"
+  },
+  "radioStationSavedList": {
+    "message": "保存した局"
+  },
+  "radioStationEmptyList": {
+    "message": "保存したラジオ局はありません"
+  },
+  "radioStationEmptyHint": {
+    "message": "ストリーミングURLを追加すると、ライブラジオを聴けます"
+  },
+  "radioStationDelete": {
+    "message": "局を削除"
+  },
+  "radioStationPlay": {
+    "message": "局を再生"
+  },
+  "radioStationInvalidUrl": {
+    "message": "有効なURL（http:// または https://）を入力してください"
+  },
+  "radioStationNameRequired": {
+    "message": "局名は必須です"
+  },
+  "radioStationAddedSuccess": {
+    "message": "局「$1」を追加しました"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "局を削除しました"
+  },
+  "radioPresetsTitle": {
+    "message": "おすすめの局"
+  },
+  "radioSearchOnlineTab": {
+    "message": "オンライン検索"
+  },
+  "radioSavedTab": {
+    "message": "マイ局"
+  },
+  "radioSelectAll": {
+    "message": "すべて選択"
+  },
+  "radioDeselectAll": {
+    "message": "すべて選択解除"
+  },
+  "radioSelectToAdd": {
+    "message": "局を選択"
+  },
+  "radioDeselect": {
+    "message": "局の選択を解除"
+  },
+  "radioAddSelected": {
+    "message": "選択した局を追加（$1）"
+  },
+  "radioAddedBadge": {
+    "message": "追加済み"
+  },
+  "radioSearching": {
+    "message": "局を検索中…"
+  },
+  "radioNoOnlineResults": {
+    "message": "「$1」に一致する局が見つかりません"
+  },
+  "radioPreviewPlay": {
+    "message": "試聴"
+  },
+  "radioPreviewStop": {
+    "message": "試聴を停止"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "オンラインラジオ局を検索"
+  },
+  "searchRadioPlaceholder": {
+    "message": "名前・国・ジャンルで検索（例: ロック、BBC、ジャズ…）"
+  },
+  "noRadioStationsFound": {
+    "message": "検索条件に一致するラジオ局が見つかりません"
+  },
+  "musicPlayerNextTrack": {
+    "message": "次: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "前: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "次の局: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "前の局: $1"
+  },
+  "sectionMusicPlayer": {
+    "message": "集中のためのオーディオ"
+  },
+  "feature_music_local_folder": {
+    "message": "ローカルフォルダの音楽をブラウザでそのまま再生できます。"
+  },
+  "feature_music_playback": {
+    "message": "再生、一時停止、スキップ、リピートなど、すべての操作に対応しています。"
+  },
+  "feature_music_seek": {
+    "message": "トラック内を正確にシークして早送り・早戻しできます。"
+  },
+  "feature_music_search": {
+    "message": "プレイリスト内のトラックをすばやく検索して絞り込めます。"
+  },
+  "feature_music_playlist": {
+    "message": "ドラッグ＆ドロップでカスタムプレイリストを作成・管理できます。"
+  },
+  "feature_music_keeps_playing": {
+    "message": "タブを切り替えても音楽は再生され続けます。"
+  },
+  "feature_radio_online_search": {
+    "message": "世界中の数千のオンラインライブラジオ局を、名前・国・ジャンルで検索できます。"
+  },
+  "feature_radio_saved_stations": {
+    "message": "お気に入りのラジオ局をIndexedDBに保存して、すばやく確実にアクセスできます。"
+  },
+  "feature_radio_batch_add": {
+    "message": "複数のオンラインラジオ局を選択して、1クリックでライブラリに追加できます。"
+  },
+  "feature_radio_import_export": {
+    "message": "保存したラジオ局を重複なしでJSONファイルにエクスポート・インポートできます。"
+  },
+  "feature_radio_sync": {
+    "message": "クラウド同期で、お気に入りのラジオ局をブラウザやデバイス間で同期できます。"
+  },
+  "feature_radio_unified_tabs": {
+    "message": "ローカル音楽、ラジオ局、統合キューをスムーズに切り替えられます。"
+  },
+  "radioExportBtn": {
+    "message": "エクスポート"
+  },
+  "radioExportTooltip": {
+    "message": "保存したすべてのラジオ局をJSONファイルにエクスポート"
+  },
+  "radioImportBtn": {
+    "message": "インポート"
+  },
+  "radioImportTooltip": {
+    "message": "JSONファイルからラジオ局を重複なしでインポート"
+  },
+  "radioSyncBtn": {
+    "message": "同期"
+  },
+  "radioSyncTooltip": {
+    "message": "Googleアカウントでブラウザ間のラジオ局を同期"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "ラジオ局の同期は有効です（クリックで無効化）"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "ラジオ局の同期は無効です（クリックで有効化）"
+  },
+  "radioSyncActiveNotification": {
+    "message": "ラジオ局の同期を有効にしました"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "ラジオ局の同期を無効にしました"
+  },
+  "radioImportSuccess": {
+    "message": "$1件のラジオ局をインポートしました"
+  },
+  "radioImportNoNew": {
+    "message": "新しい局は追加されませんでした（すべて既存または無効）"
+  },
+  "radioImportInvalidFile": {
+    "message": "選択したファイルは有効なラジオ局の形式ではありません"
+  },
+  "radioExportSuccess": {
+    "message": "ラジオ局をエクスポートしました"
+  },
+  "radioExportEmpty": {
+    "message": "エクスポートする保存済みのラジオ局がありません"
+  },
+  "radioStationAddTooltip": {
+    "message": "オンラインのラジオ局を追加または検索"
+  },
+  "dataUseRadioItem": {
+    "message": "ラジオを検索すると、入力した内容が公開ディレクトリ radio-browser.info に送信されます。"
   }
 }

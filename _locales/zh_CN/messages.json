@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "缺少地址或规则名称",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "音乐播放器"
+  },
+  "musicPlayerEmpty": {
+    "message": "未选择曲目"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "播放"
+  },
+  "musicPlayerPause": {
+    "message": "暂停"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "播放“$1”"
+  },
+  "musicPlayerStop": {
+    "message": "停止"
+  },
+  "musicPlayerPrevious": {
+    "message": "上一首"
+  },
+  "musicPlayerNext": {
+    "message": "下一首"
+  },
+  "musicPlayerRewind": {
+    "message": "后退 $1 秒"
+  },
+  "musicPlayerForward": {
+    "message": "前进 $1 秒"
+  },
+  "musicPlayerSeek": {
+    "message": "播放进度"
+  },
+  "musicPlayerSearch": {
+    "message": "搜索曲目"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "搜索曲目…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "关闭搜索"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "添加音乐文件夹"
+  },
+  "musicPlayerAddFolder": {
+    "message": "添加音乐文件夹"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "添加音乐文件"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "从列表中移除文件夹"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "从列表中移除"
+  },
+  "musicPlayerNoResults": {
+    "message": "未找到曲目"
+  },
+  "musicPlayerTrackCount": {
+    "message": "$1 首曲目"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "选择一个文件夹开始播放"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "正在播放：$1"
+  },
+  "musicPlayerShow": {
+    "message": "显示播放器"
+  },
+  "musicPlayerHide": {
+    "message": "隐藏播放器"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "所选文件夹中未找到音频文件"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "文件夹过大，已加载前 $1 首曲目"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "已从“$2”加载 $1 首曲目"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "已加载 $1 首曲目"
+  },
+  "musicPlayerVolume": {
+    "message": "音量"
+  },
+  "musicPlayerMute": {
+    "message": "静音"
+  },
+  "musicPlayerUnmute": {
+    "message": "取消静音"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "已跳过 $1 首播放列表中已有的重复曲目"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "所选文件均已在播放列表中"
+  },
+  "musicPlayerRadioStations": {
+    "message": "电台"
+  },
+  "musicPlayerAddRadio": {
+    "message": "添加电台"
+  },
+  "musicPlayerRadioLive": {
+    "message": "直播"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "电台：$1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "添加音乐（文件夹或文件）"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "添加文件夹"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "添加文件"
+  },
+  "musicPlayerLiveStream": {
+    "message": "电台直播"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "拖动以重新排序"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "文件"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "从列表中移除文件"
+  },
+  "musicTabMusic": {
+    "message": "音乐"
+  },
+  "musicTabRadio": {
+    "message": "电台"
+  },
+  "musicTabAll": {
+    "message": "全部"
+  },
+  "radioStationsModalTitle": {
+    "message": "电台"
+  },
+  "radioStationNameLabel": {
+    "message": "电台名称"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "电台流媒体 URL"
+  },
+  "radioStationUrlLabel": {
+    "message": "例如：中国之声、经典音乐电台、SomaFM…"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "添加"
+  },
+  "radioStationSavedList": {
+    "message": "已保存的电台"
+  },
+  "radioStationEmptyList": {
+    "message": "没有已保存的电台"
+  },
+  "radioStationEmptyHint": {
+    "message": "添加流媒体 URL 即可收听在线直播电台"
+  },
+  "radioStationDelete": {
+    "message": "删除电台"
+  },
+  "radioStationPlay": {
+    "message": "播放电台"
+  },
+  "radioStationInvalidUrl": {
+    "message": "请输入有效的 URL（http:// 或 https://）"
+  },
+  "radioStationNameRequired": {
+    "message": "电台名称为必填项"
+  },
+  "radioStationAddedSuccess": {
+    "message": "已成功添加电台“$1”"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "电台已删除"
+  },
+  "radioPresetsTitle": {
+    "message": "推荐电台"
+  },
+  "radioSearchOnlineTab": {
+    "message": "在线搜索"
+  },
+  "radioSavedTab": {
+    "message": "我的电台"
+  },
+  "radioSelectAll": {
+    "message": "全选"
+  },
+  "radioDeselectAll": {
+    "message": "取消全选"
+  },
+  "radioSelectToAdd": {
+    "message": "选择电台"
+  },
+  "radioDeselect": {
+    "message": "取消选择电台"
+  },
+  "radioAddSelected": {
+    "message": "添加所选（$1）"
+  },
+  "radioAddedBadge": {
+    "message": "已添加"
+  },
+  "radioSearching": {
+    "message": "正在搜索电台…"
+  },
+  "radioNoOnlineResults": {
+    "message": "未找到与“$1”匹配的电台"
+  },
+  "radioPreviewPlay": {
+    "message": "试听"
+  },
+  "radioPreviewStop": {
+    "message": "停止试听"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "搜索在线电台"
+  },
+  "searchRadioPlaceholder": {
+    "message": "按名称、国家或类型搜索（如：摇滚、BBC、爵士…）"
+  },
+  "noRadioStationsFound": {
+    "message": "未找到与搜索条件匹配的电台"
+  },
+  "musicPlayerNextTrack": {
+    "message": "下一首：$1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "上一首：$1"
+  },
+  "musicPlayerNextStation": {
+    "message": "下一个电台：$1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "上一个电台：$1"
+  },
+  "sectionMusicPlayer": {
+    "message": "专注音频"
+  },
+  "feature_music_local_folder": {
+    "message": "直接在浏览器中播放本地文件夹里的音乐。"
+  },
+  "feature_music_playback": {
+    "message": "完整的播放控制：播放、暂停、跳转和循环。"
+  },
+  "feature_music_seek": {
+    "message": "可精确拖动进度，在曲目内快进快退。"
+  },
+  "feature_music_search": {
+    "message": "即时搜索并筛选播放列表中的曲目。"
+  },
+  "feature_music_playlist": {
+    "message": "通过拖放创建和管理自定义播放列表。"
+  },
+  "feature_music_keeps_playing": {
+    "message": "切换标签页时音乐持续播放。"
+  },
+  "feature_radio_online_search": {
+    "message": "按名称、国家或类型搜索全球数千个在线直播电台。"
+  },
+  "feature_radio_saved_stations": {
+    "message": "将喜爱的电台保存到 IndexedDB，快速且持久地访问。"
+  },
+  "feature_radio_batch_add": {
+    "message": "一键选择并添加多个在线电台到你的库中。"
+  },
+  "feature_radio_import_export": {
+    "message": "将已保存的电台导出为 JSON 文件或从中导入，不会产生重复。"
+  },
+  "feature_radio_sync": {
+    "message": "通过云同步，在不同浏览器和设备间同步你喜爱的电台。"
+  },
+  "feature_radio_unified_tabs": {
+    "message": "在本地音乐、电台或合并的播放队列之间无缝切换。"
+  },
+  "radioExportBtn": {
+    "message": "导出"
+  },
+  "radioExportTooltip": {
+    "message": "将所有已保存的电台导出为 JSON 文件"
+  },
+  "radioImportBtn": {
+    "message": "导入"
+  },
+  "radioImportTooltip": {
+    "message": "从 JSON 文件导入电台，不会产生重复"
+  },
+  "radioSyncBtn": {
+    "message": "同步"
+  },
+  "radioSyncTooltip": {
+    "message": "通过 Google 账号在不同浏览器间同步电台"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "电台同步已启用（点击禁用）"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "电台同步已禁用（点击启用）"
+  },
+  "radioSyncActiveNotification": {
+    "message": "已启用电台同步"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "已禁用电台同步"
+  },
+  "radioImportSuccess": {
+    "message": "已成功导入 $1 个电台"
+  },
+  "radioImportNoNew": {
+    "message": "未添加新电台（均已存在或无效）"
+  },
+  "radioImportInvalidFile": {
+    "message": "所选文件不是有效的电台格式"
+  },
+  "radioExportSuccess": {
+    "message": "电台导出成功"
+  },
+  "radioExportEmpty": {
+    "message": "没有可导出的已保存电台"
+  },
+  "radioStationAddTooltip": {
+    "message": "添加或搜索新的在线电台"
+  },
+  "dataUseRadioItem": {
+    "message": "搜索网络电台时，你输入的内容会发送到公共目录 radio-browser.info。"
   }
 }

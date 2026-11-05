@@ -14229,5 +14229,350 @@
   "errorMissingUrlOrRule": {
     "message": "Falta o endereço ou o nome da regra",
     "description": "Error when adding an address to a rule without giving both the address and the rule name."
+  },
+  "musicPlayer": {
+    "message": "Reprodutor de música"
+  },
+  "musicPlayerEmpty": {
+    "message": "Nenhuma faixa selecionada"
+  },
+  "musicPlayerTrackPosition": {
+    "message": "$1 / $2"
+  },
+  "musicPlayerPlay": {
+    "message": "Reproduzir"
+  },
+  "musicPlayerPause": {
+    "message": "Pausar"
+  },
+  "musicPlayerPlayTrack": {
+    "message": "Reproduzir “$1”"
+  },
+  "musicPlayerStop": {
+    "message": "Parar"
+  },
+  "musicPlayerPrevious": {
+    "message": "Anterior"
+  },
+  "musicPlayerNext": {
+    "message": "Próxima"
+  },
+  "musicPlayerRewind": {
+    "message": "Voltar $1 s"
+  },
+  "musicPlayerForward": {
+    "message": "Avançar $1 s"
+  },
+  "musicPlayerSeek": {
+    "message": "Progresso da faixa"
+  },
+  "musicPlayerSearch": {
+    "message": "Buscar faixas"
+  },
+  "musicPlayerSearchPlaceholder": {
+    "message": "Buscar faixas…"
+  },
+  "musicPlayerCloseSearch": {
+    "message": "Fechar busca"
+  },
+  "musicPlayerSelectFolder": {
+    "message": "Adicionar pasta de música"
+  },
+  "musicPlayerAddFolder": {
+    "message": "Adicionar pasta de música"
+  },
+  "musicPlayerSelectFiles": {
+    "message": "Adicionar arquivos de música"
+  },
+  "musicPlayerRemoveFolder": {
+    "message": "Remover pasta da playlist"
+  },
+  "musicPlayerRemoveTrack": {
+    "message": "Remover da playlist"
+  },
+  "musicPlayerNoResults": {
+    "message": "Nenhuma faixa encontrada"
+  },
+  "musicPlayerTrackCount": {
+    "message": "$1 faixas"
+  },
+  "musicPlayerEmptyHint": {
+    "message": "Escolha uma pasta para começar a tocar"
+  },
+  "musicPlayerNowPlaying": {
+    "message": "Tocando agora: $1"
+  },
+  "musicPlayerShow": {
+    "message": "Mostrar reprodutor de música"
+  },
+  "musicPlayerHide": {
+    "message": "Ocultar reprodutor de música"
+  },
+  "musicPlayerNoAudioInFolder": {
+    "message": "Nenhum arquivo de áudio encontrado na pasta selecionada"
+  },
+  "musicPlayerFolderTooBig": {
+    "message": "A pasta é muito grande; as primeiras $1 faixas foram carregadas"
+  },
+  "musicPlayerFolderLoaded": {
+    "message": "$1 faixas carregadas de “$2”"
+  },
+  "musicPlayerTracksLoaded": {
+    "message": "$1 faixas carregadas"
+  },
+  "musicPlayerVolume": {
+    "message": "Volume"
+  },
+  "musicPlayerMute": {
+    "message": "Silenciar"
+  },
+  "musicPlayerUnmute": {
+    "message": "Ativar som"
+  },
+  "musicPlayerDuplicatesIgnored": {
+    "message": "$1 faixas duplicadas que já estavam na playlist foram ignoradas"
+  },
+  "musicPlayerAllDuplicates": {
+    "message": "Todos os arquivos selecionados já estão na playlist"
+  },
+  "musicPlayerRadioStations": {
+    "message": "Estações de rádio"
+  },
+  "musicPlayerAddRadio": {
+    "message": "Adicionar estação de rádio"
+  },
+  "musicPlayerRadioLive": {
+    "message": "AO VIVO"
+  },
+  "musicPlayerRadioPlaying": {
+    "message": "Rádio: $1"
+  },
+  "musicPlayerAddMusicMenu": {
+    "message": "Adicionar música (pasta ou arquivos)"
+  },
+  "musicPlayerAddFolderOption": {
+    "message": "Adicionar pasta"
+  },
+  "musicPlayerAddFilesOption": {
+    "message": "Adicionar arquivos"
+  },
+  "musicPlayerLiveStream": {
+    "message": "Transmissão de rádio ao vivo"
+  },
+  "musicPlayerDragToReorder": {
+    "message": "Arraste para reordenar"
+  },
+  "musicPlayerLooseFiles": {
+    "message": "Arquivos"
+  },
+  "musicPlayerRemoveFilesGroup": {
+    "message": "Remover arquivos da playlist"
+  },
+  "musicTabMusic": {
+    "message": "Música"
+  },
+  "musicTabRadio": {
+    "message": "Rádio"
+  },
+  "musicTabAll": {
+    "message": "Tudo"
+  },
+  "radioStationsModalTitle": {
+    "message": "Estações de rádio"
+  },
+  "radioStationNameLabel": {
+    "message": "Nome da estação"
+  },
+  "radioStationNamePlaceholder": {
+    "message": "Ex.: BBC Radio 1, SomaFM, Jazz FM…"
+  },
+  "radioStationUrlLabel": {
+    "message": "URL do stream da rádio"
+  },
+  "radioStationUrlPlaceholder": {
+    "message": "https://example.com/stream.mp3"
+  },
+  "radioStationAddBtn": {
+    "message": "Adicionar"
+  },
+  "radioStationSavedList": {
+    "message": "Estações salvas"
+  },
+  "radioStationEmptyList": {
+    "message": "Nenhuma estação de rádio salva"
+  },
+  "radioStationEmptyHint": {
+    "message": "Adicione uma URL de streaming para ouvir rádio ao vivo"
+  },
+  "radioStationDelete": {
+    "message": "Excluir estação"
+  },
+  "radioStationPlay": {
+    "message": "Reproduzir estação"
+  },
+  "radioStationInvalidUrl": {
+    "message": "Insira uma URL válida (http:// ou https://)"
+  },
+  "radioStationNameRequired": {
+    "message": "O nome da estação é obrigatório"
+  },
+  "radioStationAddedSuccess": {
+    "message": "Estação “$1” adicionada com sucesso"
+  },
+  "radioStationDeletedSuccess": {
+    "message": "Estação removida"
+  },
+  "radioPresetsTitle": {
+    "message": "Estações sugeridas"
+  },
+  "radioSearchOnlineTab": {
+    "message": "Buscar online"
+  },
+  "radioSavedTab": {
+    "message": "Minhas estações"
+  },
+  "radioSelectAll": {
+    "message": "Selecionar tudo"
+  },
+  "radioDeselectAll": {
+    "message": "Desmarcar tudo"
+  },
+  "radioSelectToAdd": {
+    "message": "Selecionar estação"
+  },
+  "radioDeselect": {
+    "message": "Desmarcar estação"
+  },
+  "radioAddSelected": {
+    "message": "Adicionar selecionadas ($1)"
+  },
+  "radioAddedBadge": {
+    "message": "Adicionada"
+  },
+  "radioSearching": {
+    "message": "Buscando estações…"
+  },
+  "radioNoOnlineResults": {
+    "message": "Nenhuma estação encontrada para “$1”"
+  },
+  "radioPreviewPlay": {
+    "message": "Ouvir prévia"
+  },
+  "radioPreviewStop": {
+    "message": "Parar prévia"
+  },
+  "radioBitrate": {
+    "message": "$1 kbps"
+  },
+  "searchRadioStations": {
+    "message": "Buscar estações de rádio online"
+  },
+  "searchRadioPlaceholder": {
+    "message": "Busque por nome, país ou gênero (ex.: Rock, BBC, Jazz, Los 40…)"
+  },
+  "noRadioStationsFound": {
+    "message": "Nenhuma estação de rádio encontrada para a sua busca"
+  },
+  "musicPlayerNextTrack": {
+    "message": "Próxima: $1"
+  },
+  "musicPlayerPreviousTrack": {
+    "message": "Anterior: $1"
+  },
+  "musicPlayerNextStation": {
+    "message": "Próxima estação: $1"
+  },
+  "musicPlayerPreviousStation": {
+    "message": "Estação anterior: $1"
+  },
+  "sectionMusicPlayer": {
+    "message": "Áudio para foco e concentração"
+  },
+  "feature_music_local_folder": {
+    "message": "Toque músicas de pastas locais diretamente no navegador."
+  },
+  "feature_music_playback": {
+    "message": "Controles completos de reprodução: tocar, pausar, pular e repetir."
+  },
+  "feature_music_seek": {
+    "message": "Navegue e avance dentro das faixas com precisão."
+  },
+  "feature_music_search": {
+    "message": "Busque e filtre as faixas da sua playlist na hora."
+  },
+  "feature_music_playlist": {
+    "message": "Crie e gerencie playlists personalizadas arrastando e soltando."
+  },
+  "feature_music_keeps_playing": {
+    "message": "A música continua tocando mesmo ao navegar entre abas."
+  },
+  "feature_radio_online_search": {
+    "message": "Busque milhares de rádios online ao vivo do mundo todo por nome, país ou gênero."
+  },
+  "feature_radio_saved_stations": {
+    "message": "Salve suas estações favoritas no IndexedDB para um acesso rápido e permanente."
+  },
+  "feature_radio_batch_add": {
+    "message": "Selecione e adicione várias estações de rádio online à sua biblioteca com um clique."
+  },
+  "feature_radio_import_export": {
+    "message": "Exporte e importe suas estações salvas de/para arquivos JSON, sem duplicatas."
+  },
+  "feature_radio_sync": {
+    "message": "Sincronize suas estações favoritas entre navegadores e dispositivos pela sincronização na nuvem."
+  },
+  "feature_radio_unified_tabs": {
+    "message": "Alterne sem esforço entre música local, estações de rádio ou uma fila de reprodução unificada."
+  },
+  "radioExportBtn": {
+    "message": "Exportar"
+  },
+  "radioExportTooltip": {
+    "message": "Exportar todas as estações de rádio salvas para um arquivo JSON"
+  },
+  "radioImportBtn": {
+    "message": "Importar"
+  },
+  "radioImportTooltip": {
+    "message": "Importar estações de rádio de um arquivo JSON sem duplicatas"
+  },
+  "radioSyncBtn": {
+    "message": "Sincronizar"
+  },
+  "radioSyncTooltip": {
+    "message": "Sincronizar estações de rádio entre navegadores com a sua conta do Google"
+  },
+  "radioSyncEnabledTooltip": {
+    "message": "Sincronização das estações de rádio ativada (clique para desativar)"
+  },
+  "radioSyncDisabledTooltip": {
+    "message": "Sincronização das estações de rádio desativada (clique para ativar)"
+  },
+  "radioSyncActiveNotification": {
+    "message": "Sincronização das estações de rádio ativada"
+  },
+  "radioSyncDisabledNotification": {
+    "message": "Sincronização das estações de rádio desativada"
+  },
+  "radioImportSuccess": {
+    "message": "$1 estações de rádio importadas com sucesso"
+  },
+  "radioImportNoNew": {
+    "message": "Nenhuma estação nova foi adicionada (todas já existiam ou eram inválidas)"
+  },
+  "radioImportInvalidFile": {
+    "message": "O arquivo selecionado não tem um formato válido de estações de rádio"
+  },
+  "radioExportSuccess": {
+    "message": "Estações de rádio exportadas com sucesso"
+  },
+  "radioExportEmpty": {
+    "message": "Não há estações de rádio salvas para exportar"
+  },
+  "radioStationAddTooltip": {
+    "message": "Adicionar ou buscar novas estações de rádio online"
+  },
+  "dataUseRadioItem": {
+    "message": "Ao buscar rádios na internet, o que você digitou é enviado ao diretório público radio-browser.info."
   }
 }

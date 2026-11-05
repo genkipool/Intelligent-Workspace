@@ -151,6 +151,11 @@ Novedades
 
 ### Añadido
 
+- **Vuelven el reproductor de música y la radio en línea.** El panel del reproductor, la
+  ventana de emisoras, sus dos almacenes de IndexedDB y la mitad del documento offscreen
+  que reproduce el audio regresan desde la rama `feature/musica-y-radio`. La extensión
+  vuelve a hablar con `api.radio-browser.info` mientras buscas emisoras y con el servidor
+  de la emisora que suena, y las dos conexiones se declaran en el uso de datos y el dossier.
 - El editor de cookies puede **añadir cookies**: el botón «Añadir» crea una tarjeta con
   su propio campo de nombre; con el dominio vacío la cookie es solo para el sitio de la
   pestaña, y no se guarda sin nombre.
